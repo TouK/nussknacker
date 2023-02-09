@@ -1,6 +1,5 @@
 import {cx} from "@emotion/css"
 import React, {
-  AnchorHTMLAttributes,
   ButtonHTMLAttributes,
   DetailedHTMLProps,
   forwardRef,
@@ -58,16 +57,6 @@ export function SelectWithFocus({
   const {withFocus} = useNkTheme()
   return (
     <select {...props} className={cx(withFocus, className)}/>
-  )
-}
-
-export function AWithFocus({
-  className,
-  ...props
-}: DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>): JSX.Element {
-  const {withFocus} = useNkTheme()
-  return (
-    <a {...props} className={cx(withFocus, className)}/>
   )
 }
 

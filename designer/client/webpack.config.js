@@ -3,10 +3,8 @@ const progressBar = require("./progressBar.js")
 const bootstrap = require("bootstrap")
 const path = require("path")
 const webpack = require("webpack")
-const childProcess = require("child_process")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 const HtmlWebpackHarddiskPlugin = require("html-webpack-harddisk-plugin")
-const TerserPlugin = require("terser-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
 const federationConfig = require("./federation.config.json")
 const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
@@ -48,17 +46,6 @@ const {dependencies} = require("./package.json")
 
 module.exports = {
   mode: NODE_ENV,
-  optimization: {
-    minimizer: [new TerserPlugin({
-      parallel: true,
-      //Reactable bug: https://github.com/abdulrahman-khankan/reactable/issues/3
-      terserOptions: {
-        mangle: {
-          reserved: ["Td", "Tr", "Th", "Thead", "Table"],
-        },
-      },
-    })],
-  },
   performance: {
     maxEntrypointSize: 3000000,
     maxAssetSize: 3000000,
