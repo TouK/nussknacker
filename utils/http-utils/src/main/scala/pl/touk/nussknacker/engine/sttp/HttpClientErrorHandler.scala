@@ -15,7 +15,8 @@ object HttpClientErrorHandler extends LazyLogging {
   }
 
   def recoverWithMessage[T](action: String, message: Option[String] = None): PartialFunction[Throwable, Future[T]] = {
-    case HttpError(body, status) => handleClientError(s"$body", status, action, message)
+    // extract nested HttpError: it's most likely wrapped in SttpClientException
+    case HttpErrorExtractor(HttpError(body, status)) => handleClientError(s"$body", status, action, message)
   }
 
   //We don't want to pass error directly to user, as it usually contains stacktrace etc.
@@ -25,6 +26,9 @@ object HttpClientErrorHandler extends LazyLogging {
     Future.failed(HttpClientError(errorMessage))
   }
 
+  private object HttpErrorExtractor {
+    def unapply(t: Throwable): Option[HttpError[_]] = HttpError.find(t)
+  }
 }
 
 case class HttpClientError(message: String) extends Exception(message)

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsR
 import pl.touk.nussknacker.engine.sttp.HttpClientError
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{HttpError, Response}
+import sttp.client3.{HttpError, Response, SttpClientException}
 import sttp.model.{Method, StatusCode}
 import sttp.monad.FutureMonad
 
@@ -32,7 +32,7 @@ class FlinkHttpClientTest extends AnyFunSuite
   private val flinkJarFile = JarFile(jarId, jarFileName)
   private val deploymentId = ExternalDeploymentId("someDeploymentId")
 
-  val config: FlinkConfig = FlinkConfig("http://localhost:12345/flink")
+  val config: FlinkConfig = FlinkConfig("http://localhost:12345/")
 
   test("uploadJarFileIfNotExists - should upload jar") {
     implicit val backend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
