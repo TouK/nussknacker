@@ -20,7 +20,7 @@ object LoggingAndCollectingSttpBackend {
 }
 
 class LoggingAndCollectingSttpBackend[+P](delegate: SttpBackend[Future, P], baseLoggerName: String)
-                                     (implicit ec: ExecutionContext, serviceInvocationCollector: ServiceInvocationCollector) extends DelegateSttpBackend[Future, P](delegate) {
+                                         (implicit ec: ExecutionContext, serviceInvocationCollector: ServiceInvocationCollector) extends DelegateSttpBackend[Future, P](delegate) {
 
   import LoggingAndCollectingSttpBackend._
 
