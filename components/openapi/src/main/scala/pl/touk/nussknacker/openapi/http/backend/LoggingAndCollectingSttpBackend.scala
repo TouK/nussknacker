@@ -61,10 +61,11 @@ class LoggingAndCollectingSttpBackend[+P](delegate: SttpBackend[Future, P], base
   }
 
   private def handleResponse[T, R >: P with Effect[Future]](correlationId: UUID,
-                                request: Request[T, R],
-                                requestTimestamp: Long,
-                                response: Response[WithStringResponseBody[T]]): CollectableAction[Response[T]] = {
+                                                            request: Request[T, R],
+                                                            requestTimestamp: Long,
+                                                            response: Response[WithStringResponseBody[T]]): CollectableAction[Response[T]] = {
     def responseLog = RequestResponseLog(request, response, resBody = response.body.stringResponseBody())
+
     responseLogger.debug(s"[$correlationId][took ${System.currentTimeMillis() - requestTimestamp}ms]: ${responseLog.pretty}")
     val targetResponse = response.copy(body = response.body.original)
     CollectableAction(() => responseLog, targetResponse)

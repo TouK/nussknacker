@@ -3,7 +3,7 @@
 
 1.9.0 (Not released yet)
 ------------------------
-* [#3986](https://github.com/TouK/nussknacker/pull/3986) Updated sttp 2.2.9 -> 3.8.10
+* [#3986](https://github.com/TouK/nussknacker/pull/3986) Updated sttp 2.2.9 -> 3.8.11
 
 1.8.0 (Not released yet)
 ------------------------
