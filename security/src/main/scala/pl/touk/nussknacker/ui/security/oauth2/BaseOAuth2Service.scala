@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException}
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
@@ -69,6 +69,6 @@ object DefaultOAuth2AuthorizationData extends RelativeSecondsCodecs {
 object BaseOAuth2Service {
   def apply[
     UserInfoData: Decoder
-  ](configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]): BaseOAuth2Service[UserInfoData, DefaultOAuth2AuthorizationData] =
+  ](configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any]): BaseOAuth2Service[UserInfoData, DefaultOAuth2AuthorizationData] =
     new BaseOAuth2Service(OAuth2ClientApi[UserInfoData, DefaultOAuth2AuthorizationData](configuration))
 }

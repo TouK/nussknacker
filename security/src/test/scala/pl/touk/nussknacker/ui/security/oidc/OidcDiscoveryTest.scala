@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.security.oidc
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.testing.SttpBackendStub
 
 import java.net.URI
 
@@ -23,11 +23,11 @@ class OidcDiscoveryTest extends AnyFlatSpec with Matchers {
   )
 
   implicit private val sttp = SttpBackendStub.asynchronousFuture
-    .whenRequestMatches(_.uri.host == "exception")
+    .whenRequestMatches(_.uri.host.contains("exception"))
     .thenRespond(throw new Exception("fatal error"))
-    .whenRequestMatches(_.uri.host == "client-error")
+    .whenRequestMatches(_.uri.host.contains("client-error"))
     .thenRespondNotFound()
-    .whenRequestMatches(_.uri.host == "correct")
+    .whenRequestMatches(_.uri.host.contains("correct"))
     .thenRespond(discoveredConfiguration.asJson.toString())
 
   it should "handle both a success and failures" in {

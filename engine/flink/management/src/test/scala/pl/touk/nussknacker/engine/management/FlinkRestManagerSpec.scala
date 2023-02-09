@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.testing.SttpBackendStub
-import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
+import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
 import java.net.NoRouteToHostException
@@ -101,7 +101,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
           exceptionOnDeploy
             //see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions
             //TODO: can be make behaviour more robust?
-            .flatMap(SttpClientException.defaultExceptionToSttpClientException)
+            .flatMap { ex => SttpClientException.defaultExceptionToSttpClientException(req, ex) }
             .foreach(throw _)
           RunResponse(returnedJobId)
         case (List("jars", "upload"), Method.POST) if acceptDeploy =>
@@ -145,16 +145,18 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       ).futureValue shouldBe None
   }
 
-  test("not continue on random exception exception") {
+  test("not continue on random network exception") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
     val manager = createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
 
-    expectException(manager.deploy(
-        defaultVersion,
-        defaultDeploymentData,
-        canonicalProcess,
-        None
-      ), "java.net.NoRouteToHostException: heeelo?")
+    val result = manager.deploy(
+      defaultVersion,
+      defaultDeploymentData,
+      canonicalProcess,
+      None
+    )
+    expectException(result, "Exception when sending request: POST http://test.pl/jars/file/run")
+    result.failed.futureValue.getCause.getMessage shouldBe "heeelo?"
   }
 
   private val defaultVersion = ProcessVersion(VersionId.initialVersionId, ProcessName("p1"), ProcessId(1), "user", None)
@@ -320,8 +322,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     ))
   }
 
-  private def createManagerWithBackend(backend: SttpBackend[Future, Nothing, NothingT]): FlinkRestManager = {
-    implicit val b: SttpBackend[Future, Nothing, NothingT] = backend
+  private def createManagerWithBackend(backend: SttpBackend[Future, Any]): FlinkRestManager = {
+    implicit val b: SttpBackend[Future, Any] = backend
     new FlinkRestManager(
       config = config,
       modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"

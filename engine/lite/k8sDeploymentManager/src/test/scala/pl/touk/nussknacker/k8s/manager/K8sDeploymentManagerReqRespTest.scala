@@ -23,7 +23,7 @@ import skuber.LabelSelector.dsl._
 import skuber.json.format._
 import skuber.networking.v1.Ingress
 import skuber.{LabelSelector, ListResource, Service}
-import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
+import sttp.client3._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.CollectionConverters._
@@ -34,7 +34,7 @@ import scala.util.Random
 @Network
 class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with OptionValues with EitherValuesDetailedMessage with LazyLogging {
 
-  private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+  private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
   private val givenServicePort = 12345 // some random, remote port, we don't need to worry about collisions
 
@@ -57,7 +57,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
         val pingMessage = s"""{"ping":"$pingContent"}"""
         val instanceIds = (1 to 10).map { _ =>
           val request = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
-          val response = request.body(pingMessage).send().body.rightValue
+          val response = request.body(pingMessage).send(backend).body.rightValue
           val jsonResponse = parser.parse(response).rightValue
           jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
           jsonResponse.hcursor.downField("instanceId").as[String].rightValue
@@ -79,9 +79,9 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""
-      val request = basicRequest.post(uri"http://localhost".port(8081).path(givenScenarioName))
+      val request = basicRequest.post(uri"http://localhost".port(8081).withPath(givenScenarioName))
       val response = eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
-        request.body(pingMessage).send().body.rightValue
+        request.body(pingMessage).send(backend).body.rightValue
       }
       val jsonResponse = parser.parse(response).rightValue
       jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
@@ -101,9 +101,9 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""
-      val request = basicRequest.auth.basic("publisher", "rrPassword").post(uri"http://localhost".port(8081).path(givenScenarioName))
+      val request = basicRequest.auth.basic("publisher", "rrPassword").post(uri"http://localhost".port(8081).withPath(givenScenarioName))
       val response = eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
-        request.body(pingMessage).send().body.rightValue
+        request.body(pingMessage).send(backend).body.rightValue
       }
       val jsonResponse = parser.parse(response).rightValue
       jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
@@ -124,7 +124,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
         def checkVersions() = (1 to 10).map { _ =>
           val request = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
           val response = eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
-            request.body(pingMessage).send().body.rightValue
+            request.body(pingMessage).send(backend).body.rightValue
           }
           val jsonResponse = parser.parse(response).rightValue
           jsonResponse.hcursor.downField("version").as[Int].rightValue

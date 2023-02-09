@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator}
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.lite.manager.LiteDeploymentManagerProvider
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -20,7 +20,7 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                       sttpBackend: SttpBackend[Future, Any],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     new K8sDeploymentManager(modelData.asInvokableModelData, K8sDeploymentManagerConfig.parse(config))
   }

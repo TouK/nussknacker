@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStateStatus, FlinkStreamingDeploymentManagerProvider}
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client3.SttpBackend
 
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
@@ -21,7 +21,7 @@ import scala.concurrent.Future
 trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
 
   private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
-  implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+  implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
   implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
 
   protected var kafkaClient: KafkaClient = _

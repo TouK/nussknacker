@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.testing.SttpBackendStub
 
 import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +37,7 @@ trait BaseOpenAPITest {
   protected def parseResource(name: String): String =
     IOUtils.toString(getClass.getResourceAsStream(s"/swagger/$name"), "UTF-8")
 
-  protected def parseToEnrichers(resource: String, backend: SttpBackendStub[Future, Nothing, Nothing], config: OpenAPIServicesConfig = baseConfig): Map[ServiceName, EagerServiceWithStaticParametersAndReturnType] = {
+  protected def parseToEnrichers(resource: String, backend: SttpBackendStub[Future, Any], config: OpenAPIServicesConfig = baseConfig): Map[ServiceName, EagerServiceWithStaticParametersAndReturnType] = {
     val services = parseServicesFromResourceUnsafe(resource, config)
     val creator = new SwaggerEnricherCreator((_: ExecutionContext) => backend)
     val enrichers = SwaggerEnrichers.prepare(config, services, creator)

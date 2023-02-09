@@ -44,8 +44,8 @@ import pl.touk.nussknacker.ui.process.test.{ScenarioTestDataSerDe, ScenarioTestS
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
-import sttp.client.akkahttp.AkkaHttpBackend
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.akkahttp.AkkaHttpBackend
+import sttp.client3.SttpBackend
 
 import java.net.URI
 import scala.concurrent.duration._
@@ -59,7 +59,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected implicit val processCategoryService: ProcessCategoryService = new ConfigProcessCategoryService(testConfig)
 
-  private implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend.usingActorSystem(system)
+  private implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(system)
 
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
@@ -90,7 +90,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected val deploymentManagerProvider: FlinkStreamingDeploymentManagerProvider = new FlinkStreamingDeploymentManagerProvider {
     override def createDeploymentManager(modelData: BaseModelData, config: Config)
-                                        (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                        (implicit ec: ExecutionContext, actorSystem: ActorSystem, sttpBackend: SttpBackend[Future, Any],
                                          deploymentService: ProcessingTypeDeploymentService): DeploymentManager = deploymentManager
   }
 

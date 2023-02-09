@@ -45,8 +45,8 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
-import sttp.client.akkahttp.AkkaHttpBackend
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.akkahttp.AkkaHttpBackend
+import sttp.client3.SttpBackend
 
 import java.util.concurrent.TimeUnit
 
@@ -69,7 +69,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   //override this method to e.g. run UI with local model
   protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentService, categoriesService: ProcessCategoryService)
                                          (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                          sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
+                                          sttpBackend: SttpBackend[Future, Any]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
       () => {
         implicit val deploymentService: DeploymentService = getDeploymentService()
@@ -88,7 +88,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   override def create(config: Config, dbConfig: DbConfig, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
 
-    implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend.usingActorSystem(system)
+    implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(system)
 
     val environment = config.getString("environment")
     val featureTogglesConfig = FeatureTogglesConfig.create(config)
@@ -243,7 +243,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
   //by default, we use InfluxCountsReporterCreator
   private def prepareCountsReporter(env: String, config: Config)
-                                   (implicit backend: SttpBackend[Future, Nothing, NothingT]): Option[CountsReporter[Future]] = {
+                                   (implicit backend: SttpBackend[Future, Any]): Option[CountsReporter[Future]] = {
     val configAtKey = config.atKey(CountsReporterCreator.reporterCreatorConfigPath)
     val creator = Multiplicity(ScalaServiceLoader.load[CountsReporterCreator](getClass.getClassLoader)) match {
       case One(cr) =>

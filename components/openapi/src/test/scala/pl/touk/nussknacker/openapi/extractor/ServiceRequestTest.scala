@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter}
 import pl.touk.nussknacker.openapi.extractor.ServiceRequest.SwaggerRequestType
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
-import sttp.client.StringBody
+import sttp.client3.StringBody
 import sttp.model.Uri
 
 import scala.jdk.CollectionConverters._

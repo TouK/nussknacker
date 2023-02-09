@@ -4,8 +4,8 @@ import org.asynchttpclient.{AsyncHttpClient, DefaultAsyncHttpClient}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.util.sharedservice.{SharedService, SharedServiceHolder}
-import sttp.client.SttpBackend
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client3.SttpBackend
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,7 +17,7 @@ class SharedHttpClientBackendProvider(httpClientConfig: HttpClientConfig) extend
     httpClient = SharedHttpClientBackendProvider.retrieveService(httpClientConfig)(context.jobData.metaData)
   }
 
-  override def httpBackendForEc(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, Nothing] =
+  override def httpBackendForEc(implicit ec: ExecutionContext): SttpBackend[Future, Any] =
     AsyncHttpClientFutureBackend.usingClient(httpClient.httpClient)
 
   override def close(): Unit = Option(httpClient).foreach(_.close())

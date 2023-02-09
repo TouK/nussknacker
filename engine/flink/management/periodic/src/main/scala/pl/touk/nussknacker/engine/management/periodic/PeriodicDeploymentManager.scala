@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploym
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import slick.jdbc
 import slick.jdbc.JdbcProfile
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +37,7 @@ object PeriodicDeploymentManager {
             listenerFactory: PeriodicProcessListenerFactory,
             additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
             customActionsProviderFactory: PeriodicCustomActionsProviderFactory)
-           (implicit ec: ExecutionContext, system: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): PeriodicDeploymentManager = {
+           (implicit ec: ExecutionContext, system: ActorSystem, sttpBackend: SttpBackend[Future, Any]): PeriodicDeploymentManager = {
 
     val clock = Clock.systemDefaultZone()
 
