@@ -24,10 +24,11 @@ This section provides important details of Nussknacker's integration with Kafka 
 
 ### Schemas
 
-Nussknacker uses schemas for code completions and validations of messages. 
+Schema defines the format of data. Nussknacker expects that messages in topics are described by the schema.
+Nussknacker uses information contained in schemas for code completion and validation of messages.
 Schema of message can be described in [Avro Schema format](https://avro.apache.org/docs/#schemas) or [JSON Schema format](https://json-schema.org) (Confluent Schema Registry only)
 
-Schemas are retrieved from Schema Registry - *Confluent Schema Registry* and *Azure Schema Registry* are supported.
+Schemas are managed by Schema Registry - *Confluent Schema Registry* and *Azure Schema Registry* are supported.
 
 To preview schemas or add a new version, you can use tools available on your cloud platform or tools like [AKHQ](https://akhq.io)
 
@@ -82,12 +83,13 @@ After you'll get properly working set of properties, you just need to copy it to
 
 ### Schema Registry - Connection
 
+Currently, Nussknacker supports two implementations of Schema Registries: based on *Confluent Schema Registry* and based on *Azure Schema Registry*.
+
 To configure connection Schema Registry, you need to configure at least `schema.registry.url`. It should contain comma separated list of urls to Schema Registry.
 For the single node installation, it will be just an url. Be aware that contrary to Kafka brokers, Schema Registry urls should start with `https://` or `http://`.
 
-Currently, Nussknacker supports two implementations of Schema Registries: based on *Confluent Schema Registry* and based on *Azure Schema Registry*.
-Given implementation is picked based on `schema.registry.url` property. By default, Confluent-based implementation is used.
-For urls ended with `.servicebus.windows.net` Azure-based implementation is used.
+Nussknacker determines which registry implementation (Confluent or Azure) is used from the `schema.registry.url` property. 
+If the URL ends with `.servicebus.windows.net`, Nussknacker assumes that Azure schema registry is used; if not Confluent schema registry is assumed.
 
 #### Confluent-based Schema Registry - Connection and Authentication
 
@@ -111,11 +113,11 @@ For example via Azure CLI or Azure PowerShell.
 
 ## Messaging
 
-To communicate with running Nussknacker's scenarios via Kafka sources and sinks you can use for example standard kafka-cli commands
-like `kafka-console-consumer`, `kafka-console-producer`, [kcat](https://github.com/edenhill/kcat), Confluent's
-`kafka-avro-console-consumer`, `kafka-avro-console-producer` commands for Confluent-based Avro encoded messages or graphical tools like [AKHQ](https://akhq.io).
+You can use standard kafka-cli commands like `kafka-console-consumer`, `kafka-console-producer`, [kcat](https://github.com/edenhill/kcat), Confluent's
+`kafka-avro-console-consumer`, `kafka-avro-console-producer` commands for Confluent-based Avro encoded messages or graphical tools like [AKHQ](https://akhq.io)
+to interact with kafka source and sink topics used in Nu scenarios.
 
-Be aware that Azure-based Avro encoded messages have a little different format than Confluent once - Schema ID is passed in headers instead of payload.
+Be aware that Azure-based Avro encoded messages have a little different format than Confluent - Schema ID is passed in headers instead of payload.
 It can be less supported by some available tools. See [Schema Registry comparison section](#schema-registry-comparison) for details.
 
 ### Message Payload
@@ -136,8 +138,8 @@ You can do that by enabling `avroAsJsonSerialization` configuration setting.
 ### Schema ID
 
 Each topic can contain messages written using different schema versions. Schema versions are identified by *Schema ID*. 
-Nussknacker need to know what was the schema used during writing to make message validation and schema evolution possible.
-Because of that it need to extract *Schema ID* from the message.
+Nussknacker needs to know what was the schema used during writing to make message validation and schema evolution possible.
+Because of that Nussknacker needs to extract *Schema ID* from the message.
 
 Additionally, in sources and sinks, you can choose which schema version should be used during reading/writing. Thanks to schema evolution mechanism, message in the original format will be evolved to desired format.
 This desired schema will be used in [code completion and validation](/docs/integration/DataTypingAndSchemasHandling.md).
@@ -192,7 +194,7 @@ Important thing to remember is that Kafka server addresses/Schema Registry addre
 | schemaRegistryCacheConfig.parsedSchemaAccessExpirationTime                  | Low        | duration | 2 hours          | How long parsed schema will be cached after first access to it                                                                                                                                                                                                             |
 | schemaRegistryCacheConfig.maximumSize                                       | Low        | number   | 10000            | Maximum entries size for each caches: available schemas cache and parsed schema cache                                                                                                                                                                                      |
 | lowLevelComponentsEnabled                                                   | Medium     | boolean  | false            | Add low level (deprecated) Kafka components: 'kafka-json', 'kafka-avro', 'kafka-registry-typed-json'                                                                                                                                                                       |
-| avroAsJsonSerialization                                                     | Low        | boolean  | false            | Send and receive json messages desribed using Avro schema                                                                                                                                                                                                                  |
+| avroAsJsonSerialization                                                     | Low        | boolean  | false            | Send and receive json messages described using Avro schema                                                                                                                                                                                                                 |
 
 ### Exception handling
 
