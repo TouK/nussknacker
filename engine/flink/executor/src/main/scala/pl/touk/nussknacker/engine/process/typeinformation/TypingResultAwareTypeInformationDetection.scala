@@ -38,8 +38,7 @@ object TypingResultAwareTypeInformationDetection {
   To use it for serialization between operators use TypeInformationDetection service loading.
   To use it for state serialization one can use it directly in operators/process functions (compatibility is *NOT* guaranteed ATM).
  */
-class TypingResultAwareTypeInformationDetection(customisation:
-                                                TypingResultAwareTypeInformationCustomisation) extends TypeInformationDetection {
+class TypingResultAwareTypeInformationDetection(customisation: TypingResultAwareTypeInformationCustomisation) extends TypeInformationDetection {
 
   private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
     Typed.typedClass[BigDecimal] -> TypeInformation.of(classOf[BigDecimal])
@@ -85,8 +84,7 @@ class TypingResultAwareTypeInformationDetection(customisation:
     )
   }
 
-  //we have def here, as Scala 2.11 has problems with serialization of PartialFunctions...
-  private def additionalTypeInfoDeterminer: PartialFunction[TypingResult, TypeInformation[_]] = customisation.customise(this)
+  private lazy val additionalTypeInfoDeterminer: PartialFunction[TypingResult, TypeInformation[_]] = customisation.customise(this)
 
   private def fallback[T: ClassTag]: TypeInformation[T] = fallback(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
 
