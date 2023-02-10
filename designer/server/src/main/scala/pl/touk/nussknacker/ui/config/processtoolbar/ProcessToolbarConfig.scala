@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.config.processtoolbar
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
+import net.ceedubs.ficus.readers.ValueReader
 
 import java.util.UUID
 
@@ -10,18 +10,6 @@ object ProcessToolbarsConfig {
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
-
-  // scala 2.11 needs it
-  implicit val optionConditionReader: ValueReader[Option[ToolbarCondition]] = new ValueReader[Option[ToolbarCondition]] {
-    override def read(config: Config, path: String): Option[ToolbarCondition] =
-      OptionReader.optionValueReader[ToolbarCondition].read(config, path)
-  }
-
-  // scala 2.11 needs it
-  implicit val optionButtonsListReader: ValueReader[Option[List[ToolbarButtonConfig]]] = new ValueReader[Option[List[ToolbarButtonConfig]]] {
-    override def read(config: Config, path: String): Option[List[ToolbarButtonConfig]] =
-      OptionReader.optionValueReader[List[Config]].read(config, path).map(_.map(_.as[ToolbarButtonConfig]))
-  }
 
   //It provides empty list when toolbar panel is not set
   implicit val panelListReader: ValueReader[List[ToolbarPanelConfig]] = new ValueReader[List[ToolbarPanelConfig]] {
