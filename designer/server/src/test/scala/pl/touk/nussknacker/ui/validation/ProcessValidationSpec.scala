@@ -127,8 +127,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     result.errors.invalidNodes shouldBe Map("loose" -> List(NodeValidationError("LooseNode", "Loose node", "Node loose is not connected to source, it cannot be saved properly", None, SaveNotAllowed)))
   }
 
-  //fixme
-  ignore("filter with only 'false' edge") {
+  test("filter with only 'false' edge") {
     val process = createProcess(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),

@@ -56,11 +56,16 @@ object ProcessCanonizer {
         uncanonize(a, tail).map(node.OneOutputSubsequentNode(data, _))
 
       case (a@canonicalnode.FilterNode(data, nextFalse)) :: tail if nextFalse.isEmpty =>
-        uncanonize(a, tail).map(node.FilterNode(data, _, None))
+        uncanonize(a, tail).map(nextTrue => node.FilterNode(data, Some(nextTrue), None))
+
+      case (a@canonicalnode.FilterNode(data, nextFalse)) :: tail if tail.isEmpty =>
+        uncanonize(a, nextFalse).map { nextFalseV =>
+          node.FilterNode(data, None, Some(nextFalseV))
+        }
 
       case (a@canonicalnode.FilterNode(data, nextFalse)) :: tail =>
         (uncanonize(a, tail), uncanonize(a, nextFalse)).mapN { (nextTrue, nextFalseV) =>
-          node.FilterNode(data, nextTrue, Some(nextFalseV))
+          node.FilterNode(data, Some(nextTrue), Some(nextFalseV))
         }
 
       case (a@canonicalnode.SwitchNode(data, Nil, defaultNext)) :: Nil =>
@@ -105,7 +110,7 @@ object NodeCanonizer {
       case oneOut: node.OneOutputNode =>
         canonicalnode.FlatNode(oneOut.data) :: canonize(oneOut.next)
       case node.FilterNode(data, nextTrue, nextFalse) =>
-        canonicalnode.FilterNode(data, nextFalse.toList.flatMap(canonize)) :: canonize(nextTrue)
+        canonicalnode.FilterNode(data, nextFalse.toList.flatMap(canonize)) :: nextTrue.toList.flatMap(canonize)
       case node.SwitchNode(data, nexts, defaultNext) =>
         canonicalnode.SwitchNode(
           data = data,

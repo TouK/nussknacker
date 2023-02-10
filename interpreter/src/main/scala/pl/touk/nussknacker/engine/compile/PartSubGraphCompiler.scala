@@ -56,7 +56,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           nodeCompiler.compileExpression(expression, ctx, expectedType = Typed[Boolean], outputVar = None)
         CompilationResult.map3(
           f0 = toCompilationResult(compiledExpression, typingInfo),
-          f1 = compile(nextTrue, ctx),
+          f1 = nextTrue.map(next => compile(next, ctx)).sequence,
           f2 = nextFalse.map(next => compile(next, ctx)).sequence)(
           (expr, next, nextFalse) =>
             compiledgraph.node.Filter(id = id,

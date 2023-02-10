@@ -38,20 +38,23 @@ object ProcessSplitter {
   private def traverse(node: SubsequentNode): NextWithParts =
     node match {
       case FilterNode(data, nextTrue, nextFalse) =>
-        val nextTrueT = traverse(nextTrue)
-        nextFalse.map(traverse) match {
-          case Some(nextFalseT) =>
-            NextWithParts(
-              NextNode(splittednode.FilterNode(data, nextTrueT.next, Some(nextFalseT.next))),
-              nextTrueT.nextParts ::: nextFalseT.nextParts,
-              nextTrueT.ends ::: nextFalseT.ends
-            )
-          case None =>
-            NextWithParts(
-              NextNode(splittednode.FilterNode(data, nextTrueT.next, None)),
-              nextTrueT.nextParts,
-              DeadEnd(data.id) :: nextTrueT.ends
-            )
+        (nextTrue.map(traverse), nextFalse.map(traverse)) match {
+          case (Some(nextTrueT), Some(nextFalseT)) => NextWithParts(
+            NextNode(splittednode.FilterNode(data, Some(nextTrueT.next), Some(nextFalseT.next))),
+            nextTrueT.nextParts ::: nextFalseT.nextParts,
+            nextTrueT.ends ::: nextFalseT.ends
+          )
+          case (None, Some(nextFalseT)) => NextWithParts(
+            NextNode(splittednode.FilterNode(data, None, Some(nextFalseT.next))),
+            nextFalseT.nextParts,
+            DeadEnd(data.id) :: nextFalseT.ends
+          )
+          case (Some(nextTrueT), None) => NextWithParts(
+            NextNode(splittednode.FilterNode(data, Some(nextTrueT.next), None)),
+            nextTrueT.nextParts,
+            DeadEnd(data.id) :: nextTrueT.ends
+          )
+          case (None, None) => throw new RuntimeException("todo")
         }
       case SwitchNode(data, nexts, defaultNext) =>
         val (nextsT, casesNextParts, casesEnds) = nexts.map { casee =>

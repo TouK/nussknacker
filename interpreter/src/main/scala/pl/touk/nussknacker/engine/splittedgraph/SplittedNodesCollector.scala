@@ -11,7 +11,7 @@ object SplittedNodesCollector {
       case n: OneOutputNode[_] =>
         collectNodes(n.next)
       case n: FilterNode =>
-        collectNodes(n.nextTrue) ::: n.nextFalse.toList.flatMap(collectNodes)
+        n.nextTrue.toList.flatMap(collectNodes) ::: n.nextFalse.toList.flatMap(collectNodes)
       case n: SwitchNode =>
         n.nexts.flatMap {
           case Case(_, ch) => collectNodes(ch)

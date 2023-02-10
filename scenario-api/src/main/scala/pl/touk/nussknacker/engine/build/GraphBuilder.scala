@@ -53,10 +53,10 @@ trait GraphBuilder[R] {
     creator(EndingNode(SubprocessOutputDefinition(id, outputName, params.map(kv => Field(kv._1, kv._2)).toList )))
 
   def filter(id: String, expression: Expression, disabled: Option[Boolean] = None): GraphBuilder[R] =
-    build(node => creator(FilterNode(Filter(id, expression, disabled), node, None)))
+    build(node => creator(FilterNode(Filter(id, expression, disabled), Some(node), None)))
 
   def filter(id: String, expression: Expression, nextFalse: SubsequentNode): GraphBuilder[R] =
-    build(node => creator(FilterNode(Filter(id, expression), node, Some(nextFalse))))
+    build(node => creator(FilterNode(Filter(id, expression), Some(node), Some(nextFalse))))
 
   def emptySink(id: String, typ: String, params: (String, Expression)*): R =
     creator(EndingNode(Sink(id, SinkRef(typ, params.map(evaluatedparam.Parameter.tupled).toList))))
