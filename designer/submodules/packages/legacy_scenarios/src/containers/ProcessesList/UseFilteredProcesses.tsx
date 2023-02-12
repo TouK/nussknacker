@@ -1,5 +1,5 @@
 import { isEqual } from "lodash";
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo } from "react";
 import { useDebounce } from "use-debounce";
 import { normalizeParams } from "../../common/VisualizationUrl";
 import { FiltersState } from "../TableFilters";
@@ -21,9 +21,11 @@ export function useFilteredProcesses(filters: FiltersState & Queries) {
     } = useQuery({
         queryKey: ["processes", params],
         queryFn: async () => {
-            const { ...rest } = params;
-            const { data } = await api.fetchProcesses(rest);
-            return data;
+            const hasParams = Object.keys(params).length;
+            if (hasParams) {
+                const { data } = await api.fetchProcesses(params);
+                return data;
+            }
         },
         refetchInterval,
         enabled: !!api,
