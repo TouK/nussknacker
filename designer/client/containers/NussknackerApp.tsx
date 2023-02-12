@@ -33,7 +33,7 @@ type MetricParam = {
 }
 
 const VisualizationWrapped = loadable(() => import("./VisualizationWrapped"), {fallback: <LoaderSpinner show={true}/>})
-const ProcessTabs = loadable(() => import("./ProcessTabs"), {fallback: <LoaderSpinner show={true}/>})
+const ProcessesTab = loadable(() => import("./ProcessesTab"), {fallback: <LoaderSpinner show={true}/>})
 const ScenariosTab = loadable(() => import("./ScenariosTab"), {fallback: <LoaderSpinner show={true}/>})
 const CustomTab = loadable(() => import("./CustomTab"), {fallback: <LoaderSpinner show={true}/>})
 
@@ -105,7 +105,7 @@ export class NussknackerApp extends React.Component<Props, State> {
             <ErrorHandler>
               <TransitionRouteSwitch>
                 <Route path={`${Paths.ScenariosBasePath}/:rest(.*)?`} component={ScenariosTab}/>
-                <Route path={Paths.ProcessesLegacyPaths} component={ProcessTabs} exact/>
+                <Route path={`${Paths.ProcessesTabDataPath}/:rest(.*)?`} component={ProcessesTab}/>
                 <Route path={Paths.VisualizationPath} component={VisualizationWrapped} exact/>
                 <Route path={Paths.MetricsPath} component={Metrics} exact/>
                 <Route path={Paths.ServicesPath} component={Services} exact/>
@@ -115,9 +115,14 @@ export class NussknackerApp extends React.Component<Props, State> {
               </TransitionRouteSwitch>
             </ErrorHandler>
           </main>
-          {featuresSettings.usageStatisticsReports.enabled &&
-              <img src={featuresSettings.usageStatisticsReports.url} alt="anonymous usage reporting"
-                   referrerPolicy="origin" hidden/>}
+          {featuresSettings.usageStatisticsReports.enabled && (
+            <img
+              src={featuresSettings.usageStatisticsReports.url}
+              alt="anonymous usage reporting"
+              referrerPolicy="origin"
+              hidden
+            />
+          )}
         </div>
       ) :
       null

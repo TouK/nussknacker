@@ -108,6 +108,13 @@ module.exports = {
           "^/submodules/components": "/",
         },
       },
+      "/submodules/legacy_scenarios": {
+        target: "http://localhost:5002",
+        changeOrigin: true,
+        pathRewrite: {
+          "^/submodules/legacy_scenarios": "/",
+        },
+      },
       "/submodules": {
         target: process.env.BACKEND_DOMAIN,
         changeOrigin: true,
