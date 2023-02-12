@@ -25,23 +25,19 @@ function ShowProcessIcon({ process }: { process: ProcessType }) {
 const ElementsRenderer: RowsRenderer = ({ processes }) =>
     processes.map((process) => (
         <Tr className="row-hover" key={process.name}>
-            <Td column="name">{process.name}</Td>,<Td column="category">{process.processCategory}</Td>,
+            <Td column="name">{process.name}</Td>,<Td column="category">{process.processCategory}</Td>
             <Td column="createdBy" className="centered-column" value={process.createdBy}>
                 {process.createdBy}
             </Td>
-            ,
             <Td column="createdAt" className="centered-column" value={process.createdAt}>
                 <Date date={process.createdAt} />
             </Td>
-            ,
             <Td column="modifyDate" className="centered-column" value={process.modificationDate}>
                 <Date date={process.modificationDate} />
             </Td>
-            ,
             <Td column="edit" className={classNames("edit-column", styles.iconOnly)}>
                 <ShowProcessIcon process={process} />
             </Td>
-            ,
         </Tr>
     ));
 

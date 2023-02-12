@@ -7,6 +7,7 @@ import ver from "./version";
 import MomentLocalesPlugin from "moment-locales-webpack-plugin";
 import { svgRule } from "../../configs/webpack/common";
 import { resolve } from "path";
+import TerserPlugin from "terser-webpack-plugin";
 
 const configuration = withDefaultConfig(
     withModuleFederationPlugins({
@@ -32,6 +33,21 @@ const configuration = withDefaultConfig(
         },
     }),
 );
+
+configuration.optimization = {
+    ...configuration.optimization,
+    minimizer: [
+        new TerserPlugin({
+            parallel: true,
+            //Reactable bug: https://github.com/abdulrahman-khankan/reactable/issues/3
+            terserOptions: {
+                mangle: {
+                    reserved: ["Td", "Tr", "Th", "Thead", "Table"],
+                },
+            },
+        }),
+    ],
+};
 
 configuration.module.rules = [
     ...configuration.module.rules.filter((r) => r !== svgRule),
