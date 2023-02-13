@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.Tr
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkSingleValueParameter, SinkValueParameter}
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
 /**
  * This is universal kafka sink - it will handle both avro and json
@@ -59,20 +59,23 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
       (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
       (SinkValueParamName, value: BaseDefinedParameter) :: Nil, _
     ) =>
-      val determinedSchema = getSchema(topic, version)
-      val validationResult = determinedSchema.map(_.schema)
-        .andThen { schema =>
-          schemaBasedMessagesSerdeProvider.schemaValidator.validateSchema(schema)
+      getSchema(topic, version)
+        .andThen { runtimeSchemaData =>
+          schemaBasedMessagesSerdeProvider.schemaValidator.validateSchema(runtimeSchemaData.schema)
+            .map(_ => runtimeSchemaData)
             .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
-            .map(_ => schema)
-        }.andThen { schema =>
-          schemaSupportDispatcher.forSchemaType(schema.schemaType())
-            .validateRawOutput(schema, value.returnType, extractValidationMode(mode))
-            .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
-            .leftMap(NonEmptyList.one)
-        }.swap.toList.flatMap(_.toList)
-      val finalState = determinedSchema.toOption.map(schema => TransformationState(schema, SinkSingleValueParameter(rawValueParam)))
-      FinalResults(context, validationResult, finalState)
+        }
+        .andThen { runtimeSchemaData =>
+          schemaSupportDispatcher.forSchemaType(runtimeSchemaData.schema.schemaType())
+            .extractSinkValueParameter(runtimeSchemaData.schema, rawMode = true, validationMode = extractValidationMode(mode), rawParameter = rawValueParam)
+            .map { extractedSinkParameter =>
+              val validationAgainstSchemaErrors = extractedSinkParameter.validateParams((SinkValueParamName, value) :: Nil, List.empty)
+                .swap
+                .map(_.toList)
+                .getOrElse(List.empty)
+              FinalResults(context, validationAgainstSchemaErrors, Some(TransformationState(runtimeSchemaData, extractedSinkParameter)))
+            }
+        }.valueOr(e => FinalResults(context, e.toList))
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, _) ::
       (SinkValidationModeParameterName, _) :: (SinkValueParamName, _) :: Nil, _) => FinalResults(context, Nil)
@@ -94,18 +97,20 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
       }
       validatedSchema.andThen { schemaData =>
         schemaSupportDispatcher.forSchemaType(schemaData.schema.schemaType())
-          .extractSinkValueParameter(schemaData.schema)
+          .extractSinkValueParameter(schemaData.schema, rawMode = false, validationMode = ValidationMode.lax, rawValueParam)
           .map { valueParam =>
-          val state = TransformationState(schemaData, valueParam)
-          //shouldn't happen except for empty schema, but it can lead to infinite loop...
-          if (valueParam.toParameters.isEmpty) {
-            FinalResults(context, Nil, Some(state))
-          } else {
-            NextParameters(valueParam.toParameters, state = Option(state))
+            val state = TransformationState(schemaData, valueParam)
+            //shouldn't happen except for empty schema, but it can lead to infinite loop...
+            if (valueParam.toParameters.isEmpty) {
+              FinalResults(context, Nil, Some(state))
+            } else {
+              NextParameters(valueParam.toParameters, state = Some(state))
+            }
           }
-        }
       }.valueOr(e => FinalResults(context, e.toList))
-    case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, state) => FinalResults(context, Nil, state)
+    case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, Some(state)) =>
+      val errors = state.sinkValueParameter.validateParams(valueParams, Nil).swap.map(_.toList).getOrElse(Nil)
+      FinalResults(context, errors, Some(state))
   }
 
   private def getSchema(topic: String, version: String)(implicit nodeId: NodeId) = {

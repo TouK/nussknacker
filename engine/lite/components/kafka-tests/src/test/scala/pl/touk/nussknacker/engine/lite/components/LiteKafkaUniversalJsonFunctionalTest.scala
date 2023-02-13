@@ -12,13 +12,17 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
@@ -227,6 +231,82 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
+    }
+  }
+
+  test("pattern properties validations should work in editor mode") {
+    // todo: uspójnij tworzenie/odpalanie scenariusza w trybie editor z tym w raw mode
+    def createScenario(config: ScenarioConfig, fieldsExpressions: Map[String, String]): CanonicalProcess = {
+      val sinkParams = (Map(
+        TopicParamName -> s"'${config.sinkTopic}'",
+        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+        SinkKeyParamName -> "",
+        SinkRawEditorParamName -> "false",
+      ) ++ fieldsExpressions).view.mapValues(Expression("spel", _))
+
+      ScenarioBuilder
+        .streamingLite("check json validation")
+        .source(sourceName, KafkaUniversalName,
+          TopicParamName -> s"'${config.sourceTopic}'",
+          SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        )
+        .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
+    }
+
+    def runWithValueResults(config: ScenarioConfig, fieldsExpressions: Map[String, String]) =
+      runWithResults(config, fieldsExpressions).map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
+
+    def runWithResults(config: ScenarioConfig, fieldsExpressions: Map[String, String]): RunnerListResult[ProducerRecord[String, String]] = {
+      val jsonScenario: CanonicalProcess = createScenario(config, fieldsExpressions)
+      runner.registerJsonSchema(config.sourceTopic, config.sourceSchema)
+      runner.registerJsonSchema(config.sinkTopic, config.sinkSchema)
+
+      val input = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
+      val result = runner.runWithStringData(jsonScenario, List(input))
+      result
+    }
+
+    def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
+      val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil)
+      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
+    }
+
+    val objWithNestedPatternPropertiesMap = createObjSchema(true, false, createObjectSchemaWithPatternProperties(Map("_int$" -> schemaInteger)))
+    val inputObjectIntPropValue = fromInt(1)
+
+
+    val objectWithNettedPatternPropertiesMapAsRefSchema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "field": {
+        |      "$ref": "#/defs/RefSchema"
+        |    }
+        |  },
+        |  "defs": {
+        |    "RefSchema": {
+        |      "type": "object",
+        |      "patternProperties": {
+        |        "_int$": { "type": "integer" }
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    val testData = Table(
+      ("sinkSchema", "sinkFields", "result"),
+      (objWithNestedPatternPropertiesMap, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> inputObjectIntPropValue)))),
+      (objWithNestedPatternPropertiesMap, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
+      (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> inputObjectIntPropValue)))),
+      (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
+    )
+
+    forAll(testData) {
+      (sinkSchema: EveritSchema, sinkFields: Map[String, String], expected: Validated[_, RunResult[_]]) =>
+        val dummyInputObject = obj()
+        val cfg = config(dummyInputObject, schemaMapAny, sinkSchema)
+        val results = runWithValueResults(cfg, sinkFields)
+        results shouldBe expected
     }
   }
 
