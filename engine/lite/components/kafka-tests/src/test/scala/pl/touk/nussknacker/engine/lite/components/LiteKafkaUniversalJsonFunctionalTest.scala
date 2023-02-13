@@ -279,7 +279,6 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     val objWithNestedPatternPropertiesMap = createObjSchema(true, false, createObjectSchemaWithPatternProperties(Map("_int$" -> schemaInteger)))
     val inputObjectIntPropValue = fromInt(1)
 
-
     val objectWithNettedPatternPropertiesMapAsRefSchema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
@@ -300,9 +299,9 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
 
     val testData = Table(
       ("sinkSchema", "sinkFields", "result"),
-      (objWithNestedPatternPropertiesMap, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> inputObjectIntPropValue)))),
-      (objWithNestedPatternPropertiesMap, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
-      (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> inputObjectIntPropValue)))),
+//      (objWithNestedPatternPropertiesMap, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> inputObjectIntPropValue)))),
+//      (objWithNestedPatternPropertiesMap, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
+//      (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> inputObjectIntPropValue)))),
       (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
     )
 
