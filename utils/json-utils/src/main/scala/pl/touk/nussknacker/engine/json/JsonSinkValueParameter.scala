@@ -26,7 +26,7 @@ object JsonSinkValueParameter {
   def apply(schema: Schema, defaultParamName: FieldName, validationMode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
     ParameterRetriever(schema, defaultParamName, validationMode).toSinkValueParameter(schema, paramName = None, defaultValue = None, isRequired = None)
 
-  private case class ParameterRetriever(wholeSchema: Schema, defaultParamName: FieldName, validationMode: ValidationMode)(implicit nodeId: NodeId) {
+  private case class ParameterRetriever(rootSchema: Schema, defaultParamName: FieldName, validationMode: ValidationMode)(implicit nodeId: NodeId) {
 
     def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultValue: Option[Expression], isRequired: Option[Boolean]): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
       schema match {
@@ -41,14 +41,14 @@ object JsonSinkValueParameter {
                                                  paramName: String,
                                                  defaultValue: Option[Expression],
                                                  isRequired: Option[Boolean]): SinkSingleValueParameter = {
-    val swaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(wholeSchema))
+    val swaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(rootSchema))
     val typing = swaggerTyped.typingResult
     //By default properties are not required: http://json-schema.org/understanding-json-schema/reference/object.html#required-properties
     val isOptional = !isRequired.getOrElse(false)
     val parameter = (if (isOptional) Parameter.optional(paramName, typing) else Parameter(paramName, typing))
       .copy(isLazyParameter = true, defaultValue = defaultValue.map(_.expression), editor = swaggerTyped.editorOpt)
 
-      SinkSingleValueParameter(parameter, JsonSchemaOutputValidator.jsonSchemaValidator(schema, validationMode))
+      SinkSingleValueParameter(parameter, new JsonSchemaOutputValidator(validationMode, schema, rootSchema))
     }
 
     private def objectSchemaToSinkValueParameter(schema: ObjectSchema, paramName: Option[String], isRequired: Option[Boolean]): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {

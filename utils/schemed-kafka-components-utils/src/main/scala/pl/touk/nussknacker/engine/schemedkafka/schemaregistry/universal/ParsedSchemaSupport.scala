@@ -101,7 +101,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     if (rawMode) {
       Validated.Valid(
-        SinkSingleValueParameter(rawParameter, JsonSchemaOutputValidator.jsonSchemaValidator(schema.cast().rawSchema(), validationMode))
+        SinkSingleValueParameter(rawParameter, new JsonSchemaOutputValidator(validationMode, schema.cast().rawSchema(), schema.cast().rawSchema()))
       )
     } else {
       JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName, ValidationMode.lax)
