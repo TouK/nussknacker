@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SchemaAwareSinkValueValidator, SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
 
 import scala.collection.immutable.ListMap
 
@@ -79,6 +79,6 @@ object AvroSinkSingleValueParameter {
       isLazyParameter = true,
       defaultValue = defaultValue.map(_.expression)
     )
-    SinkSingleValueParameter(parameter)
+    SinkSingleValueParameter(parameter, SchemaAwareSinkValueValidator.emptyValidator)
   }
 }
