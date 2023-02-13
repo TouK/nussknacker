@@ -11,13 +11,52 @@ import { hash } from "../../../client/version";
 const { contextPath, name, version } = require(path.join(process.cwd(), "package.json"));
 export const outputPath = contextPath ? path.join(__dirname, `../../dist/${contextPath}`) : path.join(process.cwd(), "dist");
 
+export const svgRule = {
+    test: /\.svg$/i,
+    exclude: /node_modules/,
+    oneOf: [
+        {
+            issuer: /\.[tj]sx?$/,
+            type: "asset/resource",
+            use: [
+                {
+                    loader: require.resolve("babel-loader"),
+                },
+                {
+                    loader: require.resolve("@svgr/webpack"),
+                    options: {
+                        babel: false,
+                    },
+                },
+                {
+                    loader: require.resolve("svgo-loader"),
+                    options: {
+                        externalConfig: resolve(__dirname, "../../.svgo.yml"),
+                    },
+                },
+            ],
+        },
+        {
+            type: "asset/resource",
+            use: [
+                {
+                    loader: require.resolve("svgo-loader"),
+                    options: {
+                        externalConfig: resolve(__dirname, "../../.svgo.yml"),
+                    },
+                },
+            ],
+        },
+    ],
+};
+
 export const commonConfig: Configuration = {
     resolve: {
         extensions: [".tsx", ".ts", ".jsx", ".js"],
         cacheWithContext: false,
         fallback: {
-            crypto: false
-        }
+            crypto: false,
+        },
     },
     target: "web",
     output: {
@@ -35,43 +74,7 @@ export const commonConfig: Configuration = {
                 test: /\.css$/,
                 use: [{ loader: require.resolve("style-loader") }, { loader: require.resolve("css-loader") }],
             },
-            {
-                test: /\.svg$/i,
-                exclude: /node_modules/,
-                enforce: "pre",
-                use: [
-                    {
-                        loader: require.resolve("svgo-loader"),
-                        options: {
-                            externalConfig: resolve(__dirname, "../../.svgo.yml"),
-                        },
-                    },
-                ],
-            },
-            {
-                test: /\.svg$/i,
-                exclude: /node_modules/,
-                oneOf: [
-                    {
-                        issuer: /\.[tj]sx?$/,
-                        type: "asset/resource",
-                        use: [
-                            {
-                                loader: require.resolve("babel-loader"),
-                            },
-                            {
-                                loader: require.resolve("@svgr/webpack"),
-                                options: {
-                                    babel: false,
-                                },
-                            },
-                        ],
-                    },
-                    {
-                        type: "asset/resource",
-                    },
-                ],
-            },
+            svgRule,
             {
                 test: /\.(jpe?g|png|gif)$/i,
                 exclude: /node_modules/,
@@ -85,6 +88,13 @@ export const commonConfig: Configuration = {
                         },
                     },
                 ],
+            },
+            {
+                test: /translations\/.*\.json$/i,
+                type: "asset/resource",
+                generator: {
+                    filename: "[path][name][ext]",
+                },
             },
         ],
     },

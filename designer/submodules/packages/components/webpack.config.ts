@@ -35,12 +35,4 @@ const configuration = withDefaultConfig(
     }),
 );
 
-configuration.module.rules.push({
-    test: /translations\/.*\.json$/i,
-    type: "asset/resource",
-    generator: {
-        filename: "[path][name][ext]",
-    },
-});
-
 export default configuration;

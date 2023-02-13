@@ -1,0 +1,18 @@
+{
+  "extends": [
+    "../../.eslintrc.json"
+  ],
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true,
+    "jasmine": true
+  },
+  "globals": {
+    "__webpack_public_path__": "readonly",
+    "__DEV__": "readonly",
+    "__BUILD_VERSION__": "readonly",
+    "_": "readonly"
+    // TODO: remove lodash from global, fix imports
+  }
+}

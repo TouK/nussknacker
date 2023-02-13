@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.json",
+  "exclude": [
+    "node_modules",
+    ".federated-types"
+  ],
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "Node",
+    "plugins": [
+      {
+        "name": "typescript-plugin-css-modules",
+        "options": {
+          "classnameTransform": "camelCase"
+        }
+      }
+    ]
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
+}
