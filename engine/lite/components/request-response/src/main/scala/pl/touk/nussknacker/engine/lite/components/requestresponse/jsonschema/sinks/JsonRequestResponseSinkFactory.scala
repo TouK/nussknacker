@@ -64,7 +64,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
             .leftMap(NonEmptyList.one)
             .swap.toList.flatMap(_.toList)
 
-          val valueParam: SinkValueParameter = SinkSingleValueParameter(rawValueParam.parameter)
+          val valueParam: SinkValueParameter = SinkSingleValueParameter(rawValueParam.parameter, JsonSchemaOutputValidator.jsonSchemaValidator(schema, ValidationMode.lax))
           val state = EditorTransformationState(schema, valueParam)
           valid(FinalResults(context, validationResult, Option(state)))
         }.valueOr(e => FinalResults(context, e.toList))
@@ -74,7 +74,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: Nil, _) =>
       jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
-          JsonSinkValueParameter(schema, SinkRawValueParamName).map { valueParam =>
+          JsonSinkValueParameter(schema, SinkRawValueParamName, ValidationMode.lax).map { valueParam =>
             val state = EditorTransformationState(schema, valueParam)
             //shouldn't happen except for empty schema, but it can lead to infinite loop...
             if (valueParam.toParameters.isEmpty) {
