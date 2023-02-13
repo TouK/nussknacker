@@ -92,7 +92,7 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
       ingressOpt <- serviceOpt.flatMap(s => ingressPreparerOpt.flatMap(_.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, s.name, config.servicePort)))
         .map(i => k8sUtils.createOrUpdate[Ingress](i) //fixme. it sometimes fails
           .recoverWith {
-            t =>
+            case t: Throwable =>
               logger.warn("Creating/updating ingress failed. Trying again", t)
               Thread.sleep(200)
               k8sUtils.createOrUpdate[Ingress](i)
