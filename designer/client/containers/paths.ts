@@ -1,8 +1,5 @@
 export const RootPath = `/`
 export const ProcessesTabDataPath = `/processes`
-export const ArchiveTabDataPath = `/processes/archived`
-export const SubProcessesTabDataPath = `/processes/subprocesses`
-export const ProcessesLegacyPaths = [ProcessesTabDataPath, SubProcessesTabDataPath, ArchiveTabDataPath]
 export const VisualizationBasePath = `/visualization`
 export const VisualizationPath = `${VisualizationBasePath}/:processId`
 export const MetricsBasePath = `/metrics`

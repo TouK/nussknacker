@@ -60,5 +60,3 @@ function MetricsComponent({settings}) {
 Metrics.header = "Metrics"
 
 export default Metrics
-
-export const pathForProcess = (processId) => `${MetricsBasePath}/${processId}`

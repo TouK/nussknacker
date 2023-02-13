@@ -88,7 +88,7 @@ object TopTabType extends Enumeration {
 }
 
 @JsonCodec case class TopTab(id: String,
-                             title: String,
+                             title: Option[String],
                              `type`: TopTabType.Value,
                              url: String,
                              requiredPermission: Option[String],

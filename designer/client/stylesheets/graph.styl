@@ -1,10 +1,6 @@
 @import "./_variables.styl"
 @import "./_mixins.styl"
 
-#process-name
-  position: absolute
-  margin-left: 15px
-
 .baseEspGraph
   overflow-y: overlay
   overflow-x: auto
@@ -52,11 +48,6 @@ node-highlight(strokeColor, backgroundFill)
   rect
     stroke-width 2
     opacity .2
-
-.ReactModal__Overlay
-  z-index: 100
-  background-color: rgba(23, 22, 21, 0.3) !important //fixme why important?
-
 
 espCheckbox(checkboxWidth)
   input[type='checkbox']
@@ -118,10 +109,6 @@ espCheckbox(checkboxWidth)
   right 0
   display flex
   justify-content center
-
-.ReactModal__Content, ReactModal__Content--after-open
-  background none !important
-  border none !important
 
 .compareModal
   max-width 1000

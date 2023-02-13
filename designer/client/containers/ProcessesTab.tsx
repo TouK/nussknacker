@@ -2,13 +2,13 @@ import React from "react"
 import {useAddProcessButtonProps} from "../components/table/AddProcessButton"
 import {CustomTabPage} from "./CustomTabPage"
 
-function ScenariosTab(): JSX.Element {
+function ProcessesTab(): JSX.Element {
   const {action: addScenario} = useAddProcessButtonProps()
   const {action: addFragment} = useAddProcessButtonProps(true)
 
   return (
-    <CustomTabPage id={"scenarios"} {...{addScenario, addFragment}}/>
+    <CustomTabPage id={"legacy_scenarios"} {...{addScenario, addFragment}}/>
   )
 }
 
-export default ScenariosTab
+export default ProcessesTab
