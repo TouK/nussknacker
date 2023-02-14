@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtra
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 import pl.touk.nussknacker.engine.util.output._
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SchemaAwareSinkValueValidator
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SchemaOutputValidator
 
 import scala.language.implicitConversions
 
@@ -29,7 +29,7 @@ object JsonSchemaOutputValidator {
 }
 
 // root schema is a container for eventual ref schemas - in particular it can be the same schema
-class JsonSchemaOutputValidator(validationMode: ValidationMode, outputSchema: Schema, rootSchema: Schema) extends SchemaAwareSinkValueValidator with LazyLogging {
+class JsonSchemaOutputValidator(validationMode: ValidationMode, outputSchema: Schema, rootSchema: Schema) extends SchemaOutputValidator with LazyLogging {
 
   import JsonSchemaOutputValidator._
 
