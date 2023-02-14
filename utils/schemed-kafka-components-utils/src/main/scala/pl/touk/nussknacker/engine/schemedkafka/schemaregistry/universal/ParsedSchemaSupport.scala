@@ -61,15 +61,19 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
-  override def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = AvroSinkValueParameter(schema.cast().rawSchema())
+  override def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)
+                                        (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
+    if (rawMode) {
+      Validated.Valid(SinkSingleValueParameter(rawParameter, new AvroSchemaOutputValidator(validationMode, schema.cast().rawSchema())))
+    } else {
+      AvroSinkValueParameter(schema.cast().rawSchema())
+    }
+  }
 
   override def sinkValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef = {
     val encoder = BestEffortAvroEncoder(validationMode)
     (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
   }
-
-  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit] =
-    new AvroSchemaOutputValidator(mode).validateTypingResultAgainstSchema(t, schema.cast().rawSchema())
 
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport = {
     if (kafkaConfig.avroAsJsonSerialization.contains(true)) {
@@ -88,7 +92,6 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
 
 object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = JsonSchemaPayloadDeserializer
-  private val outputValidatorErrorsConverter = new OutputValidatorErrorsConverter(SinkValueParamName)
 
   override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
     (topic: String, data: Any) => data match {
@@ -111,8 +114,6 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
     (value: Any) => BestEffortJsonSchemaEncoder.encodeOrError(value, schema.cast().rawSchema())
   }
-
-  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit] = ???
 
   override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
     JsonPayloadRecordFormatterSupport

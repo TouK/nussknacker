@@ -44,7 +44,7 @@ object SinkValueData {
     def validateParams(resultType: List[(String, BaseDefinedParameter)], prefix: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
   }
 
-  case class SinkSingleValueParameter(value: Parameter, validator: SchemaAwareSinkValueValidator) extends SinkValueParameter {
+  case class SinkSingleValueParameter(value: Parameter, validator: SchemaOutputValidator) extends SinkValueParameter {
     //todo: maybe there should be another class/object to validate existing SinkValueParameter tree (maybe it should not be a responsibility of SinkValueParameter)
     //todo: prefix/path probably should be a field in SingleSinkValueParameter/SinkRecordParameter case class
     override def validateParams(resultTypes: List[(String, BaseDefinedParameter)], prefix: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = resultTypes match {
@@ -69,12 +69,12 @@ object SinkValueData {
     }
   }
 
-  trait SchemaAwareSinkValueValidator {
+  trait SchemaOutputValidator {
     def validateTypingResultAgainstSchema(typingResult: TypingResult): ValidatedNel[OutputValidatorError, Unit]
   }
 
-  object SchemaAwareSinkValueValidator {
-    val emptyValidator: SchemaAwareSinkValueValidator = (_: TypingResult) => Validated.Valid((): Unit)
+  object SchemaOutputValidator {
+    val emptyValidator: SchemaOutputValidator = (_: TypingResult) => Validated.Valid((): Unit)
   }
 
 }

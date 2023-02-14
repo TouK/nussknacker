@@ -21,12 +21,13 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SchemaOutputValidator
 
 private[encode] case class AvroSchemaExpected(schema: Schema) extends OutputValidatorExpected {
   override def expected: String = AvroSchemaOutputValidatorPrinter.print(schema)
 }
 
-class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {
+class AvroSchemaOutputValidator(validationMode: ValidationMode, outputSchema: Schema) extends SchemaOutputValidator with LazyLogging {
 
   import cats.implicits.{catsStdInstancesForList, toTraverseOps}
   import scala.jdk.CollectionConverters._
@@ -46,8 +47,8 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   /**
     * see {@link pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder} for underlying avro types
     */
-  def validateTypingResultAgainstSchema(typingResult: TypingResult, parentSchema: Schema): ValidatedNel[OutputValidatorError, Unit] =
-    validateTypingResult(typingResult, parentSchema, None)
+  def validateTypingResultAgainstSchema(typingResult: TypingResult): ValidatedNel[OutputValidatorError, Unit] =
+    validateTypingResult(typingResult, outputSchema, None)
 
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema.getType) match {
