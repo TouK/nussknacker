@@ -22,7 +22,7 @@ Types of events in the Kafka streams or data returned by enrichers can be often 
 
 The data types used in the execution engine, SpEL expressions and data structures are Java based. 
 These are also the data type names that appear in code completion hints. 
-In most cases Nussknacker can automatically convert between Java data types and JSON and Avro formats. JSON will be used for REST API enrichers, while AVRO should be first choice for format of Kafka messages.
+In most cases Nussknacker can automatically convert between Java data types and JSON and Avro formats. JSON will be used for REST API enrichers, while AVRO should be first choice for format of Kafka messages. The rules Nussknacker uses to convert between different data type systems can be found [here](../integration/DataTypingAndSchemasHandling.md) - in most cases this information will not be needed during scenario authoring. 
 
 Below is the list of the most common data types. In Java types column package names are omitted for brevity, 
 they are usually `java.lang` (primitives), `java.util` (List, Map) and `java.time`
@@ -81,7 +81,7 @@ Formats of date/time are pretty complex - especially in Java. There are basicall
 - as date/time without timezone information (this is usually handy if your system is in one timezone).
   Converting to timestamp is done using Nussknacker server timezone.
   In Nussknacker they are usually represented as `LocalDate` and `LocalDateTime`. Suitable for date computations like adding a month or extracting date. 
-- as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime`. Suitable for date computations like adding a month or extracting date. 
+- as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime`. Suitable for date computations like adding a month or extracting date. You need to know TimeZone ID, if you want you use data/time with stored timezone. A full list of TimeZone IDs can be found [here](https://www.tutorialspoint.com/get-all-the-ids-of-the-time-zone-in-java).
 - as date/time with stored time offset. In Nussknacker usually seen as `OffsetDateTime`. Contrary to `ZonedDateTime` doesn't handle daylight saving time. 
   Quite often used to hold timestamp with additional information showing what was the local date/time from "user perspective"
 
@@ -90,8 +90,9 @@ Formats of date/time are pretty complex - especially in Java. There are basicall
 Conversions of different types of dates are handled either by
 - `#DATE` helper methods e.g.:
   - `#DATE.toEpochMilli(#zondeDate)`
+  - `#DATE.toInstant(#long)` - converts long value to `Instant`
 - methods on some types of objects, e.g.
-  - `#instantObj.toEpochMilli` returns timestamp for `#instantObj` of type `Instant`
+  - `#instantObj.toEpochMilli` - returns timestamp for `#instantObj` of type `Instant`
   - `#localDate.atStartOfDay()` - returns `LocalDateTime` at midnight for `#localDate` of type `LocalDate`
   - `#localDateTime.toLocalDate` - truncates to date for `#localDateTime` of type `LocalDateTime`
   - `#zonedDate.toInstant` - converts `ZonedDateTime` to `Instant`
