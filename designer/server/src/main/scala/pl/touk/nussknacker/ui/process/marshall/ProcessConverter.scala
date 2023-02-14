@@ -26,8 +26,7 @@ object ProcessConverter {
     }
     val props = ProcessProperties(
       typeSpecificProperties = process.metaData.typeSpecificData,
-      additionalFields = process.metaData.additionalFields,
-      subprocessVersions = process.metaData.subprocessVersions
+      additionalFields = process.metaData.additionalFields
     )
     DisplayableProcess(process.metaData.id, props, nodes, edges, processingType, category)
   }

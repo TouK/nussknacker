@@ -31,7 +31,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
   val processWithFullAdditionalFields: Json = parse(
     s"""
        |{
-       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "subprocessVersions": {}, "additionalFields": { "description": "$someProcessDescription", "properties": {}} },
+       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "additionalFields": { "description": "$someProcessDescription", "properties": {}} },
        |    "nodes" : [
        |        {
        |            "type" : "Source",

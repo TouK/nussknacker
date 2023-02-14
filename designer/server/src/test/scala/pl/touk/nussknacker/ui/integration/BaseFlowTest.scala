@@ -197,7 +197,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     val process = DisplayableProcess(
       id = processId,
-      properties = ProcessProperties(FragmentSpecificData(), subprocessVersions = Map()),
+      properties = ProcessProperties(FragmentSpecificData()),
       nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
         SubprocessOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),

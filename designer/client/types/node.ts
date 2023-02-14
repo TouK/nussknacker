@@ -27,7 +27,6 @@ export type NodeType<F extends Field = Field> = {
   parameters?: Parameter[],
   branchParameters?: BranchParams[],
   branchParametersTemplate?: BranchParametersTemplate,
-  subprocessVersions?: $TodoType,
   ref?: {
     id: string,
     typ: string,
