@@ -81,7 +81,7 @@ Formats of date/time are pretty complex - especially in Java. There are basicall
 - as date/time without timezone information (this is usually handy if your system is in one timezone).
   Converting to timestamp is done using Nussknacker server timezone.
   In Nussknacker they are usually represented as `LocalDate` and `LocalDateTime`. Suitable for date computations like adding a month or extracting date. 
-- as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime`. Suitable for date computations like adding a month or extracting date. You need to know TimeZone ID, if you want you use data/time with stored timezone. A full list of TimeZone IDs can be found [here](https://www.tutorialspoint.com/get-all-the-ids-of-the-time-zone-in-java).
+- as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime`. Suitable for date computations like adding a month or extracting date. You need to know TimeZone ID, if you want you use date/time with stored timezone. A full list of TimeZone IDs can be found [here](https://www.tutorialspoint.com/get-all-the-ids-of-the-time-zone-in-java).
 - as date/time with stored time offset. In Nussknacker usually seen as `OffsetDateTime`. Contrary to `ZonedDateTime` doesn't handle daylight saving time. 
   Quite often used to hold timestamp with additional information showing what was the local date/time from "user perspective"
 
