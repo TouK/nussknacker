@@ -314,7 +314,7 @@ jobs:
         shell: bash
         run:  tar xfz target.tgz
       # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
-      - uses: AbsaOSS/k3d-action@v2.3.0
+      - uses: AbsaOSS/k3d-action@v2.4.0
         env:
           PROJECT_ROOT: ${{ github.workspace }}
         with:
