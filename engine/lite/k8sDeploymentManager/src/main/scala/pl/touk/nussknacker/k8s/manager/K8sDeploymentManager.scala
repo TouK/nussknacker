@@ -90,14 +90,7 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
       deployment <- k8sUtils.createOrUpdate(deploymentPreparer.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, mountableResources, scalingOptions.replicasCount))
       serviceOpt <- servicePreparer.prepare(processVersion, canonicalProcess.metaData).map(k8sUtils.createOrUpdate[Service](_).map(Some(_))).getOrElse(Future.successful(None))
       ingressOpt <- serviceOpt.flatMap(s => ingressPreparerOpt.flatMap(_.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, s.name, config.servicePort)))
-        .map(i => k8sUtils.createOrUpdate[Ingress](i) //fixme. it sometimes fails
-          .recoverWith {
-            case t: Throwable =>
-              logger.warn("Creating/updating ingress failed. Trying again", t)
-              Thread.sleep(200)
-              k8sUtils.createOrUpdate[Ingress](i)
-          }
-          .map(Some(_)))
+        .map(k8sUtils.createOrUpdate[Ingress](_).map(Some(_)))
         .getOrElse(Future.successful(None))
       //we don't wait until deployment succeeds before deleting old maps and service, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
