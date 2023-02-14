@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.Invalid
+import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
@@ -34,6 +33,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   import SpecialSpELElement._
   import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
   import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
   private val lax = List(ValidationMode.lax)
@@ -247,7 +247,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
         SinkRawEditorParamName -> "false",
-      ) ++ fieldsExpressions).view.mapValues(Expression("spel", _))
+      ) ++ fieldsExpressions).mapValuesNow(Expression("spel", _))
 
       ScenarioBuilder
         .streamingLite("check json validation")
@@ -276,9 +276,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
     }
 
-    val objWithNestedPatternPropertiesMap = createObjSchema(true, false, createObjectSchemaWithPatternProperties(Map("_int$" -> schemaInteger)))
-    val inputObjectIntPropValue = fromInt(1)
-
+    val objWithNestedPatternPropertiesMapSchema = createObjSchema(true, false, createObjectSchemaWithPatternProperties(Map("_int$" -> schemaInteger)))
     val objectWithNettedPatternPropertiesMapAsRefSchema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
@@ -299,9 +297,9 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
 
     val testData = Table(
       ("sinkSchema", "sinkFields", "result"),
-//      (objWithNestedPatternPropertiesMap, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> inputObjectIntPropValue)))),
-//      (objWithNestedPatternPropertiesMap, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
-//      (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> inputObjectIntPropValue)))),
+      (objWithNestedPatternPropertiesMapSchema, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> fromInt(1))))),
+      (objWithNestedPatternPropertiesMapSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
+      (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> fromInt(1))))),
       (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
     )
 
