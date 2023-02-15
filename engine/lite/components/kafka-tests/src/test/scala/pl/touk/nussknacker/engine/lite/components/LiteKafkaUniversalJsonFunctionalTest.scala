@@ -240,8 +240,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   }
 
   test("pattern properties validations should work in editor mode") {
-    // todo: uspójnij tworzenie/odpalanie scenariusza w trybie editor z tym w raw mode
-    def createScenario(config: ScenarioConfig, fieldsExpressions: Map[String, String]): CanonicalProcess = {
+    def scenario(config: ScenarioConfig, fieldsExpressions: Map[String, String]): CanonicalProcess = {
       val sinkParams = (Map(
         TopicParamName -> s"'${config.sinkTopic}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
@@ -256,19 +255,6 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
           SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
         )
         .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
-    }
-
-    def runWithValueResults(config: ScenarioConfig, fieldsExpressions: Map[String, String]) =
-      runWithResults(config, fieldsExpressions).map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
-
-    def runWithResults(config: ScenarioConfig, fieldsExpressions: Map[String, String]): RunnerListResult[ProducerRecord[String, String]] = {
-      val jsonScenario: CanonicalProcess = createScenario(config, fieldsExpressions)
-      runner.registerJsonSchema(config.sourceTopic, config.sourceSchema)
-      runner.registerJsonSchema(config.sinkTopic, config.sinkSchema)
-
-      val input = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
-      val result = runner.runWithStringData(jsonScenario, List(input))
-      result
     }
 
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
@@ -307,7 +293,12 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (sinkSchema: EveritSchema, sinkFields: Map[String, String], expected: Validated[_, RunResult[_]]) =>
         val dummyInputObject = obj()
         val cfg = config(dummyInputObject, schemaMapAny, sinkSchema)
-        val results = runWithValueResults(cfg, sinkFields)
+        val jsonScenario: CanonicalProcess = scenario(cfg, sinkFields)
+        runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
+        runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
+
+        val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
+        val results = runner.runWithStringData(jsonScenario, List(input)).map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
         results shouldBe expected
     }
   }
