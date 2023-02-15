@@ -45,8 +45,6 @@ object SinkValueData {
   }
 
   case class SinkSingleValueParameter(value: Parameter, validator: SchemaOutputValidator) extends SinkValueParameter {
-    //todo: maybe there should be another class/object to validate existing SinkValueParameter tree (maybe it should not be a responsibility of SinkValueParameter)
-    //todo: prefix/path probably should be a field in SingleSinkValueParameter/SinkRecordParameter case class
     override def validateParams(resultTypes: List[(String, BaseDefinedParameter)], prefix: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = resultTypes match {
       case (fieldName, resultType) :: Nil =>
         val converter = new OutputValidatorErrorsConverter(fieldName)
@@ -59,7 +57,6 @@ object SinkValueData {
   }
 
   case class SinkRecordParameter(fields: ListMap[FieldName, SinkValueParameter]) extends SinkValueParameter {
-    // todo: find better way to describe what is fieldsSinkValueParameter and BaseDefinedParameter
     override def validateParams(actualResultTypes: List[(String, BaseDefinedParameter)], path: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       fields.map { case (fieldName, sinkValueParameter) =>
         val fieldPath = path :+ fieldName

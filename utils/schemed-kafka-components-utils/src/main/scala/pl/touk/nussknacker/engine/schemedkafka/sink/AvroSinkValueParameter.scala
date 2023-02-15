@@ -79,7 +79,7 @@ object AvroSinkSingleValueParameter {
       isLazyParameter = true,
       defaultValue = defaultValue.map(_.expression)
     )
-    //todo: is schema output validation needed for editor mode in avro?
+    //for now we don't SchemaOutputValidator for avro in editor mode
     SinkSingleValueParameter(parameter, SchemaOutputValidator.emptyValidator)
   }
 }
