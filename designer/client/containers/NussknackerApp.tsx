@@ -21,6 +21,7 @@ import LoaderSpinner from "../components/Spinner"
 import * as Paths from "./paths"
 import {NotFound} from "./errors/NotFound"
 import {EnvironmentTag} from "./EnvironmentTag"
+import {CompatRoute} from "react-router-dom-v5-compat"
 
 type OwnProps = UnknownRecord
 type State = UnknownRecord
@@ -103,13 +104,13 @@ export class NussknackerApp extends React.Component<Props, State> {
             <VersionInfo/>
             <ErrorHandler>
               <TransitionRouteSwitch>
-                <Route path={`${Paths.ScenariosBasePath}/:rest(.*)?`} component={ScenariosTab}/>
-                <Route path={`${Paths.ProcessesTabDataPath}/:rest(.*)?`} component={ProcessesTab}/>
-                <Route path={Paths.VisualizationPath} component={VisualizationWrapped} exact/>
-                <Route path={Paths.MetricsPath} component={Metrics} exact/>
-                <Route path={`${Paths.CustomTabBasePath}/:id/:rest(.*)?`} component={CustomTab}/>
-                <Route path={Paths.RootPath} render={() => <Redirect to={fallbackPath}/>} exact/>
-                <Route component={NotFound}/>
+                <CompatRoute path={`${Paths.ScenariosBasePath}`} component={ScenariosTab}/>
+                <CompatRoute path={`${Paths.ProcessesTabDataPath}/:rest?`} component={ProcessesTab}/>
+                <CompatRoute path={Paths.VisualizationPath} component={VisualizationWrapped} exact/>
+                <CompatRoute path={Paths.MetricsPath} component={Metrics} exact/>
+                <CompatRoute path={`${Paths.CustomTabBasePath}/:id/:rest?`} component={CustomTab}/>
+                <CompatRoute path={Paths.RootPath} render={() => <Redirect to={fallbackPath}/>} exact/>
+                <CompatRoute component={NotFound}/>
               </TransitionRouteSwitch>
             </ErrorHandler>
           </main>
