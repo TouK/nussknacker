@@ -14,7 +14,7 @@ import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchStrategy.FullSchemaNameDecomposed
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.{AzureConfigurationFactory, AzureHttpPipelineFactory, AzureTokenCredentialFactory, EnhancedSchemasImpl, SchemaRegistryJsonSerializer}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaNotFound, SchemaRegistryClientFactoryWithRegistration, SchemaRegistryClientWithRegistration, SchemaRegistryError, SchemaRegistryUnknownError, SchemaWithMetadata}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryClientFactoryWithRegistration, SchemaRegistryClientWithRegistration, SchemaRegistryError, SchemaRegistryUnknownError, SchemaTopicError, SchemaVersionError, SchemaWithMetadata}
 import reactor.core.publisher.Mono
 
 import scala.compat.java8.FunctionConverters._
@@ -56,12 +56,12 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     toSchemaWithMetada(schemaRegistryClient.getSchema(id.asString))
   }
 
-  override protected def getBySubjectAndVersion(topicName: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] = {
+  override protected def getByTopicAndVersion(topicName: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] = {
     getOneMatchingSchemaName(topicName, isKey).andThen { fullSchemaName =>
       try {
         Valid(schemaRegistryClient.getSchema(schemaGroup, fullSchemaName, version))
       } catch {
-        case NonFatal(ex) => Invalid(SchemaRegistryUnknownError(ex.getMessage, ex))
+        case NonFatal(ex) => Invalid(SchemaVersionError(ex.getMessage))
       }
     }.map(toSchemaWithMetada)
 
@@ -111,11 +111,11 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
         case one :: Nil =>
           Valid(one)
         case Nil =>
-          Invalid(SchemaNotFound(s"Schema for topic: $topicName not found"))
+          Invalid(SchemaTopicError(s"Schema for topic: $topicName not found"))
         case moreThenOnce =>
           // We can't pick one in this case because there is no option to recognize which one is newer.
           // I've tried to parse schemaId to UUID but it is saved in Version 4 UUID format (random) and has no timestamp
-          Invalid(SchemaRegistryUnknownError(s"Ambiguous schemas: ${moreThenOnce.mkString(", ")} for topic: $topicName", null))
+          Invalid(SchemaTopicError(s"Ambiguous schemas: ${moreThenOnce.mkString(", ")} for topic: $topicName"))
       }
     }
   }
