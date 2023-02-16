@@ -17,6 +17,7 @@ import history from "./history"
 import "./i18n"
 import {StoreProvider} from "./store/provider"
 import {contentGetter} from "./windowManager"
+import {CompatRouter} from "react-router-dom-v5-compat"
 
 const rootContainer = document.createElement(`div`)
 rootContainer.id = "root"
@@ -28,18 +29,24 @@ const Root = () => (
       <DragArea className={css({display: "flex"})}>
         <StoreProvider>
           <Router history={history}>
-            <SettingsProvider>
-              <NussknackerInitializer>
-                <Notifications/>
-                <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-                  <WindowManagerProvider theme={darkTheme} contentGetter={contentGetter} className={css({flex: 1, display: "flex"})}>
-                    <NkThemeProvider>
-                      <NkApp/>
-                    </NkThemeProvider>
-                  </WindowManagerProvider>
-                </NkThemeProvider>
-              </NussknackerInitializer>
-            </SettingsProvider>
+            <CompatRouter>
+              <SettingsProvider>
+                <NussknackerInitializer>
+                  <Notifications/>
+                  <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
+                    <WindowManagerProvider
+                      theme={darkTheme}
+                      contentGetter={contentGetter}
+                      className={css({flex: 1, display: "flex"})}
+                    >
+                      <NkThemeProvider>
+                        <NkApp/>
+                      </NkThemeProvider>
+                    </WindowManagerProvider>
+                  </NkThemeProvider>
+                </NussknackerInitializer>
+              </SettingsProvider>
+            </CompatRouter>
           </Router>
         </StoreProvider>
       </DragArea>
