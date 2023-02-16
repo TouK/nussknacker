@@ -5,7 +5,6 @@ import {useParams} from "react-router"
 import HttpService from "../http/HttpService"
 import {getMetricsSettings} from "../reducers/selectors/settings"
 import {Page} from "./Page"
-import {MetricsBasePath, MetricsPath} from "./paths"
 
 export const Metrics = (): JSX.Element => {
   const settings = useSelector(getMetricsSettings)

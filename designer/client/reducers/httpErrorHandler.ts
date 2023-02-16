@@ -14,9 +14,11 @@ const initialState: ErrorState = {
 
 export const reducer: Reducer<ErrorState> = (state = initialState, action) => {
   switch (action.type) {
+    case "CLEAR_PROCESS": {
+      return initialState
+    }
     case "HANDLE_HTTP_ERROR": {
       return {
-        ...state,
         error: action.error,
       }
     }

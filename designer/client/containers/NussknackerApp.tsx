@@ -1,13 +1,8 @@
 import {css} from "@emotion/css"
-import {UnregisterCallback} from "history"
-import _ from "lodash"
 import React from "react"
-import {WithTranslation, withTranslation} from "react-i18next"
-import {connect} from "react-redux"
-import {Redirect, Route, RouteComponentProps} from "react-router"
-import {matchPath, withRouter} from "react-router-dom"
-import {compose} from "redux"
-import {urlChange} from "../actions/nk"
+import {useSelector} from "react-redux"
+import {Redirect} from "react-router"
+import {matchPath, useLocation} from "react-router-dom"
 import {MenuBar} from "../components/MenuBar"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
 import {VersionInfo} from "../components/versionInfo"
@@ -22,9 +17,7 @@ import * as Paths from "./paths"
 import {NotFound} from "./errors/NotFound"
 import {EnvironmentTag} from "./EnvironmentTag"
 import {CompatRoute} from "react-router-dom-v5-compat"
-
-type OwnProps = UnknownRecord
-type State = UnknownRecord
+import {isEmpty} from "lodash"
 
 type MetricParam = {
   params: {
@@ -37,115 +30,80 @@ const ProcessesTab = loadable(() => import("./ProcessesTab"), {fallback: <Loader
 const ScenariosTab = loadable(() => import("./ScenariosTab"), {fallback: <LoaderSpinner show={true}/>})
 const CustomTab = loadable(() => import("./CustomTab"), {fallback: <LoaderSpinner show={true}/>})
 
-export class NussknackerApp extends React.Component<Props, State> {
-  private mountedHistory: UnregisterCallback
-
-  getMetricsMatch = (): MetricParam => matchPath(this.props.location.pathname, {
+function getMetricsMatch(location): MetricParam {
+  return matchPath(location.pathname, {
     path: Paths.MetricsPath,
     exact: true,
     strict: false,
   })
+}
 
-  componentDidMount() {
-    this.mountedHistory = this.props.history.listen((location, action) => {
-      if (action === "PUSH") {
-        this.props.urlChange(location)
-      }
-    })
-  }
-
-  componentWillUnmount() {
-    if (this.mountedHistory) {
-      this.mountedHistory()
-    }
-  }
-
-  canGoToProcess() {
-    const match = this.getMetricsMatch()
-    return match?.params?.processId != null
-  }
-
-  renderTopLeftButton() {
-    const match = this.getMetricsMatch()
-    if (this.canGoToProcess()) {
-      return (<ProcessBackButton processId={match.params.processId}/>)
-    } else {
-      return null
-    }
-  }
-
-  render() {
-    const {resolved, tabs, featuresSettings} = this.props
-    const rootTab = tabs.find(e => e.id === "scenarios")
-    const fallbackPath = rootTab?.type === "Local" ? rootTab.url : Paths.ScenariosBasePath
-    return resolved ?
-      (
-        <div
-          id="app-container"
-          className={css({
-            width: "100%",
-            height: "100%",
-            display: "grid",
-            alignItems: "stretch",
-            gridTemplateRows: "auto 1fr",
-            main: {
-              overflow: "auto",
-              display: "flex",
-              flexDirection: "column-reverse",
-            },
-          })}
-        >
-          <MenuBar
-            appPath={Paths.RootPath}
-            leftElement={this.renderTopLeftButton()}
-            rightElement={<EnvironmentTag/>}
-          />
-          <main>
-            <VersionInfo/>
-            <ErrorHandler>
-              <TransitionRouteSwitch>
-                <CompatRoute path={`${Paths.ScenariosBasePath}`} component={ScenariosTab}/>
-                <CompatRoute path={`${Paths.ProcessesTabDataPath}/:rest?`} component={ProcessesTab}/>
-                <CompatRoute path={Paths.VisualizationPath} component={VisualizationWrapped} exact/>
-                <CompatRoute path={Paths.MetricsPath} component={Metrics} exact/>
-                <CompatRoute path={`${Paths.CustomTabBasePath}/:id/:rest?`} component={CustomTab}/>
-                <CompatRoute path={Paths.RootPath} render={() => <Redirect to={fallbackPath}/>} exact/>
-                <CompatRoute component={NotFound}/>
-              </TransitionRouteSwitch>
-            </ErrorHandler>
-          </main>
-          {featuresSettings.usageStatisticsReports.enabled && (
-            <img
-              src={featuresSettings.usageStatisticsReports.url}
-              alt="anonymous usage reporting"
-              referrerPolicy="origin"
-              hidden
-            />
-          )}
-        </div>
-      ) :
-      null
+function TopLeftButton() {
+  const location = useLocation()
+  const match = getMetricsMatch(location)
+  if (match?.params?.processId != null) {
+    return (<ProcessBackButton processId={match.params.processId}/>)
+  } else {
+    return null
   }
 }
 
-function mapState(state) {
-  const loggedUser = getLoggedUser(state)
-  return {
-    featuresSettings: getFeatureSettings(state),
-    resolved: !_.isEmpty(loggedUser),
-    tabs: getTabs(state),
+export function NussknackerApp() {
+  const tabs = useSelector(getTabs)
+  const featuresSettings = useSelector(getFeatureSettings)
+  const loggedUser = useSelector(getLoggedUser)
+
+  const rootTab = tabs.find(e => e.id === "scenarios")
+  const fallbackPath = rootTab?.type === "Local" ? rootTab.url : Paths.ScenariosBasePath
+
+  if (isEmpty(loggedUser)) {
+    return null
   }
+
+  return (
+    <div
+      id="app-container"
+      className={css({
+        width: "100%",
+        height: "100%",
+        display: "grid",
+        alignItems: "stretch",
+        gridTemplateRows: "auto 1fr",
+        main: {
+          overflow: "auto",
+          display: "flex",
+          flexDirection: "column-reverse",
+        },
+      })}
+    >
+      <MenuBar
+        appPath={Paths.RootPath}
+        leftElement={<TopLeftButton/>}
+        rightElement={<EnvironmentTag/>}
+      />
+      <main>
+        <VersionInfo/>
+        <ErrorHandler>
+          <TransitionRouteSwitch>
+            <CompatRoute path={`${Paths.ScenariosBasePath}`} component={ScenariosTab}/>
+            <CompatRoute path={`${Paths.ProcessesTabDataPath}/:rest?`} component={ProcessesTab}/>
+            <CompatRoute path={Paths.VisualizationPath} component={VisualizationWrapped} exact/>
+            <CompatRoute path={Paths.MetricsPath} component={Metrics} exact/>
+            <CompatRoute path={`${Paths.CustomTabBasePath}/:id/:rest?`} component={CustomTab}/>
+            <CompatRoute path={Paths.RootPath} render={() => <Redirect to={fallbackPath}/>} exact/>
+            <CompatRoute component={NotFound}/>
+          </TransitionRouteSwitch>
+        </ErrorHandler>
+      </main>
+      {featuresSettings.usageStatisticsReports.enabled && (
+        <img
+          src={featuresSettings.usageStatisticsReports.url}
+          alt="anonymous usage reporting"
+          referrerPolicy="origin"
+          hidden
+        />
+      )}
+    </div>
+  )
 }
 
-const mapDispatch = {urlChange}
-
-type StateProps = ReturnType<typeof mapState> & typeof mapDispatch
-type Props = OwnProps & StateProps & WithTranslation & RouteComponentProps
-
-const enhance = compose(
-  withRouter,
-  connect(mapState, mapDispatch),
-  withTranslation(),
-)
-
-export const NkApp: React.ComponentClass<OwnProps> = enhance(NussknackerApp)

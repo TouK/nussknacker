@@ -9,7 +9,7 @@ import DragArea from "./components/DragArea"
 import LoaderSpinner from "./components/Spinner"
 import {darkTheme} from "./containers/darkTheme"
 import {Notifications} from "./containers/Notifications"
-import {NkApp} from "./containers/NussknackerApp"
+import {NussknackerApp} from "./containers/NussknackerApp"
 import NussknackerInitializer from "./containers/NussknackerInitializer"
 import {SettingsProvider} from "./containers/SettingsInitializer"
 import {NkThemeProvider} from "./containers/theme"
@@ -40,7 +40,7 @@ const Root = () => (
                       className={css({flex: 1, display: "flex"})}
                     >
                       <NkThemeProvider>
-                        <NkApp/>
+                        <NussknackerApp/>
                       </NkThemeProvider>
                     </WindowManagerProvider>
                   </NkThemeProvider>

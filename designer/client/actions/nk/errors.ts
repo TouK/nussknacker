@@ -5,10 +5,10 @@ import {ErrorType} from "../../reducers/httpErrorHandler"
 
 export interface HandleHTTPErrorAction {
   type: "HANDLE_HTTP_ERROR",
-  error: ErrorType | null,
+  error: ErrorType,
 }
 
-export const handleHTTPError = (error: ErrorType | null): HandleHTTPErrorAction => ({
+export const handleHTTPError = (error: ErrorType): HandleHTTPErrorAction => ({
   type: "HANDLE_HTTP_ERROR",
   error,
 })

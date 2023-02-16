@@ -34,15 +34,18 @@ class Visualization extends React.Component {
     dataResolved: false,
   }
 
-  get processId() {
-    return decodeURIComponent(this.props.match.params.processId)
-  }
-
   componentDidMount() {
-    const {actions} = this.props
-    this.fetchProcessDetails().then(async ({fetchedProcessDetails: {json, processingType, isSubprocess, isArchived}}) => {
-      await actions.loadProcessToolbarsConfiguration(this.processId)
-      actions.displayProcessActivity(this.processId)
+    const {processId, actions} = this.props
+    actions.fetchProcessToDisplay(processId).then(async ({
+      fetchedProcessDetails: {
+        json,
+        processingType,
+        isSubprocess,
+        isArchived,
+      },
+    }) => {
+      await actions.loadProcessToolbarsConfiguration(processId)
+      actions.displayProcessActivity(processId)
       await actions.fetchProcessDefinition(processingType, json.properties?.isSubprocess)
       this.setState({dataResolved: true})
       this.showModalDetailsIfNeeded(json)
@@ -63,7 +66,7 @@ class Visualization extends React.Component {
   }
 
   showModalDetailsIfNeeded(process) {
-    const {showModalNodeDetails, history} = this.props
+    const {showModalNodeDetails, navigate} = this.props
     const params = parseWindowsQueryParams({nodeId: [], edgeId: []})
 
     const edges = params.edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(isEdgeEditable)
@@ -75,32 +78,29 @@ class Visualization extends React.Component {
 
     this.getGraphInstance()?.highlightNodes(nodes)
 
-    history.replace({
-      search: VisualizationUrl.setAndPreserveLocationParams({
-        nodeId: nodes.map(node => node.id).map(encodeURIComponent),
-        edgeId: [],
-      }),
-    })
+    navigate(
+      {
+        search: VisualizationUrl.setAndPreserveLocationParams({
+          nodeId: nodes.map(node => node.id).map(encodeURIComponent),
+          edgeId: [],
+        }),
+      },
+      {replace: true}
+    )
   }
 
   showCountsIfNeeded(process) {
-    const countParams = VisualizationUrl.extractCountParams(this.props.location.search)
+    const {actions, location} = this.props
+    const countParams = VisualizationUrl.extractCountParams(location.search)
     if (countParams) {
       const {from, to} = countParams
-      this.props.actions.fetchAndDisplayProcessCounts(process.id, from, to)
+      actions.fetchAndDisplayProcessCounts(process.id, from, to)
     }
   }
 
   async componentWillUnmount() {
     clearInterval(this.processStateIntervalId)
-    await this.props.closeModals()
-    this.props.actions.clearProcess()
   }
-
-  fetchProcessDetails = () => this.props.actions.fetchProcessToDisplay(
-    this.processId,
-    undefined,
-  )
 
   fetchProcessState = () => this.props.actions.loadProcessState(this.props.fetchedProcessDetails?.id)
 
@@ -113,13 +113,18 @@ class Visualization extends React.Component {
   getGraphInstance = () => this.graphRef.current
 
   render() {
-    const graphNotReady = isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading
+    const {
+      nothingToSave,
+      fetchedProcessDetails,
+      capabilities,
+      graphLoading,
+      processDefinitionData,
+    } = this.props
+
+    const graphNotReady = isEmpty(fetchedProcessDetails) || graphLoading
     return (
       <GraphPage data-testid="graphPage">
-        <RouteLeavingGuard
-          when={this.props.capabilities.editFrontend && !this.props.nothingToSave}
-          navigate={path => this.props.history.push(path)}
-        />
+        <RouteLeavingGuard when={capabilities.editFrontend && !nothingToSave}/>
 
         <GraphProvider graph={this.getGraphInstance}>
           <SelectionContextProvider pastePosition={this.getPastePosition}>
@@ -131,11 +136,11 @@ class Visualization extends React.Component {
         </GraphProvider>
 
         <SpinnerWrapper isReady={!graphNotReady}>
-          {!isEmpty(this.props.processDefinitionData) ?
+          {!isEmpty(processDefinitionData) ?
             (
               <Graph
                 ref={this.graphRef}
-                capabilities={this.props.capabilities}
+                capabilities={capabilities}
               />
             ) :
             null}

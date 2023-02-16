@@ -5,14 +5,10 @@ import {Prompt} from "react-router"
 import * as DialogMessages from "../common/DialogMessages"
 import {isPristine} from "../reducers/selectors/graph"
 import {useWindows} from "../windowManager"
+import {useNavigate} from "react-router-dom-v5-compat"
 
-interface RouteLeavingGuardProps {
-  when?: boolean,
-  navigate: any,
-}
-
-export function RouteLeavingGuard(props: RouteLeavingGuardProps): JSX.Element {
-  const {when, navigate} = props
+export function RouteLeavingGuard({when}: { when?: boolean }): JSX.Element {
+  const navigate = useNavigate()
   const lastLocation = useRef(null)
   const confirmedNavigation = useRef(false)
 
