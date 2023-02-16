@@ -23,11 +23,11 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
       valid(data)
     } catch {
       case exc: RestClientException if exc.getErrorCode == subjectNotFoundCode =>
-        invalid(SchemaSubjectNotFound("Schema subject doesn't exist."))
+        invalid(SchemaTopicError("Schema subject doesn't exist."))
       case exc: RestClientException if exc.getErrorCode == versionNotFoundCode =>
-        invalid(SchemaVersionNotFound("Schema version doesn't exist."))
+        invalid(SchemaVersionError("Schema version doesn't exist."))
       case exc: RestClientException if exc.getErrorCode == schemaNotFoundCode =>
-        invalid(SchemaNotFound("Schema doesn't exist."))
+        invalid(SchemaError("Schema doesn't exist."))
       case exc: Throwable =>
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data.", exc))
@@ -45,7 +45,7 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
       ConfluentUtils.toSchemaWithMetadata(schemaMetadata, config)
     }
 
-  override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
+  override def getByTopicAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getSchemaMetadata(subject, version)
