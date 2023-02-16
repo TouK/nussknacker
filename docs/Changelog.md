@@ -7,6 +7,7 @@
 * [#3979](https://github.com/TouK/nussknacker/pull/3979) Updated Flink 1.16.0 -> 1.16.1
 * [#4019](https://github.com/TouK/nussknacker/pull/4019) Make displayable process category required
 * [#4020](https://github.com/TouK/nussknacker/pull/4020) Pass category name to process migration method
+* [#3994](https://github.com/TouK/nussknacker/pull/3994) Unification of editor/raw mode validation for JSON Schema sinks
 
 1.8.1 (not released yet)
 ------------------------
