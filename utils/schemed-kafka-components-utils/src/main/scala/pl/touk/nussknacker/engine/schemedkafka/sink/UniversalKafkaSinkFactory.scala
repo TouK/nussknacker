@@ -42,8 +42,6 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
 
   override def paramsDeterminedAfterSchema: List[Parameter] = UniversalKafkaSinkFactory.paramsDeterminedAfterSchema
 
-  private val outputValidatorErrorsConverter = new OutputValidatorErrorsConverter(SinkValueParamName)
-
   private val rawValueParam: Parameter = Parameter[AnyRef](SinkValueParamName).copy(isLazyParameter = true)
   private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))))
 
