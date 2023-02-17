@@ -84,8 +84,9 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
             }
           }
         }.valueOr(e => FinalResults(context, e.toList))
-    case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, state) =>
-      FinalResults(context, Nil, state)
+    case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, Some(state)) =>
+      val errors = state.sinkValueParameter.validateParams(valueParams, Nil).swap.map(_.toList).getOrElse(Nil)
+      FinalResults(context, errors, Some(state))
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalStateOpt: Option[State]): Sink = {
