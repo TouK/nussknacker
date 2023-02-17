@@ -60,7 +60,7 @@ object SinkValueData {
     override def validateParams(actualResultTypes: List[(String, BaseDefinedParameter)], path: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       fields.map { case (fieldName, sinkValueParameter) =>
         val fieldPath = path :+ fieldName
-        val fieldsMatchingPath = actualResultTypes.filter(k => k._1.startsWith(fieldPath.mkString(".")))
+        val fieldsMatchingPath = actualResultTypes.filter { case (name, _) => name.startsWith(fieldPath.mkString(".")) }
         sinkValueParameter.validateParams(fieldsMatchingPath, fieldPath)
       }.toList.sequence.map(_ => ())
     }
