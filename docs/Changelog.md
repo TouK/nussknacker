@@ -1,7 +1,7 @@
 
 # Changelog
 
-1.8.0 (Not released yet)
+1.8.0 (17 Feb 2023)
 ------------------------
 * [#3963](https://github.com/TouK/nussknacker/pull/3963) - Secure processDefinitionData/services endpoint by filtering based on user category "Read" permission
 * [#3945](https://github.com/TouK/nussknacker/pull/3945) - Allow to get Map category -> processingType through new categoriesWithProcessingType endpoint.
