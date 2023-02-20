@@ -64,7 +64,7 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
   override def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)
                                         (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     if (rawMode) {
-      Validated.Valid(SinkSingleValueParameter(rawParameter, new AvroSchemaOutputValidator(validationMode, schema.cast().rawSchema())))
+      Validated.Valid(SinkSingleValueParameter(List(rawParameter.name), rawParameter, new AvroSchemaOutputValidator(validationMode, schema.cast().rawSchema())))
     } else {
       AvroSinkValueParameter(schema.cast().rawSchema())
     }
@@ -104,7 +104,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     if (rawMode) {
       Validated.Valid(
-        SinkSingleValueParameter(rawParameter, new JsonSchemaOutputValidator(validationMode, schema.cast().rawSchema(), schema.cast().rawSchema()))
+        SinkSingleValueParameter(List(rawParameter.name), rawParameter, new JsonSchemaOutputValidator(validationMode, schema.cast().rawSchema(), schema.cast().rawSchema()))
       )
     } else {
       JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName, ValidationMode.lax)

@@ -46,7 +46,7 @@ class AvroSinkValueParameterTest extends AnyFunSuite with Matchers {
 
   test("typing result to AvroSinkPrimitiveValueParameter") {
     val longSchema = SchemaBuilder.builder().longType()
-    val result = AvroSinkValueParameter(longSchema).valueOr(e => fail(e.toString)).asInstanceOf[SinkSingleValueParameter]
+    val result = AvroSinkValueParameter(longSchema, List(SinkValueParamName), None).valueOr(e => fail(e.toString)).asInstanceOf[SinkSingleValueParameter]
     StandardParameterEnrichment.enrichParameterDefinitions(result.toParameters, SingleComponentConfig.zero) shouldBe List(
       Parameter(name = SinkValueParamName, typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("0"))
     )

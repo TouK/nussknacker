@@ -17,8 +17,8 @@ object JsonDefaultExpressionDeterminer {
 
   private val extractorWithHandleNotSupported = new JsonDefaultExpressionDeterminer(true)
 
-  def determineWithHandlingNotSupportedTypes(schema: Schema, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
-    extractorWithHandleNotSupported.determine(schema).leftMap(_.map(customNodeError => customNodeError.copy(nodeId = nodeId.id, paramName = paramName)))
+  def determineWithHandlingNotSupportedTypes(schema: Schema, paramName: String)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
+    extractorWithHandleNotSupported.determine(schema).leftMap(_.map(customNodeError => customNodeError.copy(nodeId = nodeId.id, paramName = Some(paramName))))
 
   private def createCustomNodeError(errMsg: String): CustomNodeError = CustomNodeError("", errMsg, None)
 

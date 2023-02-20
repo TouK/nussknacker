@@ -52,7 +52,7 @@ class AvroSinkValueTest extends AnyFunSuite with Matchers {
       override def returnType: typing.TypingResult = Typed[java.lang.Long]
     }
     val parameterValues = Map(SinkValueParamName -> value)
-    val sinkParam = AvroSinkValueParameter(longSchema).valueOr(e => fail(e.toString))
+    val sinkParam = AvroSinkValueParameter(longSchema, List(SinkValueParamName), None).valueOr(e => fail(e.toString))
 
     SinkValue
       .applyUnsafe(sinkParam, parameterValues)

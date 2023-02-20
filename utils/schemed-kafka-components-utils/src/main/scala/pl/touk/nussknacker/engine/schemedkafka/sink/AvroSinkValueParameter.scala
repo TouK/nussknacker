@@ -27,10 +27,10 @@ object AvroSinkValueParameter {
     We extract editor form from Avro schema
    */
   def apply(schema: Schema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
-    toSinkValueParameter(schema, paramName = None, defaultValue = None)
+    apply(schema, path = Nil, defaultValue = None)
 
-  private def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultValue: Option[Expression])
-                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
+  def apply(schema: Schema, path: List[String], defaultValue: Option[Expression])
+           (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     import cats.implicits.{catsStdInstancesForList, toTraverseOps}
 
     if (schema.getType == Schema.Type.RECORD) {
@@ -43,23 +43,22 @@ object AvroSinkValueParameter {
       } else {
         val listOfValidatedParams = recordFields.map { recordField =>
           val fieldName = recordField.name()
-          // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
-          val concatName = paramName.map(pn => s"$pn.$fieldName").getOrElse(fieldName)
-          val sinkValueValidated = getDefaultValue(recordField, paramName).andThen { defaultValue =>
-            toSinkValueParameter(schema = recordField.schema(), paramName = Some(concatName), defaultValue)
+          val newPath = fieldName :: path
+          val sinkValueValidated = getDefaultValue(recordField, newPath).andThen { defaultValue =>
+            AvroSinkValueParameter(schema = recordField.schema(), path = newPath, defaultValue)
           }
           sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
         }
-        listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SinkRecordParameter)
+        listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SinkRecordParameter(path, _))
       }
     } else {
-      Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue))
+      Valid(AvroSinkSingleValueParameter(Option(path).filter(_.nonEmpty).getOrElse(List(SinkValueParamName)), schema, defaultValue))
     }
   }
 
-  private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
+  private def getDefaultValue(fieldSchema: Schema.Field, path: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
     new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(fieldSchema)
-      .leftMap(_.map(err => CustomNodeError(err.getMessage, paramName)))
+      .leftMap(_.map(err => CustomNodeError(err.getMessage, Some(path.reverse.mkString(".")))))
 
   private def containsRestrictedNames(fields: List[Schema.Field]): Boolean = {
     val fieldNames = fields.map(_.name()).toSet
@@ -70,9 +69,9 @@ object AvroSinkValueParameter {
 
 object AvroSinkSingleValueParameter {
 
-  def apply(paramName: Option[String], schema: Schema, defaultValue: Option[Expression]): SinkSingleValueParameter = {
+  def apply(path: List[String], schema: Schema, defaultValue: Option[Expression]): SinkSingleValueParameter = {
     val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
-    val name = paramName.getOrElse(SinkValueParamName)
+    val name = path.reverse.mkString(".")
     val parameter = (
       if (schema.isNullable) Parameter.optional(name, typing) else Parameter(name, typing)
       ).copy(
@@ -80,6 +79,6 @@ object AvroSinkSingleValueParameter {
       defaultValue = defaultValue.map(_.expression)
     )
     //for now we don't SchemaOutputValidator for avro in editor mode
-    SinkSingleValueParameter(parameter, SchemaOutputValidator.emptyValidator)
+    SinkSingleValueParameter(path, parameter, SchemaOutputValidator.emptyValidator)
   }
 }

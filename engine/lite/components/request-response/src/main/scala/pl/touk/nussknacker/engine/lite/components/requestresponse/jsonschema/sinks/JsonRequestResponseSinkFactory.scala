@@ -64,7 +64,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
             .leftMap(NonEmptyList.one)
             .swap.toList.flatMap(_.toList)
 
-          val valueParam: SinkValueParameter = SinkSingleValueParameter(rawValueParam.parameter, new JsonSchemaOutputValidator(ValidationMode.fromString(mode, SinkValidationModeParameterName), schema, schema))
+          val valueParam: SinkValueParameter = SinkSingleValueParameter(List(SinkRawValueParamName), rawValueParam.parameter, new JsonSchemaOutputValidator(ValidationMode.fromString(mode, SinkValidationModeParameterName), schema, schema))
           val state = EditorTransformationState(schema, valueParam)
           valid(FinalResults(context, validationResult, Option(state)))
         }.valueOr(e => FinalResults(context, e.toList))
@@ -85,7 +85,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
           }
         }.valueOr(e => FinalResults(context, e.toList))
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, Some(state)) =>
-      val errors = state.sinkValueParameter.validateParams(valueParams, Nil).swap.map(_.toList).getOrElse(Nil)
+      val errors = state.sinkValueParameter.validateParams(valueParams).swap.map(_.toList).getOrElse(Nil)
       FinalResults(context, errors, Some(state))
   }
 
