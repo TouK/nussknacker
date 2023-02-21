@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
+import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaUtils}
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
@@ -13,6 +15,7 @@ import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificDatumWriter, SpecificRecord}
 import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.io.{ByteArrayOutputStream, OutputStream}
@@ -87,6 +90,19 @@ object AvroUtils extends LazyLogging {
 
   def parseSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
+
+  def toParsedSchema(schemaType: String, schemaContent: String): ParsedSchema =
+    schemaType match {
+      case "AVRO" => new AvroSchema(schemaContent)
+      case "JSON" => OpenAPIJsonSchema(schemaContent)
+      case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
+    }
+
+  def adjustParsedSchema(parsedSchema: ParsedSchema): ParsedSchema =
+    parsedSchema match {
+      case json: JsonSchema => OpenAPIJsonSchema(json.canonicalString())
+      case other => other
+    }
 
   // It is need because regards to that https://github.com/confluentinc/schema-registry/issues/1293 someone
   // could register schema with invalid default in lower avro version and despite this in newer version we want to read it

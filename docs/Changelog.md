@@ -1,6 +1,10 @@
 
 # Changelog
 
+1.8.1 (not released yet)
+------------------------
+* [#4018](https://github.com/TouK/nussknacker/pull/4018) Fix for: generate test data mechanism didn't work for json messages with defined schema id 
+
 1.8.0 (17 Feb 2023)
 ------------------------
 * [#3963](https://github.com/TouK/nussknacker/pull/3963) - Secure processDefinitionData/services endpoint by filtering based on user category "Read" permission
