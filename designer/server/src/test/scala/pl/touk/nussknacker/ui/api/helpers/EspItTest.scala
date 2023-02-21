@@ -79,8 +79,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected val processChangeListener = new TestProcessChangeListener()
 
+  protected lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
+
   private implicit val deploymentService: DeploymentService =
-    new DeploymentService(fetchingProcessRepository, actionRepository, scenarioResolver, processChangeListener)
+    new DeploymentService(_ => deploymentManager, fetchingProcessRepository, actionRepository, scenarioResolver, processChangeListener)
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
     new DefaultProcessingTypeDeploymentService(Streaming, deploymentService)
@@ -101,8 +103,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected val testProcessingTypeDataProvider: MapBasedProcessingTypeDataProvider[ProcessingTypeData] = mapProcessingTypeDataProvider(
     Streaming -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
   )
-
-  protected lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
 
   protected val newProcessPreparer: NewProcessPreparer = createNewProcessPreparer()
 

@@ -13,6 +13,7 @@ import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, DeploymentComment, FetchingProcessRepository}
@@ -25,7 +26,8 @@ import scala.util.{Failure, Success}
  * This service should be responsible for wrapping deploying and cancelling task in persistent context.
  * The purpose of it is not to handle any other things from ManagementActor - see comments there
  */
-class DeploymentService(processRepository: FetchingProcessRepository[Future],
+class DeploymentService(getDeploymentManager: ProcessingType => DeploymentManager,
+                        processRepository: FetchingProcessRepository[Future],
                         actionRepository: DbProcessActionRepository,
                         scenarioResolver: ScenarioResolver,
                         processChangeListener: ProcessChangeListener)(implicit val ec: ExecutionContext) extends LazyLogging {
@@ -70,13 +72,13 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
   //inner Future in result allows to wait for deployment finish, while outer handles validation
   def deployProcess(processIdWithName: ProcessIdWithName,
                     savepointPath: Option[String],
-                    deploymentComment: Option[DeploymentComment],
-                    deploymentManager: ProcessingType => DeploymentManager)
+                    deploymentComment: Option[DeploymentComment])
                    (implicit user: LoggedUser): Future[Future[ProcessActionEntityData]] = {
     for {
       maybeProcess <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processIdWithName.id)
       process <- processDataExistOrFail(maybeProcess, processIdWithName.id)
-      result <- deployAndSaveProcess(process, savepointPath, deploymentComment, deploymentManager(process.processingType))
+      deploymentManager = getDeploymentManager(process.processingType)
+      result <- deployAndSaveProcess(process, savepointPath, deploymentComment, deploymentManager)
     } yield result
   }
 
