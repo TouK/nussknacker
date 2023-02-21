@@ -1,5 +1,6 @@
 ---
-sidebar_position: 2
+title: Basics
+sidebar_position: 1
 ---
 # Configuration
 
@@ -53,7 +54,7 @@ See [development configuration](https://github.com/TouK/nussknacker/blob/staging
 
 ## Environment variables
 
-Environment variables are described in [Installation guide](./Installation.md), they are mostly helpful in the docker setup.
+Environment variables are described in [Installation guide](../installation/Installation.md), they are mostly helpful in the docker setup.
 
 ## Conventions
 
@@ -63,4 +64,4 @@ Environment variables are described in [Installation guide](./Installation.md), 
   * [file with configuration override](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/streaming/nussknacker/nussknacker.conf)
 * If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker Docker image.
 
-It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](ModelConfiguration.md) for the details. 
+It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](model/ModelConfiguration) for the details. 
