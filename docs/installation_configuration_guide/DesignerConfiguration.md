@@ -1,4 +1,5 @@
 ---
+title: Designer
 sidebar_position: 4
 ---
 # Designer configuration

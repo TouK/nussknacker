@@ -1,4 +1,5 @@
 ---
+title: Deployment
 sidebar_position: 3
 ---
 
@@ -250,7 +251,7 @@ It can be configured with following options.
 
 ### Configuring Prometheus metrics
 
-Just like in [Designer installation](./Installation.md#Basic environment variables), you can
+Just like in [Designer installation](../installation/Installation.md#basic-environment-variables), you can
 attach [JMX Exporter for Prometheus](https://github.com/prometheus/jmx_exporter) to your runtime pods.
 Pass `PROMETHEUS_METRICS_PORT` environment variable to enable agent, and simultaneously define port on which metrics
 will be exposed. By default, agent is configured to expose basic jvm metrics, but you can provide your own configuration

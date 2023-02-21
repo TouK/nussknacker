@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 ---
-# Basics
+# Configuration
 
 The Docker image and the binary distribution contain minimal working [configuration file](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf), which is designed as a base for further customizations using 
 additional configuration files. 
@@ -53,7 +53,7 @@ See [development configuration](https://github.com/TouK/nussknacker/blob/staging
 
 ## Environment variables
 
-Environment variables are described in [Installation guide](./Installation.md), they are mostly helpful in the docker setup.
+Environment variables are described in [Installation guide](../installation/Installation.md), they are mostly helpful in the docker setup.
 
 ## Conventions
 

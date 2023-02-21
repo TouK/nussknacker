@@ -1,7 +1,8 @@
 ---
+title: Basics
 sidebar_position: 1
 ---
-# Basics
+# Model configuration
 
 Model definition is part of a scenario type definition. There can be multiple scenario types in one Nussknacker installation, consequently there will also be multiple model definitions in such a case. 
 Check [configuration areas](./#configuration-areas) to understand where Model configuration should be placed in the Nussknacker configuration. If you deploy to K8s using Nussknacker Helm chart, check [here](docs/installation_configuration_guide/DeploymentManagerConfiguration.md#overriding-configuration-passed-to-runtime) how to supply additional model configuration.
@@ -29,7 +30,7 @@ Note that as classPath elements you can use:
 - file paths (absolute or relative to Nussknacker installation dir)
 - paths to directories (again, absolute or relative) - in this case all files in the directory will be used (including the ones found in subdirectories).
 
-If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR ` [environment variable](./Installation.md#basic-environment-variables).
+If the given path element in the `classPath` is relative, it should be relative to the path determined by the `$WORKING_DIR ` [environment variable](../../installation/Installation.md#basic-environment-variables).
 
 <!-- TODO 
 ### Object naming
