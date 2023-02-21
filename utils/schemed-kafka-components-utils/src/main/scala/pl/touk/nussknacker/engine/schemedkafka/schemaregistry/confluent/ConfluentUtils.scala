@@ -40,8 +40,7 @@ object ConfluentUtils extends LazyLogging {
   }
 
   def toSchemaWithMetadata(schemaMetadata: SchemaMetadata, config: SchemaRegistryClientKafkaConfig): SchemaWithMetadata = {
-    val adjustedSchema = AvroUtils.toParsedSchema(schemaMetadata.getSchemaType, schemaMetadata.getSchema)
-    SchemaWithMetadata(adjustedSchema, SchemaId.fromInt(schemaMetadata.getId))
+    SchemaWithMetadata.fromRawSchema(schemaMetadata.getSchemaType, schemaMetadata.getSchema, SchemaId.fromInt(schemaMetadata.getId))
   }
 
   def convertToAvroSchema(schema: Schema, version: Option[Int] = None): AvroSchema =

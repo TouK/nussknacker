@@ -7,7 +7,6 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
@@ -66,7 +65,7 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
 
   override def getSchemaById(id: SchemaId): SchemaWithMetadata = {
     val schema = client.getSchemaById(id.asInt)
-    SchemaWithMetadata(AvroUtils.adjustParsedSchema(schema), id)
+    SchemaWithMetadata(schema, id)
   }
 
   override def registerSchema(topic: String, isKey: Boolean, schema: ParsedSchema): SchemaId = {

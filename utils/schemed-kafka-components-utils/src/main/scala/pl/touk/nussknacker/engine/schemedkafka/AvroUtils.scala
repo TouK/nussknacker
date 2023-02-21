@@ -100,6 +100,7 @@ object AvroUtils extends LazyLogging {
 
   def adjustParsedSchema(parsedSchema: ParsedSchema): ParsedSchema =
     parsedSchema match {
+      case openAPIJsonSchema: OpenAPIJsonSchema => openAPIJsonSchema
       case json: JsonSchema => OpenAPIJsonSchema(json.canonicalString())
       case other => other
     }

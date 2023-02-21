@@ -8,7 +8,6 @@ import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => C
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryError, SchemaWithMetadata}
 
@@ -65,7 +64,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     //Confluent client caches the schema, but in SchemaWithMetadata we do additional processing (e.g. for JSON schema) so we shouldn't do it on each event
     caches.schemaByIdCache.getOrCreate(id) {
       val schema = client.getSchemaById(id.asInt)
-      SchemaWithMetadata(AvroUtils.adjustParsedSchema(schema), id)
+      SchemaWithMetadata(schema, id)
     }
   }
 
