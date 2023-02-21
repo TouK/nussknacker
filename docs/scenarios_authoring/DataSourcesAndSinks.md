@@ -44,7 +44,7 @@ In general following rules apply:
 * We use _event time_ in scenarios to handle notion of passing time
 * Kafka record timestamps are used to assign event time to Flink events
 * Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time_) that generated them
-* We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../installation_configuration_guide/ModelConfiguration#kafka-configuration) for details). 
+* We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../integration/KafkaIntegration#available-configuration-options) for details). 
 
 &nbsp;
 #### Aggregations, window processing 
