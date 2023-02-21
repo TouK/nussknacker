@@ -4,13 +4,12 @@ import {useDispatch, useSelector} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/unarchive.svg"
 import * as DialogMessages from "../../../../common/DialogMessages"
-import history from "../../../../history"
 import HttpService from "../../../../http/HttpService"
 import {getProcessId, isArchived} from "../../../../reducers/selectors/graph"
 import {useWindows} from "../../../../windowManager"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {ToolbarButtonProps} from "../../types"
-import {displayCurrentProcessVersion, loadProcessToolbarsConfiguration} from "../../../../actions/nk";
+import {displayCurrentProcessVersion, loadProcessToolbarsConfiguration} from "../../../../actions/nk"
 
 function UnArchiveButton({disabled}: ToolbarButtonProps) {
   const processId = useSelector(getProcessId)
@@ -24,8 +23,8 @@ function UnArchiveButton({disabled}: ToolbarButtonProps) {
     {
       text: DialogMessages.unArchiveProcess(processId),
       onConfirmCallback: () => HttpService.unArchiveProcess(processId).then(() => {
-          dispatch(loadProcessToolbarsConfiguration(processId))
-          dispatch(displayCurrentProcessVersion(processId))
+        dispatch(loadProcessToolbarsConfiguration(processId))
+        dispatch(displayCurrentProcessVersion(processId))
       }),
       confirmText: t("panels.actions.process-unarchive.yes", "Yes"),
       denyText: t("panels.actions.process-unarchive.no", "No"),

@@ -1,8 +1,7 @@
 import {css, cx} from "@emotion/css"
 import {isString} from "lodash"
 import React from "react"
-import {Link} from "react-router-dom-v5-compat"
-import type {LinkProps} from "react-router-dom-v5-compat/dist/react-router-dom"
+import {Link, LinkProps} from "react-router-dom"
 
 const externalUrlRe = /^(https?:)?\/\/\w/
 

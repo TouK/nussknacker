@@ -3,9 +3,7 @@ import {useDispatch, useSelector} from "react-redux"
 import {getFetchedProcessDetails} from "../reducers/selectors/graph"
 import {useWindows} from "../windowManager"
 import Visualization from "./Visualization"
-import {useParams} from "react-router"
-import {useNavigate} from "react-router-dom-v5-compat"
-import {useLocation} from "react-router-dom"
+import {useNavigate, useParams, useLocation} from "react-router-dom"
 import {clearProcess} from "../actions/nk/process"
 
 function useUnmountCleanup() {

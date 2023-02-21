@@ -9,7 +9,7 @@ export function RootRoutes({ inTab }: { inTab?: boolean }): JSX.Element {
     return (
         <View inTab={inTab}>
             <Routes>
-                <Route path="/" element={<ComponentsView />} />
+                <Route index element={<ComponentsView />} />
                 <Route path="usages">
                     <Route index element={<Navigate to="/invalid" replace />} />
                     <Route path=":componentId" element={<ComponentView />} />

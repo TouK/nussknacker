@@ -3,7 +3,7 @@ import {WindowManagerProvider} from "@touk/window-manager"
 import {defaultsDeep} from "lodash"
 import React, {Suspense} from "react"
 import ReactDOM from "react-dom"
-import {Router} from "react-router-dom"
+import {BrowserRouter as Router} from "react-router-dom"
 import ErrorBoundary from "./components/common/ErrorBoundary"
 import DragArea from "./components/DragArea"
 import LoaderSpinner from "./components/Spinner"
@@ -13,11 +13,9 @@ import {NussknackerApp} from "./containers/NussknackerApp"
 import NussknackerInitializer from "./containers/NussknackerInitializer"
 import {SettingsProvider} from "./containers/SettingsInitializer"
 import {NkThemeProvider} from "./containers/theme"
-import history from "./history"
 import "./i18n"
 import {StoreProvider} from "./store/provider"
 import {contentGetter} from "./windowManager"
-import {CompatRouter} from "react-router-dom-v5-compat"
 
 const rootContainer = document.createElement(`div`)
 rootContainer.id = "root"
@@ -28,25 +26,23 @@ const Root = () => (
     <ErrorBoundary>
       <DragArea className={css({display: "flex"})}>
         <StoreProvider>
-          <Router history={history}>
-            <CompatRouter>
-              <SettingsProvider>
-                <NussknackerInitializer>
-                  <Notifications/>
-                  <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-                    <WindowManagerProvider
-                      theme={darkTheme}
-                      contentGetter={contentGetter}
-                      className={css({flex: 1, display: "flex"})}
-                    >
-                      <NkThemeProvider>
-                        <NussknackerApp/>
-                      </NkThemeProvider>
-                    </WindowManagerProvider>
-                  </NkThemeProvider>
-                </NussknackerInitializer>
-              </SettingsProvider>
-            </CompatRouter>
+          <Router>
+            <SettingsProvider>
+              <NussknackerInitializer>
+                <Notifications/>
+                <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
+                  <WindowManagerProvider
+                    theme={darkTheme}
+                    contentGetter={contentGetter}
+                    className={css({flex: 1, display: "flex"})}
+                  >
+                    <NkThemeProvider>
+                      <NussknackerApp/>
+                    </NkThemeProvider>
+                  </WindowManagerProvider>
+                </NkThemeProvider>
+              </NussknackerInitializer>
+            </SettingsProvider>
           </Router>
         </StoreProvider>
       </DragArea>

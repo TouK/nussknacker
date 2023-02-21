@@ -2,24 +2,25 @@ import {defaults} from "lodash"
 import * as queryString from "query-string"
 import {ParseOptions} from "query-string"
 import {useCallback, useMemo} from "react"
-import {useHistory} from "react-router"
 import {defaultArrayFormat, setAndPreserveLocationParams} from "../../common/VisualizationUrl"
 import {UnknownRecord} from "../../types/common"
+import {useLocation, useNavigate} from "react-router-dom"
 
 export function useSearchQuery<T extends UnknownRecord>(options?: ParseOptions): [T, (v: T) => void] {
-  const history = useHistory()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const query = useMemo(() => {
     const parsedQuery = queryString.parse(
-      history.location.search,
+      location.search,
       defaults(options, {arrayFormat: defaultArrayFormat, parseBooleans: true}),
     )
     return parsedQuery as T
-  }, [history.location])
+  }, [location.search, options])
 
   const updateQuery = useCallback((value: T) => {
-    history.replace({search: setAndPreserveLocationParams(value)})
-  }, [history])
+    navigate({search: setAndPreserveLocationParams(value)}, {replace: true})
+  }, [navigate])
 
   return [query, updateQuery]
 }

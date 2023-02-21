@@ -3,12 +3,12 @@ import React, {useCallback, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {visualizationUrl} from "../common/VisualizationUrl"
 import {useProcessNameValidators} from "../containers/hooks/useProcessNameValidators"
-import history from "../history"
 import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
 import {WindowContent} from "../windowManager"
 import {AddProcessForm} from "./AddProcessForm"
 import {allValid, errorValidator} from "./graph/node-modal/editors/Validators"
+import {useNavigate} from "react-router-dom"
 
 interface AddProcessDialogProps extends WindowContentProps {
   isSubprocess?: boolean,
@@ -23,7 +23,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     fieldName: "processName",
     message: "",
     description: "",
-    typ: ""
+    typ: "",
   })
 
   const isValid = useMemo(
@@ -31,6 +31,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     [nameValidators, value],
   )
 
+  const navigate = useNavigate()
   const createProcess = useCallback(
     async () => {
       if (isValid) {
@@ -38,10 +39,10 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         try {
           await HttpService.createProcess(processId, processCategory, isSubprocess)
           passProps.close()
-          history.push(visualizationUrl(processId))
+          navigate(visualizationUrl(processId))
         } catch (error) {
           if (error?.response?.status == 400) {
-            //todo: change to pass error from BE as whole object not just the message 
+            //todo: change to pass error from BE as whole object not just the message
             setProcessNameError({fieldName: "processName", message: error?.response?.data, description: "", typ: ""})
           } else {
             throw error
@@ -49,7 +50,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         }
       }
     },
-    [isSubprocess, isValid, passProps, value],
+    [isSubprocess, isValid, navigate, passProps, value],
   )
 
   const {t} = useTranslation()

@@ -1,6 +1,5 @@
 import * as queryString from "query-string"
 import React, {memo, useMemo} from "react"
-import {useHistory} from "react-router"
 import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
@@ -8,6 +7,7 @@ import {MuiThemeProvider} from "./muiThemeProvider"
 import {NotFound} from "./errors/NotFound"
 import SystemUtils from "../common/SystemUtils"
 import ScopedCssBaseline from "@mui/material/ScopedCssBaseline"
+import {useNavigate} from "react-router-dom"
 
 export type DynamicTabData = {
   title: string,
@@ -35,8 +35,8 @@ export const RemoteModuleTab = <CP extends { basepath?: string }>({
   componentProps,
 }: { url: ModuleUrl, componentProps: CP }): JSX.Element => {
   const [urlValue, scope] = useMemo(() => splitUrl(url), [url])
-  const history = useHistory()
-  const props = useMemo(() => ({onNavigate: history.push, ...componentProps}), [componentProps, history.push])
+  const navigate = useNavigate()
+  const props = useMemo(() => ({onNavigate: navigate, ...componentProps}), [componentProps, navigate])
 
   return (
     <ErrorBoundary FallbackComponent={() => <NotFound/>}>

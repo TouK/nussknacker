@@ -1,52 +1,26 @@
 import {css} from "@emotion/css"
 import React from "react"
 import {useSelector} from "react-redux"
-import {Redirect} from "react-router"
-import {matchPath, useLocation} from "react-router-dom"
 import {MenuBar} from "../components/MenuBar"
 import ProcessBackButton from "../components/Process/ProcessBackButton"
 import {VersionInfo} from "../components/versionInfo"
 import {getFeatureSettings, getLoggedUser, getTabs} from "../reducers/selectors/settings"
-import {UnknownRecord} from "../types/common"
 import {ErrorHandler} from "./ErrorHandler"
 import Metrics from "./Metrics"
 import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
 import loadable from "@loadable/component"
 import LoaderSpinner from "../components/Spinner"
 import * as Paths from "./paths"
+import {MetricsBasePath, VisualizationBasePath} from "./paths"
 import {NotFound} from "./errors/NotFound"
 import {EnvironmentTag} from "./EnvironmentTag"
-import {CompatRoute} from "react-router-dom-v5-compat"
+import {Navigate, Route} from "react-router-dom"
 import {isEmpty} from "lodash"
-
-type MetricParam = {
-  params: {
-    processId: string,
-  },
-}
 
 const VisualizationWrapped = loadable(() => import("./VisualizationWrapped"), {fallback: <LoaderSpinner show={true}/>})
 const ProcessesTab = loadable(() => import("./ProcessesTab"), {fallback: <LoaderSpinner show={true}/>})
 const ScenariosTab = loadable(() => import("./ScenariosTab"), {fallback: <LoaderSpinner show={true}/>})
 const CustomTab = loadable(() => import("./CustomTab"), {fallback: <LoaderSpinner show={true}/>})
-
-function getMetricsMatch(location): MetricParam {
-  return matchPath(location.pathname, {
-    path: Paths.MetricsPath,
-    exact: true,
-    strict: false,
-  })
-}
-
-function TopLeftButton() {
-  const location = useLocation()
-  const match = getMetricsMatch(location)
-  if (match?.params?.processId != null) {
-    return (<ProcessBackButton processId={match.params.processId}/>)
-  } else {
-    return null
-  }
-}
 
 export function NussknackerApp() {
   const tabs = useSelector(getTabs)
@@ -78,20 +52,20 @@ export function NussknackerApp() {
     >
       <MenuBar
         appPath={Paths.RootPath}
-        leftElement={<TopLeftButton/>}
+        leftElement={<ProcessBackButton/>}
         rightElement={<EnvironmentTag/>}
       />
       <main>
         <VersionInfo/>
         <ErrorHandler>
           <TransitionRouteSwitch>
-            <CompatRoute path={`${Paths.ScenariosBasePath}`} component={ScenariosTab}/>
-            <CompatRoute path={`${Paths.ProcessesTabDataPath}/:rest?`} component={ProcessesTab}/>
-            <CompatRoute path={Paths.VisualizationPath} component={VisualizationWrapped} exact/>
-            <CompatRoute path={Paths.MetricsPath} component={Metrics} exact/>
-            <CompatRoute path={`${Paths.CustomTabBasePath}/:id/:rest?`} component={CustomTab}/>
-            <CompatRoute path={Paths.RootPath} render={() => <Redirect to={fallbackPath}/>} exact/>
-            <CompatRoute component={NotFound}/>
+            <Route path={`${Paths.ScenariosBasePath}/*`} element={<ScenariosTab/>}/>
+            <Route path={`${Paths.ProcessesTabDataPath}/*`} element={<ProcessesTab/>}/>
+            <Route path={`${VisualizationBasePath}/:processId`} element={<VisualizationWrapped/>}/>
+            <Route path={`${MetricsBasePath}/:processId?`} element={<Metrics/>}/>
+            <Route path={`${Paths.CustomTabBasePath}/:id/*`} element={<CustomTab/>}/>
+            <Route path={Paths.RootPath} element={<Navigate to={fallbackPath} replace/>}/>
+            <Route path="*" element={<NotFound/>}/>
           </TransitionRouteSwitch>
         </ErrorHandler>
       </main>

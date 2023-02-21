@@ -1,7 +1,7 @@
 import * as queryString from "query-string"
 import React, {useEffect, useState} from "react"
 import {useSelector} from "react-redux"
-import {useParams} from "react-router"
+import {useParams} from "react-router-dom"
 import HttpService from "../http/HttpService"
 import {getMetricsSettings} from "../reducers/selectors/settings"
 import {Page} from "./Page"

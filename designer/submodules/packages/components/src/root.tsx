@@ -4,15 +4,18 @@ import React from "react";
 import { RootProvidersWithAuth } from "./settings";
 import { useDefaultTheme } from "./common";
 import { RootRoutes } from "./components/rootRoutes";
+import { BrowserRouter } from "react-router-dom";
 
 export const Root = (): JSX.Element => {
     const defaultTheme = useDefaultTheme();
     return (
         <MuiThemeProvider theme={defaultTheme}>
             <CssBaseline />
-            <RootProvidersWithAuth>
-                <RootRoutes />
-            </RootProvidersWithAuth>
+            <BrowserRouter>
+                <RootProvidersWithAuth>
+                    <RootRoutes />
+                </RootProvidersWithAuth>
+            </BrowserRouter>
         </MuiThemeProvider>
     );
 };
