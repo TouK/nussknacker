@@ -94,6 +94,15 @@ module.exports = {
           }
         },
       },
+      "/grafana": {
+        target: process.env.BACKEND_DOMAIN,
+        changeOrigin: true,
+        onProxyRes: (proxyRes, req) => {
+          if (req.headers?.origin) {
+            proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin
+          }
+        },
+      },
       "/be-static": {
         target: process.env.BACKEND_DOMAIN,
         changeOrigin: true,
