@@ -47,13 +47,13 @@ object SinkValueData {
     def validateParams(resultType: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
   }
 
-  case class SinkSingleValueParameter(value: Parameter, validator: SchemaOutputValidator) extends SinkValueParameter {
+  case class SinkSingleValueParameter(value: Parameter, validator: TypingResultValidator) extends SinkValueParameter {
     override def validateParams(resultTypes: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       val paramName = value.name
       val paramResultType = resultTypes(paramName)
       val converter = new OutputValidatorErrorsConverter(paramName)
       validator
-        .validateTypingResultAgainstSchema(paramResultType.returnType)
+        .validate(paramResultType.returnType)
         .leftMap(converter.convertValidationErrors)
         .leftMap(NonEmptyList.one)
         .map(_ => ())
@@ -66,12 +66,12 @@ object SinkValueData {
     }
   }
 
-  trait SchemaOutputValidator {
-    def validateTypingResultAgainstSchema(typingResult: TypingResult): ValidatedNel[OutputValidatorError, Unit]
+  trait TypingResultValidator {
+    def validate(typingResult: TypingResult): ValidatedNel[OutputValidatorError, Unit]
   }
 
-  object SchemaOutputValidator {
-    val emptyValidator: SchemaOutputValidator = (_: TypingResult) => Validated.Valid((): Unit)
+  object TypingResultValidator {
+    val emptyValidator: TypingResultValidator = (_: TypingResult) => Validated.Valid((): Unit)
   }
 
 }
