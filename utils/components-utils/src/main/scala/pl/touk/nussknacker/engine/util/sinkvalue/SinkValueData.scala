@@ -33,7 +33,9 @@ object SinkValueData {
 
   case class SinkRecordValue(fields: ListMap[String, SinkValue]) extends SinkValue
 
-  type FieldName = String
+  // ParameterName can be created by concatenating names of records/object fields (RecordFieldName) - see AvroSinkValueParameter/JsonSinkValueParameter
+  type RecordFieldName = String
+  type ParameterName = String
 
   sealed trait SinkValueParameter {
     def toParameters: List[Parameter] = flatten.map(_.value)
@@ -42,26 +44,24 @@ object SinkValueData {
       case single: SinkSingleValueParameter => single :: Nil
       case SinkRecordParameter(fields) => fields.values.toList.flatMap(_.flatten)
     }
-    def validateParams(resultType: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
+    def validateParams(resultType: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
   }
 
   case class SinkSingleValueParameter(value: Parameter, validator: SchemaOutputValidator) extends SinkValueParameter {
-    override def validateParams(resultTypes: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
-      resultTypes.filter { case (name, _) =>
-        name == value.name
-      }.map {
-        case (fieldName, resultType) =>
-          val converter = new OutputValidatorErrorsConverter(fieldName)
-          validator
-            .validateTypingResultAgainstSchema(resultType.returnType)
-            .leftMap(converter.convertValidationErrors)
-            .leftMap(NonEmptyList.one)
-      }.sequence.map(_ => ())
+    override def validateParams(resultTypes: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+      val paramName = value.name
+      val paramResultType = resultTypes(paramName)
+      val converter = new OutputValidatorErrorsConverter(paramName)
+      validator
+        .validateTypingResultAgainstSchema(paramResultType.returnType)
+        .leftMap(converter.convertValidationErrors)
+        .leftMap(NonEmptyList.one)
+        .map(_ => ())
     }
   }
 
-  case class SinkRecordParameter(fields: ListMap[FieldName, SinkValueParameter]) extends SinkValueParameter {
-    override def validateParams(actualResultTypes: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+  case class SinkRecordParameter(fields: ListMap[RecordFieldName, SinkValueParameter]) extends SinkValueParameter {
+    override def validateParams(actualResultTypes: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       flatten.map(_.validateParams(actualResultTypes)).sequence.map(_ => ())
     }
   }
