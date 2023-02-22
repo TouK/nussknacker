@@ -200,14 +200,14 @@ class ManagementResources(val managementActor: ActorRef,
       } ~
       //TODO: maybe Write permission is enough here?
       path("processManagement" / "test" / Segment) { processName =>
-        (post & processIdWithCategory(processName)) { idWithCategory =>
-          canDeploy(idWithCategory.id) {
+        (post & processId(processName)) { idWithName =>
+          canDeploy(idWithName.id) {
             formFields(Symbol("testData"), Symbol("processJson")) { (testDataContent, displayableProcessJson) =>
               complete {
                 measureTime("test", metricRegistry) {
                   parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
                     case Right(displayableProcess) =>
-                      scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
+                      scenarioTestService.performTest(idWithName, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
                         Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                       }.recover(EspErrorToHttp.errorToHttp)
                     case Left(error) =>

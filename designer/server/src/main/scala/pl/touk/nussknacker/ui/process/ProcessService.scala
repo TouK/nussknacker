@@ -128,7 +128,7 @@ class DBProcessService(managerActor: ActorRef,
 
   override def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] = {
     def withValidProcess(callback: => Future[EmptyResponse]): Future[EmptyResponse] = getProcess[DisplayableProcess](processIdWithName)
-      .map(_.map(pd => processResolving.validateBeforeUiResolving(pd.json, pd.processCategory))) // validating the same way, as UI does
+      .map(_.map(pd => processResolving.validateBeforeUiResolving(pd.json))) // validating the same way, as UI does
       .flatMap {
         case l@Left(_) => Future(l.map(_ => ()))
         case Right(value) if value.hasErrors => Future(Left(DeployingInvalidScenarioError))
@@ -234,7 +234,7 @@ class DBProcessService(managerActor: ActorRef,
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { process =>
       val result = for {
         validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(
-          processResolving.validateBeforeUiResolving(action.process, process.processCategory)
+          processResolving.validateBeforeUiResolving(action.process)
         ))
         substituted = {
           processResolving.resolveExpressions(action.process, validation.typingInfo)
