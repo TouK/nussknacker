@@ -29,9 +29,10 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
-import pl.touk.nussknacker.ui.notifications.{ManagementActorCurrentDeployments, NotificationConfig, NotificationService, NotificationsListener}
+import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationService, NotificationsListener}
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor, ScenarioResolver}
+import pl.touk.nussknacker.ui.process.deployment.ManagementActor.ActorBasedManagementService
+import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
@@ -45,11 +46,10 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
-import sttp.client3.akkahttp.AkkaHttpBackend
 import sttp.client3.SttpBackend
+import sttp.client3.akkahttp.AkkaHttpBackend
 
 import java.util.concurrent.TimeUnit
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -67,12 +67,12 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   import net.ceedubs.ficus.Ficus._
 
   //override this method to e.g. run UI with local model
-  protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentService, categoriesService: ProcessCategoryService)
+  protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentServiceImpl, categoriesService: ProcessCategoryService)
                                          (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                           sttpBackend: SttpBackend[Future, Any]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
       () => {
-        implicit val deploymentService: DeploymentService = getDeploymentService()
+        implicit val deploymentService: DeploymentServiceImpl = getDeploymentService()
         implicit val categoriesServiceImp: ProcessCategoryService = categoriesService
         ProcessingTypeDataReader.loadProcessingTypeData(config)
       }
@@ -96,8 +96,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     // TODO: this ugly hack is because we have cycle in dependencies: deploymentService -> repostories -> modelData -> typeToConfig -> deploymentService
     // We should figure out how to split ModelData to be not passed to repositories
-    var deploymentService: DeploymentService = null
-    val getDeploymentService: () => DeploymentService = () => {
+    var deploymentService: DeploymentServiceImpl = null
+    val getDeploymentService: () => DeploymentServiceImpl = () => {
       assert(deploymentService != null, "Illegal initialization: DeploymentService should be initialized before ProcessingTypeData")
       deploymentService
     }
@@ -131,7 +131,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val scenarioResolver = new ScenarioResolver(subprocessResolver)
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
-    deploymentService = new DeploymentService(managers.forTypeUnsafe, processRepository, actionRepository, scenarioResolver, processChangeListener)
+    deploymentService = new DeploymentServiceImpl(managers.forTypeUnsafe, processRepository, actionRepository, scenarioResolver, processChangeListener)
     reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
     val processActivityRepository = new DbProcessActivityRepository(dbConfig)
 
@@ -145,13 +145,19 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
     val systemRequestTimeout = Timeout(system.settings.config.getDuration("akka.http.server.request-timeout").toMillis, TimeUnit.MILLISECONDS)
-    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, deploymentService), "management")
-    val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer,
+
+    val dmDispatcher = new DeploymentManagerDispatcher(managers, processRepository)
+    val processStateService = new ProcessStateServiceImpl(processRepository, dmDispatcher, deploymentService)
+    val customActionInvokerService = new CustomActionInvokerServiceImpl(processRepository, dmDispatcher, processStateService)
+    val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
+    val managementActor = system.actorOf(ManagementActor.props(dmDispatcher, deploymentService, customActionInvokerService, processStateService, testExecutorService), "management")
+    val managementService = new ActorBasedManagementService(managementActor, systemRequestTimeout)
+    val processService = new DBProcessService(managementService, newProcessPreparer,
       processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
       writeProcessRepository, processValidation
     )
     val scenarioTestService = ScenarioTestService(modelData, featureTogglesConfig.testDataSettings,
-      processResolving, scenarioResolver, counter, managementActor, systemRequestTimeout)
+      processResolving, counter, managementService)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 
@@ -171,7 +177,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val componentService = DefaultComponentService(config, typeToConfig, processService, processCategoryService)
 
-    val notificationService = new NotificationService(new ManagementActorCurrentDeployments(managementActor), notificationListener)
+    val notificationService = new NotificationService(managementService, notificationListener)
 
     initMetrics(metricsRegistry, config, processRepository)
 
@@ -189,7 +195,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
-        ManagementResources(managementActor, processAuthorizer, processRepository, featureTogglesConfig, processService, metricsRegistry, scenarioTestService),
+        ManagementResources(processAuthorizer, processRepository, featureTogglesConfig, processService, dmDispatcher, metricsRegistry, scenarioTestService),
         new ValidationResources(processRepository ,processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new UserResources(processCategoryService),
