@@ -68,6 +68,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: Nil, _) =>
       jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
+          //in editor mode we use lax validation mode, to be backward compatible
           JsonSinkValueParameter(schema, SinkRawValueParamName, ValidationMode.lax).map { valueParam =>
             val state = EditorTransformationState(schema, valueParam)
             //shouldn't happen except for empty schema, but it can lead to infinite loop...

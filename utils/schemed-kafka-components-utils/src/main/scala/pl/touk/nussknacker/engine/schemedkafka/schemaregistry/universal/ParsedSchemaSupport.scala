@@ -107,6 +107,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
         SinkSingleValueParameter(rawParameter, new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema()))
       )
     } else {
+      //in editor mode we use lax validation mode, to be backward compatible
       JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName, ValidationMode.lax)
     }
   }
