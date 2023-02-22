@@ -28,7 +28,7 @@ object JsonSchemaOutputValidator {
   }
 }
 
-// root schema is a container for eventual ref schemas - in particular it can be the same schema
+// root schema is a container for eventual ref schemas - in particular it can be the same schema as outputSchema
 class JsonSchemaOutputValidator(validationMode: ValidationMode, outputSchema: Schema, rootSchema: Schema) extends SchemaOutputValidator with LazyLogging {
 
   import JsonSchemaOutputValidator._

@@ -67,7 +67,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
           schemaSupportDispatcher.forSchemaType(runtimeSchemaData.schema.schemaType())
             .extractSinkValueParameter(runtimeSchemaData.schema, rawMode = true, validationMode = extractValidationMode(mode), rawParameter = rawValueParam)
             .map { extractedSinkParameter =>
-              val validationAgainstSchemaErrors = extractedSinkParameter.validateParams((SinkValueParamName, value) :: Nil)
+              val validationAgainstSchemaErrors = extractedSinkParameter.validateParams(Map(SinkValueParamName -> value))
                 .swap
                 .map(_.toList)
                 .getOrElse(List.empty)
@@ -107,7 +107,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
           }
       }.valueOr(e => FinalResults(context, e.toList))
     case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, Some(state)) =>
-      val errors = state.sinkValueParameter.validateParams(valueParams).swap.map(_.toList).getOrElse(Nil)
+      val errors = state.sinkValueParameter.validateParams(valueParams.toMap).swap.map(_.toList).getOrElse(Nil)
       FinalResults(context, errors, Some(state))
   }
 
