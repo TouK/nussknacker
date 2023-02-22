@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientWithRegistration, SchemaRegistryClientFactoryWithRegistration}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactoryWithRegistration, SchemaRegistryClientWithRegistration}
 
 /**
  * SchemaRegistryClient must be passed by name, because schemaRegistryMockClient is not serializable.
@@ -15,7 +15,7 @@ class MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient: => CSch
   override type SchemaRegistryClientT = SchemaRegistryClientWithRegistration with ConfluentSchemaRegistryClient
 
   override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
-    new DefaultConfluentSchemaRegistryClient(schemaRegistryMockClient, config)
+    new DefaultConfluentSchemaRegistryClient(schemaRegistryMockClient)
   }
 
 }
