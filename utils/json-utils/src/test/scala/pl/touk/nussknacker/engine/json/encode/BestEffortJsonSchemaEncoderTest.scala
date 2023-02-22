@@ -209,7 +209,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe Symbol("invalid")
   }
 
-  test("should validate additionalParameters type") {
+  test("should encode additionalParameters type") {
     def schema(additionalPropertiesType: String): Schema = JsonSchemaBuilder.parseSchema(
       s"""{
         |  "type": "object",
@@ -228,6 +228,91 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), schema("number")) shouldBe
       Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
     encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), schema("string")) shouldBe Symbol("invalid")
+  }
+
+  test("should encode pattern properties with implicitly enabled additional properties fields") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "field": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "type": "integer"
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    forAll(Table(
+      ("data", "expected"),
+      (Map("field" -> "bar", "other_field" -> "other"),
+        Valid(Json.obj("field" -> Json.fromString("bar"), "other_field" -> Json.fromString("other")))),
+      (Map("field" -> "bar", "other_field" -> "other", "field_1_int" -> 42, "field_2_int" -> 84),
+        Valid(Json.obj("field" -> Json.fromString("bar"), "other_field" -> Json.fromString("other"), "field_1_int" -> Json.fromLong(42L), "field_2_int" -> Json.fromLong(84L)))),
+    )) { (data, expected) =>
+      encoder.encodeWithJsonValidation(data, schema) shouldBe expected
+    }
+  }
+
+  test("should encode pattern properties with disabled additional properties fields") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "field": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "type": "integer"
+        |    }
+        |  },
+        |  "additionalProperties": false
+        |}""".stripMargin)
+
+    forAll(Table(
+      ("data", "expected"),
+      (Map("field" -> "bar"), Valid(Json.obj("field" -> Json.fromString("bar")))),
+      (Map("field" -> "bar", "other_field" -> "other"), invalid("""Not expected field with name: other_field for schema: {"type":"object","additionalProperties":false,"patternProperties":{"_int$":{"type":"integer"}},"properties":{"field":{"type":"string"}}}.""")),
+      (Map("field" -> "bar", "field_1_int" -> 42, "field_2_int" -> 84), Valid(Json.obj("field" -> Json.fromString("bar"), "field_1_int" -> Json.fromLong(42L), "field_2_int" -> Json.fromLong(84L)))),
+    )) { (data, expected) =>
+      encoder.encodeWithJsonValidation(data, schema) shouldBe expected
+    }
+  }
+
+  test("should encode 'additionalProperties with patternProperties' schema") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "additionalProperties": {
+        |    "type": ["string", "null"]
+        |  },
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "oneOf": [
+        |        { "type": "integer" },
+        |        { "type": "null" }
+        |      ]
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    forAll(Table(
+      ("data", "expected"),
+      (Map("field" -> "bar"), Valid(Json.obj("field" -> Json.fromString("bar")))),
+      (Map("field" -> null), Valid(Json.obj("field" -> Json.Null))),
+      (Map("field_int" -> 42L), Valid(Json.obj("field_int" -> Json.fromInt(42)))),
+      (Map("field_int" -> null), Valid(Json.obj("field_int" -> Json.Null))),
+      (Map("field" -> "bar", "field_int" -> 42L), Valid(Json.obj("field" -> Json.fromString("bar"), "field_int" -> Json.fromLong(42L)))),
+      (Map("field" -> "bar", "field_int" -> null), Valid(Json.obj("field" -> Json.fromString("bar"), "field_int" -> Json.Null))),
+      (Map("field" -> null, "field_int" -> 42L), Valid(Json.obj("field" -> Json.Null, "field_int" -> Json.fromLong(42L)))),
+    )) { (data, expected) =>
+      encoder.encodeWithJsonValidation(data, schema) shouldBe expected
+    }
   }
 
   test("should encode union") {

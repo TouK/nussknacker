@@ -211,8 +211,13 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       ("input",                      "sourceSchema",                                       "sinkSchema",                                   "sinkExpression",                             "validationModes",    "result"),
       (inputObject,                  schemaMapAny,                                         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
       (inputObject,                  schemaMapAny,                                         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        strict,               invalidTypes("actual: 'Map[String,Unknown]' expected: 'Map[String, Any]'")),
+      (inputObject,                  schemaMapAny,                                         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        lax,                  valid(inputObject)),
+      (inputObject,                  schemaMapAny,                                         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        strict,               invalidTypes("actual: 'Map[String,Unknown]' expected: 'Map[String, String]'")),
       (inputObject,                  objWithIntPatternPropsAndOpenAdditionalSchema,        objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
+      (inputObject,                  objWithIntPatternPropsAndOpenAdditionalSchema,        objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        strict,               invalidTypes("actual: 'Map[String,Unknown]' expected: 'Map[String, Any]'")),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
+      (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        lax,                  valid(inputObject)),
+      (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        strict,               invalidTypes("actual: 'Map[String,Long | String]' expected: 'Map[String, String]'")),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
       (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  Invalid(NonEmptyList(ExpressionParserCompilationError("Dynamic property access is not allowed", "my-sink", Some("Value"), "#input['foo_int']"), Nil))),
@@ -266,7 +271,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
         schemaMapAny,
         createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger)),
         validationMode = Some(ValidationMode.lax)
-      ), s"#/foo_int: expected type: Integer, found: String"),
+      ), s"Not expected type: String for field with schema: $schemaInteger."),
     )
 
     forAll(testData) { (cfg: ScenarioConfig, expected: String) =>
