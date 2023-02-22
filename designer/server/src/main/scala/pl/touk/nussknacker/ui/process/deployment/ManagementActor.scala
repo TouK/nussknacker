@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import akka.actor.{ActorRefFactory, Props, Status}
+import akka.actor.{Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment._
@@ -24,30 +24,19 @@ import scala.util.{Failure, Success}
 object ManagementActor {
   def props(managers: ProcessingTypeDataProvider[DeploymentManager],
             processRepository: FetchingProcessRepository[Future],
-            scenarioResolver: ScenarioResolver,
-            deploymentService: DeploymentService)
-           (implicit context: ActorRefFactory): Props = {
+            deploymentService: DeploymentService): Props = {
     val dispatcher = new DeploymentManagerDispatcher(managers, processRepository)
     val processStateService = new ProcessStateService(processRepository, dispatcher, deploymentService)
     Props(
       classOf[ManagementActor],
       dispatcher,
-      scenarioResolver,
       deploymentService,
       new CustomActionInvokerService(processRepository, dispatcher, processStateService),
       processStateService)
   }
 }
 
-// TODO: reduce number of passed repositories - split this actor to services that will be easier to testing
-// This actor should be only responsible for:
-// - protecting that there won't be more than one scenario being deployed simultaneously
-// - being able to check status of asynchronous perform deploy operation
-// Already extracted is only DeploymentService - see docs there, but should be extracted more classes e.g.:
-// - subprocess resolution should be a part of kind of ResolvedProcessRepository
-// - (maybe) some kind of facade spinning all this things together and not being an actor e.g. ScenarioManagementFacade
 class ManagementActor(dispatcher: DeploymentManagerDispatcher,
-                      scenarioResolver: ScenarioResolver,
                       deploymentService: DeploymentService,
                       customActionInvokerService: CustomActionInvokerService,
                       processStateService: ProcessStateService) extends FailurePropagatingActor with LazyLogging {
@@ -89,12 +78,11 @@ class ManagementActor(dispatcher: DeploymentManagerDispatcher,
       reply(processStateService.getProcessState(id))
     case DeploymentActionFinished(process, user, _) =>
       beingDeployed -= process.name
-    case Test(id, canonicalProcess, category, scenarioTestData, user, encoder) =>
+    case Test(id, resolvedProcess, scenarioTestData, user, encoder) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val testAction = for {
           manager <- dispatcher.deploymentManager(id.id)
-          resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess, category))
           testResult <- manager.test(id.name, resolvedProcess, scenarioTestData, encoder)
         } yield testResult
         reply(testAction)
@@ -163,7 +151,7 @@ case class Stop(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[St
 
 case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
-case class Test[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, scenarioTestData: ScenarioTestData, user: LoggedUser, variableEncoder: Any => T)
+case class Test[T](id: ProcessIdWithName, resolvedProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, user: LoggedUser, variableEncoder: Any => T)
 
 case class DeploymentDetails(version: VersionId, deploymentComment: Option[DeploymentComment], deployedAt: Instant, action: ProcessActionType)
 

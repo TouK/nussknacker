@@ -60,7 +60,6 @@ class ManagementActorSpec extends AnyFunSuite with Matchers with PatientScalaFut
       ManagementActor.props(
         mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
         fetchingProcessRepository,
-        TestFactory.scenarioResolver,
         deploymentService),
     "management"
   )
