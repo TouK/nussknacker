@@ -131,7 +131,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val scenarioResolver = new ScenarioResolver(subprocessResolver)
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
-    deploymentService = new DeploymentService(processRepository, actionRepository, scenarioResolver, processChangeListener)
+    deploymentService = new DeploymentService(managers.forTypeUnsafe, processRepository, actionRepository, scenarioResolver, processChangeListener)
     reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
     val processActivityRepository = new DbProcessActivityRepository(dbConfig)
 
@@ -145,12 +145,13 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
     val systemRequestTimeout = Timeout(system.settings.config.getDuration("akka.http.server.request-timeout").toMillis, TimeUnit.MILLISECONDS)
-    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, scenarioResolver, deploymentService), "management")
+    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, deploymentService), "management")
     val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer,
       processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
       writeProcessRepository, processValidation
     )
-    val scenarioTestService = ScenarioTestService(modelData, featureTogglesConfig.testDataSettings, processResolving, counter, managementActor, systemRequestTimeout)
+    val scenarioTestService = ScenarioTestService(modelData, featureTogglesConfig.testDataSettings,
+      processResolving, scenarioResolver, counter, managementActor, systemRequestTimeout)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 

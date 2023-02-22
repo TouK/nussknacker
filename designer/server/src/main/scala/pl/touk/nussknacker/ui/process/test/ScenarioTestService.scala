@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.TestDataSettings
-import pl.touk.nussknacker.ui.process.deployment.Test
+import pl.touk.nussknacker.ui.process.deployment.{ScenarioResolver, Test}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -25,6 +25,7 @@ object ScenarioTestService {
   def apply(providers: ProcessingTypeDataProvider[ModelData],
             testDataSettings: TestDataSettings,
             processResolving: UIProcessResolving,
+            scenarioResolver: ScenarioResolver,
             processCounter: ProcessCounter,
             managementActor: ActorRef,
             systemRequestTimeout: Timeout,
@@ -34,6 +35,7 @@ object ScenarioTestService {
       testDataSettings,
       new ScenarioTestDataSerDe(testDataSettings),
       processResolving,
+      scenarioResolver,
       processCounter,
       managementActor,
       systemRequestTimeout,
@@ -46,6 +48,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
                           testDataSettings: TestDataSettings,
                           scenarioTestDataSerDe: ScenarioTestDataSerDe,
                           processResolving: UIProcessResolving,
+                          scenarioResolver: ScenarioResolver,
                           processCounter: ProcessCounter,
                           managementActor: ActorRef,
                           systemRequestTimeout: Timeout,
@@ -79,7 +82,8 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
       scenarioTestData <- scenarioTestDataSerDe.prepareTestData(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       canonical = toCanonicalProcess(displayableProcess)
-      testResults <- (managementActor ? Test(idWithName, canonical, displayableProcess.category, scenarioTestData, user, testResultsVariableEncoder))
+      withResolvedSubprocesses <- Future.fromTry(scenarioResolver.resolveScenario(canonical, displayableProcess.category))
+      testResults <- (managementActor ? Test(idWithName, withResolvedSubprocesses, scenarioTestData, user, testResultsVariableEncoder))
         .mapTo[TestResults[T]]
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))

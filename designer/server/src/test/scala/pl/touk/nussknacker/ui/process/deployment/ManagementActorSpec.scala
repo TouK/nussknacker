@@ -49,7 +49,7 @@ class ManagementActorSpec extends AnyFunSuite with Matchers with PatientScalaFut
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   private val listener = new TestProcessChangeListener
-  private val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, TestFactory.scenarioResolver, listener)
+  private val deploymentService = new DeploymentService(_ => deploymentManager, fetchingProcessRepository, actionRepository, TestFactory.scenarioResolver, listener)
 
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
@@ -60,7 +60,6 @@ class ManagementActorSpec extends AnyFunSuite with Matchers with PatientScalaFut
       ManagementActor.props(
         mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
         fetchingProcessRepository,
-        TestFactory.scenarioResolver,
         deploymentService),
     "management"
   )

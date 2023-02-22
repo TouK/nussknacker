@@ -1,54 +1,45 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import akka.actor.{ActorRefFactory, Props, Status}
+import akka.actor.{Props, Status}
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{User => ManagerUser}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
-import pl.touk.nussknacker.ui.listener.{User => ListenerUser}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.FailurePropagatingActor
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 object ManagementActor {
   def props(managers: ProcessingTypeDataProvider[DeploymentManager],
             processRepository: FetchingProcessRepository[Future],
-            scenarioResolver: ScenarioResolver,
-            deploymentService: DeploymentService)
-           (implicit context: ActorRefFactory): Props = {
-    Props(classOf[ManagementActor], managers, processRepository, scenarioResolver, deploymentService)
+            deploymentService: DeploymentService): Props = {
+    val dispatcher = new DeploymentManagerDispatcher(managers, processRepository)
+    val processStateService = new ProcessStateService(processRepository, dispatcher, deploymentService)
+    Props(
+      classOf[ManagementActor],
+      dispatcher,
+      deploymentService,
+      new CustomActionInvokerService(processRepository, dispatcher, processStateService),
+      processStateService)
   }
 }
 
-// TODO: reduce number of passed repositories - split this actor to services that will be easier to testing
-// This actor should be only responsible for:
-// - protecting that there won't be more than one scenario being deployed simultaneously
-// - being able to check status of asynchronous perform deploy operation
-// Already extracted is only DeploymentService - see docs there, but should be extracted more classes e.g.:
-// - responsible for dispatching operations logic
-// - translating (ProcessState from DeploymentManager and historical context of deployment/cancel actions) to user-friendly ProcessStatus
-// - subprocess resolution should be a part of kind of ResolvedProcessRepository
-// - (maybe) some kind of facade spinning all this things together and not being an actor e.g. ScenarioManagementFacade
-class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
-                      processRepository: FetchingProcessRepository[Future],
-                      scenarioResolver: ScenarioResolver,
-                      deploymentService: DeploymentService) extends FailurePropagatingActor with LazyLogging {
+class ManagementActor(dispatcher: DeploymentManagerDispatcher,
+                      deploymentService: DeploymentService,
+                      customActionInvokerService: CustomActionInvokerService,
+                      processStateService: ProcessStateService) extends FailurePropagatingActor with LazyLogging {
 
   private var beingDeployed = Map[ProcessName, DeployInfo]()
 
@@ -58,16 +49,16 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     case Deploy(process, user, savepointPath, deploymentComment) =>
       ensureNoDeploymentRunning {
         val deployRes: Future[Future[ProcessActionEntityData]] = deploymentService
-          .deployProcess(process, savepointPath, deploymentComment, managers.forTypeUnsafe)(user)
+          .deployProcess(process, savepointPath, deploymentComment)(user)
         //we wait for nested Future before we consider Deployment as finished
         handleDeploymentAction(process, user, DeploymentActionType.Deployment, deploymentComment, deployRes.flatten)
         //we reply to the user without waiting for finishing deployment at DeploymentManager
         reply(deployRes)
       }
     case Snapshot(id, user, savepointDir) =>
-      reply(deploymentManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
+      reply(dispatcher.deploymentManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
     case Stop(id, user, savepointDir) =>
-      reply(deploymentManager(id.id)(ec, user).flatMap(_.stop(id.name, savepointDir, toManagerUser(user))))
+      reply(dispatcher.deploymentManager(id.id)(ec, user).flatMap(_.stop(id.name, savepointDir, toManagerUser(user))))
     case Cancel(id, user, deploymentComment) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
@@ -79,20 +70,19 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
       implicit val loggedUser: LoggedUser = user
       val processStatus = for {
-        manager <- deploymentManager(id.id)
+        manager <- dispatcher.deploymentManager(id.id)
       } yield manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy)
       reply(processStatus)
     case CheckStatus(id, user) =>
-      reply(getProcessStatus(id)(user))
+      implicit val loggedUser: LoggedUser = user
+      reply(processStateService.getProcessState(id))
     case DeploymentActionFinished(process, user, _) =>
-      implicit val listenerUser: ListenerUser = ListenerApiUser(user)
       beingDeployed -= process.name
-    case Test(id, canonicalProcess, category, scenarioTestData, user, encoder) =>
+    case Test(id, resolvedProcess, scenarioTestData, user, encoder) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val testAction = for {
-          manager <- deploymentManager(id.id)
-          resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess, category))
+          manager <- dispatcher.deploymentManager(id.id)
           testResult <- manager.test(id.name, resolvedProcess, scenarioTestData, encoder)
         } yield testResult
         reply(testAction)
@@ -101,54 +91,16 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       reply(Future.successful(DeploymentStatusResponse(beingDeployed)))
 
     case CustomAction(actionName, id, user, params) =>
-      implicit val loggedUser: LoggedUser = user
       // TODO: Currently we're treating all custom actions as deployment actions; i.e. they can't be invoked if there is some deployment in progress
       ensureNoDeploymentRunning {
-        val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)
-        val res: Future[Either[CustomActionError, CustomActionResult]] = maybeProcess.flatMap {
-          case Some(process) =>
-            val actionReq = engine.api.deployment.CustomActionRequest(
-              name = actionName,
-              processVersion = process.toEngineProcessVersion,
-              user = toManagerUser(user),
-              params = params)
-            deploymentManager(id.id).flatMap { manager =>
-              manager.customActions.find(_.name == actionName) match {
-                case Some(customAction) =>
-                  getProcessStatus(id).flatMap(status => {
-                    if (customAction.allowedStateStatusNames.contains(status.status.name)) {
-                      manager.invokeCustomAction(actionReq, process.json)
-                    } else
-                      Future(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
-                  })
-                case None =>
-                  Future(Left(CustomActionNonExisting(actionReq)))
-              }
-            }
-          case None =>
-            Future.failed(ProcessNotFoundError(id.id.value.toString))
-        }
+        implicit val loggedUser: LoggedUser = user
+        val res = customActionInvokerService.invokeCustomAction(actionName, id, params)
         reply(res)
       }
   }
 
-  private def getProcessStatus(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[ProcessState] =
-    for {
-      actions <- processRepository.fetchProcessActions(processIdWithName.id)
-      manager <- deploymentManager(processIdWithName.id)
-      state <- findJobState(manager, processIdWithName)
-      _ <- deploymentService.handleFinishedProcess(processIdWithName, state)
-    } yield ObsoleteStateDetector.handleObsoleteStatus(state, actions.headOption)
-
-  private def findJobState(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[ProcessState]] =
-    deploymentManager.findJobStatus(processIdWithName.name).recover {
-      case NonFatal(e) =>
-        logger.warn(s"Failed to get status of ${processIdWithName}: ${e.getMessage}", e)
-        Some(SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.FailedToGet))
-    }
-
   private def handleDeploymentAction(id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, deploymentComment: Option[DeploymentComment],
-                                 actionFuture: Future[ProcessActionEntityData]): Unit = {
+                                     actionFuture: Future[ProcessActionEntityData]): Unit = {
     beingDeployed += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
     actionFuture.onComplete {
       case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, deploymentComment,details.performedAtTime, details.action)))
@@ -168,11 +120,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
 
   private def performCancel(processId: ProcessIdWithName)
                            (implicit user: LoggedUser) = {
-    deploymentManager(processId.id).flatMap(_.cancel(processId.name, toManagerUser(user)))
-  }
-
-  private def deploymentManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {
-    processRepository.fetchProcessingType(processId).map(managers.forTypeUnsafe)
+    dispatcher.deploymentManager(processId.id).flatMap(_.cancel(processId.name, toManagerUser(user)))
   }
 
   //during deployment using Client.run Flink holds some data in statics and there is an exception when
@@ -203,7 +151,7 @@ case class Stop(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[St
 
 case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
-case class Test[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, scenarioTestData: ScenarioTestData, user: LoggedUser, variableEncoder: Any => T)
+case class Test[T](id: ProcessIdWithName, resolvedProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, user: LoggedUser, variableEncoder: Any => T)
 
 case class DeploymentDetails(version: VersionId, deploymentComment: Option[DeploymentComment], deployedAt: Instant, action: ProcessActionType)
 

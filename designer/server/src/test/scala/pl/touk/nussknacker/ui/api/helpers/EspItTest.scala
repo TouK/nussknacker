@@ -79,8 +79,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected val processChangeListener = new TestProcessChangeListener()
 
+  protected lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
+
   private implicit val deploymentService: DeploymentService =
-    new DeploymentService(fetchingProcessRepository, actionRepository, scenarioResolver, processChangeListener)
+    new DeploymentService(_ => deploymentManager, fetchingProcessRepository, actionRepository, scenarioResolver, processChangeListener)
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
     new DefaultProcessingTypeDeploymentService(Streaming, deploymentService)
@@ -101,8 +103,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected val testProcessingTypeDataProvider: MapBasedProcessingTypeDataProvider[ProcessingTypeData] = mapProcessingTypeDataProvider(
     Streaming -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
   )
-
-  protected lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
 
   protected val newProcessPreparer: NewProcessPreparer = createNewProcessPreparer()
 
@@ -139,7 +139,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected def createManagementActorRef: ActorRef = system.actorOf(ManagementActor.props(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
     fetchingProcessRepository,
-    TestFactory.scenarioResolver,
     deploymentService), "management")
 
   protected def createDBProcessService(managerActor: ActorRef): DBProcessService =
@@ -150,7 +149,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected def createScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider]): ScenarioTestService =
     new ScenarioTestService(testInfoProviders, featureTogglesConfig.testDataSettings, new ScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
-      processResolving, new ProcessCounter(TestFactory.prepareSampleSubprocessRepository), managementActor, 1 minute)
+      processResolving, scenarioResolver, new ProcessCounter(TestFactory.prepareSampleSubprocessRepository), managementActor, 1 minute)
 
   protected def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) = new ManagementResources(
     managementActor = managementActor,
