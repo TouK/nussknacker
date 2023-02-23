@@ -212,7 +212,7 @@ Common problem is when your Avro data encoding not correspond with the one Nussk
 2022-03-30 14:12:28.034 [worker-DetectLargeTransactions-1] INFO  p.t.n.e.u.e.DefaultWithExceptionExtractor - Unknown exception IllegalArgumentException:Unknown magic byte! for DetectLargeTransactions-kafka-avro-127
 ```
 Check [Schema Registry + Avro serialization
-](../integration/KafkaIntegration#schema-registry-integration) part for explanation.
+](../integration/KafkaIntegration#schema-registry---connection) part for explanation.
 
 ## General production readiness checklist
 
@@ -220,7 +220,7 @@ Check [Schema Registry + Avro serialization
 
 * Configure restart strategy and error handler
   * By default, scenarios are not restarted, so that errors do not go unnoticed
-  * [Kafka exception handler](../installation_configuration_guide/ModelConfiguration.md#kafka-exception-handling) should be used in production - configure error topic, with long enough retention
+  * [Kafka exception handler](../integration/KafkaIntegration#exception-handling) should be used in production - configure error topic, with long enough retention
 * Check if Nussknacker has access to all needed services:
   * Flink REST API
   * K8s REST API

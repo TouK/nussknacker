@@ -41,7 +41,7 @@ they are usually `java.lang` (primitives), `java.util` (List, Map) and `java.tim
 | BigDecimal | enable computation without rounding errors |
 | UUID       | uuid                                       |
 
-More information about how to declare each type in Avro you can find in [Avro ducumentation](http://avro.apache.org/docs/current/spec.html#schemas), 
+More information about how to declare each type in Avro you can find in [Avro documentation](http://avro.apache.org/docs/current/spec.html#schemas), 
 especially about [Avro logical types](http://avro.apache.org/docs/current/spec.html#Logical+Types).
 
 ### Records/objects/maps

@@ -14,7 +14,7 @@ Please try [Nussknacker demo](/quickstart/demo) to quickly understand how to mov
 
 While Designer GUI in most cases is self-explanatory and forgiving, there are a few features which may be not so obvious to guess:
 
-* **Scenario name change**- click Properties icon in the scenario panel, enter the name, click OK, click Save icon to save the scenario.
+* **Scenario name change** - click Properties icon in the scenario panel, enter the name, click OK, click Save icon to save the scenario.
 * **Selecting nodes** - use Shift button and left mouse button to select nodes. If you expand the selection area rightward, you need to fully mark node icons; alternatively you can mark node icons partially if you expand the selection area leftward.
 * **Copy & paste** - you can copy and paste selected nodes; just ensure that your browser has access to the clipboard for the Nussknacker site you use.
 * **Tab navigation** - you can navigate inside node details with TAB button.
