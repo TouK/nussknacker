@@ -7,7 +7,7 @@ import {MuiThemeProvider} from "./muiThemeProvider"
 import {NotFound} from "./errors/NotFound"
 import SystemUtils from "../common/SystemUtils"
 import ScopedCssBaseline from "@mui/material/ScopedCssBaseline"
-import {useNavigate} from "react-router-dom"
+import {useNavigate, useParams} from "react-router-dom"
 
 export type DynamicTabData = {
   title: string,
@@ -22,7 +22,15 @@ export type DynamicTabData = {
   addAccessTokenInQueryParam?: boolean,
 }
 
-const RemoteTabComponent = <CP extends { basepath?: string }>({
+export interface RemoteComponentProps {
+  /**
+   * @deprecated not needed and used anymore
+   */
+  basepath: string,
+  navigate: (path: string) => void,
+}
+
+const RemoteTabComponent = <CP extends RemoteComponentProps>({
   scope,
   componentProps,
 }: { scope: ModuleString, componentProps: CP }) => {
@@ -30,20 +38,17 @@ const RemoteTabComponent = <CP extends { basepath?: string }>({
   return <Component {...componentProps}/>
 }
 
-export const RemoteModuleTab = <CP extends { basepath?: string }>({
+export const RemoteModuleTab = <CP extends RemoteComponentProps>({
   url,
   componentProps,
 }: { url: ModuleUrl, componentProps: CP }): JSX.Element => {
   const [urlValue, scope] = useMemo(() => splitUrl(url), [url])
-  const navigate = useNavigate()
-  const props = useMemo(() => ({onNavigate: navigate, ...componentProps}), [componentProps, navigate])
-
   return (
     <ErrorBoundary FallbackComponent={() => <NotFound/>}>
       <MuiThemeProvider>
         <ScopedCssBaseline style={{flex: 1, overflow: "hidden"}}>
           <ExternalModule url={urlValue}>
-            <RemoteTabComponent scope={scope} componentProps={props}/>
+            <RemoteTabComponent scope={scope} componentProps={componentProps}/>
           </ExternalModule>
         </ScopedCssBaseline>
       </MuiThemeProvider>
@@ -51,7 +56,7 @@ export const RemoteModuleTab = <CP extends { basepath?: string }>({
   )
 }
 
-const IframeTab = ({tab}: { tab: DynamicTabData }) => {
+export const IframeTab = ({tab}: { tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url"> }) => {
   const iframeQueryParam = {iframe: true}
   const accessTokenQueryParam = tab.addAccessTokenInQueryParam ? {accessToken: SystemUtils.getAccessToken()} : {}
   return (
@@ -64,10 +69,21 @@ const IframeTab = ({tab}: { tab: DynamicTabData }) => {
   )
 }
 
-export const DynamicTab = memo(function DynamicComponent<CP extends { basepath?: string }>({
+function useExtednedComponentProps<P extends Record<string, any>>(props: P) {
+  const navigate = useNavigate()
+  const {"*": rest} = useParams<{ "*": string }>()
+  return useMemo(() => ({
+    basepath: window.location.pathname.replace(rest, ""),
+    navigate,
+    ...props,
+  }), [navigate, props, rest])
+}
+
+export const DynamicTab = memo(function DynamicComponent<P extends { tab: DynamicTabData }>({
   tab,
-  componentProps,
-}: { tab: DynamicTabData, componentProps: CP }): JSX.Element {
+  ...props
+}: P): JSX.Element {
+  const componentProps = useExtednedComponentProps(props)
   switch (tab.type) {
     case "Remote":
       return <RemoteModuleTab url={tab.url} componentProps={componentProps}/>
