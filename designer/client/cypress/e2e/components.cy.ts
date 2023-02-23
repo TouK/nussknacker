@@ -14,7 +14,7 @@ describe("Components list", () => {
 
   beforeEach(() => {
     cy.viewport(1400, 1000)
-    cy.visit("/customtabs/components")
+    cy.visit("/components")
   })
 
   // We filter by Default category in almost all test cases because in other categories there are sandbox components which
@@ -97,7 +97,7 @@ describe("Components list", () => {
   })
 
   it("should apply filters from query", () => {
-    cy.visit("/customtabs/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&USAGES=-1")
+    cy.visit("/components?NAME=split&GROUP=base&CATEGORY=Default&CATEGORY=DemoFeatures&USAGES=-1")
     cy.contains(/^name$/i).should("be.visible")
     cy.get("[role=row]").should("have.length", 2)
     cy.contains("[role=row] *", /^Default$/).should("be.visible")
@@ -150,7 +150,7 @@ describe("Components list", () => {
   it("should filter usages", () => {
     cy.createTestProcess(`${seed}_xxx`, "testProcess2")
 
-    cy.visit("/customtabs/components/usages/filter")
+    cy.visit("/components/usages/filter")
 
     cy.get("input[type=text]").type("8 xxx")
     cy.matchQuery("?TEXT=8+xxx")
