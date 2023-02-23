@@ -1133,7 +1133,7 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app")).
       "com.typesafe.akka" %% "akka-slf4j" % akkaV,
       "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
       "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
-    )
+    ),
   ).dependsOn(liteEngineKafkaRuntime, requestResponseRuntime)
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager")).
@@ -1614,9 +1614,8 @@ lazy val root = (project in file("."))
       releaseStepCommand("buildClient"),
       releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/Universal/packageZipTarball"),
-      releaseStepCommand("liteEngineRuntimeApp/Universal/packageZipTarball"),
-      releaseStepCommand("dist/Docker/publish"),
-      releaseStepCommand("liteEngineRuntimeApp/Docker/publish"),
+      releaseStepCommandAndRemaining("+dist/Docker/publish"),
+      releaseStepCommandAndRemaining("+liteEngineRuntimeApp/Docker/publish"),
       releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
       commitNextVersion,
