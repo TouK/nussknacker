@@ -11,6 +11,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -29,7 +30,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
-    system.settings.config,
+    ConfigWithUnresolvedVersion(system.settings.config),
     NussknackerAppInitializer.initDb(system.settings.config),
     new MetricRegistry
   )

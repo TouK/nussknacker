@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
-import pl.touk.nussknacker.ui.config.UiConfigLoader
+import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import java.net.URI
@@ -25,15 +25,15 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   }
 
   test("defaultConfig works") {
-    UiConfigLoader.load(globalConfig, classLoader).getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
-    UiConfigLoader.load(globalConfig, classLoader).getString("attachmentsPath") shouldBe "/tmp/attachments"
+    DesignerConfigLoader.load(globalConfig, classLoader).resolved.getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
+    DesignerConfigLoader.load(globalConfig, classLoader).resolved.getString("attachmentsPath") shouldBe "/tmp/attachments"
   }
 
   test("should be possible to config entries defined in default ui config from passed config") {
     val configUri = writeToTemp("foo: ${storageDir}") // storageDir is defined inside defaultDesignerConfig.conf
 
-    val loadedConfig = UiConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader), classLoader)
-    loadedConfig.getString("foo") shouldEqual "./storage"
+    val loadedConfig = DesignerConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader), classLoader)
+    loadedConfig.resolved.getString("foo") shouldEqual "./storage"
   }
 
 
@@ -72,12 +72,12 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
 
     val result = try {
       System.setProperty(randomPropertyName, "I win!")
-      UiConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader), classLoader)
+      DesignerConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader), classLoader)
     } finally {
       System.getProperties.remove(randomPropertyName)
     }
 
-    result.getString(randomPropertyName) shouldBe "I win!"
+    result.resolved.getString(randomPropertyName) shouldBe "I win!"
   }
 
   //to be able to run this test:

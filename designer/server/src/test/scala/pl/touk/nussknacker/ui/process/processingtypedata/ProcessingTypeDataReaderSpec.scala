@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.{ProcessingTypeConfig, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.deployment.DeploymentServiceImpl
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessCategoryService}
@@ -45,7 +45,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |""".stripMargin)
 
     implicit val categoriesService: ProcessCategoryService = new ConfigProcessCategoryService(config)
-    val scenarioTypes = StubbedProcessingTypeDataReader.loadProcessingTypeData(config).all
+    val scenarioTypes = StubbedProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(config)).all
 
     scenarioTypes.keySet shouldEqual Set("foo")
   }

@@ -7,6 +7,7 @@ import io.circe.Json
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeResult, ResultContext}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -30,10 +31,10 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
   private val classPath: List[String] = ClassPaths.scalaClasspath
 
-  private val config = ConfigFactory.load()
+  private val config = ConfigWithUnresolvedVersion(ConfigFactory.load()
     .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://dummy:1234"))
     .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), ConfigValueFactory.fromAnyRef("kafka:1234"))
-    .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
+    .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava)))
 
   private val scenarioTestData = ScenarioTestData(List(ScenarioTestRecord("startProcess", Json.fromString("terefere"))))
 

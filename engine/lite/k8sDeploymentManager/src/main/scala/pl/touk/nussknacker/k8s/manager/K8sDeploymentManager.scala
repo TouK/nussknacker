@@ -48,7 +48,7 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
   //runtime config is combined from scenarioType.modelConfig and deploymentConfig.configExecutionOverrides
   private val serializedRuntimeConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
-    val modelConfigPart = wrapInModelConfig(inputConfig.config.withoutPath("classPath"))
+    val modelConfigPart = inputConfig.config.withoutPath("classPath").atPath("modelConfig")
     //TODO: should overrides apply only to model or to whole config??
     val withOverrides = config.configExecutionOverrides.withFallback(modelConfigPart)
     inputConfig.copy(config = withOverrides).serialized
@@ -215,10 +215,6 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
-
-  private def wrapInModelConfig(config: Config): Config = {
-    ConfigFactory.parseMap(Collections.singletonMap("modelConfig", config.root()))
-  }
 
   override protected def executionContext: ExecutionContext = ec
 
