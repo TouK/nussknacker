@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.ui.process.test
 
-import akka.actor.ActorRef
-import akka.pattern.ask
-import akka.util.Timeout
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
@@ -12,7 +9,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.TestDataSettings
-import pl.touk.nussknacker.ui.process.deployment.{ScenarioResolver, Test}
+import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -25,20 +22,16 @@ object ScenarioTestService {
   def apply(providers: ProcessingTypeDataProvider[ModelData],
             testDataSettings: TestDataSettings,
             processResolving: UIProcessResolving,
-            scenarioResolver: ScenarioResolver,
             processCounter: ProcessCounter,
-            managementActor: ActorRef,
-            systemRequestTimeout: Timeout,
+            testExecutorService: ScenarioTestExecutorService,
            ): ScenarioTestService = {
     new ScenarioTestService(
       providers.mapValues(new ModelDataTestInfoProvider(_)),
       testDataSettings,
       new ScenarioTestDataSerDe(testDataSettings),
       processResolving,
-      scenarioResolver,
       processCounter,
-      managementActor,
-      systemRequestTimeout,
+      testExecutorService,
     )
   }
 
@@ -48,13 +41,9 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
                           testDataSettings: TestDataSettings,
                           scenarioTestDataSerDe: ScenarioTestDataSerDe,
                           processResolving: UIProcessResolving,
-                          scenarioResolver: ScenarioResolver,
                           processCounter: ProcessCounter,
-                          managementActor: ActorRef,
-                          systemRequestTimeout: Timeout,
+                          testExecutorService: ScenarioTestExecutorService,
                          ) extends LazyLogging {
-
-  private implicit val timeout: Timeout = systemRequestTimeout
 
   def getTestingCapabilities(displayableProcess: DisplayableProcess): TestingCapabilities = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
@@ -82,9 +71,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
       scenarioTestData <- scenarioTestDataSerDe.prepareTestData(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       canonical = toCanonicalProcess(displayableProcess)
-      withResolvedSubprocesses <- Future.fromTry(scenarioResolver.resolveScenario(canonical, displayableProcess.category))
-      testResults <- (managementActor ? Test(idWithName, withResolvedSubprocesses, scenarioTestData, user, testResultsVariableEncoder))
-        .mapTo[TestResults[T]]
+      testResults <- testExecutorService.testProcess(idWithName, canonical, displayableProcess.category, scenarioTestData, testResultsVariableEncoder)
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
   }

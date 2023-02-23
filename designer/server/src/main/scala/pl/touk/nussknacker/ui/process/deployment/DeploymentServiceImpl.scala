@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, User}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
@@ -13,7 +12,7 @@ import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, DeploymentComment, FetchingProcessRepository}
@@ -26,16 +25,18 @@ import scala.util.{Failure, Success}
  * This service should be responsible for wrapping deploying and cancelling task in persistent context.
  * The purpose of it is not to handle any other things from ManagementActor - see comments there
  */
-class DeploymentService(getDeploymentManager: ProcessingType => DeploymentManager,
-                        processRepository: FetchingProcessRepository[Future],
-                        actionRepository: DbProcessActionRepository,
-                        scenarioResolver: ScenarioResolver,
-                        processChangeListener: ProcessChangeListener)(implicit val ec: ExecutionContext) extends LazyLogging {
+class DeploymentServiceImpl(getDeploymentManager: ProcessingType => DeploymentManager,
+                            processRepository: FetchingProcessRepository[Future],
+                            actionRepository: DbProcessActionRepository,
+                            scenarioResolver: ScenarioResolver,
+                            processChangeListener: ProcessChangeListener) extends DeploymentService with LazyLogging {
 
-  def cancelProcess(processId: ProcessIdWithName, deploymentComment: Option[DeploymentComment], performCancel: ProcessIdWithName => Future[Unit])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
+  override def cancelProcess(processId: ProcessIdWithName, deploymentComment: Option[DeploymentComment])
+                            (implicit user: LoggedUser, ec: ExecutionContext): Future[_] = {
     withDeploymentActionNotification(processId, "cancel", deploymentComment) {
       for {
-        _ <- performCancel(processId)
+        processingType <- processRepository.fetchProcessingType(processId.id)
+        _ <- getDeploymentManager(processingType).cancel(processId.name, user.toManagerUser)
         maybeVersion <- findDeployedVersion(processId)
         version <- processDataExistOrFail(maybeVersion, processId.id)
         result <- actionRepository.markProcessAsCancelled(processId.id, version, deploymentComment)
@@ -43,7 +44,8 @@ class DeploymentService(getDeploymentManager: ProcessingType => DeploymentManage
     }
   }
 
-  def getDeployedScenarios(processingType: ProcessingType): Future[List[DeployedScenarioData]] = {
+  def getDeployedScenarios(processingType: ProcessingType)
+                          (implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
     for {
       deployedProcesses <- {
         implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser
@@ -70,10 +72,10 @@ class DeploymentService(getDeploymentManager: ProcessingType => DeploymentManage
   }
 
   //inner Future in result allows to wait for deployment finish, while outer handles validation
-  def deployProcess(processIdWithName: ProcessIdWithName,
-                    savepointPath: Option[String],
-                    deploymentComment: Option[DeploymentComment])
-                   (implicit user: LoggedUser): Future[Future[ProcessActionEntityData]] = {
+  override def deployProcessAsync(processIdWithName: ProcessIdWithName,
+                                  savepointPath: Option[String],
+                                  deploymentComment: Option[DeploymentComment])
+                                 (implicit user: LoggedUser, ec: ExecutionContext): Future[Future[_]] = {
     for {
       maybeProcess <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processIdWithName.id)
       process <- processDataExistOrFail(maybeProcess, processIdWithName.id)
@@ -84,7 +86,8 @@ class DeploymentService(getDeploymentManager: ProcessingType => DeploymentManage
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.
-  def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState]): Future[Unit] = {
+  def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState])
+                           (implicit ec: ExecutionContext): Future[Unit] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     processState match {
@@ -112,11 +115,12 @@ class DeploymentService(getDeploymentManager: ProcessingType => DeploymentManage
   private def deployAndSaveProcess(process: BaseProcessDetails[CanonicalProcess],
                                    savepointPath: Option[String],
                                    deploymentComment: Option[DeploymentComment],
-                                   deploymentManager: DeploymentManager)(implicit user: LoggedUser): Future[Future[ProcessActionEntityData]] = {
+                                   deploymentManager: DeploymentManager)
+                                  (implicit user: LoggedUser, ec: ExecutionContext): Future[Future[ProcessActionEntityData]] = {
     val processVersion = process.toEngineProcessVersion
     val validatedData = for {
       resolvedCanonicalProcess <- Future.fromTry(scenarioResolver.resolveScenario(process.json, process.processCategory))
-      deploymentData = prepareDeploymentData(toManagerUser(user))
+      deploymentData = prepareDeploymentData(user.toManagerUser)
       _ <- deploymentManager.validate(processVersion, deploymentData, resolvedCanonicalProcess)
     } yield (resolvedCanonicalProcess, deploymentData)
 
@@ -136,16 +140,16 @@ class DeploymentService(getDeploymentManager: ProcessingType => DeploymentManage
     DeploymentData(DeploymentId(""), user, Map.empty)
   }
 
-  private def findDeployedVersion(processId: ProcessIdWithName)(implicit user: LoggedUser): Future[Option[VersionId]] = for {
+  private def findDeployedVersion(processId: ProcessIdWithName)
+                                 (implicit user: LoggedUser, ec: ExecutionContext): Future[Option[VersionId]] = for {
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
     lastAction = process.flatMap(_.lastDeployedAction)
   } yield lastAction.map(la => la.processVersionId)
 
-  private def toManagerUser(loggedUser: LoggedUser) = User(loggedUser.id, loggedUser.username)
-
   private def withDeploymentActionNotification(processIdWithName: ProcessIdWithName,
                                                actionName: String,
-                                               deploymentComment: Option[DeploymentComment])(action: => Future[ProcessActionEntityData])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
+                                               deploymentComment: Option[DeploymentComment])(action: => Future[ProcessActionEntityData])
+                                              (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessActionEntityData] = {
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     val actionToRun = action
     actionToRun.onComplete {

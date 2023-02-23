@@ -147,8 +147,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
   private def createDbProcessService[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]] = Nil): DBProcessService =
     new DBProcessService(
-      managerActor = TestFactory.newDummyManagerActor(),
-      systemRequestTimeout = Timeout(1 minute),
+      managementService = TestFactory.managementService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,

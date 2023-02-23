@@ -1,14 +1,11 @@
 package pl.touk.nussknacker.ui.process
 
-import akka.actor.ActorRef
-import akka.pattern.ask
-import akka.util.Timeout
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{CustomActionError, CustomActionResult, ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -20,7 +17,7 @@ import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
-import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
+import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerService, ManagementService, ProcessStateService}
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
@@ -44,11 +41,9 @@ object ProcessService {
   @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment)
 }
 
-trait ProcessService {
+trait ProcessService extends ProcessStateService with CustomActionInvokerService {
 
   def getProcess[PS: ProcessShapeFetchStrategy](processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[XError[BaseProcessDetails[PS]]]
-
-  def getProcessState(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[ProcessState]
 
   def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse]
 
@@ -81,8 +76,7 @@ trait ProcessService {
   * ProcessService provides functionality for archive, unarchive, deploy, cancel process.
   * Each action includes verification based on actual process state and checking process is subprocess / archived.
   */
-class DBProcessService(managerActor: ActorRef,
-                       systemRequestTimeout: Timeout,
+class DBProcessService(managementService: ManagementService,
                        newProcessPreparer: NewProcessPreparer,
                        processCategoryService: ProcessCategoryService,
                        processResolving: UIProcessResolving,
@@ -95,15 +89,11 @@ class DBProcessService(managerActor: ActorRef,
   import cats.instances.future._
   import cats.syntax.either._
 
-  import scala.concurrent.duration._
-
-  private implicit val timeout: Timeout = systemRequestTimeout
-
   /**
     * Handling error at retrieving status from manager is created at ManagementActor
     */
-  override def getProcessState(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[ProcessState] =
-    (managerActor ? CheckStatus(processIdWithName, user)).mapTo[ProcessState]
+  override def getProcessState(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
+    managementService.getProcessState(processIdWithName)
 
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withNotArchivedProcess(processIdWithName, ProcessActionType.Archive) { process =>
@@ -137,16 +127,14 @@ class DBProcessService(managerActor: ActorRef,
 
     withValidProcess {
       doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, deploymentComment) { (processIdWithName: ProcessIdWithName, savepointPath: Option[ProcessingType], deploymentComment: Option[DeploymentComment]) =>
-        (managerActor ? Deploy(processIdWithName, user, savepointPath, deploymentComment))
-          .map(_ => ().asRight)
+        managementService.deployProcessAsync(processIdWithName, savepointPath, deploymentComment).map(_ => ().asRight)
       }
     }
   }
 
   override def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
     doAction(ProcessActionType.Cancel, processIdWithName, None, deploymentComment) { (processIdWithName: ProcessIdWithName, _: Option[String], deploymentComment: Option[DeploymentComment]) =>
-      (managerActor ? Cancel(processIdWithName, user, deploymentComment))
-        .map(_ => ().asRight)
+      managementService.cancelProcess(processIdWithName, deploymentComment).map(_ => ().asRight)
     }
 
   private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])
@@ -289,6 +277,12 @@ class DBProcessService(managerActor: ActorRef,
 
       Future.successful(result)
     }
+  }
+
+
+  override def invokeCustomAction(actionName: ProcessingType, id: ProcessIdWithName, params: Map[ProcessingType, ProcessingType])
+                                 (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]] = {
+    managementService.invokeCustomAction(actionName, id, params)
   }
 
   private def validateInitialScenarioProperties(canonicalProcess: CanonicalProcess, processingType:ProcessingType, category: String) = {

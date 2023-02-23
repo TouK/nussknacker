@@ -10,12 +10,12 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class ProcessStateService(processRepository: FetchingProcessRepository[Future],
-                          dispatcher: DeploymentManagerDispatcher,
-                          deploymentService: DeploymentService) extends LazyLogging {
+class ProcessStateServiceImpl(processRepository: FetchingProcessRepository[Future],
+                              dispatcher: DeploymentManagerDispatcher,
+                              deploymentService: DeploymentServiceImpl) extends ProcessStateService with LazyLogging {
 
-  def getProcessState(processIdWithName: ProcessIdWithName)
-                     (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
+  override def getProcessState(processIdWithName: ProcessIdWithName)
+                              (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
     for {
       actions <- processRepository.fetchProcessActions(processIdWithName.id)
       manager <- dispatcher.deploymentManager(processIdWithName.id)
