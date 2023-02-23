@@ -112,7 +112,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   it should "import process" in {
     val dBProcessService = createDbProcessService(processes)
 
-    val categoryDisplayable = ProcessTestData.sampleDisplayableProcess.copy(id = category1Process.name, category = Some(Category1))
+    val categoryDisplayable = ProcessTestData.sampleDisplayableProcess.copy(id = category1Process.name, category = Category1)
     val categoryStringData = ProcessConverter.fromDisplayable(categoryDisplayable).asJson.spaces2
     val baseProcessData = ProcessConverter.fromDisplayable(ProcessTestData.sampleDisplayableProcess).asJson.spaces2
 
@@ -147,8 +147,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
   private def createDbProcessService[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]] = Nil): DBProcessService =
     new DBProcessService(
-      managerActor = TestFactory.newDummyManagerActor(),
-      systemRequestTimeout = Timeout(1 minute),
+      managementService = TestFactory.managementService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,

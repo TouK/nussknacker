@@ -168,7 +168,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
       nodes = nodes,
       edges = edges,
       processingType = TestProcessingTypes.Streaming,
-      Some(TestCategories.Category1)
+      TestCategories.Category1
     )
   }
 

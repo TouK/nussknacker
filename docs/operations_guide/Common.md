@@ -220,7 +220,7 @@ Check [Schema Registry + Avro serialization
 
 * Configure restart strategy and error handler
   * By default, scenarios are not restarted, so that errors do not go unnoticed
-  * [Kafka exception handler](../installation_configuration_guide/ModelConfiguration.md#kafka-exception-handling) should be used in production - configure error topic, with long enough retention
+  * [Kafka exception handler](../integration/KafkaIntegration#exception-handling) should be used in production - configure error topic, with long enough retention
 * Check if Nussknacker has access to all needed services:
   * Flink REST API
   * K8s REST API

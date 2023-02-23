@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.process.deployment.DeploymentService
+import pl.touk.nussknacker.ui.process.deployment.DeploymentServiceImpl
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessCategoryService}
 import sttp.client3.akkahttp.AkkaHttpBackend
 import sttp.client3.SttpBackend
@@ -17,7 +17,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
   implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
   import system.dispatcher
   implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(system)
-  implicit val deploymentService: DeploymentService = null
+  implicit val deploymentService: DeploymentServiceImpl = null
 
   test("load only scenario types assigned to configured categories") {
     val config = ConfigFactory.parseString(
@@ -54,7 +54,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
     override protected def createProcessingTypeData(name: ProcessingType, typeConfig: ProcessingTypeConfig)
                                                    (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                                     sttpBackend: SttpBackend[Future, Any],
-                                                    deploymentService: DeploymentService): ProcessingTypeData = null
+                                                    deploymentService: DeploymentServiceImpl): ProcessingTypeData = null
   }
 
 }

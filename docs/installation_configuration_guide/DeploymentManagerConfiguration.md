@@ -1,11 +1,12 @@
 ---
+title: Deployment
 sidebar_position: 3
 ---
 
 # Deployment Manager configuration
 
 Deployment Manager deploys scenarios from the Designer to the engine on which scenarios are processed.
-Check [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be
+Check [configuration areas](./Common.md#configuration-areas) to understand where Deployment Manager configuration should be
 placed in Nussknacker configuration.
 
 Below you can find a snippet of Deployment Manager configuration.
@@ -162,7 +163,7 @@ Please note that you cannot override names or labels configured by Nussknacker.
 
 In most cases, the model configuration values passed to the Lite Engine runtime are the ones from
 the `modelConfig` section
-of [main configuration file](https://docs.nussknacker.io/documentation/docs/installation_configuration_guide/#configuration-areas).
+of [main configuration file](./Common.md#configuration-areas).
 However, there are two exception to this rule:
 
 - there
@@ -248,9 +249,25 @@ It can be configured with following options.
 | rootPath  | string  | "/"           | Root path for the ingress path, by default ingress path is rootPath + [slug](../scenarios_authoring/RRDataSourcesAndSinks.md) |
 | config    | config  | {}            | Additional ingress config customization                                                                                       |
 
+#### Configuring custom ingress class
+
+By default, ingress resource will be created without any ingress class. If you want to use different class, you can set
+```hocon
+ingress {
+  enabled: true,
+  config: {
+    metadata: {
+      annotations: {
+        "kubernetes.io/ingress.class": "ingress-className"
+      }
+    }
+  }
+}
+```
+
 ### Configuring Prometheus metrics
 
-Just like in [Designer installation](./Installation.md#Basic environment variables), you can
+Just like in [Designer installation](../installation/Installation.md#basic-environment-variables), you can
 attach [JMX Exporter for Prometheus](https://github.com/prometheus/jmx_exporter) to your runtime pods.
 Pass `PROMETHEUS_METRICS_PORT` environment variable to enable agent, and simultaneously define port on which metrics
 will be exposed. By default, agent is configured to expose basic jvm metrics, but you can provide your own configuration

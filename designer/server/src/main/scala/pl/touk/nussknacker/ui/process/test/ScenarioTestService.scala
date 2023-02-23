@@ -1,8 +1,5 @@
 package pl.touk.nussknacker.ui.process.test
 
-import akka.actor.ActorRef
-import akka.pattern.ask
-import akka.util.Timeout
 import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
@@ -10,9 +7,9 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithNameAndCategory
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.TestDataSettings
-import pl.touk.nussknacker.ui.process.deployment.Test
+import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -26,8 +23,7 @@ object ScenarioTestService {
             testDataSettings: TestDataSettings,
             processResolving: UIProcessResolving,
             processCounter: ProcessCounter,
-            managementActor: ActorRef,
-            systemRequestTimeout: Timeout,
+            testExecutorService: ScenarioTestExecutorService,
            ): ScenarioTestService = {
     new ScenarioTestService(
       providers.mapValues(new ModelDataTestInfoProvider(_)),
@@ -35,8 +31,7 @@ object ScenarioTestService {
       new ScenarioTestDataSerDe(testDataSettings),
       processResolving,
       processCounter,
-      managementActor,
-      systemRequestTimeout,
+      testExecutorService,
     )
   }
 
@@ -47,21 +42,18 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
                           scenarioTestDataSerDe: ScenarioTestDataSerDe,
                           processResolving: UIProcessResolving,
                           processCounter: ProcessCounter,
-                          managementActor: ActorRef,
-                          systemRequestTimeout: Timeout,
+                          testExecutorService: ScenarioTestExecutorService,
                          ) extends LazyLogging {
 
-  private implicit val timeout: Timeout = systemRequestTimeout
-
-  def getTestingCapabilities(idWithCategory: ProcessIdWithNameAndCategory, displayableProcess: DisplayableProcess): TestingCapabilities = {
+  def getTestingCapabilities(displayableProcess: DisplayableProcess): TestingCapabilities = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val canonical = toCanonicalProcess(idWithCategory, displayableProcess)
+    val canonical = toCanonicalProcess(displayableProcess)
     testInfoProvider.getTestingCapabilities(canonical)
   }
 
-  def generateData(idWithCategory: ProcessIdWithNameAndCategory, displayableProcess: DisplayableProcess, testSampleSize: Int): Either[String, RawScenarioTestData] = {
+  def generateData(displayableProcess: DisplayableProcess, testSampleSize: Int): Either[String, RawScenarioTestData] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val canonical = toCanonicalProcess(idWithCategory, displayableProcess)
+    val canonical = toCanonicalProcess(displayableProcess)
 
     for {
       _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}")
@@ -70,7 +62,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
     } yield rawTestData
   }
 
-  def performTest[T](idWithCategory: ProcessIdWithNameAndCategory,
+  def performTest[T](idWithName: ProcessIdWithName,
                      displayableProcess: DisplayableProcess,
                      rawTestData: RawScenarioTestData,
                      testResultsVariableEncoder: Any => T)
@@ -78,15 +70,14 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
     for {
       scenarioTestData <- scenarioTestDataSerDe.prepareTestData(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
-      canonical = toCanonicalProcess(idWithCategory, displayableProcess)
-      testResults <- (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, scenarioTestData, user, testResultsVariableEncoder))
-        .mapTo[TestResults[T]]
+      canonical = toCanonicalProcess(displayableProcess)
+      testResults <- testExecutorService.testProcess(idWithName, canonical, displayableProcess.category, scenarioTestData, testResultsVariableEncoder)
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
   }
 
-  private def toCanonicalProcess(idWithCategory: ProcessIdWithNameAndCategory, displayableProcess: DisplayableProcess): CanonicalProcess = {
-    val validationResult = processResolving.validateBeforeUiResolving(displayableProcess, idWithCategory.category)
+  private def toCanonicalProcess(displayableProcess: DisplayableProcess): CanonicalProcess = {
+    val validationResult = processResolving.validateBeforeUiResolving(displayableProcess)
     processResolving.resolveExpressions(displayableProcess, validationResult.typingInfo)
   }
 

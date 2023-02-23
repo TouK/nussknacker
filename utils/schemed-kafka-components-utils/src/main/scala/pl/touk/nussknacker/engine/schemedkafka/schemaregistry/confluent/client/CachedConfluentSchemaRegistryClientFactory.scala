@@ -24,7 +24,7 @@ class CachedConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFac
         new SchemaRegistryCaches(config.cacheConfig)
       })
     }
-    new CachedConfluentSchemaRegistryClient(client, cache, config)
+    new CachedConfluentSchemaRegistryClient(client, cache)
   }
 
   protected def confluentClient(config: SchemaRegistryClientKafkaConfig): CSchemaRegistryClient = CachedSchemaRegistryClient(config)

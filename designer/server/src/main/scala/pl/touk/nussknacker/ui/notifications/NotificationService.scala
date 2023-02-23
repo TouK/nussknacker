@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.ui.notifications
 
-import akka.actor.ActorRef
-import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
-import pl.touk.nussknacker.ui.process.deployment.{DeployInfo, DeploymentActionType, DeploymentStatus, DeploymentStatusResponse}
+import pl.touk.nussknacker.ui.process.deployment.{AllInProgressDeploymentActionsResult, InProgressDeploymentActionsProvider, DeployInfo, DeploymentActionType}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.temporal.ChronoUnit
@@ -15,7 +13,6 @@ import java.time.{Clock, Instant}
 import java.util.UUID
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 case class NotificationConfig(duration: FiniteDuration)
@@ -51,15 +48,7 @@ class NotificationsListener(config: NotificationConfig,
 
 }
 
-trait CurrentDeployments {
-  def retrieve(implicit timeout: Timeout): Future[DeploymentStatusResponse]
-}
-
-class ManagementActorCurrentDeployments(managementActor: ActorRef) extends CurrentDeployments {
-  override def retrieve(implicit timeout: Timeout): Future[DeploymentStatusResponse] = (managementActor ? DeploymentStatus).mapTo[DeploymentStatusResponse]
-}
-
-class NotificationService(currentDeployments: CurrentDeployments,
+class NotificationService(currentDeployments: InProgressDeploymentActionsProvider,
                           store: NotificationsListener) {
 
   def notifications(user: LoggedUser, notificationsAfter: Option[Instant])(implicit ec: ExecutionContext, timeout: Timeout): Future[List[Notification]] = {
@@ -82,7 +71,7 @@ class NotificationService(currentDeployments: CurrentDeployments,
   }
 
   private def prepareDeploymentNotifications(user: LoggedUser)(implicit ec: ExecutionContext, timeout: Timeout): Future[List[Notification]] = {
-    currentDeployments.retrieve.map { case DeploymentStatusResponse(deploymentInfos) =>
+    currentDeployments.getAllInProgressDeploymentActions.map { case AllInProgressDeploymentActionsResult(deploymentInfos) =>
       deploymentInfos
         //no need to inform current user, DeployInfo takes username, not id
         .filterNot(_._2.userId == user.username)
