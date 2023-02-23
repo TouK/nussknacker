@@ -16,7 +16,7 @@ import scala.jdk.CollectionConverters._
 /**
  * We use there own cache engine because ConfluentCachedClient doesn't cache getLatestSchemaMetadata and getSchemaMetadata
  */
-class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, caches: SchemaRegistryCaches, val config: SchemaRegistryClientKafkaConfig)
+class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, caches: SchemaRegistryCaches)
   extends ConfluentSchemaRegistryClient with LazyLogging {
 
   override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
@@ -31,7 +31,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       caches.schemaCache.getOrCreate(s"$subject-$version") {
         logger.debug(s"Cache schema for subject: $subject and version: $version.")
         val schemaMetadata = client.getSchemaMetadata(subject, version)
-        ConfluentUtils.toSchemaWithMetadata(schemaMetadata, config)
+        ConfluentUtils.toSchemaWithMetadata(schemaMetadata)
       }
     }
 
@@ -56,7 +56,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     caches.latestSchemaIdCache.put(subject)(SchemaId.fromInt(schemaMetadata.getId))
     caches.schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
-      ConfluentUtils.toSchemaWithMetadata(schemaMetadata, config)
+      ConfluentUtils.toSchemaWithMetadata(schemaMetadata)
     }
   }
 
