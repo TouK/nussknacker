@@ -34,6 +34,7 @@ if [[ "${USE_DOCKER_ENV}" == "true" ]]; then
   export SCHEMA_REGISTRY_URL="http://localhost:3082"
   export GRAFANA_URL="http://localhost:8081/grafana"
   export INFLUXDB_URL="http://localhost:3086/query"
+  export LOAD_INPUT_CONFIG="false"
 else
   echo "Using local environment"
 fi

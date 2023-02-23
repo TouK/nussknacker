@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.modelconfig
 
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.modelconfig.ModelConfigLoader.defaultModelConfigResource
 
 object ModelConfigLoader {
@@ -18,7 +20,7 @@ object ModelConfigLoader {
   *
   * This class is optional to implement.
   */
-abstract class ModelConfigLoader extends Serializable {
+abstract class ModelConfigLoader extends Serializable with LazyLogging {
 
   /**
     * Resolves config part to pass during execution while e.g. process deployment on Flink cluster. When running
@@ -31,9 +33,26 @@ abstract class ModelConfigLoader extends Serializable {
     * @param inputConfig configuration from scenarioTypes.{type_name}.modelConfig
     * @return config part that is later passed to a running process (see e.g. FlinkProcessCompiler)
     */
-  def resolveInputConfigDuringExecution(inputConfig: Config, classLoader: ClassLoader): InputConfigDuringExecution = {
-    resolveInputConfigDuringExecution(inputConfig, resolveConfigUsingDefaults(inputConfig, classLoader), classLoader)
+  final def resolveInputConfigDuringExecution(inputConfig: ConfigWithUnresolvedVersion, classLoader: ClassLoader): InputConfigDuringExecution = {
+    val (potentiallyLoadedInputConfig, potentiallyLoadedConfigWithDefaults) = if (shouldLoadInputConfigDuringExecution) {
+      logger.debug("Loading input model config")
+      val configWithDefaults = withFallbackToDefaults(inputConfig.resolved, classLoader)
+      (inputConfig.resolved, ConfigFactory.load(classLoader, configWithDefaults))
+    } else {
+      logger.debug("Skipping input model config load")
+      val configWithDefaults = withFallbackToDefaults(inputConfig.withUnresolvedEnvVariables, classLoader)
+      (inputConfig.withUnresolvedEnvVariables, configWithDefaults)
+    }
+    resolveInputConfigDuringExecution(potentiallyLoadedInputConfig, potentiallyLoadedConfigWithDefaults, classLoader)
   }
+
+  /**
+    * We want to be able to turn off loading model config before passing it to execution.
+    * It is for purpose where engine (e.g. Flink) see other host names / ports than designer.
+    * It is especially useful for local development. Remember that when you turn it off, you can't
+    * use optional substitutions (e.g. ${?KAFKA_ADDRESS} in model config. Otherwise they will be removed.
+    */
+  protected def shouldLoadInputConfigDuringExecution: Boolean = sys.env.get("LOAD_INPUT_CONFIG").forall(_.toBoolean)
 
   /**
     * Same as [[resolveInputConfigDuringExecution]] but with provided param configWithDefaults containing inputConfig
@@ -59,7 +78,7 @@ abstract class ModelConfigLoader extends Serializable {
     * <li>reference.conf from model jar</li
     * </ol
     */
-  protected def resolveConfigUsingDefaults(inputConfig: Config, classLoader: ClassLoader): Config = {
+  final protected def resolveConfigUsingDefaults(inputConfig: Config, classLoader: ClassLoader): Config = {
     /*
       We want to be able to embed config in model jar, to avoid excessive config files
       For most cases using reference.conf would work, however there are subtle problems with substitution:
@@ -69,9 +88,13 @@ abstract class ModelConfigLoader extends Serializable {
       service1Url: ${baseUrl}/service1
       and have baseUrl taken from application config
     */
-    val configFallbackFromModel = ConfigFactory.parseResources(classLoader, modelConfigResource)
     //We want to respect overrides (like system properties) and standard fallbacks (like reference.conf)
-    ConfigFactory.load(classLoader, inputConfig.withFallback(configFallbackFromModel)).resolve()
+    ConfigFactory.load(classLoader, withFallbackToDefaults(inputConfig, classLoader))
+  }
+
+  final protected def withFallbackToDefaults(inputConfig: Config, classLoader: ClassLoader): Config = {
+    val configFallbackFromModel = ConfigFactory.parseResources(classLoader, modelConfigResource)
+    inputConfig.withFallback(configFallbackFromModel)
   }
 
   //only for testing

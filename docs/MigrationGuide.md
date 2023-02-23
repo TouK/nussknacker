@@ -3,6 +3,14 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.9.0 (not released yet)
+
+### Code API changes
+* [#4030](https://github.com/TouK/nussknacker/pull/4030) Changes for purpose of local testing of designer with other urls than on engine side
+  * `ProcessingTypeConfig.modelConfig` now contains `ConfigWithUnresolvedVersion` instead of `Config`. Old `Config` value is in `ConfigWithUnresolvedVersion.resolved`
+  * `ModelConfigLoader.resolveInputConfigDuringExecution` takes `ConfigWithUnresolvedVersion` instead of `Config`. Use `ConfigWithUnresolvedVersion.apply`
+    for easy transition between those classes
+
 ## In version 1.8.0
 
 ### Scenario authoring changes

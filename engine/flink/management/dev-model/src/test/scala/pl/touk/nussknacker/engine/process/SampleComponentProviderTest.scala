@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.management.sample.modelconfig.SampleModelConfigLoader
-import pl.touk.nussknacker.engine.process
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, process}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -43,7 +43,7 @@ class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matche
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val loadedConfig = new SampleModelConfigLoader().resolveInputConfigDuringExecution(config, getClass.getClassLoader)
+    val loadedConfig = new SampleModelConfigLoader().resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(config), getClass.getClassLoader)
     val modelData = LocalModelData(loadedConfig.config, configCreator)
     registrar = process.registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }

@@ -5,6 +5,7 @@ import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.Ficus._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentProvider, NussknackerVersion, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
@@ -146,7 +147,7 @@ class ComponentExtractorTest extends AnyFunSuite with Matchers {
       (classOf[ComponentProvider], classOf[SameNameDifferentComponentTypeProvider]),
       (classOf[ComponentProvider], classOf[AutoLoadedProvider])), getClass.getClassLoader) { cl =>
       val extractor = makeExtractor(cl)
-      val resolved = loader.resolveInputConfigDuringExecution(fromMap(map.toSeq: _*), cl)
+      val resolved = loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(map.toSeq: _*)), cl)
       extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
     }
   }
@@ -154,7 +155,7 @@ class ComponentExtractorTest extends AnyFunSuite with Matchers {
   private def extractProvider(providers: List[(Class[_], Class[_])], config: Map[String, Any] = Map()) = {
     ClassLoaderWithServices.withCustomServices(providers, getClass.getClassLoader) { cl =>
       val extractor = ComponentExtractor(cl)
-      val resolved = loader.resolveInputConfigDuringExecution(fromMap(config.toSeq: _*), cl)
+      val resolved = loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
       extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
     }
   }

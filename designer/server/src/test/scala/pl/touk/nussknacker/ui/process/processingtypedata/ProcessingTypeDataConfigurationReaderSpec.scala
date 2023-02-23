@@ -4,6 +4,7 @@ import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, include}
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 
 class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
 
@@ -28,7 +29,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
   import scala.jdk.CollectionConverters._
 
   test("should load old processTypes configuration") {
-    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(oldConfiguration)
+    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(oldConfiguration))
 
     processTypes.size shouldBe 1
     processTypes.keys.take(1) shouldBe Set("streaming")
@@ -41,7 +42,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
 
     val config = oldConfiguration.withFallback(configuration).resolve()
 
-    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
+    val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(config))
 
     processTypes.size shouldBe 1
     processTypes.keys.take(1) shouldBe Set("newStreamingScenario")
@@ -68,7 +69,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
     val config = configuration.resolve()
 
     intercept[typesafe.config.ConfigException] {
-      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
+      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(config))
     }.getMessage should include("No configuration setting found for key 'deploymentConfig.type'")
   }
 
@@ -82,7 +83,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
     val config = configuration.resolve()
 
     intercept[RuntimeException] {
-      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
+      ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(ConfigWithUnresolvedVersion(config))
     }.getMessage should include("No scenario types configuration provided")
   }
 

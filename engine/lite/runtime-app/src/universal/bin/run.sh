@@ -7,7 +7,6 @@ RUN_IN_BACKGROUND=${RUN_IN_BACKGROUND:-false}
 NUSSKNACKER_DIR=`dirname "$0" | xargs -I{} readlink -f {}/..`
 CONF_DIR="$NUSSKNACKER_DIR/conf"
 LIB_DIR="$NUSSKNACKER_DIR/lib"
-export COMPONENTS_DIR="$NUSSKNACKER_DIR/components"
 
 CLASSPATH=${CLASSPATH:-$LIB_DIR/*}
 CONFIG_FILE=${CONFIG_FILE:-$CONF_DIR/application.conf}

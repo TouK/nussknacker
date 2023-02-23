@@ -31,7 +31,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
 object FlinkStreamingDeploymentManagerProvider {
 
-  def defaultDeploymentManager(config: Config)
+  def defaultDeploymentManager(config: ConfigWithUnresolvedVersion)
                               (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val typeConfig = ProcessingTypeConfig.read(config)

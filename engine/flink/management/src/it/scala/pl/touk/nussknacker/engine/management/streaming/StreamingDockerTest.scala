@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, Suite}
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -38,7 +39,8 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
     super.afterAll()
   }
 
-  protected lazy val deploymentManager: DeploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
+  protected lazy val deploymentManager: DeploymentManager =
+    FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(ConfigWithUnresolvedVersion(config))
 
   protected def deployProcessAndWaitIfRunning(process: CanonicalProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
     deployProcess(process, processVersion, savepointPath)
