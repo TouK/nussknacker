@@ -30,7 +30,7 @@ have to implement `FlinkSource` (or its subtrait `BasicFlinkSource`).
 
 ### Examples
 
-- [Periodic source](../scenarios_authoring/BasicNodes.md#periodic) and its [implementation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/PeriodicSourceFactory.scala)
+- [Periodic source](../scenarios_authoring/DataSourcesAndSinks.md#periodic) and its [implementation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/PeriodicSourceFactory.scala)
 - [FlinkKafkaSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/kafka/source/flink/FlinkKafkaSource.scala)
   and its factory returning the source implementation along with the fixed specification (e.g. based on a Scala case class) [KafkaSourceFactory](https://github.com/TouK/nussknacker/blob/staging/utils/kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/kafka/source/KafkaSourceFactory.scala)
   or generic one [UniversalKafkaSourceFactory](https://github.com/TouK/nussknacker/blob/staging/utils/schemed-kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/schemedkafka/source/UniversalKafkaSourceFactory.scala)
@@ -67,7 +67,7 @@ Examples:
 
 Custom transformation can arbitrarily change `DataStream[Context]`, it is implemented with [FlinkCustomStreamTransformation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkCustomStreamTransformation.scala).
 Great examples of custom transformers are [aggregates](../scenarios_authoring/AggregatesInTimeWindows.md). [See here](https://github.com/TouK/nussknacker/tree/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer)
-how components like [previousValue](../scenarios_authoring/BasicNodes.md#previousvalue), [delay](../scenarios_authoring/BasicNodes.md#delay)
+how components like [previousValue](../scenarios_authoring/DataSourcesAndSinks#previousvalue), [delay](../scenarios_authoring/DataSourcesAndSinks.md#delay)
 and aggregates are implemented.
 
 ## Common details
