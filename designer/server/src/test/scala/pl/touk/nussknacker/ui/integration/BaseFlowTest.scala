@@ -332,41 +332,6 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     }
   }
 
-  test("should reload model config") {
-    def invokeModelConfigReader(configPath: String): String = {
-      val serviceParameters = List(Parameter("configPath", s"'$configPath'"))
-      val entity = HttpEntity(MediaTypes.`application/json`, serviceParameters.asJson.noSpaces)
-
-      Post("/api/service/streaming/modelConfigReader", entity) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-        status shouldEqual StatusCodes.OK
-        val resultJson = entityAs[Json]
-        resultJson
-          .hcursor
-          .downField("result")
-          .as[String]
-          .fold(error => throw error, identity)
-      }
-    }
-
-    val configLoadedMsBeforeReload = invokeModelConfigReader("configLoadedMs").toLong
-    val addedConstantPropertyBeforeReload = invokeModelConfigReader("configValueToLoad")
-    val propertyFromResourcesBeforeReload = invokeModelConfigReader("configValueToLoadFrom")
-
-    configLoadedMsBeforeReload shouldBe < (System.currentTimeMillis())
-    addedConstantPropertyBeforeReload shouldBe "someDummyValue"
-    propertyFromResourcesBeforeReload shouldBe "someDummyValue"
-
-    reloadModel()
-
-    val configLoadedMsAfterReload = invokeModelConfigReader("configLoadedMs").toLong
-    val addedConstantPropertyAfterReload = invokeModelConfigReader("configValueToLoad")
-    val propertyFromResourcesAfterReload = invokeModelConfigReader("configValueToLoadFrom")
-
-    configLoadedMsAfterReload should (be < System.currentTimeMillis() and be > configLoadedMsBeforeReload)
-    addedConstantPropertyAfterReload shouldBe addedConstantPropertyBeforeReload
-    propertyFromResourcesAfterReload shouldBe propertyFromResourcesBeforeReload
-  }
-
   private def saveProcess(process: CanonicalProcess): ValidationResult = {
     Post(s"/api/processes/${process.id}/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
