@@ -202,7 +202,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new NotificationResources(notificationService),
         appResources,
         new TestInfoResources(processAuthorizer, processRepository, scenarioTestService),
-        new ServiceRoutes(modelData),
         new ComponentResource(componentService),
         new AttachmentResources(new ProcessAttachmentService(AttachmentsConfig.create(config), processActivityRepository), processRepository, processAuthorizer)
       )
