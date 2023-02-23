@@ -101,6 +101,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (config(samplePerson, schemaPerson, nameAndLastNameSchema), valid(samplePerson)),
       (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaInteger)), valid(samplePerson)),
       (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaString)), invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
+      (config(samplePerson, schemaPersonWithLimits, nameAndLastNameSchema(schemaString)), invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -124,19 +125,23 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (sampleMapStr,        schemaMapStringOrInt,  schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'String | Long' expected: 'String'")),
       (sampleMapStr,        schemaMapStringOrInt,  schemaMapStr,                         lax,                valid(sampleMapStr)),
       (sampleMapPerson,     schemaMapObjPerson,    schemaMapStr,                         strictAndLax,       invalidTypes("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String'")),
+      (sampleMapPerson,     schemaMapObjPersonWithLimits,    schemaMapStr,                         strictAndLax,       invalidTypes("path 'value' actual: '{age: Integer, first: String, last: String}' expected: 'String'")),
       (sampleArrayInt,      schemaArrayInt,        schemaMapStr,                         strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String]'")),
       (samplePerson,        schemaPerson,          schemaMapStr,                         strictAndLax,       invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
+      (samplePerson,        schemaPersonWithLimits,          schemaMapStr,                         strictAndLax,       invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
       (sampleMapAny,        schemaMapAny,          schemaMapStringOrInt,                 strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'String | Long'")),
       (sampleMapInt,        schemaMapAny,          schemaMapStringOrInt,                 lax,                valid(sampleMapInt)),
       (sampleMapStr,        schemaMapStr,          schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapStr)),
       (sampleMapStr,        schemaMapStringOrInt,  schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapStr)),
       (sampleMapInt,        schemaMapStringOrInt,  schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapInt)),
       (samplePerson,        schemaMapObjPerson,    schemaMapStringOrInt,                 strictAndLax,       invalidTypes("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String | Long'")),
+      (samplePerson,        schemaMapObjPersonWithLimits,    schemaMapStringOrInt,                 strictAndLax,       invalidTypes("path 'value' actual: '{age: Integer, first: String, last: String}' expected: 'String | Long'")),
       (sampleArrayInt,      schemaArrayInt,        schemaMapStringOrInt,                 strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
       (samplePerson,        schemaPerson,          schemaMapStringOrInt,                 strictAndLax,       valid(samplePerson)),
       (samplePerson,        schemaPerson,          nameAndLastNameSchema,                strictAndLax,       valid(samplePerson)),
       (samplePerson,        schemaPerson,          nameAndLastNameSchema(schemaInteger), strictAndLax,       valid(samplePerson)),
       (samplePerson,        schemaPerson,          nameAndLastNameSchema(schemaString),  strictAndLax,       invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
+      (samplePerson,        schemaPersonWithLimits,          nameAndLastNameSchema(schemaString),  strictAndLax,       invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
     )
     //@formatter:on
 

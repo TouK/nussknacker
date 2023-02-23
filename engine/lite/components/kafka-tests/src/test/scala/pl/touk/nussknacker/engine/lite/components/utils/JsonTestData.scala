@@ -28,11 +28,30 @@ object JsonTestData {
       |      "type": "string"
       |    },
       |    "age": {
-      |      "type": "integer"
+      |      "type": "integer",
       |    }
       |  },
       |  "additionalProperties": false
       |}""".stripMargin)
+
+  val schemaPersonWithLimits: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{
+       |  "type": "object",
+       |  "properties": {
+       |    "first": {
+       |      "type": "string"
+       |    },
+       |    "last": {
+       |      "type": "string"
+       |    },
+       |    "age": {
+       |      "type": "integer",
+       |      "minimum": 10,
+       |      "maximum": 200,
+       |    }
+       |  },
+       |  "additionalProperties": false
+       |}""".stripMargin)
 
   val trueSchema: Schema = JsonSchemaBuilder.parseSchema("true")
 
@@ -79,6 +98,8 @@ object JsonTestData {
   val schemaMapStringOrInt: ObjectSchema = createMapSchema(schemaString, schemaInteger)
 
   val schemaMapObjPerson: ObjectSchema = createMapSchema(schemaPerson)
+
+  val schemaMapObjPersonWithLimits: ObjectSchema = createMapSchema(schemaPersonWithLimits)
 
   val schemaObjMapAny: ObjectSchema = createObjSchema(schemaMapAny)
 

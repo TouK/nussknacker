@@ -10,6 +10,7 @@ import org.everit.json.schema.Schema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroTestData, JsonTestData}
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
@@ -38,6 +39,11 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     .source("my-source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
     .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkRawEditorParamName -> "false",
       "first" -> s"#input.first", "last" -> "#input.last", "age" -> "#input.age")
+
+  private val scenarioWithRawEditor = ScenarioBuilder.streamingLite("check json serialization")
+    .source("my-source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
+    .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkRawEditorParamName -> "true",
+      SinkValueParamName -> s"#input")
 
   test("should mix avro schema source and json schema sink") {
     //Given
@@ -82,6 +88,57 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
 
     //When
     val result = runner.runWithRawData(scenario, List(input)).validValue
+
+    //Then
+    result.errors shouldBe empty
+    val expectedRecord = AvroUtils.createRecord(avroSchema, Map("first" -> "John", "last" -> "Doe", "age" -> 21))
+    val resultRecord = runner.deserializeAvroData[GenericData.Record](result.success.head.value(), new RecordHeaders(), isKey = false)
+    resultRecord shouldBe expectedRecord
+  }
+
+  test("should fail json schema source with avro schema sink when json integer is cast to Long") {
+    //Given
+    val runner = createRunner
+    val schemaId = runner.registerJsonSchema(inputTopic, jsonSchema)
+    runner.registerAvroSchema(outputTopic, avroSchema)
+
+    val inputJsonBytes =
+      """{
+        |  "first": "John",
+        |  "last": "Doe",
+        |  "age": 21
+        |}""".stripMargin.getBytes()
+
+    val headers = new RecordHeaders().add(new RecordHeader("value.schemaId", s"$schemaId".getBytes()))
+    val input = new ConsumerRecord(inputTopic, 1, 1, ConsumerRecord.NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE, null.asInstanceOf[Array[Byte]], inputJsonBytes, headers, Optional.empty[Integer]())
+
+    //When
+    val result = runner.runWithRawData(scenarioWithRawEditor, List(input))
+
+    //Then
+    val CustomNodeError(nodeId, message, _) = result.invalidValue.head
+    nodeId shouldBe "my-sink"
+    message should include("Incorrect type: path 'age' actual: 'Long' expected: 'Integer'")
+  }
+
+  test("should mix json schema source with avro schema sink when json integer is cast to Integer") {
+    //Given
+    val runner = createRunner
+    val schemaId = runner.registerJsonSchema(inputTopic, JsonTestData.schemaPersonWithLimits)
+    runner.registerAvroSchema(outputTopic, avroSchema)
+
+    val inputJsonBytes =
+      """{
+        |  "first": "John",
+        |  "last": "Doe",
+        |  "age": 21
+        |}""".stripMargin.getBytes()
+
+    val headers = new RecordHeaders().add(new RecordHeader("value.schemaId", s"$schemaId".getBytes()))
+    val input = new ConsumerRecord(inputTopic, 1, 1, ConsumerRecord.NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE, null.asInstanceOf[Array[Byte]], inputJsonBytes, headers, Optional.empty[Integer]())
+
+    //When
+    val result = runner.runWithRawData(scenarioWithRawEditor, List(input)).validValue
 
     //Then
     result.errors shouldBe empty
