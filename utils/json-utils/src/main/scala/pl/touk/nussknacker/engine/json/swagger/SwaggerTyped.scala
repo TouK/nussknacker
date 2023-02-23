@@ -35,6 +35,10 @@ case object SwaggerBool extends SwaggerTyped
 
 case object SwaggerLong extends SwaggerTyped
 
+case object SwaggerInteger extends SwaggerTyped
+
+case object SwaggerBigInteger extends SwaggerTyped
+
 case object SwaggerDouble extends SwaggerTyped
 
 case object SwaggerNull extends SwaggerTyped
@@ -111,7 +115,7 @@ object SwaggerTyped {
         case (Some("string"), Some("date")) => SwaggerDate
         case (Some("string"), Some("time")) => SwaggerTime
         case (Some("string"), _) => SwaggerString
-        case (Some("integer"), _) => SwaggerLong
+        case (Some("integer"), _) => inferredIntType(schema.getMinimum, schema.getExclusiveMinimumValue, schema.getMaximum, schema.getExclusiveMaximumValue)
         //we refuse to accept invalid formats (e.g. integer, int32, decimal etc.)
         case (Some("number"), None) => SwaggerBigDecimal
         case (Some("number"), Some("double")) => SwaggerDouble
@@ -151,8 +155,12 @@ object SwaggerTyped {
       Typed.typedClass[java.lang.Boolean]
     case SwaggerString =>
       Typed.typedClass[String]
+    case SwaggerInteger =>
+      Typed.typedClass[java.lang.Integer]
     case SwaggerLong =>
       Typed.typedClass[java.lang.Long]
+    case SwaggerBigInteger =>
+      Typed.typedClass[java.math.BigInteger]
     case SwaggerDouble =>
       Typed.typedClass[java.lang.Double]
     case SwaggerBigDecimal =>
@@ -186,6 +194,20 @@ object SwaggerTyped {
       }
     } else {
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy { case (propertyName, _) => propertyName })
+    }
+  }
+
+  private def inferredIntType(minValue: BigDecimal, exclusiveMinValue: BigDecimal, maxValue: BigDecimal, exclusiveMaxValue: BigDecimal): SwaggerTyped = {
+
+    val lowerBoundary: Option[BigDecimal] = List(Option(exclusiveMinValue).map(_ + 1), Option(minValue)).flatten.sorted(Ordering.BigDecimal.reverse).headOption
+    val upperBoundary: Option[BigDecimal] = List(Option(exclusiveMaxValue).map(_ - 1), Option(maxValue)).flatten.sorted(Ordering.BigDecimal).headOption
+
+    List(lowerBoundary, upperBoundary).flatten match {
+      case min :: max :: Nil if min.isValidInt && max.isValidInt => SwaggerInteger
+      case min :: max :: Nil if min.isValidLong && max.isValidLong => SwaggerLong
+      case _ :: _ :: Nil => SwaggerBigInteger
+      case value :: Nil if !value.isValidLong => SwaggerBigInteger
+      case _ => SwaggerLong
     }
   }
 }

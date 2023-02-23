@@ -511,4 +511,56 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     result shouldBe TypedObjectTypingResult(List("items" -> TypedObjectTypingResult(List("next" -> Unknown, "value" -> Typed[String]))))
 
   }
+
+  test("should map integer type to the narrowest type possible") {
+    def schema(minValue: String, exclusiveMinValue: String, maxValue: String, exclusiveMaxValue: String) = JsonSchemaBuilder.parseSchema(
+      s"""{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |        "type": "integer"
+        |        ${Option(minValue).map(min => s""", "minimum":$min""").getOrElse("")}
+        |        ${Option(exclusiveMinValue).map(min => s""", "exclusiveMinimum":$min""").getOrElse("")}
+        |        ${Option(maxValue).map(max => s""", "maximum":$max""").getOrElse("")}
+        |        ${Option(exclusiveMaxValue).map(max => s""", "exclusiveMaximum":$max""").getOrElse("")}
+        |       }
+        |   }
+        |}""".stripMargin)
+
+    val table = Table(
+      ("minValue", "exclusiveMinValue", "maxValue", "exclusiveMaxValue", "expectedType"),
+      ("10", null, "100", null, classOf[java.lang.Integer]),
+      (null, "10", null, "100", classOf[java.lang.Integer]),
+      (null, "10", "100", null, classOf[java.lang.Integer]),
+      ("10", null, null, "100", classOf[java.lang.Integer]),
+      ("100", null, null, null, classOf[java.lang.Long]),
+      (null, null, null, "100", classOf[java.lang.Long]),
+      (s"${Int.MinValue}", null, s"${Int.MaxValue}", null, classOf[java.lang.Integer]),
+      (null, s"${BigInt(Int.MinValue) - 1}", null, s"${BigInt(Int.MaxValue) + 1}", classOf[java.lang.Integer]),
+      (s"${BigInt(Int.MinValue) - 1}", null, "0", null, classOf[java.lang.Long]),
+      ("0", null, s"${BigInt(Int.MaxValue) + 1}", null, classOf[java.lang.Long]),
+      ("0", null, s"${BigInt(Int.MaxValue) + 1}", s"${BigInt(Int.MaxValue) + 1}", classOf[java.lang.Integer]),
+      ("0", null, s"${BigInt(Long.MaxValue) + 1},", null, classOf[java.math.BigInteger]),
+      ("0", null, s"${BigInt(Long.MaxValue) + 1}", s"${BigInt(Long.MaxValue) + 1}", classOf[java.lang.Long]),
+      (null, null, "100", null, classOf[java.lang.Long]),
+      (null, null, s"${BigInt(Long.MaxValue) + 1}", null, classOf[java.math.BigInteger]),
+      (null, null, null, s"${BigInt(Long.MaxValue) + 1}", classOf[java.lang.Long]),
+      (null, null, null, s"${BigInt(Long.MaxValue) + 10}", classOf[java.math.BigInteger]),
+      (null, null, s"${BigInt(Int.MaxValue) + 10}", null, classOf[java.lang.Long]),
+      (null, null, null, s"${BigInt(Int.MaxValue) + 10}", classOf[java.lang.Long]),
+      (s"${BigInt(Int.MinValue) - 1}", null, null, null, classOf[java.lang.Long]),
+      (null, s"${BigInt(Int.MinValue) - 1}",  null, null, classOf[java.lang.Long]),
+      (s"${BigInt(Long.MinValue) - 1}", null, null, null, classOf[java.math.BigInteger]),
+      (null, s"${BigInt(Long.MinValue) - 1}", null, null, classOf[java.lang.Long]),
+      (null, s"${BigInt(Long.MinValue) - 10}",  null, null, classOf[java.math.BigInteger]),
+    )
+
+    forAll(table){(minValue, exclusiveMinValue, maxValue, exclusiveMaxValue, expectedType) =>
+      val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema(minValue, exclusiveMinValue, maxValue, exclusiveMaxValue)).typingResult
+
+      val results = List("id" -> Typed.typedClass(expectedType))
+
+      result shouldBe TypedObjectTypingResult.apply(results)
+    }
+  }
 }
