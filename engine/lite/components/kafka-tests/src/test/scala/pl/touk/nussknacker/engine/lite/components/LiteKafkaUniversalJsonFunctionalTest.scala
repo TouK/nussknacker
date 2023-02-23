@@ -271,7 +271,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
         schemaMapAny,
         createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger)),
         validationMode = Some(ValidationMode.lax)
-      ), s"Not expected type: String for field with schema: $schemaInteger."),
+      ), s"Not expected type: String for field: 'foo_int' with schema: $schemaInteger."),
     )
 
     forAll(testData) { (cfg: ScenarioConfig, expected: String) =>

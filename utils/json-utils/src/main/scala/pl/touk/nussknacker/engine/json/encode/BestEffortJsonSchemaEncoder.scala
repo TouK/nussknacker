@@ -92,7 +92,7 @@ object BestEffortJsonSchemaEncoder {
     // Note: if a field matches both properties and pattern property, we try to encode the field using its property schema
     // instead of encoding with all of: property and pattern property schemas.
     case PatternPropertySchema(schema, ObjectField(fieldName, Some(value), _, _)) =>
-      encode(value, schema).map(fieldName -> _)
+      encode(value, schema, Some(fieldName)).map(fieldName -> _)
     case ObjectField(fieldName, _, None, parentSchema) if !parentSchema.permitsAdditionalProperties() =>
       error(s"Not expected field with name: $fieldName for schema: $parentSchema.")
     case ObjectField(fieldName, Some(value), None, parentSchema) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
