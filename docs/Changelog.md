@@ -11,6 +11,7 @@
 1.8.1 (not released yet)
 ------------------------
 * [#4018](https://github.com/TouK/nussknacker/pull/4018) Fix for: generate test data mechanism didn't work for json messages with defined schema id
+* [#4024](https://github.com/TouK/nussknacker/pull/4024) Fix encoding object in sink with JSON schema pattern properties 
 
 1.8.0 (17 Feb 2023)
 ------------------------
