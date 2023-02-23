@@ -33,7 +33,7 @@ object BestEffortJsonSchemaEncoder {
       schema
         .validateData(json)
         .leftMap(errorMsg => NonEmptyList.of(errorMsg))
-        .map(_ => result) //we return here base json (e.g. without felt defaults - there is no need to put these data as output, because json still is valid)
+        .map(_ => result) //we return here base json (e.g. without defaults - there is no need to put these data as output, because json still is valid)
     }
 
   private def encode(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput = {
@@ -89,6 +89,8 @@ object BestEffortJsonSchemaEncoder {
   }
 
   private def encodeFieldWithoutSchema: PartialFunction[ObjectField, WithError[(String, Json)]] = {
+    // Note: if a field matches both properties and pattern property, we try to encode the field using its property schema
+    // instead of encoding with all of: property and pattern property schemas.
     case PatternPropertySchema(schema, ObjectField(fieldName, Some(value), _, _)) =>
       encode(value, schema).map(fieldName -> _)
     case ObjectField(fieldName, _, None, parentSchema) if !parentSchema.permitsAdditionalProperties() =>
@@ -155,9 +157,8 @@ object BestEffortJsonSchemaEncoder {
 
   private object PatternPropertySchema {
     def unapply(objectField: ObjectField): Option[(Schema, ObjectField)] = {
-      for {
-        patternPropertySchema <- findPatternPropertySchema(objectField.name, objectField.parentSchema)
-      } yield (patternPropertySchema, objectField)
+      findPatternPropertySchema(objectField.name, objectField.parentSchema)
+        .map((_, objectField))
     }
 
     private def findPatternPropertySchema(fieldName: String, parentSchema: ObjectSchema): Option[Schema] = {
