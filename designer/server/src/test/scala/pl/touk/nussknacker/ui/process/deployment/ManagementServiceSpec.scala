@@ -78,6 +78,15 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
   }
 
+  test("should return state correctly when state is cancelled") {
+    val id: ProcessId = prepareDeployedProcess(processName).futureValue
+
+    deploymentManager.withWaitForCancelFinish {
+      managementService.cancelProcess(ProcessIdWithName(id, processName), None)
+      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringCancel
+    }
+  }
+
   test("Should mark finished process as finished") {
     val id: ProcessId = prepareDeployedProcess(processName).futureValue
 

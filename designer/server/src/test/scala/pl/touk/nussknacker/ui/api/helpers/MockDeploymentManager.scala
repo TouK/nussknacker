@@ -45,7 +45,11 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     deployResult
   }
 
+  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = cancelResult
+
   private var deployResult: Future[Option[ExternalDeploymentId]] = Future.successful(None)
+
+  private var cancelResult: Future[Unit] = Future.successful(())
 
   private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(defaultProcessStateStatus))
 
@@ -60,6 +64,16 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     } finally {
       promise.complete(Try(None))
       deployResult = Future.successful(None)
+    }
+  }
+  def withWaitForCancelFinish[T](action: => T): T = {
+    val promise = Promise[Unit]()
+    try {
+      cancelResult = promise.future
+      action
+    } finally {
+      promise.complete(Try(()))
+      cancelResult = Future.successful(())
     }
   }
 
@@ -96,8 +110,6 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
       managerProcessState.set(prepareProcessState(defaultProcessStateStatus))
     }
   }
-
-  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(())
 
   override protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
 

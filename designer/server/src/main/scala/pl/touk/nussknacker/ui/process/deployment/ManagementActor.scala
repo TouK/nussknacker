@@ -18,6 +18,7 @@ import pl.touk.nussknacker.ui.util.FailurePropagatingActor
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import ManagementActor._
+import pl.touk.nussknacker.ui.process.deployment.DeploymentActionType.{Cancel, Deployment}
 
 class ManagementActor(dispatcher: DeploymentManagerDispatcher,
                       deploymentService: DeploymentService,
@@ -25,7 +26,7 @@ class ManagementActor(dispatcher: DeploymentManagerDispatcher,
                       processStateService: ProcessStateService,
                       testExecutorService: ScenarioTestExecutorService) extends FailurePropagatingActor with LazyLogging {
 
-  private var beingDeployed = Map[ProcessName, DeployInfo]()
+  private var deploymentActionInProgress = Map[ProcessName, DeployInfo]()
 
   private implicit val ec: ExecutionContext = context.dispatcher
 
@@ -47,26 +48,24 @@ class ManagementActor(dispatcher: DeploymentManagerDispatcher,
         handleDeploymentAction(id, DeploymentActionType.Cancel, cancelRes)
         reply(cancelRes)
       }
-    // FIXME: this works bad - isBeingDeployed returns true when any action is in progress - also when cancel is in progress
-    //        but we always return DuringDeploy
-    case GetProcessState(id, user) if isBeingDeployed(id.name) =>
+    case GetProcessState(id@DeploymentActionInProgressForProcess(Deployment), user) =>
       implicit val loggedUser: LoggedUser = user
-      val processStatus = for {
-        manager <- dispatcher.deploymentManager(id.id)
-      } yield manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy)
-      reply(processStatus)
+      replyWithPredefinedState(id, SimpleStateStatus.DuringDeploy)
+    case GetProcessState(id@DeploymentActionInProgressForProcess(Cancel), user) =>
+      implicit val loggedUser: LoggedUser = user
+      replyWithPredefinedState(id, SimpleStateStatus.DuringCancel)
     case GetProcessState(id, user) =>
       implicit val loggedUser: LoggedUser = user
       reply(processStateService.getProcessState(id))
     case DeploymentActionFinished(process) =>
-      beingDeployed -= process.name
+      deploymentActionInProgress -= process.name
     case TestProcess(id, canonicalProcess, category, scenarioTestData, user, variableEncoder) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         reply(testExecutorService.testProcess(id, canonicalProcess, category, scenarioTestData, variableEncoder))
       }
     case GetAllInProgressDeploymentActions =>
-      reply(Future.successful(AllInProgressDeploymentActionsResult(beingDeployed)))
+      reply(Future.successful(AllInProgressDeploymentActionsResult(deploymentActionInProgress)))
     case InvokeCustomAction(actionName, id, user, params) =>
       // TODO: Currently we're treating all custom actions as deployment actions; i.e. they can't be invoked if there is some deployment in progress
       ensureNoDeploymentRunning {
@@ -75,9 +74,18 @@ class ManagementActor(dispatcher: DeploymentManagerDispatcher,
       }
   }
 
+  private def replyWithPredefinedState(id: ProcessIdWithName, status: StateStatus)
+                                      (implicit user: LoggedUser): Unit = {
+    val processStatus = for {
+      manager <- dispatcher.deploymentManager(id.id)
+      state = manager.processStateDefinitionManager.processState(status)
+    } yield state
+    reply(processStatus)
+  }
+
   private def handleDeploymentAction(id: ProcessIdWithName, action: DeploymentActionType, actionFuture: Future[_])
                                     (implicit user: LoggedUser): Unit = {
-    beingDeployed += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
+    deploymentActionInProgress += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
     actionFuture.onComplete { _ =>
       self ! DeploymentActionFinished(id)
     }
@@ -91,13 +99,16 @@ class ManagementActor(dispatcher: DeploymentManagerDispatcher,
     }
   }
 
-  private def isBeingDeployed(id: ProcessName) = beingDeployed.contains(id)
+  private object DeploymentActionInProgressForProcess {
+    def unapply(idWithName: ProcessIdWithName): Option[DeploymentActionType] =
+      deploymentActionInProgress.get(idWithName.name).map(_.action)
+  }
 
   //during deployment using Client.run Flink holds some data in statics and there is an exception when
   //test or verification run in parallel
   private def ensureNoDeploymentRunning(action: => Unit): Unit = {
-    if (beingDeployed.nonEmpty) {
-      sender() ! Status.Failure(new ProcessIsBeingDeployed(beingDeployed))
+    if (deploymentActionInProgress.nonEmpty) {
+      sender() ! Status.Failure(new ProcessIsBeingDeployed(deploymentActionInProgress))
     } else {
       action
     }
