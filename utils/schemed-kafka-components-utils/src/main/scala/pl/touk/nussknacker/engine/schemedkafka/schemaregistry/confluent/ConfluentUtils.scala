@@ -9,9 +9,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import org.apache.kafka.common.errors.SerializationException
 import org.everit.json.schema.{Schema => EveritSchema}
-import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaWithMetadata}
 
 import java.io.{ByteArrayOutputStream, DataOutputStream, OutputStream}
@@ -40,13 +38,8 @@ object ConfluentUtils extends LazyLogging {
     case ValueSubjectPattern(value) => value
   }
 
-  def toSchemaWithMetadata(schemaMetadata: SchemaMetadata, config: SchemaRegistryClientKafkaConfig): SchemaWithMetadata = {
-    val confluentParsedSchema = schemaMetadata.getSchemaType match {
-      case "AVRO" => new AvroSchema(schemaMetadata.getSchema)
-      case "JSON" => OpenAPIJsonSchema(schemaMetadata.getSchema)
-      case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
-    }
-    SchemaWithMetadata(confluentParsedSchema, SchemaId.fromInt(schemaMetadata.getId))
+  def toSchemaWithMetadata(schemaMetadata: SchemaMetadata): SchemaWithMetadata = {
+    SchemaWithMetadata.fromRawSchema(schemaMetadata.getSchemaType, schemaMetadata.getSchema, SchemaId.fromInt(schemaMetadata.getId))
   }
 
   def convertToAvroSchema(schema: Schema, version: Option[Int] = None): AvroSchema =

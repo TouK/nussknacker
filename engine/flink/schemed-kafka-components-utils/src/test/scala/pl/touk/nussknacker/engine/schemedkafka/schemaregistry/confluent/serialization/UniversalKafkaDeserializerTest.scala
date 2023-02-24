@@ -7,7 +7,7 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.common.header.Headers
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor6}
-import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
+import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{SchemaRegistryMixin, SimpleKafkaAvroSerializer}
 import pl.touk.nussknacker.engine.schemedkafka.schema.{PaymentV1, PaymentV2}
@@ -25,7 +25,7 @@ class UniversalKafkaDeserializerTest extends SchemaRegistryMixin with TableDrive
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
-  private val confluentSchemaRegistryClient = new DefaultConfluentSchemaRegistryClient(MockSchemaRegistry.schemaRegistryMockClient, SchemaRegistryClientKafkaConfig(Map(), SchemaRegistryCacheConfig(), None))
+  private val confluentSchemaRegistryClient = new DefaultConfluentSchemaRegistryClient(MockSchemaRegistry.schemaRegistryMockClient)
 
   type CreateSetup = RuntimeSchemaData[ParsedSchema] => SchemaRegistryProviderSetup
 

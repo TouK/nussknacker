@@ -1,24 +1,15 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ValueReader
-import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 
 object ProcessingTypeDataConfigurationReader extends LazyLogging {
 
   import scala.jdk.CollectionConverters._
 
-  def readProcessingTypeConfig(config: Config): Map[String, ProcessingTypeConfig] = {
-    implicit val reader: ValueReader[Map[String, ProcessingTypeConfig]] = ValueReader.relative { config =>
-      config.root().entrySet().asScala.map(_.getKey).map { key =>
-        key -> config.as[ProcessingTypeConfig](key)(ProcessingTypeConfig.reader)
-      }.toMap
-    }
-
-    val processTypesOption = config.getAs[Map[String, ProcessingTypeConfig]]("processTypes")
-    val scenarioTypesOption = config.getAs[Map[String, ProcessingTypeConfig]]("scenarioTypes")
+  def readProcessingTypeConfig(config: ConfigWithUnresolvedVersion): Map[String, ProcessingTypeConfig] = {
+    val processTypesOption = read(config, "processTypes")
+    val scenarioTypesOption = read(config, "scenarioTypes")
     (scenarioTypesOption, processTypesOption) match {
       case (Some(scenarioTypes), _) => scenarioTypes
       case (None, Some(processTypes)) =>
@@ -27,4 +18,16 @@ object ProcessingTypeDataConfigurationReader extends LazyLogging {
       case (None, None) => throw new RuntimeException("No scenario types configuration provided")
     }
   }
+
+  private def read(config: ConfigWithUnresolvedVersion, path: String): Option[Map[String, ProcessingTypeConfig]] = {
+    if (config.resolved.hasPath(path)) {
+      val nestedConfig = config.getConfig(path)
+      Some(nestedConfig.resolved.root().entrySet().asScala.map(_.getKey).map { key =>
+        key -> ProcessingTypeConfig.read(nestedConfig.getConfig(key))
+      }.toMap)
+    } else {
+      None
+    }
+  }
+
 }

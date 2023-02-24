@@ -87,7 +87,7 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 }
 
 class KeyCloakScalaContainer() extends SingleContainer[KeycloakContainer] {
-  override val container: KeycloakContainer = new KeycloakContainer()
+  override val container: KeycloakContainer = new KeycloakContainer("quay.io/keycloak/keycloak:19.0.0")
     //sample keycloak realm...
-    .withRealmImportFile("keycloak.json")
+    .withRealmImportFile("/keycloak.json")
 }

@@ -5,8 +5,16 @@
 ------------------------
 * [#3986](https://github.com/TouK/nussknacker/pull/3986) Updated sttp 2.2.9 -> 3.8.11
 * [#3979](https://github.com/TouK/nussknacker/pull/3979) Updated Flink 1.16.0 -> 1.16.1
+* [#4019](https://github.com/TouK/nussknacker/pull/4019) Make displayable process category required
+* [#4020](https://github.com/TouK/nussknacker/pull/4020) Pass category name to process migration method
+* [#4039](https://github.com/TouK/nussknacker/pull/4039) Fix for: After clicking cancel, sometimes for a moment appear "during deploy" status instead of "during cancel"
 
-1.8.0 (Not released yet)
+1.8.1 (not released yet)
+------------------------
+* [#4018](https://github.com/TouK/nussknacker/pull/4018) Fix for: generate test data mechanism didn't work for json messages with defined schema id
+* [#4024](https://github.com/TouK/nussknacker/pull/4024) Fix encoding object in sink with JSON schema pattern properties 
+
+1.8.0 (17 Feb 2023)
 ------------------------
 * [#3963](https://github.com/TouK/nussknacker/pull/3963) - Secure processDefinitionData/services endpoint by filtering based on user category "Read" permission
 * [#3945](https://github.com/TouK/nussknacker/pull/3945) - Allow to get Map category -> processingType through new categoriesWithProcessingType endpoint.

@@ -27,35 +27,23 @@ object BestEffortJsonSchemaEncoder {
     encodeWithJsonValidation(value, schema).valueOr(errors => throw new RuntimeException(errors.toList.mkString(",")))
   }
 
-  private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): EncodeOutput = {
-    (fields.keys.toList ++ parentSchema.getPropertySchemas.keySet.asScala.toList).distinct.map{ key =>
-      val schema = Option(parentSchema.getPropertySchemas.get(key))
-      val value = fields.get(key)
-      (key, value,schema)
-    } //we do collect here because we want to do own pre-validation with human readably message (consider doing encode and at the end schema.validate instead of this)
-    .collect {
-      case (fieldName, Some(null), Some(schema)) if schema.isNullableSchema => Valid((fieldName, Json.Null))
-      case (fieldName, None, Some(_)) if parentSchema.getRequiredProperties.contains(fieldName) =>
-        error(s"Missing property: $fieldName for schema: $parentSchema.")
-      case (fieldName, Some(value), Some(schema)) =>
-        encode(value, schema, Some(fieldName)).map(fieldName -> _)
-      case (fieldName, _: Option[_], None) if !parentSchema.permitsAdditionalProperties() =>
-        error(s"Not expected field with name: $fieldName for schema: $parentSchema.")
-      case (fieldName, Some(value), None) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
-        case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
-        case None => Valid(jsonEncoder.encode(value)).map(fieldName -> _)
-      }
-    }.sequence.map { values => Json.fromFields(values) }
-  }
+  private[encode] def encodeWithJsonValidation(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput =
+    encode(value, schema, fieldName).andThen { result =>
+      val json = JsonSchemaUtils.circeToJson(result)
+      schema
+        .validateData(json)
+        .leftMap(errorMsg => NonEmptyList.of(errorMsg))
+        .map(_ => result) //we return here base json (e.g. without defaults - there is no need to put these data as output, because json still is valid)
+    }
 
-  private def encodeCollection(collection: Iterable[_], schema: ArraySchema): EncodeOutput = {
-    collection.map(el => encode(el, schema.getAllItemSchema)).toList.sequence.map(l => Json.fromValues(l))
+  private def encode(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput = {
+    optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse[EncodeInput, EncodeOutput]((value, schema, fieldName), encodeBasedOnSchema)
   }
 
   def encodeBasedOnSchema(input: EncodeInput): EncodeOutput = {
     val (value, schema, fieldName) = input
     (schema, value) match {
-      case (schema: EmptySchema, _) => Valid(jsonEncoder.encode(value))
+      case (_: EmptySchema, _) => Valid(jsonEncoder.encode(value))
       case (schema: ObjectSchema, map: scala.collection.Map[String@unchecked, _]) => encodeObject(map.toMap, schema)
       case (schema: ObjectSchema, map: java.util.Map[String@unchecked, _]) => encodeObject(map.asScala.toMap, schema)
       case (schema: ArraySchema, value: Iterable[_]) => encodeCollection(value, schema)
@@ -79,6 +67,42 @@ object BestEffortJsonSchemaEncoder {
       case (_, null) => error(null, schema.toString, fieldName)
       case (_, _) => error(value, schema.toString, fieldName)
     }
+  }
+
+  private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): EncodeOutput = {
+    (fields.keys.toList ++ parentSchema.getPropertySchemas.keySet.asScala.toList).distinct.map { key =>
+      val schema = Option(parentSchema.getPropertySchemas.get(key))
+      val value = fields.get(key)
+      ObjectField(key, value, schema, parentSchema)
+    } //we do collect here because we want to do own pre-validation with human readably message (consider doing encode and at the end schema.validate instead of this)
+    .collect(encodeFieldWithSchema.orElse(encodeFieldWithoutSchema))
+    .sequence.map { values => Json.fromFields(values) }
+  }
+
+  private def encodeFieldWithSchema: PartialFunction[ObjectField, WithError[(String, Json)]] = {
+    case ObjectField(fieldName, Some(null), Some(schema), _) if schema.isNullableSchema =>
+      Valid((fieldName, Json.Null))
+    case ObjectField(fieldName, None, Some(_), parentSchema) if parentSchema.getRequiredProperties.contains(fieldName) =>
+      error(s"Missing property: $fieldName for schema: $parentSchema.")
+    case ObjectField(fieldName, Some(value), Some(schema), _) =>
+      encode(value, schema, Some(fieldName)).map(fieldName -> _)
+  }
+
+  private def encodeFieldWithoutSchema: PartialFunction[ObjectField, WithError[(String, Json)]] = {
+    // Note: if a field matches both properties and pattern property, we try to encode the field using its property schema
+    // instead of encoding with all of: property and pattern property schemas.
+    case PatternPropertySchema(schema, ObjectField(fieldName, Some(value), _, _)) =>
+      encode(value, schema, Some(fieldName)).map(fieldName -> _)
+    case ObjectField(fieldName, _, None, parentSchema) if !parentSchema.permitsAdditionalProperties() =>
+      error(s"Not expected field with name: $fieldName for schema: $parentSchema.")
+    case ObjectField(fieldName, Some(value), None, parentSchema) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
+      case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
+      case None => Valid(jsonEncoder.encode(value)).map(fieldName -> _)
+    }
+  }
+
+  private def encodeCollection(collection: Iterable[_], schema: ArraySchema): EncodeOutput = {
+    collection.map(el => encode(el, schema.getAllItemSchema)).toList.sequence.map(l => Json.fromValues(l))
   }
 
   private def encodeStringSchema(schema: StringSchema, value: Any, fieldName: Option[String] = None): Validated[NonEmptyList[String], Json] = {
@@ -131,17 +155,19 @@ object BestEffortJsonSchemaEncoder {
     Invalid(NonEmptyList.of(s"Not expected type: ${runtimeType.withoutValue.display} for field${fieldName.map(f => s": '$f'").getOrElse("")} with schema: $schema."))
   }
 
-  private[encode] def encodeWithJsonValidation(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput =
-    encode(value, schema, fieldName).andThen { result =>
-      val json = JsonSchemaUtils.circeToJson(result)
-      schema
-        .validateData(json)
-        .leftMap(errorMsg => NonEmptyList.of(errorMsg))
-        .map(_ => result) //we return here base json (e.g. without felt defaults - there is no need to put these data as output, because json still is valid)
+  private object PatternPropertySchema {
+    def unapply(objectField: ObjectField): Option[(Schema, ObjectField)] = {
+      findPatternPropertySchema(objectField.name, objectField.parentSchema)
+        .map((_, objectField))
     }
 
-  private def encode(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput = {
-    optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse[EncodeInput, EncodeOutput]((value, schema, fieldName), encodeBasedOnSchema)
+    private def findPatternPropertySchema(fieldName: String, parentSchema: ObjectSchema): Option[Schema] = {
+      parentSchema.patternProperties.collectFirst {
+        case (pattern, schema) if pattern.asPredicate().test(fieldName) => schema
+      }
+    }
   }
+
+  private case class ObjectField(name: String, value: Option[_], schema: Option[Schema], parentSchema: ObjectSchema)
 
 }

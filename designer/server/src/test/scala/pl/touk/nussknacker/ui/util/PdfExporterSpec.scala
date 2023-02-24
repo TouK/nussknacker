@@ -44,7 +44,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   it should "export empty process to " in {
     val displayable: DisplayableProcess = DisplayableProcess(
-      "Proc11", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming, Some(TestCategories.Category1))
+      "Proc11", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming, TestCategories.Category1)
 
     val details = createDetails(displayable)
 
@@ -57,7 +57,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   it should "not allow entities in provided SVG" in {
     val displayable: DisplayableProcess = DisplayableProcess(
-      "Proc11", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming, Some(TestCategories.Category1))
+      "Proc11", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming, TestCategories.Category1)
 
     val details = createDetails(displayable)
 

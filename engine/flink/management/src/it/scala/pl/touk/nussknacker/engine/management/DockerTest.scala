@@ -14,7 +14,7 @@ import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.images.builder.ImageFromDockerfile
 import org.testcontainers.containers.Network
 import org.testcontainers.utility.DockerImageName
-import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.deployment.User
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties}
@@ -123,7 +123,7 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
     .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
     .withFallback(additionalConfig)
 
-  def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(config)
+  def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(ConfigWithUnresolvedVersion(config))
 
   protected def classPath: List[String]
 

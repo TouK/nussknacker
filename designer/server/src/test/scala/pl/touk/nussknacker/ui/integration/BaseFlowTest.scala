@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Processor, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, spel}
 import pl.touk.nussknacker.restmodel.definition.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -49,7 +49,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
-    system.settings.config,
+    ConfigWithUnresolvedVersion(system.settings.config),
     NussknackerAppInitializer.initDb(system.settings.config),
     new MetricRegistry
   )
@@ -139,6 +139,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
       val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }
       relevant shouldBe underTest
+      val not = other.values.filter(_.docsUrl.isDefined)
       other.values.forall(_.docsUrl.isEmpty) shouldBe true
     }
   }
@@ -201,7 +202,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
         SubprocessOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),
       processingType = TestProcessingTypes.Streaming,
-      Some(TestCategories.Category1)
+      TestCategories.Category1
     )
 
     Post(s"$endpoint/Category1?isSubprocess=true") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
@@ -330,41 +331,6 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
       status shouldEqual StatusCodes.OK
       headers should contain allElementsOf (CorsSupport.headers ::: SecurityHeadersSupport.headers)
     }
-  }
-
-  test("should reload model config") {
-    def invokeModelConfigReader(configPath: String): String = {
-      val serviceParameters = List(Parameter("configPath", s"'$configPath'"))
-      val entity = HttpEntity(MediaTypes.`application/json`, serviceParameters.asJson.noSpaces)
-
-      Post("/api/service/streaming/modelConfigReader", entity) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-        status shouldEqual StatusCodes.OK
-        val resultJson = entityAs[Json]
-        resultJson
-          .hcursor
-          .downField("result")
-          .as[String]
-          .fold(error => throw error, identity)
-      }
-    }
-
-    val configLoadedMsBeforeReload = invokeModelConfigReader("configLoadedMs").toLong
-    val addedConstantPropertyBeforeReload = invokeModelConfigReader("configValueToLoad")
-    val propertyFromResourcesBeforeReload = invokeModelConfigReader("configValueToLoadFrom")
-
-    configLoadedMsBeforeReload shouldBe < (System.currentTimeMillis())
-    addedConstantPropertyBeforeReload shouldBe "someDummyValue"
-    propertyFromResourcesBeforeReload shouldBe "someDummyValue"
-
-    reloadModel()
-
-    val configLoadedMsAfterReload = invokeModelConfigReader("configLoadedMs").toLong
-    val addedConstantPropertyAfterReload = invokeModelConfigReader("configValueToLoad")
-    val propertyFromResourcesAfterReload = invokeModelConfigReader("configValueToLoadFrom")
-
-    configLoadedMsAfterReload should (be < System.currentTimeMillis() and be > configLoadedMsBeforeReload)
-    addedConstantPropertyAfterReload shouldBe addedConstantPropertyBeforeReload
-    propertyFromResourcesAfterReload shouldBe propertyFromResourcesBeforeReload
   }
 
   private def saveProcess(process: CanonicalProcess): ValidationResult = {

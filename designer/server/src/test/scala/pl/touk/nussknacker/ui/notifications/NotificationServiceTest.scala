@@ -10,7 +10,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentActionType.Deployment
-import pl.touk.nussknacker.ui.process.deployment.{DeployInfo, DeploymentStatusResponse}
+import pl.touk.nussknacker.ui.process.deployment.{AllInProgressDeploymentActionsResult, InProgressDeploymentActionsProvider, DeployInfo}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.temporal.ChronoUnit
@@ -27,8 +27,8 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
 
     val clock: Clock = clockForInstant(() => currentInstant)
 
-    val currentDeployments = new CurrentDeployments {
-      override def retrieve(implicit timeout: Timeout): Future[DeploymentStatusResponse] = Future.successful(DeploymentStatusResponse(
+    val currentDeployments = new InProgressDeploymentActionsProvider {
+      override def getAllInProgressDeploymentActions: Future[AllInProgressDeploymentActionsResult] = Future.successful(AllInProgressDeploymentActionsResult(
         Map(ProcessName("id1") -> DeployInfo("deployingUser", clock.millis(), Deployment))))
     }
     val listener = new NotificationsListener(NotificationConfig(20 minutes), (id: ProcessId) => Future.successful(Some(ProcessName("" + id.value + "-name"))), clock)

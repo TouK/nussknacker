@@ -249,6 +249,22 @@ It can be configured with following options.
 | rootPath  | string  | "/"           | Root path for the ingress path, by default ingress path is rootPath + [slug](../scenarios_authoring/RRDataSourcesAndSinks.md) |
 | config    | config  | {}            | Additional ingress config customization                                                                                       |
 
+#### Configuring custom ingress class
+
+By default, ingress resource will be created without any ingress class. If you want to use different class, you can set
+```hocon
+ingress {
+  enabled: true,
+  config: {
+    metadata: {
+      annotations: {
+        "kubernetes.io/ingress.class": "ingress-className"
+      }
+    }
+  }
+}
+```
+
 ### Configuring Prometheus metrics
 
 Just like in [Designer installation](../installation/Installation.md#basic-environment-variables), you can

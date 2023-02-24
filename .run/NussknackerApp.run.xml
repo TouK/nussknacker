@@ -15,6 +15,7 @@
       <env name="SQL_ENRICHER_URL" value="localhost:5432" />
       <env name="USAGE_REPORTS_FINGERPRINT" value="development" />
       <env name="USAGE_REPORTS_SOURCE" value="sources" />
+      <env name="INPUT_CONFIG_RESOLVE_ENV_VARIABLES" value="false" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />

@@ -31,7 +31,7 @@ object AzureAvroSerializerFactory {
   // with Azure's implementation but on the other hand, it is impossible to pass own Encoder to Azure serializer
   // without copying almost all classes. Encoder is created in com.azure.data.schemaregistry.apacheavro.AvroSerializer
   private def createJsonPayloadSerializer(schemaRegistryClient: AzureSchemaRegistryClient, kafkaConfig: KafkaConfig, avroSchemaOpt: Option[AvroSchema], isKey: Boolean) = {
-    val confluentClient = new DefaultConfluentSchemaRegistryClient(null, kafkaConfig.schemaRegistryClientKafkaConfig)
+    val confluentClient = new DefaultConfluentSchemaRegistryClient(null)
     new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, confluentClient, new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = isKey) {
       override protected def autoRegisterSchemaIfNeeded(topic: String, data: Any, isKey: Boolean, avroSchema: AvroSchema): SchemaId = {
         schemaRegistryClient.getSchemaIdByContent(avroSchema)

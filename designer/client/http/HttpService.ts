@@ -193,10 +193,6 @@ class HttpService {
     return api.get<string[]>("/processDefinitionData/componentIds")
   }
 
-  fetchServices() {
-    return api.get<Services>("/processDefinitionData/services")
-  }
-
   fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
     return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`)
   }
@@ -271,10 +267,6 @@ class HttpService {
         return {isSuccess: false}
       })
     })
-  }
-
-  invokeService(processingType, serviceName, parameters) {
-    return api.post(`/service/${processingType}/${serviceName}`, parameters)
   }
 
   cancel(processId, comment?) {

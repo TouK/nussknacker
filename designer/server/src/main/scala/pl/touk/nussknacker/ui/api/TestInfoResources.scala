@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.util.Timeout
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
@@ -16,9 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class TestInfoResources(val processAuthorizer: AuthorizeProcess,
                         val processRepository: FetchingProcessRepository[Future],
-                        scenarioTestService: ScenarioTestService,
-                       )
-                       (implicit val ec: ExecutionContext)
+                        scenarioTestService: ScenarioTestService)(implicit val ec: ExecutionContext)
   extends Directives
     with FailFastCirceSupport
     with RouteWithUser
@@ -32,16 +29,16 @@ class TestInfoResources(val processAuthorizer: AuthorizeProcess,
     pathPrefix("testInfo") {
       post {
         entity(as[DisplayableProcess]) { displayableProcess =>
-          processIdWithCategory(displayableProcess.id) { idWithCategory =>
-            canDeploy(idWithCategory.id) {
+          processId(displayableProcess.id) { idWithName =>
+            canDeploy(idWithName.id) {
 
               path("capabilities") {
                 complete {
-                  scenarioTestService.getTestingCapabilities(idWithCategory, displayableProcess)
+                  scenarioTestService.getTestingCapabilities(displayableProcess)
                 }
               } ~ path("generate" / IntNumber) { testSampleSize =>
                 complete {
-                  scenarioTestService.generateData(idWithCategory, displayableProcess, testSampleSize) match {
+                  scenarioTestService.generateData(displayableProcess, testSampleSize) match {
                     case Left(error) => HttpResponse(StatusCodes.BadRequest, entity = error)
                     case Right(rawScenarioTestData) => HttpResponse(entity = rawScenarioTestData.content)
                   }

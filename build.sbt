@@ -18,7 +18,10 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
 val scala213 = "2.13.10"
-val defaultScalaV = scala213
+val defaultScalaV = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match {
+  case "2.12" => scala212
+  case "2.13" => scala213
+}
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
@@ -1285,7 +1288,7 @@ lazy val security = (project in file("security")).
       "com.auth0" % "jwks-rsa" % "0.21.3", // a tool library for reading a remote JWK store, not an Auth0 service dependency
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-      "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
+      "com.github.dasniko" % "testcontainers-keycloak" % "2.0.0" % "it,test"
     )
   )
   .dependsOn(utilsInternal, httpUtils, testUtils % "it,test")
