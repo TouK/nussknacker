@@ -4,8 +4,8 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigValueFactory._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.commons.io.FileUtils
-import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessingTypeDeploymentService}
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, DeploymentManagerProvider, ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentServiceImpl
 import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, DefaultProcessingTypeDeploymentService, Initialization, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReload}
@@ -28,7 +28,7 @@ object LocalNussknackerWithSingleModel  {
           deploymentManagerProvider: DeploymentManagerProvider,
           managerConfig: Config, categories: Set[String]): Unit = {
     val router = new NusskanckerDefaultAppRouter {
-      override protected def prepareProcessingTypeData(config: Config,
+      override protected def prepareProcessingTypeData(config: ConfigWithUnresolvedVersion,
                                                        getDeploymentService: () => DeploymentServiceImpl,
                                                        categoriesService: ProcessCategoryService)
                                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,

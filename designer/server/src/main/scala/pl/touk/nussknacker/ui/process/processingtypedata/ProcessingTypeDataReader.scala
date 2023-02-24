@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
 import akka.actor.ActorSystem
-import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentServiceImpl
@@ -18,10 +17,10 @@ object ProcessingTypeDataReader extends ProcessingTypeDataReader
 
 trait ProcessingTypeDataReader extends LazyLogging {
 
-  def loadProcessingTypeData(config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                             sttpBackend: SttpBackend[Future, Any],
-                                             deploymentService: DeploymentServiceImpl,
-                                             categoriesService: ProcessCategoryService): ProcessingTypeDataProvider[ProcessingTypeData] = {
+  def loadProcessingTypeData(config: ConfigWithUnresolvedVersion)(implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                                                                  sttpBackend: SttpBackend[Future, Any],
+                                                                  deploymentService: DeploymentServiceImpl,
+                                                                  categoriesService: ProcessCategoryService): ProcessingTypeDataProvider[ProcessingTypeData] = {
     val types: Map[ProcessingType, ProcessingTypeConfig] = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val valueMap = types
       .filterKeysNow(categoriesService.getProcessingTypeCategories(_).nonEmpty)
