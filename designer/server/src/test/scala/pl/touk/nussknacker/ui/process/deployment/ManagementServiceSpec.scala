@@ -54,12 +54,10 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   private val dmDispatcher = new DeploymentManagerDispatcher(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager), fetchingProcessRepository)
   private val processStateService = new ProcessStateServiceImpl(fetchingProcessRepository, dmDispatcher, deploymentService)
-  private val customActionInvokerService = new CustomActionInvokerServiceImpl(fetchingProcessRepository, dmDispatcher, processStateService)
-  private val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
 
   private val managementActor = system.actorOf(
       ManagementActor.props(
-        dmDispatcher, deploymentService, customActionInvokerService, processStateService, testExecutorService),
+        dmDispatcher, deploymentService, processStateService),
     "management"
   )
 
@@ -90,13 +88,13 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   test("Should mark finished process as finished") {
     val id: ProcessId = prepareDeployedProcess(processName).futureValue
 
-    isFollowingDeploy(managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue) shouldBe true
+    checkIsFollowingDeploy(managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue, expected = true)
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
     deploymentManager.withProcessFinished {
       //we simulate what happens when retrieveStatus is called mulitple times to check only one comment is added
       (1 to 5).foreach { _ =>
-        isFollowingDeploy(managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue) shouldBe false
+        checkIsFollowingDeploy(managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue, expected = false)
       }
       val finishedStatus = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
       finishedStatus.status shouldBe SimpleStateStatus.Finished
@@ -133,7 +131,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
     eventually {
       checkStatusAction(SimpleStateStatus.Running, Some(ProcessActionType.Deploy))
-      listener.events.filter(_.isInstanceOf[OnDeployActionSuccess]) should have length 1
+      listener.events.toArray.filter(_.isInstanceOf[OnDeployActionSuccess]) should have length 1
     }
   }
 
@@ -431,7 +429,11 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.deploys.clear()
   }
 
-  private def isFollowingDeploy(state: ProcessState): Boolean = state.isDeployed
+  private def checkIsFollowingDeploy(state: ProcessState, expected: Boolean) = {
+    withClue(state) {
+      state.isDeployed shouldBe expected
+    }
+  }
 
   private def prepareDeployedProcess(processName: ProcessName): Future[ProcessId] =
     for {
