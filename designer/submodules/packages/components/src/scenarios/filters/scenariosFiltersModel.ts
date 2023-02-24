@@ -7,8 +7,14 @@ export interface ScenariosFiltersModel extends SortableFiltersModel {
     HIDE_ACTIVE?: boolean;
     HIDE_FRAGMENTS?: boolean;
     HIDE_SCENARIOS?: boolean;
-    HIDE_DEPLOYED?: boolean;
-    HIDE_NOT_DEPLOYED?: boolean;
+    SHOW_DEPLOYED?: boolean;
+    SHOW_NOT_DEPLOYED?: boolean;
+    DEPLOYED?: string[];
     CREATED_BY?: string[];
     STATUS?: string[];
+}
+
+export enum ScenariosFiltersModelDeployed {
+    DEPLOYED = "DEPLOYED",
+    NOT_DEPLOYED = "NOT_DEPLOYED",
 }

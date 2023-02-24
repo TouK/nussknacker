@@ -79,10 +79,6 @@ function ScenariosView({ children, table }: PropsWithChildren<{ table?: boolean 
           return value && setNewValue("SHOW_ARCHIVED", true);
         case "SHOW_ARCHIVED":
           return !value && setNewValue("HIDE_ACTIVE", false);
-        case "HIDE_DEPLOYED":
-          return value && setNewValue("HIDE_NOT_DEPLOYED", false);
-        case "HIDE_NOT_DEPLOYED":
-          return value && setNewValue("HIDE_DEPLOYED", false);
       }
     },
     []

@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { flatten, uniq, uniqBy } from "lodash";
 import { useFilterContext } from "../../common";
-import { ScenariosFiltersModel } from "./scenariosFiltersModel";
+import { ScenariosFiltersModel, ScenariosFiltersModelDeployed } from "./scenariosFiltersModel";
 import { useUserQuery } from "../useScenariosQuery";
 import { QuickFilter } from "./quickFilter";
 import { FilterMenu } from "./filterMenu";
@@ -33,7 +33,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
         };
     }, [data, filterableKeys, userData?.categories]);
 
-    const statusFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
+    const statusFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_ACTIVE", "SHOW_ARCHIVED"];
     const { getFilter, setFilter, activeKeys } = useFilterContext<ScenariosFiltersModel>();
 
     const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
@@ -49,10 +49,13 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                     return t("table.filter.desc.HIDE_SCENARIOS", "Scenarios hidden");
                 case "SHOW_ARCHIVED":
                     return t("table.filter.desc.SHOW_ARCHIVED", "Archived visible");
-                case "HIDE_DEPLOYED":
-                    return t("table.filter.desc.HIDE_DEPLOYED", "Deployed hidden");
-                case "HIDE_NOT_DEPLOYED":
-                    return t("table.filter.desc.HIDE_NOT_DEPLOYED", "Not deployed hidden");
+                case "DEPLOYED":
+                    switch (value) {
+                        case ScenariosFiltersModelDeployed.DEPLOYED:
+                            return t("table.filter.DEPLOYED", "Deployed");
+                        case ScenariosFiltersModelDeployed.NOT_DEPLOYED:
+                            return t("table.filter.NOT_DEPLOYED", "Not deployed");
+                    }
             }
 
             if (value?.toString().length) {
@@ -76,7 +79,10 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                     {/*        onChange={setFilter("STATUS")}*/}
                     {/*    />*/}
                     {/*</FilterMenu>*/}
-                    <FilterMenu label={t("table.filter.STATUS", "Status")} count={statusFilters.filter((k) => getFilter(k)).length}>
+                    <FilterMenu
+                        label={t("table.filter.STATUS", "Status")}
+                        count={getFilter("DEPLOYED", true).length + statusFilters.filter((k) => getFilter(k)).length}
+                    >
                         <StatusOptionsStack />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
