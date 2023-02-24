@@ -92,7 +92,7 @@ function useCountsIfNeeded() {
 function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
   const navigate = useNavigate()
   const {openNodeWindow} = useWindows()
-  const process = useSelector(getProcessToDisplay)
+  const {json: process} = useSelector(getFetchedProcessDetails) || {}
   useEffect(() => {
     const params = parseWindowsQueryParams({nodeId: [], edgeId: []})
 
@@ -127,20 +127,20 @@ function Visualization({processId}: { processId: string }) {
   const [dataResolved, setDataResolved] = useState(false)
 
   const fetchAdditionalData = useCallback(async process => {
-    const {name: processId, json, processingType} = process
-    await dispatch(loadProcessToolbarsConfiguration(processId))
-    dispatch(displayProcessActivity(processId))
+    const {name, json, processingType} = process
+    await dispatch(loadProcessToolbarsConfiguration(name))
+    dispatch(displayProcessActivity(name))
     await dispatch(fetchProcessDefinition(processingType, json.properties?.isSubprocess))
     setDataResolved(true)
   }, [dispatch])
 
-  const fetchData = useCallback(() => {
+  const fetchData = useCallback((processName: string) => {
     //TODO: move fetchProcessToDisplay to ts
-    const promise = dispatch(fetchProcessToDisplay(processId)) as any
+    const promise = dispatch(fetchProcessToDisplay(processName)) as any
     promise
       .then(({fetchedProcessDetails}) => fetchAdditionalData(fetchedProcessDetails))
       .catch((error) => dispatch(handleHTTPError(error)))
-  }, [dispatch, fetchAdditionalData, processId])
+  }, [dispatch, fetchAdditionalData])
 
   const {graphLoading} = useSelector(getGraph)
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
@@ -157,8 +157,8 @@ function Visualization({processId}: { processId: string }) {
   }, [getGraphInstance])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    fetchData(processId)
+  }, [fetchData, processId])
 
   useProcessState()
   useCountsIfNeeded()

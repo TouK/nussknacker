@@ -24,7 +24,7 @@ const StyledSpeedDial = styled(SpeedDial)(({ theme }) => ({
     },
 }));
 
-interface ActionsProps {
+export interface ActionsProps {
     addScenario?: () => void;
     addFragment?: () => void;
 }
