@@ -22,6 +22,7 @@ import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor.ActorBasedManagementService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -35,7 +36,6 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   private implicit val system: ActorSystem = ActorSystem()
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
   private implicit val ds: ExecutionContextExecutor = system.dispatcher
-  val processName: ProcessName = ProcessName("proces1")
 
   private val deploymentManager = new MockDeploymentManager
   private val repositoryManager = newDBRepositoryManager(db)
@@ -64,6 +64,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   private val managementService = new ActorBasedManagementService(managementActor, 1 minute)
 
   test("should return state correctly when state is deployed") {
+    val processName: ProcessName = generateProcessName
     val id: ProcessId =  prepareProcess(processName).futureValue
 
     deploymentManager.withWaitForDeployFinish {
@@ -77,6 +78,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("should return state correctly when state is cancelled") {
+    val processName: ProcessName = generateProcessName
     val id: ProcessId = prepareDeployedProcess(processName).futureValue
 
     deploymentManager.withWaitForCancelFinish {
@@ -86,6 +88,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should mark finished process as finished") {
+    val processName: ProcessName = generateProcessName
     val id: ProcessId = prepareDeployedProcess(processName).futureValue
 
     checkIsFollowingDeploy(managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue, expected = true)
@@ -111,6 +114,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should finish deployment only after DeploymentManager finishes") {
+    val processName: ProcessName = generateProcessName
     val id: ProcessId = prepareProcess(processName).futureValue
     val processIdName = ProcessIdWithName(id, processName)
 
@@ -136,6 +140,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should skip notifications and deployment on validation errors") {
+    val processName: ProcessName = generateProcessName
     val id: ProcessId = prepareProcess(processName, Some(MockDeploymentManager.maxParallelism + 1)).futureValue
     val processIdName = ProcessIdWithName(id, processName)
 
@@ -153,6 +158,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return properly state when state is canceled and process is canceled") {
+    val processName: ProcessName = generateProcessName
     val id =  prepareCanceledProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
@@ -161,6 +167,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return canceled status for canceled process with empty state - cleaned state") {
+    val processName: ProcessName = generateProcessName
     val id = prepareCanceledProcess(processName).futureValue
 
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
@@ -176,6 +183,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return canceled status for canceled process with not founded state - cleaned state") {
+    val processName: ProcessName = generateProcessName
     val id = prepareCanceledProcess(processName).futureValue
 
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
@@ -191,6 +199,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return state with warning when state is running and process is canceled") {
+    val processName: ProcessName = generateProcessName
     val id =  prepareCanceledProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
@@ -204,6 +213,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return state with warning when state is running and process is not deployed") {
+    val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
@@ -217,6 +227,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return state with warning when state is during canceled and process hasn't action") {
+    val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringCancel) {
@@ -230,6 +241,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return DuringCancel state when is during canceled and process has CANCEL action") {
+    val processName: ProcessName = generateProcessName
     val id = prepareCanceledProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringCancel) {
@@ -240,6 +252,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return state with error when state is finished and process hasn't action") {
+    val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Finished) {
@@ -252,6 +265,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return state with warning when state is restarting and process hasn't had action (couldn't be even deployed)") {
+    val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).futureValue
 
     val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
@@ -266,6 +280,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return state with status Restarting when process has been deployed and is restarting") {
+    val processName: ProcessName = generateProcessName
     val id = prepareDeployedProcess(processName).futureValue
 
     val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
@@ -280,6 +295,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return state with error when state is not running and process is deployed") {
+    val processName: ProcessName = generateProcessName
     val id = prepareDeployedProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
@@ -293,6 +309,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return state with error when state is null and process is deployed") {
+    val processName: ProcessName = generateProcessName
     val id = prepareDeployedProcess(processName).futureValue
 
     deploymentManager.withEmptyProcessState {
@@ -306,6 +323,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return error state when state is running and process is deployed with mismatch versions") {
+    val processName: ProcessName = generateProcessName
     val id =  prepareDeployedProcess(processName).futureValue
     val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
@@ -320,6 +338,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should always return process manager failure, even if some other verifications return invalid") {
+    val processName: ProcessName = generateProcessName
     val id =  prepareDeployedProcess(processName).futureValue
     val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
@@ -332,6 +351,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return warning state when state is running with empty version and process is deployed") {
+    val processName: ProcessName = generateProcessName
     val id =  prepareDeployedProcess(processName).futureValue
 
     deploymentManager.withProcessStateVersion(SimpleStateStatus.Running, Option.empty) {
@@ -345,6 +365,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return error state when failed to get state") {
+    val processName: ProcessName = generateProcessName
     val id =  prepareDeployedProcess(processName).futureValue
 
     deploymentManager.withProcessStateVersion(SimpleStateStatus.FailedToGet, Option.empty) {
@@ -358,6 +379,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return not deployed status for process with empty state - not deployed state") {
+    val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).futureValue
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
 
@@ -371,6 +393,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return not deployed status for process with not found state - not deployed state") {
+    val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).futureValue
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
 
@@ -384,6 +407,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return NotDeployed state for archived process with missing state") {
+    val processName: ProcessName = generateProcessName
     val id = prepareArchivedProcess(processName).futureValue
     deploymentManager.withEmptyProcessState {
       val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -393,6 +417,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return NotDeployed state for unarchived process with missing state") {
+    val processName: ProcessName = generateProcessName
     val id = prepareUnArchivedProcess(processName).futureValue
     deploymentManager.withEmptyProcessState {
       val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -402,6 +427,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return any status for archived process with any available state") {
+    val processName: ProcessName = generateProcessName
     val id = prepareArchivedProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
@@ -412,6 +438,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   }
 
   test("Should return warning status for archived process with running state") {
+    val processName: ProcessName = generateProcessName
     val id = prepareArchivedProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
@@ -475,5 +502,9 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
         actionRepository.markProcessAsUnArchived(processId = id, initialVersionId)
       )
     } yield id
+  }
+
+  private def generateProcessName = {
+    ProcessName("proces_" + UUID.randomUUID())
   }
 }
