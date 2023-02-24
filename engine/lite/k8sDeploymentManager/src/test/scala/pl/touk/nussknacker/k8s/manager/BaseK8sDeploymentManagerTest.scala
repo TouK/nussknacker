@@ -83,9 +83,8 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
 
     def withRunningScenario(action: => Unit): Unit = {
       manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
-      waitForRunning(version)
-
       try {
+        waitForRunning(version)
         action
       } catch {
         case NonFatal(ex) =>
