@@ -7,6 +7,7 @@
 * [#3979](https://github.com/TouK/nussknacker/pull/3979) Updated Flink 1.16.0 -> 1.16.1
 * [#4019](https://github.com/TouK/nussknacker/pull/4019) Make displayable process category required
 * [#4020](https://github.com/TouK/nussknacker/pull/4020) Pass category name to process migration method
+* [#4039](https://github.com/TouK/nussknacker/pull/4039) Fix for: After clicking cancel, sometimes for a moment appear "during deploy" status instead of "during cancel"
 
 1.8.1 (not released yet)
 ------------------------
