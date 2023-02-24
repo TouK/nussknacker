@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -15,8 +14,6 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ManagementService
   extends DeploymentService
     with ProcessStateService
-    with CustomActionInvokerService
-    with ScenarioTestExecutorService
     with InProgressDeploymentActionsProvider
 
 trait DeploymentService {
@@ -67,11 +64,3 @@ object DeploymentActionType {
   case object Deployment extends DeploymentActionType
   case object Cancel extends DeploymentActionType
 }
-
-class ProcessIsBeingDeployed(deployments: Map[ProcessName, DeployInfo]) extends
-  Exception(s"Cannot deploy/test as following deployments are in progress: ${
-    deployments.map {
-      case (id, info) => s"${info.action} on $id by ${info.userId}"
-    }.mkString(", ")
-  }") with EspError
-

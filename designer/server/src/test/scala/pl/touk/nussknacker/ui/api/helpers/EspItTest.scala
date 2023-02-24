@@ -151,7 +151,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   protected def createManagementActorRef: ActorRef = system.actorOf(ManagementActor.props(
-    dmDispatcher, deploymentService, customActionInvokerService, processStateService, testExecutorService), "management")
+    dmDispatcher, deploymentService, processStateService), "management")
 
   protected def createDBProcessService(managementService: ManagementService): DBProcessService = {
     new DBProcessService(managementService, newProcessPreparer,
@@ -162,7 +162,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected def createScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider]): ScenarioTestService =
     new ScenarioTestService(testInfoProviders, featureTogglesConfig.testDataSettings, new ScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
-      processResolving, new ProcessCounter(TestFactory.prepareSampleSubprocessRepository), managementService)
+      processResolving, new ProcessCounter(TestFactory.prepareSampleSubprocessRepository), testExecutorService)
 
   protected def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) = new ManagementResources(
     processAuthorizer = processAuthorizer,
@@ -170,6 +170,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     deploymentCommentSettings = deploymentCommentSettings,
     processService = processService,
     dispatcher = dmDispatcher,
+    customActionInvokerService = customActionInvokerService,
     metricRegistry = new MetricRegistry,
     scenarioTestService = scenarioTestService,
   )

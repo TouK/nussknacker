@@ -13,12 +13,12 @@ import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSett
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeData}
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeData}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
@@ -151,14 +151,14 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processStateService = new ProcessStateServiceImpl(processRepository, dmDispatcher, deploymentService)
     val customActionInvokerService = new CustomActionInvokerServiceImpl(processRepository, dmDispatcher, processStateService)
     val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
-    val managementActor = system.actorOf(ManagementActor.props(dmDispatcher, deploymentService, customActionInvokerService, processStateService, testExecutorService), "management")
+    val managementActor = system.actorOf(ManagementActor.props(dmDispatcher, deploymentService, processStateService), "management")
     val managementService = new ActorBasedManagementService(managementActor, systemRequestTimeout)
     val processService = new DBProcessService(managementService, newProcessPreparer,
       processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
       writeProcessRepository, processValidation
     )
     val scenarioTestService = ScenarioTestService(modelData, featureTogglesConfig.testDataSettings,
-      processResolving, counter, managementService)
+      processResolving, counter, testExecutorService)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(resolvedConfig, processCategoryService.getAllCategories)
 
@@ -196,7 +196,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
-        ManagementResources(processAuthorizer, processRepository, featureTogglesConfig, processService, dmDispatcher, metricsRegistry, scenarioTestService),
+        new ManagementResources(processAuthorizer, processRepository, featureTogglesConfig.deploymentCommentSettings, processService,
+          dmDispatcher, customActionInvokerService, metricsRegistry, scenarioTestService),
         new ValidationResources(processRepository ,processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new UserResources(processCategoryService),

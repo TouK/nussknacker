@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -33,13 +34,16 @@ class DeploymentServiceImpl(getDeploymentManager: ProcessingType => DeploymentMa
 
   override def cancelProcess(processId: ProcessIdWithName, deploymentComment: Option[DeploymentComment])
                             (implicit user: LoggedUser, ec: ExecutionContext): Future[_] = {
-    withDeploymentActionNotification(processId, "cancel", deploymentComment) {
+    withDeploymentActionNotificationOpt(processId, "cancel", deploymentComment) {
       for {
         processingType <- processRepository.fetchProcessingType(processId.id)
         _ <- getDeploymentManager(processingType).cancel(processId.name, user.toManagerUser)
         maybeVersion <- findDeployedVersion(processId)
-        version <- processDataExistOrFail(maybeVersion, processId.id)
-        result <- actionRepository.markProcessAsCancelled(processId.id, version, deploymentComment)
+        // process can be have deployment in progress (no last deploy action) or be already cancelled - in this
+        // situation we don't have version to mark as cancel
+        result <- maybeVersion.map { version =>
+          actionRepository.markProcessAsCancelled(processId.id, version, deploymentComment)
+        }.sequence
       } yield result
     }
   }
@@ -116,7 +120,7 @@ class DeploymentServiceImpl(getDeploymentManager: ProcessingType => DeploymentMa
                                    savepointPath: Option[String],
                                    deploymentComment: Option[DeploymentComment],
                                    deploymentManager: DeploymentManager)
-                                  (implicit user: LoggedUser, ec: ExecutionContext): Future[Future[ProcessActionEntityData]] = {
+                                  (implicit user: LoggedUser, ec: ExecutionContext): Future[Future[_]] = {
     val processVersion = process.toEngineProcessVersion
     val validatedData = for {
       resolvedCanonicalProcess <- Future.fromTry(scenarioResolver.resolveScenario(process.json, process.processCategory))
@@ -126,12 +130,12 @@ class DeploymentServiceImpl(getDeploymentManager: ProcessingType => DeploymentMa
 
     validatedData.map { case (resolvedCanonicalProcess, deploymentData) =>
       //we notify of deployment finish/fail only if initial validation succeeded
-      withDeploymentActionNotification(process.idWithName, "deploy", deploymentComment) {
+      withDeploymentActionNotificationOpt(process.idWithName, "deploy", deploymentComment) {
         for {
           _ <- deploymentManager.deploy(processVersion, deploymentData, resolvedCanonicalProcess, savepointPath)
           deployedActionData <- actionRepository.markProcessAsDeployed(
             process.processId, process.processVersionId, process.processingType, deploymentComment)
-        } yield deployedActionData
+        } yield Some(deployedActionData)
       }
     }
   }
@@ -146,19 +150,21 @@ class DeploymentServiceImpl(getDeploymentManager: ProcessingType => DeploymentMa
     lastAction = process.flatMap(_.lastDeployedAction)
   } yield lastAction.map(la => la.processVersionId)
 
-  private def withDeploymentActionNotification(processIdWithName: ProcessIdWithName,
-                                               actionName: String,
-                                               deploymentComment: Option[DeploymentComment])(action: => Future[ProcessActionEntityData])
-                                              (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessActionEntityData] = {
+  private def withDeploymentActionNotificationOpt(processIdWithName: ProcessIdWithName,
+                                                  actionName: String,
+                                                  deploymentComment: Option[DeploymentComment])(action: => Future[Option[ProcessActionEntityData]])
+                                                 (implicit user: LoggedUser, ec: ExecutionContext): Future[Option[ProcessActionEntityData]] = {
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     val actionToRun = action
     actionToRun.onComplete {
       case Failure(failure) =>
         logger.error(s"Action: $actionName of ${processIdWithName.name} finished with failure", failure)
         processChangeListener.handle(OnDeployActionFailed(processIdWithName.id, failure))
-      case Success(details) =>
+      case Success(Some(details)) =>
         logger.info(s"Finishing $actionName of ${processIdWithName.name}")
         processChangeListener.handle(OnDeployActionSuccess(details.processId, details.processVersionId, deploymentComment, details.performedAtTime, details.action))
+      case Success(None) =>
+        logger.info(s"Action $actionName of ${processIdWithName.name} finished without any effect - skipping listener notification")
     }
     actionToRun
   }
