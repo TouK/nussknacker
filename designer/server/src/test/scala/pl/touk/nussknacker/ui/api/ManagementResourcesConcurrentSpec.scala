@@ -84,7 +84,7 @@ class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteT
   }
 
   private def withWaitForDeployFinish(name: String)(action: => Unit): Unit = {
-    val firstRun = deploymentManager.withWaitForDeployFinish {
+    val firstRun = deploymentManager.withWaitForDeployFinish(ProcessName(name)) {
       val firstRun = deployProcess(name) ~> runRoute
       firstRun.handled shouldBe false
       //We want to be sure deployment was invoked, to avoid flakiness
