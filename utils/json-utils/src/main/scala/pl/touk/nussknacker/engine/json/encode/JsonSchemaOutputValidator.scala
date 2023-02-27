@@ -36,6 +36,12 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   private val valid = Validated.Valid(())
 
+  private val additionalTypesMapping: Map[Class[_], Set[Class[_]]] = Map(
+    classOf[java.lang.Long] -> Set(classOf[java.lang.Integer]),
+    classOf[java.lang.Float] -> Set(classOf[java.lang.Integer], classOf[java.lang.Long]),
+    classOf[java.lang.Double] -> Set(classOf[java.lang.Integer], classOf[java.lang.Long], classOf[java.lang.Float]),
+  )
+
   /**
     * To see what's we currently supporting see SwaggerBasedJsonSchemaTypeDefinitionExtractor as well
     */
@@ -196,14 +202,19 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   /**
    * TODO: Consider verification class instead of using .canBeSubclassOf from Typing - we want to avoid:
    * * Unknown.canBeSubclassOf(Any) => true
-   * * Long.canBeSubclassOf(Integer) => true
    * Should we use strict verification at json?
    */
   private def canBeSubclassOf(typingResult: TypingResult, schema: Schema, rootSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     val schemaAsTypedResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(rootSchema)).typingResult
-    condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
-      OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema))
-    )
+
+    (schemaAsTypedResult, typingResult) match {
+      case (schemaType: SingleTypingResult, typing: SingleTypingResult) if schemaType.objType.klass == typing.objType.klass => valid
+      case (schemaType: SingleTypingResult, typing: SingleTypingResult) if additionalTypesMapping.getOrElse(schemaType.objType.klass, Set.empty).contains(typing.objType.klass) => valid
+      case (_: SingleTypingResult, _: SingleTypingResult) => OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema)).invalidNel
+      case _ => condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
+        OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema))
+      )
+    }
   }
 
   private def invalid(typingResult: TypingResult, schema: Schema, rootSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorTypeError, Nothing] =

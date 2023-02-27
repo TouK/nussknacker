@@ -533,6 +533,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
       (null, "10", null, "100", classOf[java.lang.Integer]),
       (null, "10", "100", null, classOf[java.lang.Integer]),
       ("10", null, null, "100", classOf[java.lang.Integer]),
+      ("10", null, "10", null, classOf[java.lang.Integer]),
       ("100", null, null, null, classOf[java.lang.Long]),
       (null, null, null, "100", classOf[java.lang.Long]),
       (s"${Int.MinValue}", null, s"${Int.MaxValue}", null, classOf[java.lang.Integer]),

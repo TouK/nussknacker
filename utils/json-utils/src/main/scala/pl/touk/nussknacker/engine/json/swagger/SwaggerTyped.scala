@@ -202,6 +202,9 @@ object SwaggerTyped {
     val lowerBoundary: Option[BigDecimal] = List(Option(exclusiveMinValue).map(_ + 1), Option(minValue)).flatten.sorted(Ordering.BigDecimal.reverse).headOption
     val upperBoundary: Option[BigDecimal] = List(Option(exclusiveMaxValue).map(_ - 1), Option(maxValue)).flatten.sorted(Ordering.BigDecimal).headOption
 
+    // We try to keep inferred type as narrow as possible,
+    // but in the case when at least one boundary exceeds Long range we end up with BigInteger type.
+    // That can have negative performance impact and can be inconvenient to use.
     List(lowerBoundary, upperBoundary).flatten match {
       case min :: max :: Nil if min.isValidInt && max.isValidInt => SwaggerInteger
       case min :: max :: Nil if min.isValidLong && max.isValidLong => SwaggerLong
