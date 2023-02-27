@@ -17,7 +17,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
-import pl.touk.nussknacker.ui.process.deployment.ManagementActor.ActorBasedManagementService
+import pl.touk.nussknacker.ui.process.deployment.DeploymentActionsInProgressActor.ActorBasedDeploymentActionsInProgressRepository
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -26,7 +26,7 @@ import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting {
+class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting {
 
   import TestCategories._
   import TestFactory._
@@ -46,30 +46,30 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   private val dmDispatcher = new DeploymentManagerDispatcher(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager), fetchingProcessRepository)
 
   private val listener = new TestProcessChangeListener
-  private val deploymentService = new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, TestFactory.scenarioResolver, listener)
+
+  private val deploymentActionsInProgressActor = system.actorOf(DeploymentActionsInProgressActor.props, "deploymentActionsInProgress")
+
+  private val deploymentActionsInProgressRepository = new ActorBasedDeploymentActionsInProgressRepository(deploymentActionsInProgressActor, 1 minute)
+
+  private val deploymentService = new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository,
+    TestFactory.scenarioResolver, deploymentActionsInProgressRepository, listener)
 
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
     mapProcessingTypeDataProvider("streaming" -> Map.empty)
   )
 
-  private val managementActor = system.actorOf(
-      ManagementActor.props(dmDispatcher, deploymentService),"management"
-  )
-
-  private val managementService = new ActorBasedManagementService(managementActor, 1 minute)
-
   test("should return state correctly when state is deployed") {
     val processName: ProcessName = generateProcessName
     val id: ProcessId =  prepareProcess(processName).futureValue
 
     deploymentManager.withWaitForDeployFinish(processName) {
-      managementService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
-      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
+      deploymentService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
     }
 
     eventually {
-      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Running
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Running
     }
   }
 
@@ -78,8 +78,8 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id: ProcessId = prepareDeployedProcess(processName).futureValue
 
     deploymentManager.withWaitForCancelFinish {
-      managementService.cancelProcess(ProcessIdWithName(id, processName), None)
-      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringCancel
+      deploymentService.cancelProcess(ProcessIdWithName(id, processName), None)
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringCancel
     }
   }
 
@@ -87,15 +87,15 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id: ProcessId = prepareDeployedProcess(processName).futureValue
 
-    checkIsFollowingDeploy(managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue, expected = true)
+    checkIsFollowingDeploy(deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue, expected = true)
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
     deploymentManager.withProcessFinished {
       //we simulate what happens when retrieveStatus is called mulitple times to check only one comment is added
       (1 to 5).foreach { _ =>
-        checkIsFollowingDeploy(managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue, expected = false)
+        checkIsFollowingDeploy(deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue, expected = false)
       }
-      val finishedStatus = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val finishedStatus = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
       finishedStatus.status shouldBe SimpleStateStatus.Finished
       finishedStatus.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive)
 
@@ -116,7 +116,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ProcessActionType]) = {
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.flatMap(_.lastAction).map(_.action) shouldBe expectedAction
-      managementService.getProcessState(processIdName).futureValue.status shouldBe expectedStatus
+      deploymentService.getProcessState(processIdName).futureValue.status shouldBe expectedStatus
     }
 
     val statusFromDeploymentManager = SimpleStateStatus.NotDeployed
@@ -124,7 +124,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       checkStatusAction(statusFromDeploymentManager, None)
       deploymentManager.withWaitForDeployFinish(processName) {
-        managementService.deployProcessAsync(processIdName, None, None).futureValue
+        deploymentService.deployProcessAsync(processIdName, None, None).futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
         listener.events shouldBe Symbol("empty")
       }
@@ -141,14 +141,14 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processIdName = ProcessIdWithName(id, processName)
 
     deploymentManager.withProcessState(None) {
-      val result = managementService.deployProcessAsync(processIdName, None, None).failed.futureValue
+      val result = deploymentService.deployProcessAsync(processIdName, None, None).failed.futureValue
       result.getMessage shouldBe "Parallelism too large"
       deploymentManager.deploys shouldBe Symbol("empty")
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.flatMap(_.lastAction) shouldBe None
       listener.events shouldBe Symbol("empty")
       // during short period of time, status will be during deploy - because parallelism validation are done in the same critical section as deployment
       eventually {
-        managementService.getProcessState(processIdName).futureValue.status shouldBe SimpleStateStatus.NotDeployed
+        deploymentService.getProcessState(processIdName).futureValue.status shouldBe SimpleStateStatus.NotDeployed
       }
     }
   }
@@ -158,7 +158,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id =  prepareCanceledProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
-      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
     }
   }
 
@@ -169,7 +169,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
     deploymentManager.withEmptyProcessState {
-      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
@@ -185,7 +185,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction should not be None
 
     deploymentManager.withEmptyProcessState {
-      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
@@ -199,7 +199,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id =  prepareCanceledProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Warning
       state.icon shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
@@ -213,7 +213,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Warning
       state.icon shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
@@ -227,7 +227,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringCancel) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Warning
       state.icon shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
@@ -241,7 +241,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareCanceledProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringCancel) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.DuringCancel
     }
@@ -252,7 +252,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Finished) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Warning
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
@@ -267,7 +267,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessState(Some(state)) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Warning
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
@@ -282,7 +282,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessState(Some(state)) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe FlinkStateStatus.Restarting
       state.allowedActions shouldBe List(ProcessActionType.Cancel)
@@ -295,7 +295,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareDeployedProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Error
       state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
@@ -309,7 +309,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareDeployedProcess(processName).futureValue
 
     deploymentManager.withEmptyProcessState {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Error
       state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
@@ -324,7 +324,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
     deploymentManager.withProcessStateVersion(SimpleStateStatus.Running, version) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Error
       state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
@@ -339,7 +339,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
     deploymentManager.withProcessStateVersion(SimpleStateStatus.Failed, version) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Failed
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
@@ -351,7 +351,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id =  prepareDeployedProcess(processName).futureValue
 
     deploymentManager.withProcessStateVersion(SimpleStateStatus.Running, Option.empty) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Warning
       state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployWarningIcon)
@@ -365,7 +365,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id =  prepareDeployedProcess(processName).futureValue
 
     deploymentManager.withProcessStateVersion(SimpleStateStatus.FailedToGet, Option.empty) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Error
       state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
@@ -380,7 +380,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
 
     deploymentManager.withEmptyProcessState {
-      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.NotDeployed
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.NotDeployed
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
@@ -394,7 +394,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get.lastAction shouldBe None
 
     deploymentManager.withEmptyProcessState {
-      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.NotDeployed
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.NotDeployed
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.get
@@ -406,7 +406,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id = prepareArchivedProcess(processName).futureValue
     deploymentManager.withEmptyProcessState {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.NotDeployed
     }
@@ -416,7 +416,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id = prepareUnArchivedProcess(processName).futureValue
     deploymentManager.withEmptyProcessState {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.NotDeployed
     }
@@ -427,7 +427,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareArchivedProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Canceled
     }
@@ -438,7 +438,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareArchivedProcess(processName).futureValue
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
-      val state = managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Warning
       state.icon shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
@@ -451,12 +451,12 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id: ProcessId = prepareProcess(processName).futureValue
 
     deploymentManager.withWaitForDeployFinish(processName) {
-      val firstDeployResult = managementService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
-      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
+      val firstDeployResult = deploymentService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
 
       // in the normal situation, scenario probably will have some properties changed for the next deployment
       deploymentManager.withWaitForDeployFinish(processName) {
-        managementService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
+        deploymentService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
       }.futureValue
 
       eventually {
@@ -466,7 +466,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
         case _: OnDeployActionSuccess =>
       }
 
-      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
       firstDeployResult
     }.futureValue
 

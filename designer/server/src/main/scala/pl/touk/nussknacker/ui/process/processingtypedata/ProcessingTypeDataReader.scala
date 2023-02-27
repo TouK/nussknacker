@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.process.deployment.DeploymentServiceImpl
+import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,7 +19,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
   def loadProcessingTypeData(config: ConfigWithUnresolvedVersion)(implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                                                   sttpBackend: SttpBackend[Future, Any],
-                                                                  deploymentService: DeploymentServiceImpl,
+                                                                  deploymentService: DeploymentService,
                                                                   categoriesService: ProcessCategoryService): ProcessingTypeDataProvider[ProcessingTypeData] = {
     val types: Map[ProcessingType, ProcessingTypeConfig] = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val valueMap = types
@@ -34,7 +34,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
   protected def createProcessingTypeData(name: ProcessingType, typeConfig: ProcessingTypeConfig)
                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                          sttpBackend: SttpBackend[Future, Any],
-                                         deploymentService: DeploymentServiceImpl): ProcessingTypeData = {
+                                         deploymentService: DeploymentService): ProcessingTypeData = {
     logger.debug(s"Creating scenario manager: $name with config: $typeConfig")
     val managerProvider = ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.engineType)
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService = new DefaultProcessingTypeDeploymentService(name, deploymentService)

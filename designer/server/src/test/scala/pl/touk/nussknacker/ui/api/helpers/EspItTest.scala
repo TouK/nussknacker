@@ -34,8 +34,8 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.ManagementActor.ActorBasedManagementService
-import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerServiceImpl, DeploymentManagerDispatcher, DeploymentServiceImpl, ManagementActor, ManagementService, ScenarioTestExecutorServiceImpl}
+import pl.touk.nussknacker.ui.process.deployment.DeploymentActionsInProgressActor.ActorBasedDeploymentActionsInProgressRepository
+import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerServiceImpl, DeploymentManagerDispatcher, DeploymentService, DeploymentServiceImpl, DeploymentActionsInProgressActor, ScenarioTestExecutorServiceImpl}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -86,8 +86,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
     fetchingProcessRepository)
 
-  private implicit val deploymentService: DeploymentServiceImpl =
-    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, scenarioResolver, processChangeListener)
+  protected val deploymentActionsInProgressActor: ActorRef = system.actorOf(DeploymentActionsInProgressActor.props, "deploymentActionsInProgress")
+
+  protected val deploymentActionsInProgressActorRepository = new ActorBasedDeploymentActionsInProgressRepository(deploymentActionsInProgressActor, 1 minute)
+
+  private implicit val deploymentService: DeploymentService =
+    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, scenarioResolver, deploymentActionsInProgressActorRepository, processChangeListener)
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
     new DefaultProcessingTypeDeploymentService(Streaming, deploymentService)
@@ -120,11 +124,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
 
-  protected val managementActor: ActorRef = createManagementActorRef
-
-  protected val managementService = new ActorBasedManagementService(managementActor, 1 minute)
-
-  protected val processService: DBProcessService = createDBProcessService(managementService)
+  protected val processService: DBProcessService = createDBProcessService(deploymentService)
 
   protected val scenarioTestService: ScenarioTestService = createScenarioTestService(testModelDataProvider.mapValues(new ModelDataTestInfoProvider(_)))
 
@@ -148,11 +148,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
-  protected def createManagementActorRef: ActorRef = system.actorOf(ManagementActor.props(
-    dmDispatcher, deploymentService), "management")
-
-  protected def createDBProcessService(managementService: ManagementService): DBProcessService = {
-    new DBProcessService(managementService, newProcessPreparer,
+  protected def createDBProcessService(deploymentService: DeploymentService): DBProcessService = {
+    new DBProcessService(deploymentService, newProcessPreparer,
       processCategoryService, processResolving, repositoryManager, fetchingProcessRepository,
       actionRepository, writeProcessRepository, processValidation
     )

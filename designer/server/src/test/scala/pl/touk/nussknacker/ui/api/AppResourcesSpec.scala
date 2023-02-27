@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, withAdminPermissions, withPermissions, withoutPermissions}
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, StubManagementService, TestFactory}
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, StubDeploymentService, TestFactory}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReload
 
 import scala.jdk.CollectionConverters._
@@ -35,7 +35,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
     SimpleProcessStateDefinitionManager.processState(status)
 
   private def prepareBasicAppResources(statuses: Map[ProcessName, StateStatus], withConfigExposed: Boolean = true) = {
-    val processService = createDBProcessService(new StubManagementService(statuses.mapValuesNow(processStatus)))
+    val processService = createDBProcessService(new StubDeploymentService(statuses.mapValuesNow(processStatus)))
     new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, fetchingProcessRepository,
       TestFactory.processValidation, processService, exposeConfig = withConfigExposed, processCategoryService
     )

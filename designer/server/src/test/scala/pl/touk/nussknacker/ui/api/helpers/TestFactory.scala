@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.server.Route
-import akka.testkit.TestProbe
 import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances.DB
@@ -19,7 +17,6 @@ import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
-import pl.touk.nussknacker.ui.process.deployment.ManagementActor.ActorBasedManagementService
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
@@ -31,7 +28,6 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 
 //TODO: merge with ProcessTestData?
 object TestFactory extends TestPermissions{
@@ -65,9 +61,7 @@ object TestFactory extends TestPermissions{
 
   def scenarioResolver = new ScenarioResolver(sampleResolver)
 
-  def newDummyManagerActor(): ActorRef = TestProbe()(ActorSystem("DefaultComponentServiceSpec")).ref
-
-  def managementService() = new ActorBasedManagementService(newDummyManagerActor(), 1 minute)
+  def deploymentService() = new StubDeploymentService(Map.empty)
 
   def newDBRepositoryManager(dbs: DbConfig): RepositoryManager[DB] =
     RepositoryManager.createDbRepositoryManager(dbs)
