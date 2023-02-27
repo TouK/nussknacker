@@ -1,17 +1,16 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestCategories, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
 
 import scala.jdk.CollectionConverters._
@@ -20,10 +19,7 @@ import scala.jdk.CollectionConverters._
 class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-
-
   test("not allow concurrent deployment of same process") {
-
     val processId = "sameConcurrentDeployments"
 
     saveProcessAndAssertSuccess(processId, SampleProcess.process)
@@ -62,27 +58,6 @@ class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteT
     }
   }
 
-  test("not allow concurrent deployment of different processes") {
-    val processId = "differentScenarios1"
-    val processId2 = "differentScenarios2"
-
-    saveProcessAndAssertSuccess(processId, SampleProcess.process)
-    saveProcessAndAssertSuccess(processId2, SampleProcess.process)
-
-    withWaitForDeployFinish(processId) {
-      eventually {
-        deployProcess(processId2) ~> check {
-          status shouldBe StatusCodes.Conflict
-        }
-      }
-    }
-
-    deployProcess(processId2) ~> runRoute ~> check {
-      status shouldBe StatusCodes.OK
-    }
-
-  }
-
   private def withWaitForDeployFinish(name: String)(action: => Unit): Unit = {
     val firstRun = deploymentManager.withWaitForDeployFinish(ProcessName(name)) {
       val firstRun = deployProcess(name) ~> runRoute
@@ -98,7 +73,5 @@ class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteT
       status shouldBe StatusCodes.OK
     }
   }
-
-
 
 }

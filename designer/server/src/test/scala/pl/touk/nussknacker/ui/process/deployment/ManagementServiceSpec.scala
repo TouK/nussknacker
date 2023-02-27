@@ -446,7 +446,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
   }
 
-  ignore("should handle correctly concurrent >1 deploy") {
+  test("should handle correctly concurrent >1 deploy") {
     val processName: ProcessName = generateProcessName
     val id: ProcessId = prepareProcess(processName).futureValue
 
@@ -458,7 +458,10 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       deploymentManager.withWaitForDeployFinish(processName) {
         managementService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
       }.futureValue
-      listener.events should have size 1
+
+      eventually {
+        listener.events should have size 1
+      }
       all(listener.events.toArray.toList) should matchPattern {
         case _: OnDeployActionSuccess =>
       }
@@ -467,7 +470,9 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       firstDeployResult
     }.futureValue
 
-    listener.events should have size 2
+    eventually {
+      listener.events should have size 2
+    }
     all(listener.events.toArray.toList) should matchPattern {
       case _: OnDeployActionSuccess =>
     }
