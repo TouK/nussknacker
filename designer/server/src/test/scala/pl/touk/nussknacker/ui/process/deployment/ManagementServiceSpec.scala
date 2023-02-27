@@ -43,22 +43,18 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val actionRepository = newActionProcessRepository(db)
   private val activityRepository = newProcessActivityRepository(db)
+  private val dmDispatcher = new DeploymentManagerDispatcher(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager), fetchingProcessRepository)
 
   private val listener = new TestProcessChangeListener
-  private val deploymentService = new DeploymentServiceImpl(_ => deploymentManager, fetchingProcessRepository, actionRepository, TestFactory.scenarioResolver, listener)
+  private val deploymentService = new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, TestFactory.scenarioResolver, listener)
 
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
     mapProcessingTypeDataProvider("streaming" -> Map.empty)
   )
 
-  private val dmDispatcher = new DeploymentManagerDispatcher(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager), fetchingProcessRepository)
-  private val processStateService = new ProcessStateServiceImpl(fetchingProcessRepository, dmDispatcher, deploymentService)
-
   private val managementActor = system.actorOf(
-      ManagementActor.props(
-        dmDispatcher, deploymentService, processStateService),
-    "management"
+      ManagementActor.props(dmDispatcher, deploymentService),"management"
   )
 
   private val managementService = new ActorBasedManagementService(managementActor, 1 minute)
