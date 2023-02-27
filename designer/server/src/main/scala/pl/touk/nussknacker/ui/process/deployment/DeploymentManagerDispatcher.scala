@@ -14,7 +14,7 @@ class DeploymentManagerDispatcher(managers: ProcessingTypeDataProvider[Deploymen
 
   def deploymentManager(processId: ProcessId)
                        (implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {
-    processRepository.fetchProcessingType(processId).map(managers.forTypeUnsafe)
+    processRepository.fetchProcessingType(processId).map(deploymentManager)
   }
 
   def deploymentManager(typ: ProcessingType): DeploymentManager = {
