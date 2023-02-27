@@ -7,8 +7,6 @@ export interface ScenariosFiltersModel extends SortableFiltersModel {
     HIDE_ACTIVE?: boolean;
     HIDE_FRAGMENTS?: boolean;
     HIDE_SCENARIOS?: boolean;
-    SHOW_DEPLOYED?: boolean;
-    SHOW_NOT_DEPLOYED?: boolean;
     DEPLOYED?: string[];
     CREATED_BY?: string[];
     STATUS?: string[];
