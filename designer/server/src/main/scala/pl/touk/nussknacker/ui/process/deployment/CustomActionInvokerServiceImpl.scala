@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepository[Future],
                                      dispatcher: DeploymentManagerDispatcher,
-                                     processStateService: ProcessStateServiceImpl) extends CustomActionInvokerService {
+                                     processStateService: ProcessStateService) extends CustomActionInvokerService {
   override def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
                                  (implicit user: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]] = {
     val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)

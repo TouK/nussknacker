@@ -13,10 +13,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ManagementService
   extends DeploymentService
-    with ProcessStateService
     with InProgressDeploymentActionsProvider
 
-trait DeploymentService {
+trait DeploymentService extends ProcessStateService {
 
   //inner Future in result allows to wait for deployment finish, while outer handles validation
   def deployProcessAsync(id: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])
@@ -27,17 +26,17 @@ trait DeploymentService {
 
 }
 
-trait CustomActionInvokerService {
-
-  def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
-                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]]
-
-}
-
 trait ProcessStateService {
 
   def getProcessState(processIdWithName: ProcessIdWithName)
                      (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState]
+
+}
+
+trait CustomActionInvokerService {
+
+  def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
+                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]]
 
 }
 
