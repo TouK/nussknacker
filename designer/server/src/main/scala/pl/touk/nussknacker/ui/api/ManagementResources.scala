@@ -20,9 +20,8 @@ import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
-import pl.touk.nussknacker.ui.process.deployment.DeploymentManagerDispatcher
+import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerService, DeploymentManagerDispatcher}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
@@ -34,25 +33,6 @@ import scala.concurrent.{ExecutionContext, Future}
 object ManagementResources {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
-
-  def apply(processAuthorizator: AuthorizeProcess,
-            processRepository: FetchingProcessRepository[Future],
-            featuresOptions: FeatureTogglesConfig,
-            processService: ProcessService,
-            dispatcher: DeploymentManagerDispatcher,
-            metricRegistry: MetricRegistry,
-            scenarioTestService: ScenarioTestService)
-           (implicit ec: ExecutionContext): ManagementResources = {
-    new ManagementResources(
-      processAuthorizator,
-      processRepository,
-      featuresOptions.deploymentCommentSettings,
-      processService,
-      dispatcher,
-      metricRegistry,
-      scenarioTestService,
-    )
-  }
 
   implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts[Json]] = deriveConfiguredEncoder
 
@@ -97,6 +77,7 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                           deploymentCommentSettings: Option[DeploymentCommentSettings],
                           processService: ProcessService,
                           dispatcher: DeploymentManagerDispatcher,
+                          customActionInvokerService: CustomActionInvokerService,
                           metricRegistry: MetricRegistry,
                           scenarioTestService: ScenarioTestService)
                          (implicit val ec: ExecutionContext)
@@ -213,7 +194,7 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
         (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
           val params = req.params.getOrElse(Map.empty)
           complete {
-            processService.invokeCustomAction(req.actionName, process, params)
+            customActionInvokerService.invokeCustomAction(req.actionName, process, params)
               .flatMap {
                 case res@Right(_) =>
                   toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)

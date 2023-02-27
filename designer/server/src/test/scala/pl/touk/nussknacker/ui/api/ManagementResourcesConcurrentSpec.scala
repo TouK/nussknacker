@@ -1,20 +1,26 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess}
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestCategories, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
 
 import scala.jdk.CollectionConverters._
 
 @Slow
-class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteTest
+class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+
+
 
   test("not allow concurrent deployment of same process") {
 
@@ -34,20 +40,25 @@ class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteT
     }
   }
 
-  test("not allow concurrent deployment and cancel of same process") {
-    val processId = "concurrentDeployAndCancel"
+  test("allow concurrent deployment and cancel of same process") {
+    val processName = ProcessName("concurrentDeployAndCancel")
 
-    saveProcessAndAssertSuccess(processId, SampleProcess.process)
+    saveProcessAndAssertSuccess(processName.value, SampleProcess.process)
+    getProcess(processName) ~> check {
+      val processId = responseAs[ProcessDetails].processId
 
-    withWaitForDeployFinish(processId) {
-      eventually {
-        cancelProcess(processId) ~> check {
-          status shouldBe StatusCodes.Conflict
+      withWaitForDeployFinish(processName.value) {
+        cancelProcess(processName.value) ~> check {
+          status shouldBe StatusCodes.OK
         }
       }
-    }
-    cancelProcess(processId) ~> check {
-      status shouldBe StatusCodes.OK
+      // we have to wait for deploys, because otherwise insert into actions table can end up with constraint violated (process will be removed before insert)
+      eventually {
+        val successDeploys = processChangeListener.events.toArray.collect {
+          case success@OnDeployActionSuccess(`processId`, _, _, _, _) => success
+        }
+        successDeploys should have length 1
+      }
     }
   }
 

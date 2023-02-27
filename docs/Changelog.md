@@ -8,6 +8,7 @@
 * [#4019](https://github.com/TouK/nussknacker/pull/4019) Make displayable process category required
 * [#4020](https://github.com/TouK/nussknacker/pull/4020) Pass category name to process migration method
 * [#4039](https://github.com/TouK/nussknacker/pull/4039) Fix for: After clicking cancel, sometimes for a moment appear "during deploy" status instead of "during cancel"
+* [#4041](https://github.com/TouK/nussknacker/pull/4041) Concurrent deploy, cancel and test from file mechanisms are allowed now
 
 1.8.1 (not released yet)
 ------------------------
