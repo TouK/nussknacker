@@ -46,7 +46,8 @@ or [start a discussion](https://github.com/TouK/nussknacker/discussions/new?cate
 
 ## Scala compatibility
 
-Currently, we do support Scala 2.12, we will cross publish when Flink supports Scala >= 2.13.
+Currently, we do support Scala 2.12 and 2.13, we cross publish versions. Default scala version is 2.13, so docker images (both Designer and Lite Runtime images) are tagged with `_scala-2.X` suffix (e.g. `1.8.0_scala_2.13` or `latest_2.12`). 
+Tags without such suffix point to images with default scala version build. Please be aware of that, especially if you use `latest` image tag.
 
 ## Flink compatibility
 
@@ -56,6 +57,8 @@ However, it should be possible to run Nussknacker with older Flink version.
 While we don't provide out-of-the-box
 support as it would complicate the build process, there is separate [repo](https://github.com/TouK/nussknacker-flink-compatibility)
 with detailed instructions how to run Nussknacker with some of the older versions.  
+
+As for now, Flink does not support scala 2.12 (see [FLINK-13414](https://issues.apache.org/jira/browse/FLINK-13414) issue), so to use Nussknacker build with scala 2.13 some [tweaks](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/src/it/scala/pl/touk/nussknacker/engine/management/DockerTest.scala#L60) in Flink installations are required.
 
 ## Related projects
 
