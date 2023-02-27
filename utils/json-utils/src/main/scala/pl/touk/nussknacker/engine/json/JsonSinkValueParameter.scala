@@ -6,24 +6,29 @@ import org.everit.json.schema.{ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
 import pl.touk.nussknacker.engine.json.swagger.implicits.RichSwaggerTyped
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
+import pl.touk.nussknacker.engine.util.output.OutputValidatorError
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter, TypingResultValidator}
 
 import scala.collection.immutable.ListMap
 
 object JsonSinkValueParameter {
 
-  import scala.jdk.CollectionConverters._
   import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
+
+  import scala.jdk.CollectionConverters._
 
   type FieldName = String
 
   //Extract editor form from JSON schema
-  def apply(schema: Schema, defaultParamName: String)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
-    ParameterRetriever(schema, defaultParamName).toSinkValueParameter(schema, paramName = None, defaultValue = None, isRequired = None)
+  def apply(schema: Schema, defaultParamName: FieldName, validationMode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
+    ParameterRetriever(schema, defaultParamName, validationMode).toSinkValueParameter(schema, paramName = None, defaultValue = None, isRequired = None)
 
-  private case class ParameterRetriever(wholeSchema: Schema, defaultParamName: String)(implicit nodeId: NodeId) {
+  private case class ParameterRetriever(rootSchema: Schema, defaultParamName: FieldName, validationMode: ValidationMode)(implicit nodeId: NodeId) {
 
     def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultValue: Option[Expression], isRequired: Option[Boolean]): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
       schema match {
@@ -34,18 +39,18 @@ object JsonSinkValueParameter {
       }
     }
 
-  private def createJsonSinkSingleValueParameter(schema: Schema,
-                                                 paramName: String,
-                                                 defaultValue: Option[Expression],
-                                                 isRequired: Option[Boolean]): SinkSingleValueParameter = {
-    val swaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(wholeSchema))
-    val typing = swaggerTyped.typingResult
-    //By default properties are not required: http://json-schema.org/understanding-json-schema/reference/object.html#required-properties
-    val isOptional = !isRequired.getOrElse(false)
-    val parameter = (if (isOptional) Parameter.optional(paramName, typing) else Parameter(paramName, typing))
-      .copy(isLazyParameter = true, defaultValue = defaultValue.map(_.expression), editor = swaggerTyped.editorOpt)
+    private def createJsonSinkSingleValueParameter(schema: Schema,
+                                                   paramName: String,
+                                                   defaultValue: Option[Expression],
+                                                   isRequired: Option[Boolean]): SinkSingleValueParameter = {
+      val swaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(rootSchema))
+      val typing = swaggerTyped.typingResult
+      //By default properties are not required: http://json-schema.org/understanding-json-schema/reference/object.html#required-properties
+      val isOptional = !isRequired.getOrElse(false)
+      val parameter = (if (isOptional) Parameter.optional(paramName, typing) else Parameter(paramName, typing))
+        .copy(isLazyParameter = true, defaultValue = defaultValue.map(_.expression), editor = swaggerTyped.editorOpt)
 
-      SinkSingleValueParameter(parameter)
+      SinkSingleValueParameter(parameter, new JsonSchemaOutputValidator(validationMode).validate(_, schema, Some(rootSchema)))
     }
 
     private def objectSchemaToSinkValueParameter(schema: ObjectSchema, paramName: Option[String], isRequired: Option[Boolean]): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {

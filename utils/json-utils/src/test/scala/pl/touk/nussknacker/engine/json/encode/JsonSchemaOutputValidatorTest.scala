@@ -35,7 +35,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
-      strictValidator.validateTypingResultAgainstSchema(typing, mapStringToAnySchema).isValid shouldBe isValid
+      strictValidator.validate(typing, mapStringToAnySchema).isValid shouldBe isValid
     }
   }
 
@@ -61,7 +61,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
-      strictValidator.validateTypingResultAgainstSchema(typing, mapStringToStringSchema).isValid shouldBe isValid
+      strictValidator.validate(typing, mapStringToStringSchema).isValid shouldBe isValid
     }
   }
 
@@ -86,7 +86,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
-      strictValidator.validateTypingResultAgainstSchema(typing, mapStringToStringOrIntSchema).isValid shouldBe isValid
+      strictValidator.validate(typing, mapStringToStringOrIntSchema).isValid shouldBe isValid
     }
   }
 
@@ -121,8 +121,8 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValidForStrict: Boolean, isValidForLax: Boolean) =>
-      strictValidator.validateTypingResultAgainstSchema(typing, schema).isValid shouldBe isValidForStrict
-      laxValidator.validateTypingResultAgainstSchema(typing, schema).isValid shouldBe isValidForLax
+      strictValidator.validate(typing, schema).isValid shouldBe isValidForStrict
+      laxValidator.validate(typing, schema).isValid shouldBe isValidForLax
     }
   }
 
@@ -154,8 +154,8 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValidForStrict: Boolean, isValidForLax: Boolean) =>
-      strictValidator.validateTypingResultAgainstSchema(typing, schema).isValid shouldBe isValidForStrict
-      laxValidator.validateTypingResultAgainstSchema(typing, schema).isValid shouldBe isValidForLax
+      strictValidator.validate(typing, schema).isValid shouldBe isValidForStrict
+      laxValidator.validate(typing, schema).isValid shouldBe isValidForLax
     }
   }
 
@@ -196,8 +196,8 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValidForStrict: Boolean, isValidForLax: Boolean) =>
-      strictValidator.validateTypingResultAgainstSchema(typing, schema).isValid shouldBe isValidForStrict
-      laxValidator.validateTypingResultAgainstSchema(typing, schema).isValid shouldBe isValidForLax
+      strictValidator.validate(typing, schema).isValid shouldBe isValidForStrict
+      laxValidator.validate(typing, schema).isValid shouldBe isValidForLax
     }
   }
 
@@ -225,8 +225,8 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValidForStrict: Boolean, isValidForLax: Boolean) =>
-      strictValidator.validateTypingResultAgainstSchema(typing, schema).isValid shouldBe isValidForStrict
-      laxValidator.validateTypingResultAgainstSchema(typing, schema).isValid shouldBe isValidForLax
+      strictValidator.validate(typing, schema).isValid shouldBe isValidForStrict
+      laxValidator.validate(typing, schema).isValid shouldBe isValidForLax
     }
   }
 
@@ -256,8 +256,8 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValidForStrict: Boolean, isValidForLax: Boolean) =>
-      strictValidator.validateTypingResultAgainstSchema(typing, schema).isValid shouldBe isValidForStrict
-      laxValidator.validateTypingResultAgainstSchema(typing, schema).isValid shouldBe isValidForLax
+      strictValidator.validate(typing, schema).isValid shouldBe isValidForStrict
+      laxValidator.validate(typing, schema).isValid shouldBe isValidForLax
     }
   }
 
@@ -269,7 +269,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
         |}""".stripMargin)
 
     def validate(typing: TypingResult) = new JsonSchemaOutputValidator(ValidationMode.strict)
-      .validateTypingResultAgainstSchema(typing, emptyMapSchema)
+      .validate(typing, emptyMapSchema)
 
     validate(TypedObjectTypingResult(ListMap[String, TypingResult]())) shouldBe Symbol("valid")
     validate(TypedObjectTypingResult(ListMap("stringProp" -> Typed[String]))) shouldBe Symbol("valid")
