@@ -10,6 +10,7 @@
 * [#4039](https://github.com/TouK/nussknacker/pull/4039) Fix for: After clicking cancel, sometimes for a moment appear "during deploy" status instead of "during cancel"
 * [#4041](https://github.com/TouK/nussknacker/pull/4041) Concurrent deploy, cancel and test from file mechanisms are allowed now
 * [#3994](https://github.com/TouK/nussknacker/pull/3994) Unification of editor/raw mode validation for JSON Schema sinks
+* [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`.
 
 1.8.1 (not released yet)
 ------------------------
