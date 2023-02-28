@@ -156,7 +156,7 @@ There are couple fine points to make here:
 
 ## Full-outer-join
 
-Full-outer-join is nussknackers version of SQLs full outer join. It works much like single-side-join,
+Full-outer-join is Nussknacker's version of SQLs full outer join. It works much like single-side-join,
 but it has aggregates for both branches and emits a new event for every event it receives. Every time
 a new event is received, it is matched with events with the same key, then the aggregate for the appropriate
 branch is updated, and values of aggregates for both branches are returned. If an event cannot be matched,

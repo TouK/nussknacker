@@ -1,7 +1,7 @@
 
 # Changelog
 
-1.9.0 (Not released yet)
+1.9.0 (not released yet)
 ------------------------
 * [#3986](https://github.com/TouK/nussknacker/pull/3986) Updated sttp 2.2.9 -> 3.8.11
 * [#3979](https://github.com/TouK/nussknacker/pull/3979) Updated Flink 1.16.0 -> 1.16.1
@@ -11,10 +11,10 @@
 * [#4041](https://github.com/TouK/nussknacker/pull/4041) Concurrent deploy, cancel and test from file mechanisms are allowed now
 * [#3994](https://github.com/TouK/nussknacker/pull/3994) Unification of editor/raw mode validation for JSON Schema sinks
 
-1.8.1 (not released yet)
+1.8.1 (28 Feb 2023)
 ------------------------
 * [#4018](https://github.com/TouK/nussknacker/pull/4018) Fix for: generate test data mechanism didn't work for json messages with defined schema id
-* [#4024](https://github.com/TouK/nussknacker/pull/4024) Fix encoding object in sink with JSON schema pattern properties 
+* [#4024](https://github.com/TouK/nussknacker/pull/4024) Fix encoding object in sink with JSON schema pattern properties
 
 1.8.0 (17 Feb 2023)
 ------------------------

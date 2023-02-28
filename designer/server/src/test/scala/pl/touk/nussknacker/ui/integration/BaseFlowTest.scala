@@ -134,7 +134,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
         ),
         "providedComponent-component-v1" -> SingleComponentConfig(None, None, Some("https://nussknacker.io/Configuration.html"), None, None),
         "$properties" -> SingleComponentConfig(None, None,
-          Some("https://nussknacker.io/documentation/docs/installation_configuration_guide/ModelConfiguration/#additional-properties"), None, None)
+          Some("https://nussknacker.io/documentation/docs/installation_configuration_guide/ModelConfiguration#scenarios-additional-properties"), None, None)
       )
 
       val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }

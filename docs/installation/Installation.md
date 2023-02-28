@@ -8,6 +8,12 @@ Nussknacker relies on several open source components like Kafka, Grafana (or opt
 Nussknacker. This document focuses on the configuration of Nussknacker and its integrations with those components;
 please refer to their respective documentations for details on their optimal configuration.
 
+### Flink
+Nussknacker (both binary package and docker image) is published in two versions - built with scala 2.12 and 2.13. 
+As for now, Flink does not support scala 2.13 (see [FLINK-13414](https://issues.apache.org/jira/browse/FLINK-13414) issue), 
+so to use Nussknacker built with scala 2.13 some [tweaks](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/src/it/scala/pl/touk/nussknacker/engine/management/DockerTest.scala#L60) in Flink installations are required.
+Nussknacker built with scala 2.12 works with Flink out of the box.
+
 ## Docker based installation
 
 Nussknacker is available at [Docker Hub](https://hub.docker.com/r/touk/nussknacker/). You can check an example usage

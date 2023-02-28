@@ -27,7 +27,7 @@ Click Properties icon on the right panel of the scenario to define input and out
 ### Scenario response in scenarios with split and for-each nodes
 
 If parallel branches end with response nodes and more than one response is generated (e.g there is no filtering after
-split), the only response which is returned is the one which was chronologically generated first. There is not way to
+split), the only response which is returned is the one which was chronologically generated first. There is no way to
 determine which one will be generated first. If all responses are important to you, you need to take additional
 measures - use [union](./BasicNodes.md#union) node to merge branches and [collect](#collect) node to collect data
 records into a list. Your scenario should have only one response node.
@@ -71,13 +71,13 @@ in the following cases:
 - if [split](./BasicNodes.md#split) node is used
 
 In such cases, the `collect` node provides a convenient way of collecting all these records into a list. If data records
-are in parallel branches, a [union](./BasicNodes.md/#union) node should be used to merge the branches first.
+are in parallel branches, a [union](./BasicNodes.md#union) node should be used to merge the branches first.
 
 Collect node takes two parameters:
 
 - Input expression - this expression will be evaluated for all data "records" which "flow" through the scenario and will
   be collected into a list.
-- Output variable name - name of the variable which will store the above mentioned list.
+- Output variable name - name of the variable which will store the above-mentioned list.
 
 Example:
 

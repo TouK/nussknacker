@@ -93,7 +93,7 @@ When using the Raw editor, you can choose the [validation mode](/docs/integratio
 
 ![dead_end_window](img/dead_end.png)
 
-`dead-end` is a special type of a sink that sends your data into the void. 
+`dead-end` is a special type of sink that sends your data into the void. 
 It is handy when you want to end your scenario without specifying exact data sink at the moment. 
 
 &nbsp;
@@ -116,7 +116,7 @@ UnionMemo merges multiple branches into one stream. For each incoming branch two
 - key - it's value should be of type `String`, defines how elements from branches will be matched together
 - value - the value of this expression will be put in the output variable with the name the same as branch id
 
-#input variable is no longer available downstream the UnionMemo, a new variable whose name is defined by "Output variable name' parameter will be present instead:
+#input variable is no longer available downstream the UnionMemo, a new variable whose name is defined by "Output variable name" parameter will be present instead:
 ```$json
 {
   "key": `value of key expression for given event`,
@@ -151,7 +151,7 @@ then the value of the output variable is the previous location for the current u
 Holds event in the node until 
   *event time* + `delay` >= max (*event time* ever seen by the delay node). 
 
-The `key` parameter will be removed in the future release of Nussknacker, for the time being configure it to `#inputMeta.key`.
+The `key` parameter will be removed in the future release of Nussknacker, for the time being, configure it to `#inputMeta.key`.
 
 &nbsp;
 ### Periodic

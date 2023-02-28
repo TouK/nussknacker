@@ -30,7 +30,7 @@ Please note, that K8s Deployment Manager has to be run with properly configured 
 in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you
 have to configure `.kube/config` properly.
 
-With the exception of the `servicePort` configuration option, all remaining configuration options apply to
+Except the `servicePort` configuration option, all remaining configuration options apply to
 both `streaming` and `request-response` processing modes.
 
 The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can customize
