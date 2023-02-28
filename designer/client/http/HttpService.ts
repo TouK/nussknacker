@@ -52,13 +52,6 @@ export interface AppBuildInfo {
   processingType: any,
 }
 
-type Services = Record<string, Record<string, {
-  "parameters": unknown[],
-  "returnType": unknown,
-  "categories": string[],
-  "nodeConfig": unknown,
-}>>
-
 export type ComponentActionType = {
   id: string,
   title: string,
@@ -365,9 +358,9 @@ class HttpService {
   validateProperties(processId, processProperties): Promise<AxiosResponse<ValidationData>> {
     const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, {processProperties})
     promise.catch(error => this.#addError(
-        i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
-        error,
-        true
+      i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
+      error,
+      true
     ))
     return promise
   }

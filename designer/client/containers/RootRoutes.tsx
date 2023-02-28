@@ -5,7 +5,6 @@ import * as Paths from "./paths"
 import {MetricsBasePath, RootPath, ScenariosBasePath, VisualizationBasePath} from "./paths"
 import {createRoutesFromElements, Navigate, Route} from "react-router-dom"
 import Metrics from "./Metrics"
-import Services from "./Services"
 import {NotFound} from "./errors/NotFound"
 import {CustomTab, StarRedirect} from "./CustomTab"
 import {useTabData} from "./CustomTabPage"
@@ -27,7 +26,6 @@ export default createRoutesFromElements(
     <Route path="/404" element={<NotFound/>}/>
 
     <Route path={`${VisualizationBasePath}/:id`} element={<Visualization/>}/>
-    <Route path="/services" element={<Services/>}/>
 
     {/* overrides scenarios custom tab */}
     <Route path={ScenariosBasePath} element={<ScenariosTab/>}/>
