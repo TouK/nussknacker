@@ -7,6 +7,7 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -34,9 +35,8 @@ trait UniversalSchemaSupport {
   def payloadDeserializer: UniversalSchemaPayloadDeserializer
   def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any]
   def typeDefinition(schema: ParsedSchema): TypingResult
-  def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter]
+  def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter]
   def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
-  def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit]
   def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
 }
 

@@ -4,6 +4,7 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, User}
@@ -20,13 +21,14 @@ import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, Dep
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 /**
  * This service should be responsible for wrapping deploying and cancelling task in persistent context.
  * The purpose of it is not to handle any other things from ManagementActor - see comments there
  */
-class DeploymentServiceImpl(getDeploymentManager: ProcessingType => DeploymentManager,
+class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                             processRepository: FetchingProcessRepository[Future],
                             actionRepository: DbProcessActionRepository,
                             scenarioResolver: ScenarioResolver,
@@ -37,7 +39,7 @@ class DeploymentServiceImpl(getDeploymentManager: ProcessingType => DeploymentMa
     withDeploymentActionNotificationOpt(processId, "cancel", deploymentComment) {
       for {
         processingType <- processRepository.fetchProcessingType(processId.id)
-        _ <- getDeploymentManager(processingType).cancel(processId.name, user.toManagerUser)
+        _ <- dispatcher.deploymentManager(processingType).cancel(processId.name, user.toManagerUser)
         maybeVersion <- findDeployedVersion(processId)
         // process can be have deployment in progress (no last deploy action) or be already cancelled - in this
         // situation we don't have version to mark as cancel
@@ -83,30 +85,9 @@ class DeploymentServiceImpl(getDeploymentManager: ProcessingType => DeploymentMa
     for {
       maybeProcess <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processIdWithName.id)
       process <- processDataExistOrFail(maybeProcess, processIdWithName.id)
-      deploymentManager = getDeploymentManager(process.processingType)
+      deploymentManager = dispatcher.deploymentManager(process.processingType)
       result <- deployAndSaveProcess(process, savepointPath, deploymentComment, deploymentManager)
     } yield result
-  }
-
-  //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
-  //- then it's gone, not finished.
-  def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState])
-                           (implicit ec: ExecutionContext): Future[Unit] = {
-    implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
-    implicit val listenerUser: ListenerUser = ListenerApiUser(user)
-    processState match {
-      case Some(state) if state.status.isFinished =>
-        findDeployedVersion(idWithName).flatMap {
-          case Some(version) => {
-            val finishedDeploymentComment = DeploymentComment.unsafe("Scenario finished")
-            actionRepository.markProcessAsCancelled(idWithName.id, version, Some(finishedDeploymentComment)).map(_ =>
-              processChangeListener.handle(OnFinished(idWithName.id, version))
-            )
-          }
-          case _ => Future.successful(())
-        }
-      case _ => Future.successful(())
-    }
   }
 
   private def processDataExistOrFail[T](maybeProcess: Option[T], processId: ProcessId): Future[T] = {
@@ -167,6 +148,44 @@ class DeploymentServiceImpl(getDeploymentManager: ProcessingType => DeploymentMa
         logger.info(s"Action $actionName of ${processIdWithName.name} finished without any effect - skipping listener notification")
     }
     actionToRun
+  }
+
+  override def getProcessState(processIdWithName: ProcessIdWithName)
+                              (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
+    for {
+      actions <- processRepository.fetchProcessActions(processIdWithName.id)
+      manager <- dispatcher.deploymentManager(processIdWithName.id)
+      state <- findJobState(manager, processIdWithName)
+      _ <- handleFinishedProcess(processIdWithName, state)
+    } yield ObsoleteStateDetector.handleObsoleteStatus(state, actions.headOption)
+
+  private def findJobState(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName)
+                          (implicit user: LoggedUser, ec: ExecutionContext): Future[Option[ProcessState]] =
+    deploymentManager.findJobStatus(processIdWithName.name).recover {
+      case NonFatal(e) =>
+        logger.warn(s"Failed to get status of ${processIdWithName}: ${e.getMessage}", e)
+        Some(SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.FailedToGet))
+    }
+
+  //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
+  //- then it's gone, not finished.
+  private def handleFinishedProcess(idWithName: ProcessIdWithName, processState: Option[ProcessState])
+                                   (implicit ec: ExecutionContext): Future[Unit] = {
+    implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
+    implicit val listenerUser: ListenerUser = ListenerApiUser(user)
+    processState match {
+      case Some(state) if state.status.isFinished =>
+        findDeployedVersion(idWithName).flatMap {
+          case Some(version) => {
+            val finishedDeploymentComment = DeploymentComment.unsafe("Scenario finished")
+            actionRepository.markProcessAsCancelled(idWithName.id, version, Some(finishedDeploymentComment)).map(_ =>
+              processChangeListener.handle(OnFinished(idWithName.id, version))
+            )
+          }
+          case _ => Future.successful(())
+        }
+      case _ => Future.successful(())
+    }
   }
 
 }

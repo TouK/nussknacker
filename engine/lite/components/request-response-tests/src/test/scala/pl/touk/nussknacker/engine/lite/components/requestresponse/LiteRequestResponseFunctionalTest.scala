@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunn
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.SpecialSpELElement.{EmptyMap, Input}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, SpecialSpELElement, ValidatedValuesDetailedMessage}
 
@@ -32,6 +32,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
   with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink._
+  import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
   private val runner: RequestResponseTestScenarioRunner = TestScenarioRunner
@@ -298,6 +299,53 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
       result shouldBe expected
     }
   }
+
+  test("validate pattern properties on sink in editor mode") {
+    def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
+      val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil)
+      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
+    }
+    val objectWithNestedPatternPropertiesSchema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "field": {
+        |      "type": "object",
+        |      "patternProperties": {
+        |        "_int$": { "type": "integer" }
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    val testData = Table(
+      ("sinkSchema", "sinkFields", "result"),
+      (objectWithNestedPatternPropertiesSchema, Map("field" -> "{'foo_int': 1}"), Valid(obj("field" -> obj("foo_int" -> fromInt(1))))),
+      (objectWithNestedPatternPropertiesSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
+    )
+
+    forAll(testData) {  (sinkSchema: Schema, sinkFields: Map[String, String], expected: Validated[_, Json]) =>
+      val cfg = config(sampleObjWithAdds, schemaObjString(true), sinkSchema)
+      val sinkParams = (Map(
+        SinkRawEditorParamName -> "false",
+        SinkValidationModeParameterName -> s"'${cfg.validationModeName}'",
+      ) ++ sinkFields).mapValuesNow(Expression("spel", _))
+      val scenario = ScenarioBuilder
+        .requestResponse("test")
+        .additionalFields(properties = Map(
+          "inputSchema" -> cfg.sourceSchema.toString,
+          "outputSchema" -> cfg.outputSchema.toString
+        ))
+        .source("input", "request")
+        .emptySink(sinkName, "response", sinkParams.toList: _*)
+      val result = runner.runWithRequests(scenario) { invoker =>
+        invoker(HttpRequest(HttpMethods.POST, entity = cfg.input.asJson.spaces2)).rightValue
+      }
+
+      result shouldBe expected
+    }
+  }
+
   private def runWithResults(config: ScenarioConfig): ValidatedNel[ProcessCompilationError, Json] = {
     val scenario: CanonicalProcess = createScenario(config)
     val result = runner.runWithRequests(scenario) { invoker =>

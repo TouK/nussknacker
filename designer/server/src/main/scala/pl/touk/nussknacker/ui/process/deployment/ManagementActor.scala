@@ -18,8 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class ManagementActor(dispatcher: DeploymentManagerDispatcher,
-                      deploymentService: DeploymentService,
-                      processStateService: ProcessStateService) extends FailurePropagatingActor with LazyLogging {
+                      deploymentService: DeploymentService) extends FailurePropagatingActor with LazyLogging {
 
   private var deploymentActionInProgress = Map[ProcessName, DeployInfo]()
 
@@ -47,7 +46,7 @@ class ManagementActor(dispatcher: DeploymentManagerDispatcher,
       replyWithPredefinedState(id, SimpleStateStatus.DuringCancel)
     case GetProcessState(id, user) =>
       implicit val loggedUser: LoggedUser = user
-      reply(processStateService.getProcessState(id))
+      reply(deploymentService.getProcessState(id))
     case DeploymentActionFinished(process) =>
       deploymentActionInProgress -= process.name
     case GetAllInProgressDeploymentActions =>
@@ -88,9 +87,8 @@ class ManagementActor(dispatcher: DeploymentManagerDispatcher,
 
 object ManagementActor {
   def props(dispatcher: DeploymentManagerDispatcher,
-            deploymentService: DeploymentService,
-            processStateService: ProcessStateService): Props = {
-    Props(new ManagementActor(dispatcher, deploymentService, processStateService))
+            deploymentService: DeploymentService): Props = {
+    Props(new ManagementActor(dispatcher, deploymentService))
   }
 
   private trait DeploymentAction {

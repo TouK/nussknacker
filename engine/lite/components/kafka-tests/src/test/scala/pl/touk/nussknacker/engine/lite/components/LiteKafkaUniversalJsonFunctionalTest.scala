@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.Invalid
+import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -12,13 +12,16 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
@@ -30,6 +33,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   import SpecialSpELElement._
   import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
   import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
   private val lax = List(ValidationMode.lax)
@@ -232,6 +236,70 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
+    }
+  }
+
+  test("pattern properties validations should work in editor mode") {
+    def scenario(config: ScenarioConfig, fieldsExpressions: Map[String, String]): CanonicalProcess = {
+      val sinkParams = (Map(
+        TopicParamName -> s"'${config.sinkTopic}'",
+        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+        SinkKeyParamName -> "",
+        SinkRawEditorParamName -> "false",
+      ) ++ fieldsExpressions).mapValuesNow(Expression("spel", _))
+
+      ScenarioBuilder
+        .streamingLite("check json validation")
+        .source(sourceName, KafkaUniversalName,
+          TopicParamName -> s"'${config.sourceTopic}'",
+          SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        )
+        .emptySink(sinkName, KafkaUniversalName, sinkParams.toList: _*)
+    }
+
+    def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
+      val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil)
+      Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
+    }
+
+    val objWithNestedPatternPropertiesMapSchema = createObjSchema(true, false, createObjectSchemaWithPatternProperties(Map("_int$" -> schemaInteger)))
+    val objectWithNettedPatternPropertiesMapAsRefSchema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "field": {
+        |      "$ref": "#/defs/RefSchema"
+        |    }
+        |  },
+        |  "defs": {
+        |    "RefSchema": {
+        |      "type": "object",
+        |      "patternProperties": {
+        |        "_int$": { "type": "integer" }
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    val testData = Table(
+      ("sinkSchema", "sinkFields", "result"),
+      (objWithNestedPatternPropertiesMapSchema, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> fromInt(1))))),
+      (objWithNestedPatternPropertiesMapSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
+      (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': 1}"), valid(obj("field" -> obj("foo_int" -> fromInt(1))))),
+      (objectWithNettedPatternPropertiesMapAsRefSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
+    )
+
+    forAll(testData) {
+      (sinkSchema: EveritSchema, sinkFields: Map[String, String], expected: Validated[_, RunResult[_]]) =>
+        val dummyInputObject = obj()
+        val cfg = config(dummyInputObject, schemaMapAny, sinkSchema)
+        val jsonScenario: CanonicalProcess = scenario(cfg, sinkFields)
+        runner.registerJsonSchema(cfg.sourceTopic, cfg.sourceSchema)
+        runner.registerJsonSchema(cfg.sinkTopic, cfg.sinkSchema)
+
+        val input = KafkaConsumerRecord[String, String](cfg.sourceTopic, cfg.inputData.toString())
+        val results = runner.runWithStringData(jsonScenario, List(input)).map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
+        results shouldBe expected
     }
   }
 
