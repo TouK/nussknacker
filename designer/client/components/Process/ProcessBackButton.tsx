@@ -1,4 +1,4 @@
-import React from "react"
+import React, {useMemo} from "react"
 import {ProcessLink} from "../../containers/processLink"
 import {ReactComponent as ProcessBackIcon} from "../../assets/img/arrows/back-process.svg"
 import {useTranslation} from "react-i18next"
@@ -8,19 +8,18 @@ import {MetricsBasePath} from "../../containers/paths"
 
 export default function ProcessBackButton() {
   const {t} = useTranslation()
-  const location = useLocation()
-  const match = matchPath(`${MetricsBasePath}/:processId`, location.pathname)
-  const processId = match?.params?.processId
+  const {pathname} = useLocation()
+  const processId = useMemo(() => {
+    const match = matchPath(`${MetricsBasePath}/:processId`, pathname)
+    return match?.params?.processId
+  }, [pathname])
+
   if (!processId) {
     return null
   }
 
   return (
-    <ProcessLink
-      processId={processId}
-      className={styles.button}
-      title={t("processBackButton.title", "Go back to {{processId}} graph page", {processId})}
-    >
+    <ProcessLink processId={processId} className={styles.button} title={t("processBackButton.title", "Go back to {{processId}} graph page", {processId})}>
       <ProcessBackIcon className={styles.icon}/>
       <span className={styles.text}>
         {t("processBackButton.text", "back to {{processId}}", {processId})}

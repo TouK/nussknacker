@@ -72,25 +72,25 @@ function Actions({ addScenario, addFragment }: ActionsProps): JSX.Element {
 }
 
 function Scenarios({ children, table }: PropsWithChildren<{ table?: boolean }>): JSX.Element {
-  const { data = [], isLoading, isFetching } = useScenariosWithStatus();
-  const valueLinker: ValueLinker<ScenariosFiltersModel> = useCallback(
-    (setNewValue) => (id, value) => {
-      switch (id) {
-        case "HIDE_SCENARIOS":
-          return value && setNewValue("HIDE_FRAGMENTS", false);
-        case "HIDE_FRAGMENTS":
-          return value && setNewValue("HIDE_SCENARIOS", false);
-      }
-    },
-    [],
-  );
-  return (
-    <FiltersContextProvider<ScenariosFiltersModel> getValueLinker={valueLinker}>
-      {children}
-      <FiltersPart data={data} isLoading={isFetching} withSort={!table} />
-      {table ? <TablePart data={data} isLoading={isLoading} /> : <ListPart data={data} isLoading={isLoading} />}
-    </FiltersContextProvider>
-  );
+    const { data = [], isLoading, isFetching } = useScenariosWithStatus();
+    const valueLinker: ValueLinker<ScenariosFiltersModel> = useCallback(
+        (setNewValue) => (id, value) => {
+            switch (id) {
+                case "HIDE_SCENARIOS":
+                    return value && setNewValue("HIDE_FRAGMENTS", false);
+                case "HIDE_FRAGMENTS":
+                    return value && setNewValue("HIDE_SCENARIOS", false);
+            }
+        },
+        [],
+    );
+    return (
+        <FiltersContextProvider<ScenariosFiltersModel> getValueLinker={valueLinker}>
+            {children}
+            <FiltersPart data={data} isLoading={isFetching} withSort={!table} />
+            {table ? <TablePart data={data} isLoading={isLoading} /> : <ListPart data={data} isLoading={isLoading} />}
+        </FiltersContextProvider>
+    );
 }
 
 export type ScenariosViewProps = ActionsProps;

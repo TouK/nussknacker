@@ -77,18 +77,15 @@ function ProcessComments(): JSX.Element {
       </ul>
       {
         capabilities.write ?
-          (
-            <div className="add-comment-panel">
-              <CommentInput onChange={onInputChange.bind(this)} value={comment}/>
-              <NkButton
-                type="button"
-                className="add-comment"
-                onClick={_addComment}
-                disabled={pending || comment == ""}
-              >Add</NkButton>
-            </div>
-          ) :
-          null
+          <div className="add-comment-panel">
+            <CommentInput onChange={onInputChange.bind(this)} value={comment}/>
+            <NkButton
+              type="button"
+              className="add-comment"
+              onClick={_addComment}
+              disabled={pending || comment == ""}
+            >Add</NkButton>
+          </div> : null
       }
     </div>
   )
