@@ -75,10 +75,6 @@ function ScenariosView({ children, table }: PropsWithChildren<{ table?: boolean 
                     return value && setNewValue("HIDE_FRAGMENTS", false);
                 case "HIDE_FRAGMENTS":
                     return value && setNewValue("HIDE_SCENARIOS", false);
-                case "HIDE_ACTIVE":
-                    return value && setNewValue("SHOW_ARCHIVED", true);
-                case "SHOW_ARCHIVED":
-                    return !value && setNewValue("HIDE_ACTIVE", false);
             }
         },
         [],

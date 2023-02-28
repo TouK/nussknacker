@@ -6,5 +6,5 @@ export const MetricsBasePath = `/metrics`
 export const MetricsPath = `${MetricsBasePath}/:processId?`
 export const CustomTabBasePath = `/customtabs`
 export const ScenariosBasePath = `/scenarios`
-export const ArchivedPath = `${ScenariosBasePath}/?SHOW_ARCHIVED=true&HIDE_ACTIVE=true`
+export const ArchivedPath = `${ScenariosBasePath}/?ARCHIVED=true`
 
