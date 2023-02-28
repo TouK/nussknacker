@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Columns, FilterLinkCell, TableWrapper } from "../../components";
-import { ScenariosFiltersModel, ScenariosFiltersModelDeployed } from "../filters/scenariosFiltersModel";
+import {ScenariosFiltersModel, ScenariosFiltersModelDeployed, ScenariosFiltersModelType} from "../filters/scenariosFiltersModel";
 import { ListPartProps, RowType } from "./listPart";
 import { useTranslation } from "react-i18next";
 import { createFilterRules, ExternalLink, Highlight, metricsHref, useFilterContext } from "../../common";
@@ -116,8 +116,15 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                     );
                 },
                 ARCHIVED: (row, filter) => (filter ? row.isArchived : !row.isArchived),
-                HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
-                HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
+                TYPE: (row, value) =>
+                    !value?.length ||
+                    []
+                        .concat(value)
+                        .some(
+                            (f) =>
+                                (f === ScenariosFiltersModelType.SCENARIOS && !row.isSubprocess) ||
+                                (f === ScenariosFiltersModelType.FRAGMENTS && row.isSubprocess),
+                        ),
                 DEPLOYED: (row, value) =>
                     !value?.length ||
                     []
