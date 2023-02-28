@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import slick.ast.BaseTypedType
@@ -19,7 +20,13 @@ trait BaseEntityFactory {
   implicit def versionIdMapping: BaseColumnType[VersionId] =
     MappedColumnType.base[VersionId, Long](_.value, VersionId(_))
 
-  implicit def deploymentMapper: JdbcType[ProcessActionType] with BaseTypedType[ProcessActionType] =
+  implicit def processActionIdMapping: BaseColumnType[ProcessActionId] =
+    MappedColumnType.base[ProcessActionId, Long](_.value, ProcessActionId.apply)
+
+  implicit def processActionType: JdbcType[ProcessActionType] with BaseTypedType[ProcessActionType] =
     MappedColumnType.base[ProcessActionType, String](_.toString, ProcessActionType.withName)
+
+  implicit def processActionState: JdbcType[ProcessActionState] with BaseTypedType[ProcessActionState] =
+    MappedColumnType.base[ProcessActionState, String](_.toString, ProcessActionState.withName)
 
 }

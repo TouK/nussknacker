@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.ui.db.entity
 
+
 import java.sql.Timestamp
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.{NotNull, Nullable}
@@ -20,11 +23,15 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
   val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
 
   class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_actions") {
+    def id: Rep[ProcessActionId] = column[ProcessActionId]("id", O.PrimaryKey, O.AutoInc)
+
     def processId: Rep[ProcessId] = column[ProcessId]("process_id", NotNull)
 
     def processVersionId: Rep[VersionId] = column[VersionId]("process_version_id", Nullable)
 
-    def performedAt: Rep[Timestamp] = column[Timestamp]("performed_at", NotNull)
+    def createdAt: Rep[Timestamp] = column[Timestamp]("created_at", NotNull)
+
+    def performedAt: Rep[Timestamp] = column[Timestamp]("performed_at", Nullable)
 
     def user: Rep[String] = column[String]("user", NotNull)
 
@@ -32,9 +39,9 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
 
     def action: Rep[ProcessActionType] = column[ProcessActionType]("action", NotNull)
 
-    def commentId: Rep[Option[Long]] = column[Option[Long]]("comment_id", Nullable)
+    def state: Rep[ProcessActionState] = column[ProcessActionState]("state", NotNull)
 
-    def pk = primaryKey("process_actions_pk", (processId, processVersionId, performedAt))
+    def commentId: Rep[Option[Long]] = column[Option[Long]]("comment_id", Nullable)
 
     def processes_fk: ForeignKeyQuery[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData] = foreignKey("process_actions_version_fk", (processId, processVersionId), processVersionsTable)(
       procV => (procV.processId, procV.id),
@@ -48,21 +55,27 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
       onDelete = ForeignKeyAction.SetNull
     )
 
-    def * : ProvenShape[ProcessActionEntityData] = (processId, processVersionId, user, performedAt, action, commentId, buildInfo) <> (
+    def * : ProvenShape[ProcessActionEntityData] = (id, processId, processVersionId, user, createdAt, performedAt, action, state, commentId, buildInfo) <> (
       ProcessActionEntityData.apply _ tupled, ProcessActionEntityData.unapply
     )
   }
 }
 
-case class ProcessActionEntityData(processId: ProcessId,
+case class ProcessActionEntityData(id: ProcessActionId,
+                                   processId: ProcessId,
                                    processVersionId: VersionId,
                                    user: String,
+                                   createdAt: Timestamp,
                                    performedAt: Timestamp,
                                    action: ProcessActionType,
+                                   state: ProcessActionState,
                                    commentId: Option[Long],
                                    buildInfo: Option[String]) {
 
   lazy val performedAtTime: Instant = performedAt.toInstant
   lazy val isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
-  lazy val isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
+  lazy val isInProgress: Boolean = state.equals(ProcessActionState.InProgress)
+  lazy val isFinished: Boolean = state.equals(ProcessActionState.Finished)
 }
+
+final case class ProcessActionId(value: Long)
