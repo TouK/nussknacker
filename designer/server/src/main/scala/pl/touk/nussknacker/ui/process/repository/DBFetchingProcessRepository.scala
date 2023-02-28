@@ -21,7 +21,11 @@ import scala.language.higherKinds
 
 object DBFetchingProcessRepository {
   def create(dbConfig: DbConfig)(implicit ec: ExecutionContext) =
+    new DBFetchingProcessRepository[DB](dbConfig) with DbioRepistory
+
+  def createFutureRespository(dbConfig: DbConfig)(implicit ec: ExecutionContext) =
     new DBFetchingProcessRepository[Future](dbConfig) with BasicRepository
+
 }
 
 abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) extends FetchingProcessRepository[F] with LazyLogging {
@@ -46,7 +50,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
                                                                               isDeployed: Option[Boolean])(implicit loggedUser: LoggedUser, ec: ExecutionContext): DBIOAction[List[BaseProcessDetails[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {
-      lastActionPerProcess <- fetchLastActionPerProcessQuery.result
+      lastActionPerProcess <- fetchLastFinishedActionPerProcessQuery.result
       lastDeployedActionPerProcess <- fetchLastDeployedActionPerProcessQuery.result
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess, isDeployed).result
     } yield
@@ -86,7 +90,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   }
 
   override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]] =
-    run(fetchProcessLatestActionsQuery(processId).result.map(_.toList.map(ProcessDBQueryRepository.toProcessAction)))
+    run(fetchProcessLatestFinishedActionsQuery(processId).result.map(_.toList.map(ProcessDBQueryRepository.toProcessAction)))
 
   override def fetchProcessingType(processId: ProcessId)(implicit user: LoggedUser, ec: ExecutionContext): F[ProcessingType] = {
     run {
@@ -112,7 +116,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
       processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](fetchProcessLatestVersionsQuery(id)(ProcessShapeFetchStrategy.NotFetch).result)
-      actions <- OptionT.liftF[DB, Seq[(ProcessActionEntityData, Option[CommentEntityData])]](fetchProcessLatestActionsQuery(id).result)
+      actions <- OptionT.liftF[DB, Seq[(ProcessActionEntityData, Option[CommentEntityData])]](fetchProcessLatestFinishedActionsQuery(id).result)
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
       process = process,
@@ -122,7 +126,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       isLatestVersion = isLatestVersion,
       tags = tags,
       history = processVersions.map(
-        v => ProcessDBQueryRepository.toProcessVersion(v, actions.filter(p => p._1.processVersionId == v.id).toList)
+        v => ProcessDBQueryRepository.toProcessVersion(v, actions.filter(p => p._1.processVersionId.contains(v.id)).toList)
       ),
     )
   }

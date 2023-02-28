@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.validation.FatalValidationError
 import pl.touk.nussknacker.ui._
 
 import scala.language.implicitConversions
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 
@@ -47,17 +48,9 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
     }
   }
 
-  def toResponseXor[T: Encoder](xor: Either[EspError, T]): ToResponseMarshallable =
-    xor match {
-      case Right(t) =>
-        t
-      case Left(err) =>
-        espErrorToHttp(err)
-    }
-
   def toResponseEither[T: Encoder](either: Either[EspError, T]): ToResponseMarshallable = either match {
-      case Right(t) => t
-      case Left(err) => espErrorToHttp(err)
+    case Right(t) => t
+    case Left(err) => espErrorToHttp(err)
   }
 
   def toResponseEither[T: Encoder](either: Either[EspError, T], okStatus: StatusCode): HttpResponse = {
@@ -76,9 +69,10 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
     case Right(_) => HttpResponse(status = okStatus)
   }
 
-  def toResponseReject(message: String): ToResponseMarshallable = {
-    val entity = Encoder.encodeMap[String, String].apply(Map("message" -> message)).spaces2
-    HttpResponse(status = StatusCodes.BadRequest, entity = HttpEntity(ContentTypes.`application/json`, entity))
+  def toResponseTryPF(okStatus: StatusCode): PartialFunction[Try[Unit], HttpResponse] = {
+    case Failure(ex) => errorToHttp(ex)
+    case Success(_) => HttpResponse(status = okStatus)
   }
+
 }
 

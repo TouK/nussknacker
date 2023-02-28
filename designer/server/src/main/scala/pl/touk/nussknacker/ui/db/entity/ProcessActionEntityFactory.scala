@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import java.sql.Timestamp
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
-import slick.sql.SqlProfile.ColumnOption.{NotNull, Nullable}
 
+import java.sql.Timestamp
 import java.time.Instant
+import java.util.UUID
 
 trait ProcessActionEntityFactory extends BaseEntityFactory {
 
@@ -20,24 +21,28 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
   val commentsTable: LTableQuery[CommentEntityFactory#CommentEntity]
 
   class ProcessActionEntity(tag: Tag) extends Table[ProcessActionEntityData](tag, "process_actions") {
-    def processId: Rep[ProcessId] = column[ProcessId]("process_id", NotNull)
+    def id: Rep[ProcessActionId] = column[ProcessActionId]("id", O.PrimaryKey)
 
-    def processVersionId: Rep[VersionId] = column[VersionId]("process_version_id", Nullable)
+    def processId: Rep[ProcessId] = column[ProcessId]("process_id")
 
-    def performedAt: Rep[Timestamp] = column[Timestamp]("performed_at", NotNull)
+    def processVersionId: Rep[Option[VersionId]] = column[Option[VersionId]]("process_version_id")
 
-    def user: Rep[String] = column[String]("user", NotNull)
+    def createdAt: Rep[Timestamp] = column[Timestamp]("created_at")
 
-    def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info", Nullable)
+    def performedAt: Rep[Option[Timestamp]] = column[Option[Timestamp]]("performed_at")
 
-    def action: Rep[ProcessActionType] = column[ProcessActionType]("action", NotNull)
+    def user: Rep[String] = column[String]("user")
 
-    def commentId: Rep[Option[Long]] = column[Option[Long]]("comment_id", Nullable)
+    def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
 
-    def pk = primaryKey("process_actions_pk", (processId, processVersionId, performedAt))
+    def action: Rep[ProcessActionType] = column[ProcessActionType]("action")
+
+    def state: Rep[ProcessActionState] = column[ProcessActionState]("state")
+
+    def commentId: Rep[Option[Long]] = column[Option[Long]]("comment_id")
 
     def processes_fk: ForeignKeyQuery[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData] = foreignKey("process_actions_version_fk", (processId, processVersionId), processVersionsTable)(
-      procV => (procV.processId, procV.id),
+      procV => (procV.processId, procV.id?),
       onUpdate = ForeignKeyAction.Cascade,
       onDelete = ForeignKeyAction.NoAction
     )
@@ -48,21 +53,27 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
       onDelete = ForeignKeyAction.SetNull
     )
 
-    def * : ProvenShape[ProcessActionEntityData] = (processId, processVersionId, user, performedAt, action, commentId, buildInfo) <> (
+    def * : ProvenShape[ProcessActionEntityData] = (id, processId, processVersionId, user, createdAt, performedAt, action, state, commentId, buildInfo) <> (
       ProcessActionEntityData.apply _ tupled, ProcessActionEntityData.unapply
     )
   }
 }
 
-case class ProcessActionEntityData(processId: ProcessId,
-                                   processVersionId: VersionId,
+case class ProcessActionEntityData(id: ProcessActionId,
+                                   processId: ProcessId,
+                                   processVersionId: Option[VersionId],
                                    user: String,
-                                   performedAt: Timestamp,
+                                   createdAt: Timestamp,
+                                   performedAt: Option[Timestamp],
                                    action: ProcessActionType,
+                                   state: ProcessActionState,
                                    commentId: Option[Long],
                                    buildInfo: Option[String]) {
 
-  lazy val performedAtTime: Instant = performedAt.toInstant
+  lazy val performedAtTime: Option[Instant] = performedAt.map(_.toInstant)
   lazy val isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
-  lazy val isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
+}
+
+final case class ProcessActionId(value: UUID) {
+  override def toString: String = value.toString
 }

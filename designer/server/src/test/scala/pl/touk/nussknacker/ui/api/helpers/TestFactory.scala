@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api.helpers
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
-import db.util.DBIOActionInstances.DB
+import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.compile.ProcessValidator
@@ -63,14 +63,17 @@ object TestFactory extends TestPermissions{
 
   def deploymentService() = new StubDeploymentService(Map.empty)
 
-  def newDBRepositoryManager(dbs: DbConfig): RepositoryManager[DB] =
-    RepositoryManager.createDbRepositoryManager(dbs)
+  def newDBIOActionRunner(dbs: DbConfig): DBIOActionRunner =
+    DBIOActionRunner(dbs)
 
-  def newDummyRepositoryManager(): RepositoryManager[DB] =
-    newDBRepositoryManager(dummyDb)
+  def newDummyDBIOActionRunner(): DBIOActionRunner =
+    newDBIOActionRunner(dummyDb)
 
-  def newFetchingProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
+  def newFutureFetchingProcessRepository(dbs: DbConfig) =
     new DBFetchingProcessRepository[Future](dbs) with BasicRepository
+
+  def newFetchingProcessRepository(dbs: DbConfig) =
+    new DBFetchingProcessRepository[DB](dbs) with DbioRepistory
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBProcessRepository(dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
@@ -81,10 +84,10 @@ object TestFactory extends TestPermissions{
   def newSubprocessRepository(db: DbConfig): DbSubprocessRepository =
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
 
-  def newActionProcessRepository(db: DbConfig) = new DbProcessActionRepository(db,
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo))
+  def newActionProcessRepository(db: DbConfig) = new DbProcessActionRepository[DB](db,
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo)) with DbioRepistory
 
-  def newDummyActionRepository(): DbProcessActionRepository =
+  def newDummyActionRepository(): DbProcessActionRepository[DB] =
     newActionProcessRepository(dummyDb)
 
   def newProcessActivityRepository(db: DbConfig) = new DbProcessActivityRepository(db)

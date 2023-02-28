@@ -15,10 +15,11 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
+import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
@@ -30,7 +31,7 @@ class AppResources(config: Config,
                    modelData: ProcessingTypeDataProvider[ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
-                   processService: ProcessService,
+                   deploymentService: DeploymentService,
                    exposeConfig: Boolean,
                    processCategoryService: ProcessCategoryService
                   )(implicit ec: ExecutionContext)
@@ -151,5 +152,5 @@ class AppResources(config: Config,
   }
 
   private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, ProcessState)]] =
-    processes.map(process => processService.getProcessState(process.idWithName).map((process.name, _)))
+    processes.map(process => deploymentService.getProcessState(process.idWithName).map((process.name, _)))
 }

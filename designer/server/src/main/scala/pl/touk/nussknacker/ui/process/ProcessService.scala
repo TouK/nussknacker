@@ -16,8 +16,8 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ProcessStateService}
-import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction, ProcessValidationError}
+import pl.touk.nussknacker.ui.process.deployment.DeploymentService
+import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -27,6 +27,7 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
+import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -40,7 +41,7 @@ object ProcessService {
   @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment)
 }
 
-trait ProcessService extends ProcessStateService {
+trait ProcessService {
 
   def getProcess[PS: ProcessShapeFetchStrategy](processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[XError[BaseProcessDetails[PS]]]
 
@@ -49,10 +50,6 @@ trait ProcessService extends ProcessStateService {
   def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse]
 
   def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse]
-
-  def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse]
-
-  def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse]
 
   def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]]
 
@@ -79,7 +76,7 @@ class DBProcessService(deploymentService: DeploymentService,
                        newProcessPreparer: NewProcessPreparer,
                        processCategoryService: ProcessCategoryService,
                        processResolving: UIProcessResolving,
-                       repositoryManager: RepositoryManager[DB],
+                       dbioRunner: DBIOActionRunner,
                        fetchingProcessRepository: FetchingProcessRepository[Future],
                        processActionRepository: ProcessActionRepository[DB],
                        processRepository: ProcessRepository[DB],
@@ -88,14 +85,13 @@ class DBProcessService(deploymentService: DeploymentService,
   import cats.instances.future._
   import cats.syntax.either._
 
-  override def getProcessState(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
-    deploymentService.getProcessState(processIdWithName)
-
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withNotArchivedProcess(processIdWithName, ProcessActionType.Archive) { process =>
       if (process.isSubprocess) {
         archiveSubprocess(process)
       } else {
+        // FIXME: This doesn't work correctly because concurrent request can change a state and double archive actions will be done.
+        //        See ManagementResourcesConcurrentSpec and how DeploymentService handles it correctly for deploy and cancel
         doOnProcessStateVerification(process, ProcessActionType.Archive)(doArchive)
       }
     }
@@ -103,59 +99,21 @@ class DBProcessService(deploymentService: DeploymentService,
   override def unArchiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withProcess(processIdWithName) { process =>
       if (process.isArchived) {
-        repositoryManager.runInTransaction(
+        dbioRunner.runInTransaction(DBIOAction.seq(
           processRepository.archive(processId = process.idWithName.id, isArchived = false),
           processActionRepository.markProcessAsUnArchived(processId = process.idWithName.id, process.processVersionId)
-        ).map(_ => ().asRight)
+        )).map(_ => ().asRight)
       } else {
         Future(Left(ProcessIllegalAction("Can't unarchive not archived scenario.")))
       }
     }
 
-  override def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] = {
-    def withValidProcess(callback: => Future[EmptyResponse]): Future[EmptyResponse] = getProcess[DisplayableProcess](processIdWithName)
-      .map(_.map(pd => processResolving.validateBeforeUiResolving(pd.json))) // validating the same way, as UI does
-      .flatMap {
-        case l@Left(_) => Future(l.map(_ => ()))
-        case Right(value) if value.hasErrors => Future(Left(DeployingInvalidScenarioError))
-        case _ => callback
-      }
-
-    withValidProcess {
-      doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, deploymentComment) { (processIdWithName: ProcessIdWithName, savepointPath: Option[ProcessingType], deploymentComment: Option[DeploymentComment]) =>
-        deploymentService.deployProcessAsync(processIdWithName, savepointPath, deploymentComment).map(_ => ().asRight)
-      }
-    }
-  }
-
-  override def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
-    doAction(ProcessActionType.Cancel, processIdWithName, None, deploymentComment) { (processIdWithName: ProcessIdWithName, _: Option[String], deploymentComment: Option[DeploymentComment]) =>
-      deploymentService.cancelProcess(processIdWithName, deploymentComment).map(_ => ().asRight)
-    }
-
-  private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])
-                      (actionToDo: (ProcessIdWithName, Option[String], Option[DeploymentComment]) => Future[EmptyResponse])
-                      (implicit user: LoggedUser): Future[EmptyResponse] = {
-    withNotArchivedProcess(processIdWithName, action) { process =>
-      if (process.isSubprocess) {
-        Future(Left(ProcessIllegalAction.subprocess(action, processIdWithName)))
-      } else {
-        getProcessState(processIdWithName).flatMap(ps => {
-          if (ps.allowedActions.contains(action)) {
-            actionToDo(processIdWithName, savepointPath, deploymentComment)
-          } else {
-            Future(Left(ProcessIllegalAction(action, processIdWithName, ps)))
-          }
-        })
-      }
-    }
-  }
 
   // FIXME: How should look flow? Process -> archive -> delete?
   override def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withProcess(processIdWithName) { process =>
       withNotRunningState(process, "Can't delete still running scenario.") { _ =>
-        repositoryManager.runInTransaction(
+        dbioRunner.runInTransaction(
           processRepository.deleteProcess(processIdWithName.id)
         ).map(_ => ().asRight)
       }
@@ -164,7 +122,7 @@ class DBProcessService(deploymentService: DeploymentService,
   override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't rename archived scenario.") { process =>
       withNotRunningState(process, "Can't change name still running scenario.") { _ =>
-        repositoryManager.runInTransaction(
+        dbioRunner.runInTransaction(
           processRepository
             .renameProcess(processIdWithName, name)
             .map {
@@ -178,7 +136,7 @@ class DBProcessService(deploymentService: DeploymentService,
   override def updateCategory(processIdWithName: ProcessIdWithName, category: String)(implicit user: LoggedUser): Future[XError[UpdateProcessCategoryResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't update category archived scenario.") { process =>
       withProcessingType(category) { _ =>
-        repositoryManager.runInTransaction(
+        dbioRunner.runInTransaction(
           processRepository
             .updateCategory(processIdWithName.id, category)
             .map {
@@ -200,7 +158,7 @@ class DBProcessService(deploymentService: DeploymentService,
       if (propertiesErrors.nonEmpty) {
         Future.successful(Left(ProcessValidationError(propertiesErrors.map(_.message).mkString(", "))))
       } else {
-        repositoryManager
+        dbioRunner
           .runInTransaction(processRepository.saveNewProcess(action))
           .map {
             case Right(maybemaybeCreated) =>
@@ -223,7 +181,7 @@ class DBProcessService(deploymentService: DeploymentService,
         substituted = {
           processResolving.resolveExpressions(action.process, validation.typingInfo)
         }
-        processUpdated <- EitherT(repositoryManager
+        processUpdated <- EitherT(dbioRunner
           .runInTransaction(processRepository
             .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, Option(action.comment), increaseVersionWhenJsonNotChanged = false))
           ))
@@ -286,7 +244,7 @@ class DBProcessService(deploymentService: DeploymentService,
 
   private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(callback: BaseProcessDetails[_] => Future[EmptyResponse])
                                           (implicit user: LoggedUser): Future[EmptyResponse] =
-    getProcessState(process.idWithName).flatMap(state => {
+    deploymentService.getProcessState(process.idWithName).flatMap(state => {
       if (state.allowedActions.contains(actionToCheck)) {
         callback(process)
       } else {
@@ -295,10 +253,10 @@ class DBProcessService(deploymentService: DeploymentService,
     })
 
   private def doArchive(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =
-    repositoryManager.runInTransaction(
+    dbioRunner.runInTransaction(DBIOAction.seq(
       processRepository.archive(processId = process.idWithName.id, isArchived = true),
       processActionRepository.markProcessAsArchived(processId = process.idWithName.id, process.processVersionId)
-    ).map(_ => ().asRight)
+    )).map(_ => ().asRight)
 
   private def toProcessResponse(processName: ProcessName, created: ProcessCreated): ProcessResponse =
     ProcessResponse(created.processId, created.processVersionId, processName)
@@ -333,7 +291,7 @@ class DBProcessService(deploymentService: DeploymentService,
     if (process.isDeployed) {
       Future(Left(ProcessIllegalAction(errorMessage)))
     } else {
-      getProcessState(process.idWithName).flatMap(ps => {
+      deploymentService.getProcessState(process.idWithName).flatMap(ps => {
         if (ps.status.isRunning) {
           Future(Left(ProcessIllegalAction(errorMessage)))
         } else {

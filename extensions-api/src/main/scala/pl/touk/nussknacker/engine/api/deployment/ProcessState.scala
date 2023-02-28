@@ -50,6 +50,15 @@ object ProcessActionType extends Enumeration {
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
 }
 
+object ProcessActionState extends Enumeration {
+  implicit val typeEncoder: Encoder[ProcessActionState.Value] = Encoder.encodeEnumeration(ProcessActionState)
+  implicit val typeDecoder: Decoder[ProcessActionState.Value] = Decoder.decodeEnumeration(ProcessActionState)
+
+  type ProcessActionState = Value
+  val InProgress: Value = Value("IN_PROGRESS")
+  val Finished: Value = Value("FINISHED")
+}
+
 object StateStatus {
   implicit val configuration: Configuration = Configuration
     .default

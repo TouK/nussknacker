@@ -39,7 +39,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     ))
   )
 
-  private val route: Route = withPermissions(new ValidationResources(fetchingProcessRepository,
+  private val route: Route = withPermissions(new ValidationResources(futureFetchingProcessRepository,
     new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)), testPermissionRead
   )
 

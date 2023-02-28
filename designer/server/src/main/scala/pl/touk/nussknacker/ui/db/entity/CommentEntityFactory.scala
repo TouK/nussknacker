@@ -55,7 +55,7 @@ trait CommentActions {
     Sequence[Long]("process_comments_id_sequence").next.result
   }
 
-  def newCommentAction(processId: ProcessId, processVersionId: VersionId, comment: Option[Comment])
+  def newCommentAction(processId: ProcessId, processVersionId: => VersionId, comment: Option[Comment])
                       (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Option[Long]] = {
     comment match {
       case Some(c) if c.value.nonEmpty => for {

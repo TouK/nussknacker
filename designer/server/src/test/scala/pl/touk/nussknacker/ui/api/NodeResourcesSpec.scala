@@ -38,7 +38,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.TestCat)
 
   private val validation = ProcessValidation(typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators), new SubprocessResolver(subprocessRepository))
-  private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), validation)
+  private val nodeRoute = new NodesResources(futureFetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), validation)
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
   = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)

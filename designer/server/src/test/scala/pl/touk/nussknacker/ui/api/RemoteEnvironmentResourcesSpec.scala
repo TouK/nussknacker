@@ -42,7 +42,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
   val readWritePermissions: CategorizedPermission = testPermissionRead |+| testPermissionWrite
   it should "fail when scenario does not exist" in {
     val remoteEnvironment = new MockRemoteEnvironment
-    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, fetchingProcessRepository, processAuthorizer),readWritePermissions)
+    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, futureFetchingProcessRepository, processAuthorizer),readWritePermissions)
 
     Get(s"/remoteEnvironment/$processId/2/compare/1") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -64,7 +64,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
     val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression("spel", "#input == 4"))))
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
-    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, fetchingProcessRepository, processAuthorizer), readWritePermissions)
+    val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, futureFetchingProcessRepository, processAuthorizer), readWritePermissions)
     val expectedDisplayable = ProcessTestData.validDisplayableProcess.toDisplayable.copy(category = category)
 
     saveProcess(processName, ProcessTestData.validProcess, category) {
@@ -91,7 +91,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
       TestMigrationResult(process.copy(id = "failingProcess"), validationResult, true),
       TestMigrationResult(process.copy(id = "notFailing"), ValidationResult.success, false)
     )
-    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), fetchingProcessRepository, processAuthorizer), testPermissionRead)
+    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), futureFetchingProcessRepository, processAuthorizer), testPermissionRead)
 
     Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
       status shouldEqual StatusCodes.InternalServerError
@@ -108,7 +108,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
       TestMigrationResult(process.copy(id = "notFailing"), ValidationResult.success, false)
     )
 
-    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), fetchingProcessRepository, processAuthorizer), testPermissionRead)
+    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), futureFetchingProcessRepository, processAuthorizer), testPermissionRead)
 
     Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
       status shouldEqual StatusCodes.OK
@@ -131,7 +131,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
       processId2.value -> Map()
 
     )),
-      fetchingProcessRepository, processAuthorizer), testPermissionRead)
+      futureFetchingProcessRepository, processAuthorizer), testPermissionRead)
 
     saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value), TestCat) {
       saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value), TestCat) {
@@ -156,7 +156,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
     val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(mockDifferences = Map(
       processId1.value -> Map("n1" -> difference)
     )),
-      fetchingProcessRepository, processAuthorizer), readWritePermissions)
+      futureFetchingProcessRepository, processAuthorizer), readWritePermissions)
 
     saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value), TestCat) {
       saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value), TestCat) {

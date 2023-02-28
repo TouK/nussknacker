@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessState}
+import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -12,12 +13,16 @@ trait DeploymentService extends ProcessStateService {
   def getDeployedScenarios(processingType: ProcessingType)
                           (implicit ec: ExecutionContext): Future[List[DeployedScenarioData]]
 
-  //inner Future in result allows to wait for deployment finish, while outer handles validation
+  // Inner Future in result allows to wait for deployment finish, while outer handles validation
+  // We split deploy process that way because we want to be able to split FE logic into two phases:
+  // - validations - it is quick part, the result will be displayed on deploy modal
+  // - deployment on engine side - it is longer part, the result will be shown as a notification
   def deployProcessAsync(id: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])
-                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[_]]
+                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]]
 
   def cancelProcess(id: ProcessIdWithName, deploymentComment: Option[DeploymentComment])
-                   (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[_]
+                   (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Unit]
+  def invalidateInProgressActions(): Unit
 
 }
 

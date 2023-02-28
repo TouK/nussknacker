@@ -43,7 +43,8 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    deploys.add(processVersion)
+    logger.debug(s"Adding deploy for ${processVersion.processName}")
+    deploys.add(processVersion.processName)
     synchronized {
       Option(deployResult.get(processVersion.processName)).map(_.toArray(Array.empty[Future[Option[ExternalDeploymentId]]]))
         .getOrElse(Array.empty)
@@ -52,8 +53,6 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     }
   }
 
-  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = cancelResult
-
   private val deployResult = LinkedHashMultimap.create[ProcessName, Future[Option[ExternalDeploymentId]]]
 
   private var cancelResult: Future[Unit] = Future.successful(())
@@ -61,7 +60,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
   private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(defaultProcessStateStatus))
 
   //queue of invocations to e.g. check that deploy was already invoked in "ProcessManager"
-  val deploys = new ConcurrentLinkedQueue[ProcessVersion]()
+  val deploys = new ConcurrentLinkedQueue[ProcessName]()
 
   def withWaitForDeployFinish[T](name: ProcessName)(action: => T): T = {
     val promise = Promise[Option[ExternalDeploymentId]]()
@@ -153,7 +152,9 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
 
   override def close(): Unit = {}
 
-  override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(())
+  override def cancel(name: ProcessName, user: User): Future[Unit] = cancelResult
+
+  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(())
 
   override protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] =
     if (canonicalProcess.metaData.typeSpecificData.cast[StreamMetaData].flatMap(_.parallelism).exists(_ > maxParallelism)) {

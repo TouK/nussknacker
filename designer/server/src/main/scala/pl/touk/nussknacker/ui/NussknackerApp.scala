@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.Materializer
-import akka.util.Timeout
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import fr.davit.akka.http.metrics.core.HttpMetrics._
@@ -31,7 +30,6 @@ import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationService, NotificationsListener}
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.DeploymentActionsInProgressActor.ActorBasedDeploymentActionsInProgressRepository
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata._
@@ -49,7 +47,6 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client3.SttpBackend
 import sttp.client3.akkahttp.AkkaHttpBackend
 
-import java.util.concurrent.TimeUnit
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -122,23 +119,22 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
     val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
 
-    val dbRepositoryManager = RepositoryManager.createDbRepositoryManager(dbConfig)
+    val dbioRunner = DBIOActionRunner(dbConfig)
     val processRepository = DBFetchingProcessRepository.create(dbConfig)
+    // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
+    val futureProcessRepository = DBFetchingProcessRepository.createFutureRespository(dbConfig)
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
-    val notificationListener = new NotificationsListener(resolvedConfig.as[NotificationConfig]("notifications"), processRepository.fetchProcessName(_))
+    val notificationListener = new NotificationsListener(resolvedConfig.as[NotificationConfig]("notifications"), futureProcessRepository.fetchProcessName(_))
     val processChangeListener = ProcessChangeListenerLoader
-      .loadListeners(getClass.getClassLoader, resolvedConfig, NussknackerServices(new PullProcessRepository(processRepository)), notificationListener)
+      .loadListeners(getClass.getClassLoader, resolvedConfig, NussknackerServices(new PullProcessRepository(futureProcessRepository)), notificationListener)
 
     val scenarioResolver = new ScenarioResolver(subprocessResolver)
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
-    val dmDispatcher = new DeploymentManagerDispatcher(managers, processRepository)
+    val dmDispatcher = new DeploymentManagerDispatcher(managers, futureProcessRepository)
 
-    val systemRequestTimeout = Timeout(system.settings.config.getDuration("akka.http.server.request-timeout").toMillis, TimeUnit.MILLISECONDS)
-    val deploymentActionsInProgressActor = system.actorOf(DeploymentActionsInProgressActor.props, "deploymentActionsInProgress")
-    val deploymentActionsInProgressRepo = new ActorBasedDeploymentActionsInProgressRepository(deploymentActionsInProgressActor, systemRequestTimeout)
-
-    deploymentService = new DeploymentServiceImpl(dmDispatcher, processRepository, actionRepository, scenarioResolver, deploymentActionsInProgressRepo, processChangeListener)
+    deploymentService = new DeploymentServiceImpl(dmDispatcher, processRepository, actionRepository, dbioRunner, processValidation, scenarioResolver, processChangeListener)
+    deploymentService.invalidateInProgressActions()
     reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
     val processActivityRepository = new DbProcessActivityRepository(dbConfig)
 
@@ -151,10 +147,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
-    val customActionInvokerService = new CustomActionInvokerServiceImpl(processRepository, dmDispatcher, deploymentService)
+    val customActionInvokerService = new CustomActionInvokerServiceImpl(futureProcessRepository, dmDispatcher, deploymentService)
     val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
     val processService = new DBProcessService(deploymentService, newProcessPreparer,
-      processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
+      processCategoryService, processResolving, dbioRunner, futureProcessRepository, actionRepository,
       writeProcessRepository, processValidation
     )
     val scenarioTestService = ScenarioTestService(modelData, featureTogglesConfig.testDataSettings,
@@ -162,14 +158,14 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val configProcessToolbarService = new ConfigProcessToolbarService(resolvedConfig, processCategoryService.getAllCategories)
 
-    val processAuthorizer = new AuthorizeProcess(processRepository)
+    val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
     val appResources = new AppResources(
       config = resolvedConfig,
       processingTypeDataReload = reload,
       modelData = modelData,
-      processRepository = processRepository,
+      processRepository = futureProcessRepository,
       processValidation = processValidation,
-      processService = processService,
+      deploymentService = deploymentService,
       exposeConfig = featureTogglesConfig.enableConfigEndpoint,
       processCategoryService = processCategoryService
     )
@@ -180,40 +176,41 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val notificationService = new NotificationService(notificationListener)
 
-    initMetrics(metricsRegistry, resolvedConfig, processRepository)
+    initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
         new ProcessesResources(
-          processRepository = processRepository,
+          processRepository = futureProcessRepository,
           processService = processService,
+          deploymentService = deploymentService,
           processToolbarService = configProcessToolbarService,
           processResolving = processResolving,
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener,
           typeToConfig = typeToConfig
         ),
-        new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
-        new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
-        new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
-        new ManagementResources(processAuthorizer, processRepository, featureTogglesConfig.deploymentCommentSettings, processService,
-          dmDispatcher, customActionInvokerService, metricsRegistry, scenarioTestService),
-        new ValidationResources(processRepository ,processResolving),
+        new NodesResources(futureProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
+        new ProcessesExportResources(futureProcessRepository, processActivityRepository, processResolving),
+        new ProcessActivityResource(processActivityRepository, futureProcessRepository, processAuthorizer),
+        new ManagementResources(processAuthorizer, futureProcessRepository, featureTogglesConfig.deploymentCommentSettings,
+          deploymentService, dmDispatcher, customActionInvokerService, metricsRegistry, scenarioTestService),
+        new ValidationResources(futureProcessRepository ,processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new UserResources(processCategoryService),
         new NotificationResources(notificationService),
         appResources,
-        new TestInfoResources(processAuthorizer, processRepository, scenarioTestService),
+        new TestInfoResources(processAuthorizer, futureProcessRepository, scenarioTestService),
         new ComponentResource(componentService),
-        new AttachmentResources(new ProcessAttachmentService(AttachmentsConfig.create(resolvedConfig), processActivityRepository), processRepository, processAuthorizer)
+        new AttachmentResources(new ProcessAttachmentService(AttachmentsConfig.create(resolvedConfig), processActivityRepository), futureProcessRepository, processAuthorizer)
       )
 
       val optionalRoutes = List(
         featureTogglesConfig.remoteEnvironment
           .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, new TestModelMigrations(modelData.mapValues(_.migrations), processValidation), environment))
-          .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
+          .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, futureProcessRepository, processAuthorizer)),
         countsReporter
-          .map(reporter => new ProcessReportResources(reporter, counter, processRepository))
+          .map(reporter => new ProcessReportResources(reporter, counter, futureProcessRepository))
       ).flatten
       routes ++ optionalRoutes
     }

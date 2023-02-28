@@ -24,7 +24,7 @@ class ProcessActivityResourceSpec extends AnyFlatSpec with ScalatestRouteTest wi
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val attachmentService = new ProcessAttachmentService(AttachmentsConfig.default, processActivityRepository)
-  private val attachmentsRoute = new AttachmentResources(attachmentService, fetchingProcessRepository, processAuthorizer)
+  private val attachmentsRoute = new AttachmentResources(attachmentService, futureFetchingProcessRepository, processAuthorizer)
   private val attachmentsRouteWithAllPermissions: Route = withAllPermissions(attachmentsRoute)
 
   private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess

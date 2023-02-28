@@ -895,14 +895,14 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   private def fetchSampleProcess(): Future[CanonicalProcess] = {
-    fetchingProcessRepository
+    futureFetchingProcessRepository
       .fetchLatestProcessDetailsForProcessId[CanonicalProcess](getProcessId(processName))
       .map(_.getOrElse(sys.error("Sample process missing")))
       .map(_.json)
   }
 
   private def getProcessId(processName: ProcessName): ProcessId =
-    fetchingProcessRepository.fetchProcessId(processName).futureValue.get
+    futureFetchingProcessRepository.fetchProcessId(processName).futureValue.get
 
   private def renameProcess(processName: ProcessName, newName: ProcessName)(callback: StatusCode => Any): Any =
     Put(s"/processes/${processName.value}/rename/${newName.value}") ~> routeWithAllPermissions ~> check {
@@ -944,5 +944,5 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
 
   private def updateCategory(processId: ProcessId, category: String): XError[Unit] =
-    repositoryManager.runInTransaction(writeProcessRepository.updateCategory(processId, category)).futureValue
+    dbioRunner.runInTransaction(writeProcessRepository.updateCategory(processId, category)).futureValue
 }
