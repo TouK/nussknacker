@@ -46,7 +46,8 @@ or [start a discussion](https://github.com/TouK/nussknacker/discussions/new?cate
 
 ## Scala compatibility
 
-Currently, we do support Scala 2.12, we will cross publish when Flink supports Scala >= 2.13.
+Currently, we do support Scala 2.12 and 2.13, we cross publish versions. Default scala version is 2.13. Docker images (both Designer and Lite Runtime) are tagged with `_scala-2.X` suffix (e.g. `1.8.0_scala_2.13` or `latest_2.12`). 
+Tags without such suffix are also published, and they point to images with default scala version build. Please be aware of that, especially if you use `latest` image tag.
 
 ## Flink compatibility
 
