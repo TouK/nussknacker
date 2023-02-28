@@ -83,7 +83,7 @@ function ScenariosView({ children, table }: PropsWithChildren<{ table?: boolean 
         <FiltersContextProvider<ScenariosFiltersModel> getValueLinker={valueLinker}>
             {children}
             <FiltersPart data={data} isLoading={isFetching} withSort={!table} />
-            {!table ? <TablePart data={data} isLoading={isLoading} /> : <ListPart data={data} isLoading={isLoading} />}
+            {table ? <TablePart data={data} isLoading={isLoading} /> : <ListPart data={data} isLoading={isLoading} />}
         </FiltersContextProvider>
     );
 }
