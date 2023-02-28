@@ -2,70 +2,49 @@ import loadable from "@loadable/component"
 import LoaderSpinner from "../components/Spinner"
 import React, {useMemo} from "react"
 import * as Paths from "./paths"
-import {MetricsBasePath, VisualizationBasePath} from "./paths"
-import {Navigate, useRoutes} from "react-router-dom"
+import {MetricsBasePath, RootPath, ScenariosBasePath, VisualizationBasePath} from "./paths"
+import {createRoutesFromElements, Navigate, Route} from "react-router-dom"
 import Metrics from "./Metrics"
 import Services from "./Services"
 import {NotFound} from "./errors/NotFound"
-import {CustomTab, RedirectStar} from "./CustomTab"
+import {CustomTab, StarRedirect} from "./CustomTab"
 import {useTabData} from "./CustomTabPage"
+import {NussknackerApp} from "./NussknackerApp"
 
-const VisualizationWrapped = loadable(() => import("./VisualizationWrapped"), {fallback: <LoaderSpinner show={true}/>})
+const Visualization = loadable(() => import("./Visualization"), {fallback: <LoaderSpinner show={true}/>})
 const ProcessesTab = loadable(() => import("./ProcessesTab"), {fallback: <LoaderSpinner show={true}/>})
 const ScenariosTab = loadable(() => import("./ScenariosTab"), {fallback: <LoaderSpinner show={true}/>})
 
-export function RootRoutes() {
+function DefaultRedirect() {
   const rootTab = useTabData("scenarios")
-  const fallbackPath = useMemo(() => rootTab?.type === "Local" ? rootTab.url : Paths.ScenariosBasePath, [rootTab])
-  return useRoutes([
-    {
-      path: "/",
-      element: <Navigate to={fallbackPath} replace/>,
-    },
-    {
-      path: "/404",
-      element: <NotFound/>,
-    },
-    {
-      path: `${VisualizationBasePath}/:processId`,
-      element: <VisualizationWrapped/>,
-    },
-    {
-      path: Paths.ScenariosBasePath,
-      element: <ScenariosTab/>,
-    },
-    {
-      path: `/legacy_scenarios/*`,
-      element: <RedirectStar to={`/`}/>,
-    },
-    {
-      path: `/processes/*`,
-      element: <ProcessesTab/>,
-    },
-    {
-      path: "/services",
-      element: <Services/>,
-    },
-    {
-      path: MetricsBasePath,
-      children: [
-        {
-          index: true,
-          element: <Metrics/>,
-        },
-        {
-          path: `:processId`,
-          element: <Metrics/>,
-        },
-      ],
-    },
-    {
-      path: "/:id/*",
-      element: <CustomTab/>,
-    },
-    {
-      path: "/*",
-      element: <Navigate to="/404" replace/>,
-    },
-  ])
+  const defaultPath = useMemo(() => rootTab?.type === "Local" ? rootTab.url : Paths.ScenariosBasePath, [rootTab])
+  return <Navigate to={defaultPath} replace/>
 }
+
+export default createRoutesFromElements(
+  <Route path="/" element={<NussknackerApp/>}>
+    <Route index element={<DefaultRedirect/>}/>
+    <Route path="/404" element={<NotFound/>}/>
+
+    <Route path={`${VisualizationBasePath}/:id`} element={<Visualization/>}/>
+    <Route path="/services" element={<Services/>}/>
+
+    {/* overrides scenarios custom tab */}
+    <Route path={ScenariosBasePath} element={<ScenariosTab/>}/>
+
+    {/* overrides legacy scenarios custom tab */}
+    <Route path="/legacy_scenarios/*" element={<StarRedirect to={RootPath}/>}/>
+    <Route path="/processes/*" element={<ProcessesTab/>}/>
+
+    {/* overrides metrics custom tab */}
+    <Route path={MetricsBasePath}>
+      <Route index element={<Metrics/>}/>
+      <Route path=":processId" element={<Metrics/>}/>
+    </Route>
+
+    <Route path="/:id/*" element={<CustomTab/>}/>
+
+    <Route path="*" element={<Navigate to="/404" replace/>}/>
+  </Route>
+)
+

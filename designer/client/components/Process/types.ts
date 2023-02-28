@@ -56,6 +56,7 @@ export interface ProcessType {
   state: ProcessStateType,
   history?: ProcessVersionType[],
   json: Process,
+  processingType: string,
 }
 
 export type ProcessStateType = {

@@ -1,5 +1,5 @@
 import {useDispatch, useSelector} from "react-redux"
-import {getFetchedProcessDetails, getGraph, getProcessToDisplay} from "../reducers/selectors/graph"
+import {getFetchedProcessDetails, getGraph} from "../reducers/selectors/graph"
 import {defaultsDeep, isEmpty} from "lodash"
 import {getProcessDefinitionData} from "../reducers/selectors/settings"
 import {getCapabilities} from "../reducers/selectors/other"
@@ -16,23 +16,17 @@ import {ProcessGraph as GraphEl} from "../components/graph/ProcessGraph"
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react"
 import ProcessUtils from "../common/ProcessUtils"
 import {useWindows} from "../windowManager"
-import {useNavigate, useSearchParams} from "react-router-dom"
+import {useNavigate, useParams, useSearchParams} from "react-router-dom"
 import {parseWindowsQueryParams} from "../windowManager/useWindows"
 import NodeUtils from "../components/graph/NodeUtils"
 import {isEdgeEditable} from "../common/EdgeUtils"
 import * as VisualizationUrl from "../common/VisualizationUrl"
-import {
-  clearProcess,
-  displayProcessActivity,
-  fetchAndDisplayProcessCounts,
-  fetchProcessDefinition,
-  fetchProcessToDisplay,
-  handleHTTPError,
-  loadProcessState,
-  loadProcessToolbarsConfiguration,
-} from "../actions/nk"
 import {Graph} from "../components/graph/Graph"
 import {ErrorHandler} from "./ErrorHandler"
+import {Process} from "../types"
+import {fetchVisualizationData} from "../actions/nk/fetchVisualizationData"
+import {clearProcess, loadProcessState} from "../actions/nk/process"
+import {fetchAndDisplayProcessCounts} from "../actions/nk/displayProcessCounts"
 
 function useUnmountCleanup() {
   const {close} = useWindows()
@@ -92,8 +86,7 @@ function useCountsIfNeeded() {
 function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
   const navigate = useNavigate()
   const {openNodeWindow} = useWindows()
-  const {json: process} = useSelector(getFetchedProcessDetails) || {}
-  useEffect(() => {
+  return useCallback((process: Process) => {
     const params = parseWindowsQueryParams({nodeId: [], edgeId: []})
 
     const edges = params.edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(isEdgeEditable)
@@ -115,10 +108,11 @@ function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
       },
       {replace: true}
     )
-  }, [getGraphInstance, navigate, openNodeWindow, process])
+  }, [getGraphInstance, navigate, openNodeWindow])
 }
 
-function Visualization({processId}: { processId: string }) {
+function Visualization() {
+  const {id: processId} = useParams<{ id: string }>()
   const dispatch = useDispatch()
 
   const graphRef = useRef<Graph>()
@@ -126,25 +120,14 @@ function Visualization({processId}: { processId: string }) {
 
   const [dataResolved, setDataResolved] = useState(false)
 
-  const fetchAdditionalData = useCallback(async process => {
-    const {name, json, processingType} = process
-    await dispatch(loadProcessToolbarsConfiguration(name))
-    dispatch(displayProcessActivity(name))
-    await dispatch(fetchProcessDefinition(processingType, json.properties?.isSubprocess))
+  const fetchData = useCallback(async (processName: string) => {
+    await dispatch(fetchVisualizationData(processName))
     setDataResolved(true)
   }, [dispatch])
 
-  const fetchData = useCallback((processName: string) => {
-    //TODO: move fetchProcessToDisplay to ts
-    const promise = dispatch(fetchProcessToDisplay(processName)) as any
-    promise
-      .then(({fetchedProcessDetails}) => fetchAdditionalData(fetchedProcessDetails))
-      .catch((error) => dispatch(handleHTTPError(error)))
-  }, [dispatch, fetchAdditionalData])
-
   const {graphLoading} = useSelector(getGraph)
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
-  const graphNotReady = useMemo(() => isEmpty(fetchedProcessDetails) || graphLoading, [fetchedProcessDetails, graphLoading])
+  const graphNotReady = useMemo(() => !dataResolved || isEmpty(fetchedProcessDetails) || graphLoading, [dataResolved, fetchedProcessDetails, graphLoading])
 
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const capabilities = useSelector(getCapabilities)
@@ -162,7 +145,13 @@ function Visualization({processId}: { processId: string }) {
 
   useProcessState()
   useCountsIfNeeded()
-  useModalDetailsIfNeeded(getGraphInstance)
+
+  const modalDetailsIfNeeded = useModalDetailsIfNeeded(getGraphInstance)
+  useEffect(() => {
+    if (!graphNotReady) {
+      modalDetailsIfNeeded(fetchedProcessDetails.json)
+    }
+  }, [fetchedProcessDetails, graphNotReady, modalDetailsIfNeeded])
 
   useUnmountCleanup()
 
