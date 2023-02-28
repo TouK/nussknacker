@@ -58,8 +58,6 @@ While we don't provide out-of-the-box
 support as it would complicate the build process, there is separate [repo](https://github.com/TouK/nussknacker-flink-compatibility)
 with detailed instructions how to run Nussknacker with some of the older versions.  
 
-As for now, Flink does not support scala 2.13 (see [FLINK-13414](https://issues.apache.org/jira/browse/FLINK-13414) issue), so to use Nussknacker build with scala 2.13 some [tweaks](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/src/it/scala/pl/touk/nussknacker/engine/management/DockerTest.scala#L60) in Flink installations are required.
-
 ## Related projects
 
 - [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) - Repository with quick setup (docker-compose or helm) presenting typical usage of Nussknacker    
