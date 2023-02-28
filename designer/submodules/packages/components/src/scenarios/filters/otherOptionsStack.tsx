@@ -1,10 +1,11 @@
 import { useFilterContext } from "../../common";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ScenariosFiltersModel } from "./scenariosFiltersModel";
+import { ScenariosFiltersModel, ScenariosFiltersModelDeployed } from "./scenariosFiltersModel";
 import { FilterListItem } from "./filterListItem";
 import { OptionsStack } from "./optionsStack";
 import { Divider } from "@mui/material";
+import { some, xor } from "lodash";
 
 export function OtherOptionsStack(): JSX.Element {
     const { t } = useTranslation();
@@ -42,7 +43,7 @@ export function OtherOptionsStack(): JSX.Element {
 export function StatusOptionsStack(): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
-    const filters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
+    const filters: Array<keyof ScenariosFiltersModel> = ["HIDE_ACTIVE", "SHOW_ARCHIVED", "DEPLOYED"];
 
     return (
         <OptionsStack
@@ -55,18 +56,16 @@ export function StatusOptionsStack(): JSX.Element {
             onChange={(v) => filters.forEach((k: keyof ScenariosFiltersModel) => setFilter(k, v))}
         >
             <FilterListItem
-                invert
                 color="default"
-                checked={getFilter("HIDE_DEPLOYED") === true}
-                onChange={(checked) => setFilter("HIDE_DEPLOYED", checked)}
-                label={t("table.filter.SHOW_DEPLOYED", "Show deployed")}
+                checked={getFilter("DEPLOYED", true)?.includes(ScenariosFiltersModelDeployed.DEPLOYED)}
+                onChange={() => setFilter("DEPLOYED", xor([ScenariosFiltersModelDeployed.DEPLOYED], getFilter("DEPLOYED", true)))}
+                label={t("table.filter.DEPLOYED", "Deployed")}
             />
             <FilterListItem
-                invert
                 color="default"
-                checked={getFilter("HIDE_NOT_DEPLOYED") === true}
-                onChange={(checked) => setFilter("HIDE_NOT_DEPLOYED", checked)}
-                label={t("table.filter.SHOW_NOT_DEPLOYED", "Show not deployed")}
+                checked={getFilter("DEPLOYED", true)?.includes(ScenariosFiltersModelDeployed.NOT_DEPLOYED)}
+                onChange={() => setFilter("DEPLOYED", xor([ScenariosFiltersModelDeployed.NOT_DEPLOYED], getFilter("DEPLOYED", true)))}
+                label={t("table.filter.NOT_DEPLOYED", "Not deployed")}
             />
             <Divider />
             <FilterListItem
