@@ -115,8 +115,7 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                             .some((value) => value.includes(segment.toLowerCase())),
                     );
                 },
-                SHOW_ARCHIVED: (row, filter) => filter || !row.isArchived,
-                HIDE_ACTIVE: (row, filter) => (filter ? row.isArchived : true),
+                ARCHIVED: (row, filter) => (filter ? row.isArchived : !row.isArchived),
                 HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
                 HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
                 DEPLOYED: (row, value) =>

@@ -33,7 +33,7 @@ describe("Process", () => {
       cy.contains(/^archive/i).should("be.enabled").click()
       cy.contains("want to archive").should("be.visible")
       cy.contains(/^yes$/i).should("be.enabled").click()
-      cy.contains(/^archived visible$/i, {timeout: 60000}).should("be.visible")
+      cy.contains(/^archived$/i, {timeout: 60000}).should("be.visible")
       cy.contains(this.processName).should("be.visible").click({force: true})
       cy.contains(/scenario was archived/i).should("be.visible")
     })

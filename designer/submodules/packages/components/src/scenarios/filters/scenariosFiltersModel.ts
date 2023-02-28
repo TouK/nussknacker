@@ -3,8 +3,7 @@ import { SortableFiltersModel } from "./common/sortableFiltersModel";
 export interface ScenariosFiltersModel extends SortableFiltersModel {
     NAME?: string;
     CATEGORY?: string[];
-    SHOW_ARCHIVED?: boolean;
-    HIDE_ACTIVE?: boolean;
+    ARCHIVED?: boolean;
     HIDE_FRAGMENTS?: boolean;
     HIDE_SCENARIOS?: boolean;
     DEPLOYED?: string[];

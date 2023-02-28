@@ -2,7 +2,7 @@ import { useFilterContext } from "../../common";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ScenariosFiltersModel, ScenariosFiltersModelDeployed } from "./scenariosFiltersModel";
-import { FilterListItem } from "./filterListItem";
+import {FilterListItem, FilterListItemSwitch} from "./filterListItem";
 import { OptionsStack } from "./optionsStack";
 import { Divider } from "@mui/material";
 import { some, xor } from "lodash";
@@ -43,7 +43,7 @@ export function OtherOptionsStack(): JSX.Element {
 export function StatusOptionsStack(): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
-    const filters: Array<keyof ScenariosFiltersModel> = ["HIDE_ACTIVE", "SHOW_ARCHIVED", "DEPLOYED"];
+    const filters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED", "DEPLOYED"];
 
     return (
         <OptionsStack
@@ -68,17 +68,10 @@ export function StatusOptionsStack(): JSX.Element {
                 label={t("table.filter.NOT_DEPLOYED", "Not deployed")}
             />
             <Divider />
-            <FilterListItem
-                invert
-                color="default"
-                checked={getFilter("HIDE_ACTIVE") === true}
-                onChange={(checked) => setFilter("HIDE_ACTIVE", checked)}
-                label={t("table.filter.SHOW_ACTIVE", "Show active")}
-            />
-            <FilterListItem
-                checked={getFilter("SHOW_ARCHIVED") === true}
-                onChange={(checked) => setFilter("SHOW_ARCHIVED", checked)}
-                label={t("table.filter.SHOW_ARCHIVED", "Show archived")}
+            <FilterListItemSwitch
+                checked={getFilter("ARCHIVED") === true}
+                onChange={(checked) => setFilter("ARCHIVED", checked)}
+                label={t("table.filter.ARCHIVED", "Archived")}
             />
         </OptionsStack>
     );
