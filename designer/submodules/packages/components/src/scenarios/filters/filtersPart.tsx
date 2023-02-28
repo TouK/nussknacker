@@ -33,7 +33,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
         };
     }, [data, filterableKeys, userData?.categories]);
 
-    const statusFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_ACTIVE", "SHOW_ARCHIVED"];
+    const statusFilters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED"];
     const { getFilter, setFilter, activeKeys } = useFilterContext<ScenariosFiltersModel>();
 
     const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
@@ -41,14 +41,12 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
     const getLabel = useCallback(
         (name: keyof ScenariosFiltersModel, value?: string | number) => {
             switch (name) {
-                case "HIDE_ACTIVE":
-                    return t("table.filter.desc.HIDE_ACTIVE", "Active hidden");
                 case "HIDE_FRAGMENTS":
                     return t("table.filter.desc.HIDE_FRAGMENTS", "Fragments hidden");
                 case "HIDE_SCENARIOS":
                     return t("table.filter.desc.HIDE_SCENARIOS", "Scenarios hidden");
-                case "SHOW_ARCHIVED":
-                    return t("table.filter.desc.SHOW_ARCHIVED", "Archived visible");
+                case "ARCHIVED":
+                    return t("table.filter.ARCHIVED", "Archived");
                 case "DEPLOYED":
                     switch (value) {
                         case ScenariosFiltersModelDeployed.DEPLOYED:
