@@ -22,7 +22,7 @@ function UnArchiveButton({disabled}: ToolbarButtonProps) {
   const onClick = useCallback(() => available && confirm(
     {
       text: DialogMessages.unArchiveProcess(processId),
-      onConfirmCallback: () => HttpService.unArchiveProcess(processId).then(() => {
+      onConfirmCallback: (confirmed) => confirmed && HttpService.unArchiveProcess(processId).then(() => {
         dispatch(loadProcessToolbarsConfiguration(processId))
         dispatch(displayCurrentProcessVersion(processId))
       }),

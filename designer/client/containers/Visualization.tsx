@@ -4,7 +4,7 @@ import {defaultsDeep, isEmpty} from "lodash"
 import {getProcessDefinitionData} from "../reducers/selectors/settings"
 import {getCapabilities} from "../reducers/selectors/other"
 import {GraphPage} from "./Page"
-import RouteLeavingGuard from "../components/RouteLeavingGuard"
+import {RouteLeavingGuard, useRouteLeavingGuard} from "../components/RouteLeavingGuard"
 import {GraphProvider} from "../components/graph/GraphContext"
 import SelectionContextProvider from "../components/graph/SelectionContextProvider"
 import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
@@ -154,12 +154,11 @@ function Visualization() {
   }, [fetchedProcessDetails, graphNotReady, modalDetailsIfNeeded])
 
   useUnmountCleanup()
+  useRouteLeavingGuard(capabilities.editFrontend && !nothingToSave)
 
   return (
     <ErrorHandler>
       <GraphPage data-testid="graphPage">
-        <RouteLeavingGuard when={capabilities.editFrontend && !nothingToSave}/>
-
         <GraphProvider graph={getGraphInstance}>
           <SelectionContextProvider pastePosition={getPastePosition}>
             <BindKeyboardShortcuts/>

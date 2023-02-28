@@ -27,7 +27,7 @@ function ArchiveButton({disabled}: ToolbarButtonProps): JSX.Element {
   const onClick = useCallback(() => available && confirm(
     {
       text: DialogMessages.archiveProcess(processId),
-      onConfirmCallback: () => HttpService.archiveProcess(processId).then(() => {
+      onConfirmCallback: (confirmed) => confirmed && HttpService.archiveProcess(processId).then(() => {
         if (redirectAfterArchive) navigate(ArchivedPath)
         else {
           dispatch(loadProcessToolbarsConfiguration(processId))

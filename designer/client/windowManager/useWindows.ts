@@ -40,26 +40,22 @@ export function useWindows(parent?: WindowId) {
     }))
   }, [dispatch, forceDisableModals, _open])
 
-  const openNodeWindow = useCallback((
-    node: NodeType,
-    process: Process,
-    readonly?: boolean,
-  ) => {
-    open({
+  const openNodeWindow = useCallback(
+    (node: NodeType, process: Process, readonly?: boolean) => open({
       title: node.id,
       isResizable: true,
       kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
       meta: {node, process},
-    })
-
-  }, [open])
+    }),
+    [open]
+  )
 
   const confirm = useCallback((data: ConfirmDialogData, event?: EventInfo) => {
     if (!isEmpty(event)) {
       dispatch(reportEvent(event))
     }
 
-    open({
+    return open({
       title: data.text,
       kind: WindowKind.confirm,
       meta: defaults(data, {confirmText: "Yes", denyText: "No"}),

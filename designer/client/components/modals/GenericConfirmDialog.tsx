@@ -9,7 +9,7 @@ export interface ConfirmDialogData {
   confirmText?: string,
   denyText?: string,
   //TODO: get rid of callbacks in store
-  onConfirmCallback: () => void,
+  onConfirmCallback: (confirmed: boolean) => void,
 }
 
 export function GenericConfirmDialog({
@@ -25,13 +25,14 @@ export function GenericConfirmDialog({
       {
         title: meta.denyText || t("dialog.button.no", "no"),
         action: () => {
+          meta.onConfirmCallback(false)
           props.close()
         },
       },
       {
         title: meta.confirmText || t("dialog.button.yes", "yes"),
         action: () => {
-          meta.onConfirmCallback()
+          meta.onConfirmCallback(true)
           props.close()
         },
       },

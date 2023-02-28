@@ -29,7 +29,7 @@ export function ProcessHistoryComponent(props: {isReadOnly?: boolean}): JSX.Elem
   const changeVersion = useCallback(
     (version: ProcessVersionType) => props.isReadOnly || nothingToSave ?
       doChangeVersion(version) :
-      confirm({text: unsavedProcessChanges(), onConfirmCallback: () => doChangeVersion(version), confirmText: "DISCARD", denyText: "CANCEL"}),
+      confirm({text: unsavedProcessChanges(), onConfirmCallback: (confirmed) => confirmed && doChangeVersion(version), confirmText: "DISCARD", denyText: "CANCEL"}),
     [confirm, doChangeVersion, nothingToSave, props.isReadOnly],
   )
 

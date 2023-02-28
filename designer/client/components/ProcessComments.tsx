@@ -42,8 +42,10 @@ function ProcessComments(): JSX.Element {
       text: DialogMessages.deleteComment(),
       confirmText: "DELETE",
       denyText: "NO",
-      onConfirmCallback: async () => {
-        await dispatch(deleteComment(processId, comment.id))
+      onConfirmCallback: async (confirmed) => {
+        if (confirmed) {
+          await dispatch(deleteComment(processId, comment.id))
+        }
         setPending(false)
       },
     })
@@ -75,15 +77,18 @@ function ProcessComments(): JSX.Element {
       </ul>
       {
         capabilities.write ?
-          <div className="add-comment-panel">
-            <CommentInput onChange={onInputChange.bind(this)} value={comment}/>
-            <NkButton
-              type="button"
-              className="add-comment"
-              onClick={_addComment}
-              disabled={pending || comment == ""}
-            >Add</NkButton>
-          </div> : null
+          (
+            <div className="add-comment-panel">
+              <CommentInput onChange={onInputChange.bind(this)} value={comment}/>
+              <NkButton
+                type="button"
+                className="add-comment"
+                onClick={_addComment}
+                disabled={pending || comment == ""}
+              >Add</NkButton>
+            </div>
+          ) :
+          null
       }
     </div>
   )
