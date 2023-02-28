@@ -1,4 +1,5 @@
 import React from "react"
+import "../stylesheets/processes.styl"
 import "../stylesheets/visualization.styl"
 import styled from "@emotion/styled"
 

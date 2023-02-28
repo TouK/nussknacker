@@ -21,7 +21,7 @@ case class ApiKeyInHeader(name: String, key: String) extends SecurityInHeader {
 }
 
 case class ApiKeyInQuery(name: String, key: String) extends SwaggerSecurity {
-  def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request.method(request.method, request.uri.param(name, key))
+  def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request.method(request.method, request.uri.addParam(name, key))
 }
 
 case class ApiKeyInCookie(name: String, key: String) extends SwaggerSecurity {

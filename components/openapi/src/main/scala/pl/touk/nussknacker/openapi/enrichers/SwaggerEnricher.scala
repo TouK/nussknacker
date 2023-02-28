@@ -14,7 +14,7 @@ import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricherCreator.determineInv
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
 import pl.touk.nussknacker.openapi.http.backend._
-import sttp.client.SttpBackend
+import sttp.client3.SttpBackend
 import sttp.model.StatusCode
 
 import java.net.{MalformedURLException, URL}
@@ -33,8 +33,8 @@ class SwaggerEnricher(baseUrl: URL, swaggerService: SwaggerService,
 
   private val parameterExtractor = new ParametersExtractor(swaggerService, fixedParams)
 
-  implicit protected def httpBackendForEc(implicit ec: ExecutionContext, collector: ServiceInvocationCollector): SttpBackend[Future, Nothing, Nothing] = {
-    val originalBackend: SttpBackend[Future, Nothing, Nothing] = httpBackendProvider.httpBackendForEc
+  implicit protected def httpBackendForEc(implicit ec: ExecutionContext, collector: ServiceInvocationCollector): SttpBackend[Future, Any] = {
+    val originalBackend: SttpBackend[Future, Any] = httpBackendProvider.httpBackendForEc
     new LoggingAndCollectingSttpBackend(originalBackend, s"${getClass.getPackage.getName}.$serviceName")
   }
 

@@ -6,7 +6,6 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
@@ -34,22 +33,21 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
     }
 }
 
-class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient,
-                                           config: SchemaRegistryClientKafkaConfig)
+class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient)
   extends ConfluentSchemaRegistryClient with SchemaRegistryClientWithRegistration {
 
   override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
-      ConfluentUtils.toSchemaWithMetadata(schemaMetadata, config)
+      ConfluentUtils.toSchemaWithMetadata(schemaMetadata)
     }
 
   override def getByTopicAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getSchemaMetadata(subject, version)
-      ConfluentUtils.toSchemaWithMetadata(schemaMetadata, config)
+      ConfluentUtils.toSchemaWithMetadata(schemaMetadata)
     }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =

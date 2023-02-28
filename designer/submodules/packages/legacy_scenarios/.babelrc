@@ -1,0 +1,4 @@
+{
+    "extends": "../../.babelrc",
+    "only": ["src/**/*", "test/**/*", "__mocks__/**/*"]
+}

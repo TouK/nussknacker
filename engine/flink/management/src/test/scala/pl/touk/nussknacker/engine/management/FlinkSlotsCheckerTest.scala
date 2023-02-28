@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsEx
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.testing.SttpBackendStub
-import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
+import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
 import java.net.ConnectException
@@ -75,13 +75,13 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
           JobConfig(jobId, ExecutionConfig(`job-parallelism` = 1, `user-config` = Map.empty))
         case (List("overview"), Method.GET) =>
           clusterOverviewResult.recoverWith {
-            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(ex).get)
+            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(req, ex).get)
           }.get
         case (List("jobmanager", "config"), Method.GET) =>
           jobManagerConfigResult.map(_.toMap.asScala.toList.map {
             case (key, value) => KeyValueEntry(key, value)
           }).recoverWith {
-            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(ex).get)
+            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(req, ex).get)
           }.get
         case _ => throw new IllegalStateException()
       }
@@ -90,8 +90,8 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
     slotsChecker
   }
 
-  private def createSlotsCheckerWithBackend(backend: SttpBackend[Future, Nothing, NothingT]): FlinkSlotsChecker = {
-    implicit val b: SttpBackend[Future, Nothing, NothingT] = backend
+  private def createSlotsCheckerWithBackend(backend: SttpBackend[Future, Any]): FlinkSlotsChecker = {
+    implicit val b: SttpBackend[Future, Any] = backend
     new FlinkSlotsChecker(new HttpFlinkClient(config))
   }
 

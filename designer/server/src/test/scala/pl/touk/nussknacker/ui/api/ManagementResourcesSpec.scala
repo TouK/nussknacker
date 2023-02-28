@@ -235,7 +235,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#output")
     saveProcessAndAssertSuccess(invalidScenario.id, invalidScenario)
 
-    deploymentManager.withFailingDeployment {
+    deploymentManager.withFailingDeployment(ProcessName(invalidScenario.id)) {
       deployProcess(invalidScenario.id) ~> check {
         responseAs[String] shouldBe "Cannot deploy invalid scenario"
         status shouldBe StatusCodes.Conflict
@@ -247,7 +247,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     val largeParallelismScenario = SampleProcess.process.copy(metaData = MetaData(SampleProcess.process.id, StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1))))
     saveProcessAndAssertSuccess(largeParallelismScenario.id, largeParallelismScenario)
 
-    deploymentManager.withFailingDeployment {
+    deploymentManager.withFailingDeployment(ProcessName(largeParallelismScenario.id)) {
       deployProcess(largeParallelismScenario.id) ~> check {
         status shouldBe StatusCodes.BadRequest
         responseAs[String] shouldBe "Parallelism too large"
@@ -258,7 +258,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("return from deploy before deployment manager proceeds") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
 
-    deploymentManager.withWaitForDeployFinish {
+    deploymentManager.withWaitForDeployFinish(ProcessName(SampleProcess.process.id)) {
       deployProcess(SampleProcess.process.id) ~> check {
         status shouldBe StatusCodes.OK
       }

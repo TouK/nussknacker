@@ -1,13 +1,9 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import akka.pattern.ask
-import akka.stream.Materializer
-import akka.util.Timeout
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -24,43 +20,19 @@ import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
-import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
-import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop}
+import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerService, DeploymentManagerDispatcher}
+import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
-import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
+import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.nio.charset.StandardCharsets
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object ManagementResources {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
-
-  def apply(managementActor: ActorRef,
-            processAuthorizator: AuthorizeProcess,
-            processRepository: FetchingProcessRepository[Future],
-            featuresOptions: FeatureTogglesConfig,
-            processService: ProcessService,
-            metricRegistry: MetricRegistry,
-            scenarioTestService: ScenarioTestService,
-           )
-           (implicit ec: ExecutionContext,
-            mat: Materializer, system: ActorSystem): ManagementResources = {
-    new ManagementResources(
-      managementActor,
-      featuresOptions.testDataSettings,
-      processAuthorizator,
-      processRepository,
-      featuresOptions.deploymentCommentSettings,
-      processService,
-      metricRegistry,
-      scenarioTestService,
-    )
-  }
 
   implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts[Json]] = deriveConfiguredEncoder
 
@@ -100,16 +72,15 @@ object ManagementResources {
 
 }
 
-class ManagementResources(val managementActor: ActorRef,
-                          testDataSettings: TestDataSettings,
-                          val processAuthorizer: AuthorizeProcess,
+class ManagementResources(val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository[Future],
                           deploymentCommentSettings: Option[DeploymentCommentSettings],
                           processService: ProcessService,
+                          dispatcher: DeploymentManagerDispatcher,
+                          customActionInvokerService: CustomActionInvokerService,
                           metricRegistry: MetricRegistry,
-                          scenarioTestService: ScenarioTestService,
-                         )
-                         (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
+                          scenarioTestService: ScenarioTestService)
+                         (implicit val ec: ExecutionContext)
   extends Directives
     with LazyLogging
     with RouteWithUser
@@ -120,8 +91,6 @@ class ManagementResources(val managementActor: ActorRef,
   import ManagementResources._
 
   //TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
-  private val durationFromConfig = system.settings.config.getDuration("akka.http.server.request-timeout")
-  private implicit val timeout: Timeout = Timeout(durationFromConfig.toMillis millis)
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
@@ -141,7 +110,8 @@ class ManagementResources(val managementActor: ActorRef,
       (post & processId(processName) & parameters(Symbol("savepointDir").?)) { (processId, savepointDir) =>
         canDeploy(processId) {
           complete {
-            convertSavepointResultToResponse(managementActor ? Snapshot(processId, user, savepointDir))
+            convertSavepointResultToResponse(
+              dispatcher.deploymentManager(processId.id)(ec, user).flatMap(_.savepoint(processId.name, savepointDir)))
           }
         }
       }
@@ -150,7 +120,8 @@ class ManagementResources(val managementActor: ActorRef,
         (post & processId(processName) & parameters(Symbol("savepointDir").?)) { (processId, savepointDir) =>
           canDeploy(processId) {
             complete {
-              convertSavepointResultToResponse(managementActor ? Stop(processId, user, savepointDir))
+              convertSavepointResultToResponse(
+                dispatcher.deploymentManager(processId.id)(ec, user).flatMap(_.stop(processId.name, savepointDir, user.toManagerUser)))
             }
           }
         }
@@ -200,14 +171,14 @@ class ManagementResources(val managementActor: ActorRef,
       } ~
       //TODO: maybe Write permission is enough here?
       path("processManagement" / "test" / Segment) { processName =>
-        (post & processIdWithCategory(processName)) { idWithCategory =>
-          canDeploy(idWithCategory.id) {
+        (post & processId(processName)) { idWithName =>
+          canDeploy(idWithName.id) {
             formFields(Symbol("testData"), Symbol("processJson")) { (testDataContent, displayableProcessJson) =>
               complete {
                 measureTime("test", metricRegistry) {
                   parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
                     case Right(displayableProcess) =>
-                      scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
+                      scenarioTestService.performTest(idWithName, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
                         Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                       }.recover(EspErrorToHttp.errorToHttp)
                     case Left(error) =>
@@ -222,10 +193,8 @@ class ManagementResources(val managementActor: ActorRef,
       path("processManagement" / "customAction" / Segment) { processName =>
         (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
           val params = req.params.getOrElse(Map.empty)
-          val customAction = uideployment.CustomAction(req.actionName, process, user, params)
           complete {
-            (managementActor ? customAction)
-              .mapTo[Either[CustomActionError, CustomActionResult]]
+            customActionInvokerService.invokeCustomAction(req.actionName, process, params)
               .flatMap {
                 case res@Right(_) =>
                   toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
@@ -246,9 +215,8 @@ class ManagementResources(val managementActor: ActorRef,
   private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
 
-  private def convertSavepointResultToResponse(future: Future[Any]) = {
+  private def convertSavepointResultToResponse(future: Future[SavepointResult]) = {
     future
-      .mapTo[SavepointResult]
       .map { case SavepointResult(path) => HttpResponse(entity = path, status = StatusCodes.OK) }
       .recover(EspErrorToHttp.errorToHttp)
   }

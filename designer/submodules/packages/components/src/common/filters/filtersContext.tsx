@@ -19,7 +19,7 @@ function serializeToQuery<T>(filterModel: T): [string, string][] {
         .map(({ key, value }) => [key, value]);
 }
 
-function deserializeFromQuery<T extends Record<Uppercase<string>, any>>(params: URLSearchParams): T {
+function deserializeFromQuery<T>(params: URLSearchParams): T {
     return [...params].reduce((result, [key, _value]) => {
         const value = _value === "true" || toNumber(_value) || _value;
         return {
@@ -133,7 +133,7 @@ export function FiltersContextProvider<M>({ children, getValueLinker }: PropsWit
     const [searchParams, _setSearchParams] = useSearchParams();
     const setSearchParams = useDebounce(_setSearchParams, 100);
 
-    const [model = {}, setModel] = useState<M>(window.location.search ? deserializeFromQuery(searchParams) : ({} as M));
+    const [model = {}, setModel] = useState<M>(window.location.search ? deserializeFromQuery<M>(searchParams) : ({} as M));
 
     useEffect(() => {
         const fromQuery = deserializeFromQuery<M>(searchParams);

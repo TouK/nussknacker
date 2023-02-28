@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import com.google.common.collect.LinkedHashMultimap
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -40,35 +41,65 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
     Future.successful(managerProcessState.get())
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
+                      canonicalProcess: CanonicalProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
     deploys.add(processVersion)
-    deployResult
+    synchronized {
+      Option(deployResult.get(processVersion.processName)).map(_.toArray(Array.empty[Future[Option[ExternalDeploymentId]]]))
+        .getOrElse(Array.empty)
+        .lastOption
+        .getOrElse(Future.successful(None))
+    }
   }
 
-  private var deployResult: Future[Option[ExternalDeploymentId]] = Future.successful(None)
+  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = cancelResult
+
+  private val deployResult = LinkedHashMultimap.create[ProcessName, Future[Option[ExternalDeploymentId]]]
+
+  private var cancelResult: Future[Unit] = Future.successful(())
 
   private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(defaultProcessStateStatus))
 
   //queue of invocations to e.g. check that deploy was already invoked in "ProcessManager"
   val deploys = new ConcurrentLinkedQueue[ProcessVersion]()
 
-  def withWaitForDeployFinish[T](action: => T): T = {
+  def withWaitForDeployFinish[T](name: ProcessName)(action: => T): T = {
     val promise = Promise[Option[ExternalDeploymentId]]()
+    val future = promise.future
+    synchronized {
+      deployResult.put(name, future)
+    }
     try {
-      deployResult = promise.future
       action
     } finally {
       promise.complete(Try(None))
-      deployResult = Future.successful(None)
+      synchronized {
+        deployResult.remove(name, future)
+      }
+    }
+  }
+  def withWaitForCancelFinish[T](action: => T): T = {
+    val promise = Promise[Unit]()
+    try {
+      cancelResult = promise.future
+      action
+    } finally {
+      promise.complete(Try(()))
+      cancelResult = Future.successful(())
     }
   }
 
-  def withFailingDeployment[T](action: => T): T = {
-    deployResult = Future.failed(new RuntimeException("Failing deployment..."))
+  def withFailingDeployment[T](name: ProcessName)(action: => T): T = {
+    val future = Future.failed(new RuntimeException("Failing deployment..."))
+    synchronized {
+      deployResult.put(name, future)
+    }
     try {
       action
     } finally {
-      deployResult = Future.successful(None)
+      synchronized {
+        deployResult.remove(name, future)
+      }
     }
   }
 
@@ -96,8 +127,6 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
       managerProcessState.set(prepareProcessState(defaultProcessStateStatus))
     }
   }
-
-  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(())
 
   override protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
 
@@ -132,4 +161,6 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     } else {
       Future.successful(())
     }
+
+
 }

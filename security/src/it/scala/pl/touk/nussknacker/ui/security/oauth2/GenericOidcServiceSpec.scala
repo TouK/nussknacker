@@ -8,9 +8,8 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.ui.security.oidc.{OidcAuthenticationConfiguration, OidcService}
-import sttp.client.asynchttpclient.WebSocketHandler
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client.{SttpBackend, _}
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client3.{SttpBackend, _}
 
 import java.net.URI
 import scala.concurrent.Future
@@ -25,7 +24,7 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 
   override val container: KeyCloakScalaContainer = new KeyCloakScalaContainer
 
-  private implicit val backend: SttpBackend[Future, Nothing, WebSocketHandler] = AsyncHttpClientFutureBackend()
+  private implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
 
   private def baseUrl: String = s"${container.container.getAuthServerUrl}/realms/$realmId"
 
@@ -61,7 +60,7 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
     val redirectValue = basicRequest
       .get(uri"${config.authorizeUrl.get.toString}")
       .response(asString)
-      .send().futureValue
+      .send(backend).futureValue
 
     val pattern = """.*action="([^"]*)".*""".r
     val passwordLocation = redirectValue.body.toOption.get.replaceAll("\n", "") match {
@@ -70,10 +69,10 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 
     basicRequest
       .post(uri"$passwordLocation")
-      .cookies(redirectValue.cookies)
+      .cookies(redirectValue.unsafeCookies)
       .body("username" -> "user1", "password" -> "pass1", "credentialId" -> "")
       .followRedirects(false)
-      .send().futureValue
+      .send(backend).futureValue
   }
 
   private def oauth2Conf: OidcAuthenticationConfiguration =
@@ -88,7 +87,7 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 }
 
 class KeyCloakScalaContainer() extends SingleContainer[KeycloakContainer] {
-  override val container: KeycloakContainer = new KeycloakContainer()
+  override val container: KeycloakContainer = new KeycloakContainer("quay.io/keycloak/keycloak:19.0.0")
     //sample keycloak realm...
-    .withRealmImportFile("keycloak.json")
+    .withRealmImportFile("/keycloak.json")
 }

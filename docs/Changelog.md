@@ -1,10 +1,20 @@
 
 # Changelog
 
+1.9.0 (not released yet)
+------------------------
+* [#3986](https://github.com/TouK/nussknacker/pull/3986) Updated sttp 2.2.9 -> 3.8.11
+* [#3979](https://github.com/TouK/nussknacker/pull/3979) Updated Flink 1.16.0 -> 1.16.1
+* [#4019](https://github.com/TouK/nussknacker/pull/4019) Make displayable process category required
+* [#4020](https://github.com/TouK/nussknacker/pull/4020) Pass category name to process migration method
+* [#4039](https://github.com/TouK/nussknacker/pull/4039) Fix for: After clicking cancel, sometimes for a moment appear "during deploy" status instead of "during cancel"
+* [#4041](https://github.com/TouK/nussknacker/pull/4041) Concurrent deploy, cancel and test from file mechanisms are allowed now
+* [#3994](https://github.com/TouK/nussknacker/pull/3994) Unification of editor/raw mode validation for JSON Schema sinks
+
 1.8.1 (28 Feb 2023)
 ------------------------
-* [#4018](https://github.com/TouK/nussknacker/pull/4018) Fix for: generate test data mechanism didn't work for json messages with defined schema id 
-* [#4024](https://github.com/TouK/nussknacker/pull/4024) Fix encoding object in sink with JSON schema pattern properties 
+* [#4018](https://github.com/TouK/nussknacker/pull/4018) Fix for: generate test data mechanism didn't work for json messages with defined schema id
+* [#4024](https://github.com/TouK/nussknacker/pull/4024) Fix encoding object in sink with JSON schema pattern properties
 
 1.8.0 (17 Feb 2023)
 ------------------------

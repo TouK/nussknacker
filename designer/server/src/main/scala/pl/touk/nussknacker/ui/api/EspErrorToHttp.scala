@@ -6,7 +6,6 @@ import akka.http.scaladsl.server.ExceptionHandler
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
-import pl.touk.nussknacker.ui.process.deployment.ProcessIsBeingDeployed
 import pl.touk.nussknacker.ui.validation.FatalValidationError
 import pl.touk.nussknacker.ui._
 
@@ -21,7 +20,6 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
       case e: NotFoundError => StatusCodes.NotFound
       case e: FatalError => StatusCodes.InternalServerError
       case e: BadRequestError => StatusCodes.BadRequest
-      case e: ProcessIsBeingDeployed => StatusCodes.Conflict
       case e: FatalValidationError => StatusCodes.BadRequest
       case e: IllegalOperationError => StatusCodes.Conflict
       //unknown?

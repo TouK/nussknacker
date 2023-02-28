@@ -1,5 +1,5 @@
 import {Redirect, useRouteMatch} from "react-router"
-import {ScenariosBasePath} from "./paths"
+import {ProcessesTabDataPath, ScenariosBasePath} from "./paths"
 import React from "react"
 import {CustomTabPage} from "./CustomTabPage"
 
@@ -8,8 +8,9 @@ function CustomTab(): JSX.Element {
   switch (params.id) {
     case "scenarios":
       // "Scenarios" is the main view and is defined in different way so we want to get rid of "customtabs" segment
-      const basePath = ScenariosBasePath
-      return <Redirect to={params.rest ? `${basePath}/${params.rest}` : basePath}/>
+      return <Redirect to={params.rest ? `${ScenariosBasePath}/${params.rest}` : ScenariosBasePath}/>
+    case "legacy_scenarios":
+      return <Redirect to={params.rest ? `${ProcessesTabDataPath}/${params.rest}` : ProcessesTabDataPath}/>
     default:
       return <CustomTabPage id={params.id}/>
   }

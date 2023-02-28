@@ -33,10 +33,6 @@ export function extractCountParams(queryParams) {
 
 export const defaultArrayFormat: ParseOptions["arrayFormat"] = "comma"
 
-export function normalizeParams<T extends Record<any, any>>(object: T) {
-  return queryString.parse(queryString.stringify(object, {arrayFormat: defaultArrayFormat})) as Record<keyof T, string>
-}
-
 export function setAndPreserveLocationParams<T extends Record<string, any>>(params: T, arrayFormat = defaultArrayFormat): string {
   const queryParams = queryString.parse(window.location.search, {arrayFormat, parseNumbers: true})
   const merged = {...queryParams, ...params}

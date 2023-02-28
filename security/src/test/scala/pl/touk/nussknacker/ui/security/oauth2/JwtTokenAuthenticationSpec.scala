@@ -11,13 +11,14 @@ import org.scalatest.matchers.should.Matchers
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.Uri
 
 import java.net.URI
 import java.security.KeyPairGenerator
 import java.time.Clock
 import java.util.Base64
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
 class JwtTokenAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives with FailFastCirceSupport {
@@ -51,7 +52,7 @@ class JwtTokenAuthenticationSpec extends AnyFunSpec with Matchers with Scalatest
   private val expiredAccessToken = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresNow, keyPair.getPrivate, JwtAlgorithm.RS256)
   private val accessTokenWithInvalidAudience = JwtCirce.encode(JwtClaim().about("admin").to("invalid").expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
 
-  implicit private val testingBackend: RecordingSttpBackend = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture[Nothing]
+  implicit private val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture
     .whenRequestMatches(_.uri.equals(userinfoUri))
     .thenRespond(s""" { "sub": "admin" } """))
      // See classpath:oauth2-users.conf for the roles defined for user admin.

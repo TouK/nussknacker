@@ -15,7 +15,6 @@ import {BackendNotification} from "../containers/Notifications"
 import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
 import {AdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
-import {omit} from "lodash";
 import {withoutHackOfEmptyEdges} from "../components/graph/GraphPartialsInTS/EdgeUtils";
 
 type HealthCheckProcessDeploymentType = {
@@ -194,10 +193,6 @@ class HttpService {
     return api.get<string[]>("/processDefinitionData/componentIds")
   }
 
-  fetchServices() {
-    return api.get<Services>("/processDefinitionData/services")
-  }
-
   fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
     return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`)
   }
@@ -272,10 +267,6 @@ class HttpService {
         return {isSuccess: false}
       })
     })
-  }
-
-  invokeService(processingType, serviceName, parameters) {
-    return api.post(`/service/${processingType}/${serviceName}`, parameters)
   }
 
   cancel(processId, comment?) {
@@ -468,7 +459,7 @@ class HttpService {
 
   testProcess(processId: ProcessId, file: File, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
     const sanitized = this.#sanitizeProcess(processJson)
-    
+
     const data = new FormData()
     data.append("testData", file)
     data.append("processJson", new Blob([JSON.stringify(sanitized)], {type: "application/json"}))
@@ -529,7 +520,7 @@ class HttpService {
     this.#addErrorMessage(message, errorMessage, showErrorText)
     return Promise.resolve(error)
   }
-  
+
   #sanitizeProcess(process: Process) {
     //don't send validationResult, it's not needed and can be v. large,
     const {id, nodes, edges, properties, processingType, category}: Omit<Process, "validationResult">
@@ -537,7 +528,7 @@ class HttpService {
       = withoutHackOfEmptyEdges(process)
     return {id, nodes, edges, properties, processingType, category}
   }
-  
+
 }
 
 export default new HttpService()

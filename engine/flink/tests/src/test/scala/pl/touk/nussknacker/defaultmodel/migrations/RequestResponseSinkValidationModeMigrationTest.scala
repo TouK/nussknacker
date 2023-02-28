@@ -20,7 +20,7 @@ class RequestResponseSinkValidationModeMigrationTest extends AnyFunSuite {
         .source("source", "request")
         .emptySink("sink", "response")
 
-    val results = RequestResponseSinkValidationModeMigration.migrateProcess(process)
+    val results = RequestResponseSinkValidationModeMigration.migrateProcess(process, "none")
     getFirst[Sink](results).parameters shouldBe List(Parameter("Value validation mode", "'lax'"))
   }
 

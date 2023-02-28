@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.directives.AuthenticationDirective
 import akka.http.scaladsl.server.{AuthorizationFailedRejection, Directive1, Directives, RejectionHandler, Route}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -49,7 +49,7 @@ trait AnonymousAccess extends Directives {
 }
 
 object AuthenticationResources {
-  def apply(config: Config, classLoader: ClassLoader)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): AuthenticationResources = {
+  def apply(config: Config, classLoader: ClassLoader)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): AuthenticationResources = {
     AuthenticationProvider(config, classLoader).createAuthenticationResources(config, classLoader)
   }
 }

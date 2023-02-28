@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.security.oidc
 import pl.touk.nussknacker.engine.util.config.URIExtensions
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.OIDC
 import pl.touk.nussknacker.ui.security.oauth2.{JwtConfiguration, OAuth2Configuration, TokenCookieConfig}
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 import sttp.model.MediaType
 
 import java.net.URI
@@ -63,7 +63,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
     tokenCookie = tokenCookie
   )
 
-  def withDiscovery(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OidcAuthenticationConfiguration = {
+  def withDiscovery(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OidcAuthenticationConfiguration = {
     val discoveredConfiguration = OidcDiscovery(issuer)
     copy(
       authorizationEndpoint = authorizationEndpoint.orElse(discoveredConfiguration.map(_.authorizationEndpoint)),

@@ -64,7 +64,7 @@ class KafkaAvroSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClient
       val validationResult = validatedSchema
         .andThen { schema =>
           new AvroSchemaOutputValidator(extractValidationMode(mode))
-            .validateTypingResultAgainstSchema(value.returnType, schema.rawSchema())
+            .validate(value.returnType, schema.rawSchema())
             .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
             .leftMap(NonEmptyList.one)
         }.swap.toList.flatMap(_.toList)

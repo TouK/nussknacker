@@ -9,7 +9,6 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import org.apache.kafka.common.errors.SerializationException
 import org.everit.json.schema.{Schema => EveritSchema}
-import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaWithMetadata}
 
@@ -39,7 +38,7 @@ object ConfluentUtils extends LazyLogging {
     case ValueSubjectPattern(value) => value
   }
 
-  def toSchemaWithMetadata(schemaMetadata: SchemaMetadata, config: SchemaRegistryClientKafkaConfig): SchemaWithMetadata = {
+  def toSchemaWithMetadata(schemaMetadata: SchemaMetadata): SchemaWithMetadata = {
     SchemaWithMetadata.fromRawSchema(schemaMetadata.getSchemaType, schemaMetadata.getSchema, SchemaId.fromInt(schemaMetadata.getId))
   }
 

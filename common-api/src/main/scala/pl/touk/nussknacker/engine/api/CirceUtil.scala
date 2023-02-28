@@ -35,7 +35,7 @@ object CirceUtil {
   def decodeJsonUnsafe[T: Decoder](json: Json, message: String): T = unsafe(Decoder[T].decodeJson(json), message)
 
   private def unsafe[T](result: Either[circe.Error, T], message: String = "") = result match {
-    case Left(error) => throw DecodingError(s"Failed to decode${if (message.isBlank) s"- $message" else ""}, error: ${error.getMessage}", error)
+    case Left(error) => throw DecodingError(s"Failed to decode${if (message.isBlank) "" else s" - $message"}, error: ${error.getMessage}", error)
     case Right(data) => data
   }
 

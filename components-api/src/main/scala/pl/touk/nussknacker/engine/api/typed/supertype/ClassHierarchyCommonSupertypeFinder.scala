@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
 import scala.collection.compat._
-import scala.collection.mutable
+import scala.collection.immutable.ListSet
 
 /**
   * It looks for nearest common super type using algorithm described here: See https://stackoverflow.com/a/9797689
@@ -43,19 +43,17 @@ object ClassHierarchyCommonSupertypeFinder {
     }
   }
 
-  // We are using mutable.LinkedHashSet instead of immutable.ListSet because of this bug in Scala 2.11: https://github.com/scala/bug/issues/10005
-  // For ++, flatMap and intersect it returns copy of set
-  private def classesBfs(clazz: Class[_]): mutable.LinkedHashSet[Class[_]] = {
-    bfsNodesForThisAndAllLevelsBelow(mutable.LinkedHashSet(clazz))
+  private def classesBfs(clazz: Class[_]): ListSet[Class[_]] = {
+    bfsNodesForThisAndAllLevelsBelow(ListSet(clazz))
   }
 
-  private def bfsNodesForThisAndAllLevelsBelow(classesOnThisLevel: mutable.LinkedHashSet[Class[_]]): mutable.LinkedHashSet[Class[_]] = {
+  private def bfsNodesForThisAndAllLevelsBelow(classesOnThisLevel: ListSet[Class[_]]): ListSet[Class[_]] = {
     classesOnThisLevel ++ classesOnThisLevel.flatMap(classOnThisLevel => bfsNodesForThisAndAllLevelsBelow(classesOnLowerLevel(classOnThisLevel)))
   }
 
-  private def classesOnLowerLevel(classOnUpperLevel: Class[_]): mutable.LinkedHashSet[Class[_]] = {
-    mutable.LinkedHashSet.from(Option[Class[_]](classOnUpperLevel.getSuperclass).filterNot(_ == classOf[Object]).toList) ++
-      mutable.LinkedHashSet.from(classOnUpperLevel.getInterfaces.filterNot(IgnoredCommonInterfaces.contains))
+  private def classesOnLowerLevel(classOnUpperLevel: Class[_]): ListSet[Class[_]] = {
+    ListSet.from(Option[Class[_]](classOnUpperLevel.getSuperclass).filterNot(_ == classOf[Object]).toList) ++
+      ListSet.from(classOnUpperLevel.getInterfaces.filterNot(IgnoredCommonInterfaces.contains))
   }
 
 }

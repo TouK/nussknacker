@@ -31,7 +31,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeD
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -221,7 +221,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   private object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
     override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                         sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
+                                         sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
       new MockDeploymentManager
   }
 
@@ -519,8 +519,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   private def createDbProcessService(processCategoryService: ProcessCategoryService, processes: List[ProcessWithJson] = Nil): DBProcessService =
     new DBProcessService(
-      managerActor = TestFactory.newDummyManagerActor(),
-      systemRequestTimeout = Timeout(1 minute),
+      managementService = TestFactory.managementService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,

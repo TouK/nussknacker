@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import io.circe.Json
 import org.scalatest.Suite
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileClearanceResponse, TestProfileResponse}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CompoundException, OAuth2ServerError}
-import sttp.client.Response
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.Response
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
 
 import java.net.URI
@@ -26,7 +25,7 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(uri)))
-      .thenRespondWrapped(Future(Response(Option.empty, code)))
+      .thenRespond(Response(Option.empty, code))
 
     ExampleOAuth2ServiceFactory.service(config)
   }
