@@ -95,7 +95,7 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
   test("listen to deployment failure") {
     val processId = createValidProcess(processName, TestCat, false)
 
-    deploymentManager.withFailingDeployment {
+    deploymentManager.withFailingDeployment(processName) {
       deployProcess(processName.value) ~> checkEventually {
         processChangeListener.events.toArray.last should matchPattern { case OnDeployActionFailed(`processId`, _) => }
       }

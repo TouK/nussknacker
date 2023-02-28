@@ -20,7 +20,8 @@ import scala.util.{Failure, Success}
 class ManagementActor(dispatcher: DeploymentManagerDispatcher,
                       deploymentService: DeploymentService) extends FailurePropagatingActor with LazyLogging {
 
-  private var deploymentActionInProgress = Map[ProcessName, DeployInfo]()
+
+  private var deploymentActionsInProgress = Map[(ProcessName, ActionId), DeployInfo]()
 
   private implicit val ec: ExecutionContext = context.dispatcher
 
@@ -38,19 +39,22 @@ class ManagementActor(dispatcher: DeploymentManagerDispatcher,
       val cancelRes = deploymentService.cancelProcess(id, deploymentComment)
       handleDeploymentAction(id, DeploymentActionType.Cancel, cancelRes)
       reply(cancelRes)
-    case GetProcessState(id@DeploymentActionInProgressForProcess(Deployment), user) =>
+    case GetProcessState(id, user) if deploymentActionTypesInProgress(id).contains(Deployment) =>
       implicit val loggedUser: LoggedUser = user
       replyWithPredefinedState(id, SimpleStateStatus.DuringDeploy)
-    case GetProcessState(id@DeploymentActionInProgressForProcess(Cancel), user) =>
+    case GetProcessState(id, user) if deploymentActionTypesInProgress(id).contains(Cancel) =>
       implicit val loggedUser: LoggedUser = user
       replyWithPredefinedState(id, SimpleStateStatus.DuringCancel)
     case GetProcessState(id, user) =>
       implicit val loggedUser: LoggedUser = user
       reply(deploymentService.getProcessState(id))
-    case DeploymentActionFinished(process) =>
-      deploymentActionInProgress -= process.name
+    case DeploymentActionFinished(process, actionId) =>
+      deploymentActionsInProgress -= ((process.name, actionId))
     case GetAllInProgressDeploymentActions =>
-      reply(Future.successful(AllInProgressDeploymentActionsResult(deploymentActionInProgress)))
+      val deduplicatedActions = deploymentActionsInProgress.map {
+        case ((processName, _), deployInfo) => processName -> deployInfo
+      }
+      reply(Future.successful(AllInProgressDeploymentActionsResult(deduplicatedActions)))
   }
 
   private def replyWithPredefinedState(id: ProcessIdWithName, status: StateStatus)
@@ -62,11 +66,12 @@ class ManagementActor(dispatcher: DeploymentManagerDispatcher,
     reply(processStatus)
   }
 
-  private def handleDeploymentAction(id: ProcessIdWithName, action: DeploymentActionType, actionFuture: Future[_])
+  private def handleDeploymentAction(id: ProcessIdWithName, actionType: DeploymentActionType, actionFuture: Future[_])
                                     (implicit user: LoggedUser): Unit = {
-    deploymentActionInProgress += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
+    val actionId = new Object
+    deploymentActionsInProgress += (id.name, actionId) -> DeployInfo(user.username, System.currentTimeMillis(), actionType)
     actionFuture.onComplete { _ =>
-      self ! DeploymentActionFinished(id)
+      self ! DeploymentActionFinished(id, actionId)
     }
   }
 
@@ -78,14 +83,18 @@ class ManagementActor(dispatcher: DeploymentManagerDispatcher,
     }
   }
 
-  private object DeploymentActionInProgressForProcess {
-    def unapply(idWithName: ProcessIdWithName): Option[DeploymentActionType] =
-      deploymentActionInProgress.get(idWithName.name).map(_.action)
+  private def deploymentActionTypesInProgress(idWithName: ProcessIdWithName) = {
+    deploymentActionsInProgress.toList.collect {
+      case ((processName, _), DeployInfo(_, _, actionType)) if processName == idWithName.name => actionType
+    }
   }
 
 }
 
 object ManagementActor {
+
+  private type ActionId = AnyRef
+
   def props(dispatcher: DeploymentManagerDispatcher,
             deploymentService: DeploymentService): Props = {
     Props(new ManagementActor(dispatcher, deploymentService))
@@ -101,7 +110,7 @@ object ManagementActor {
 
   private case class GetProcessState(id: ProcessIdWithName, user: LoggedUser)
 
-  private case class DeploymentActionFinished(id: ProcessIdWithName)
+  private case class DeploymentActionFinished(processIdWithName: ProcessIdWithName, actionId: ActionId)
 
   private case object GetAllInProgressDeploymentActions
 

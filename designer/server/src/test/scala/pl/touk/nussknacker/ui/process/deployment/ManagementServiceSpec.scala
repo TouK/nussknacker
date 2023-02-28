@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState, StateStatus}
@@ -16,10 +16,10 @@ import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
-import pl.touk.nussknacker.ui.process.repository.DeploymentComment
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ManagementActor.ActorBasedManagementService
+import pl.touk.nussknacker.ui.process.repository.DeploymentComment
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.util.UUID
@@ -28,10 +28,10 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 
 class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting {
 
+  import TestCategories._
   import TestFactory._
   import TestProcessingTypes._
   import VersionId._
-  import TestCategories._
 
   private implicit val system: ActorSystem = ActorSystem()
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
@@ -63,8 +63,8 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id: ProcessId =  prepareProcess(processName).futureValue
 
-    deploymentManager.withWaitForDeployFinish {
-      managementService.deployProcessAsync(ProcessIdWithName(id, processName), None, None)
+    deploymentManager.withWaitForDeployFinish(processName) {
+      managementService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
       managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
     }
 
@@ -123,7 +123,7 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessState(None) {
 
       checkStatusAction(statusFromDeploymentManager, None)
-      deploymentManager.withWaitForDeployFinish {
+      deploymentManager.withWaitForDeployFinish(processName) {
         managementService.deployProcessAsync(processIdName, None, None).futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
         listener.events shouldBe Symbol("empty")
@@ -443,6 +443,38 @@ class ManagementServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       state.status shouldBe SimpleStateStatus.Warning
       state.icon shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+    }
+  }
+
+  test("should handle correctly concurrent >1 deploy") {
+    val processName: ProcessName = generateProcessName
+    val id: ProcessId = prepareProcess(processName).futureValue
+
+    deploymentManager.withWaitForDeployFinish(processName) {
+      val firstDeployResult = managementService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
+      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
+
+      // in the normal situation, scenario probably will have some properties changed for the next deployment
+      deploymentManager.withWaitForDeployFinish(processName) {
+        managementService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
+      }.futureValue
+
+      eventually {
+        listener.events should have size 1
+      }
+      all(listener.events.toArray.toList) should matchPattern {
+        case _: OnDeployActionSuccess =>
+      }
+
+      managementService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
+      firstDeployResult
+    }.futureValue
+
+    eventually {
+      listener.events should have size 2
+    }
+    all(listener.events.toArray.toList) should matchPattern {
+      case _: OnDeployActionSuccess =>
     }
   }
 
