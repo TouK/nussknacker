@@ -94,16 +94,11 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   private def handleDeploymentAction[T](id: ProcessIdWithName, actionType: DeploymentActionType)(actionFuture: Future[T])
                                        (implicit user: LoggedUser, ec: ExecutionContext): Future[T] = {
-    for {
-      actionId <- deploymentActionsInProgressRepository.addDeploymentActionInProgress(id, actionType)
-      _ = {
-        // TODO: maybe we should do it less asynchronously, in the same flow as notification saving?
-        actionFuture.onComplete { _ =>
-          deploymentActionsInProgressRepository.removedDeploymentActionInProgress(id, actionId)
-        }
-      }
-      actionResult <- actionFuture
-    } yield actionResult
+    deploymentActionsInProgressRepository.addDeploymentActionInProgress(id, actionType).flatMap { actionId =>
+      // TODO: maybe we should do it in the same flow as rest of things like notification saving and marking scenario as deployed?
+      actionFuture.onComplete(_ => deploymentActionsInProgressRepository.removedDeploymentActionInProgress(id, actionId))
+      actionFuture
+    }
   }
 
   private def processDataExistOrFail[T](maybeProcess: Option[T], processId: ProcessId): Future[T] = {
