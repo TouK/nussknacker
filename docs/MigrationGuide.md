@@ -10,6 +10,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ProcessingTypeConfig.modelConfig` now contains `ConfigWithUnresolvedVersion` instead of `Config`. Old `Config` value is in `ConfigWithUnresolvedVersion.resolved`
   * `ModelConfigLoader.resolveInputConfigDuringExecution` takes `ConfigWithUnresolvedVersion` instead of `Config`. Use `ConfigWithUnresolvedVersion.apply`
     for easy transition between those classes
+* [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`. It affects `MetaData`, `ProcessMetaDataBuilder` and `DisplayableProcess` properties. 
 
 ## In version 1.8.0
 

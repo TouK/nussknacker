@@ -194,8 +194,7 @@ object ProcessTestData {
         "maxEvents" -> "text",
         "unknown" -> "x",
         "numberOfThreads" -> "wrong fixed value"
-      ))),
-      subprocessVersions = Map.empty),
+      )))),
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
@@ -205,7 +204,7 @@ object ProcessTestData {
   val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), Some(ProcessAdditionalFields(Some("process description"), Map.empty)), subprocessVersions = Map.empty),
+      properties = ProcessProperties(StreamMetaData(Some(2)), Some(ProcessAdditionalFields(Some("process description"), Map.empty))),
       nodes = List(
         node.Source(
           id = "sourceId",
@@ -225,7 +224,7 @@ object ProcessTestData {
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None, Map()), List(), List.empty)
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None), List(), List.empty)
   }
 
   val sampleSubprocessOneOut = {
@@ -261,8 +260,7 @@ object ProcessTestData {
       id = processName.value,
       properties = ProcessProperties(
         StreamMetaData(),
-        None,
-        subprocessVersions = Map.empty
+        None
       ),
       nodes = List.empty,
       edges = List.empty,

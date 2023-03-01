@@ -591,7 +591,7 @@ private object ProcessValidationSpec {
                             `type`: ProcessingType = TestProcessingTypes.Streaming,
                             category: String = Category1,
                             additionalFields: Map[String, String] = Map()): DisplayableProcess = {
-    DisplayableProcess("test", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`, category)
+    DisplayableProcess("test", ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`, category)
   }
 
   def mockProcessValidation(subprocess: CanonicalProcess): ProcessValidation = {

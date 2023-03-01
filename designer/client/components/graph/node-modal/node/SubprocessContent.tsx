@@ -9,7 +9,6 @@ import NodeUtils from "../../NodeUtils"
 import {SubProcessGraph as BareGraph} from "../../SubProcessGraph"
 
 export function SubprocessContent({nodeToDisplay}: { nodeToDisplay: SubprocessNodeType }): JSX.Element {
-  const {properties: {subprocessVersions}} = useSelector(getProcessToDisplay)
   const processCounts = useSelector(getProcessCounts)
 
   const [subprocessContent, setSubprocessContent] = useState<ProcessType>(null)
@@ -18,13 +17,12 @@ export function SubprocessContent({nodeToDisplay}: { nodeToDisplay: SubprocessNo
     () => {
       if (NodeUtils.nodeIsSubprocess(nodeToDisplay)) {
         const id = nodeToDisplay?.ref.id
-        const subprocessVersion = subprocessVersions?.[id]
-        HttpService.fetchProcessDetails(id, subprocessVersion).then(response => {
+        HttpService.fetchProcessDetails(id).then(response => {
           setSubprocessContent(response.data.json)
         })
       }
     },
-    [nodeToDisplay, subprocessVersions],
+    [nodeToDisplay],
   )
 
   const subprocessCounts = (processCounts[nodeToDisplay.id] || {}).subprocessCounts || {}

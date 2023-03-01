@@ -27,9 +27,6 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
        |    "typeSpecificData" : {
        |      "spillStateToDisk" : true,
        |      "type" : "StreamMetaData"
-       |    },
-       |    "subprocessVersions" : {
-       |      
        |    }
        |  },
        |  "nodes" : [

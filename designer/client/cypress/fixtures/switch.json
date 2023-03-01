@@ -14,9 +14,6 @@
         "environment" : "test",
         "numberOfThreads" : "1"
       }
-    },
-    "subprocessVersions" : {
-
     }
   },
   "nodes" : [
