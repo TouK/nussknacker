@@ -29,7 +29,7 @@ env:
   #NOTE: for publishing we use different settings, we don't use ciRunSbt.sh there
   CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
   #disable JVMCICompiler as of (https://github.com/playframework/playframework/issues/11137)
-  SBT_JOPTS: "-J-Xms1500M -J-Xmx1500M -J-XX:+UnlockExperimentalVMOptions -J-XX:-UseJVMCICompiler"
+  SBT_JOPTS: "-J-Xms2g -J-Xmx2g -J-XX:+UnlockExperimentalVMOptions -J-XX:-UseJVMCICompiler"
 jobs:
   setup:
     runs-on: ubuntu-latest
