@@ -54,6 +54,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
 
 /*
+  FIXME: better synchronization - comment below isn't true anymore
   Currently we assume that all operations that modify state (i.e. deploy and cancel) are performed from
   ManagementActor, which provides synchronization. Hence, we ignore all synchronization issues, except for
   checking status, but for this @volatile on interpreters should suffice.

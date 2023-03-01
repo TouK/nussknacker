@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
-import pl.touk.nussknacker.ui.process.deployment.{ManagementService, ProcessStateService}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ProcessStateService}
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
@@ -75,7 +75,7 @@ trait ProcessService extends ProcessStateService {
   * ProcessService provides functionality for archive, unarchive, deploy, cancel process.
   * Each action includes verification based on actual process state and checking process is subprocess / archived.
   */
-class DBProcessService(managementService: ManagementService,
+class DBProcessService(deploymentService: DeploymentService,
                        newProcessPreparer: NewProcessPreparer,
                        processCategoryService: ProcessCategoryService,
                        processResolving: UIProcessResolving,
@@ -88,11 +88,8 @@ class DBProcessService(managementService: ManagementService,
   import cats.instances.future._
   import cats.syntax.either._
 
-  /**
-    * Handling error at retrieving status from manager is created at ManagementActor
-    */
   override def getProcessState(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
-    managementService.getProcessState(processIdWithName)
+    deploymentService.getProcessState(processIdWithName)
 
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withNotArchivedProcess(processIdWithName, ProcessActionType.Archive) { process =>
@@ -126,14 +123,14 @@ class DBProcessService(managementService: ManagementService,
 
     withValidProcess {
       doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, deploymentComment) { (processIdWithName: ProcessIdWithName, savepointPath: Option[ProcessingType], deploymentComment: Option[DeploymentComment]) =>
-        managementService.deployProcessAsync(processIdWithName, savepointPath, deploymentComment).map(_ => ().asRight)
+        deploymentService.deployProcessAsync(processIdWithName, savepointPath, deploymentComment).map(_ => ().asRight)
       }
     }
   }
 
   override def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
     doAction(ProcessActionType.Cancel, processIdWithName, None, deploymentComment) { (processIdWithName: ProcessIdWithName, _: Option[String], deploymentComment: Option[DeploymentComment]) =>
-      managementService.cancelProcess(processIdWithName, deploymentComment).map(_ => ().asRight)
+      deploymentService.cancelProcess(processIdWithName, deploymentComment).map(_ => ().asRight)
     }
 
   private def doAction(action: ProcessActionType, processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])

@@ -14,6 +14,7 @@ import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.process.deployment.DeploymentActionType.{Cancel, Deployment}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -24,29 +25,28 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-/**
- * This service should be responsible for wrapping deploying and cancelling task in persistent context.
- * The purpose of it is not to handle any other things from ManagementActor - see comments there
- */
 class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                             processRepository: FetchingProcessRepository[Future],
                             actionRepository: DbProcessActionRepository,
                             scenarioResolver: ScenarioResolver,
+                            deploymentActionsInProgressRepository: DeploymentActionsInProgressRepository,
                             processChangeListener: ProcessChangeListener) extends DeploymentService with LazyLogging {
 
   override def cancelProcess(processId: ProcessIdWithName, deploymentComment: Option[DeploymentComment])
                             (implicit user: LoggedUser, ec: ExecutionContext): Future[_] = {
-    withDeploymentActionNotificationOpt(processId, "cancel", deploymentComment) {
-      for {
-        processingType <- processRepository.fetchProcessingType(processId.id)
-        _ <- dispatcher.deploymentManager(processingType).cancel(processId.name, user.toManagerUser)
-        maybeVersion <- findDeployedVersion(processId)
-        // process can be have deployment in progress (no last deploy action) or be already cancelled - in this
-        // situation we don't have version to mark as cancel
-        result <- maybeVersion.map { version =>
-          actionRepository.markProcessAsCancelled(processId.id, version, deploymentComment)
-        }.sequence
-      } yield result
+    handleDeploymentAction(processId, Cancel) {
+      withDeploymentActionNotificationOpt(processId, "cancel", deploymentComment) {
+        for {
+          processingType <- processRepository.fetchProcessingType(processId.id)
+          _ <- dispatcher.deploymentManager(processingType).cancel(processId.name, user.toManagerUser)
+          maybeVersion <- findDeployedVersion(processId)
+          // process can be have deployment in progress (no last deploy action) or be already cancelled - in this
+          // situation we don't have version to mark as cancel
+          result <- maybeVersion.map { version =>
+            actionRepository.markProcessAsCancelled(processId.id, version, deploymentComment)
+          }.sequence
+        } yield result
+      }
     }
   }
 
@@ -82,12 +82,23 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                                   savepointPath: Option[String],
                                   deploymentComment: Option[DeploymentComment])
                                  (implicit user: LoggedUser, ec: ExecutionContext): Future[Future[_]] = {
-    for {
+    val deployAsyncFuture = for {
       maybeProcess <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processIdWithName.id)
       process <- processDataExistOrFail(maybeProcess, processIdWithName.id)
       deploymentManager = dispatcher.deploymentManager(process.processingType)
       result <- deployAndSaveProcess(process, savepointPath, deploymentComment, deploymentManager)
     } yield result
+    handleDeploymentAction(processIdWithName, Deployment)(deployAsyncFuture.flatten)
+    deployAsyncFuture
+  }
+
+  private def handleDeploymentAction[T](id: ProcessIdWithName, actionType: DeploymentActionType)(actionFuture: Future[T])
+                                       (implicit user: LoggedUser, ec: ExecutionContext): Future[T] = {
+    deploymentActionsInProgressRepository.addDeploymentActionInProgress(id, actionType).flatMap { actionId =>
+      // TODO: maybe we should do it in the same flow as rest of things like notification saving and marking scenario as deployed?
+      actionFuture.onComplete(_ => deploymentActionsInProgressRepository.removedDeploymentActionInProgress(id, actionId))
+      actionFuture
+    }
   }
 
   private def processDataExistOrFail[T](maybeProcess: Option[T], processId: ProcessId): Future[T] = {
@@ -151,13 +162,25 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   }
 
   override def getProcessState(processIdWithName: ProcessIdWithName)
-                              (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
+                              (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] = {
     for {
-      actions <- processRepository.fetchProcessActions(processIdWithName.id)
       manager <- dispatcher.deploymentManager(processIdWithName.id)
-      state <- findJobState(manager, processIdWithName)
-      _ <- handleFinishedProcess(processIdWithName, state)
-    } yield ObsoleteStateDetector.handleObsoleteStatus(state, actions.headOption)
+      inProgressActionTypes <- deploymentActionsInProgressRepository.getDeploymentActionInProgressTypes(processIdWithName)
+      result <- {
+        if (inProgressActionTypes.contains(Deployment)) {
+          Future.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy))
+        } else if (inProgressActionTypes.contains(Cancel)) {
+          Future.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringCancel))
+        } else {
+          for {
+            actions <- processRepository.fetchProcessActions(processIdWithName.id)
+            state <- findJobState(manager, processIdWithName)
+            _ <- handleFinishedProcess(processIdWithName, state)
+          } yield ObsoleteStateDetector.handleObsoleteStatus(state, actions.headOption)
+        }
+      }
+    } yield result
+  }
 
   private def findJobState(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName)
                           (implicit user: LoggedUser, ec: ExecutionContext): Future[Option[ProcessState]] =

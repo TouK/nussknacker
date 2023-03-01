@@ -190,7 +190,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
         .recover({
           //sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
           //workaround for now, not the best solution though
-          //TODO: we should change logic of ManagementActor to mark process deployed for *some* exceptions (like Timeout here)
+          //TODO: we should change logic of DeploymentService to mark process deployed for *some* exceptions (like Timeout here)
           case timeoutExtractor(e) =>
             logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...", e)
             None

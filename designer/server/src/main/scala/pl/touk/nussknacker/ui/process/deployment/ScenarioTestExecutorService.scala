@@ -8,6 +8,13 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
+trait ScenarioTestExecutorService {
+
+  def testProcess[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, scenarioTestData: ScenarioTestData, variableEncoder: Any => T)
+                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]]
+
+}
+
 class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver,
                                       dispatcher: DeploymentManagerDispatcher) extends ScenarioTestExecutorService {
   override def testProcess[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, scenarioTestData: ScenarioTestData, variableEncoder: Any => T)

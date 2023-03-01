@@ -11,6 +11,13 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
+trait CustomActionInvokerService {
+
+  def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
+                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]]
+
+}
+
 class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepository[Future],
                                      dispatcher: DeploymentManagerDispatcher,
                                      processStateService: ProcessStateService) extends CustomActionInvokerService {

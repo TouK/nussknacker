@@ -519,7 +519,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   private def createDbProcessService(processCategoryService: ProcessCategoryService, processes: List[ProcessWithJson] = Nil): DBProcessService =
     new DBProcessService(
-      managementService = TestFactory.managementService(),
+      deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,
