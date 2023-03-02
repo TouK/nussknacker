@@ -42,8 +42,10 @@ function ProcessComments(): JSX.Element {
       text: DialogMessages.deleteComment(),
       confirmText: "DELETE",
       denyText: "NO",
-      onConfirmCallback: async () => {
-        await dispatch(deleteComment(processId, comment.id))
+      onConfirmCallback: async (confirmed) => {
+        if (confirmed) {
+          await dispatch(deleteComment(processId, comment.id))
+        }
         setPending(false)
       },
     })

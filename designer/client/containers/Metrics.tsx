@@ -1,62 +1,38 @@
-import * as queryString from "query-string"
-import React, {useEffect, useState} from "react"
+import React, {useEffect, useMemo, useState} from "react"
 import {useSelector} from "react-redux"
-import {useParams} from "react-router"
+import {useParams} from "react-router-dom"
 import HttpService from "../http/HttpService"
 import {getMetricsSettings} from "../reducers/selectors/settings"
-import {Page} from "./Page"
-import {MetricsBasePath, MetricsPath} from "./paths"
+import {CustomTabWrapper, useTabData} from "./CustomTabPage"
 
-export const Metrics = (): JSX.Element => {
-  const settings = useSelector(getMetricsSettings)
-
-  if (!settings.url) {
-    return (<div/>)
-  }
-
-  return <MetricsComponent settings={settings}/>
-}
-
-function MetricsComponent({settings}) {
-
-  const [processingType, setProcessingType] = useState<string>(null)
-  const {processId} = useParams<Record<"processId", string>>()
-
+function useExtendedMetricsTab(processId?: string) {
+  const [processingType, setProcessingType] = useState("")
   useEffect(() => {
     if (processId) {
-      HttpService.fetchProcessDetails(processId).then(response => {
-        setProcessingType(response.data.processingType)
+      HttpService.fetchProcessDetails(processId).then(({data}) => {
+        setProcessingType(data.processingType)
       })
     } else {
       setProcessingType("")
     }
   }, [processId])
 
-  //TODO: this is still a bit grafana specific...
-  const scenarioTypeToDashboard = settings.scenarioTypeToDashboard
-  const dashboard = scenarioTypeToDashboard && scenarioTypeToDashboard[processingType] || settings.defaultDashboard
-
-  const scenarioName = processId || "All"
-
-  const finalIframeUrl = queryString.stringifyUrl({
-    url: settings.url.replace("$dashboard", dashboard).replace("$scenarioName", scenarioName),
-    query: {
-      iframe: "true",
-    },
-  })
-
-  return (
-    <Page>
-      <iframe
-        src={finalIframeUrl}
-        width="100%"
-        height={window.innerHeight}
-        frameBorder="0"
-      />
-    </Page>
-  )
+  const settings = useSelector(getMetricsSettings)
+  const tab = useTabData("metrics")
+  return useMemo(() => {
+    const dashboard = settings.scenarioTypeToDashboard?.[processingType] || settings.defaultDashboard
+    const scenarioName = processId || "All"
+    return {
+      ...tab,
+      url: settings.url?.replace("$dashboard", dashboard).replace("$scenarioName", scenarioName) || tab.url,
+    }
+  }, [processId, processingType, settings, tab])
 }
 
-Metrics.header = "Metrics"
+function Metrics(): JSX.Element {
+  const {processId} = useParams<{ processId: string }>()
+  const tab = useExtendedMetricsTab(processId)
+  return <CustomTabWrapper tab={tab}/>
+}
 
 export default Metrics

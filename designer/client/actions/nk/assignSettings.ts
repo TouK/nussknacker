@@ -1,12 +1,11 @@
 import {DynamicTabData} from "../../containers/DynamicTab"
 import {AuthenticationSettings} from "../../reducers/settings"
-import {UnknownRecord} from "../../types/common"
 import type {EnvironmentTagColor} from "../../containers/EnvironmentTag"
 
 export type MetricsType = {
   url: string,
   defaultDashboard: string,
-  scenarioTypeToDashboard: UnknownRecord,
+  scenarioTypeToDashboard: Record<string, string>,
 }
 
 export type UsageStatisticsReports = {
@@ -14,7 +13,7 @@ export type UsageStatisticsReports = {
   url: string,
 }
 
-export type SurveySettings ={
+export type SurveySettings = {
   link: string,
   text: string,
   key: string,
@@ -39,11 +38,11 @@ export type FeaturesSettings = {
   redirectAfterArchive: boolean,
   usageStatisticsReports: UsageStatisticsReports,
   surveySettings: SurveySettings,
-};
+}
 
 export type TestDataSettings = {
   maxSamplesCount: number,
-  testDataMaxLength: number
+  testDataMaxLength: number,
 }
 
 type EngineData = {

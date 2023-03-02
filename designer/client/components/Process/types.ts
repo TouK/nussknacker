@@ -1,5 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import {UnknownRecord, Instant} from "../../types/common"
+import {Process} from "../../types"
 
 export enum ActionType {
   Deploy = "DEPLOY",
@@ -54,6 +55,8 @@ export interface ProcessType {
   lastDeployedAction?: ProcessActionType,
   state: ProcessStateType,
   history?: ProcessVersionType[],
+  json: Process,
+  processingType: string,
 }
 
 export type ProcessStateType = {

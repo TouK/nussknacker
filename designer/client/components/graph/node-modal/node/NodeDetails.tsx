@@ -4,12 +4,12 @@ import React, {SetStateAction, useCallback, useEffect, useMemo, useState} from "
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {editNode} from "../../../../actions/nk"
-import {visualizationUrl} from "../../../../common/VisualizationUrl"
+import {setAndPreserveLocationParams, visualizationUrl} from "../../../../common/VisualizationUrl"
 import {alpha, tint, useNkTheme} from "../../../../containers/theme"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {Edge, NodeType, Process} from "../../../../types"
 import {WindowContent, WindowKind} from "../../../../windowManager"
-import {replaceWindowsQueryParams} from "../../../../windowManager/useWindows"
+import {parseWindowsQueryParams} from "../../../../windowManager/useWindows"
 import ErrorBoundary from "../../../common/ErrorBoundary"
 import NodeUtils from "../../NodeUtils"
 import NodeDetailsModalHeader from "../NodeDetailsModalHeader"
@@ -19,6 +19,9 @@ import urljoin from "url-join"
 import {BASE_PATH} from "../../../../config"
 import {RootState} from "../../../../reducers"
 import {applyIdFromFakeName} from "../IdField"
+import {mapValues} from "lodash"
+import {ensureArray} from "../../../../common/arrayUtils"
+import {useNavigate} from "react-router-dom"
 
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType, process: Process }> {
   readOnly?: boolean,
@@ -38,6 +41,16 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
   }, [])
 
   const dispatch = useDispatch()
+
+  const navigate = useNavigate()
+  const replaceWindowsQueryParams = useCallback(
+    <P extends Record<string, string | string[]>>(add: P, remove?: P): void => {
+      const params = parseWindowsQueryParams(add, remove)
+      const search = setAndPreserveLocationParams(mapValues(params, v => ensureArray(v).map(encodeURIComponent)))
+      navigate({search}, {replace: true})
+    },
+    [navigate]
+  )
 
   useEffect(() => {
     replaceWindowsQueryParams({nodeId: node.id})

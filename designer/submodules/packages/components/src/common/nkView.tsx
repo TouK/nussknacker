@@ -4,26 +4,27 @@ import { RootProviders } from "../settings";
 import { useTheme } from "@emotion/react";
 import { useDefaultTheme } from "./defaultTheme";
 import { NavigationProvider } from "./parentNavigationProvider";
+import { RemoteComponentProps } from "nussknackerUi/containers/DynamicTab";
+import { View } from "./view";
 
-export interface NkViewProps {
-    basepath?: string;
-    onNavigate?: (path: string) => void;
-}
+export type NkViewProps = Omit<RemoteComponentProps, "basepath">;
 
 export function NkView(props: PropsWithChildren<NkViewProps>): JSX.Element {
     const theme = useTheme();
     const defaultTheme = useDefaultTheme(theme);
-    const { basepath, onNavigate, children } = props;
+    const { navigate, children } = props;
 
     useEffect(() => {
         console.debug({ BUILD_HASH });
     }, []);
 
-    const navigation = useMemo(() => ({ onNavigate }), [onNavigate]);
+    const navigation = useMemo(() => ({ onNavigate: navigate }), [navigate]);
     return (
         <MuiThemeProvider theme={defaultTheme}>
             <NavigationProvider navigation={navigation}>
-                <RootProviders basepath={basepath}>{children}</RootProviders>
+                <RootProviders>
+                    <View inTab>{children}</View>
+                </RootProviders>
             </NavigationProvider>
         </MuiThemeProvider>
     );

@@ -90,12 +90,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       }
     }
     case "CLEAR_PROCESS": {
-      return {
-        ...state,
-        processToDisplay: null,
-        fetchedProcessDetails: null,
-        testResults: null,
-      }
+      return emptyGraphState
     }
     case "EDIT_NODE": {
       const stateAfterNodeRename = {
@@ -125,12 +120,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
           processToDisplay,
         }
       }, state)
-    }
-    case "URL_CHANGED": {
-      return {
-        ...state,
-        ...emptyGraphState,
-      }
     }
     case "NODES_CONNECTED": {
       let newEdges: Edge[]

@@ -18,7 +18,6 @@ export type ActionTypes =
   | "NODE_ADDED"
   | "NODES_WITH_EDGES_ADDED"
   | "VALIDATION_RESULT"
-  | "URL_CHANGED"
   | "COPY_SELECTION"
   | "CUT_SELECTION"
   | "PASTE_SELECTION"

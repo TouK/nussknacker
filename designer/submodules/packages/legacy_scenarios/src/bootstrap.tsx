@@ -8,6 +8,7 @@ import ProcessTabs from "./containers/ProcessTabs";
 import { NkApiProvider } from "./settings/nkApiProvider";
 import { Auth } from "./settings/auth";
 import { QueryClient, QueryClientProvider } from "react-query";
+import { BrowserRouter } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
@@ -22,12 +23,14 @@ const Root = () => (
                 <QueryClientProvider client={queryClient}>
                     <Auth>
                         <NkThemeProvider>
-                            <ProcessTabs
-                                onFragmentAdd={() => alert("fragment")}
-                                onScenarioAdd={() => alert("scenario")}
-                                metricsLinkGetter={(id) => `/metrics/${encodeURIComponent(id)}`}
-                                scenarioLinkGetter={(id) => `/visualization/${encodeURIComponent(id)}`}
-                            />
+                            <BrowserRouter>
+                                <ProcessTabs
+                                    onFragmentAdd={() => alert("fragment")}
+                                    onScenarioAdd={() => alert("scenario")}
+                                    metricsLinkGetter={(id) => `/metrics/${encodeURIComponent(id)}`}
+                                    scenarioLinkGetter={(id) => `/visualization/${encodeURIComponent(id)}`}
+                                />
+                            </BrowserRouter>
                         </NkThemeProvider>
                     </Auth>
                 </QueryClientProvider>

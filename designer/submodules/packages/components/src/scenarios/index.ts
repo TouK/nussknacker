@@ -1,2 +1,2 @@
-export { RootRoutes } from "./rootRoutes";
-export { ScenariosWithActions as ScenariosView } from "./scenariosView";
+export { ScenariosView } from "./scenariosView";
+export type { ScenariosViewProps } from "./scenariosView";

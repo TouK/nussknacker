@@ -24,7 +24,12 @@ const StyledSpeedDial = styled(SpeedDial)(({ theme }) => ({
     },
 }));
 
-function Actions({ addScenario, addFragment }: { addScenario?: () => void; addFragment?: () => void }): JSX.Element {
+export interface ActionsProps {
+    addScenario?: () => void;
+    addFragment?: () => void;
+}
+
+function Actions({ addScenario, addFragment }: ActionsProps): JSX.Element {
     const [ref, inView] = useInViewRef();
 
     if (!addScenario && !addFragment) {
@@ -66,7 +71,7 @@ function Actions({ addScenario, addFragment }: { addScenario?: () => void; addFr
     );
 }
 
-function ScenariosView({ children, table }: PropsWithChildren<{ table?: boolean }>): JSX.Element {
+function Scenarios({ children, table }: PropsWithChildren<{ table?: boolean }>): JSX.Element {
     const { data = [], isLoading, isFetching } = useScenariosWithStatus();
     const valueLinker: ValueLinker<ScenariosFiltersModel> = useCallback(
         (setNewValue) => (id, value) => {
@@ -88,8 +93,10 @@ function ScenariosView({ children, table }: PropsWithChildren<{ table?: boolean 
     );
 }
 
-export const ScenariosWithActions = (props: { addScenario?: () => void; addFragment?: () => void }) => (
-    <ScenariosView table={false}>
+export type ScenariosViewProps = ActionsProps;
+
+export const ScenariosView = (props: ScenariosViewProps) => (
+    <Scenarios table={false}>
         <Actions {...props} />
-    </ScenariosView>
+    </Scenarios>
 );

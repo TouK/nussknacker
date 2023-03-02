@@ -1,34 +1,37 @@
 import {defaultsDeep} from "lodash"
 import React, {useMemo} from "react"
 import {useSelector} from "react-redux"
-import {useRouteMatch} from "react-router"
 import {darkTheme} from "./darkTheme"
 import {getTabs} from "../reducers/selectors/settings"
-import {DynamicTab} from "./DynamicTab"
-import {NotFound} from "./errors/NotFound"
+import {DynamicTab, DynamicTabData} from "./DynamicTab"
 import {NkThemeProvider} from "./theme"
 import "../stylesheets/visualization.styl"
 import {Page} from "./Page"
+import {Navigate} from "react-router-dom"
 
-export function CustomTabPage<P extends Record<string, unknown>>({id, ...props}: { id?: string } & P): JSX.Element {
+export function CustomTabWrapper<P extends { tab: DynamicTabData }>(props: P) {
+  return (
+    <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
+      <Page>
+        <DynamicTab {...props}/>
+      </Page>
+    </NkThemeProvider>
+  )
+}
+
+export function useTabData(id: string) {
   const customTabs = useSelector(getTabs)
-  const tab = useMemo(
-    () => customTabs.find(tab => tab.id == id),
+  return useMemo(
+    () => customTabs.find(tab => tab.id === id),
     [customTabs, id],
   )
+}
 
-  const {params} = useRouteMatch<{ rest: string }>()
-  const basepath = window.location.pathname.replace(params.rest, "")
+export function CustomTabPage<P extends Record<string, unknown>>({id, ...props}: { id?: string } & P): JSX.Element {
+  const tab = useTabData(id)
   return tab ?
-    (
-      <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-        <Page>
-          <DynamicTab tab={tab} componentProps={{...props, basepath}}/>
-        </Page>
-      </NkThemeProvider>
-    ) :
-    (
-      <NotFound/>
-    )
+    <CustomTabWrapper tab={tab} {...props}/> :
+    <Navigate to="/404"/>
 
 }
+

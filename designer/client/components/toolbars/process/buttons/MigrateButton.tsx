@@ -31,7 +31,7 @@ function MigrateButton(props: Props) {
   const onClick = useCallback(() => confirm(
     {
       text: DialogMessages.migrate(processId, targetEnvironmentId),
-      onConfirmCallback: () => HttpService.migrateProcess(processId, versionId),
+      onConfirmCallback: (confirmed) => confirmed && HttpService.migrateProcess(processId, versionId),
       confirmText: t("panels.actions.process-migrate.yes", "Yes"),
       denyText: t("panels.actions.process-migrate.no", "No"),
     },
