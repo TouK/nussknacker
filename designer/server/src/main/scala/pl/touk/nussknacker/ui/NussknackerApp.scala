@@ -178,12 +178,13 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       val routes = List(
         new ProcessesResources(
           processRepository = processRepository,
+          subprocessRepository = subprocessRepository,
           processService = processService,
           processToolbarService = configProcessToolbarService,
           processResolving = processResolving,
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener,
-          typeToConfig = typeToConfig
+          typeToConfigProvider = typeToConfig
         ),
         new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),

@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server.Route
 import cats.data.OptionT
 import cats.instances.future._
@@ -13,12 +15,17 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
+import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
+import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -27,13 +34,16 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareValidationContext}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -57,6 +67,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
     import akka.http.scaladsl.server.Directives._
 
     pathPrefix("nodes" / Segment) { processName =>
+      processId(processName) { processId =>
       (post & processDetailsForName[Unit](processName)) { process =>
         path("additionalInfo") {
           entity(as[NodeData]) { nodeData =>
@@ -69,11 +80,27 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
           implicit val requestDecoder: Decoder[NodeValidationRequest] = NodesResources.prepareNodeRequestDecoder(modelData)
           entity(as[NodeValidationRequest]) { nodeData =>
             complete {
+//              processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
+//                case Some(processDetails) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(processDetails))
+//                case Some(process) => {
+//                  val processTypeData = typeToConfigProvider.forType(process.processingType)
+//                  val processConfig = processTypeData.map(_.modelData).map(_.processConfig).get
+//                  val classLoader = processTypeData.map(_.modelData).map(_.modelClassLoader).map(_.classLoader).get
+//                  val subprocessesConfig: Map[String, SingleComponentConfig] = ComponentsUiConfigExtractor.extract(processConfig)
+//                  val subprocessesDetails = subprocessRepository.loadSubprocesses(Map.empty, process.processCategory)
+//                  val subprocessDefinitionExtractor = SubprocessDefinitionExtractor.apply(
+//                    category = process.processCategory,
+//                    subprocessesDetails = subprocessesDetails.map { d => pl.touk.nussknacker.engine.definition.SubprocessDetails(d.canonical, d.category) },
+//                    subprocessesConfig = subprocessesConfig,
+//                    classLoader = classLoader
+//                  )
+//                  val subprocessesDefinition = subprocessDefinitionExtractor.extract
               nodeValidator.validate(nodeData, modelData, process.id, subprocessRepository)
             }
           }
         }
       }
+    }
     } ~ pathPrefix("properties" / Segment) { processName =>
       (post & processDetailsForName[Unit](processName)) { process =>
         path("additionalInfo") {
@@ -100,6 +127,17 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
       }
     }
   }
+//  private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS]): BaseProcessDetails[PS] =
+//    process.copy(state = deploymentManager(process.processingType).map(m => m.processStateDefinitionManager.processState(
+//      m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action))
+//    )))
+//
+//  private def deploymentManager(processingType: ProcessingType): Option[DeploymentManager] =
+//    typeToConfig.forType(processingType).map(_.deploymentManager)
+//  private def toProcessDetails(canonicalProcessDetails: BaseProcessDetails[CanonicalProcess]): Future[ProcessDetails] = {
+//    val processDetails = canonicalProcessDetails.mapProcess(canonical => ProcessConverter.toDisplayable(canonical, canonicalProcessDetails.processingType, canonicalProcessDetails.processCategory))
+//    Future.successful(processDetails)
+//  }
 }
 
 object NodesResources {

@@ -7,13 +7,16 @@ import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ProcessingTypeData
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
+import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ProcessShapeFetchStrategy, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.EspError.XError
@@ -37,13 +40,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: Move remained business logic to processService
 class ProcessesResources(
-  val processRepository: FetchingProcessRepository[Future],
-  processService: ProcessService,
-  processToolbarService: ProcessToolbarService,
-  processResolving: UIProcessResolving,
-  val processAuthorizer:AuthorizeProcess,
-  processChangeListener: ProcessChangeListener,
-  typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData]
+                          val processRepository: FetchingProcessRepository[Future],
+                          subprocessRepository: SubprocessRepository,
+                          processService: ProcessService,
+                          processToolbarService: ProcessToolbarService,
+                          processResolving: UIProcessResolving,
+                          val processAuthorizer:AuthorizeProcess,
+                          processChangeListener: ProcessChangeListener,
+                          typeToConfigProvider: ProcessingTypeDataProvider[ProcessingTypeData]
 )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -157,7 +161,21 @@ class ProcessesResources(
               complete {
                 processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
                   case Some(process) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(process))
-                  case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process))
+                  case Some(process) => {
+                    val processTypeData  = typeToConfigProvider.forType(process.processingType)
+                    val processConfig    = processTypeData.map(_.modelData).map(_.processConfig).get
+                    val classLoader = processTypeData.map(_.modelData).map(_.modelClassLoader).map(_.classLoader).get
+                    val subprocessesConfig:Map[String,SingleComponentConfig] = ComponentsUiConfigExtractor.extract(processConfig)
+                    val subprocessesDetails = subprocessRepository.loadSubprocesses(Map.empty, process.processCategory)
+                    val subprocessDefinitionExtractor = SubprocessDefinitionExtractor.apply(
+                      category = process.processCategory,
+                      subprocessesDetails = subprocessesDetails.map { d => pl.touk.nussknacker.engine.definition.SubprocessDetails(d.canonical, d.category)},
+                      subprocessesConfig  = subprocessesConfig,
+                      classLoader         = classLoader
+                    )
+                    val subprocessesDefinition = subprocessDefinitionExtractor.extract
+                    validateAndReverseResolve(enrichDetailsWithProcessState(process))
+                  }
                   case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
                 }
               }
@@ -274,7 +292,7 @@ class ProcessesResources(
     )))
 
   private def deploymentManager(processingType: ProcessingType): Option[DeploymentManager] =
-    typeToConfig.forType(processingType).map(_.deploymentManager)
+    typeToConfigProvider.forType(processingType).map(_.deploymentManager)
 
   private def withJson(processId: ProcessId, version: VersionId)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
