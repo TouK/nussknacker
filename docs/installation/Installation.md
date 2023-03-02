@@ -228,11 +228,10 @@ Don't forget to specify `HTTP_PUBLIC_PATH=/my-custom-path` environment variable 
 http {
   server {
     location / {
-      set $designer_url http://designer:8080;
-      proxy_pass $designer_url;
+      proxy_pass http://designer:8080;
     }
     location /my-custom-path/ {
-      rewrite           ^/my-custom-path/(.*) /$1;
+      rewrite           ^/my-custom-path/?(.*) /$1;
     }
   }
 }
