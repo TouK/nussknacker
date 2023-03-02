@@ -1,11 +1,9 @@
 package pl.touk.nussknacker.ui.notifications
 
-import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
-import pl.touk.nussknacker.ui.process.deployment.{DeploymentActionsInProgress, DeploymentActionsInProgressProvider, DeployInfo, DeploymentActionType}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.temporal.ChronoUnit
@@ -48,17 +46,13 @@ class NotificationsListener(config: NotificationConfig,
 
 }
 
-class NotificationService(currentDeployments: DeploymentActionsInProgressProvider,
-                          store: NotificationsListener) {
+class NotificationService(store: NotificationsListener) {
 
-  def notifications(user: LoggedUser, notificationsAfter: Option[Instant])(implicit ec: ExecutionContext, timeout: Timeout): Future[List[Notification]] = {
-    Future.sequence(List(
-      prepareDeploymentNotifications(user),
-      Future.successful(userDeployments(user, notificationsAfter))
-    )).map(_.flatten)
+  def notifications(user: LoggedUser, notificationsAfter: Option[Instant]): List[Notification] = {
+      userDeployments(user, notificationsAfter)
   }
 
-  private def userDeployments(user: LoggedUser, notificationsAfter: Option[Instant]): Seq[Notification] = {
+  private def userDeployments(user: LoggedUser, notificationsAfter: Option[Instant]): List[Notification] = {
     store.dataFor(user, notificationsAfter).collect {
       case NotificationEvent(id, OnDeployActionFailed(_, reason), _, _, name) =>
         Notification(id, Some(name), s"Deployment of ${name.value} failed with ${reason.getMessage}", Some(NotificationType.error),
@@ -68,24 +62,6 @@ class NotificationService(currentDeployments: DeploymentActionsInProgressProvide
         //deployment may proceed asynchronously (e.g. in streaming-lite)
         Notification(id, Some(name), s"Deployment finished", None, List(DataToRefresh.versions, DataToRefresh.activity))
     }
-  }
-
-  private def prepareDeploymentNotifications(user: LoggedUser)(implicit ec: ExecutionContext, timeout: Timeout): Future[List[Notification]] = {
-    currentDeployments.getAllDeploymentActionsInProgress.map { case DeploymentActionsInProgress(deploymentInfos) =>
-      deploymentInfos
-        //no need to inform current user, DeployInfo takes username, not id
-        .filterNot(_._2.userId == user.username)
-        .map { case (k, v) => currentDeploymentToNotification(k, v) }.toList
-    }
-  }
-
-  private def currentDeploymentToNotification(processName: ProcessName, deploymentInfo: DeployInfo): Notification = {
-    val actionString = deploymentInfo.action match {
-      case DeploymentActionType.Deployment => "deployed"
-      case DeploymentActionType.Cancel => "cancelled"
-    }
-    //TODO: should it be displayed only once?
-    Notification(UUID.randomUUID().toString, None, s"Scenario ${processName.value} is being $actionString by ${deploymentInfo.userId}", Some(NotificationType.success), Nil)
   }
 
 }

@@ -178,7 +178,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val componentService = DefaultComponentService(resolvedConfig, typeToConfig, processService, processCategoryService)
 
-    val notificationService = new NotificationService(deploymentActionsInProgressRepo, notificationListener)
+    val notificationService = new NotificationService(notificationListener)
 
     initMetrics(metricsRegistry, resolvedConfig, processRepository)
 
