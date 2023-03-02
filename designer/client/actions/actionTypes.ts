@@ -24,7 +24,6 @@ export type ActionTypes =
   | "EXPAND_SELECTION"
   | "RESET_SELECTION"
   | "CLOSE_MODALS"
-  | "IMPORT_FILES"
   | "EDIT_NODE"
   | "PROCESS_RENAME"
   | "SHOW_METRICS"

@@ -4,8 +4,9 @@ import {useParams} from "react-router-dom"
 import HttpService from "../http/HttpService"
 import {getMetricsSettings} from "../reducers/selectors/settings"
 import {CustomTabWrapper, useTabData} from "./CustomTabPage"
+import {ProcessId} from "../types"
 
-function useExtendedMetricsTab(processId?: string) {
+function useExtendedMetricsTab(processId?: ProcessId) {
   const [processingType, setProcessingType] = useState("")
   useEffect(() => {
     if (processId) {

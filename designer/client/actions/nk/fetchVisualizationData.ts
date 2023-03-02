@@ -1,15 +1,15 @@
 import {ThunkAction} from "../reduxTypes"
-import {fetchProcessToDisplay} from "./process"
+import {displayCurrentProcessVersion} from "./process"
 import {displayProcessActivity} from "./displayProcessActivity"
 import {fetchProcessDefinition} from "./processDefinitionData"
 import {handleHTTPError} from "./errors"
 import {loadProcessToolbarsConfiguration} from "./loadProcessToolbarsConfiguration"
+import {ProcessId} from "../../types"
 
-export function fetchVisualizationData(processName: string): ThunkAction {
+export function fetchVisualizationData(processName: ProcessId): ThunkAction {
   return async dispatch => {
     try {
-      //TODO: move fetchProcessToDisplay to ts
-      const {fetchedProcessDetails} = await dispatch(fetchProcessToDisplay(processName)) as any
+      const {fetchedProcessDetails} = await dispatch(displayCurrentProcessVersion(processName))
       const {name, json, processingType} = fetchedProcessDetails
       await dispatch(loadProcessToolbarsConfiguration(name))
       dispatch(displayProcessActivity(name))
