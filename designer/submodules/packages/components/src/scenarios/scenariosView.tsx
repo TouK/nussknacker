@@ -73,18 +73,8 @@ function Actions({ addScenario, addFragment }: ActionsProps): JSX.Element {
 
 function Scenarios({ children, table }: PropsWithChildren<{ table?: boolean }>): JSX.Element {
     const { data = [], isLoading, isFetching } = useScenariosWithStatus();
-    // @ts-ignore
-    const valueLinker: ValueLinker<ScenariosFiltersModel> = useCallback(
-        (setNewValue) => (id, value) => {
-            switch (id) {
-                default:
-                    break;
-            }
-        },
-        [],
-    );
     return (
-        <FiltersContextProvider<ScenariosFiltersModel> getValueLinker={valueLinker}>
+        <FiltersContextProvider<ScenariosFiltersModel>>
             {children}
             <FiltersPart data={data} isLoading={isFetching} withSort={!table} />
             {table ? <TablePart data={data} isLoading={isLoading} /> : <ListPart data={data} isLoading={isLoading} />}
