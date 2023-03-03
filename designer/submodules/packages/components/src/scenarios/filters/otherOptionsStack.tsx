@@ -11,6 +11,7 @@ export function OtherOptionsStack(): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
     const otherFilters: Array<keyof ScenariosFiltersModel> = ["TYPE"];
+    const getTypeFilter = () => getFilter("TYPE", true);
 
     return (
         <OptionsStack
@@ -25,13 +26,13 @@ export function OtherOptionsStack(): JSX.Element {
             <FilterListItem
                 color="default"
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.SCENARIOS)}
-                onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.SCENARIOS], getFilter("TYPE", true)))}
+                onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.SCENARIOS], getTypeFilter()))}
                 label={t("table.filter.SCENARIOS", "Scenarios")}
             />
             <FilterListItem
                 color="default"
                 checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.FRAGMENTS)}
-                onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.FRAGMENTS], getFilter("TYPE", true)))}
+                onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.FRAGMENTS], getTypeFilter()))}
                 label={t("table.filter.FRAGMENTS", "Fragments")}
             />
         </OptionsStack>
@@ -42,6 +43,7 @@ export function StatusOptionsStack(): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
     const filters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED", "DEPLOYED"];
+    const getDeployedFilter = () => getFilter("DEPLOYED", true);
 
     return (
         <OptionsStack
@@ -56,13 +58,13 @@ export function StatusOptionsStack(): JSX.Element {
             <FilterListItem
                 color="default"
                 checked={getFilter("DEPLOYED", true)?.includes(ScenariosFiltersModelDeployed.DEPLOYED)}
-                onChange={() => setFilter("DEPLOYED", xor([ScenariosFiltersModelDeployed.DEPLOYED], getFilter("DEPLOYED", true)))}
+                onChange={() => setFilter("DEPLOYED", xor([ScenariosFiltersModelDeployed.DEPLOYED], getDeployedFilter()))}
                 label={t("table.filter.DEPLOYED", "Deployed")}
             />
             <FilterListItem
                 color="default"
                 checked={getFilter("DEPLOYED", true)?.includes(ScenariosFiltersModelDeployed.NOT_DEPLOYED)}
-                onChange={() => setFilter("DEPLOYED", xor([ScenariosFiltersModelDeployed.NOT_DEPLOYED], getFilter("DEPLOYED", true)))}
+                onChange={() => setFilter("DEPLOYED", xor([ScenariosFiltersModelDeployed.NOT_DEPLOYED], getDeployedFilter()))}
                 label={t("table.filter.NOT_DEPLOYED", "Not deployed")}
             />
             <Divider />
