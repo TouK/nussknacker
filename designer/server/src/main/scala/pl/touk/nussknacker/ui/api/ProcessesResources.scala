@@ -45,6 +45,8 @@ class ProcessesResources(
   processResolving: UIProcessResolving,
   val processAuthorizer:AuthorizeProcess,
   processChangeListener: ProcessChangeListener,
+  categoryService: ProcessCategoryService,
+  statusDefinitionService: ProcessStatusDefinitionService
 )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -102,6 +104,12 @@ class ProcessesResources(
               } else {
                 validateAndReverseResolveAll(processes)
               }
+            }
+          }
+        } ~ path("processes" / "statusDefinitions") {
+          get {
+            complete {
+              fetchAllStateDefinitions
             }
           }
         } ~ path("processes" / "status") {
@@ -267,6 +275,14 @@ class ProcessesResources(
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS])
                                                                           (implicit user: LoggedUser): Future[BaseProcessDetails[PS]] = {
     deploymentService.getInternalProcessState(process).map(state => process.copy(state = Some(state)))
+  }
+
+  private def fetchAllStateDefinitions(implicit user: LoggedUser): List[StateDefinition] = {
+    val userCategories = categoryService.getUserCategories(user).toSet
+    statusDefinitionService.fetchStateDefinitions()
+      .map(rawDefinition =>
+        rawDefinition.copy(categories = userCategories.intersect(rawDefinition.categories))
+      )
   }
 
   private def withJson(processId: ProcessId, version: VersionId)
