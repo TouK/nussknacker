@@ -2,11 +2,12 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 
 import java.net.URI
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateId
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState, ProcessStateDefinitionManager, StateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
-  val defaultActions = List()
+  val defaultActions: List[ProcessActionType] = Nil
 
   val actionStatusMap: Map[ProcessActionType, StateStatus] = Map(
     ProcessActionType.Deploy -> SimpleStateStatus.Running,
@@ -76,6 +77,21 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.Warning -> "There are some warnings establishing a scenario state."
   )
 
+  val statusDisplayableNameMap: Map[StateStatus, String] = Map(
+    SimpleStateStatus.FailedToGet -> "Failed to get",
+    SimpleStateStatus.Unknown -> "Unknown",
+    SimpleStateStatus.NotDeployed -> "Not deployed",
+    SimpleStateStatus.DuringDeploy -> "During deploy",
+    SimpleStateStatus.Running -> "Running",
+    SimpleStateStatus.Canceled -> "Canceled",
+    SimpleStateStatus.Restarting -> "Restarting",
+    SimpleStateStatus.DuringCancel -> "During cancel",
+    SimpleStateStatus.Failed -> "Failed",
+    SimpleStateStatus.Finished -> "Finished",
+    SimpleStateStatus.Error -> "Error",
+    SimpleStateStatus.Warning -> "Warning"
+  )
+
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
     statusIconsMap.get(stateStatus).map(URI.create)
 
@@ -93,7 +109,16 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusDescriptionsMap.get(stateStatus)
 
-  def errorshouldBeRunningState(deployedVersionId: VersionId, user: String): ProcessState =
+  override def statusIds(): Set[StateId] =
+    statusDisplayableNameMap.map { case (status, _) => status.name }.toSet
+
+  override def statusDisplayableName(name: StateId): String =
+    statusDisplayableNameMap.collectFirst { case (status, displayableName) if status.name.equals(name) => displayableName}.get
+
+  override def statusIcon(name: StateId): Option[URI] =
+    statusIconsMap.collectFirst { case (status, url) if status.name.equals(name) => URI.create(url) }
+
+  def errorShouldBeRunningState(deployedVersionId: VersionId, user: String): ProcessState =
     processState(SimpleStateStatus.Error).copy(
       icon = Some(deployFailedIcon),
       tooltip = Some(shouldBeRunningTooltip(deployedVersionId.value, user)),

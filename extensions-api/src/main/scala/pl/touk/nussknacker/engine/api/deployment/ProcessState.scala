@@ -4,6 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateId
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import java.net.URI
@@ -61,6 +62,7 @@ object ProcessActionState extends Enumeration {
 }
 
 object StateStatus {
+  type StateId = String
   implicit val configuration: Configuration = Configuration
     .default
     .withDefaults
@@ -75,31 +77,31 @@ object StateStatus {
 
   def isRunning: Boolean = false
   def isFailed: Boolean = false
-  def name: String
+  def name: StateId
 
 }
 
-final case class AllowDeployStateStatus(name: String) extends StateStatus
+final case class AllowDeployStateStatus(name: StateId) extends StateStatus
 
-final case class NotEstablishedStateStatus(name: String) extends StateStatus
+final case class NotEstablishedStateStatus(name: StateId) extends StateStatus
 
-final case class DuringDeployStateStatus(name: String) extends StateStatus {
+final case class DuringDeployStateStatus(name: StateId) extends StateStatus {
   override def isDuringDeploy: Boolean = true
 }
 
-final case class FinishedStateStatus(name: String) extends StateStatus {
+final case class FinishedStateStatus(name: StateId) extends StateStatus {
   override def isFinished: Boolean = true
 }
 
-final case class RunningStateStatus(name: String) extends StateStatus {
+final case class RunningStateStatus(name: StateId) extends StateStatus {
   override def isRunning: Boolean = true
 }
 
-final case class FailedStateStatus(name: String) extends StateStatus {
+final case class FailedStateStatus(name: StateId) extends StateStatus {
   override def isFailed: Boolean = true
 }
 
 // This status class is a walk around for fact that StateStatus is encoded and decoded. It causes that there is no easy option
 // to add own status with some specific fields without passing Encoders and Decoders to many places in application.
 // TODO: we should find places where StateStatuses are encoded and decoded and replace them with some DTOs for this purpose
-class CustomStateStatus(val name: String) extends StateStatus
+class CustomStateStatus(val name: StateId) extends StateStatus

@@ -228,9 +228,14 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     customActionsProvider.invokeCustomAction(actionRequest, canonicalProcess)
 }
 
-case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus("SCHEDULED") {
+case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus(ScheduledStatus.name) {
   override def isRunning: Boolean = true
 }
+
+case object ScheduledStatus {
+  val name = "SCHEDULED"
+}
+
 
 case object WaitingForScheduleStatus extends CustomStateStatus("WAITING_FOR_SCHEDULE") {
   override def isRunning: Boolean = true

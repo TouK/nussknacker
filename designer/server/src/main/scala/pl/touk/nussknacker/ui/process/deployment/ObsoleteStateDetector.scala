@@ -65,7 +65,7 @@ object ObsoleteStateDetector {
       case Some(state) =>
         state.version match {
           case _ if !state.isDeployed =>
-            state.withStatusDetails(SimpleProcessStateDefinitionManager.errorshouldBeRunningState(action.processVersionId, action.user))
+            state.withStatusDetails(SimpleProcessStateDefinitionManager.errorShouldBeRunningState(action.processVersionId, action.user))
           case Some(ver) if ver.versionId != action.processVersionId =>
             state.withStatusDetails(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionState(ver.versionId, action.processVersionId, action.user))
           case Some(ver) if ver.versionId == action.processVersionId =>
@@ -76,7 +76,7 @@ object ObsoleteStateDetector {
             SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.Error) //Generic error in other cases
         }
       case None =>
-        SimpleProcessStateDefinitionManager.errorshouldBeRunningState(action.processVersionId, action.user)
+        SimpleProcessStateDefinitionManager.errorShouldBeRunningState(action.processVersionId, action.user)
     }
 
 

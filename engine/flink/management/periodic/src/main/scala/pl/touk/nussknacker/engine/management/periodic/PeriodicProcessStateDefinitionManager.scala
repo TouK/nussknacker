@@ -6,10 +6,10 @@ import java.time.format.DateTimeFormatter
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateId
 import pl.touk.nussknacker.engine.api.deployment.{FailedStateStatus, ProcessActionType, ProcessStateDefinitionManager, RunningStateStatus, StateStatus}
 
-class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager) extends ProcessStateDefinitionManager  with LazyLogging{
+class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager) extends ProcessStateDefinitionManager with LazyLogging{
 
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = stateStatus match {
     case _: RunningStateStatus => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
@@ -40,6 +40,23 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
   }
 
   override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus = delegate.mapActionToStatus(stateAction)
+
+  override def statusIds(): Set[StateId] =
+    delegate.statusIds() +
+      WaitingForScheduleStatus.name +
+      ScheduledStatus.name
+
+  override def statusDisplayableName(name: StateId): String = name match {
+    case WaitingForScheduleStatus.name => "After"
+    case ScheduledStatus.name => "Preparing"
+    case _ => delegate.statusDisplayableName(name)
+  }
+
+  override def statusIcon(name: StateId): Option[URI] = name match {
+    case WaitingForScheduleStatus.name => Some(URI.create("/assets/states/wait-reschedule.svg"))
+    case ScheduledStatus.name => Some(URI.create("/assets/states/scheduled.svg"))
+    case _ => delegate.statusIcon(name)
+  }
 }
 
 object PeriodicProcessStateDefinitionManager {

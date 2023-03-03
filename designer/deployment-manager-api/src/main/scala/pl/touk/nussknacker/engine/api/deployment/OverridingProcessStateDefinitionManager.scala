@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateId
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 
 import java.net.URI
@@ -24,4 +25,14 @@ class OverridingProcessStateDefinitionManager(statusActionsPF: PartialFunction[S
 
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusDescriptionsPF.lift(stateStatus).orElse(SimpleProcessStateDefinitionManager.statusDescription(stateStatus))
+
+  //TODO: provide partial functions
+  override def statusIds(): Set[StateId] =
+    SimpleProcessStateDefinitionManager.statusIds()
+
+  override def statusDisplayableName(name: StateId): String =
+    SimpleProcessStateDefinitionManager.statusDisplayableName(name)
+
+  override def statusIcon(name: StateId): Option[URI] =
+    SimpleProcessStateDefinitionManager.statusIcon(name)
 }
