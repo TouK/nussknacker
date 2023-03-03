@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, ProcessObjectFactory}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, ProcessObjectFactory, Validations}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -137,8 +137,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
   def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)
                             (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
-
     val ref = subprocessInput.ref
+
+//    val verifiedParams: ValidatedNel[PartSubGraphCompilationError, Unit] =
+//      Validations.validateParameters(parameterDefinitions.get(ref.id), ref.parameters)
+
     val validParamDefs = ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
     val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>
       ps.map(p => (p.name, p.typ))

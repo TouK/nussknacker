@@ -80,21 +80,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
           implicit val requestDecoder: Decoder[NodeValidationRequest] = NodesResources.prepareNodeRequestDecoder(modelData)
           entity(as[NodeValidationRequest]) { nodeData =>
             complete {
-//              processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
-//                case Some(processDetails) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(processDetails))
-//                case Some(process) => {
-//                  val processTypeData = typeToConfigProvider.forType(process.processingType)
-//                  val processConfig = processTypeData.map(_.modelData).map(_.processConfig).get
-//                  val classLoader = processTypeData.map(_.modelData).map(_.modelClassLoader).map(_.classLoader).get
-//                  val subprocessesConfig: Map[String, SingleComponentConfig] = ComponentsUiConfigExtractor.extract(processConfig)
-//                  val subprocessesDetails = subprocessRepository.loadSubprocesses(Map.empty, process.processCategory)
-//                  val subprocessDefinitionExtractor = SubprocessDefinitionExtractor.apply(
-//                    category = process.processCategory,
-//                    subprocessesDetails = subprocessesDetails.map { d => pl.touk.nussknacker.engine.definition.SubprocessDetails(d.canonical, d.category) },
-//                    subprocessesConfig = subprocessesConfig,
-//                    classLoader = classLoader
-//                  )
-//                  val subprocessesDefinition = subprocessDefinitionExtractor.extract
+              val testId = processId
               nodeValidator.validate(nodeData, modelData, process.id, subprocessRepository)
             }
           }
@@ -127,17 +113,6 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
       }
     }
   }
-//  private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS]): BaseProcessDetails[PS] =
-//    process.copy(state = deploymentManager(process.processingType).map(m => m.processStateDefinitionManager.processState(
-//      m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action))
-//    )))
-//
-//  private def deploymentManager(processingType: ProcessingType): Option[DeploymentManager] =
-//    typeToConfig.forType(processingType).map(_.deploymentManager)
-//  private def toProcessDetails(canonicalProcessDetails: BaseProcessDetails[CanonicalProcess]): Future[ProcessDetails] = {
-//    val processDetails = canonicalProcessDetails.mapProcess(canonical => ProcessConverter.toDisplayable(canonical, canonicalProcessDetails.processingType, canonicalProcessDetails.processCategory))
-//    Future.successful(processDetails)
-//  }
 }
 
 object NodesResources {
