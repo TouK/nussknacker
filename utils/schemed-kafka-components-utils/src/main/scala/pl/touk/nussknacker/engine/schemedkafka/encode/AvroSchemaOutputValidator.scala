@@ -8,6 +8,7 @@ import org.apache.avro.Schema.Type
 import org.apache.avro.SchemaCompatibility.SchemaCompatibilityType
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.{LogicalTypes, Schema, SchemaCompatibility}
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
@@ -35,12 +36,6 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   private val longLogicalTypes = Set(
     LogicalTypes.timeMicros(), LogicalTypes.timestampMillis(), LogicalTypes.timestampMicros()
-  )
-
-  private val additionalTypesMapping: Map[Type, Set[Class[_]]] = Map(
-    Type.LONG -> Set(classOf[java.lang.Integer]),
-    Type.FLOAT -> Set(classOf[java.lang.Integer], classOf[java.lang.Long]),
-    Type.DOUBLE -> Set(classOf[java.lang.Integer], classOf[java.lang.Long], classOf[java.lang.Float]),
   )
 
   /**
@@ -271,11 +266,8 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   private def canBeSubclassOf(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     val schemaAsTypedResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
-    val additionalTypes = additionalTypesMapping.getOrElse(schema.getType, Set.empty)
-
     (schemaAsTypedResult, typingResult) match {
-      case (schemaType: SingleTypingResult, typing: SingleTypingResult) if schemaType.objType.klass == typing.objType.klass => valid
-      case (_, typing: SingleTypingResult) if additionalTypes.contains(typing.objType.klass) => valid
+      case (schemaType: SingleTypingResult, typing: SingleTypingResult) if ClassUtils.isAssignable(typing.objType.primitiveClass, schemaType.objType.primitiveClass, false) => valid
       case _ => invalid(typingResult, schema, path)
     }
   }
