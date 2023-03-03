@@ -44,7 +44,6 @@ export function FirstLine({ row }: { row: RowType }): JSX.Element {
                 <Highlight value={row.id} filterText={filtersContext.getFilter("NAME")} />
             </CopyTooltip>
             <Category value={row.processCategory} filtersContext={filtersContext} />
-            <LastAction lastAction={row.lastAction} />
         </Stack>
     );
 }
