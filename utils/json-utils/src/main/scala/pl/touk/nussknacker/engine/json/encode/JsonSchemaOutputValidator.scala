@@ -4,6 +4,7 @@ import cats.data.Validated.condNel
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.lang3.ClassUtils
 import org.everit.json.schema.{EmptySchema, ObjectSchema, ReferenceSchema, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -35,12 +36,6 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   import scala.jdk.CollectionConverters._
 
   private val valid = Validated.Valid(())
-
-  private val additionalTypesMapping: Map[Class[_], Set[Class[_]]] = Map(
-    classOf[java.lang.Long] -> Set(classOf[java.lang.Integer]),
-    classOf[java.lang.Float] -> Set(classOf[java.lang.Integer], classOf[java.lang.Long]),
-    classOf[java.lang.Double] -> Set(classOf[java.lang.Integer], classOf[java.lang.Long], classOf[java.lang.Float]),
-  )
 
   /**
     * To see what's we currently supporting see SwaggerBasedJsonSchemaTypeDefinitionExtractor as well
@@ -208,11 +203,10 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     val schemaAsTypedResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(rootSchema)).typingResult
 
     (schemaAsTypedResult, typingResult) match {
-      case (TypedClass(schemaClass, Nil), TypedClass(typeClass, Nil)) if schemaClass == typeClass || additionalTypesMapping.getOrElse(schemaClass, Set.empty).contains(typeClass) => valid
-      case (TypedClass(_, Nil), TypedClass(_, Nil)) => OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema)).invalidNel
+      case (schema: SingleTypingResult, typing: SingleTypingResult) if ClassUtils.isAssignable(typing.objType.primitiveClass, schema.objType.primitiveClass, false) => valid
+      case (_: SingleTypingResult, _: SingleTypingResult) => invalid(typingResult, schema, rootSchema, path)
       case _ => condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
-        OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema))
-      )
+        OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema)))
     }
   }
 
