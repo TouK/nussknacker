@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { flatten, uniq, uniqBy } from "lodash";
 import { useFilterContext } from "../../common";
-import { ScenariosFiltersModel, ScenariosFiltersModelDeployed } from "./scenariosFiltersModel";
+import {ScenariosFiltersModel, ScenariosFiltersModelDeployed, ScenariosFiltersModelType} from "./scenariosFiltersModel";
 import { useUserQuery } from "../useScenariosQuery";
 import { QuickFilter } from "./quickFilter";
 import { FilterMenu } from "./filterMenu";
@@ -36,15 +36,17 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
     const statusFilters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED"];
     const { getFilter, setFilter, activeKeys } = useFilterContext<ScenariosFiltersModel>();
 
-    const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
-
     const getLabel = useCallback(
         (name: keyof ScenariosFiltersModel, value?: string | number) => {
             switch (name) {
-                case "HIDE_FRAGMENTS":
-                    return t("table.filter.desc.HIDE_FRAGMENTS", "Fragments hidden");
-                case "HIDE_SCENARIOS":
-                    return t("table.filter.desc.HIDE_SCENARIOS", "Scenarios hidden");
+                case "TYPE":
+                    switch (value) {
+                        case ScenariosFiltersModelType.FRAGMENTS:
+                            return t("table.filter.FRAGMENTS", "Fragments");
+                        case ScenariosFiltersModelType.SCENARIOS:
+                            return t("table.filter.SCENARIOS", "Scenarios");
+                    }
+                    break;
                 case "ARCHIVED":
                     return t("table.filter.ARCHIVED", "Archived");
                 case "DEPLOYED":
@@ -99,7 +101,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             onChange={setFilter("CREATED_BY")}
                         />
                     </FilterMenu>
-                    <FilterMenu label={t("table.filter.other", "Type")} count={otherFilters.filter((k) => getFilter(k)).length}>
+                    <FilterMenu label={t("table.filter.other", "Type")} count={getFilter("TYPE", true).length}>
                         <OtherOptionsStack />
                     </FilterMenu>
                     {withSort ? (

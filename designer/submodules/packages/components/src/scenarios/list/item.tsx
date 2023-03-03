@@ -17,21 +17,21 @@ function Category({ value, filtersContext }: { value: string; filtersContext: Fi
 }
 
 export function LastAction({ lastAction }: { lastAction: ProcessActionType }): JSX.Element {
-  const { t } = useTranslation();
+    const { t } = useTranslation();
 
-  return lastAction ? (
-    <Stack
-      spacing={1}
-      direction="row"
-      alignItems="center"
-      title={t("scenario.lastAction", "Last action performed {{date, relativeDate}}.", {
-        date: new Date(lastAction.performedAt)
-      })}
-    >
-      <History />
-      <Typography variant="caption">{lastAction.action}</Typography>
-    </Stack>
-  ) : null;
+    return lastAction ? (
+        <Stack
+            spacing={1}
+            direction="row"
+            alignItems="center"
+            title={t("scenario.lastAction", "Last action performed {{date, relativeDate}}.", {
+                date: new Date(lastAction.performedAt),
+            })}
+        >
+            <History />
+            <Typography variant="caption">{lastAction.action}</Typography>
+        </Stack>
+    ) : null;
 }
 
 export function FirstLine({ row }: { row: RowType }): JSX.Element {
@@ -44,7 +44,6 @@ export function FirstLine({ row }: { row: RowType }): JSX.Element {
                 <Highlight value={row.id} filterText={filtersContext.getFilter("NAME")} />
             </CopyTooltip>
             <Category value={row.processCategory} filtersContext={filtersContext} />
-            <LastAction lastAction={row.lastAction}/>
         </Stack>
     );
 }

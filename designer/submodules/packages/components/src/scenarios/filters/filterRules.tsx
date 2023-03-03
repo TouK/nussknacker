@@ -1,5 +1,5 @@
 import { createFilterRules } from "../../common";
-import { ScenariosFiltersModel, ScenariosFiltersModelDeployed } from "./scenariosFiltersModel";
+import { ScenariosFiltersModel, ScenariosFiltersModelDeployed, ScenariosFiltersModelType } from "./scenariosFiltersModel";
 import { RowType } from "../list/listPart";
 
 export const filterRules = createFilterRules<RowType, ScenariosFiltersModel>({
@@ -15,8 +15,15 @@ export const filterRules = createFilterRules<RowType, ScenariosFiltersModel>({
         );
     },
     ARCHIVED: (row, filter) => (filter ? row.isArchived : !row.isArchived),
-    HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
-    HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
+    TYPE: (row, value) =>
+        !value?.length ||
+        []
+            .concat(value)
+            .some(
+                (f) =>
+                    (f === ScenariosFiltersModelType.SCENARIOS && !row.isSubprocess) ||
+                    (f === ScenariosFiltersModelType.FRAGMENTS && row.isSubprocess),
+            ),
     DEPLOYED: (row, value) =>
         !value?.length ||
         []
