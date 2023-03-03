@@ -15,30 +15,25 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DeploymentActionsInProgressActor extends FailurePropagatingActor with LazyLogging {
 
-  private var deploymentActionsInProgress = Map[(ProcessName, DeploymentActionId), DeployInfo]()
+  private var deploymentActionsInProgress = Map[(ProcessName, DeploymentActionId), DeploymentActionType]()
 
   private implicit val ec: ExecutionContext = context.dispatcher
 
   override def receive: PartialFunction[Any, Unit] = {
     case AddDeploymentActionInProgress(id, user, actionType) =>
       val actionId = new Object
-      deploymentActionsInProgress += (id.name, actionId) -> DeployInfo(user.username, actionType)
+      deploymentActionsInProgress += (id.name, actionId) -> actionType
       sender() ! actionId
     case RemoveDeploymentActionInProgress(process, actionId) =>
       deploymentActionsInProgress -= ((process.name, actionId))
       sender() ! (())
     case GetDeploymentActionInProgressTypes(id) =>
       sender() ! deploymentActionTypesInProgress(id)
-    case GetAllDeploymentActionsInProgress =>
-      val deduplicatedActions = deploymentActionsInProgress.map {
-        case ((processName, _), deployInfo) => processName -> deployInfo
-      }
-      sender() ! DeploymentActionsInProgress(deduplicatedActions)
   }
 
   private def deploymentActionTypesInProgress(idWithName: ProcessIdWithName): Set[DeploymentActionType] = {
     deploymentActionsInProgress.toList.collect {
-      case ((processName, _), DeployInfo(_, actionType)) if processName == idWithName.name => actionType
+      case ((processName, _), actionType) if processName == idWithName.name => actionType
     }.toSet
   }
 
@@ -57,8 +52,6 @@ object DeploymentActionsInProgressActor {
   }
 
   private case class RemoveDeploymentActionInProgress(processIdWithName: ProcessIdWithName, actionId: DeploymentActionId)
-
-  private case object GetAllDeploymentActionsInProgress
 
   private case class AddDeploymentActionInProgress(id: ProcessIdWithName, user: LoggedUser, actionType: DeploymentActionType)
 
@@ -81,12 +74,6 @@ object DeploymentActionsInProgressActor {
       (managerActor ? GetDeploymentActionInProgressTypes(id)).mapTo[Set[DeploymentActionType]]
     }
 
-    override def getAllDeploymentActionsInProgress: Future[DeploymentActionsInProgress] = {
-      (managerActor ? GetAllDeploymentActionsInProgress).mapTo[DeploymentActionsInProgress]
-    }
-
   }
 
 }
-
-

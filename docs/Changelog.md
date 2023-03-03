@@ -11,6 +11,7 @@
 * [#4041](https://github.com/TouK/nussknacker/pull/4041) Concurrent deploy, cancel and test from file mechanisms are allowed now
 * [#3994](https://github.com/TouK/nussknacker/pull/3994) Unification of editor/raw mode validation for JSON Schema sinks
 * [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`.
+* [#4060](https://github.com/TouK/nussknacker/pull/4060) Notifications about pending deployments of other user not appear anymore.
 
 1.8.1 (28 Feb 2023)
 ------------------------
