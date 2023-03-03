@@ -176,6 +176,8 @@ object typing {
 
     override def objType: TypedClass = this
 
+    def primitiveClass: Class[_] = Option(ClassUtils.wrapperToPrimitive(klass)).getOrElse(klass)
+
   }
 
   object Typed {
