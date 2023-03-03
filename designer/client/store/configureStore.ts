@@ -2,7 +2,6 @@
 import {applyMiddleware, createStore} from "redux"
 import {composeWithDevTools} from "redux-devtools-extension"
 import thunk from "redux-thunk"
-import {analyticsMiddleware} from "../analytics/AnalyticsMiddleware"
 import {persistStore} from "redux-persist"
 import {reducer} from "../reducers"
 import {ThunkDispatch} from "../actions/reduxTypes"
@@ -15,7 +14,6 @@ export default function configureStore() {
     reducer,
     composeWithDevTools(
       applyMiddleware(
-        analyticsMiddleware,
         thunk,
         createStateSyncMiddleware({
           whitelist: [
