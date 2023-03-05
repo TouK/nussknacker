@@ -1,8 +1,6 @@
-import {events} from "../../../analytics/TrackingEvents"
 import {getLayout} from "../../../reducers/selectors/layout"
 import {NodeId} from "../../../types"
 import {ThunkAction} from "../../reduxTypes"
-import {reportEvent} from "../reportEvent"
 import {batchGroupBy} from "../../../reducers/graph/batchGroupBy"
 
 export type Position = { x: number, y: number }
@@ -33,24 +31,12 @@ export function togglePanel(side: "LEFT" | "RIGHT"): ThunkAction {
       type: side === "LEFT" ? "TOGGLE_LEFT_PANEL" : "TOGGLE_RIGHT_PANEL",
       configId,
     })
-
-    dispatch(reportEvent({
-      category: side === "LEFT" ? events.categories.leftPanel : events.categories.rightPanel,
-      action: events.actions.buttonClick,
-      name: side === "LEFT" ? "toggle_left_panel" : "toggle_right_panel",
-    }))
   }
 }
 
 export function layout(graphLayoutFunction: GraphLayoutFunction): ThunkAction {
   return (dispatch) => {
     graphLayoutFunction()
-
-    dispatch(reportEvent({
-      category: "right_panel",
-      action: "button_click",
-      name: "layout",
-    }))
 
     return dispatch({
       type: "LAYOUT",

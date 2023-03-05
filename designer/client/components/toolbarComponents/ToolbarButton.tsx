@@ -17,7 +17,7 @@ export interface ToolbarButtonProps {
   onDrop?: <T extends File>(acceptedFiles: T[], rejectedFiles: T[], event: DropEvent) => void,
   onMouseOver?: ReactEventHandler,
   onMouseOut?: ReactEventHandler,
-  onClick: ReactEventHandler,
+  onClick?: ReactEventHandler,
   hasError?: boolean,
   isActive?: boolean,
 }

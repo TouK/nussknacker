@@ -23,7 +23,6 @@ import {
 } from "../../actions/nk"
 import {error, success} from "../../actions/notificationActions"
 import {redo, undo} from "../../actions/undoRedoActions"
-import {events} from "../../analytics/TrackingEvents"
 import * as ClipboardUtils from "../../common/ClipboardUtils"
 import {tryParseOrNull} from "../../common/JsonUtils"
 import {isInputEvent} from "../../containers/BindKeyboardShortcuts"
@@ -89,7 +88,9 @@ function useClipboardPermission(): boolean | string {
   useEffect(() => {
     if (state === "granted") {
       const interval = setInterval(checkClipboard, 500)
-      return () => {clearInterval(interval)}
+      return () => {
+        clearInterval(interval)
+      }
     }
   }, [checkClipboard, state])
 
@@ -127,7 +128,9 @@ export const useSelectionActions = (): UserActions => {
   return selectionActions
 }
 
-export default function SelectionContextProvider(props: PropsWithChildren<{ pastePosition: () => { x: number, y: number } }>): JSX.Element {
+export default function SelectionContextProvider(props: PropsWithChildren<{
+  pastePosition: () => { x: number, y: number },
+}>): JSX.Element {
   const dispatch = useDispatch()
   const {t} = useTranslation()
 
@@ -223,37 +226,15 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
 
   const canAccessClipboard = useClipboardPermission()
   const userActions: UserActions = useMemo(() => ({
-    copy: canModifySelected && !hasSelection && (() => dispatch(
-      copySelection(
-        copy,
-        {category: events.categories.keyboard, action: events.actions.keyboard.copy},
-      ),
-    )),
+    copy: canModifySelected && !hasSelection && (() => dispatch(copySelection(copy))),
     canPaste: !!canAccessClipboard,
-    paste: capabilities.editFrontend && ((e) => dispatch(
-      pasteSelection(
-        () => paste(e),
-        {category: events.categories.keyboard, action: events.actions.keyboard.paste},
-      ),
-    )),
-    cut: canModifySelected && capabilities.editFrontend && (() => dispatch(
-      cutSelection(
-        cut,
-        {category: events.categories.keyboard, action: events.actions.keyboard.cut},
-      ),
-    )),
+    paste: capabilities.editFrontend && ((e) => dispatch(pasteSelection(() => paste(e)))),
+    cut: canModifySelected && capabilities.editFrontend && (() => dispatch(cutSelection(cut))),
     delete: canModifySelected && capabilities.editFrontend && (() => dispatch(
-      deleteSelection(
-        selectionState,
-        {category: events.categories.keyboard, action: events.actions.keyboard.delete},
-      ),
+      deleteSelection(selectionState),
     )),
-    undo: () => dispatch(
-      undo({category: events.categories.keyboard, action: events.actions.keyboard.undo}),
-    ),
-    redo: () => dispatch(
-      redo({category: events.categories.keyboard, action: events.actions.keyboard.redo}),
-    ),
+    undo: () => dispatch(undo()),
+    redo: () => dispatch(redo()),
     selectAll: () => {
       dispatch(selectAll())
     },

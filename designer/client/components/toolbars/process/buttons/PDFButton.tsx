@@ -2,18 +2,18 @@ import React from "react"
 import {RootState} from "../../../../reducers/index"
 import ProcessUtils from "../../../../common/ProcessUtils"
 import {connect} from "react-redux"
-import {exportProcessToPdf} from "../../../../actions/nk/importExport"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
-import {getProcessVersionId, getProcessId} from "../../../../reducers/selectors/graph"
+import {getProcessId, getProcessVersionId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {useGraph} from "../../../graph/GraphContext"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/PDF.svg"
 import {ToolbarButtonProps} from "../../types"
+import HttpService from "../../../../http/HttpService"
 
 type Props = StateProps & ToolbarButtonProps
 
 function PDFButton(props: Props) {
-  const {processId, versionId, canExport, exportProcessToPdf, disabled} = props
+  const {processId, versionId, canExport, disabled} = props
   const available = !disabled && canExport
   const {t} = useTranslation()
   const graphGetter = useGraph()
@@ -28,7 +28,7 @@ function PDFButton(props: Props) {
         // TODO: try to do this in worker
         // TODO: try to do this more in redux/react style
         const exportedGraph = await graphGetter().exportGraph()
-        exportProcessToPdf(processId, versionId, exportedGraph)
+        HttpService.exportProcessToPdf(processId, versionId, exportedGraph)
       }}
     />
   )
@@ -43,7 +43,6 @@ const mapState = (state: RootState) => {
 }
 
 const mapDispatch = {
-  exportProcessToPdf,
 }
 type StateProps = typeof mapDispatch & ReturnType<typeof mapState>
 

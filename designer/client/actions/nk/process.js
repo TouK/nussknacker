@@ -1,8 +1,6 @@
-import {events} from "../../analytics/TrackingEvents"
 import HttpService from "../../http/HttpService"
 import * as UndoRedoActions from "../undoRedoActions"
 import {displayProcessActivity} from "./displayProcessActivity"
-import {reportEvent} from "./reportEvent"
 
 export function fetchProcessToDisplay(processId, versionId) {
   return (dispatch) => {
@@ -76,12 +74,6 @@ export function clearProcess() {
 
 export function hideRunProcessDetails() {
   return (dispatch) => {
-    dispatch(reportEvent({
-      category: events.categories.rightPanel,
-      action: events.actions.buttonClick,
-      name: "hide",
-    }))
-
     return dispatch({
       type: "HIDE_RUN_PROCESS_DETAILS",
     })

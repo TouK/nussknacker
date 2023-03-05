@@ -2,7 +2,6 @@ import {isEmpty} from "lodash"
 import React, {useCallback} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
-import {events} from "../../../../analytics/TrackingEvents"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/migrate.svg"
 import * as DialogMessages from "../../../../common/DialogMessages"
 import HttpService from "../../../../http/HttpService"
@@ -34,11 +33,6 @@ function MigrateButton(props: Props) {
       onConfirmCallback: (confirmed) => confirmed && HttpService.migrateProcess(processId, versionId),
       confirmText: t("panels.actions.process-migrate.yes", "Yes"),
       denyText: t("panels.actions.process-migrate.no", "No"),
-    },
-    {
-      category: events.categories.rightPanel,
-      action: events.actions.buttonClick,
-      name: `migrate`,
     },
   ), [confirm, processId, t, targetEnvironmentId, versionId])
 

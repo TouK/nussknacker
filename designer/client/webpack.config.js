@@ -56,8 +56,6 @@ module.exports = {
       path: require.resolve("path-browserify"), //reason: react-markdown
       crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
       stream: require.resolve("stream-browserify"), //reason: jsonwebtoken
-      http: require.resolve("stream-http"), //reason: matomo-tracker
-      https: require.resolve("https-browserify"), //reason: matomo-tracker
       fs: false,
     },
   },

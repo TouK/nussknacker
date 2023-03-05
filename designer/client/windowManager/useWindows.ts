@@ -1,9 +1,7 @@
 import {useWindowManager, WindowId, WindowType} from "@touk/window-manager"
-import {defaults, isEmpty, uniq, without} from "lodash"
+import {defaults, uniq, without} from "lodash"
 import * as queryString from "query-string"
 import {useCallback, useMemo} from "react"
-import {useDispatch} from "react-redux"
-import {EventInfo, reportEvent} from "../actions/nk"
 import {ensureArray} from "../common/arrayUtils"
 import {useUserSettings} from "../common/userSettings"
 import {defaultArrayFormat} from "../common/VisualizationUrl"
@@ -24,7 +22,6 @@ export function parseWindowsQueryParams<P extends Record<string, string | string
 
 export function useWindows(parent?: WindowId) {
   const {open: _open, closeAll} = useWindowManager(parent)
-  const dispatch = useDispatch()
   const [settings] = useUserSettings()
   const forceDisableModals = useMemo(() => settings["wm.forceDisableModals"], [settings])
 
@@ -32,13 +29,8 @@ export function useWindows(parent?: WindowId) {
     const isModal = windowData.isModal === undefined ?
       !forceDisableModals :
       windowData.isModal && !forceDisableModals
-    const {id, title} = await _open({isResizable: false, ...windowData, isModal})
-    dispatch(reportEvent({
-      category: "window_manager",
-      action: "window_open",
-      name: `${title} (${id})`,
-    }))
-  }, [dispatch, forceDisableModals, _open])
+    await _open({isResizable: false, ...windowData, isModal})
+  }, [forceDisableModals, _open])
 
   const openNodeWindow = useCallback(
     (node: NodeType, process: Process, readonly?: boolean) => open({
@@ -50,17 +42,13 @@ export function useWindows(parent?: WindowId) {
     [open]
   )
 
-  const confirm = useCallback((data: ConfirmDialogData, event?: EventInfo) => {
-    if (!isEmpty(event)) {
-      dispatch(reportEvent(event))
-    }
-
+  const confirm = useCallback((data: ConfirmDialogData) => {
     return open({
       title: data.text,
       kind: WindowKind.confirm,
       meta: defaults(data, {confirmText: "Yes", denyText: "No"}),
     })
-  }, [dispatch, open])
+  }, [open])
 
   return useMemo(() => ({
     open,
