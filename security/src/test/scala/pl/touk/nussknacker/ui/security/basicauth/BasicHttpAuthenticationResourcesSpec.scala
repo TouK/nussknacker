@@ -22,9 +22,10 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
   private val userWithEncryptedPassword = ConfigUser("foo", None, Some(encryptedPassword), Set.empty)
 
   it("should authenticate using plain password") {
-    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(ConfigUser("foo", Some("password"), None, Set.empty))))
-    authenticator.authenticate(new SampleProvidedCredentials("foo","password")) shouldBe Symbol("defined")
-    authenticator.authenticate(new SampleProvidedCredentials("foo","password2")) shouldBe Symbol("empty")
+    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(ConfigUser("foo", Some(matchingSecret), None, Set
+      .empty))))
+    authenticator.authenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe Symbol("defined")
+    authenticator.authenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe Symbol("empty")
   }
 
   it("should authenticate using bcrypt password") {
