@@ -33,6 +33,16 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
     authenticator.authenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe Symbol("empty")
   }
 
+  it("should authenticate using bcrypt password with 2y identifier") {
+    // result of python -c 'from passlib.hash import bcrypt; print(bcrypt.using(rounds=12, ident="2y").hash("password"))'
+    val encryptedPasswordWithPrefix2y = "$2y$12$Lg.AtiNDoHJp1mUD6POPMeqJwh8R/naTrKstlZ76Yn3iGYmAyuWhy"
+    val userWithEncryptedPasswordWithPrefix2y = ConfigUser("foo", None, Some(encryptedPasswordWithPrefix2y), Set.empty)
+
+    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPasswordWithPrefix2y)))
+    authenticator.authenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
+    authenticator.authenticate(new SampleProvidedCredentials("foo", notMatchingSecret)) shouldBe Symbol("empty")
+  }
+
   it("should cache hashes") {
     var hashComputationCount = 0
     val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPassword), cachingHashes = Some(CachingHashesConfig(enabled = Some(true), None, None, None)))) {
