@@ -270,12 +270,12 @@ lazy val commonSettings =
       )
     )
 
-val flinkV = "1.16.0"
-val avroV = "1.11.0"
+val flinkV = "1.16.1"
+val avroV = "1.11.1"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV = "3.3.1"
+val kafkaV = "3.3.2"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
-val springV = "5.2.21.RELEASE"
+val springV = "5.2.22.RELEASE"
 val scalaTestV = "3.2.15"
 val scalaCheckV = "1.17.0"
 val scalaCheckVshort = scalaCheckV.take(4).replace(".","-")

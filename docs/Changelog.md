@@ -1,6 +1,9 @@
 
 # Changelog
 
+1.8.2 (not released yet)
+* Bump patch dependency for Flink (1.6.1), Kafka (3.3.2), Avro (1.11.1) and Spring (5.2.22)
+
 1.8.1 (28 Feb 2023)
 ------------------------
 * [#4018](https://github.com/TouK/nussknacker/pull/4018) Fix for: generate test data mechanism didn't work for json messages with defined schema id 
