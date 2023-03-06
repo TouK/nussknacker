@@ -39,8 +39,8 @@ To run image with embedded Request-response engine (good for development, experi
 ```
 docker run -it --network host -e DEFAULT_SCENARIO_TYPE=request-response-embedded touk/nussknacker:latest
 ```
-After it started go to http://localhost:8080 and login using credentials: admin/admin. 
-Scenarios REST API will be exposed at http://localhost:8181
+After it started go to http://localhost:8080 and login using credentials: admin/admin.  
+REST endpoints of deployed scenarios will be exposed at http://localhost:8181/scenario/<slug>. Slug is defined in Properties, and by default it is scenario name.
 
 
 

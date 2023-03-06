@@ -34,6 +34,8 @@ If you want to see Nussknacker in action without any other dependencies, you can
 ```bash
 docker run -it --network host -e DEFAULT_SCENARIO_TYPE=request-response-embedded touk/nussknacker:latest
 ```
+After it started go to http://localhost:8080 and login using credentials: admin/admin.
+REST endpoints of deployed scenarios will be exposed at http://localhost:8181/scenario/<slug>. Slug is defined in Properties, and by default it is scenario name.
 Be aware that some things (e.g. metrics) will not work, and this engine is not intended for production use.
 
 If you want to follow step-by-step via more complex tutorials, based on production ready engines, read one of quickstart guides for: [Streaming mode on Flink engine](https://nussknacker.io/documentation/quickstart/docker/)
