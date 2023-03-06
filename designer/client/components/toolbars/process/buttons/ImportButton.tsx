@@ -1,8 +1,6 @@
 import React from "react"
 import {useDispatch, useSelector} from "react-redux"
-import {events} from "../../../../analytics/TrackingEvents"
 import {importFiles} from "../../../../actions/nk/importExport"
-import {reportEvent} from "../../../../actions/nk/reportEvent"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"

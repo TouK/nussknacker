@@ -1,6 +1,4 @@
 import {ThunkAction} from "../reduxTypes"
-import {reportEvent} from "./reportEvent"
-import {events} from "../../analytics/TrackingEvents"
 import {clear as clearUndo} from "./../undoRedoActions"
 import {Process, ProcessId} from "../../types"
 import HttpService from "./../../http/HttpService"
@@ -50,15 +48,8 @@ export function clearProcess(): ThunkAction {
   }
 }
 
-export function hideRunProcessDetails(): ThunkAction {
-  return (dispatch) => {
-    dispatch(reportEvent({
-      category: events.categories.rightPanel,
-      action: events.actions.buttonClick,
-      name: "hide",
-    }))
-    dispatch({type: "HIDE_RUN_PROCESS_DETAILS"})
-  }
+export function hideRunProcessDetails() {
+  return {type: "HIDE_RUN_PROCESS_DETAILS"}
 }
 
 export function addAttachment(processId: ProcessId, processVersionId: ProcessVersionId, file: File) {
