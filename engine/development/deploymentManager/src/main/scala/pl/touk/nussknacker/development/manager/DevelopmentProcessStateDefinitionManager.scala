@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.development.manager
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateId
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, ProcessActionType, ProcessStateDefinitionManager, StateStatus}
 
 import java.net.URI
@@ -39,23 +39,23 @@ class DevelopmentProcessStateDefinitionManager(delegate: ProcessStateDefinitionM
   override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
     delegate.mapActionToStatus(stateAction)
 
-  override def statusIds(): Set[StateId] =
-    delegate.statusIds() +
+  override def stateNames(): Set[StatusName] =
+    delegate.stateNames() +
       AfterRunningStatus.name +
       PreparingResourcesStatus.name +
       TestStatus.name
 
-  override def statusDisplayableName(name: StateId): String = name match {
-    case AfterRunningStatus.name => "After"
-    case PreparingResourcesStatus.name => "Preparing"
+  override def stateDisplayableName(name: StatusName): String = name match {
+    case AfterRunningStatus.name => "After running"
+    case PreparingResourcesStatus.name => "Preparing resources"
     case TestStatus.name => "Test"
-    case _ => delegate.statusDisplayableName(name)
+    case _ => delegate.stateDisplayableName(name)
   }
 
-  override def statusIcon(name: StateId): Option[URI] = name match {
+  override def stateIcon(name: StatusName): Option[URI] = name match {
     case AfterRunningStatus.name => None
     case PreparingResourcesStatus.name => None
     case TestStatus.name => None
-    case _ => delegate.statusIcon(name)
+    case _ => delegate.stateIcon(name)
   }
 }
