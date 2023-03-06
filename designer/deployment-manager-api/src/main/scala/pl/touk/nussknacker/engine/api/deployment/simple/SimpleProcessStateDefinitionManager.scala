@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 
 import java.net.URI
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.StateStatus.StateId
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState, ProcessStateDefinitionManager, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState, ProcessStateDefinitionManager, StateDefinition, StateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
@@ -109,13 +109,13 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusDescriptionsMap.get(stateStatus)
 
-  override def statusIds(): Set[StateId] =
+  override def stateNames(): Set[StatusName] =
     statusDisplayableNameMap.map { case (status, _) => status.name }.toSet
 
-  override def statusDisplayableName(name: StateId): String =
+  override def stateDisplayableName(name: StatusName): String =
     statusDisplayableNameMap.collectFirst { case (status, displayableName) if status.name.equals(name) => displayableName}.get
 
-  override def statusIcon(name: StateId): Option[URI] =
+  override def stateIcon(name: StatusName): Option[URI] =
     statusIconsMap.collectFirst { case (status, url) if status.name.equals(name) => URI.create(url) }
 
   def errorShouldBeRunningState(deployedVersionId: VersionId, user: String): ProcessState =
