@@ -54,7 +54,7 @@ object ProcessSplitter {
             nextTrueT.nextParts,
             DeadEnd(data.id) :: nextTrueT.ends
           )
-          case (None, None) => throw new RuntimeException("todo")
+          case (None, None) => throw new IllegalStateException("should not happen")
         }
       case SwitchNode(data, nexts, defaultNext) =>
         val (nextsT, casesNextParts, casesEnds) = nexts.map { casee =>

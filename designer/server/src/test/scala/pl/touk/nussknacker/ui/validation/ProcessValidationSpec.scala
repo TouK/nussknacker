@@ -142,7 +142,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
         "requiredStringProperty" -> "test"
       )
     )
-    val result = validator.validate(process, Category1)
+    val result = validator.validate(process)
 
     result.hasErrors shouldBe false
   }
