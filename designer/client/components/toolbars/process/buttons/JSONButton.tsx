@@ -2,12 +2,13 @@ import React from "react"
 import {RootState} from "../../../../reducers/index"
 import ProcessUtils from "../../../../common/ProcessUtils"
 import {connect} from "react-redux"
-import {exportProcessToJSON} from "../../../../actions/nk/importExport"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
-import {getProcessVersionId, getProcessToDisplay} from "../../../../reducers/selectors/graph"
+import {getProcessToDisplay, getProcessVersionId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/JSON.svg"
 import {ToolbarButtonProps} from "../../types"
+import {withoutHackOfEmptyEdges} from "../../../graph/GraphPartialsInTS/EdgeUtils"
+import HttpService from "../../../../http/HttpService"
 
 type Props = StateProps & ToolbarButtonProps
 
@@ -16,7 +17,6 @@ function JSONButton(props: Props) {
     processToDisplay,
     versionId,
     canExport,
-    exportProcessToJSON,
     disabled,
   } = props
   const available = !disabled && canExport
@@ -27,7 +27,10 @@ function JSONButton(props: Props) {
       name={t("panels.actions.process-JSON.button", "JSON")}
       icon={<Icon/>}
       disabled={!available}
-      onClick={() => exportProcessToJSON(processToDisplay, versionId)}
+      onClick={() => {
+        const noEmptyEdges = withoutHackOfEmptyEdges(processToDisplay)
+        HttpService.exportProcess(noEmptyEdges, versionId)
+      }}
     />
   )
 }
@@ -41,7 +44,6 @@ const mapState = (state: RootState) => {
 }
 
 const mapDispatch = {
-  exportProcessToJSON,
 }
 
 type StateProps = typeof mapDispatch & ReturnType<typeof mapState>

@@ -1,5 +1,4 @@
 export type ActionTypes =
-  | "USER_TRACKING"
   | "LAYOUT_CHANGED"
   | "TOGGLE_LEFT_PANEL"
   | "TOGGLE_RIGHT_PANEL"

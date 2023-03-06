@@ -285,7 +285,6 @@ const undoableReducer = undoable(reducer, {
   groupBy: batchGroupBy.init(),
   filter: combineFilters(
     excludeAction([
-      "USER_TRACKING",
       "VALIDATION_RESULT",
       "DISPLAY_PROCESS",
       "UPDATE_IMPORTED_PROCESS",
