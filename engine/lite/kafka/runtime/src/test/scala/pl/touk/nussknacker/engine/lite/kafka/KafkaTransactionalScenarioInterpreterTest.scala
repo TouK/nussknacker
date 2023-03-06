@@ -187,6 +187,23 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
     }
   }
 
+  test("correctly handling aborted transactions and respecting interpreter timeout") { fixture =>
+    val scenario: CanonicalProcess = ScenarioBuilder
+      .streamingLite("test")
+      .source("source", "source", "topic" -> s"'${fixture.inputTopic}'")
+      .enricher("sleep", "sleep", "sleep")
+      .emptySink("sink", "sink", "topic" -> s"'${fixture.outputTopic}'", "value" -> "#input")
+
+    lazy val outputConsumer = kafkaClient.createConsumer().consume(fixture.outputTopic).map(rec => new String(rec.message()))
+    runScenarioWithoutErrors(fixture, scenario) {
+      kafkaClient.sendMessage(fixture.inputTopic, "one").futureValue
+      outputConsumer.take(1) shouldEqual List("one")
+
+      // we check that it is second attempt of scenario interpreter run
+      metricsForName[Gauge[Int]]("task.attempt").map(_._2.getValue).exists(_ == 2) shouldBe true
+    }
+  }
+
   test("starts without error without kafka") { fixture =>
     val scenario: CanonicalProcess = passThroughScenario(fixture)
 
@@ -383,8 +400,9 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
   private def modelData(config: Config) = LocalModelData(config, new EmptyProcessConfigCreator)
 
   private def adjustConfig(errorTopic: String, config: Config) = config
-    .withValue("components.kafkaSources.enabled", fromAnyRef(true))
+    .withValue("components.testComponents.enabled", fromAnyRef(true))
     .withValue("kafka.\"auto.offset.reset\"", fromAnyRef("earliest"))
+    .withValue("interpreterTimeout", fromAnyRef("3s"))
     .withValue("exceptionHandlingConfig.topic", fromAnyRef(errorTopic))
     .withValue("waitAfterFailureDelay", fromAnyRef("1 millis"))
 

@@ -110,6 +110,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
 
   private def processRecords(records: ConsumerRecords[Array[Byte], Array[Byte]]) = {
     val valuesToRun = prepareRecords(records)
+    logger.trace(s"Invoking interpreter for batch of size ${valuesToRun.size}.")
     val output = Await.result(interpreter.invoke(ScenarioInputBatch(valuesToRun)), engineConfig.interpreterTimeout)
     Await.result(sendOutputToKafka(output), engineConfig.publishTimeout)
   }

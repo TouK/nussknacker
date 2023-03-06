@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api._
@@ -12,10 +13,13 @@ import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpret
 import pl.touk.nussknacker.engine.lite.kafka.TestComponentProvider.{SourceFailure, failingInputValue}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 
+import java.util.concurrent.atomic.AtomicBoolean
+import scala.concurrent.Future
+
 //Simplistic Kafka source/sinks, assuming string as value. To be replaced with proper components
 class TestComponentProvider extends ComponentProvider {
 
-  override def providerName: String = "kafkaSources"
+  override def providerName: String = "testComponents"
 
   override def resolveConfigForExecution(config: Config): Config = config
 
@@ -23,6 +27,7 @@ class TestComponentProvider extends ComponentProvider {
     List(
       ComponentDefinition("source", KafkaSource),
       ComponentDefinition("sink", KafkaSink),
+      ComponentDefinition("sleep", InitiallySleepingService),
     )
   }
 
@@ -57,6 +62,23 @@ class TestComponentProvider extends ComponentProvider {
         implicit val epi: LazyParameterInterpreter = evaluateLazyParameter
         value.map(out => new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))
       }
+  }
+
+  case object InitiallySleepingService extends Service with LazyLogging {
+
+    private val initialized = new AtomicBoolean(false)
+    @MethodToInvoke
+    def invoke(): Future[Unit] = {
+      Future.successful {
+        if (initialized.compareAndSet(false, true)) {
+          logger.info("Sleeping for 4s...")
+          Thread.sleep(4000)
+        } else {
+          logger.debug("No need to sleep...")
+        }
+        ()
+      }
+    }
   }
 
 }

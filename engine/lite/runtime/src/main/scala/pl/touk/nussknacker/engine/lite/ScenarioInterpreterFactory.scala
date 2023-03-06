@@ -158,8 +158,8 @@ object ScenarioInterpreterFactory {
 
       def computeNextSourceInvocation(base: ScenarioInterpreterType, nextSource: SourcePart, next: Input => F[ResultType[PartResult]]): ScenarioInputBatch[Input] => InterpreterOutputType = (inputs: ScenarioInputBatch[Input]) =>
         Monoid.combineAll(inputs.value.map {
-          case (source, ctx) if source.value == nextSource.id => next(ctx)
-          case other => base(ScenarioInputBatch(other :: Nil))
+          case (source, ctx) if source.value == nextSource.id => monad.unit.flatMap(_ => next(ctx))
+          case other => monad.unit.flatMap(_ => base(ScenarioInputBatch(other :: Nil)))
         })
 
       //here we rely on the fact that parts are sorted correctly (see ProcessCompiler.compileSources)
