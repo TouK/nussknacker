@@ -10,16 +10,18 @@ import java.net.URI
 class ProcessStatusDefinitionService(typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                                      categoryService: ProcessCategoryService) {
 
-  def fetchStateDefinitions(): List[StateDefinition] = {
+  def fetchStateDefinitions(): List[UIStateDefinition] = {
     //gather state definitions for all processing types
     val allProcessingTypeStateDefinitions = typeToConfig.all.toList.flatMap { case (processingType, processingTypeData) =>
       val processingTypeCategories = categoryService.getProcessingTypeCategories(processingType).toSet
       val stateDefinitionManager = processingTypeData.deploymentManager.processStateDefinitionManager
       stateDefinitionManager.stateDefinitions().map(definition =>
-        StateDefinition(
+        UIStateDefinition(
           definition.name,
           definition.displayableName,
           definition.icon,
+          definition.tooltip,
+          definition.description,
           processingTypeCategories
         ))
     }
@@ -36,7 +38,9 @@ class ProcessStatusDefinitionService(typeToConfig: ProcessingTypeDataProvider[Pr
 
 }
 
-@JsonCodec case class StateDefinition(name: StatusName,
-                                      displayableName: String,
-                                      icon: Option[URI],
-                                      categories: Set[String])
+@JsonCodec case class UIStateDefinition(name: StatusName,
+                                        displayableName: String,
+                                        icon: Option[URI],
+                                        tooltip: Option[String],
+                                        description: Option[String],
+                                        categories: Set[String])
