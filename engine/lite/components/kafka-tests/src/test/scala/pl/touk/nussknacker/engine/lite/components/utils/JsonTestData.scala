@@ -17,41 +17,13 @@ object JsonTestData {
 
   val OutputField: SpecialSpELElement = SpecialSpELElement(s"#input.$ObjectFieldName")
 
-  val schemaPerson: Schema = JsonSchemaBuilder.parseSchema(
-    """{
-      |  "type": "object",
-      |  "properties": {
-      |    "first": {
-      |      "type": "string"
-      |    },
-      |    "last": {
-      |      "type": "string"
-      |    },
-      |    "age": {
-      |      "type": "integer",
-      |    }
-      |  },
-      |  "additionalProperties": false
-      |}""".stripMargin)
+  val schemaPerson: Schema = schemaPerson(None, None)
 
-  val schemaPersonWithLimits: Schema = JsonSchemaBuilder.parseSchema(
-    s"""{
-       |  "type": "object",
-       |  "properties": {
-       |    "first": {
-       |      "type": "string"
-       |    },
-       |    "last": {
-       |      "type": "string"
-       |    },
-       |    "age": {
-       |      "type": "integer",
-       |      "minimum": 10,
-       |      "maximum": 200,
-       |    }
-       |  },
-       |  "additionalProperties": false
-       |}""".stripMargin)
+  val schemaPersonWithLimits: Schema = schemaPerson(Some(10), Some(200))
+
+  val schemaPersonWithUpperLimits: Schema = schemaPerson(None, Some(201), exclusiveMaximum = true)
+
+  val schemaPersonWithLowerLimits: Schema = schemaPerson(Some(300), None, exclusiveMinimum = true)
 
   val trueSchema: Schema = JsonSchemaBuilder.parseSchema("true")
 
@@ -69,6 +41,17 @@ object JsonTestData {
     .requiresInteger(true)
     .minimum(Integer.MIN_VALUE)
     .maximum(Integer.MAX_VALUE)
+    .build()
+
+  val schemaIntegerRange0to100: Schema = NumberSchema.builder()
+    .requiresInteger(true)
+    .minimum(0)
+    .maximum(100)
+    .build()
+
+  val schemaIntegerRangeTo100: Schema = NumberSchema.builder()
+    .requiresInteger(true)
+    .maximum(100)
     .build()
 
   val nameAndLastNameSchema: Schema = nameAndLastNameSchema(true)
@@ -155,9 +138,13 @@ object JsonTestData {
 
   val sampleJInt: Json = fromInt(sampleInt)
 
+  val sampleJMinInt: Json = fromInt(Int.MinValue)
+
   val sampleJStr: Json = fromString(sampleStr)
 
   val samplePerson: Json = obj("first" -> fromString(strNu), "last" -> fromString(strTouK), "age" -> sampleJInt)
+
+  val sampleInvalidPerson: Json = obj("first" -> fromString(strNu), "last" -> fromString(strTouK), "age" -> fromInt(300))
 
   val sampleArrayInt: Json = arr(sampleJInt)
 
@@ -233,6 +220,26 @@ object JsonTestData {
         throw new IllegalArgumentException(s"Unknown `additionalProperties` value: $additionalProperties.")
     }
   }
+
+  private def schemaPerson(minimum: Option[Int], maximum: Option[Int], exclusiveMinimum: Boolean = false, exclusiveMaximum: Boolean = false): Schema =
+    JsonSchemaBuilder.parseSchema(
+      s"""{
+         |  "type": "object",
+         |  "properties": {
+         |    "first": {
+         |      "type": "string"
+         |    },
+         |    "last": {
+         |      "type": "string"
+         |    },
+         |    "age": {
+         |      "type": "integer",
+         |      ${minimum.fold("")(x => s""" "${if (exclusiveMinimum) "exclusiveMinimum" else "minimum"}": $x,""")}
+         |      ${maximum.fold("")(x => s""" ${if (exclusiveMaximum) "exclusiveMaximum" else "maximum"}: $x""")}
+         |    }
+         |  },
+         |  "additionalProperties": false
+         |}""".stripMargin)
 
   def createObjectSchemaWithPatternProperties(patternProperties: Map[String, Schema], additionalPropertySchema: Option[Schema] = None, definedProperties: Map[String, Schema] = Map.empty): Schema = {
     val builder = ObjectSchema.builder()

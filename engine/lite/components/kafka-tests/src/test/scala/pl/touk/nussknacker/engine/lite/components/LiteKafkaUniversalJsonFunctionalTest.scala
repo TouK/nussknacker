@@ -68,6 +68,9 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       ("config", "result"),
       //Primitive integer validations
       (config(fromLong(Integer.MAX_VALUE.toLong + 1), schemaInteger, schemaIntegerRange), invalidTypes("actual: 'Long' expected: 'Integer'")),
+      (config(sampleJInt, schemaInteger, schemaIntegerRange0to100, fromInt(200)), invalidRanges("actual value: '200' should be between 0 and 100")),
+      (config(sampleJInt, schemaInteger, schemaIntegerRangeTo100, fromInt(200)), invalidRanges("actual value: '200' should be between -inf and 100")),
+      (config(sampleJInt, schemaInteger, schemaIntegerRange0to100, fromInt(100)), valid(fromInt(100))),
       (config(sampleJInt, schemaIntegerRange, schemaInteger), valid(sampleJInt)),
       (config(fromLong(Integer.MAX_VALUE), schemaIntegerRange, schemaIntegerRange), valid(fromInt(Integer.MAX_VALUE))),
     )
@@ -95,8 +98,8 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (config(sampleObjMapInt, schemaObjMapInt, schemaObjMapInt), valid(sampleObjMapInt)),
       (conf(schemaObjMapInt, sampleObjMapIntOutput), valid(sampleObjMapInt)),
 
-      (config(samplePerson, schemaPerson, schemaObjStr), invalid(Nil, List("field"), List("age", "first", "last"))),
-      (conf(schemaObjStr, samplePersonOutput), invalid(Nil, List("field"), List("first", "last", "age"))),
+      (config(samplePerson, schemaPerson, schemaObjStr), invalid(Nil, List("field"), List("age", "first", "last"), Nil)),
+      (conf(schemaObjStr, samplePersonOutput), invalid(Nil, List("field"), List("first", "last", "age"), Nil)),
 
       (config(sampleObjMapAny, schemaObjMapAny, schemaObjMapInt), invalidTypes("path 'field.value' actual: 'Unknown' expected: 'Long'")),
 
@@ -152,6 +155,27 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (input: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
         validationModes.foreach { mode =>
           val cfg = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
+          val results = runWithValueResults(cfg)
+          results shouldBe expected
+        }
+    }
+  }
+
+  test("sink with schema with range defined on age field") {
+    //@formatter:off
+    val testData = Table(
+      ("input", "sourceSchema", "sinkSchema", "validationModes", "result"),
+      (samplePerson, schemaPerson, schemaPersonWithLimits, strictAndLax, valid(samplePerson)),
+      (sampleInvalidPerson, schemaPerson, schemaPersonWithLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be between 10 and 200")),
+      (sampleInvalidPerson, schemaPerson, schemaPersonWithUpperLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be between -inf and 200")),
+      (sampleInvalidPerson, schemaPerson, schemaPersonWithLowerLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be between 301 and +inf")),
+    )
+    //@formatter:on
+
+    forAll(testData) {
+      (input: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
+        validationModes.foreach { mode =>
+          val cfg = config(input, sourceSchema, sinkSchema, output = input, Some(mode))
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
@@ -262,7 +286,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     }
 
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
-      val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil)
+      val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
       Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
     }
 

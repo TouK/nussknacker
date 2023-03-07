@@ -5,18 +5,32 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.ClassUtils
-import org.everit.json.schema.{EmptySchema, ObjectSchema, ReferenceSchema, Schema}
+import org.everit.json.schema.{EmptySchema, NumberSchema, ObjectSchema, ReferenceSchema, Schema, ValidationException}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
-import pl.touk.nussknacker.engine.util.output._
+import pl.touk.nussknacker.engine.util.output.{OutputValidatorError, _}
 
 import scala.language.implicitConversions
 
 private[encode] case class JsonSchemaExpected(schema: Schema, rootSchema: Schema) extends OutputValidatorExpected {
   override def expected: String = new JsonSchemaOutputValidatorPrinter(rootSchema).print(schema)
+}
+
+private[encode] case class NumberSchemaRangeExpected(schema: NumberSchema) extends OutputValidatorExpected {
+  override def expected: String = s"${minimumValue.getOrElse("-inf")} and ${maximumValue.getOrElse("+inf")}"
+
+  private val minimumValue = List(
+    Option(schema.getMinimum).map(x => BigInt(s"$x")),
+    Option(schema.getExclusiveMinimumLimit).map(x => BigInt(s"$x") + 1)
+  ).flatten.sorted.headOption
+
+  private val maximumValue = List(
+    Option(schema.getMaximum).map(x => BigInt(s"$x")),
+    Option(schema.getExclusiveMaximumLimit).map(x => BigInt(s"$x") - 1)
+  ).flatten.sorted(Ordering.BigInt.reverse).headOption
 }
 
 object JsonSchemaOutputValidator {
@@ -52,9 +66,18 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (union: TypedUnion, _) => validateUnionInputType(union, schema, rootSchema, path)
       case (tc: TypedClass, s: ObjectSchema) if tc.representsMapWithStringKeys => validateMapInputType(tc, tc.params.tail.head, s, rootSchema, path)
       case (typingResult: TypedObjectTypingResult, s: ObjectSchema) => validateRecordInputType(typingResult, s, rootSchema, path)
+      case (typed: TypedObjectWithValue, s: NumberSchema)
+        if ClassUtils.isAssignable(typed.underlying.objType.primitiveClass, classOf[Number], true) => validateValueAgainstNumberSchema(s, typed, path)
       case (_, _) => canBeSubclassOf(typingResult, schema, rootSchema, path)
     }
   }
+
+  private def validateValueAgainstNumberSchema(schema: NumberSchema, typeWithValue: TypedObjectWithValue, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] =
+    Validated
+      .catchOnly[ValidationException] {
+        schema.validate(typeWithValue.value)
+      }
+      .leftMap(_ => NonEmptyList.one(OutputValidatorRangeTypeError(path, typeWithValue, NumberSchemaRangeExpected(schema))))
 
   private def validateUnknownInputType(schema: Schema, rootSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     validationMode match {
