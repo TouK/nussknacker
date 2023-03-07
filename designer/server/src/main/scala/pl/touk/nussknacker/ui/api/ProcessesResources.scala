@@ -46,7 +46,7 @@ class ProcessesResources(
   val processAuthorizer:AuthorizeProcess,
   processChangeListener: ProcessChangeListener,
   categoryService: ProcessCategoryService,
-  statusDefinitionService: ProcessStatusDefinitionService
+  stateDefinitionService: ProcessStateDefinitionService
 )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -279,7 +279,7 @@ class ProcessesResources(
 
   private def fetchAllStateDefinitions(implicit user: LoggedUser): List[UIStateDefinition] = {
     val userCategories = categoryService.getUserCategories(user).toSet
-    statusDefinitionService.fetchStateDefinitions()
+    stateDefinitionService.fetchStateDefinitions()
       .map(rawDefinition =>
         rawDefinition.copy(categories = userCategories.intersect(rawDefinition.categories))
       )
