@@ -45,7 +45,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     val definitions = service.fetchStateDefinitions()
 
     definitions should contain(UIStateDefinition(
-      definition = streamingProcessStateDefinitionManager.stateDefinitions().toMapByName("CUSTOM_COMMON"),
+      definition = streamingProcessStateDefinitionManager.stateDefinitions().toMapByName("COMMON"),
       categories = Set(Category1, Category2, TestCat, TestCat2)
     ))
 
@@ -83,7 +83,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
                                                       ) extends OverridingProcessStateDefinitionManager(
     stateDefinitions = Set(
       StateDefinition(
-        name = "CUSTOM_COMMON", displayableName = displayableName, icon = icon, tooltip = tooltip, description = description
+        name = "COMMON", displayableName = displayableName, icon = icon, tooltip = tooltip, description = description
       ),
       StateDefinition(
         name = "CUSTOM_STREAMING", displayableName = "Streaming", icon = None, tooltip = None, description = Some("This definition is specific for stremaing")
@@ -98,7 +98,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
                                                   ) extends OverridingProcessStateDefinitionManager(
     stateDefinitions = Set(
       StateDefinition(
-        name = "CUSTOM_COMMON", displayableName = displayableName, icon = icon, tooltip = tooltip, description = description
+        name = "COMMON", displayableName = displayableName, icon = icon, tooltip = tooltip, description = description
       ),
       StateDefinition(
         name = "CUSTOM_FRAUD", displayableName = "Fraud", icon = None, tooltip = None, description = Some("This definition is specific for Fraud")
