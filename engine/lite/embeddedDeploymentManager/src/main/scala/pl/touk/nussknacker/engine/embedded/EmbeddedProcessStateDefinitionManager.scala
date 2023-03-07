@@ -7,15 +7,10 @@ object EmbeddedProcessStateDefinitionManager extends OverridingProcessStateDefin
   statusActionsPF = {
     case SimpleStateStatus.Restarting => List(ProcessActionType.Cancel)
     // We don't know if it is temporal problem or not so deploy is still available
-    case  EmbeddedStateStatus.DetailedFailedStateStatus(_) => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-  },
-  statusIconsPF = {
-    case EmbeddedStateStatus.DetailedFailedStateStatus(_) => "/assets/states/failed.svg"
+    case EmbeddedStateStatus.DetailedFailedStateStatus(_) => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   },
   statusTooltipsPF = {
-    case EmbeddedStateStatus.DetailedFailedStateStatus(message) => s"Problems detected: $message"
+    case EmbeddedStateStatus.DetailedFailedStateStatus(message) => Some(s"Problems detected: $message")
   },
-  statusDescriptionsPF = {
-    case EmbeddedStateStatus.DetailedFailedStateStatus(_) => "There are some problems with scenario."
-  }
+  stateDefinitions = EmbeddedStateStatus.customStateDefinitions
 )

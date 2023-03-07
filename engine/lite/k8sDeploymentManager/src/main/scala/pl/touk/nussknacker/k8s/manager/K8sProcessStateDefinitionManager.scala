@@ -5,5 +5,6 @@ import pl.touk.nussknacker.engine.api.deployment.{OverridingProcessStateDefiniti
 object K8sProcessStateDefinitionManager extends OverridingProcessStateDefinitionManager(
   statusActionsPF = {
     case K8sStateStatus.MultipleJobsRunning => List(ProcessActionType.Cancel)
-  }
+  },
+  stateDefinitions = K8sStateStatus.customStateDefinitions
 )
