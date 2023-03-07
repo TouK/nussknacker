@@ -319,7 +319,7 @@ val confluentV = "7.3.0"
 val azureKafkaSchemaRegistryV = "1.0.0-beta.9"
 val azureSchemaRegistryV = "1.3.1"
 val azureIdentityV = "1.7.3"
-val jbcryptV = "0.4"
+val bcryptV = "0.10.2"
 val cronParserV = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "3.1.2"
@@ -1280,7 +1280,7 @@ lazy val security = (project in file("security")).
       "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
       "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
       "com.typesafe" % "config" % configV,
-      "org.mindrot" % "jbcrypt" % jbcryptV,
+      "at.favre.lib" % "bcrypt" % bcryptV,
       //Packages below are only for plugin providers purpose
       "io.circe" %% "circe-core" % circeV,
       "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,

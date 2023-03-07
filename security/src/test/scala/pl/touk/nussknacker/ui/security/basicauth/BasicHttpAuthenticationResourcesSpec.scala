@@ -22,15 +22,26 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
   private val userWithEncryptedPassword = ConfigUser("foo", None, Some(encryptedPassword), Set.empty)
 
   it("should authenticate using plain password") {
-    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(ConfigUser("foo", Some("password"), None, Set.empty))))
-    authenticator.authenticate(new SampleProvidedCredentials("foo","password")) shouldBe Symbol("defined")
-    authenticator.authenticate(new SampleProvidedCredentials("foo","password2")) shouldBe Symbol("empty")
+    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(ConfigUser("foo", Some(matchingSecret), None, Set
+      .empty))))
+    authenticator.authenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe Symbol("defined")
+    authenticator.authenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe Symbol("empty")
   }
 
   it("should authenticate using bcrypt password") {
     val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPassword)))
     authenticator.authenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe Symbol("defined")
     authenticator.authenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe Symbol("empty")
+  }
+
+  it("should authenticate using bcrypt password with 2y identifier") {
+    // result of python -c 'from passlib.hash import bcrypt; print(bcrypt.using(rounds=12, ident="2y").hash("password"))'
+    val encryptedPasswordWithPrefix2y = "$2y$12$Lg.AtiNDoHJp1mUD6POPMeqJwh8R/naTrKstlZ76Yn3iGYmAyuWhy"
+    val userWithEncryptedPasswordWithPrefix2y = ConfigUser("foo", None, Some(encryptedPasswordWithPrefix2y), Set.empty)
+
+    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPasswordWithPrefix2y)))
+    authenticator.authenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
+    authenticator.authenticate(new SampleProvidedCredentials("foo", notMatchingSecret)) shouldBe Symbol("empty")
   }
 
   it("should cache hashes") {
