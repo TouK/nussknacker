@@ -11,6 +11,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ModelConfigLoader.resolveInputConfigDuringExecution` takes `ConfigWithUnresolvedVersion` instead of `Config`. Use `ConfigWithUnresolvedVersion.apply`
     for easy transition between those classes
 * [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`. It affects `MetaData`, `ProcessMetaDataBuilder` and `DisplayableProcess` properties. 
+* [#4066](https://github.com/TouK/nussknacker/pull/4066) Changes in state definitions:
+  * `ProcessResources` exposes new endpoint `/api/procecesses/stateDefinitions`
+  * `CustomStateStatus.name` type renamed to `StatusName`
+  * Use `ProcessStateDefinitionManager.stateDefinitions` to describe default states and their properties (see an example of basic definitions in `SimpleProcessStateDefinitionManager` and `SimpleStateStatus`).
+  * In `ProcessStateDefinitionManager` methods `statusTooltip`, `statusDescription` and `statusIcon` return default values defined via `stateDefinitions`.
+    It is not necessary to override those methods when there is only fixed set of state defaults.
+  * To introduce custom states, extensions to basic definitions, use `OverridingProcessStateDefinitionManager`.
+  * `OverridingProcessStateDefinitionManager` allows to specify delegate (previously only `SimpleProcessStateDefinitionManager` was available) and custom state definitions.
+  * State defaults, actions and transformations are moved to `SimpleStateStatus`, `FlinkStateStatus`, `PeriodicStateStatus`, `EmbeddedStateStatus` and `K8sStateStatus` 
+    from corresponding state-definition-managers (e.g. `FlinkProcessStateDefinitionManager` etc). 
 
 ### Other changes
 * [#3675](https://github.com/TouK/nussknacker/pull/3675) Improvements: Normalize kafka components params name

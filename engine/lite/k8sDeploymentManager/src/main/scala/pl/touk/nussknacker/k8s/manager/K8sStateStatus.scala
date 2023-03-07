@@ -7,12 +7,6 @@ import java.net.URI
 object K8sStateStatus  {
   val MultipleJobsRunning: StateStatus = NotEstablishedStateStatus("MULTIPLE_JOBS_RUNNING")
 
-//  def failed(ex: Throwable): StateStatus = DetailedFailedStateStatus(ex.getMessage)
-//
-//  case class DetailedFailedStateStatus(message: String) extends CustomStateStatus("Failed") {
-//    override def isFailed: Boolean = true
-//  }
-
   val customStateDefinitions: Set[StateDefinition] = Set(
     StateDefinition(
       name = MultipleJobsRunning.name,

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, DuringDeployStateStatus, FailedStateStatus, FinishedStateStatus, NotEstablishedStateStatus, RunningStateStatus, StateDefinition, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, DuringDeployStateStatus, FailedStateStatus, FinishedStateStatus, NotEstablishedStateStatus, ProcessActionType, RunningStateStatus, StateDefinition, StateStatus}
 
 import java.net.URI
 
@@ -17,6 +18,31 @@ object SimpleStateStatus {
   val Failed: StateStatus = FailedStateStatus("FAILED")
   val Error: StateStatus = AllowDeployStateStatus("ERROR")
   val Warning: StateStatus = AllowDeployStateStatus("WARNING")
+
+  val defaultActions: List[ProcessActionType] = Nil
+
+  val actionStatusMap: Map[ProcessActionType, StateStatus] = Map(
+    ProcessActionType.Deploy -> SimpleStateStatus.Running,
+    ProcessActionType.Cancel -> SimpleStateStatus.Canceled,
+    ProcessActionType.Archive -> SimpleStateStatus.NotDeployed,
+    ProcessActionType.UnArchive -> SimpleStateStatus.NotDeployed
+  )
+
+  val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
+    SimpleStateStatus.Unknown -> List(ProcessActionType.Deploy),
+    SimpleStateStatus.NotDeployed -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
+    SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Deploy, ProcessActionType.Cancel), // Deploy? see FlinkStateStatus
+    SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy),
+    SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
+    SimpleStateStatus.Restarting -> List(ProcessActionType.Deploy, ProcessActionType.Cancel), // Deploy? see FlinkStateStatus
+    SimpleStateStatus.Finished -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
+    // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
+    // - that's why Cancel action is available
+    SimpleStateStatus.Failed -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
+    SimpleStateStatus.Error -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
+    SimpleStateStatus.Warning -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
+    SimpleStateStatus.FailedToGet -> List(ProcessActionType.Deploy, ProcessActionType.Archive)
+  )
 
   val definitions: Set[StateDefinition] = Set(
     StateDefinition(
