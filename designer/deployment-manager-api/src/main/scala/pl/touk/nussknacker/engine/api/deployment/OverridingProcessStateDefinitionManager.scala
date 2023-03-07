@@ -5,6 +5,16 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefini
 
 import java.net.URI
 
+/**
+  * Wrapper for delegate [[ProcessStateDefinitionManager]], used to enhance base state definitions and actions
+  * with custom states and actions (default delegate is [[SimpleProcessStateDefinitionManager]]).
+  * Use statusIconsPF, statusTooltipsPF and statusDescriptionsPF to customize varying state properties.
+  * The order of handlers:
+  * <li>handle state via statusIconsPF, statusTooltipsPF and statusDescriptionsPF or else
+  * <li>use custom default definitions from stateDefinitions or else
+  * <li>use delegate
+  * @param stateDefinitions Set of definitions that extends or overwrites delegate definitions
+  */
 class OverridingProcessStateDefinitionManager(statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = PartialFunction.empty,
                                               mapActionToStatusPF: PartialFunction[Option[ProcessActionType], StateStatus] = PartialFunction.empty,
                                               statusIconsPF: PartialFunction[StateStatus, Option[URI]] = PartialFunction.empty,
