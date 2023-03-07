@@ -108,4 +108,12 @@ class CustomStateStatus(val name: StatusName) extends StateStatus
 
 @JsonCodec case class StateDefinition(name: StatusName,
                                       displayableName: String,
-                                      icon: Option[URI])
+                                      icon: Option[URI],
+                                      tooltip: Option[String],
+                                      description: Option[String])
+
+object StateDefinition {
+  implicit class RichStateDefinitionsSet(definitions: Set[StateDefinition]) {
+    def toMapByName: Map[StatusName, StateDefinition] = definitions.map(d => (d.name, d)).toMap
+  }
+}
