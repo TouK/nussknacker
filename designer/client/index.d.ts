@@ -23,9 +23,9 @@ declare module "*.html" {
 }
 
 declare module "*.svg" {
-  const content: string
-  export const ReactComponent: React.FC<React.SVGProps<SVGSVGElement>>
-  export default content
+  const uri: string
+  export const ReactComponent: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  export default uri
 }
 
 declare module "!raw-loader!*" {

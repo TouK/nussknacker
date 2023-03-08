@@ -1,8 +1,8 @@
 import {css} from "@emotion/css"
-import React from "react"
+import React, {ReactElement} from "react"
 import HeaderIcon from "./HeaderIcon"
 
-export function IconWithLabel({icon, message}: { icon: string, message: string }): JSX.Element {
+export function IconWithLabel({icon, message}: { icon: ReactElement, message: string }): JSX.Element {
   return (
     <div className={css({display: "flex", alignItems: "center"})}>
       <HeaderIcon

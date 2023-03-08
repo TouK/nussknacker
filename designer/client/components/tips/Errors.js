@@ -1,7 +1,7 @@
 import PropTypes from "prop-types"
 import React from "react"
 import {v4 as uuid4} from "uuid"
-import InlinedSvgs from "../../assets/icons/InlinedSvgs"
+import {ReactComponent as TipsError} from "../../assets/img/icons/tipsError.svg"
 import HeaderIcon from "./HeaderIcon"
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection"
 import i18next from "i18next"
@@ -22,22 +22,25 @@ export default class Errors extends React.Component {
     )
   }
 
-  headerIcon = (errors) => _.isEmpty(errors.globalErrors) && _.isEmpty(errors.invalidNodes) && _.isEmpty(errors.processPropertiesErrors) ? null :
-  <HeaderIcon className={"icon"} icon={InlinedSvgs.tipsError}/>
+  headerIcon = (errors) => _.isEmpty(errors.globalErrors) && _.isEmpty(errors.invalidNodes) && _.isEmpty(errors.processPropertiesErrors) ?
+    null :
+    <HeaderIcon className={"icon"} icon={<TipsError/>}/>
 
   errorTips = (errors) => {
     const globalErrors = errors.globalErrors
     const nodeErrors = errors.invalidNodes
     const propertiesErrors = errors.processPropertiesErrors
 
-    return _.isEmpty(nodeErrors) && _.isEmpty(propertiesErrors) && _.isEmpty(globalErrors) ? null : (
-      <div className={"node-error-section"}>
-        <div>
-          {this.globalErrorsTips(globalErrors)}
-          {this.nodeErrorsTips(propertiesErrors, nodeErrors)}
+    return _.isEmpty(nodeErrors) && _.isEmpty(propertiesErrors) && _.isEmpty(globalErrors) ?
+      null :
+      (
+        <div className={"node-error-section"}>
+          <div>
+            {this.globalErrorsTips(globalErrors)}
+            {this.nodeErrorsTips(propertiesErrors, nodeErrors)}
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
   globalErrorsTips = (globalErrors) => (
     <div>

@@ -1,8 +1,8 @@
-import React from "react"
+import React, {ReactElement} from "react"
 import HeaderIcon from "./HeaderIcon"
 
 export default function ValidTip({icon, message}: {
-  icon: string,
+  icon: ReactElement,
   message: string,
 }) {
 

@@ -7,7 +7,8 @@ import {bindActionCreators, Dispatch} from "redux"
 import {getBackendNotifications, getNotifications} from "../reducers/selectors/other"
 import {useInterval} from "./Interval"
 import Notification from "../components/notifications/Notification"
-import InlinedSvgs from "../assets/icons/InlinedSvgs"
+import {ReactComponent as TipsSuccess} from "../assets/img/icons/tipsSuccess.svg"
+import {ReactComponent as TipsError} from "../assets/img/icons/tipsError.svg"
 import {v4 as uuid4} from "uuid"
 import {markBackendNotificationRead, updateBackendNotifications} from "../actions/nk/notifications"
 import {displayCurrentProcessVersion, displayProcessActivity, loadProcessState} from "../actions/nk"
@@ -15,7 +16,7 @@ import {getProcessId} from "../reducers/selectors/graph"
 
 function prepareNotification(backendNotification: BackendNotification, dispatch: Dispatch<any>) {
   const autoDismiss = backendNotification.type == "error" ? 0 : 10
-  const icon = backendNotification.type == "error" ? InlinedSvgs.tipsError : InlinedSvgs.tipsSuccess
+  const icon = backendNotification.type == "error" ? <TipsError/> : <TipsSuccess/>
   return ReactNotifications.show({
     autoDismiss: autoDismiss,
     uid: backendNotification.id,

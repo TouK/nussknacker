@@ -1,11 +1,11 @@
-import React from "react"
+import React, {ReactElement} from "react"
 
 export default function HeaderIcon({className, icon}: {
-  icon: string,
+  icon: ReactElement,
   className?: string,
 }) {
   return (
-    <div className={className} title="icon" dangerouslySetInnerHTML={{__html: icon}}/>
+    <div className={className} title="icon">{icon}</div>
   )
 }
 

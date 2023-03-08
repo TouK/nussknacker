@@ -1,5 +1,5 @@
 import React from "react"
-import InlinedSvgs from "../../../assets/icons/InlinedSvgs"
+import {ReactComponent as TipsError} from "../../../assets/img/icons/tipsError.svg"
 import NodeTip from "./NodeTip"
 import {css} from "@emotion/css"
 import {NodeValidationError} from "../../../types"
@@ -25,7 +25,7 @@ export default function NodeErrors(props: { errors: NodeValidationError[], messa
       },
     })}
     >
-      <NodeTip title={errorMessage} icon={InlinedSvgs.tipsError}/>
+      <NodeTip title={errorMessage} icon={<TipsError/>}/>
       <div>
         {errors.map(({description, fieldName, message}, index) => (
           <div
