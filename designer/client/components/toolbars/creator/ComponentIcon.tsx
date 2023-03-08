@@ -5,7 +5,7 @@ import ProcessUtils from "../../../common/ProcessUtils"
 import {absoluteBePath} from "../../../common/UrlUtils"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {NodeType, ProcessDefinitionData} from "../../../types"
-import SvgDiv from "../../SvgDiv"
+import {ReactComponent as PropertiesSvg} from "../../../assets/img/properties.svg"
 
 const preloadImage = memoize((href: string) => new Promise<string>(resolve => {
   const image = new Image()
@@ -49,7 +49,11 @@ export function useComponentIcon(node: NodeType): string {
 export function ComponentIcon({node, className}: { node: NodeType, className?: string }): JSX.Element {
   const icon = useComponentIcon(node)
   if (!icon) {
-    return <SvgDiv className={className} svgFile={"properties.svg"}/>
+    return (
+      <div className={className}>
+        <PropertiesSvg/>
+      </div>
+    )
   }
   return <img src={icon} alt={node.type} className={className}/>
 }

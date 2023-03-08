@@ -1,23 +1,33 @@
-import React, {PropsWithChildren, useEffect, useState} from "react"
+import React, {ComponentType, DetailedHTMLProps, ImgHTMLAttributes, PropsWithChildren, useEffect, useState} from "react"
 import {absoluteBePath} from "../common/UrlUtils"
-import SvgDiv from "./SvgDiv"
+import {InlineSvg, InlineSvgProps} from "./SvgDiv"
 
-function UrlIcon({path, title, children}: PropsWithChildren<{ path?: string, title?: string }>): JSX.Element {
-  const [error, setError] = useState(!path)
-
-  useEffect(() => {
-    setError(!path)
-  }, [path])
-
-  if (error) {
-    return <>{children}</>
-  }
-
-  return (
-    <SvgDiv svgFile={path}>
-      <img onError={() => setError(true)} src={absoluteBePath(path)} title={title}/>
-    </SvgDiv>
-  )
+interface ImageWithFallbackProps extends DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement> {
+  src: string,
+  FallbackComponent?: ComponentType,
 }
 
-export default UrlIcon
+function ImageWithFallback({src, FallbackComponent, ...props}: PropsWithChildren<ImageWithFallbackProps>): JSX.Element {
+  const [error, setError] = useState(!src)
+
+  useEffect(() => {
+    setError(!src)
+  }, [src])
+
+  if (error && FallbackComponent) {
+    return <FallbackComponent/>
+  }
+
+  return <img onError={() => setError(true)} src={absoluteBePath(src)} {...props}/>
+}
+
+export type UrlIconProps = InlineSvgProps & ImageWithFallbackProps
+
+export default function UrlIcon(props: UrlIconProps): JSX.Element {
+  switch (true) {
+    case /\.svg$/i.test(props.src):
+      return <InlineSvg {...props}/>
+    default:
+      return <ImageWithFallback {...props}/>
+  }
+}

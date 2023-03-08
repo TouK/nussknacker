@@ -3,15 +3,8 @@ import React, {memo} from "react"
 import {connect} from "react-redux"
 import {SwitchTransition} from "react-transition-group"
 import {RootState} from "../../../reducers"
-import {
-  getFetchedProcessDetails,
-  getProcessUnsavedNewName,
-  isProcessRenamed,
-} from "../../../reducers/selectors/graph"
-import {
-  getProcessState,
-  isProcessStateLoaded
-} from "../../../reducers/selectors/scenarioState";
+import {getFetchedProcessDetails, getProcessUnsavedNewName, isProcessRenamed} from "../../../reducers/selectors/graph"
+import {getProcessState, isProcessStateLoaded} from "../../../reducers/selectors/scenarioState"
 import {getCustomActions} from "../../../reducers/selectors/settings"
 import {UnknownRecord} from "../../../types/common"
 import {CssFade} from "../../CssFade"
@@ -43,13 +36,9 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
               <div className={"panel-process-info"}>
                 <div className={"process-info-icon"}>
                   <ProcessStateIcon
-                    popover={true}
-                    animation={true}
                     process={process}
                     processState={processState}
                     isStateLoaded={isStateLoaded}
-                    height={32}
-                    width={32}
                   />
                 </div>
                 <div className={"process-info-text"}>
