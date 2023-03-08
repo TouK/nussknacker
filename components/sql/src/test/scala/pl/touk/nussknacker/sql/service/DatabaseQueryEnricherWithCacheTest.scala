@@ -49,5 +49,12 @@ class DatabaseQueryEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
     result2 shouldBe List(
       TypedMap(Map("ID" -> 1, "NAME" -> "John"))
     )
+
+    service.close() // it's not production behaviour - we only close service to make sure DB connection is closed, and prove that value is populated from cache.
+    val resultF3 = invoker.invokeService(Map("arg1" -> 1))
+    val result3 = Await.result(resultF3, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
+    result3 shouldBe List(
+      TypedMap(Map("ID" -> 1, "NAME" -> "John"))
+    )
   }
 }

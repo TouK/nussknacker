@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.sql.service
 
-import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.{AsyncCache, Caffeine}
 import pl.touk.nussknacker.engine.api.ContextId
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
@@ -31,7 +31,7 @@ class DatabaseEnricherInvokerWithCache(query: String,
   import DatabaseEnricherInvokerWithCache._
 
   // TODO: cache size
-  private val cache = Caffeine.newBuilder()
+  private val cache: AsyncCache[CacheKey, CacheEntry[queryExecutor.QueryResult]] = Caffeine.newBuilder()
     .expireAfterWrite(cacheTTL)
     .buildAsync[CacheKey, CacheEntry[queryExecutor.QueryResult]]
 
@@ -42,11 +42,11 @@ class DatabaseEnricherInvokerWithCache(query: String,
     getTimeMeasurement().measuring {
       val queryArguments = queryArgumentsExtractor(argsCount, params)
       val cacheKey = CacheKey(query, queryArguments)
-      Option(cache.getIfPresent(cacheKey)).map(_.toScala.map(_.value)).getOrElse {
-        val queryResult: Future[queryExecutor.QueryResult] = queryDatabase(queryArguments)
-        cache.put(cacheKey, queryResult.map(CacheEntry(_)).toJava.toCompletableFuture)
-        queryResult
-      }
+
+      cache.get(cacheKey, (k, unused) => {
+        // we use our own executor
+        queryDatabase(k.queryArguments).map(CacheEntry(_)).toJava.toCompletableFuture
+      }).toScala.map(_.value)
     }
   }
 }

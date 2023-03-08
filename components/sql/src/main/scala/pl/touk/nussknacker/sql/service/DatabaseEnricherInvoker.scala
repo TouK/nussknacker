@@ -33,12 +33,13 @@ class DatabaseEnricherInvoker(query: String,
       queryDatabase(queryArgumentsExtractor(argsCount, params))
     }
 
-  protected def queryDatabase(queryArguments: QueryArguments)(implicit ec: ExecutionContext): Future[queryExecutor.QueryResult] = Future {
-    withConnection(query) { statement =>
-      setQueryArguments(statement, queryArguments)
-      queryExecutor.execute(statement)
+  protected def queryDatabase(queryArguments: QueryArguments)(implicit ec: ExecutionContext): Future[queryExecutor.QueryResult] =
+    Future {
+      withConnection(query) { statement =>
+        setQueryArguments(statement, queryArguments)
+        queryExecutor.execute(statement)
+      }
     }
-  }
 
   protected def setQueryArguments(statement: PreparedStatement, queryArguments: QueryArguments): Unit =
     queryArguments.value.foreach { arg =>
