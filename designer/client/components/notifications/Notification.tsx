@@ -2,7 +2,6 @@ import {isEmpty} from "lodash"
 import React, {ReactElement} from "react"
 import Dotdotdot from "react-dotdotdot"
 import {ReactComponent as TipsClose} from "../../assets/img/icons/tipsClose.svg"
-import HeaderIcon from "../tips/HeaderIcon"
 import classnames from "./notifications.styl"
 
 interface Props {
@@ -23,7 +22,7 @@ export default function Notification({icon, message, details}: Props): JSX.Eleme
           </Dotdotdot>
         )}
       </div>
-      <HeaderIcon className={classnames.dismissIcon} icon={<TipsClose/>}/>
+      <TipsClose className={classnames.dismissIcon}/>
     </div>
   )
 }

@@ -14,7 +14,7 @@ function ProcessDialogWarnings(): JSX.Element {
       (
         <h5 className={css({color: theme.colors.warning})}>
           <IconWithLabel
-            icon={<TipsWarning/>}
+            icon={TipsWarning}
             message={"Warnings found - please look at left panel to see details. Proceed with caution"}
           />
         </h5>

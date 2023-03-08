@@ -9,8 +9,8 @@ export default function ValidTips(props: {hasNeitherErrorsNorWarnings?: boolean,
 
   return (
     <React.Fragment>
-      {hasNeitherErrorsNorWarnings && <ValidTip icon={<TipsSuccess/>} message={"Everything seems to be OK"}/>}
-      {testing && <ValidTip icon={<TestingMode/>} message={"Testing mode enabled"}/>}
+      {hasNeitherErrorsNorWarnings && <ValidTip icon={TipsSuccess} message={"Everything seems to be OK"}/>}
+      {testing && <ValidTip icon={TestingMode} message={"Testing mode enabled"}/>}
     </React.Fragment>
   )
 }

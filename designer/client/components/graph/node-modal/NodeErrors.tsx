@@ -12,19 +12,20 @@ export default function NodeErrors(props: { errors: NodeValidationError[], messa
     return null
   }
 
+  const className = css({
+    display: "flex",
+    margin: 0,
+    "&&& .node-tip": {
+      margin: ".5em 1em .5em 0",
+    },
+    "&&& .node-error": {
+      padding: 0,
+      margin: "0 0 .5em 0",
+    },
+  })
+
   return (
-    <div className={css({
-      display: "flex",
-      margin: 0,
-      "&&& .node-tip": {
-        margin: ".5em 1em .5em 0",
-      },
-      "&&& .node-error": {
-        padding: 0,
-        margin: "0 0 .5em 0",
-      },
-    })}
-    >
+    <div className={className}>
       <NodeTip title={errorMessage} icon={<TipsError/>}/>
       <div>
         {errors.map(({description, fieldName, message}, index) => (

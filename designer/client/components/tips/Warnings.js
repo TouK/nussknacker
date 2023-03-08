@@ -4,7 +4,6 @@ import {Link} from "react-router-dom"
 import {v4 as uuid4} from "uuid"
 import {ReactComponent as TipsWarning} from "../../assets/img/icons/tipsWarning.svg"
 import NodeUtils from "../graph/NodeUtils"
-import HeaderIcon from "./HeaderIcon"
 
 export default class Warnings extends React.Component {
 
@@ -21,7 +20,7 @@ export default class Warnings extends React.Component {
 
     return (
       <div key={uuid4()}>
-        {warnings.length > 0 && <HeaderIcon className={"icon"} icon={<TipsWarning/>}/>}
+        {warnings.length > 0 && <TipsWarning className={"icon"}/>}
         <div>
           {
             Object.entries(groupedByMessage).map(([message, warnings]) => (
