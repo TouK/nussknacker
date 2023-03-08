@@ -33,19 +33,20 @@ class DatabaseEnricherInvokerWithCache(query: String,
   // TODO: cache size
   private val cache = Caffeine.newBuilder()
     .expireAfterWrite(cacheTTL)
-    .build[CacheKey, CacheEntry[queryExecutor.QueryResult]]
+    .buildAsync[CacheKey, CacheEntry[queryExecutor.QueryResult]]
+
+  import scala.compat.java8.FutureConverters._
 
   override def invokeService(params: Map[String, Any])
                             (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, componentUseCase: ComponentUseCase): Future[queryExecutor.QueryResult] = {
     getTimeMeasurement().measuring {
       val queryArguments = queryArgumentsExtractor(argsCount, params)
       val cacheKey = CacheKey(query, queryArguments)
-      val result = Option(cache.getIfPresent(cacheKey)).map(_.value).getOrElse {
-        val queryResult = queryDatabase(queryArguments)
-        cache.put(cacheKey, CacheEntry(queryResult))
+      Option(cache.getIfPresent(cacheKey)).map(_.toScala.map(_.value)).getOrElse {
+        val queryResult: Future[queryExecutor.QueryResult] = queryDatabase(queryArguments)
+        cache.put(cacheKey, queryResult.map(CacheEntry(_)).toJava.toCompletableFuture)
         queryResult
       }
-      Future.successful(result)
     }
   }
 }
