@@ -20,7 +20,12 @@ private[encode] case class JsonSchemaExpected(schema: Schema, rootSchema: Schema
 }
 
 private[encode] case class NumberSchemaRangeExpected(schema: NumberSchema) extends OutputValidatorExpected {
-  override def expected: String = s"${minimumValue.getOrElse("-inf")} and ${maximumValue.getOrElse("+inf")}"
+  override def expected: String = (minimumValue, maximumValue) match {
+    case (Some(min), Some(max)) => s"between $min and $max"
+    case (Some(min), None ) => s"greater than or equal to $min"
+    case (None, Some(max) ) => s"less than or equal to $max"
+    case _ => ""
+  }
 
   private val minimumValue = List(
     Option(schema.getMinimum).map(x => BigInt(s"$x")),

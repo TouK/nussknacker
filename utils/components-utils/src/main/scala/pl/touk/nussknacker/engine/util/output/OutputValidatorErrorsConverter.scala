@@ -24,7 +24,7 @@ class OutputValidatorErrorsConverter(schemaParamName: String) {
     )
 
     val fieldsRangeError  = errors.collect { case e: OutputValidatorRangeTypeError => e }.map(err =>
-      s"${err.field.map(f => s"path '$f' ").getOrElse("")}actual value: '${err.actual.valueOpt.orNull}' should be between ${err.expected.expected}"
+      s"${err.field.map(f => s"path '$f' ").getOrElse("")}actual value: '${err.actual.valueOpt.orNull}' should be ${err.expected.expected}"
     )
 
     val message = makeMessage(messageTypeFieldErrors, missingFieldsError, redundantFieldsError, fieldsRangeError)

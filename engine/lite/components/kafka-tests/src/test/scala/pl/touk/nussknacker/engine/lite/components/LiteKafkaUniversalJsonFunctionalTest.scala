@@ -69,7 +69,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       //Primitive integer validations
       (config(fromLong(Integer.MAX_VALUE.toLong + 1), schemaInteger, schemaIntegerRange), invalidTypes("actual: 'Long' expected: 'Integer'")),
       (config(sampleJInt, schemaInteger, schemaIntegerRange0to100, fromInt(200)), invalidRanges("actual value: '200' should be between 0 and 100")),
-      (config(sampleJInt, schemaInteger, schemaIntegerRangeTo100, fromInt(200)), invalidRanges("actual value: '200' should be between -inf and 100")),
+      (config(sampleJInt, schemaInteger, schemaIntegerRangeTo100, fromInt(200)), invalidRanges("actual value: '200' should be less than or equal to 100")),
       (config(sampleJInt, schemaInteger, schemaIntegerRange0to100, fromInt(100)), valid(fromInt(100))),
       (config(sampleJInt, schemaIntegerRange, schemaInteger), valid(sampleJInt)),
       (config(fromLong(Integer.MAX_VALUE), schemaIntegerRange, schemaIntegerRange), valid(fromInt(Integer.MAX_VALUE))),
@@ -167,8 +167,8 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       ("input", "sourceSchema", "sinkSchema", "validationModes", "result"),
       (samplePerson, schemaPerson, schemaPersonWithLimits, strictAndLax, valid(samplePerson)),
       (sampleInvalidPerson, schemaPerson, schemaPersonWithLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be between 10 and 200")),
-      (sampleInvalidPerson, schemaPerson, schemaPersonWithUpperLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be between -inf and 200")),
-      (sampleInvalidPerson, schemaPerson, schemaPersonWithLowerLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be between 301 and +inf")),
+      (sampleInvalidPerson, schemaPerson, schemaPersonWithUpperLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be less than or equal to 200")),
+      (sampleInvalidPerson, schemaPerson, schemaPersonWithLowerLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be greater than or equal to 301")),
     )
     //@formatter:on
 
