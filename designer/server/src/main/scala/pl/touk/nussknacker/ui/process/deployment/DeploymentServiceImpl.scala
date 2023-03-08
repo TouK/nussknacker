@@ -103,8 +103,8 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }
   }
 
-  private def validateBeforeDeploy(processDetails: BaseProcessDetails[CanonicalProcess], actionId: ProcessActionId)
-                                  (implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
+  protected def validateBeforeDeploy(processDetails: BaseProcessDetails[CanonicalProcess], actionId: ProcessActionId)
+                                    (implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
     validateProcess(processDetails)
     val deploymentManager = dispatcher.deploymentManager(processDetails.processingType)
     for {
@@ -164,7 +164,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }
   }
 
-  private def prepareDeploymentData(user: User, deploymentId: DeploymentId) = {
+  protected def prepareDeploymentData(user: User, deploymentId: DeploymentId): DeploymentData = {
     DeploymentData(deploymentId, user, Map.empty)
   }
 

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
@@ -29,7 +29,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContextExecutor
 
 class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with DBIOActionValues
-  with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting {
+  with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting with EitherValuesDetailedMessage {
 
   import TestCategories._
   import TestFactory._
@@ -499,11 +499,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
     val action = CreateProcessAction(processName, TestCat, canonicalProcess, Streaming, isSubprocess = false)
-
-    for {
-      _ <- writeProcessRepository.saveNewProcess(action)
-      id <- fetchingProcessRepository.fetchProcessId(processName).map(_.get)
-    } yield id
+    writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
   }
 
   private def prepareArchivedProcess(processName: ProcessName): DB[ProcessId] = {
