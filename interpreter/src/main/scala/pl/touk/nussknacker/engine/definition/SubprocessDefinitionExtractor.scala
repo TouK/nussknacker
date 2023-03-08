@@ -21,7 +21,11 @@ case class SubprocessDetails(canonical: CanonicalProcess, category: String)
 
 class SubprocessDefinitionExtractor(category:String, subprocessesDetails:Set[SubprocessDetails], subprocessesConfig:Map[String, SingleComponentConfig], classLoader: ClassLoader) {
 
-  def extract: Map[String, ObjectDefinition] = {
+  def extract(subprocessId: String): List[Parameter] = {
+    extract.getOrElse(subprocessId, ObjectDefinition.withParams(List.empty)).parameters
+  }
+
+  private def extract: Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, FragmentSpecificData(docsUrl), _, _), FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>
         val config = subprocessesConfig.getOrElse(id, SingleComponentConfig.zero).copy(docsUrl = docsUrl)
@@ -31,7 +35,6 @@ class SubprocessDefinitionExtractor(category:String, subprocessesDetails:Set[Sub
     }.toMap
     subprocessInputs
   }
-
 }
 
 object SubprocessDefinitionExtractor {

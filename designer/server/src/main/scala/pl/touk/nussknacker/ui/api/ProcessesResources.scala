@@ -173,7 +173,8 @@ class ProcessesResources(
                       subprocessesConfig  = subprocessesConfig,
                       classLoader         = classLoader
                     )
-                    val subprocessesDefinition = subprocessDefinitionExtractor.extract
+                    val subprocessesDefinition = subprocessDefinitionExtractor.extract(process.id)
+
                     validateAndReverseResolve(enrichDetailsWithProcessState(process))
                   }
                   case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")

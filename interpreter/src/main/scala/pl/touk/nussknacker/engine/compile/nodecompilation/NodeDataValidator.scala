@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.Applicative
-import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
@@ -15,6 +14,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, InputValidationResponse, Output, SubprocessResolver}
+import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
@@ -41,15 +41,16 @@ object NodeDataValidator {
                branchContexts: Map[String, ValidationContext],
                getFragment: String => Option[CanonicalProcess],
                outgoingEdges: List[OutgoingEdge]
-              )(implicit metaData: MetaData): ValidationResponse = {
+              )(implicit metaData: MetaData, subprocessDefinitionExtractor: SubprocessDefinitionExtractor): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
 
       val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
-      val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
-        expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
       implicit val nodeId: NodeId = NodeId(nodeData.id)
+      implicit val parametersDefinitionExtractor = subprocessDefinitionExtractor
+      val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
+        expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.Validation)(parametersDefinitionExtractor)
 
       nodeData match {
         case a: Join => toValidationResponse(compiler.compileCustomNodeObject(a, Right(branchContexts), ending = false))

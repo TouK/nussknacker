@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExc
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, SubprocessDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.{DefaultExpressionId, branchParameterExpressionId}
@@ -64,7 +64,9 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                    objectParametersExpressionCompiler: ExpressionCompiler,
                    classLoader: ClassLoader,
                    resultCollector: ResultCollector,
-                   componentUseCase: ComponentUseCase) {
+                   componentUseCase: ComponentUseCase)
+                  (implicit parametersDefinitionExtractor: SubprocessDefinitionExtractor){
+
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
     new NodeCompiler(definitions, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, componentUseCase)
@@ -135,14 +137,23 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
   }
 
+
   def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)
                             (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
+    def validateParams (defParams: List[Parameter], actualParams: List[evaluatedparam.Parameter]):ValidatedNel[PartSubGraphCompilationError, Unit]={
+      if (defParams.size == 0) valid(())
+      else Validations.validateParameters(
+        defParams,
+        actualParams
+      )
+    }
+
     val ref = subprocessInput.ref
+    val parametersDefinition = parametersDefinitionExtractor.extract(nodeId.id)
 
-//    val verifiedParams: ValidatedNel[PartSubGraphCompilationError, Unit] =
-//      Validations.validateParameters(parameterDefinitions.get(ref.id), ref.parameters)
+    val validParamDefs: ValidatedNel[PartSubGraphCompilationError, List[Parameter]] = validateParams(parametersDefinition, ref.parameters)
+      .andThen(_ =>  ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence)
 
-    val validParamDefs = ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
     val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>
       ps.map(p => (p.name, p.typ))
     }.getOrElse(ref.parameters.map(p => (p.name, Unknown)))

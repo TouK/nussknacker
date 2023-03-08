@@ -44,6 +44,7 @@ object ProcessCompilerData {
     val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
     //for testing environment it's important to take classloader from user jar
+//    TODO: pass subprocessDefinitionExtractor to nodeCompiler
     val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader, resultsCollector, componentUseCase)
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler, customProcessValidator)
