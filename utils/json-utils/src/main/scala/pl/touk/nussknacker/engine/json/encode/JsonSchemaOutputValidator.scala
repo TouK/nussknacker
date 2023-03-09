@@ -25,7 +25,7 @@ private[encode] case class NumberSchemaRangeExpected(schema: NumberSchema) exten
     case (Some(min), Some(max)) => s"between $min and $max"
     case (Some(min), None) => s"greater than or equal to $min"
     case (None, Some(max)) => s"less than or equal to $max"
-    case _ => throw new RuntimeException("Something went wrong. This should be unreachable.")
+    case _ => throw new IllegalArgumentException("Schema does not contain integer range. This should be unreachable.")
   }
 
   private val minimumValue = List(
