@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 
 import java.net.URI
@@ -20,7 +21,7 @@ class OverridingProcessStateDefinitionManager(statusActionsPF: PartialFunction[S
                                               statusIconsPF: PartialFunction[StateStatus, Option[URI]] = PartialFunction.empty,
                                               statusTooltipsPF: PartialFunction[StateStatus, Option[String]] = PartialFunction.empty,
                                               statusDescriptionsPF: PartialFunction[StateStatus, Option[String]] = PartialFunction.empty,
-                                              stateDefinitions: Set[StateDefinition] = Set.empty,
+                                              stateDefinitions: Map[StatusName, StateDefinition] = Map.empty,
                                               delegate: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager)
   extends ProcessStateDefinitionManager {
 
@@ -39,11 +40,11 @@ class OverridingProcessStateDefinitionManager(statusActionsPF: PartialFunction[S
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusDescriptionsPF.orElse(stateDefinitionsPF(_.description)).applyOrElse(stateStatus, delegate.statusDescription)
 
-  override def stateDefinitions(): Set[StateDefinition] =
-    (delegate.stateDefinitions().toMapByName ++ stateDefinitions.toMapByName).values.toSet
+  override def stateDefinitions(): Map[StatusName, StateDefinition] =
+    delegate.stateDefinitions() ++ stateDefinitions
 
   private def stateDefinitionsPF[T](map: StateDefinition => Option[T]): PartialFunction[StateStatus, Option[T]] = {
-    case stateStatus if stateDefinitions.toMapByName.contains(stateStatus.name) => stateDefinitions.toMapByName.get(stateStatus.name).flatMap(map)
+    case stateStatus if stateDefinitions.contains(stateStatus.name) => stateDefinitions.get(stateStatus.name).flatMap(map)
   }
 
 }

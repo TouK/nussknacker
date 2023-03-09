@@ -51,7 +51,7 @@ class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[Pro
         .deploymentManager
         .processStateDefinitionManager
         .stateDefinitions()
-        .map(sd => (processingType, sd.name, sd))
+        .map { case (name, sd) => (processingType, name, sd) }
     }.toSet
   }
 }
