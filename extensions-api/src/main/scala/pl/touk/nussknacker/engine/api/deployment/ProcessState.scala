@@ -57,6 +57,7 @@ object ProcessActionState extends Enumeration {
   type ProcessActionState = Value
   val InProgress: Value = Value("IN_PROGRESS")
   val Finished: Value = Value("FINISHED")
+  val Failed: Value = Value("FAILED")
 }
 
 object StateStatus {

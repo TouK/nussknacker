@@ -39,6 +39,8 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
 
     def state: Rep[ProcessActionState] = column[ProcessActionState]("state")
 
+    def failureMessage: Rep[Option[String]] = column[Option[String]]("failure_message")
+
     def commentId: Rep[Option[Long]] = column[Option[Long]]("comment_id")
 
     def processes_fk: ForeignKeyQuery[ProcessVersionEntityFactory#ProcessVersionEntity, ProcessVersionEntityData] = foreignKey("process_actions_version_fk", (processId, processVersionId), processVersionsTable)(
@@ -53,7 +55,7 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
       onDelete = ForeignKeyAction.SetNull
     )
 
-    def * : ProvenShape[ProcessActionEntityData] = (id, processId, processVersionId, user, createdAt, performedAt, action, state, commentId, buildInfo) <> (
+    def * : ProvenShape[ProcessActionEntityData] = (id, processId, processVersionId, user, createdAt, performedAt, action, state, failureMessage, commentId, buildInfo) <> (
       ProcessActionEntityData.apply _ tupled, ProcessActionEntityData.unapply
     )
   }
@@ -67,6 +69,7 @@ case class ProcessActionEntityData(id: ProcessActionId,
                                    performedAt: Option[Timestamp],
                                    action: ProcessActionType,
                                    state: ProcessActionState,
+                                   failureMessage: Option[String],
                                    commentId: Option[Long],
                                    buildInfo: Option[String]) {
 

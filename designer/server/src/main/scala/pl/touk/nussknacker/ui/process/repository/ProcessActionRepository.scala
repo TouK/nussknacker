@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ProcessActionType}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData, ProcessActionId}
@@ -19,7 +19,7 @@ import slick.dbio.DBIOAction
 import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 
 //TODO: Add missing methods: markProcessAsDeployed and markProcessAsCancelled
@@ -42,7 +42,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     val now = Instant.now()
     run(
       insertAction(None, processId, processVersion = processVersion, actionType = actionType, state = ProcessActionState.InProgress,
-      createdAt = now, performedAt = None, commentId = None, buildInfoProcessingType = buildInfoProcessingType).map(_.id))
+      createdAt = now, performedAt = None, failure = None, commentId = None, buildInfoProcessingType = buildInfoProcessingType).map(_.id))
   }
 
   // We add comment during marking action as finished because we don't want to show this comment for in progress actions
@@ -52,13 +52,32 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
                           (implicit user: LoggedUser): F[Unit] = {
     run(for {
       commentId <- newCommentAction(processId, processVersion, comment)
-      updated <- updateAction(actionId, processId, Some(processVersion), ProcessActionState.Finished, Some(performedAt), commentId)
+      updated <- updateAction(actionId, processId, Some(processVersion), ProcessActionState.Finished, Some(performedAt), None, commentId)
       _ <-
         if (updated) {
           DBIOAction.successful(())
         } else {
           // we have to revert action - in progress action was probably invalidated
-          insertAction(Some(actionId), processId, Some(processVersion), actionType, ProcessActionState.Finished, performedAt, Some(performedAt), commentId, buildInfoProcessingType)
+          insertAction(Some(actionId), processId, Some(processVersion), actionType, ProcessActionState.Finished,
+            performedAt, Some(performedAt), None, commentId, buildInfoProcessingType)
+        }
+    } yield ())
+  }
+
+  // We pass all parameters here because in_progress action can be invalidated and we have to revert it back
+  def markActionAsFailed(actionId: ProcessActionId, processId: ProcessId, actionType: ProcessActionType, processVersion: Option[VersionId],
+                         performedAt: Instant, failureMessage: String, buildInfoProcessingType: Option[ProcessingType])
+                        (implicit user: LoggedUser): F[Unit] = {
+    val failureMessageOpt = Option(failureMessage).map(_.take(1022)) // crop to not overflow column size)
+    run(for {
+      updated <- updateAction(actionId, processId, processVersion, ProcessActionState.Failed, Some(performedAt), failureMessageOpt, None)
+      _ <-
+        if (updated) {
+          DBIOAction.successful(())
+        } else {
+          // we have to revert action - in progress action was probably invalidated
+          insertAction(Some(actionId), processId, processVersion, actionType, ProcessActionState.Failed,
+            performedAt, Some(performedAt), failureMessageOpt, None, buildInfoProcessingType)
         }
     } yield ())
   }
@@ -78,12 +97,12 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     val now = Instant.now()
     run(for {
       commentId <- newCommentAction(processId, processVersion, comment)
-      result <- insertAction(None, processId, Some(processVersion), actionType, ProcessActionState.Finished, now, Some(now), commentId, buildInfoProcessingType)
+      result <- insertAction(None, processId, Some(processVersion), actionType, ProcessActionState.Finished, now, Some(now), None, commentId, buildInfoProcessingType)
     } yield result)
   }
 
   private def insertAction(actionIdOpt: Option[ProcessActionId], processId: ProcessId, processVersion: Option[VersionId], actionType: ProcessActionType, state: ProcessActionState,
-                           createdAt: Instant, performedAt: Option[Instant], commentId: Option[Long], buildInfoProcessingType: Option[ProcessingType])
+                           createdAt: Instant, performedAt: Option[Instant], failure: Option[String], commentId: Option[Long], buildInfoProcessingType: Option[ProcessingType])
                           (implicit user: LoggedUser): DB[ProcessActionEntityData] = {
     val actionId = actionIdOpt.getOrElse(ProcessActionId(UUID.randomUUID()))
     val buildInfoJsonOpt = buildInfoProcessingType.flatMap(buildInfos.forType).map(BuildInfo.writeAsJson)
@@ -91,11 +110,12 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
       id = actionId,
       processId = processId,
       processVersionId = processVersion,
-      user = user.username,
+      user = user.username, // TODO: it should be user.id not name
       createdAt = Timestamp.from(createdAt),
       performedAt = performedAt.map(Timestamp.from),
       action = actionType,
       state = state,
+      failureMessage = failure,
       commentId = commentId,
       buildInfo = buildInfoJsonOpt)
     (processActionsTable += processActionData).map { insertCount =>
@@ -105,12 +125,12 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     }
   }
 
-  private def updateAction(actionId: ProcessActionId, processId: ProcessId, processVersion: Option[VersionId], state: ProcessActionState, performedAt: Option[Instant], commentId: Option[Long])
-                          (implicit user: LoggedUser): DB[Boolean] = {
+  private def updateAction(actionId: ProcessActionId, processId: ProcessId, processVersion: Option[VersionId], state: ProcessActionState,
+                           performedAt: Option[Instant], failure: Option[String], commentId: Option[Long]): DB[Boolean] = {
     for {
       updateCount <- processActionsTable.filter(_.id === actionId)
-        .map(a => (a.performedAt, a.state, a.commentId))
-        .update((performedAt.map(Timestamp.from), state, commentId))
+        .map(a => (a.performedAt, a.state, a.failureMessage, a.commentId))
+        .update((performedAt.map(Timestamp.from), state, failure, commentId))
     } yield updateCount == 1
   }
 
@@ -124,6 +144,19 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
       .filter(action => action.processId === processId && action.state === ProcessActionState.InProgress)
       .map(_.action).distinct
     run(query.result.map(_.toSet))
+  }
+
+  def getUserActionsAfter(user: LoggedUser, possibleStates: Set[ProcessActionState], actionType: ProcessActionType, limit: Instant): F[Seq[(ProcessActionEntityData, ProcessName)]] = {
+    run(
+      processActionsTable
+        .filter(a => a.user === user.username && a.state.inSet(possibleStates) && a.action === actionType && a.performedAt > Timestamp.from(limit))
+        .join(processesTable).on((a, p) => p.id === a.processId)
+        .map {
+          case (a, p) => (a, p.name)
+        }
+        .sortBy(_._1.performedAt)
+        .result
+    )
   }
 
   def deleteInProgressActions(): F[Unit] = {

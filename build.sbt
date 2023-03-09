@@ -1515,6 +1515,7 @@ lazy val designer = (project in file("designer/server"))
 
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "test",
         "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaV % "test",
+        "org.scalatestplus" %% "mockito-4-6" % scalaTestPlusV % "test",
 
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-jmx" % dropWizardV,

@@ -28,7 +28,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
-import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationService, NotificationsListener}
+import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
@@ -125,9 +125,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val futureProcessRepository = DBFetchingProcessRepository.createFutureRespository(dbConfig)
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
-    val notificationListener = new NotificationsListener(resolvedConfig.as[NotificationConfig]("notifications"), futureProcessRepository.fetchProcessName(_))
+    val notificationsConfig = resolvedConfig.as[NotificationConfig]("notifications")
     val processChangeListener = ProcessChangeListenerLoader
-      .loadListeners(getClass.getClassLoader, resolvedConfig, NussknackerServices(new PullProcessRepository(futureProcessRepository)), notificationListener)
+      .loadListeners(getClass.getClassLoader, resolvedConfig, NussknackerServices(new PullProcessRepository(futureProcessRepository)))
 
     val scenarioResolver = new ScenarioResolver(subprocessResolver)
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
@@ -174,7 +174,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val componentService = DefaultComponentService(resolvedConfig, typeToConfig, processService, processCategoryService)
 
-    val notificationService = new NotificationService(notificationListener)
+    val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
 
     initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
