@@ -12,8 +12,7 @@ import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import shapeless.syntax.typeable.typeableOps
 
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 import scala.util.Try
@@ -39,7 +38,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     Some(SimpleProcessStateDefinitionManager.processState(status, Some(ExternalDeploymentId("1")), version))
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
-    Future.successful(managerProcessState.get())
+    Future.successful(managerProcessState.getOrDefault(name, prepareProcessState(defaultProcessStateStatus)))
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
@@ -57,7 +56,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
 
   private var cancelResult: Future[Unit] = Future.successful(())
 
-  private val managerProcessState = new AtomicReference[Option[ProcessState]](prepareProcessState(defaultProcessStateStatus))
+  private val managerProcessState = new ConcurrentHashMap[ProcessName, Option[ProcessState]]
 
   //queue of invocations to e.g. check that deploy was already invoked in "ProcessManager"
   val deploys = new ConcurrentLinkedQueue[ProcessName]()
@@ -102,28 +101,28 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     }
   }
 
-  def withProcessFinished[T](action: => T): T = {
-    withProcessStateStatus(SimpleStateStatus.Finished)(action)
+  def withProcessFinished[T](processName: ProcessName)(action: => T): T = {
+    withProcessStateStatus(processName, SimpleStateStatus.Finished)(action)
   }
 
-  def withProcessStateStatus[T](status: StateStatus)(action: => T): T = {
-    withProcessState(prepareProcessState(status))(action)
+  def withProcessStateStatus[T](processName: ProcessName, status: StateStatus)(action: => T): T = {
+    withProcessState(processName, prepareProcessState(status))(action)
   }
 
-  def withProcessStateVersion[T](status: StateStatus, version: Option[ProcessVersion])(action: => T): T = {
-    withProcessState(prepareProcessState(status, version))(action)
+  def withProcessStateVersion[T](processName: ProcessName, status: StateStatus, version: Option[ProcessVersion])(action: => T): T = {
+    withProcessState(processName, prepareProcessState(status, version))(action)
   }
 
-  def withEmptyProcessState[T](action: => T): T = {
-    withProcessState(None)(action)
+  def withEmptyProcessState[T](processName: ProcessName)(action: => T): T = {
+    withProcessState(processName, None)(action)
   }
 
-  def withProcessState[T](status: Option[ProcessState])(action: => T): T = {
+  def withProcessState[T](processName: ProcessName, status: Option[ProcessState])(action: => T): T = {
     try {
-      managerProcessState.set(status)
+      managerProcessState.put(processName, status)
       action
     } finally {
-      managerProcessState.set(prepareProcessState(defaultProcessStateStatus))
+      managerProcessState.remove(processName)
     }
   }
 

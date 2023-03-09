@@ -68,7 +68,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("process during deploy can be deployed again") {
     createDeployedProcess(processName, TestCat)
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringDeploy) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
       deployProcess(processName.value) ~> check {
         status shouldBe StatusCodes.OK
       }
@@ -78,7 +78,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("canceled process can't be canceled again") {
     createDeployedCanceledProcess(processName, TestCat)
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       cancelProcess(processName.value) ~> check {
         status shouldBe StatusCodes.Conflict
       }
@@ -89,7 +89,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     val id = createArchivedProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       deployProcess(processName.value) ~> check {
         status shouldBe StatusCodes.Conflict
         responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy, processIdWithName).message

@@ -116,7 +116,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("not allow to archive still running process") {
     createDeployedProcess(processName)
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       archiveProcess(processName) { status =>
         status shouldEqual StatusCodes.Conflict
       }
@@ -198,7 +198,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createEmptyProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       renameProcess(processName, newName) { status =>
         status shouldEqual StatusCodes.Conflict
       }
@@ -834,7 +834,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("fetching status for deployed process should properly return status") {
     createDeployedProcess(processName)
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       Get(s"/processes/${processName.value}/status") ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
         val stateStatusResponse = parseStateResponse(responseAs[Json])
