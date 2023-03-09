@@ -302,6 +302,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldBe List(asList(4, 3, 2, 1), asList(7, 6, 5), asList(8))
+
+    val nodeResults = runCollectOutputVariables(id, model, testProcess)
+    nodeResults.flatMap(_.variableTyped[TestRecord]("input")) shouldBe Nil
   }
 
   test("sum session aggregate on event with context") {
