@@ -132,7 +132,7 @@ object transformers {
             case SessionWindowTrigger.OnEvent =>
               keyedStream.eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
             case SessionWindowTrigger.OnEnd =>
-              keyedStream.window(EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis)))
+              keyedStream.window(windowDefinition)
                 .trigger(baseTrigger)
                 .aggregate(
                   new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1),
