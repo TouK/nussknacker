@@ -32,10 +32,10 @@ object SimpleStateStatus {
   val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
     SimpleStateStatus.Unknown -> List(ProcessActionType.Deploy),
     SimpleStateStatus.NotDeployed -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
-    SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Deploy, ProcessActionType.Cancel), // Deploy? see FlinkStateStatus
+    SimpleStateStatus.DuringDeploy -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Running -> List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy),
     SimpleStateStatus.Canceled -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
-    SimpleStateStatus.Restarting -> List(ProcessActionType.Deploy, ProcessActionType.Cancel), // Deploy? see FlinkStateStatus
+    SimpleStateStatus.Restarting -> List(ProcessActionType.Deploy, ProcessActionType.Cancel),
     SimpleStateStatus.Finished -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
