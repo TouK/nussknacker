@@ -13,8 +13,9 @@ import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
                                    toRefresh: List[DataToRefresh])
 
 object Notification {
-  def deploymentFailedNotification(id: String, name: ProcessName, reason: String): Notification = {
-    Notification(id, Some(name), s"Deployment of ${name.value} failed with $reason", Some(NotificationType.error), List(DataToRefresh.state))
+  def deploymentFailedNotification(id: String, name: ProcessName, failureMessageOpt: Option[String]): Notification = {
+    Notification(id, Some(name), s"Deployment of ${name.value} failed" + failureMessageOpt.map(" with reason: " + _).getOrElse(""),
+      Some(NotificationType.error), List(DataToRefresh.state))
   }
 
   def deploymentFinishedNotification(id: String, name: ProcessName): Notification = {

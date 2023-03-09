@@ -66,17 +66,18 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
 
   // We pass all parameters here because in_progress action can be invalidated and we have to revert it back
   def markActionAsFailed(actionId: ProcessActionId, processId: ProcessId, actionType: ProcessActionType, processVersion: Option[VersionId],
-                         performedAt: Instant, failure: String, buildInfoProcessingType: Option[ProcessingType])
+                         performedAt: Instant, failureMessage: String, buildInfoProcessingType: Option[ProcessingType])
                         (implicit user: LoggedUser): F[Unit] = {
+    val failureMessageOpt = Option(failureMessage).map(_.take(1022)) // crop to not overflow column size)
     run(for {
-      updated <- updateAction(actionId, processId, processVersion, ProcessActionState.Failed, Some(performedAt), Some(failure), None)
+      updated <- updateAction(actionId, processId, processVersion, ProcessActionState.Failed, Some(performedAt), failureMessageOpt, None)
       _ <-
         if (updated) {
           DBIOAction.successful(())
         } else {
           // we have to revert action - in progress action was probably invalidated
           insertAction(Some(actionId), processId, processVersion, actionType, ProcessActionState.Failed,
-            performedAt, Some(performedAt), Some(failure), None, buildInfoProcessingType)
+            performedAt, Some(performedAt), failureMessageOpt, None, buildInfoProcessingType)
         }
     } yield ())
   }
@@ -114,7 +115,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
       performedAt = performedAt.map(Timestamp.from),
       action = actionType,
       state = state,
-      failure = failure,
+      failureMessage = failure,
       commentId = commentId,
       buildInfo = buildInfoJsonOpt)
     (processActionsTable += processActionData).map { insertCount =>
@@ -128,7 +129,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
                            performedAt: Option[Instant], failure: Option[String], commentId: Option[Long]): DB[Boolean] = {
     for {
       updateCount <- processActionsTable.filter(_.id === actionId)
-        .map(a => (a.performedAt, a.state, a.failure, a.commentId))
+        .map(a => (a.performedAt, a.state, a.failureMessage, a.commentId))
         .update((performedAt.map(Timestamp.from), state, failure, commentId))
     } yield updateCount == 1
   }

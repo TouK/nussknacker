@@ -27,8 +27,8 @@ class NotificationServiceImpl(actionRepository: DbProcessActionRepository[DB], d
     dbioRunner.run(actionRepository.getUserActionsAfter(user, Set(ProcessActionState.Failed, ProcessActionState.Finished), ProcessActionType.Deploy, limit)).map(_.map {
       case (ProcessActionEntityData(id, _, _, _, _, _, _, ProcessActionState.Finished, _, _, _), processName) =>
         Notification.deploymentFinishedNotification(id.toString, processName)
-      case (ProcessActionEntityData(id, _, _, _, _, _, _, ProcessActionState.Failed, Some(failure), _, _), processName) =>
-        Notification.deploymentFailedNotification(id.toString, processName, failure)
+      case (ProcessActionEntityData(id, _, _, _, _, _, _, ProcessActionState.Failed, failureMessageOpt, _, _), processName) =>
+        Notification.deploymentFailedNotification(id.toString, processName, failureMessageOpt)
       case (a, processName) =>
         throw new IllegalStateException(s"Unexpected action returned by query: $a, for scenario: $processName")
     }.toList)

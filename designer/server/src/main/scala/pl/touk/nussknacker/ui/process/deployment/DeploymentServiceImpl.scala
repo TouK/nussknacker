@@ -184,10 +184,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       case Failure(failure) =>
         logger.error(s"Action: $actionString finished with failure", failure)
         val performedAt = clock.instant()
-        val failureMessage = failure.getMessage.take(1022) // crop to not overflow column size
         processChangeListener.handle(OnDeployActionFailed(processIdWithName.id, failure))
         dbioRunner.runInTransaction(
-          actionRepository.markActionAsFailed(actionId, processIdWithName.id, actionType, versionOnWhichActionIsDoneOpt, performedAt, failureMessage, buildInfoProcessIngType)
+          actionRepository.markActionAsFailed(actionId, processIdWithName.id, actionType, versionOnWhichActionIsDoneOpt, performedAt, failure.getMessage, buildInfoProcessIngType)
         ).transform(_ => Failure(failure))
       case Success(result) =>
         versionOnWhichActionIsDoneOpt.map { versionOnWhichActionIsDone =>

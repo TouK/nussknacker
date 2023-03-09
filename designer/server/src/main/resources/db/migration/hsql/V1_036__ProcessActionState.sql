@@ -8,7 +8,7 @@ ALTER TABLE "process_actions" ALTER COLUMN "process_version_id" SET NULL;
 ALTER TABLE "process_actions" ADD COLUMN "id" UUID;
 ALTER TABLE "process_actions" ADD COLUMN "state" VARCHAR(16);
 ALTER TABLE "process_actions" ADD COLUMN "created_at" TIMESTAMP;
-ALTER TABLE "process_actions" ADD COLUMN "failure" VARCHAR(1022);
+ALTER TABLE "process_actions" ADD COLUMN "failure_message" VARCHAR(1022);
 
 --- UPDATE OLD VALUES
 UPDATE "process_actions" set "state" = 'FINISHED', "created_at" = "performed_at";
