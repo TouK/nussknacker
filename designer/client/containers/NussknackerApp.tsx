@@ -51,6 +51,7 @@ export function NussknackerApp() {
                 "--warnColor": theme.colors.warning,
                 "--errorColor": theme.colors.error,
                 "--successColor": theme.colors.sucess,
+                "--infoColor": theme.colors.accent,
               },
             })}
             />

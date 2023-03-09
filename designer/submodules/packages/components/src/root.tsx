@@ -1,4 +1,4 @@
-import { CssBaseline } from "@mui/material";
+import { CssBaseline, GlobalStyles } from "@mui/material";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import React from "react";
 import { RootProvidersWithAuth } from "./settings";
@@ -12,6 +12,16 @@ export const Root = (): JSX.Element => {
     return (
         <MuiThemeProvider theme={defaultTheme}>
             <CssBaseline />
+            <GlobalStyles
+                styles={(theme) => ({
+                    ":root": {
+                        "--warnColor": theme.palette.warning.main,
+                        "--errorColor": theme.palette.error.main,
+                        "--successColor": theme.palette.success.main,
+                        "--infoColor": theme.palette.info.main,
+                    },
+                })}
+            />
             <BrowserRouter>
                 <RootProvidersWithAuth>
                     <View>
