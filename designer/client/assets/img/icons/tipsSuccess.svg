@@ -1,1 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 8 8 8 8 0 0 0-8-8Zm-.85 12.61L5.56 11 2.82 8.28 4.41 6.7 7 9.26l4.38-5.48 1.83 1.64Z" fill="#64d864"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 8 8 8 8 0 0 0-8-8Zm-.85 12.61L5.56 11 2.82 8.28 4.41 6.7 7 9.26l4.38-5.48 1.83 1.64Z" fill="var(--successColor, #64D864)"/></svg>
