@@ -4,7 +4,7 @@ import ErrorBoundary from "react-error-boundary"
 import {absoluteBePath} from "../common/UrlUtils"
 import styled from "@emotion/styled"
 
-const urlRe = /^(((https?:)?\/)?\/)\w.*\.svg$/i
+const urlRe = /^(((https?:)?\/)?\/)?\w.*\.svg$/i
 
 const AsyncSvg = loadable.lib(async ({src}: { src: string }) => {
   const urlMatch = src.match(urlRe)
