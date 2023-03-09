@@ -82,10 +82,12 @@ function Scenarios({ children, table }: PropsWithChildren<{ table?: boolean }>):
     );
 }
 
-export type ScenariosViewProps = ActionsProps;
+export interface ScenariosViewProps extends ActionsProps {
+    table?: boolean;
+}
 
-export const ScenariosView = (props: ScenariosViewProps) => (
-    <Scenarios table={false}>
+export const ScenariosView = ({ table, ...props }: ScenariosViewProps) => (
+    <Scenarios table={table}>
         <Actions {...props} />
     </Scenarios>
 );

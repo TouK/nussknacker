@@ -9,7 +9,8 @@ export function RootRoutes(): JSX.Element {
         <Routes>
             <Route index element={<Navigate to="/scenarios" />} />
             <Route path="scenarios" element={<ScenariosView />} />
-            <Route path="components" element={<ComponentsRoutes />} />
+            <Route path="scenarios/table" element={<ScenariosView table />} />
+            <Route path="components/*" element={<ComponentsRoutes />} />
             <Route path="*" element={<UnavailableViewPlaceholder />} />
         </Routes>
     );
