@@ -277,7 +277,7 @@ class ProcessesResources(
     deploymentService.getInternalProcessState(process).map(state => process.copy(state = Some(state)))
   }
 
-  private def fetchAllStateDefinitions(implicit user: LoggedUser): List[UIStateDefinition] = {
+  private def fetchAllStateDefinitions(implicit user: LoggedUser): Set[UIStateDefinition] = {
     val userCategories = categoryService.getUserCategories(user).toSet
     stateDefinitionService.fetchStateDefinitions()
       .map(rawDefinition =>

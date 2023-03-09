@@ -68,9 +68,9 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       streamingProcessStateDefinitionManager,
       fraudProcessStateDefinitionManager
     )
-    val service = new ProcessStateDefinitionService(providerWithInvalidStateDefinitions, categoryService)
 
     intercept[IllegalStateException]{
+      val service = new ProcessStateDefinitionService(providerWithInvalidStateDefinitions, categoryService)
       service.fetchStateDefinitions()
     }.getMessage should include("State definitions are not unique")
   }

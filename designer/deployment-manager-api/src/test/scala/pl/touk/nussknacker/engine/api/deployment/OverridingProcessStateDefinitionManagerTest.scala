@@ -2,62 +2,52 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 
 class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Matchers {
 
-  case object DelegateState extends CustomStateStatus("DELEGATE_STATE")
-  case object DelegateStateToOverride extends CustomStateStatus("OVERRIDE_THIS_STATE")
+  case object DefaultState extends CustomStateStatus("DEFAULT_STATE")
+  case object DefaultStateToOverride extends CustomStateStatus("OVERRIDE_THIS_STATE")
 
   case object CustomState extends CustomStateStatus("CUSTOM_STATE")
-  case object CustomStateToOverride extends CustomStateStatus("OVERRIDE_THIS_STATE")
+  case object CustomStateThatOverrides extends CustomStateStatus("OVERRIDE_THIS_STATE")
 
-  private val delegateStateDefinitionManager: ProcessStateDefinitionManager = new ProcessStateDefinitionManager {
+  private val defaultStateDefinitionManager: ProcessStateDefinitionManager = new ProcessStateDefinitionManager {
     override def stateDefinitions(): Set[StateDefinition] = Set(
-      StateDefinition(DelegateState.name, "Dummy 1", None, None, Some("Description 1")),
-      StateDefinition(DelegateStateToOverride.name, "Dummy 2", None, None, Some("Description 2"))
+      StateDefinition(DefaultState.name, "Default", None, None, Some("Default description")),
+      StateDefinition(DefaultStateToOverride.name, "Default to override", None, None, Some("Default description to override"))
     )
-    override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = stateStatus match {
-      case DelegateState => List(Deploy)
-      case DelegateStateToOverride => List(Deploy, Cancel)
-      case _ => Nil
-    }
-    override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus = stateAction match {
-      case Deploy => DelegateState
-      case Cancel => DelegateStateToOverride
-      case _ => FailedStateStatus("UNKNOWN_ACTION")
-    }
+    override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
+    override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus = FailedStateStatus("UNKNOWN_ACTION")
   }
 
   test("should combine delegate state definitions with overrides") {
-    // here we expect to have 3 states: CustomState, CustomStateToOverride and DelegateState
+    // here we use default set of states and apply extensions and overrides
     val manager = new OverridingProcessStateDefinitionManager(
-      statusActionsPF = {
-        case CustomStateToOverride => List(Cancel)
-      },
       statusDescriptionsPF = {
-        case DelegateState => Some("Calculated description for delegate, e.g. schedule date")
+        case DefaultState => Some("Calculated description for default, e.g. schedule date")
         case CustomState => Some("Calculated description for custom, e.g. schedule date")
       },
       stateDefinitions = Set(
-        StateDefinition(CustomState.name, "Custom 1", None, None, Some("Default description for custom")),
-        StateDefinition(CustomStateToOverride.name, "Custom 2", None, None, Some("Default description for custom 2"))
+        StateDefinition(CustomState.name, "Custom", None, None, Some("Custom description")),
+        StateDefinition(CustomStateThatOverrides.name, "Custom that overrides", None, None, Some("Custom description that overrides"))
       ),
-      delegate = delegateStateDefinitionManager
+      delegate = defaultStateDefinitionManager
     )
 
-    //FIXME: manager.stateDefinitions() should have size 3
+    // eventually expect to have 3 states: CustomState, CustomStateToOverride and DelegateState
+    manager.stateDefinitions() should have size 3
+
     val definitionsMap = manager.stateDefinitions().toMapByName
     definitionsMap  should have size 3
     // Raw definitions that are displayed as filter options
-    definitionsMap(DelegateState.name).description shouldBe Some("Description 1")
-    definitionsMap(CustomState.name).description shouldBe Some("Default description for custom")
-    definitionsMap(CustomStateToOverride.name).description shouldBe Some("Default description for custom 2")
+    definitionsMap(DefaultState.name).description shouldBe Some("Default description")
+    definitionsMap(CustomState.name).description shouldBe Some("Custom description")
+    definitionsMap(CustomStateThatOverrides.name).description shouldBe Some("Custom description that overrides")
 
     // Description assigned to a scenario, with custom calculations
-    manager.statusDescription(DelegateState) shouldBe Some("Calculated description for delegate, e.g. schedule date")
+    manager.statusDescription(DefaultState) shouldBe Some("Calculated description for default, e.g. schedule date")
     manager.statusDescription(CustomState) shouldBe Some("Calculated description for custom, e.g. schedule date")
-    manager.statusDescription(CustomStateToOverride) shouldBe Some("Default description for custom 2")
-
+    manager.statusDescription(CustomStateThatOverrides) shouldBe Some("Custom description that overrides")
   }
 }
