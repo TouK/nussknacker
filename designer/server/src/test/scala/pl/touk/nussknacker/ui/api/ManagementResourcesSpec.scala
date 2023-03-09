@@ -221,7 +221,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       .parallelism(1)
       .source("startProcess", "csv-source")
       .filter("input", "#input != null", Some(true))
-      .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#input")
+      .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#input")
 
     saveProcessAndAssertSuccess(SampleProcess.process.id, processWithDisabledFilter)
     deployProcess(processName.value) ~> check {
@@ -325,7 +325,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       .parallelism(1)
       .source("startProcess", "csv-source")
       .filter("input", "new java.math.BigDecimal(null) == 0")
-      .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", "value" -> "''")
+      .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "''")
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
         |{"sourceId":"startProcess","record":"bela"}""".stripMargin
@@ -349,7 +349,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           .streaming("sampleProcess")
           .parallelism(1)
           .source("startProcess", "csv-source")
-          .emptySink("end", "kafka-string", KafkaFactory.TopicParamName -> "'end.topic'")
+          .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'")
     }
 
     saveProcessAndAssertSuccess(process.id, process)
