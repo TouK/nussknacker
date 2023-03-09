@@ -31,18 +31,18 @@ class OverridingProcessStateDefinitionManager(statusActionsPF: PartialFunction[S
     mapActionToStatusPF.applyOrElse(stateAction, delegate.mapActionToStatus)
 
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
-    statusIconsPF.orElse(customDefinitionPF(_.icon)).applyOrElse(stateStatus, delegate.statusIcon)
+    statusIconsPF.orElse(stateDefinitionsPF(_.icon)).applyOrElse(stateStatus, delegate.statusIcon)
 
   override def statusTooltip(stateStatus: StateStatus): Option[String] =
-    statusTooltipsPF.orElse(customDefinitionPF(_.tooltip)).applyOrElse(stateStatus, delegate.statusTooltip)
+    statusTooltipsPF.orElse(stateDefinitionsPF(_.tooltip)).applyOrElse(stateStatus, delegate.statusTooltip)
 
   override def statusDescription(stateStatus: StateStatus): Option[String] =
-    statusDescriptionsPF.orElse(customDefinitionPF(_.description)).applyOrElse(stateStatus, delegate.statusDescription)
+    statusDescriptionsPF.orElse(stateDefinitionsPF(_.description)).applyOrElse(stateStatus, delegate.statusDescription)
 
   override def stateDefinitions(): Set[StateDefinition] =
-    delegate.stateDefinitions() ++ stateDefinitions
+    (delegate.stateDefinitions().toMapByName ++ stateDefinitions.toMapByName).values.toSet
 
-  private def customDefinitionPF[T](map: StateDefinition => Option[T]): PartialFunction[StateStatus, Option[T]] = {
+  private def stateDefinitionsPF[T](map: StateDefinition => Option[T]): PartialFunction[StateStatus, Option[T]] = {
     case stateStatus if stateDefinitions.toMapByName.contains(stateStatus.name) => stateDefinitions.toMapByName.get(stateStatus.name).flatMap(map)
   }
 
