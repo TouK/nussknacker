@@ -40,7 +40,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
 
   protected val repositoryManager: RepositoryManager = RepositoryManager.createDbRepositoryManager(db)
 
-  private var currentInstant: Instant = Instant.now()
+  private var currentInstant: Instant = Instant.ofEpochMilli(0)
   private val clock: Clock = clockForInstant(() => currentInstant)
   private val processRepository = TestFactory.newFetchingProcessRepository(db)
   private val writeProcessRepository = TestFactory.newWriteProcessRepository(db)
@@ -57,8 +57,8 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     val listener = new NotificationsListener(NotificationConfig(20 minutes), (_: ProcessId) => Future.successful(Some(processName)), clock)
     val deploymentManager = mock[DeploymentManager]
     val deploymentService = createDeploymentService(listener, deploymentManager)
-    val notificationService = new NotificationService(listener)
-    def notificationsFor(user: LoggedUser, after: Option[Instant] = None): List[Notification] = notificationService.notifications(user, after)
+    val notificationService = new ListenerBasedNotificationService(listener)
+    def notificationsFor(user: LoggedUser, after: Option[Instant] = None): List[Notification] = notificationService.notifications(after)(user, ctx).futureValue
     def deployProcess(givenDeployResult: Try[Option[ExternalDeploymentId]], user: LoggedUser): Option[ExternalDeploymentId] = {
       when(deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])).thenReturn(Future.fromTry(givenDeployResult))
       deploymentService.deployProcessAsync(processIdWithName, None, None)(user, ctx).flatten.futureValue
@@ -87,7 +87,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     when(deploymentManager.findJobStatus(any[ProcessName])).thenReturn(Future.successful(None))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])).thenReturn(deploymentManager)
-    new DeploymentServiceImpl(managerDispatcher, processRepository, actionRepository, repositoryManager, mock[ProcessValidation], mock[ScenarioResolver], listener) {
+    new DeploymentServiceImpl(managerDispatcher, processRepository, actionRepository, repositoryManager, mock[ProcessValidation], mock[ScenarioResolver], listener, clock) {
       override protected def validateBeforeDeploy(processDetails: processdetails.BaseProcessDetails[CanonicalProcess], actionId: ProcessActionId)(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
         Future.successful(DeployedScenarioData(processDetails.toEngineProcessVersion, prepareDeploymentData(user.toManagerUser, DeploymentId(actionId.toString)), processDetails.json))
       }

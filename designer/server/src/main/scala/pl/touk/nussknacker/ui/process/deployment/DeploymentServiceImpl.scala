@@ -23,9 +23,9 @@ import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.dbio.DBIOAction
 
-import java.time.Instant
-import scala.concurrent.{Await, ExecutionContext, Future}
+import java.time.Clock
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
@@ -39,7 +39,8 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                             dbioRunner: DBIOActionRunner,
                             processValidation: ProcessValidation,
                             scenarioResolver: ScenarioResolver,
-                            processChangeListener: ProcessChangeListener) extends DeploymentService with LazyLogging {
+                            processChangeListener: ProcessChangeListener,
+                            clock: Clock = Clock.systemUTC()) extends DeploymentService with LazyLogging {
 
   def getDeployedScenarios(processingType: ProcessingType)
                           (implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
@@ -182,15 +183,20 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     actionFuture.transformWith {
       case Failure(failure) =>
         logger.error(s"Action: $actionString finished with failure", failure)
+        val performedAt = clock.instant()
+        val failureMessage = failure.getMessage.take(1022) // crop to not overflow column size
         processChangeListener.handle(OnDeployActionFailed(processIdWithName.id, failure))
-        dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(failure))
+        dbioRunner.runInTransaction(
+          actionRepository.markActionAsFailed(actionId, processIdWithName.id, actionType, versionOnWhichActionIsDoneOpt, performedAt, failureMessage, buildInfoProcessIngType)
+        ).transform(_ => Failure(failure))
       case Success(result) =>
         versionOnWhichActionIsDoneOpt.map { versionOnWhichActionIsDone =>
           logger.info(s"Finishing $actionString")
-          val performedAt = Instant.now
+          val performedAt = clock.instant()
           val comment = deploymentComment.map(_.toComment(actionType))
           processChangeListener.handle(OnDeployActionSuccess(processIdWithName.id, versionOnWhichActionIsDone, comment, performedAt, actionType))
-          dbioRunner.runInTransaction(actionRepository.markActionAsFinished(actionId, processIdWithName.id, actionType, versionOnWhichActionIsDone, performedAt, comment, buildInfoProcessIngType))
+          dbioRunner.runInTransaction(
+            actionRepository.markActionAsFinished(actionId, processIdWithName.id, actionType, versionOnWhichActionIsDone, performedAt, comment, buildInfoProcessIngType))
         }.getOrElse {
           // Currently we don't send notifications and don't add finished action into db if version id is missing.
           // It happens that way during cancel when there was no finished deploy before it, but some scenario is running on engine

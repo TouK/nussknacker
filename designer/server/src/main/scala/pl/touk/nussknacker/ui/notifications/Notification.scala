@@ -12,6 +12,19 @@ import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
                                    `type`: Option[NotificationType.Value],
                                    toRefresh: List[DataToRefresh])
 
+object Notification {
+  def deploymentFailedNotification(id: String, name: ProcessName, reason: String): Notification = {
+    Notification(id, Some(name), s"Deployment of ${name.value} failed with $reason", Some(NotificationType.error), List(DataToRefresh.state))
+  }
+
+  def deploymentFinishedNotification(id: String, name: ProcessName): Notification = {
+    //We don't want to display this notification, not to confuse user, as
+    //deployment may proceed asynchronously (e.g. in streaming-lite)
+    Notification(id, Some(name), s"Deployment finished", None, List(DataToRefresh.versions, DataToRefresh.activity))
+  }
+
+}
+
 object NotificationType extends Enumeration {
 
   implicit val typeEncoder: Encoder[NotificationType.Value] = Encoder.encodeEnumeration(NotificationType)

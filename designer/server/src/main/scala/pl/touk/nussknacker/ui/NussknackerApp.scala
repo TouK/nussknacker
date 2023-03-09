@@ -28,7 +28,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
-import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationService, NotificationsListener}
+import pl.touk.nussknacker.ui.notifications.{ListenerBasedNotificationService, NotificationConfig, NotificationsListener}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
@@ -174,7 +174,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val componentService = DefaultComponentService(resolvedConfig, typeToConfig, processService, processCategoryService)
 
-    val notificationService = new NotificationService(notificationListener)
+    val notificationService = new ListenerBasedNotificationService(notificationListener)
 
     initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
