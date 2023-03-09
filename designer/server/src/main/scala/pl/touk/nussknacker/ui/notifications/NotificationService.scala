@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.notifications
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
-import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, RepositoryManager}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.{Clock, Instant}
@@ -17,17 +17,20 @@ trait NotificationService {
 
 }
 
-class NotificationServiceImpl(actionRepository: DbProcessActionRepository[DB], dbioRunner: RepositoryManager,
-                              config: NotificationConfig, clock: Clock) extends NotificationService {
+class NotificationServiceImpl(actionRepository: DbProcessActionRepository[DB], dbioRunner: DBIOActionRunner,
+                              config: NotificationConfig, clock: Clock = Clock.systemUTC()) extends NotificationService {
   override def notifications(notificationsAfter: Option[Instant])(implicit user: LoggedUser, ec: ExecutionContext): Future[List[Notification]] = {
     val now = clock.instant()
     val limitBasedOnConfig = now.minusMillis(config.duration.toMillis)
     def maxInstant(instant1: Instant, instant2: Instant) = if (instant1.compareTo(instant2) > 0) instant1 else instant2
     val limit = notificationsAfter.map(maxInstant(_, limitBasedOnConfig)).getOrElse(limitBasedOnConfig)
-    dbioRunner.run(actionRepository.getActionsAfter(Set(ProcessActionState.Failed, ProcessActionState.Finished), ProcessActionType.Deploy, limit)).map(_.map {
-      case ProcessActionEntityData(id, processId, processVersionId, user, createdAt, performedAt, action, state, failure, commentId, buildInfo) =>
-        ???
-    })
-    ???
+    dbioRunner.run(actionRepository.getUserActionsAfter(user, Set(ProcessActionState.Failed, ProcessActionState.Finished), ProcessActionType.Deploy, limit)).map(_.map {
+      case (ProcessActionEntityData(id, _, _, _, _, _, _, ProcessActionState.Finished, _, _, _), processName) =>
+        Notification.deploymentFinishedNotification(id.toString, processName)
+      case (ProcessActionEntityData(id, _, _, _, _, _, _, ProcessActionState.Failed, Some(failure), _, _), processName) =>
+        Notification.deploymentFailedNotification(id.toString, processName, failure)
+      case (a, processName) =>
+        throw new IllegalStateException(s"Unexpected action returned by query: $a, for scenario: $processName")
+    }.toList)
   }
 }

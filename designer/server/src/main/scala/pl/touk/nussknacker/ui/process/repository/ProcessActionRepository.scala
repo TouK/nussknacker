@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ProcessActionType}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData, ProcessActionId}
@@ -109,7 +109,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
       id = actionId,
       processId = processId,
       processVersionId = processVersion,
-      user = user.username,
+      user = user.username, // TODO: it should be user.id not name
       createdAt = Timestamp.from(createdAt),
       performedAt = performedAt.map(Timestamp.from),
       action = actionType,
@@ -125,8 +125,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
   }
 
   private def updateAction(actionId: ProcessActionId, processId: ProcessId, processVersion: Option[VersionId], state: ProcessActionState,
-                           performedAt: Option[Instant], failure: Option[String], commentId: Option[Long])
-                          (implicit user: LoggedUser): DB[Boolean] = {
+                           performedAt: Option[Instant], failure: Option[String], commentId: Option[Long]): DB[Boolean] = {
     for {
       updateCount <- processActionsTable.filter(_.id === actionId)
         .map(a => (a.performedAt, a.state, a.failure, a.commentId))
@@ -146,8 +145,17 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     run(query.result.map(_.toSet))
   }
 
-  def getActionsAfter(possibleStates: Set[ProcessActionState], actionType: ProcessActionType, limit: Instant): F[Seq[ProcessActionEntityData]] = {
-    run(processActionsTable.filter(a => a.state.inSet(possibleStates) && a.action === actionType && a.performedAt > Timestamp.from(limit)).result)
+  def getUserActionsAfter(user: LoggedUser, possibleStates: Set[ProcessActionState], actionType: ProcessActionType, limit: Instant): F[Seq[(ProcessActionEntityData, ProcessName)]] = {
+    run(
+      processActionsTable
+        .filter(a => a.user === user.username && a.state.inSet(possibleStates) && a.action === actionType && a.performedAt > Timestamp.from(limit))
+        .join(processesTable).on((a, p) => p.id === a.processId)
+        .map {
+          case (a, p) => (a, p.name)
+        }
+        .sortBy(_._1.performedAt)
+        .result
+    )
   }
 
   def deleteInProgressActions(): F[Unit] = {

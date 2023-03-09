@@ -14,6 +14,7 @@
 * [#4060](https://github.com/TouK/nussknacker/pull/4060) Notifications about pending deployments of other user not appear anymore.
 * [#4071](https://github.com/TouK/nussknacker/pull/4071) Change BCrypt library
 * [#4077](https://github.com/TouK/nussknacker/pull/4077) Fix database query invoker to be async
+* [#4055](https://github.com/TouK/nussknacker/pull/4055)[#4080](https://github.com/TouK/nussknacker/pull/4080) Removed local state of designer - for HA purpose
 * [#4055](https://github.com/TouK/nussknacker/pull/4055) Performance tweaks for API operations like: process status, deploy, cancel 
 
 1.8.1 (28 Feb 2023)
