@@ -106,14 +106,7 @@ final case class FailedStateStatus(name: StatusName) extends StateStatus {
 // TODO: we should find places where StateStatuses are encoded and decoded and replace them with some DTOs for this purpose
 class CustomStateStatus(val name: StatusName) extends StateStatus
 
-@JsonCodec case class StateDefinition(name: StatusName,
-                                      displayableName: String,
+@JsonCodec case class StateDefinition(displayableName: String,
                                       icon: Option[URI],
                                       tooltip: Option[String],
                                       description: Option[String])
-
-object StateDefinition {
-  implicit class RichStateDefinitionsSet(definitions: Set[StateDefinition]) {
-    def toMapByName: Map[StatusName, StateDefinition] = definitions.map(d => (d.name, d)).toMap
-  }
-}

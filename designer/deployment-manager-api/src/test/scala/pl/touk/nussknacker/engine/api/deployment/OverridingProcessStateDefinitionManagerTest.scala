@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
 class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Matchers {
 
@@ -13,9 +14,9 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
   case object CustomStateThatOverrides extends CustomStateStatus("OVERRIDE_THIS_STATE")
 
   private val defaultStateDefinitionManager: ProcessStateDefinitionManager = new ProcessStateDefinitionManager {
-    override def stateDefinitions(): Set[StateDefinition] = Set(
-      StateDefinition(DefaultState.name, "Default", None, None, Some("Default description")),
-      StateDefinition(DefaultStateToOverride.name, "Default to override", None, None, Some("Default description to override"))
+    override def stateDefinitions(): Map[StatusName, StateDefinition] = Map(
+      DefaultState.name -> StateDefinition("Default", None, None, Some("Default description")),
+      DefaultStateToOverride.name -> StateDefinition("Default to override", None, None, Some("Default description to override"))
     )
     override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
     override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus = FailedStateStatus("UNKNOWN_ACTION")
@@ -28,17 +29,15 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
         case DefaultState => Some("Calculated description for default, e.g. schedule date")
         case CustomState => Some("Calculated description for custom, e.g. schedule date")
       },
-      stateDefinitions = Set(
-        StateDefinition(CustomState.name, "Custom", None, None, Some("Custom description")),
-        StateDefinition(CustomStateThatOverrides.name, "Custom that overrides", None, None, Some("Custom description that overrides"))
+      stateDefinitions = Map(
+        CustomState.name -> StateDefinition("Custom", None, None, Some("Custom description")),
+        CustomStateThatOverrides.name -> StateDefinition("Custom that overrides", None, None, Some("Custom description that overrides"))
       ),
       delegate = defaultStateDefinitionManager
     )
 
     // eventually expect to have 3 states: CustomState, CustomStateToOverride and DelegateState
-    manager.stateDefinitions() should have size 3
-
-    val definitionsMap = manager.stateDefinitions().toMapByName
+    val definitionsMap = manager.stateDefinitions()
     definitionsMap  should have size 3
     // Raw definitions that are displayed as filter options
     definitionsMap(DefaultState.name).description shouldBe Some("Default description")

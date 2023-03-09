@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
@@ -29,16 +30,14 @@ object FlinkStateStatus {
     case FlinkStateStatus.MultipleJobsRunning => List(ProcessActionType.Cancel)
   }
 
-  val customStateDefinitions: Set[StateDefinition] = Set(
-    StateDefinition(
-      name = Failing.name,
+  val customStateDefinitions: Map[StatusName, StateDefinition] = Map(
+    Failing.name -> StateDefinition(
       displayableName = "Failing",
       icon = Some(URI.create("/assets/states/error.svg")),
       tooltip = Some("Failing"),
       description = Some("Failing")
     ),
-    StateDefinition(
-      name = MultipleJobsRunning.name,
+    MultipleJobsRunning.name -> StateDefinition(
       displayableName = "More than one job running",
       icon = Some(URI.create("/assets/states/error.svg")),
       tooltip = Some("More than one job running"),
