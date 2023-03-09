@@ -20,11 +20,12 @@ private[encode] case class JsonSchemaExpected(schema: Schema, rootSchema: Schema
 }
 
 private[encode] case class NumberSchemaRangeExpected(schema: NumberSchema) extends OutputValidatorExpected {
+
   override def expected: String = (minimumValue, maximumValue) match {
     case (Some(min), Some(max)) => s"between $min and $max"
-    case (Some(min), None ) => s"greater than or equal to $min"
-    case (None, Some(max) ) => s"less than or equal to $max"
-    case _ => ""
+    case (Some(min), None) => s"greater than or equal to $min"
+    case (None, Some(max)) => s"less than or equal to $max"
+    case _ => throw new RuntimeException("Something went wrong. This should be unreachable.")
   }
 
   private val minimumValue = List(
