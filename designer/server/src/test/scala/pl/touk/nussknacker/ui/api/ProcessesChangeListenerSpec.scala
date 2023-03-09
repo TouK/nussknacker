@@ -26,11 +26,6 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
 
   private val processName = ProcessName(SampleProcess.process.id)
 
-  override protected def beforeEach(): Unit = {
-    super.beforeEach()
-    processChangeListener.clear()
-  }
-
   test("listen to category change") {
     val processId = createEmptyProcess(processName, TestCat, false)
 

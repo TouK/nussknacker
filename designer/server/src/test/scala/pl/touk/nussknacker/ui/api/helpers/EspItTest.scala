@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
-import pl.touk.nussknacker.engine.{BaseModelData, ConfigWithUnresolvedVersion, ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
@@ -31,11 +30,9 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.deployment.DeploymentActionsInProgressActor.ActorBasedDeploymentActionsInProgressRepository
-import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerServiceImpl, DeploymentManagerDispatcher, DeploymentService, DeploymentServiceImpl, DeploymentActionsInProgressActor, ScenarioTestExecutorServiceImpl}
+import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -45,11 +42,12 @@ import pl.touk.nussknacker.ui.process.test.{ScenarioTestDataSerDe, ScenarioTestS
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
-import sttp.client3.akkahttp.AkkaHttpBackend
 import sttp.client3.SttpBackend
+import sttp.client3.akkahttp.AkkaHttpBackend
+import pl.touk.nussknacker.engine.{BaseModelData, ConfigWithUnresolvedVersion, ModelData, ProcessingTypeConfig, ProcessingTypeData}
+import slick.dbio.DBIOAction
 
 import java.net.URI
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers with ScalaFutures =>
@@ -64,17 +62,19 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
-  protected val repositoryManager: RepositoryManager[DB] = newDBRepositoryManager(db)
+  protected val dbioRunner: DBIOActionRunner = newDBIOActionRunner(db)
 
-  protected val fetchingProcessRepository: DBFetchingProcessRepository[Future] with BasicRepository = newFetchingProcessRepository(db)
+  protected val fetchingProcessRepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(db)
 
-  protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(fetchingProcessRepository)
+  protected val futureFetchingProcessRepository: DBFetchingProcessRepository[Future] = newFutureFetchingProcessRepository(db)
+
+  protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(futureFetchingProcessRepository)
 
   protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(db)
 
   protected val subprocessRepository: DbSubprocessRepository = newSubprocessRepository(db)
 
-  protected val actionRepository: DbProcessActionRepository = newActionProcessRepository(db)
+  protected val actionRepository: DbProcessActionRepository[DB] = newActionProcessRepository(db)
 
   protected val processActivityRepository: DbProcessActivityRepository = newProcessActivityRepository(db)
 
@@ -84,14 +84,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected val dmDispatcher = new DeploymentManagerDispatcher(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
-    fetchingProcessRepository)
+    futureFetchingProcessRepository)
 
-  protected val deploymentActionsInProgressActor: ActorRef = system.actorOf(DeploymentActionsInProgressActor.props, "deploymentActionsInProgress")
-
-  protected val deploymentActionsInProgressActorRepository = new ActorBasedDeploymentActionsInProgressRepository(deploymentActionsInProgressActor, 1 minute)
-
-  private implicit val deploymentService: DeploymentService =
-    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, scenarioResolver, deploymentActionsInProgressActorRepository, processChangeListener)
+  protected implicit val deploymentService: DeploymentService =
+    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, scenarioResolver, processChangeListener)
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
     new DefaultProcessingTypeDeploymentService(Streaming, deploymentService)
@@ -120,7 +116,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData] =
     ProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(testConfig))
 
-  protected val customActionInvokerService = new CustomActionInvokerServiceImpl(fetchingProcessRepository, dmDispatcher, deploymentService)
+  protected val customActionInvokerService = new CustomActionInvokerServiceImpl(futureFetchingProcessRepository, dmDispatcher, deploymentService)
 
   protected val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
 
@@ -131,8 +127,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected val configProcessToolbarService = new ConfigProcessToolbarService(testConfig, processCategoryService.getAllCategories)
 
   protected val processesRoute = new ProcessesResources(
-    processRepository = fetchingProcessRepository,
+    processRepository = futureFetchingProcessRepository,
     processService = processService,
+    deploymentService = deploymentService,
     processToolbarService = configProcessToolbarService,
     processResolving = processResolving,
     processAuthorizer = processAuthorizer,
@@ -140,7 +137,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     typeToConfig = typeToConfig
   )
 
-  protected val processActivityRoute = new ProcessActivityResource(processActivityRepository, fetchingProcessRepository, processAuthorizer)
+  protected val processActivityRoute = new ProcessActivityResource(processActivityRepository, futureFetchingProcessRepository, processAuthorizer)
 
   protected val processActivityRouteWithAllPermissions: Route = withAllPermissions(processActivityRoute)
 
@@ -148,12 +145,11 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
-  protected def createDBProcessService(deploymentService: DeploymentService): DBProcessService = {
+  protected def createDBProcessService(deploymentService: DeploymentService): DBProcessService =
     new DBProcessService(deploymentService, newProcessPreparer,
-      processCategoryService, processResolving, repositoryManager, fetchingProcessRepository,
+      processCategoryService, processResolving, dbioRunner, futureFetchingProcessRepository,
       actionRepository, writeProcessRepository, processValidation
     )
-  }
 
   protected def createScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider]): ScenarioTestService =
     new ScenarioTestService(testInfoProviders, featureTogglesConfig.testDataSettings, new ScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
@@ -161,9 +157,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) = new ManagementResources(
     processAuthorizer = processAuthorizer,
-    processRepository = fetchingProcessRepository,
+    processRepository = futureFetchingProcessRepository,
     deploymentCommentSettings = deploymentCommentSettings,
-    processService = processService,
+    deploymentService = deploymentService,
     dispatcher = dmDispatcher,
     customActionInvokerService = customActionInvokerService,
     metricRegistry = new MetricRegistry,
@@ -171,6 +167,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   )
 
   protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager
+
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    processChangeListener.clear()
+  }
 
   protected def saveProcessAndAssertSuccess(processId: String, process: CanonicalProcess, category: String = TestCat): Assertion =
     saveProcess(ProcessName(processId), process, category) {
@@ -323,19 +325,25 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     val processName = ProcessName(process.id)
     val action = CreateProcessAction(processName, category, process, processingType, isSubprocess)
     for {
-      _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
-      id <- fetchingProcessRepository.fetchProcessId(processName).map(_.get)
+      _ <- dbioRunner.runInTransaction(writeProcessRepository.saveNewProcess(action))
+      id <- futureFetchingProcessRepository.fetchProcessId(processName).map(_.get)
     } yield id
   }
 
   protected def getProcessDetails(processId: ProcessId): processdetails.BaseProcessDetails[Unit] =
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
+    futureFetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](processId).futureValue.get
 
-  protected def prepareDeploy(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsDeployed(id, VersionId.initialVersionId, Streaming, Some(DeploymentComment.unsafe("Deploy comment")))
+  protected def prepareDeploy(id: ProcessId): Future[_] = {
+    val actionType = ProcessActionType.Deploy
+    val comment = DeploymentComment.unsafe("Deploy comment").toComment(actionType)
+    dbioRunner.run(actionRepository.addInstantAction(id, VersionId.initialVersionId, actionType, Some(comment), Some(Streaming)))
+  }
 
-  protected def prepareCancel(id: ProcessId): Future[ProcessActionEntityData] =
-    actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some(DeploymentComment.unsafe("Cancel comment")))
+  protected def prepareCancel(id: ProcessId): Future[_] = {
+    val actionType = ProcessActionType.Cancel
+    val comment = DeploymentComment.unsafe("Cancel comment").toComment(actionType)
+    dbioRunner.run(actionRepository.addInstantAction(id, VersionId.initialVersionId, actionType, Some(comment), None))
+  }
 
   protected def createEmptyProcess(processName: ProcessName, category: String = TestCat, isSubprocess: Boolean = false): ProcessId =
     prepareEmptyProcess(processName, category, isSubprocess).futureValue
@@ -346,10 +354,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected def createArchivedProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId = {
     (for {
       id <- prepareValidProcess(processName, TestCat, isSubprocess)
-      _ <- repositoryManager.runInTransaction(
+      _ <- dbioRunner.runInTransaction(DBIOAction.seq(
         writeProcessRepository.archive(processId = id, isArchived = true),
         actionRepository.markProcessAsArchived(processId = id, VersionId(1))
-      )
+      ))
     } yield id).futureValue
   }
 

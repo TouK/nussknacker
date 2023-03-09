@@ -35,7 +35,7 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller.forContentTypes(ContentTypeRange(ContentTypes.`application/octet-stream`))
 
-  private def route(additionalDataSize: Int = 0) = new TestInfoResources(processAuthorizer, fetchingProcessRepository,
+  private def route(additionalDataSize: Int = 0) = new TestInfoResources(processAuthorizer, futureFetchingProcessRepository,
     createScenarioTestService(mapProcessingTypeDataProvider("streaming" -> testInfoProvider(additionalDataSize))))
 
   test("generates data") {

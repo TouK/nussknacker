@@ -35,9 +35,9 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
     SimpleProcessStateDefinitionManager.processState(status)
 
   private def prepareBasicAppResources(statuses: Map[ProcessName, StateStatus], withConfigExposed: Boolean = true) = {
-    val processService = createDBProcessService(new StubDeploymentService(statuses.mapValuesNow(processStatus)))
-    new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, fetchingProcessRepository,
-      TestFactory.processValidation, processService, exposeConfig = withConfigExposed, processCategoryService
+    val deploymentService = new StubDeploymentService(statuses.mapValuesNow(processStatus))
+    new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, futureFetchingProcessRepository,
+      TestFactory.processValidation, deploymentService, exposeConfig = withConfigExposed, processCategoryService
     )
   }
 
@@ -137,8 +137,8 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
 
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)), emptyReload,
-       mapProcessingTypeDataProvider("test1" -> modelData), fetchingProcessRepository, TestFactory.processValidation,
-      processService, exposeConfig = false, processCategoryService)
+      mapProcessingTypeDataProvider("test1" -> modelData), futureFetchingProcessRepository, TestFactory.processValidation,
+      deploymentService, exposeConfig = false, processCategoryService)
 
     val result = Get("/app/buildInfo") ~> withoutPermissions(resources)
     result ~> check {

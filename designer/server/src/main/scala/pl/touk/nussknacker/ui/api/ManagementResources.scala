@@ -18,14 +18,13 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
-import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
+import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponseTryPF
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
-import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerService, DeploymentManagerDispatcher}
+import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerService, DeploymentManagerDispatcher, DeploymentService}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
-import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -75,7 +74,7 @@ object ManagementResources {
 class ManagementResources(val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository[Future],
                           deploymentCommentSettings: Option[DeploymentCommentSettings],
-                          processService: ProcessService,
+                          deploymentService: DeploymentService,
                           dispatcher: DeploymentManagerDispatcher,
                           customActionInvokerService: CustomActionInvokerService,
                           metricRegistry: MetricRegistry,
@@ -131,9 +130,9 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
           canDeploy(processId) {
             withDeploymentComment { deploymentComment =>
               complete {
-                processService
-                  .deployProcess(processId, Some(savepointPath), deploymentComment)
-                  .map(toResponse(StatusCodes.OK))
+                deploymentService
+                  .deployProcessAsync(processId, Some(savepointPath), deploymentComment).map(_ => ())
+                  .andThen(toResponseTryPF(StatusCodes.OK))
               }
             }
           }
@@ -145,9 +144,9 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
             withDeploymentComment { deploymentComment =>
               complete {
                 measureTime("deployment", metricRegistry) {
-                  processService
-                    .deployProcess(processId, None, deploymentComment)
-                    .map(toResponse(StatusCodes.OK))
+                  deploymentService
+                    .deployProcessAsync(processId, None, deploymentComment).map(_ => ())
+                    .andThen(toResponseTryPF(StatusCodes.OK))
                 }
               }
             }
@@ -160,9 +159,9 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
             withDeploymentComment { deploymentComment =>
               complete {
                 measureTime("cancel", metricRegistry) {
-                  processService
+                  deploymentService
                     .cancelProcess(processId, deploymentComment)
-                    .map(toResponse(StatusCodes.OK))
+                    .andThen(toResponseTryPF(StatusCodes.OK))
                 }
               }
             }

@@ -31,7 +31,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
   private implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testPermissionEmpty)
 
-  private val processesExportResources = new ProcessesExportResources(fetchingProcessRepository, processActivityRepository, processResolving)
+  private val processesExportResources = new ProcessesExportResources(futureFetchingProcessRepository, processActivityRepository, processResolving)
   private val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   private val adminRoute = asAdmin(processesExportResources) ~ asAdmin(processesRoute)
 

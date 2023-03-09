@@ -24,11 +24,11 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
@@ -39,6 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProcessesResources(
   val processRepository: FetchingProcessRepository[Future],
   processService: ProcessService,
+  deploymentService: DeploymentService,
   processToolbarService: ProcessToolbarService,
   processResolving: UIProcessResolving,
   val processAuthorizer:AuthorizeProcess,
@@ -204,7 +205,7 @@ class ProcessesResources(
         } ~ path("processes" / Segment / "status") { processName =>
           (get & processId(processName)) { processId =>
             complete {
-              processService.getProcessState(processId).map(ToResponseMarshallable(_))
+              deploymentService.getProcessState(processId).map(ToResponseMarshallable(_))
             }
           }
         } ~ path("processes" / Segment / "toolbars") { processName =>
@@ -262,7 +263,7 @@ class ProcessesResources(
     import cats.instances.future._
     import cats.instances.list._
     import cats.syntax.traverse._
-    processes.map(process => processService.getProcessState(process.idWithName).map(status => process.name -> status))
+    processes.map(process => deploymentService.getProcessState(process.idWithName).map(status => process.name -> status))
       .sequence[Future, (String, ProcessState)].map(_.toMap)
   }
 

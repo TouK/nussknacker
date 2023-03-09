@@ -41,10 +41,10 @@ object Initialization {
 
   private def runOperationsTransactionally(db: DbConfig, operations: List[InitialOperation])(implicit ec: ExecutionContext): List[Unit] = {
 
-    import db.driver.api._
+    import db.profile.api._
 
     val result = operations.map(_.runOperation).sequence[DB, Unit]
-    val runFuture = db.run(result.transactionally)
+    val runFuture = DBIOActionRunner(db).run(result.transactionally)
 
     //TODO: make it more configurable...
     Await.result(runFuture, 10 minute)
@@ -61,9 +61,9 @@ trait InitialOperation extends LazyLogging {
 class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends InitialOperation {
   override def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     //`insertOrUpdate` in Slick v.3.2.0-M1 seems not to work
-    import dbConfig.driver.api._
+    import dbConfig.profile.api._
     val espTables = new EspTables {
-      override implicit val profile: JdbcProfile = dbConfig.driver
+      override implicit val profile: JdbcProfile = dbConfig.profile
     }
     val uppsertEnvironmentAction = for {
       alreadyExists <- espTables.environmentsTable.filter(_.name === environmentName).exists.result

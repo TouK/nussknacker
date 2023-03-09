@@ -14,9 +14,15 @@ trait Repository [F[_]] {
   val dbConfig: DbConfig
 
   //this has to be val, not def to have *stable* scala identifiers - we want to be able to do import api._ 
-  protected lazy val profile: JdbcProfile = dbConfig.driver
+  protected lazy val profile: JdbcProfile = dbConfig.profile
 
   protected lazy val api : profile.API = profile.api
+
+}
+
+trait DbioRepistory extends Repository[DB] {
+
+  override def run[R]: (DB[R]) => DB[R] = identity
 
 }
 
@@ -24,6 +30,8 @@ trait BasicRepository extends Repository[Future] {
 
   import api._
 
-  override def run[R]: (DB[R]) => Future[R] = a => dbConfig.run(a.transactionally)
+  private val dbioRunner = DBIOActionRunner(dbConfig)
+
+  override def run[R]: (DB[R]) => Future[R] = a => dbioRunner.run(a.transactionally)
 
 }

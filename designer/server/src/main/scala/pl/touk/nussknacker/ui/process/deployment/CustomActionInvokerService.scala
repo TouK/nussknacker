@@ -18,6 +18,10 @@ trait CustomActionInvokerService {
 
 }
 
+// TODO: move this logic to DeploymentService - thanks to it, we will be able to:
+//       - block two concurrent custom actions - see ManagementResourcesConcurrentSpec
+//       - see those actions in the actions table
+//       - send notifications about finished/failed custom actions
 class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepository[Future],
                                      dispatcher: DeploymentManagerDispatcher,
                                      processStateService: ProcessStateService) extends CustomActionInvokerService {
@@ -31,18 +35,17 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
           processVersion = process.toEngineProcessVersion,
           user = user.toManagerUser,
           params = params)
-        dispatcher.deploymentManager(id.id).flatMap { manager =>
-          manager.customActions.find(_.name == actionName) match {
-            case Some(customAction) =>
-              processStateService.getProcessState(id).flatMap(status => {
-                if (customAction.allowedStateStatusNames.contains(status.status.name)) {
-                  manager.invokeCustomAction(actionReq, process.json)
-                } else
-                  Future(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
-              })
-            case None =>
-              Future(Left(CustomActionNonExisting(actionReq)))
-          }
+        val manager = dispatcher.deploymentManager(process.processingType)
+        manager.customActions.find(_.name == actionName) match {
+          case Some(customAction) =>
+            processStateService.getProcessState(id).flatMap { status =>
+              if (customAction.allowedStateStatusNames.contains(status.status.name)) {
+                manager.invokeCustomAction(actionReq, process.json)
+              } else
+                Future.successful(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
+            }
+          case None =>
+            Future.successful(Left(CustomActionNonExisting(actionReq)))
         }
       case None =>
         Future.failed(ProcessNotFoundError(id.id.value.toString))
