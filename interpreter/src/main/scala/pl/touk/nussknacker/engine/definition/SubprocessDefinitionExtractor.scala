@@ -19,13 +19,13 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.Subproces
 case class SubprocessDetails(canonical: CanonicalProcess, category: String)
 
 
-class SubprocessDefinitionExtractor(category:String, subprocessesDetails:Set[SubprocessDetails], subprocessesConfig:Map[String, SingleComponentConfig], classLoader: ClassLoader) {
+class SubprocessDefinitionExtractor(category: String, subprocessesDetails: Set[SubprocessDetails], subprocessesConfig: Map[String, SingleComponentConfig], classLoader: ClassLoader) {
 
-  def extract(subprocessId: String): List[Parameter] = {
+  def extractBySubprocessId(subprocessId: String): List[Parameter] = {
     extract.getOrElse(subprocessId, ObjectDefinition.withParams(List.empty)).parameters
   }
 
-  private def extract: Map[String, ObjectDefinition] = {
+  protected def extract: Map[String, ObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, FragmentSpecificData(docsUrl), _, _), FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>
         val config = subprocessesConfig.getOrElse(id, SingleComponentConfig.zero).copy(docsUrl = docsUrl)
@@ -41,7 +41,7 @@ object SubprocessDefinitionExtractor {
 
   implicit val dummyExtractor = SubprocessDefinitionExtractor(category = "dummy", subprocessesDetails = Set.empty, Map.empty, classLoader = this.getClass.getClassLoader)
 
-  def apply(category:String, subprocessesDetails:Set[SubprocessDetails], subprocessesConfig :Map[String, SingleComponentConfig], classLoader:ClassLoader): SubprocessDefinitionExtractor = {
+  def apply(category: String, subprocessesDetails: Set[SubprocessDetails], subprocessesConfig: Map[String, SingleComponentConfig], classLoader: ClassLoader): SubprocessDefinitionExtractor = {
     new SubprocessDefinitionExtractor(
       category = category,
       subprocessesDetails = subprocessesDetails,

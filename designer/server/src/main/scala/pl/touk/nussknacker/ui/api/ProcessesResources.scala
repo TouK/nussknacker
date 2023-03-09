@@ -173,7 +173,7 @@ class ProcessesResources(
                       subprocessesConfig  = subprocessesConfig,
                       classLoader         = classLoader
                     )
-                    val subprocessesDefinition = subprocessDefinitionExtractor.extract(process.id)
+                    val subprocessesDefinition = subprocessDefinitionExtractor.extractBySubprocessId(process.id)
 
                     validateAndReverseResolve(enrichDetailsWithProcessState(process))
                   }

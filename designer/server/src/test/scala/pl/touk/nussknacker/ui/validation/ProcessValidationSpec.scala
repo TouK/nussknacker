@@ -526,7 +526,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val subprocess = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
       nodes = List(
-        FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("subParam1", SubprocessClazzRef[String])))),
+        FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("shouldNotBeEmptyParam", SubprocessClazzRef[String])))),
         FlatNode(SubprocessOutputDefinition("subOut1", "out", List(Field("foo", "42L"))))
       ),
       additionalBranches = List.empty
@@ -534,11 +534,10 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
     val process = createProcess(
       nodes = List(
-//        Source("source", SourceRef(sourceTypeName, List())),
-        Source("source", SourceRef("sourceWithParams", List(evaluatedparam.Parameter("mandatory", "")))),
+        Source("source", SourceRef("sourceWithParams", List(evaluatedparam.Parameter("mandatory", "'ala'")))),
         SubprocessInput("subIn", SubprocessRef(
           subprocess.id,
-          List(evaluatedparam.Parameter("subParam1", ""))),
+          List(evaluatedparam.Parameter("shouldNotBeEmptyParam", Expression("spel", "")))),
           isDisabled = Some(false)
         ),
         Sink("sink", SinkRef(sinkTypeName, Nil))
@@ -550,10 +549,8 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
 
     val processValidation = mockWithSubprocessValidation(Set(subprocess))
-
     val validationResult = processValidation.validate(process, Category1)
-    validationResult.errors.invalidNodes shouldBe Symbol("empty")
-    validationResult.errors.globalErrors shouldBe Symbol("empty")
+    validationResult.errors.invalidNodes.size shouldBe 1
     validationResult.saveAllowed shouldBe true
   }
 

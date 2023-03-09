@@ -12,6 +12,14 @@ object Validations {
   import cats.data.ValidatedNel
   import cats.implicits._
 
+  def validateParametersSafe(defParams: List[Parameter], actualParams: List[evaluatedparam.Parameter])(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
+    if (defParams.isEmpty) {
+      valid(())
+    }
+    else {
+      Validations.validateParameters(defParams, actualParams)
+    }
+  }
   def validateParameters(parameterDefinitions: List[Parameter],
                          parameters: List[evaluatedparam.Parameter])
                         (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {

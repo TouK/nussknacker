@@ -140,18 +140,10 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
   def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)
                             (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
-    def validateParams (defParams: List[Parameter], actualParams: List[evaluatedparam.Parameter]):ValidatedNel[PartSubGraphCompilationError, Unit]={
-      if (defParams.size == 0) valid(())
-      else Validations.validateParameters(
-        defParams,
-        actualParams
-      )
-    }
-
     val ref = subprocessInput.ref
-    val parametersDefinition = parametersDefinitionExtractor.extract(nodeId.id)
+    val parametersDefinition = parametersDefinitionExtractor.extractBySubprocessId(nodeId.id)
 
-    val validParamDefs: ValidatedNel[PartSubGraphCompilationError, List[Parameter]] = validateParams(parametersDefinition, ref.parameters)
+    val validParamDefs: ValidatedNel[PartSubGraphCompilationError, List[Parameter]] = Validations.validateParametersSafe(parametersDefinition, ref.parameters)
       .andThen(_ =>  ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence)
 
     val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>

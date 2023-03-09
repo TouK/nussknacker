@@ -40,17 +40,17 @@ object NodeDataValidator {
                validationContext: ValidationContext,
                branchContexts: Map[String, ValidationContext],
                getFragment: String => Option[CanonicalProcess],
-               outgoingEdges: List[OutgoingEdge]
-              )(implicit metaData: MetaData, subprocessDefinitionExtractor: SubprocessDefinitionExtractor): ValidationResponse = {
+               outgoingEdges: List[OutgoingEdge],
+               subprocessDefinitionExtractor: SubprocessDefinitionExtractor
+              )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
 
       val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
       implicit val nodeId: NodeId = NodeId(nodeData.id)
-      implicit val parametersDefinitionExtractor = subprocessDefinitionExtractor
       val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
-        expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.Validation)(parametersDefinitionExtractor)
+        expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.Validation)(subprocessDefinitionExtractor)
 
       nodeData match {
         case a: Join => toValidationResponse(compiler.compileCustomNodeObject(a, Right(branchContexts), ending = false))

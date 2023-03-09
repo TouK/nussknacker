@@ -1,27 +1,22 @@
 package pl.touk.nussknacker.ui.api
 
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server.Route
 import cats.data.OptionT
 import cats.instances.future._
-import cats.syntax.traverse._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import org.springframework.util.ClassUtils
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
@@ -34,16 +29,13 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareValidationContext}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -55,13 +47,12 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 class NodesResources(val processRepository: FetchingProcessRepository[Future],
                      subprocessRepository: SubprocessRepository,
-                     typeToConfigModel: ProcessingTypeDataProvider[ModelData],
-                     typeToConfigPrcessing: ProcessingTypeDataProvider[ProcessingTypeData],
+                     typeToConfig: ProcessingTypeDataProvider[ModelData],
                      processValidation: ProcessValidation,
                     )(implicit val ec: ExecutionContext)
   extends ProcessDirectives with FailFastCirceSupport with RouteWithUser {
 
-  private val additionalInfoProviders = new AdditionalInfoProviders(typeToConfigModel)
+  private val additionalInfoProviders = new AdditionalInfoProviders(typeToConfig)
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
     import akka.http.scaladsl.server.Directives._
@@ -75,21 +66,17 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
             }
           }
         } ~ path("validation") {
-          val modelData = typeToConfigModel.forTypeUnsafe(process.processingType)
+          val modelData = typeToConfig.forTypeUnsafe(process.processingType)
           implicit val requestDecoder: Decoder[NodeValidationRequest] = NodesResources.prepareNodeRequestDecoder(modelData)
           entity(as[NodeValidationRequest]) { nodeData =>
             complete {
-//              TODO: pass subrocessparamExtractor here
-              val processTypeData = typeToConfigPrcessing.forType(process.processingType)
-              val processConfig = processTypeData.map(_.modelData).map(_.processConfig).get
-              val classLoader = processTypeData.map(_.modelData).map(_.modelClassLoader).map(_.classLoader).get
-              val subprocessesConfig: Map[String, SingleComponentConfig] = ComponentsUiConfigExtractor.extract(processConfig)
               val subprocessesDetails = subprocessRepository.loadSubprocesses(Map.empty, process.processCategory)
+              val subprocessesConfig: Map[String, SingleComponentConfig] = ComponentsUiConfigExtractor.extract(modelData.processConfig)
               val subprocessDefinitionExtractor = SubprocessDefinitionExtractor.apply(
                 category = process.processCategory,
                 subprocessesDetails = subprocessesDetails.map { d => pl.touk.nussknacker.engine.definition.SubprocessDetails(d.canonical, d.category) },
                 subprocessesConfig = subprocessesConfig,
-                classLoader = classLoader
+                classLoader = modelData.modelClassLoader.classLoader
               )
               NodeValidator.validate(nodeData, modelData, process.id, subprocessRepository, subprocessDefinitionExtractor)
             }
@@ -105,7 +92,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
             }
           }
         } ~ path("validation") {
-          val modelData = typeToConfigModel.forTypeUnsafe(process.processingType)
+          val modelData = typeToConfig.forTypeUnsafe(process.processingType)
           implicit val requestDecoder: Decoder[PropertiesValidationRequest] = preparePropertiesRequestDecoder(modelData)
           entity(as[PropertiesValidationRequest]) { properties =>
             complete {
@@ -152,12 +139,11 @@ object NodesResources {
 object NodeValidator {
   def validate(nodeData: NodeValidationRequest, modelData: ModelData, processId: String, subprocessRepository: SubprocessRepository, subprocessDefinitionExtractor: SubprocessDefinitionExtractor): NodeValidationResult = {
     implicit val metaData: MetaData = nodeData.processProperties.toMetaData(processId)
-    implicit val parametersDefinitionExtractor : SubprocessDefinitionExtractor = subprocessDefinitionExtractor
     val validationContext = prepareValidationContext(modelData)(nodeData.variableTypes)
     val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValuesNow(prepareValidationContext(modelData))
 
     val edges = nodeData.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to, e.edgeType))
-    NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs, k => subprocessRepository.get(k).map(_.canonical), edges)(metaData, parametersDefinitionExtractor) match {
+    NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs, k => subprocessRepository.get(k).map(_.canonical), edges, subprocessDefinitionExtractor)(metaData) match {
       case ValidationNotPerformed => NodeValidationResult(parameters = None, expressionType = None, validationErrors = Nil, validationPerformed = false)
       case ValidationPerformed(errors, parameters, expressionType) =>
         val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter))
