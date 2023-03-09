@@ -8,7 +8,7 @@ sidebar_position: 3
 This page covers topics specific to the Streaming processing mode. Please read the [common introduction](Intro.md) before proceeding. The components which implement aggregates in the time windows (Flink engine only) are covered [here](AggregatesInTimeWindows.md).
 
 
-In the Streaming processing mode the scenario processes events. They are read from Kafka topics and processed by the [engine](https://nussknacker.io/documentation/about/engines/) of choice: Flink or Lite. At the end of the scenario, events which represent results or decisions are written to Kafka topic(s).
+In the Streaming processing mode the scenario processes events. They are read from Kafka topics and processed by the [engine](/about/engines/) of choice: Flink or Lite. At the end of the scenario, events which represent results or decisions are written to Kafka topic(s).
 
 &nbsp;
 ## Prerequisites
@@ -44,12 +44,12 @@ In general following rules apply:
 * We use _event time_ in scenarios to handle notion of passing time
 * Kafka record timestamps are used to assign event time to Flink events
 * Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time_) that generated them
-* We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../integration/KafkaIntegration#available-configuration-options) for details). 
+* We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../integration/KafkaIntegration.md#available-configuration-options) for details). 
 
 &nbsp;
 #### Aggregations, window processing 
 
-If a new event is triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) for more details.
+If a new event is triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows.md#tumbling-window) for more details.
 
 &nbsp;
 ### Notion of time | Lite engine only

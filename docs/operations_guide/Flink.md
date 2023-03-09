@@ -16,7 +16,7 @@ In order to understand various metrics dealing with the concept of time (e.g. de
 Flink reference [documentation on time concepts](https://ci.apache.org/projects/flink/flink-docs-stable/docs/concepts/time/)
  is a good starting point.
 
-Pay special attention to the concept of event time and watermarks, see also [documentation](../scenarios_authoring/Intro#notion-of-time) to understand how Nussknacker deals with them.
+Pay special attention to the concept of event time and watermarks, see also [documentation](../scenarios_authoring/Intro.md#notion-of-time) to understand how Nussknacker deals with them.
 
 
 ### Integration with Apache Kafka
@@ -27,7 +27,7 @@ In particular, one must not forget that the Flink connector (when checkpoints ar
 
 
 
-* Commits offsets to Kafka only during checkpoint - so offsets returned by Kafka almost always will not be correct .
+* Commits the offsets to Kafka only during checkpoint - so offsets returned by Kafka almost always will not be correct .
 * Ignore offsets in Kafka when it’s started with the checkpointed state - topic offsets are also saved in the checkpointed state.
 
 ## Nussknacker and Flink cluster
@@ -119,7 +119,7 @@ For minor release changes (e.g. 1.11 to 1.12) it’s a bit more involved, the sa
 * Upgrade cluster
 * Restore all jobs from savepoints
 
-See Nussknacker management REST API [documentation](#deployment-rest-api) for performing savepoints and restoring from them.
+See Nussknacker management REST API [documentation](../operations_guide/Common.md#deployment-rest-api) for performing savepoints and restoring from them.
 
 ### Common problems with Flink cluster
 
@@ -213,7 +213,7 @@ Flink exposes many metrics for each of the jobs, you can read about them in deta
 
 Most of them are quite technical, and they do not show data from nodes of the Nussknacker scenario. Nussknacker adds a couple of its own metrics, described in the table below:
 
-Each of metrics described in [common part](./Common) comes with the following tags:
+Each of metrics described in [common part](./Common.md) comes with the following tags:
 
 * process
 * slot (important for large parallelism)

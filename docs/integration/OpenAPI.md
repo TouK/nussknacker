@@ -78,4 +78,4 @@ level to `DEBUG` will turn on logging on all enrichers.
 
 Enricher level logging can be enabled:
 - in Flink TaskManager [configuration](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/streaming/flink/log4j-console.properties)
-- in Lite runtime [configuration](../installation_configuration_guide/DeploymentManagerConfiguration#configuring-runtime-logging)
+- in Lite runtime [configuration](../installation_configuration_guide/DeploymentManagerConfiguration.md#configuring-runtime-logging)
