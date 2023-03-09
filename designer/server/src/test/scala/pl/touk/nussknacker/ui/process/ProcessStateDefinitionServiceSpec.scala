@@ -40,8 +40,8 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
       streamingProcessStateDefinitionManager,
       fraudProcessStateDefinitionManager
     )
-    val service = new ProcessStateDefinitionService(providerWithUniqueStateDefinitions, categoryService)
 
+    val service = new ProcessStateDefinitionService(providerWithUniqueStateDefinitions, categoryService)
     val definitions = service.fetchStateDefinitions()
 
     definitions should contain(UIStateDefinition(

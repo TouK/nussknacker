@@ -15,8 +15,6 @@ class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[Pro
     * states with the same StatusName and different meanings. Here is an assertion that this does not happen,
     * and each state has the same definition across all processingTypes
     */
-  validate()
-
   def validate(): Unit = {
     val countDefinitionsForName = allProcessingTypeStateDefinitions
       .groupBy { case (_, statusName, _) =>  statusName }
@@ -34,6 +32,7 @@ class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[Pro
   }
 
   def fetchStateDefinitions(): Set[UIStateDefinition] = {
+    validate()
     allProcessingTypeStateDefinitions
       .groupBy { case (_, statusName, _) => statusName }
       .map { case (_, stateDefinitionsByName) =>
