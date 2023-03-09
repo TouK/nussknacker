@@ -20,15 +20,9 @@ export function FilterListItemLabel({ name, icon }: { name: string; icon?: strin
     }, [name, t]);
 
     return icon ? (
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
             <span>{label}</span>
-            <NuIcon
-                src={icon}
-                sx={{ color: "primary.main" }}
-                style={{
-                    fontSize: "1.2em",
-                }}
-            />
+            <NuIcon src={icon} sx={{ fontSize: "1.2em", color: "inherit" }} />
         </Stack>
     ) : (
         <>{label}</>

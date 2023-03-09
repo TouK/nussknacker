@@ -4,6 +4,7 @@
     "./config": "./config",
     "./HttpService": "./http/HttpService",
     "./Auth": "./containers/Auth/AuthInitializer",
-    "./ComponentIcon": "./components/toolbars/creator/ComponentIcon"
+    "./ComponentIcon": "./components/toolbars/creator/ComponentIcon",
+    "./Icon": "./components/UrlIcon"
   }
 }

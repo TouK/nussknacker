@@ -104,6 +104,11 @@ module.exports = {
       "/be-static": {
         target: process.env.BACKEND_DOMAIN,
         changeOrigin: true,
+        onProxyRes: (proxyRes, req) => {
+          if (req.headers?.origin) {
+            proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin
+          }
+        },
         pathRewrite: {
           "^/be-static": "/static",
         },
