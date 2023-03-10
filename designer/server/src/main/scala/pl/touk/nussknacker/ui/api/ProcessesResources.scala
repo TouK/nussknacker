@@ -39,16 +39,15 @@ import pl.touk.nussknacker.ui.util._
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: Move remained business logic to processService
-class ProcessesResources(
-                          val processRepository: FetchingProcessRepository[Future],
-                          subprocessRepository: SubprocessRepository,
-                          processService: ProcessService,
-                          processToolbarService: ProcessToolbarService,
-                          processResolving: UIProcessResolving,
-                          val processAuthorizer:AuthorizeProcess,
-                          processChangeListener: ProcessChangeListener,
-                          typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData]
-)(implicit val ec: ExecutionContext, mat: Materializer)
+class ProcessesResources(val processRepository: FetchingProcessRepository[Future],
+                         subprocessRepository: SubprocessRepository,
+                         processService: ProcessService,
+                         processToolbarService: ProcessToolbarService,
+                         processResolving: UIProcessResolving,
+                         val processAuthorizer: AuthorizeProcess,
+                         processChangeListener: ProcessChangeListener,
+                         typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData]
+                        )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
     with EspPathMatchers
@@ -162,8 +161,8 @@ class ProcessesResources(
                 processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
                   case Some(process) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(process))
                   case Some(process) => {
-                    val processTypeData  = typeToConfig.forType(process.processingType)
-                    val processConfig    = processTypeData.map(_.modelData).map(_.processConfig).get
+                    val processTypeData = typeToConfig.forType(process.processingType)
+                    val processConfig = processTypeData.map(_.modelData).map(_.processConfig).get
                     val classLoader = processTypeData.map(_.modelData).map(_.modelClassLoader).map(_.classLoader).get
                     val subprocessesConfig:Map[String,SingleComponentConfig] = ComponentsUiConfigExtractor.extract(processConfig)
                     val subprocessesDetails = subprocessRepository.loadSubprocesses(Map.empty, process.processCategory)

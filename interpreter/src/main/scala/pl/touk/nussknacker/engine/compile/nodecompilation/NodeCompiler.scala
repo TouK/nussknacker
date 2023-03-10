@@ -65,8 +65,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                    classLoader: ClassLoader,
                    resultCollector: ResultCollector,
                    componentUseCase: ComponentUseCase)
-                  (implicit parametersDefinitionExtractor: SubprocessDefinitionExtractor){
-
+                  (implicit subprocessDefinitionExtractor: SubprocessDefinitionExtractor){
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
     new NodeCompiler(definitions, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, componentUseCase)
@@ -141,10 +140,12 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)
                             (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
     val ref = subprocessInput.ref
-    val parametersDefinition = parametersDefinitionExtractor.extractBySubprocessId(nodeId.id)
+    val parametersDefinition = subprocessDefinitionExtractor.extractBySubprocessId(nodeId.id)
 
-    val validParamDefs: ValidatedNel[PartSubGraphCompilationError, List[Parameter]] = Validations.validateParametersSafe(parametersDefinition, ref.parameters)
-      .andThen(_ =>  ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence)
+    val validParamDefs: ValidatedNel[PartSubGraphCompilationError, List[Parameter]] =
+      Validations
+        .validateParametersSafe(parametersDefinition, ref.parameters)
+        .andThen(_ =>  ref.parameters.map(p => validateSubprocessInputParamType(subprocessInput, p.name)).sequence)
 
     val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>
       ps.map(p => (p.name, p.typ))
@@ -332,7 +333,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 
 
-  private def getSubprocessParamDefinition(subprocessInput: SubprocessInput, paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
+  private def validateSubprocessInputParamType(subprocessInput: SubprocessInput, paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
     val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
     subParam.typ.toRuntimeClass(classLoader) match {
       case Success(runtimeClass) =>
@@ -343,6 +344,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
         ).toValidatedNel
     }
   }
+
 
   //TODO: better classloader error handling
   private def loadFromParameter(subprocessParameter: SubprocessParameter)(implicit nodeId: NodeId) =
