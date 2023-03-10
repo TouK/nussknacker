@@ -1,0 +1,23 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      backport_release:
+        description: "Backport release - 'latest' tag won't be updated on docker"
+        required: true
+        default: true
+        type: boolean
+      release_candidate:
+        description: "Release candidate - 'latest' tag won't be updated on docker"
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    env:
+      NU_DOCKER_UPDATE_LATEST: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
+    steps:
+      - run: echo Docker update latest is ${{ env.NU_DOCKER_UPDATE_LATEST }}
+
