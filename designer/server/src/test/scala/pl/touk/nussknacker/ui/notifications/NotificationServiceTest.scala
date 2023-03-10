@@ -47,7 +47,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
   private val writeProcessRepository = TestFactory.newWriteProcessRepository(db)
   private val actionRepository = DbProcessActionRepository.create(db, new MapBasedProcessingTypeDataProvider(Map.empty))
 
-  private val expectedRefreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity)
+  private val expectedRefreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
   private val expectedRefreshAfterFail = List(DataToRefresh.state)
 
   test("Should return only events for user in given time") {
