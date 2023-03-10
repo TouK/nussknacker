@@ -112,7 +112,6 @@ object transformers {
                                sessionWindowTrigger: SessionWindowTrigger,
                                variableName: String
                               )(implicit nodeId: NodeId): ContextTransformation =
-  // TODO: to be consistent with sliding window we should probably forward context of variables for tumblingWindowTrigger == SessionWindowTrigger.OnEnd
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, emitContext = sessionWindowTrigger == SessionWindowTrigger.OnEvent, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
