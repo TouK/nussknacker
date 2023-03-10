@@ -67,7 +67,7 @@ As described in the [Concepts section](#concepts), there are cases when during s
 response scenario, multiple data records start to "flow" through the scenario. Just to reiterate, this situation happens
 in the following cases:
 
-- as the result of the execution of the [for-each](./BasicNodes.md#) node,
+- as the result of the execution of the [for-each](./BasicNodes.md#foreach) node,
 - if [split](./BasicNodes.md#split) node is used
 
 In such cases, the `collect` node provides a convenient way of collecting all these records into a list. If data records

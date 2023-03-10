@@ -61,7 +61,7 @@ You can check example usage at [Nussknacker Quickstart repository](https://githu
 
 ## Configuration with environment variables
 
-All configuration options are described in [Configuration](./DesignerConfiguration.md).
+All configuration options are described in [Configuration](../installation_configuration_guide/DesignerConfiguration.md).
 
 Some of them can be configured using environment variables, which is mostly helpful in Docker setup.
 In the table below there are all environment variables used in Nussknacker image. $NUSSKNACKER_DIR is a placeholder pointing to Nussknacker installation directory.
@@ -184,11 +184,11 @@ please consult their documentation.
 
 You can set up Nussknacker as a systemd service using our example unit file.
 
-1. Download distribution as described in [Binary package installation](Installation#Binary package installation)
+1. Download distribution as described in [Binary package installation](Installation.md#Binary package installation)
 2. Unzip it to `/opt/nussknacker`
 3. `sudo touch /lib/systemd/system/nussknacker.service`
 4. edit `/lib/systemd/system/nussknacker.service` file and add write content
-   of [Systemd unit file](Installation#systemd-unit-file)
+   of [Systemd unit file](Installation.md#systemd-unit-file)
 5. `sudo systemctl daemon-reload`
 6. `sudo systemctl enable nussknacker.service`
 7. `sudo systemctl start nussknacker.service`
@@ -257,7 +257,7 @@ If you want to install them from the scratch or use already installed at your or
   - Telegraf's configuration - some metric tags and names need to be cleaned
   - Importing scenario dashboard to Grafana configuration
 - Flink savepoint configuration. To be able to use scenario verification
-  (see `shouldVerifyBeforeDeploy` property in [Deployment Manager documentation](./DeploymentManagerConfiguration.md))
+  (see `shouldVerifyBeforeDeploy` property in [Deployment Manager documentation](../installation_configuration_guide/DeploymentManagerConfiguration.md))
   you have to make sure that savepoint location is available from Nussknacker designer (e.g. via NFS like in quickstart
   setup)
 
