@@ -47,7 +47,7 @@ class ProcessesResources(
                           processResolving: UIProcessResolving,
                           val processAuthorizer:AuthorizeProcess,
                           processChangeListener: ProcessChangeListener,
-                          typeToConfigProvider: ProcessingTypeDataProvider[ProcessingTypeData]
+                          typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData]
 )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -162,7 +162,7 @@ class ProcessesResources(
                 processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
                   case Some(process) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(process))
                   case Some(process) => {
-                    val processTypeData  = typeToConfigProvider.forType(process.processingType)
+                    val processTypeData  = typeToConfig.forType(process.processingType)
                     val processConfig    = processTypeData.map(_.modelData).map(_.processConfig).get
                     val classLoader = processTypeData.map(_.modelData).map(_.modelClassLoader).map(_.classLoader).get
                     val subprocessesConfig:Map[String,SingleComponentConfig] = ComponentsUiConfigExtractor.extract(processConfig)
@@ -293,7 +293,7 @@ class ProcessesResources(
     )))
 
   private def deploymentManager(processingType: ProcessingType): Option[DeploymentManager] =
-    typeToConfigProvider.forType(processingType).map(_.deploymentManager)
+    typeToConfig.forType(processingType).map(_.deploymentManager)
 
   private def withJson(processId: ProcessId, version: VersionId)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
