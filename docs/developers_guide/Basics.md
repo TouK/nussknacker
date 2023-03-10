@@ -8,7 +8,7 @@ The main way of adding customizations to Nussknacker is [ServiceLoader](https://
 **Please make sure to put jars with custom code on right classpath**
 - Customizations of model (in particular `ComponentProviders`) can be loaded by adding libs/classes to dedicated `components/common/extra`, 
   `components/lite/extra` or `components/flink/extra` directory. For advanced usages, you can configure `modelConfig.classPath` 
-  in [Model config](../installation_configuration_guide/model/ModelConfiguration.md).
+  in [Model config](../installation_configuration_guide/ModelConfiguration.md).
 - Code of Designer customizations should go to the main designer classpath (e.g. put the jars in the `lib` folder)
  
 ## Types
