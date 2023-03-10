@@ -4,7 +4,10 @@ sidebar_position: 4
 ---
 # Designer configuration
 
-The default Designer configuration is defined in [defaultDesignerConfig.conf](https://github.com/TouK/nussknacker/blob/staging/designer/server/src/main/resources/defaultDesignerConfig.conf).
+Designer configuration area contains configs for web application interface, security, various UI settings, database and more. Check [configuration areas](./Common.md#configuration-areas)) to understand where Designer configuration should be
+placed in the Nussknacker configuration.
+
+The default Designer configuration can be found in [defaultDesignerConfig.conf](https://github.com/TouK/nussknacker/blob/staging/designer/server/src/main/resources/defaultDesignerConfig.conf).
 
 
 ## Web interface configuration
@@ -112,13 +115,15 @@ See [development configuration](https://github.com/TouK/nussknacker/blob/staging
 
 ## Security
 
-Nussknacker has pluggable security architecture - by default we support two type of authentication: BasicAuth and
-OAuth2. You can either use default authentication provider, based on Basic authentication and static user configuration
-or integrate with other authentication mechanisms such as custom SSO implementation.
 
-### Users and permissions
+### Overview
+Nussknacker has pluggable security architecture - we support three types of authentication: BasicAuth, OAuth2 and OpenID Connect (OIDC). Configuration specific to each of these three types of authentication mechanism is described in the dedicated sections.
 
-Each user has id and set of permissions for every scenario category. There are following permissions:
+Nussknacker supports roles; the roles permissions are defined in the users configuration file. 
+
+### Users, roles and permissions
+
+Each user has id and set of permissions for every scenario category. The following permissions are supported:
 
 * Read - user can view scenarios in category
 * Write - user can modify/add new scenarios in category
@@ -138,7 +143,9 @@ Currently supported permissions:
 * AdminTab - shows Admin tab in the UI (right now there are some useful things kept there including search components
   functionality).
 
-### Configuration parameters 
+### Common configuration parameters 
+
+The table below contains parameters common to all the supported authentication methods.
 
 | Parameter name                   | Importance | Type        | Default value | Description                                                                                                                                                        |
 |----------------------------------|------------|-------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -147,6 +154,10 @@ Currently supported permissions:
 | authentication.anonymousUserRole | optional   | string      |               | Role assigned to an unauthenticated user if the selected authentication provider permits anonymous access. No anonymous access allowed unless a value is provided. |
 
 #### Users' file format:
+
+The association of the users to the roles is in the users' configuration file; in the case of OIDC it can additionally be supplemented by the list of roles provided by the OpenId provider.
+
+If OpenID Connect (OIDC) authentication is used, the information about the user identity is stored in the field `sub` (subject) of the OIDC token - make sure that these values match. 
 
 ```hocon
 users: [
@@ -230,7 +241,7 @@ authentication: {
 This workaround causes that passwords are kept in the memory, and it will introduce risk that someone with access to
 content of heap will see cached passwords.
 
-### OpenID Connect security module
+### OpenID Connect (OIDC) security module
 
 When talking about OAuth2 in the context of authentication, most people probably mean OpenID Connect, an identity layer
 built on top of it. Nussknacker provides a separate authentication provider for OIDC with simple configuration 
@@ -244,7 +255,7 @@ You can select this authentication method by setting the `authentication.method`
 | authentication.clientId              | required    | string         |                             | Client identifier valid at the authorization server                                                           |
 | authentication.clientSecret          | required    | string         |                             | Secret corresponding to the client identifier at the authorization server                                     |
 | authentication.audience              | recommended | string         |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                    |
-| authentication.rolesClaims           | recommended | list of string |                             | ID Token claims used for mapping users to roles instead of or additionally to the ones defined in `usersFile` |
+| authentication.rolesClaims           | recommended | list of string |                             | Name of the field in the ID token which contains list of user roles. This list supplements roles defined in the `usersFile` |
 | authentication.redirectUri           | optional    | url            | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                    |
 | authentication.scope                 | optional    | string         | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                   |
 | authentication.authorizationEndpoint | auxiliary   | url or path    | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider             |
@@ -385,7 +396,7 @@ No token refreshing nor revoking is implemented.
 ```
 ### OAuth2 security module - GitHub example with code flow
 
-#### Configuration in following format:
+#### Configuration example:
 
 ```
 authentication: {
@@ -411,7 +422,7 @@ authentication: {
 }
 ```
 
-#### Users file in following format:
+#### Users file example:
 
 ```
 users: [ //Special settings by user email
