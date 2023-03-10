@@ -156,7 +156,7 @@ The table below contains parameters common to all the supported authentication m
 
 The association of the users to the roles is in the users' configuration file; in the case of OIDC it can additionally be supplemented by  the list of roles provided by the OpenId provider.
 
-If OpenID Connect (OIDC) authentication is used, the information about the user identity is stored in the field `sub` (subject) of the OIDC token - make sure that the identity field in the users file has the same value as those in the sub field of the OIDC token. 
+If OpenID Connect (OIDC) authentication is used, the information about the user identity is stored in the field `sub` (subject) of the OIDC token - make sure that these values match. 
 
 ```hocon
 users: [
