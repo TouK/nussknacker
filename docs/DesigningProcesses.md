@@ -1,8 +1,8 @@
-#Designing processes 
+#Designing processes
 
 In this section you will learn how to create Nussknacker processes using defined model. In the examples we'll use sample model that comes with Nussknacker distribution. You can find latest sources [here](https://github.com/TouK/nussknacker/tree/master/engine/example/src/main/scala/).
-  
-If you want to learn how to develop your own model, please see [API](API.md)  
+
+If you want to learn how to develop your own model, please see [API](API.md)
 
 ###Global process properties
 * parallelism (see [Flink docs](https://flink.apache.org/faq.html#what-is-the-parallelism-how-do-i-set-it))
@@ -15,8 +15,8 @@ In the beginning there is only one variable - `input`, contains single record fo
 
 ###Expressions
 Currently expressions in Nussknacker can be written using Spring Expression Language.
- You can find extensive documentation [here](https://docs.spring.io/spring/docs/current/spring-framework-reference/html/expressions.html). Autocomplete function (Ctrl-Space) is available in expression input boxes. 
-See [more detailed documentation](Spel.md)
+You can find extensive documentation [here](https://docs.spring.io/spring/docs/current/spring-framework-reference/html/expressions.html). Autocomplete function (Ctrl-Space) is available in expression input boxes.
+See [more detailed documentation](Spel)
 
 #Basic nodes
 Node works with a data stream. It can produce, fetch, send, collect data or organize data flow.
