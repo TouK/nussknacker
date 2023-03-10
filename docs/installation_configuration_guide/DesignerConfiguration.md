@@ -3,7 +3,7 @@ sidebar_position: 4
 ---
 # Designer configuration
 
-Designer configuration area contains configs for web application interface, security, various UI settings, database and more. Check [configuration areas](./#configuration-areas) to understand where Designer configuration should be
+Designer configuration area contains configs for web application interface, security, various UI settings, database and more. Check [configuration areas](./Common.md#configuration-areas)) to understand where Designer configuration should be
 placed in the Nussknacker configuration.
 
 The default Designer configuration can be found in [defaultDesignerConfig.conf](https://github.com/TouK/nussknacker/blob/staging/designer/server/src/main/resources/defaultDesignerConfig.conf).
@@ -122,7 +122,7 @@ Nussknacker supports roles; the roles permissions are defined in the users confi
 
 ### Users, roles and permissions
 
-Each user has id and set of permissions for every scenario category. There following permissions are supported:
+Each user has id and set of permissions for every scenario category. The following permissions are supported:
 
 * Read - user can view scenarios in category
 * Write - user can modify/add new scenarios in category
@@ -154,7 +154,7 @@ The table below contains parameters common to all the supported authentication m
 
 #### Users' file format:
 
-The association of the users to the roles is in the users' configuration file; in the case of OIDC it can additionally be supplemented by  the list of roles provided by the OpenId provider.
+The association of the users to the roles is in the users' configuration file; in the case of OIDC it can additionally be supplemented by the list of roles provided by the OpenId provider.
 
 If OpenID Connect (OIDC) authentication is used, the information about the user identity is stored in the field `sub` (subject) of the OIDC token - make sure that these values match. 
 
