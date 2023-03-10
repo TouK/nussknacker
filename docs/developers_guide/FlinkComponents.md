@@ -14,7 +14,7 @@ is more complicated than a sink since the following things has to be provided:
   for serializing/deserializing emitted data (e.g. `#input`)
 - a [timestamp watermark handler](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/timestampwatermark/TimestampWatermarkHandler.scala)
   so that events are correctly processed downstream, for example to avoid (or force!) dropping late events by aggregates. Read more about
-  [notion of time](../scenarios_authoring/Intro.md#notion-of-time)
+  [notion of time](../scenarios_authoring/DataSourcesAndSinks.md#notion-of-time--flink-engine-only)
   and [watermarks](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/event-time/generating_watermarks/)
 - (optionally) generating test data support (trait `FlinkSourceTestSupport`) to ease [scenarios authoring](../scenarios_authoring/TestingAndDebugging.md)
 - (optionally) custom [context initializer](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/ContextInitializer.scala)
@@ -67,7 +67,7 @@ Examples:
 
 Custom transformation can arbitrarily change `DataStream[Context]`, it is implemented with [FlinkCustomStreamTransformation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkCustomStreamTransformation.scala).
 Great examples of custom transformers are [aggregates](../scenarios_authoring/AggregatesInTimeWindows.md). [See here](https://github.com/TouK/nussknacker/tree/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer)
-how components like [previousValue](../scenarios_authoring/DataSourcesAndSinks#previousvalue), [delay](../scenarios_authoring/DataSourcesAndSinks.md#delay)
+how components like [previousValue](../scenarios_authoring/DataSourcesAndSinks.md#previousvalue), [delay](../scenarios_authoring/DataSourcesAndSinks.md#delay)
 and aggregates are implemented.
 
 ## Common details
