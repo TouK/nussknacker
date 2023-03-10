@@ -10,7 +10,7 @@ trait DBIOActionValues { self: ScalaFutures =>
 
   implicit class DBIOActionOps[T](dbioAction: DB[T]) {
 
-    def dbioActionValues: T = dbioRunner.runInTransaction(dbioAction).futureValue
+    def dbioActionValues: T = dbioRunner.run(dbioAction).futureValue
 
   }
 
