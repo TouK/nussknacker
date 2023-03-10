@@ -52,6 +52,8 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     }
   }
 
+  override protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit] = Future.successful(())
+
   private val deployResult = LinkedHashMultimap.create[ProcessName, Future[Option[ExternalDeploymentId]]]
 
   private var cancelResult: Future[Unit] = Future.successful(())

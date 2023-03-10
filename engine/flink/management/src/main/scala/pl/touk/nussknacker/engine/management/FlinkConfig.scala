@@ -14,4 +14,8 @@ import scala.concurrent.duration.DurationInt
 case class FlinkConfig(restUrl: String,
                        jobManagerTimeout: FiniteDuration = 1 minute,
                        shouldVerifyBeforeDeploy: Boolean = true,
-                       shouldCheckAvailableSlots: Boolean = true)
+                       shouldCheckAvailableSlots: Boolean = true,
+                       waitForDuringDeployFinish: Option[FlinkWaitForDuringDeployFinishedConfig] =
+                       Some(FlinkWaitForDuringDeployFinishedConfig(60, 1 second)))
+
+case class FlinkWaitForDuringDeployFinishedConfig(maxChecks: Int, delay: FiniteDuration)
