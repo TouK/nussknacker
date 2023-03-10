@@ -549,6 +549,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % flinkScope,
+        "com.softwaremill.retry" %% "retry" % "0.3.6",
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test"

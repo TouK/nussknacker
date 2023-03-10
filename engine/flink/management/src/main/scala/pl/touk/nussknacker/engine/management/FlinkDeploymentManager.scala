@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeployment
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import ModelData._
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
@@ -57,8 +58,11 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
         prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, canonicalProcess),
         savepointPath.orElse(maybeSavepoint)
       )
+      _ <- waitForDuringDeployFinished(processName)
     } yield runResult
   }
+
+  protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit]
 
   private def checkOldJobStatus(processVersion: ProcessVersion): Future[Option[ProcessState]] = {
     val processName = processVersion.processName
