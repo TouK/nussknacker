@@ -450,16 +450,17 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).dbioActionValues
 
-    val sineInitialStatus = SimpleStateStatus.Warning // I don't know why it is not NotDeployed
-    deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe sineInitialStatus
-    deploymentManager.withWaitForDeployFinish(processName) {
-      deploymentService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
-      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
+    deploymentManager.withEmptyProcessState(processName) {
+      val sinkInitialStatus = SimpleStateStatus.NotDeployed
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe sinkInitialStatus
+      deploymentManager.withWaitForDeployFinish(processName) {
+        deploymentService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
+        deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
 
-      deploymentService.invalidateInProgressActions()
-      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe sineInitialStatus
+        deploymentService.invalidateInProgressActions()
+        deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe sinkInitialStatus
+      }
     }
-    deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Running
   }
 
   override protected def beforeEach(): Unit = {

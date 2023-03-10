@@ -230,7 +230,12 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       for {
         state <- DBIOAction.from(getStateFromEngine(manager, processDetails.idWithName))
         cancelActionOpt <- handleFinishedProcess(processDetails, state)
-      } yield ObsoleteStateDetector.handleObsoleteStatus(state, cancelActionOpt.orElse(processDetails.lastAction))
+      } yield {
+        val lastAction = cancelActionOpt.orElse(processDetails.lastAction)
+        val finalState = ObsoleteStateDetector.handleObsoleteStatus(state, lastAction)
+        logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.map(_.status)}, in-progress action types: $inProgressActionTypes, last action: ${lastAction.map(_.action)})")
+        finalState
+      }
     }
   }
 

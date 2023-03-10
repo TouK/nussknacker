@@ -197,10 +197,10 @@ object SwaggerTyped {
     }
   }
 
-  private def inferredIntType(minValue: BigDecimal, exclusiveMinValue: BigDecimal, maxValue: BigDecimal, exclusiveMaxValue: BigDecimal): SwaggerTyped = {
+  private def inferredIntType(minValue: java.math.BigDecimal, exclusiveMinValue: java.math.BigDecimal, maxValue: java.math.BigDecimal, exclusiveMaxValue: java.math.BigDecimal): SwaggerTyped = {
 
-    val lowerBoundary: Option[BigDecimal] = List(Option(exclusiveMinValue).map(_ + 1), Option(minValue)).flatten.sorted(Ordering.BigDecimal.reverse).headOption
-    val upperBoundary: Option[BigDecimal] = List(Option(exclusiveMaxValue).map(_ - 1), Option(maxValue)).flatten.sorted(Ordering.BigDecimal).headOption
+    val lowerBoundary: Option[BigDecimal] = List(Option(exclusiveMinValue).map(_.add(java.math.BigDecimal.ONE)), Option(minValue)).flatten.map(bd => bd: BigDecimal).sorted(Ordering.BigDecimal.reverse).headOption
+    val upperBoundary: Option[BigDecimal] = List(Option(exclusiveMaxValue).map(_.subtract(java.math.BigDecimal.ONE)), Option(maxValue)).flatten.map(bd => bd: BigDecimal).sorted(Ordering.BigDecimal).headOption
 
     // We try to keep inferred type as narrow as possible,
     // but in the case when at least one boundary exceeds Long range we end up with BigInteger type.
