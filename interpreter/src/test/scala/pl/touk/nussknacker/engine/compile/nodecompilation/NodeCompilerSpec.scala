@@ -108,20 +108,16 @@ class NodeCompilerSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
-  class MockedSubprocessDefinitionExtractor(subprocesses: Map[String, ObjectDefinition]) extends SubprocessDefinitionExtractor(category = "RTM", subprocessesDetails = Set.empty, Map.empty, classLoader = this.getClass.getClassLoader) {
-    val map = subprocesses
-    override def extract: Map[String, ObjectDefinition] = {
-        map
-    }
-  }
-  def getSubprocessDefinitionExtractor ={
-    val map = Map(
+  def getSubprocessDefinitionExtractor = {
+    val subprocesses = Map(
       "fragment1" -> ObjectDefinition.withParams(List(
         definition.Parameter[String]("P1").copy(validators = List(), defaultValue = None),
         definition.Parameter[Short]( "P2").copy(validators = List(MandatoryParameterValidator), defaultValue = None),
         definition.Parameter[String]("P3").copy(validators = List(MandatoryParameterValidator), defaultValue = Some("'kuku'"))
       )),
     )
-    new MockedSubprocessDefinitionExtractor(map)
+    new SubprocessDefinitionExtractor(category = "RTM", subprocessesDetails = Set.empty, Map.empty, classLoader = this.getClass.getClassLoader) {
+      override def extract: Map[String, ObjectDefinition] = subprocesses
+    }
   }
 }
