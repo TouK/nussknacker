@@ -11,7 +11,7 @@ ALTER TABLE "process_actions" ADD COLUMN "created_at" TIMESTAMP;
 ALTER TABLE "process_actions" ADD COLUMN "failure_message" VARCHAR(1022);
 
 --- UPDATE OLD VALUES
-UPDATE "process_actions" set "state" = 'FINISHED', "created_at" = "performed_at";
+UPDATE "process_actions" set "id" = UUID(), "state" = 'FINISHED', "created_at" = "performed_at";
 
 --- ADD CONSTRAINTS
 ALTER TABLE "process_actions" ADD CONSTRAINT "process_actions_pk" PRIMARY KEY ("id");
