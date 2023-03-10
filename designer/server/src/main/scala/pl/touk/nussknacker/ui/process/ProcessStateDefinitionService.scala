@@ -20,7 +20,7 @@ class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[Pro
       .groupBy { case (_, statusName, _) =>  statusName }
       .map { case (statusName, stateDefinitionsForOneName) =>
         val uniqueDefinitionsForName = stateDefinitionsForOneName
-          .groupBy { case (_, _, sd) => (sd.displayableName, sd.icon, sd.tooltip, sd.description) }
+          .groupBy { case (_, _, sd) => (sd.displayableName, sd.icon) }
         (statusName, uniqueDefinitionsForName.size)
       }
     val namesWithNonUniqueDefinitions = countDefinitionsForName
@@ -35,12 +35,12 @@ class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[Pro
     validate()
     allProcessingTypeStateDefinitions
       .groupBy { case (_, statusName, _) => statusName }
-      .map { case (_, stateDefinitionsByName) =>
+      .map { case (statusName, stateDefinitionsByName) =>
         // here we assume it is asserted that all definitions are unique
         val stateDefinition = stateDefinitionsByName.map { case (_, _, sd) => sd }.head
         val categoriesWhereStateAppears = stateDefinitionsByName
           .flatMap { case (processingType, _, _) => categoryService.getProcessingTypeCategories(processingType).toSet }
-        UIStateDefinition(stateDefinition, categoriesWhereStateAppears)
+        UIStateDefinition(statusName, stateDefinition, categoriesWhereStateAppears)
       }
       .toSet
   }
@@ -56,4 +56,4 @@ class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[Pro
   }
 }
 
-@JsonCodec case class UIStateDefinition(definition: StateDefinition, categories: Set[String])
+@JsonCodec case class UIStateDefinition(name: StatusName, definition: StateDefinition, categories: Set[String])
