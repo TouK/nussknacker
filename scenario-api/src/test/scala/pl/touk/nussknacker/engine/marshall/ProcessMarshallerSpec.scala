@@ -198,7 +198,7 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
       |        {
       |            "type" : "Source",
       |            "id" : "start",
-      |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "expression": { "language": "spel", "expression": "in.topic" }}]}
+      |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "Topic", "expression": { "language": "spel", "expression": "in.topic" }}]}
       |            ${nodeAdditionalFields.map(fields => s""", "additionalFields" : $fields""").getOrElse("")}
       |        }
       |    ]

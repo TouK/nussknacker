@@ -130,14 +130,14 @@ const processDefinition = {
   "sourceFactories": {
     "kafka-transaction": {
       "parameters": [{
-        "name": "topic",
+        "name": "Topic",
         "typ": {"refClazzName": "java.lang.String"}
       }], "returnType": {"refClazzName": "org.nussknacker.model.Transaction"}, "categories": ["Category1"]
     }
   },
   "sinkFactories": {
     "endTransaction": {
-      "parameters": [{"name": "topic", "typ": {"refClazzName": "java.lang.String"}}],
+      "parameters": [{"name": "Topic", "typ": {"refClazzName": "java.lang.String"}}],
       "returnType": {"refClazzName": "pl.touk.esp.engine.kafka.KafkaSinkFactory"},
       "categories": ["Category1", "Category2", "Category3"]
     }
@@ -185,7 +185,7 @@ const process = {
     {
       "type": "Source",
       "id": "start",
-      "ref": {"typ": "kafka-transaction", "parameters": [{"name": "topic", "value": "transaction.topic"}]}
+      "ref": {"typ": "kafka-transaction", "parameters": [{"name": "Topic", "Value": "transaction.topic"}]}
     },
     {
       "type": "VariableBuilder",
@@ -224,7 +224,7 @@ const process = {
     {
       "type": "Sink",
       "id": "endEnriched",
-      "ref": {"typ": "transactionSink", "parameters": [{"name": "topic", "value": "transaction.errors"}]}
+      "ref": {"typ": "transactionSink", "parameters": [{"name": "Topic", "Value": "transaction.errors"}]}
     }
   ],
   "edges": [
@@ -268,7 +268,7 @@ const subprocess = {
     {
       "type": "Sink",
       "id": "endEnriched",
-      "ref": {"typ": "transactionSink", "parameters": [{"name": "topic", "value": "transaction.errors"}]}
+      "ref": {"typ": "transactionSink", "parameters": [{"name": "Topic", "Value": "transaction.errors"}]}
     }
   ],
   "edges": [

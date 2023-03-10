@@ -98,7 +98,7 @@ class DelayedKafkaAvroIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
         s"$TimestampFieldParamName" -> s"${timestampField}",
         s"$DelayParameterName" -> s"${delay}"
       )
-      .emptySink("out", "sinkForLongs", "value" -> "T(java.time.Instant).now().toEpochMilli()")
+      .emptySink("out", "sinkForLongs", "Value" -> "T(java.time.Instant).now().toEpochMilli()")
   }
 
 }

@@ -10,15 +10,18 @@ import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
+import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkSingleValueParameter
 
 import java.util.{Date, UUID}
 
 class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   import spel.Implicits._
+  import SingleValueSinkFactory._
 
   test("skip null records") {
 
@@ -61,7 +64,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   test("handles lazy params in sinks") {
     val process = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
-      .emptySink("end", "sinkForInts", "value" -> "#input.value1 + 4")
+      .emptySink("end", "sinkForInts", SingleValueParamName -> "#input.value1 + 4")
 
 
     val data = List(
@@ -252,7 +255,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       .streaming("proc")
       .source("start", "input")
       .enricher("componentUseCase", "componentUseCase", "returningComponentUseCaseService")
-      .emptySink("out", "sinkForStrings", "value" -> "#componentUseCase.toString")
+      .emptySink("out", "sinkForStrings", SingleValueParamName-> "#componentUseCase.toString")
 
     val data = List(
       SimpleRecord("a", 1, "a", new Date(1))
@@ -272,9 +275,9 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       .split("split",
         GraphBuilder
           .enricher("throwingNonTransientErrorsNodeId", "out", "throwingNonTransientErrors", "throw" -> "true")
-          .emptySink("out1", "sinkForStrings", "value" -> "'a'"),
+          .emptySink("out1", "sinkForStrings", SingleValueParamName -> "'a'"),
         GraphBuilder
-          .emptySink("out2", "sinkForStrings", "value" -> "'b'")
+          .emptySink("out2", "sinkForStrings", SingleValueParamName -> "'b'")
       )
 
     //we test both sync and async to be sure collecting is handled correctly

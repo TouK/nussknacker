@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.embedded.EmbeddedStateStatus.DetailedFailedStateStatus
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -22,15 +23,17 @@ import scala.jdk.CollectionConverters._
 class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploymentManagerTest
   with OptionValues with EitherValuesDetailedMessage {
 
+  import KafkaUniversalComponentTransformer._
+
   test("Deploys scenario and cancels") {
     val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
-        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
+      .source("source", "kafka", TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> "'latest'")
+      .emptySink("sink", "kafka", TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> "'latest'", "Key" -> "null",
+       SinkRawEditorParamName -> "true", SinkValidationModeParameterName -> "'strict'", SinkValueParamName -> "#input")
 
     wrapInFailingLoader {
       fixture.deployScenario(scenario)
@@ -56,9 +59,9 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
-        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
+      .source("source", "kafka", TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> "'latest'")
+      .emptySink("sink", "kafka", TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> "'latest'", "Key" -> "null",
+        SinkRawEditorParamName -> "true", SinkValidationModeParameterName -> "'strict'", SinkValueParamName -> "#input")
 
     val deployedScenarioData = DeployedScenarioData(ProcessVersion.empty.copy(processName = name), DeploymentData.empty, scenario)
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
@@ -83,15 +86,15 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     // We simulate scenario json incompatible with component API by replacing parameter name with some other name
     val scenarioWithIncompatibleParameters = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka", "Old Topic param" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
-        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
+      .source("source", "kafka", "Old Topic param" -> s"'$inputTopic'", SchemaVersionParamName -> "'latest'")
+      .emptySink("sink", "kafka", TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> "'latest'", "Key" -> "null",
+        SinkRawEditorParamName -> "true", SinkValidationModeParameterName -> "'strict'", SinkValueParamName -> "#input")
 
     val deployedScenarioData = DeployedScenarioData(ProcessVersion.empty.copy(processName = name), DeploymentData.empty, scenarioWithIncompatibleParameters)
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
     manager.findJobStatus(name).futureValue.map(_.status) should matchPattern {
-      case Some(DetailedFailedStateStatus(msg)) if msg.contains("Topic") =>
+      case Some(DetailedFailedStateStatus(msg)) if msg.contains(TopicParamName) =>
     }
   }
 
@@ -101,9 +104,9 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     // We simulate scenario json incompatible with component API by replacing parameter name with some other name
     val scenarioWithIncompatibleParameters = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka", "Old Topic param" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
-        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
+      .source("source", "kafka", "Old Topic param" -> s"'$inputTopic'", SchemaVersionParamName -> "'latest'")
+      .emptySink("sink", "kafka", TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> "'latest'", "Key" -> "null",
+        SinkRawEditorParamName -> "true", SinkValidationModeParameterName -> "'strict'", SinkValueParamName -> "#input")
 
     an [Exception] shouldBe thrownBy {
       fixture.deployScenario(scenarioWithIncompatibleParameters)
@@ -132,9 +135,9 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val name = ProcessName("testName")
     def scenarioForOutput(outputPrefix: String) = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
-        "Raw editor" -> "true", "Value validation mode" -> "'strict'",  "Value" -> s"{message: #input.message, prefix: '$outputPrefix'}")
+      .source("source", "kafka", TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> "'latest'")
+      .emptySink("sink", "kafka", TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> "'latest'", "Key" -> "null",
+        SinkRawEditorParamName -> "true", SinkValidationModeParameterName -> "'strict'", SinkValueParamName -> s"{message: #input.message, prefix: '$outputPrefix'}")
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
     def prefixMessage(prefix: String, message: String) = obj("message" -> fromString(message), "prefix" -> fromString(prefix))
 
@@ -191,9 +194,9 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
       .parallelism(1)
-      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
-        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> s"{message: #input.message, other: '1'}")
+      .source("source", "kafka", TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> "'latest'")
+      .emptySink("sink", "kafka", TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> "'latest'", "Key" -> "null",
+        SinkRawEditorParamName -> "true", SinkValidationModeParameterName -> "'strict'", SinkValueParamName -> s"{message: #input.message, other: '1'}")
 
     kafkaClient.sendMessage(inputTopic, message("1")).futureValue
     kafkaClient.sendMessage(inputTopic, message("2")).futureValue
@@ -210,9 +213,9 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val id2 = idGenerator.nextContextId()
     invocationResults.toSet shouldBe Set(
       ExpressionInvocationResult(id1, "Key", null),
-      ExpressionInvocationResult(id1, "Value", Map("message" -> "1", "other" -> "1").asJava),
+      ExpressionInvocationResult(id1, SinkValueParamName, Map("message" -> "1", "other" -> "1").asJava),
       ExpressionInvocationResult(id2, "Key", null),
-      ExpressionInvocationResult(id2, "Value", Map("message" -> "2", "other" -> "1").asJava)
+      ExpressionInvocationResult(id2, SinkValueParamName, Map("message" -> "2", "other" -> "1").asJava)
     )
 
   }

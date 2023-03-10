@@ -12,6 +12,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     for easy transition between those classes
 * [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`. It affects `MetaData`, `ProcessMetaDataBuilder` and `DisplayableProcess` properties. 
 
+### Other changes
+* [#3675](https://github.com/TouK/nussknacker/pull/3675) Improvements: Normalize kafka components params name
+  * Renamed kafka topic param name from `topic` to `Topic`
+  * Renamed kafka value param name from `value` to `Value`
+
 ## In version 1.8.0
 
 ### Scenario authoring changes

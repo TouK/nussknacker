@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
+import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJson}
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
@@ -24,7 +25,6 @@ import pl.touk.nussknacker.test.KafkaConfigProperties
 import java.util.Collections
 
 class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
-
 
   private lazy val creator = new KafkaSourceFactoryProcessConfigCreator()
 
@@ -42,7 +42,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start", "kafka-GenericJsonSourceFactory", TopicParamName -> s"'$topic'",
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
-      .emptySink("end", "sinkForInputMeta", "value" -> "#inputMeta")
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
 
     val consumerRecord = new InputMetaToJson()
       .encoder(BestEffortJsonEncoder.defaultForTests.encode).apply(inputMeta)
@@ -59,7 +59,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
   test("should test source emitting event extending DisplayWithEncoder") {
     val process = ScenarioBuilder.streaming("test")
       .source("start", "kafka-jsonValueWithMeta", TopicParamName -> "'test.topic'")
-      .emptySink("end", "sinkForInputMeta", "value" -> "#inputMeta")
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
     val inputMeta = InputMeta(null, "test.topic", 0, 1, System.currentTimeMillis(), TimestampType.CREATE_TIME, Collections.emptyMap(), 0)
     val consumerRecord = new InputMetaToJson()
       .encoder(BestEffortJsonEncoder.defaultForTests.encode).apply(inputMeta)
