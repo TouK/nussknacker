@@ -45,16 +45,19 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     val definitions = service.fetchStateDefinitions()
 
     definitions should contain(UIStateDefinition(
+      name = "COMMON",
       definition = streamingProcessStateDefinitionManager.stateDefinitions()("COMMON"),
       categories = Set(Category1, Category2, TestCat, TestCat2)
     ))
 
     definitions should contain(UIStateDefinition(
+      name = "CUSTOM_STREAMING",
       definition = streamingProcessStateDefinitionManager.stateDefinitions()("CUSTOM_STREAMING"),
       categories = Set(Category1, Category2)
     ))
 
     definitions should contain(UIStateDefinition(
+      name = "CUSTOM_FRAUD",
       definition = fraudProcessStateDefinitionManager.stateDefinitions()("CUSTOM_FRAUD"),
       categories = Set(TestCat, TestCat2)
     ))

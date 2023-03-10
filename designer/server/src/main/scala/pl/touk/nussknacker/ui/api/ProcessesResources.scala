@@ -106,7 +106,7 @@ class ProcessesResources(
               }
             }
           }
-        } ~ path("processes" / "status" / "definitions") {
+        } ~ path("statusDefinitions") {
           get {
             complete {
               fetchAllStateDefinitions

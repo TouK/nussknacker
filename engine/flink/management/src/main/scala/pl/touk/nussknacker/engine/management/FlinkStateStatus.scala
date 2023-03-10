@@ -38,10 +38,10 @@ object FlinkStateStatus {
       description = Some("Failing")
     ),
     MultipleJobsRunning.name -> StateDefinition(
-      displayableName = "More than one job running",
+      displayableName = "More than one deployment running",
       icon = Some(URI.create("/assets/states/error.svg")),
-      tooltip = Some("More than one job running"),
-      description = Some("More than one job running")
+      tooltip = Some("More than one deployment running"),
+      description = Some("More than one deployment running")
     )
   )
 }
