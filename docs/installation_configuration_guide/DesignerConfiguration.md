@@ -699,8 +699,8 @@ categoriesConfig: {
 ```
 
 For each category you have to define its scenario type (`streaming` in examples above). Scenario type configuration consists of two parts:
-- `deploymentConfig` - [deployment manager configuration](DeploymentManagerConfiguration)
-- `modelConfig` - [model configuration](ModelConfiguration)
+- `deploymentConfig` - [deployment manager configuration](./DeploymentManagerConfiguration.md)
+- `modelConfig` - [model configuration](./model/ModelConfiguration.md)
 
 In Nussknacker distribution there are preconfigured scenario types:
 - `streaming` - using Flink Deployment Manager providing both stateful and stateless streaming components

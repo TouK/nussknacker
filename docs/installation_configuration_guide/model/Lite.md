@@ -27,4 +27,4 @@ sidebar_label: "Lite"
    }
  }
  ```
- please look at [common cofiguration](../../integration/KafkaIntegration/#kafka-exception-handling) for the details of the configuration.
+ please look at [common cofiguration](../../integration/KafkaIntegration.md/#kafka-exception-handling) for the details of the configuration.

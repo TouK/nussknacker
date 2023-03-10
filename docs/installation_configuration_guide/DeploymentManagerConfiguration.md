@@ -35,7 +35,7 @@ both `streaming` and `request-response` processing modes.
 The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can customize
 the Helm chart to use different values for
 those [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). If you install
-Designer outside of the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any
+Designer outside the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any
 other Nussknacker non K8s configuration.
 
 | Parameter                 | Type                                                | Default value                     | Description                                                                              |
@@ -228,7 +228,7 @@ It can be used to identify scenario deployments and its resources bound to a spe
 With `logbackConfigPath` you can provide path to your own logback config file, which will be used by runtime containers.
 This configuration is optional, if skipped default logging configuration will be used.
 Please mind, that apart whether you will provide your own logging configuration or use default, you can still modify it
-in runtime (for each scenario deployment separately*) as described [here](../operations_guide/Lite#logging-level)
+in runtime (for each scenario deployment separately*) as described [here](../operations_guide/Lite.md#logging-level)
 
 *By default, every scenario runtime has its own separate configMap with logback configuration. By
 setting `commonConfigMapForLogback` you can enforce usage of single configMap (with such name as configured) with

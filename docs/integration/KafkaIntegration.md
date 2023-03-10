@@ -8,7 +8,7 @@ sidebar_position: 1
 
 To better understand how Nussknacker works with Kafka, it's recommended to read the following first:
 * [Kafka introduction](https://kafka.apache.org/intro)
-* [Role of Schema Registry](/about/TypicalImplementationStreaming)
+* [Role of Schema Registry](/about/TypicalImplementationStreaming/)
 * [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html)
 
 If you want to use Flink engine, this is also recommended:
@@ -273,7 +273,7 @@ Important thing to remember is that Kafka server addresses/schema registry addre
 - Nussknacker Designer host (to enable schema discovery and scenario testing)
 - Flink cluster (both jobmanagers and taskmanagers) hosts - to be able to run job
 
-See [common config](../ModelConfiguration#kafka-connection-configuration) for the details of Kafka configuration, the table below presents additional options available only in Flink engine:
+See [common config](#available-configuration-options) for the details of Kafka configuration, the table below presents additional options available only in Flink engine:
       
 
 | Name                                              | Importance | Type                       | Default value    | Description                                                                                                                                                                                                 |
@@ -286,7 +286,7 @@ See [common config](../ModelConfiguration#kafka-connection-configuration) for th
 ### Configuration for Lite engine
 
 The Lite engine in Streaming processing mode uses Kafka as it's core part (e.g. delivery guarantees are based on Kafka transactions), so it's configured separately from other components. Therefore, it's only possible to use one Kafka cluster for one model configuration. This configuration is used for all
-Kafka based sources and sinks (you don't need to configure them separately). See [common config](#kafka-connection-configuration) for the details.
+Kafka based sources and sinks (you don't need to configure them separately). See [common config](#available-configuration-options) for the details.
 ```
 modelConfig {
   kafka {
