@@ -75,13 +75,15 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("return single process") {
     val processId = createDeployedProcess(processName)
 
-    forScenarioReturned(processName) { process =>
-      process.processId shouldBe processId.value
-      process.name shouldBe processName.value
-      process.stateStatus shouldBe Some(SimpleStateStatus.Running.name)
-      process.stateTooltip shouldBe SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running)
-      process.stateDescription shouldBe SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running)
-      process.stateIcon shouldBe SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running)
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+      forScenarioReturned(processName) { process =>
+        process.processId shouldBe processId.value
+        process.name shouldBe processName.value
+        process.stateStatus shouldBe Some(SimpleStateStatus.Running.name)
+        process.stateTooltip shouldBe SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running)
+        process.stateDescription shouldBe SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running)
+        process.stateIcon shouldBe SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running)
+      }
     }
   }
 
@@ -483,35 +485,40 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createDeployedCanceledProcess(secondProcessor)
     createDeployedProcess(thirdProcessor)
 
-    forScenariosReturned(ProcessesQuery.empty) { processes =>
-      processes.size shouldBe 3
-      val status = processes.find(_.name == firstProcessor.value).flatMap(_.stateStatus)
-      status shouldBe Some(SimpleStateStatus.NotDeployed.name)
-    }
-    forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
-      processes.size shouldBe 3
-    }
 
-    forScenariosReturned(ProcessesQuery.empty.deployed()) { processes =>
-      processes.size shouldBe 1
-      val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
-      status shouldBe Some(SimpleStateStatus.Running.name)
-    }
-    forScenariosDetailsReturned(ProcessesQuery.empty.deployed()) { processes =>
-      processes.size shouldBe 1
-    }
+    deploymentManager.withProcessStateStatus(secondProcessor, SimpleStateStatus.Canceled) {
+      deploymentManager.withProcessStateStatus(thirdProcessor, SimpleStateStatus.Running) {
+        forScenariosReturned(ProcessesQuery.empty) { processes =>
+          processes.size shouldBe 3
+          val status = processes.find(_.name == firstProcessor.value).flatMap(_.stateStatus)
+          status shouldBe Some(SimpleStateStatus.NotDeployed.name)
+        }
+        forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
+          processes.size shouldBe 3
+        }
 
-    forScenariosReturned(ProcessesQuery.empty.notDeployed()) { processes =>
-      processes.size shouldBe 2
+        forScenariosReturned(ProcessesQuery.empty.deployed()) { processes =>
+          processes.size shouldBe 1
+          val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
+          status shouldBe Some(SimpleStateStatus.Running.name)
+        }
+        forScenariosDetailsReturned(ProcessesQuery.empty.deployed()) { processes =>
+          processes.size shouldBe 1
+        }
 
-      val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
-      status shouldBe None
+        forScenariosReturned(ProcessesQuery.empty.notDeployed()) { processes =>
+          processes.size shouldBe 2
 
-      val canceledProcess = processes.find(_.name == secondProcessor.value).flatMap(_.stateStatus)
-      canceledProcess shouldBe Some(SimpleStateStatus.Canceled.name)
-    }
-    forScenariosDetailsReturned(ProcessesQuery.empty.notDeployed()) { processes =>
-      processes.size shouldBe 2
+          val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
+          status shouldBe None
+
+          val canceledProcess = processes.find(_.name == secondProcessor.value).flatMap(_.stateStatus)
+          canceledProcess shouldBe Some(SimpleStateStatus.Canceled.name)
+        }
+        forScenariosDetailsReturned(ProcessesQuery.empty.notDeployed()) { processes =>
+          processes.size shouldBe 2
+        }
+      }
     }
   }
 

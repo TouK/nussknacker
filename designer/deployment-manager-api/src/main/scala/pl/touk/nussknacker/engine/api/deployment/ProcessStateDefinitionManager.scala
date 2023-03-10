@@ -13,9 +13,6 @@ trait ProcessStateDefinitionManager {
   def statusTooltip(stateStatus: StateStatus): Option[String]
   def statusDescription(stateStatus: StateStatus): Option[String]
   def statusIcon(stateStatus: StateStatus): Option[URI]
-  //Temporary mapping ProcessActionType to StateStatus. TODO: Remove it when we will support state cache
-  def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus
-
   def processState(status: StateStatus,
                    deploymentId: Option[ExternalDeploymentId] = None,
                    version: Option[ProcessVersion] = None,

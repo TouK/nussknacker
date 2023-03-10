@@ -8,13 +8,6 @@ import pl.touk.nussknacker.engine.api.process.VersionId
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
   val defaultActions = List()
 
-  val actionStatusMap: Map[ProcessActionType, StateStatus] = Map(
-    ProcessActionType.Deploy -> SimpleStateStatus.Running,
-    ProcessActionType.Cancel -> SimpleStateStatus.Canceled,
-    ProcessActionType.Archive -> SimpleStateStatus.NotDeployed,
-    ProcessActionType.UnArchive -> SimpleStateStatus.NotDeployed
-  )
-
   val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
     SimpleStateStatus.Unknown -> List(ProcessActionType.Deploy),
     SimpleStateStatus.NotDeployed -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
@@ -81,11 +74,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
 
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsMap.getOrElse(stateStatus, defaultActions)
-
-  override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
-    stateAction
-      .map(sa => actionStatusMap.getOrElse(sa, SimpleStateStatus.Unknown))
-      .getOrElse(SimpleStateStatus.NotDeployed)
 
   override def statusTooltip(stateStatus: StateStatus): Option[String] =
     statusTooltipsMap.get(stateStatus)

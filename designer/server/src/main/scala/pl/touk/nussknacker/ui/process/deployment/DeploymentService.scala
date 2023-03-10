@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessState}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -29,6 +30,8 @@ trait DeploymentService extends ProcessStateService {
 trait ProcessStateService {
 
   def getProcessState(processIdWithName: ProcessIdWithName)
+                     (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState]
+  def getProcessState(processDetails: BaseProcessDetails[_])
                      (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState]
 
 }

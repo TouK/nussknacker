@@ -218,6 +218,13 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       result <- getProcessState(processDetails, inProgressActionTypes)
     } yield result)
   }
+  override def getProcessState(processDetails: BaseProcessDetails[_])
+                              (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] = {
+    dbioRunner.run(for {
+      inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
+      result <- getProcessState(processDetails, inProgressActionTypes)
+    } yield result)
+  }
 
   private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType])
                              (implicit ec: ExecutionContext): DB[ProcessState] = {

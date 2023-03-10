@@ -39,7 +39,6 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
     case _ => delegate.statusIcon(stateStatus)
   }
 
-  override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus = delegate.mapActionToStatus(stateAction)
 }
 
 object PeriodicProcessStateDefinitionManager {

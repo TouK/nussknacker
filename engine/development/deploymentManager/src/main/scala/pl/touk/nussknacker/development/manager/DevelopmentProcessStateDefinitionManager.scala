@@ -36,6 +36,4 @@ class DevelopmentProcessStateDefinitionManager(delegate: ProcessStateDefinitionM
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
     delegate.statusIcon(stateStatus)
 
-  override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
-    delegate.mapActionToStatus(stateAction)
 }

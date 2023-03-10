@@ -19,9 +19,6 @@ class OverridingProcessStateDefinitionManager(statusActionsPF: PartialFunction[S
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsPF.applyOrElse(stateStatus, SimpleProcessStateDefinitionManager.statusActions)
 
-  override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
-    SimpleProcessStateDefinitionManager.mapActionToStatus(stateAction)
-
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusDescriptionsPF.lift(stateStatus).orElse(SimpleProcessStateDefinitionManager.statusDescription(stateStatus))
 }
