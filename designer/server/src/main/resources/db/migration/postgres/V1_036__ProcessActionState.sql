@@ -1,6 +1,3 @@
---- ENABLES uuid-ossp to make uuid_generate_v4() function available
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 --- DROP CONSTRAINTS
 ALTER TABLE "process_actions" DROP CONSTRAINT "process_actions_pk";
 ALTER TABLE "process_actions" ALTER COLUMN "performed_at" DROP NOT NULL;
@@ -14,7 +11,11 @@ ALTER TABLE "process_actions" ADD COLUMN "created_at" TIMESTAMP;
 ALTER TABLE "process_actions" ADD COLUMN "failure_message" VARCHAR(1022);
 
 --- UPDATE OLD VALUES
-UPDATE "process_actions" set "id" = uuid_generate_v4(), "state" = 'FINISHED', "created_at" = "performed_at";
+--- https://stackoverflow.com/a/21327318/1370301 we use this solution to not enforce usage of uuid-ossp extension or postgres 13
+UPDATE "process_actions"
+SET "id" = uuid_in(overlay(overlay(md5(random()::text || ':' || random()::text) placing '4' from 13) placing to_hex(floor(random()*(11-8+1) + 8)::int)::text from 17)::cstring),
+    "state" = 'FINISHED',
+    "created_at" = "performed_at";
 
 --- ADD CONSTRAINTS
 ALTER TABLE "process_actions" ADD CONSTRAINT "process_actions_pk" PRIMARY KEY ("id");
