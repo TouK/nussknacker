@@ -3,14 +3,14 @@ sidebar_position: 5
 ---
 # Model configuration
 
-This part of configuration defines how to configure Components and certain runtime behaviour (e.g. error handling) for a given scenario type (Lite or Flink engine). 
-It is processed not only at the Designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
+This part of configuration defines how to configure Components and certain runtime behaviour (e.g. error handling) for a given scenario type (Lite or Flink engine).
+It is processed not only at the Designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently:
 
-* Some Components can use a special mechanism which resolves and adds additional configuration during deployment, which is then passed to the execution engine. Such configuration is read and resolved only at the designer. Example: OpenAPI enrichers need to read its definition from external sites - so e.g. Flink cluster does not have to have access to the site with the definition. 
-* There is additional set of defaults, taken from `defaultModelConfig.conf` if it exists on the classpath. The standard Nussknacker installation uses the one from [here](https://github.com/TouK/nussknacker/blob/staging/defaultModel/src/main/resources/defaultModelConfig.conf), installations using certain code customizations may use a different one.       
+* Some Components can use a special mechanism which resolves and adds additional configuration during deployment, which is then passed to the execution engine. Such configuration is read and resolved only at the designer. Example: OpenAPI enrichers need to read its definition from external sites - so e.g. Flink cluster does not have to have access to the site with the definition.
+* There is additional set of defaults, taken from `defaultModelConfig.conf` if it exists on the classpath. The standard Nussknacker installation uses the one from [here](https://github.com/TouK/nussknacker/blob/staging/defaultModel/src/main/resources/defaultModelConfig.conf), installations using certain code customizations may use a different one.
 
 Look at [configuration areas](./#configuration-areas) to understand where Model configuration should be placed in Nussknacker configuration.
-                  
+
 ## ClassPath configuration
 
 Nussknacker looks for components and various extensions in jars on the Model classpath, default config [example here](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) to see where classpath can be configured.
@@ -35,15 +35,15 @@ If the given path element in the `classPath` is relative, it should be relative 
 ### Object naming
 -->
 
-## Components configuration 
+## Components configuration
 
-Nussknacker comes with a set of provided components. Some of them (e.g. `filter`, `variable`, aggregations in Flink, `for-each`, `union`) are 
-predefined and accessible by default. Others need additional configuration - the most important ones are enrichers, 
+Nussknacker comes with a set of provided components. Some of them (e.g. `filter`, `variable`, aggregations in Flink, `for-each`, `union`) are
+predefined and accessible by default. Others need additional configuration - the most important ones are enrichers,
 where you have to set e.g. JDBC URL or external service address.
 
 Check documentation of available components that you can configure:
-- [OpenAPI](../components/OpenAPI.md) Supports accessing external APIs directly from scenario 
-- [SQL](../components/Sql.md)         Supports access to SQL database engines    
+- [OpenAPI](../integration/OpenAPI.md) Supports accessing external APIs directly from scenario
+- [SQL](../integration/Sql.md)         Supports access to SQL database engines
 
 
 ### Configuration of component providers
@@ -81,14 +81,14 @@ Below you can see typical component configuration, each section describes config
 
 ### Configuration of UI attributes of components
 
-In model configuration you can also define some UI attributes of components. This can be useful for tweaking of appearance of generated components (like from OpenAPI), 
+In model configuration you can also define some UI attributes of components. This can be useful for tweaking of appearance of generated components (like from OpenAPI),
 in most cases you should not need to defined these settings. The settings you can configure include:
 * icons - `icon` property
 * documentation - `docsUrl` property
 * should component be disabled - `disabled` property
-* in which toolbox panel the component should appear (`componentGroup` property)  
+* in which toolbox panel the component should appear (`componentGroup` property)
 * `params` configuration (allows to override default component settings):
-  * `editor` - `BoolParameterEditor`, `StringParameterEditor`, `DateParameterEditor` etc. 
+  * `editor` - `BoolParameterEditor`, `StringParameterEditor`, `DateParameterEditor` etc.
   * `validators` - `MandatoryParameterValidator`, `NotBlankParameterValidator`, `RegexpParameterValidator`
   * `defaultValue`
   * `label`
@@ -120,8 +120,8 @@ Example (see [dev application config](https://github.com/TouK/nussknacker/blob/s
 
 ### Component links
 
-You can add additional links that will be shown in `Components` tab. They can be used e.g. to point to 
-custom dashboards with component performance or point to some external system (link to documentation is configured by default). 
+You can add additional links that will be shown in `Components` tab. They can be used e.g. to point to
+custom dashboards with component performance or point to some external system (link to documentation is configured by default).
 The config format is as follows:
 ```
 componentLinks: [
@@ -140,11 +140,11 @@ Fields `title`, `icon`, `url` can contain templates: `$componentId` nad `$compon
 
 You can override default grouping of basic components in toolbox panels with `componentsGroupMapping` setting. Component names are keys, while values are toolbox panels name (e.g. sources, enrichers etc.)                |
 
-## Scenario's additional properties              
+## Scenario's additional properties
 
-It's possible to add additional properties for scenario. 
-They can be used for allowing more detailed scenario information (e.g. pass information about marketing campaign target etc.), 
-they can also be used in various Nussknacker extensions: 
+It's possible to add additional properties for scenario.
+They can be used for allowing more detailed scenario information (e.g. pass information about marketing campaign target etc.),
+they can also be used in various Nussknacker extensions:
 
 Example (see [dev application config](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/resources/defaultModelConfig.conf#L61) for more examples):
 
