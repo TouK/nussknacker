@@ -67,8 +67,10 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     val testData = Table(
       ("config", "result"),
       //Primitive integer validations
-      // FIXME handle minimum > MIN_VALUE && maximum < MAX_VALUE) as an Integer to make better interoperability between json and avro?
-      //      (sConfig(fromLong(Integer.MAX_VALUE.toLong + 1), longSchema, integerRangeSchema), invalidTypes("path 'Value' actual: 'Long' expected: 'Integer'")),
+      (config(fromLong(Integer.MAX_VALUE.toLong + 1), schemaInteger, schemaIntegerRange), invalidTypes("actual: 'Long' expected: 'Integer'")),
+      (config(sampleJInt, schemaInteger, schemaIntegerRange0to100, fromInt(200)), invalidRanges("actual value: '200' should be between 0 and 100")),
+      (config(sampleJInt, schemaInteger, schemaIntegerRangeTo100, fromInt(200)), invalidRanges("actual value: '200' should be less than or equal to 100")),
+      (config(sampleJInt, schemaInteger, schemaIntegerRange0to100, fromInt(100)), valid(fromInt(100))),
       (config(sampleJInt, schemaIntegerRange, schemaInteger), valid(sampleJInt)),
       (config(fromLong(Integer.MAX_VALUE), schemaIntegerRange, schemaIntegerRange), valid(fromInt(Integer.MAX_VALUE))),
     )
@@ -96,8 +98,8 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (config(sampleObjMapInt, schemaObjMapInt, schemaObjMapInt), valid(sampleObjMapInt)),
       (conf(schemaObjMapInt, sampleObjMapIntOutput), valid(sampleObjMapInt)),
 
-      (config(samplePerson, schemaPerson, schemaObjStr), invalid(Nil, List("field"), List("age", "first", "last"))),
-      (conf(schemaObjStr, samplePersonOutput), invalid(Nil, List("field"), List("first", "last", "age"))),
+      (config(samplePerson, schemaPerson, schemaObjStr), invalid(Nil, List("field"), List("age", "first", "last"), Nil)),
+      (conf(schemaObjStr, samplePersonOutput), invalid(Nil, List("field"), List("first", "last", "age"), Nil)),
 
       (config(sampleObjMapAny, schemaObjMapAny, schemaObjMapInt), invalidTypes("path 'field.value' actual: 'Unknown' expected: 'Long'")),
 
@@ -105,6 +107,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (config(samplePerson, schemaPerson, nameAndLastNameSchema), valid(samplePerson)),
       (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaInteger)), valid(samplePerson)),
       (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaString)), invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
+      (config(samplePerson, schemaPersonWithLimits, nameAndLastNameSchema(schemaString)), invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -116,31 +119,35 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   test("sink with schema with additionalProperties: true/{schema}") {
     //@formatter:off
     val testData = Table(
-      ("input",             "sourceSchema",        "sinkSchema",                         "validationModes",  "result"),
-      (sampleMapAny,        schemaMapAny,          schemaMapAny,                         strictAndLax,       valid(sampleMapAny)),
-      (sampleMapStr,        schemaMapStr,          schemaMapAny,                         strictAndLax,       valid(sampleMapStr)),
-      (sampleMapPerson,     schemaMapObjPerson,    schemaMapAny,                         strictAndLax,       valid(sampleMapPerson)),
-      (sampleArrayInt,      schemaArrayInt,        schemaMapAny,                         strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, Any]'")),
-      (samplePerson,        schemaPerson,          schemaMapAny,                         strictAndLax,       valid(samplePerson)),
-      (sampleMapAny,        schemaMapAny,          schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'String'")),
-      (sampleMapStr,        schemaMapAny,          schemaMapStr,                         lax,                valid(sampleMapStr)),
-      (sampleMapStr,        schemaMapStr,          schemaMapStr,                         strictAndLax,       valid(sampleMapStr)),
-      (sampleMapStr,        schemaMapStringOrInt,  schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'String | Long' expected: 'String'")),
-      (sampleMapStr,        schemaMapStringOrInt,  schemaMapStr,                         lax,                valid(sampleMapStr)),
-      (sampleMapPerson,     schemaMapObjPerson,    schemaMapStr,                         strictAndLax,       invalidTypes("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String'")),
-      (sampleArrayInt,      schemaArrayInt,        schemaMapStr,                         strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String]'")),
-      (samplePerson,        schemaPerson,          schemaMapStr,                         strictAndLax,       invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
-      (sampleMapAny,        schemaMapAny,          schemaMapStringOrInt,                 strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'String | Long'")),
-      (sampleMapInt,        schemaMapAny,          schemaMapStringOrInt,                 lax,                valid(sampleMapInt)),
-      (sampleMapStr,        schemaMapStr,          schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapStr)),
-      (sampleMapStr,        schemaMapStringOrInt,  schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapStr)),
-      (sampleMapInt,        schemaMapStringOrInt,  schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapInt)),
-      (samplePerson,        schemaMapObjPerson,    schemaMapStringOrInt,                 strictAndLax,       invalidTypes("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String | Long'")),
-      (sampleArrayInt,      schemaArrayInt,        schemaMapStringOrInt,                 strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
-      (samplePerson,        schemaPerson,          schemaMapStringOrInt,                 strictAndLax,       valid(samplePerson)),
-      (samplePerson,        schemaPerson,          nameAndLastNameSchema,                strictAndLax,       valid(samplePerson)),
-      (samplePerson,        schemaPerson,          nameAndLastNameSchema(schemaInteger), strictAndLax,       valid(samplePerson)),
-      (samplePerson,        schemaPerson,          nameAndLastNameSchema(schemaString),  strictAndLax,       invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
+      ("input",           "sourceSchema",                "sinkSchema",                         "validationModes",  "result"),
+      (sampleMapAny,      schemaMapAny,                  schemaMapAny,                         strictAndLax,       valid(sampleMapAny)),
+      (sampleMapStr,      schemaMapStr,                  schemaMapAny,                         strictAndLax,       valid(sampleMapStr)),
+      (sampleMapPerson,   schemaMapObjPerson,            schemaMapAny,                         strictAndLax,       valid(sampleMapPerson)),
+      (sampleArrayInt,    schemaArrayInt,                schemaMapAny,                         strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, Any]'")),
+      (samplePerson,      schemaPerson,                  schemaMapAny,                         strictAndLax,       valid(samplePerson)),
+      (sampleMapAny,      schemaMapAny,                  schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'String'")),
+      (sampleMapStr,      schemaMapAny,                  schemaMapStr,                         lax,                valid(sampleMapStr)),
+      (sampleMapStr,      schemaMapStr,                  schemaMapStr,                         strictAndLax,       valid(sampleMapStr)),
+      (sampleMapStr,      schemaMapStringOrInt,          schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'String | Long' expected: 'String'")),
+      (sampleMapStr,      schemaMapStringOrInt,          schemaMapStr,                         lax,                valid(sampleMapStr)),
+      (sampleMapPerson,   schemaMapObjPerson,            schemaMapStr,                         strictAndLax,       invalidTypes("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String'")),
+      (sampleMapPerson,   schemaMapObjPersonWithLimits,  schemaMapStr,                         strictAndLax,       invalidTypes("path 'value' actual: '{age: Integer, first: String, last: String}' expected: 'String'")),
+      (sampleArrayInt,    schemaArrayInt,                schemaMapStr,                         strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String]'")),
+      (samplePerson,      schemaPerson,                  schemaMapStr,                         strictAndLax,       invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
+      (samplePerson,      schemaPersonWithLimits,        schemaMapStr,                         strictAndLax,       invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
+      (sampleMapAny,      schemaMapAny,                  schemaMapStringOrInt,                 strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'String | Long'")),
+      (sampleMapInt,      schemaMapAny,                  schemaMapStringOrInt,                 lax,                valid(sampleMapInt)),
+      (sampleMapStr,      schemaMapStr,                  schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapStr)),
+      (sampleMapStr,      schemaMapStringOrInt,          schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapStr)),
+      (sampleMapInt,      schemaMapStringOrInt,          schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapInt)),
+      (samplePerson,      schemaMapObjPerson,            schemaMapStringOrInt,                 strictAndLax,       invalidTypes("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String | Long'")),
+      (samplePerson,      schemaMapObjPersonWithLimits,  schemaMapStringOrInt,                 strictAndLax,       invalidTypes("path 'value' actual: '{age: Integer, first: String, last: String}' expected: 'String | Long'")),
+      (sampleArrayInt,    schemaArrayInt,                schemaMapStringOrInt,                 strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
+      (samplePerson,      schemaPerson,                  schemaMapStringOrInt,                 strictAndLax,       valid(samplePerson)),
+      (samplePerson,      schemaPerson,                  nameAndLastNameSchema,                strictAndLax,       valid(samplePerson)),
+      (samplePerson,      schemaPerson,                  nameAndLastNameSchema(schemaInteger), strictAndLax,       valid(samplePerson)),
+      (samplePerson,      schemaPerson,                  nameAndLastNameSchema(schemaString),  strictAndLax,       invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
+      (samplePerson,      schemaPersonWithLimits,        nameAndLastNameSchema(schemaString),  strictAndLax,       invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
     )
     //@formatter:on
 
@@ -148,6 +155,27 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (input: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
         validationModes.foreach { mode =>
           val cfg = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
+          val results = runWithValueResults(cfg)
+          results shouldBe expected
+        }
+    }
+  }
+
+  test("sink with schema with range defined on age field") {
+    //@formatter:off
+    val testData = Table(
+      ("input", "sourceSchema", "sinkSchema", "validationModes", "result"),
+      (samplePerson, schemaPerson, schemaPersonWithLimits, strictAndLax, valid(samplePerson)),
+      (sampleInvalidPerson, schemaPerson, schemaPersonWithLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be between 10 and 200")),
+      (sampleInvalidPerson, schemaPerson, schemaPersonWithUpperLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be less than or equal to 200")),
+      (sampleInvalidPerson, schemaPerson, schemaPersonWithLowerLimits, strictAndLax, invalidRanges("path 'age' actual value: '300' should be greater than or equal to 301")),
+    )
+    //@formatter:on
+
+    forAll(testData) {
+      (input: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
+        validationModes.foreach { mode =>
+          val cfg = config(input, sourceSchema, sinkSchema, output = input, Some(mode))
           val results = runWithValueResults(cfg)
           results shouldBe expected
         }
@@ -258,7 +286,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     }
 
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
-      val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil)
+      val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
       Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
     }
 

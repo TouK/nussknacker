@@ -64,9 +64,13 @@ object JsonToNuStruct {
           extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
         case SwaggerBool =>
           extract(_.asBoolean, boolean2Boolean)
+        case SwaggerInteger =>
+          extract[JsonNumber](_.asNumber, n => int2Integer(n.toDouble.toInt))
         case SwaggerLong =>
           //FIXME: to ok?
           extract[JsonNumber](_.asNumber, n => long2Long(n.toDouble.toLong))
+        case SwaggerBigInteger =>
+          extract[JsonNumber](_.asNumber, _.toBigInt.map(_.bigInteger).orNull)
         case SwaggerDateTime =>
           extract(_.asString, parseDateTime)
         case SwaggerTime =>

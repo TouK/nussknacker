@@ -238,6 +238,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
       //Primitive integer validations
       (config(fromInt(1), schemaInt, schemaInt), Valid(fromInt(1))),
       (conf(schemaInt, 1), Valid(fromInt(1))),
+      (conf(schemaInt, 100), invalidRange("actual value: '100' should be between 1 and 16")),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, Json]) =>
@@ -286,7 +287,6 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
       (config(obj(), schemaObjString(), schemaObjString(), Map(ObjectFieldName -> InputField)), s"Not expected type: Null for field: 'field' with schema: $schemaStr."),
       (config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()), s"Not expected field with name: field2 for schema: ${schemaObjUnionNullString()}."),
       (config(fromInt(Int.MaxValue), schemaInt, schemaInt), s"#: ${Int.MaxValue} is not less or equal to 16"),
-      (conf(schemaInt, Int.MaxValue), s"#: ${Int.MaxValue} is not less or equal to 16"),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: String) =>
@@ -302,7 +302,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
 
   test("validate pattern properties on sink in editor mode") {
     def invalidTypeInEditorMode(fieldName: String, error: String): Invalid[NonEmptyList[CustomNodeError]] = {
-      val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil)
+      val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
       Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
     }
     val objectWithNestedPatternPropertiesSchema = JsonSchemaBuilder.parseSchema(
@@ -391,8 +391,14 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
   protected def invalidTypes(typeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
     invalid(typeErrors.toList, Nil, Nil)
 
-  protected def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String]): Invalid[NonEmptyList[CustomNodeError]] = {
-    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(typeFieldErrors, missingFieldsError, redundantFieldsError)
+  protected def invalidRange(rangeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
+    invalid(Nil, Nil, Nil, rangeErrors.toList)
+
+  protected def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String]): Invalid[NonEmptyList[CustomNodeError]] =
+    invalid(typeFieldErrors, missingFieldsError, redundantFieldsError, Nil)
+
+  protected def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String], rangeTypeError: List[String]): Invalid[NonEmptyList[CustomNodeError]] = {
+    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(typeFieldErrors, missingFieldsError, redundantFieldsError, rangeTypeError)
     Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(JsonRequestResponseSink.SinkRawValueParamName))))
   }
 

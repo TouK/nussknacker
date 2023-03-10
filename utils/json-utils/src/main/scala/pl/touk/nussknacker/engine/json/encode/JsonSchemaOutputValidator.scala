@@ -4,18 +4,39 @@ import cats.data.Validated.condNel
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import org.everit.json.schema.{EmptySchema, ObjectSchema, ReferenceSchema, Schema}
+import org.apache.commons.lang3.ClassUtils
+import org.everit.json.schema.{EmptySchema, NumberSchema, ObjectSchema, ReferenceSchema, Schema, ValidationException}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
-import pl.touk.nussknacker.engine.util.output._
+import pl.touk.nussknacker.engine.util.output.{OutputValidatorError, _}
 
 import scala.language.implicitConversions
 
 private[encode] case class JsonSchemaExpected(schema: Schema, rootSchema: Schema) extends OutputValidatorExpected {
   override def expected: String = new JsonSchemaOutputValidatorPrinter(rootSchema).print(schema)
+}
+
+private[encode] case class NumberSchemaRangeExpected(schema: NumberSchema) extends OutputValidatorExpected {
+
+  override def expected: String = (minimumValue, maximumValue) match {
+    case (Some(min), Some(max)) => s"between $min and $max"
+    case (Some(min), None) => s"greater than or equal to $min"
+    case (None, Some(max)) => s"less than or equal to $max"
+    case _ => throw new IllegalArgumentException("Schema does not contain integer range. This should be unreachable.")
+  }
+
+  private val minimumValue = List(
+    Option(schema.getMinimum).map(x => BigInt(s"$x")),
+    Option(schema.getExclusiveMinimumLimit).map(x => BigInt(s"$x") + 1)
+  ).flatten.sorted.headOption
+
+  private val maximumValue = List(
+    Option(schema.getMaximum).map(x => BigInt(s"$x")),
+    Option(schema.getExclusiveMaximumLimit).map(x => BigInt(s"$x") - 1)
+  ).flatten.sorted(Ordering.BigInt.reverse).headOption
 }
 
 object JsonSchemaOutputValidator {
@@ -51,9 +72,18 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (union: TypedUnion, _) => validateUnionInputType(union, schema, rootSchema, path)
       case (tc: TypedClass, s: ObjectSchema) if tc.representsMapWithStringKeys => validateMapInputType(tc, tc.params.tail.head, s, rootSchema, path)
       case (typingResult: TypedObjectTypingResult, s: ObjectSchema) => validateRecordInputType(typingResult, s, rootSchema, path)
+      case (typed: TypedObjectWithValue, s: NumberSchema)
+        if ClassUtils.isAssignable(typed.underlying.objType.primitiveClass, classOf[Number], true) => validateValueAgainstNumberSchema(s, typed, path)
       case (_, _) => canBeSubclassOf(typingResult, schema, rootSchema, path)
     }
   }
+
+  private def validateValueAgainstNumberSchema(schema: NumberSchema, typeWithValue: TypedObjectWithValue, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] =
+    Validated
+      .catchOnly[ValidationException] {
+        schema.validate(typeWithValue.value)
+      }
+      .leftMap(_ => NonEmptyList.one(OutputValidatorRangeTypeError(path, typeWithValue, NumberSchemaRangeExpected(schema))))
 
   private def validateUnknownInputType(schema: Schema, rootSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     validationMode match {
@@ -196,14 +226,17 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   /**
    * TODO: Consider verification class instead of using .canBeSubclassOf from Typing - we want to avoid:
    * * Unknown.canBeSubclassOf(Any) => true
-   * * Long.canBeSubclassOf(Integer) => true
    * Should we use strict verification at json?
    */
   private def canBeSubclassOf(typingResult: TypingResult, schema: Schema, rootSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     val schemaAsTypedResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(rootSchema)).typingResult
-    condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
-      OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema))
-    )
+
+    (schemaAsTypedResult, typingResult) match {
+      case (schema@TypedClass(_, Nil), typing@TypedClass(_, Nil)) if ClassUtils.isAssignable(typing.primitiveClass, schema.primitiveClass, false) => valid
+      case (TypedClass(_, Nil), TypedClass(_, Nil)) => invalid(typingResult, schema, rootSchema, path)
+      case _ => condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
+        OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema)))
+    }
   }
 
   private def invalid(typingResult: TypingResult, schema: Schema, rootSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorTypeError, Nothing] =
