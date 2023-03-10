@@ -1,21 +1,18 @@
 import React, {ComponentType, DetailedHTMLProps, HTMLAttributes} from "react"
 import loadable from "@loadable/component"
 import ErrorBoundary from "react-error-boundary"
-import {absoluteBePath} from "../common/UrlUtils"
 import styled from "@emotion/styled"
 
-const urlRe = /^(((https?:)?\/)?\/)?\w.*\.svg$/i
+const svgExp = /\.svg$/i
+const absoluteExp = /^((https?:)?\/)?\//i
 
 const AsyncSvg = loadable.lib(async ({src}: { src: string }) => {
-  const urlMatch = src.match(urlRe)
-
-  if (!urlMatch) {
+  if (!svgExp.test(src)) {
     throw `${src} is not svg path`
   }
 
-  if (urlMatch[1]) {
-    const url = urlMatch[2] ? src : absoluteBePath(src)
-    const response = await fetch(url)
+  if (absoluteExp.test(src)) {
+    const response = await fetch(src)
     return await response.text()
   }
 

@@ -41,7 +41,7 @@ function StateIconPopover({processName, processState, tooltip, children}: PropsW
   const imagePopover = useMemo(() => {
     const className = css({
       marginTop: "5px",
-      "&, h3": {backgroundColor: theme.colors.primaryBackground},
+      "&, h3": {backgroundColor: theme.colors?.primaryBackground},
     })
     return (
       <Popover id="state-icon-popover" className={className} title={processName}>
@@ -49,7 +49,7 @@ function StateIconPopover({processName, processState, tooltip, children}: PropsW
         <Errors state={processState}/>
       </Popover>
     )
-  }, [processName, processState, theme.colors.primaryBackground, tooltip])
+  }, [processName, processState, theme.colors?.primaryBackground, tooltip])
 
   return (
     <OverlayTrigger trigger="click" placement="left" overlay={imagePopover}>
