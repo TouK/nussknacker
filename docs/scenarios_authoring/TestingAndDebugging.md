@@ -25,7 +25,7 @@ Each line of this file represents the next ongoing event and specify which sourc
 A scenario can be tested with events coming from a file; this can be very handy if several test passes on the same input events are needed before the scenario is deemed ready. Similarly, as with test data capture, this feature also works with multiple sources.
 All you need to do is to reuse file you already have from the `Test data capture` step or prepare such file manually e.g. for the **Request-Response** processing mode.
 
-If you want to read more than 20 records from file, you will need to change [testing settings](/docs/installation_configuration_guide/DesignerConfiguration.md#testing).
+If you want to read more than 20 records from file, you will need to change [testing settings](../installation_configuration_guide/DesignerConfiguration.md#testing).
 
 
 ## Debugging node behaviour 
@@ -41,6 +41,6 @@ You can also watch [this video](/quickstart/flink#correcting-errors) to see debu
 
 Understanding how many events passed through a given node can be very handy during debugging - choose `counts` button to see the counts snapshoot. The number displayed is the number of events which entered a given node. 
 
-In some edge cases, you may need to change algorithm used for counts computations - consult the [counts configuration](/docs/installation_configuration_guide/DesignerConfiguration.md#counts) for details.
+In some edge cases, you may need to change algorithm used for counts computations - consult the [counts configuration](../installation_configuration_guide/DesignerConfiguration.md#counts) for details.
 
 ![alt_text](img/Counts.png "Watching nodes filtering behaviour")
