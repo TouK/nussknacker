@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.compile.nodecompilation
+package pl.touk.nussknacker.engine.compile
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
@@ -8,14 +8,13 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.EmptyMandatoryParameter
 import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
-import pl.touk.nussknacker.engine.compile.Validations
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
 
-class NodeCompilerSpec extends AnyFunSuite with Matchers with Inside {
+class ValidationsSpec extends AnyFunSuite with Matchers with Inside {
   test("should validate fragment: params definitions with actual params") {
     val subprocessDefinitionExctractor = getSubprocessDefinitionExtractor
 
