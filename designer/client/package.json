@@ -7,8 +7,9 @@
   "private": true,
   "scripts": {
     "prebuild": "i18next '!(node_modules|cypress|dist|test)/**/*.{js,ts,tsx}'",
-    "build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress && cp -R assets/icons/license dist",
-    "clean-build": "rm -rf dist && NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress && cp -R assets/icons/license dist",
+    "build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress",
+    "clean": "rm -rf dist",
+    "clean-build": "npm run clean && npm run build",
     "check-types": "tsc",
     "lint": "eslint --fix .",
     "svgo": "svgo --folder assets --recursive",

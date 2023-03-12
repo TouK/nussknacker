@@ -229,6 +229,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales", noErrorOnMissing: true},
+        {from: "assets/img/icons/license", to: "license", noErrorOnMissing: true},
       ],
     }),
     new PreloadWebpackPlugin({
