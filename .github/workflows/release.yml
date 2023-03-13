@@ -51,5 +51,5 @@ jobs:
 
       - name: "Push to master"
         if: ${{ NU_DOCKER_UPDATE_LATEST }}
-        echo: "TBD: git push origin HEAD:master -f && ./dockerhub/pulishReadme.sh"
+        run: echo "TBD git push origin HEAD:master -f && ./dockerhub/pulishReadme.sh"
 
