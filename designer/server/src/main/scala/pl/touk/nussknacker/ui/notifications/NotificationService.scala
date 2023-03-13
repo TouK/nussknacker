@@ -25,12 +25,13 @@ class NotificationServiceImpl(actionRepository: DbProcessActionRepository[DB], d
     def maxInstant(instant1: Instant, instant2: Instant) = if (instant1.compareTo(instant2) > 0) instant1 else instant2
     val limit = notificationsAfter.map(maxInstant(_, limitBasedOnConfig)).getOrElse(limitBasedOnConfig)
     dbioRunner.run(actionRepository.getUserActionsAfter(user,
+      Set(ProcessActionType.Deploy, ProcessActionType.Cancel),
       Set(ProcessActionState.Failed, ProcessActionState.Finished),
-      Set(ProcessActionType.Deploy, ProcessActionType.Cancel), limit)).map(_.map {
+      limit)).map(_.map {
       case (ProcessActionEntityData(id, _, _, _, _, _, actionType, ProcessActionState.Finished, _, _, _), processName) =>
-        Notification.deploymentActionFinishedNotification(id.toString, actionType, processName)
+        Notification.actionFinishedNotification(id.toString, actionType, processName)
       case (ProcessActionEntityData(id, _, _, _, _, _, actionType, ProcessActionState.Failed, failureMessageOpt, _, _), processName) =>
-        Notification.deploymentActionFailedNotification(id.toString, actionType, processName, failureMessageOpt)
+        Notification.actionFailedNotification(id.toString, actionType, processName, failureMessageOpt)
       case (a, processName) =>
         throw new IllegalStateException(s"Unexpected action returned by query: $a, for scenario: $processName")
     }.toList)

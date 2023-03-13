@@ -15,14 +15,13 @@ import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
                                    toRefresh: List[DataToRefresh])
 
 object Notification {
-  def deploymentActionFailedNotification(id: String, actionType: ProcessActionType, name: ProcessName, failureMessageOpt: Option[String]): Notification = {
+  def actionFailedNotification(id: String, actionType: ProcessActionType, name: ProcessName, failureMessageOpt: Option[String]): Notification = {
     Notification(id, Some(name), s"${displayableActionName(actionType)} of ${name.value} failed" + failureMessageOpt.map(" with reason: " + _).getOrElse(""),
       Some(NotificationType.error), List(DataToRefresh.state))
   }
 
-  def deploymentActionFinishedNotification(id: String, actionType: ProcessActionType, name: ProcessName): Notification = {
-    //We don't want to display this notification, not to confuse user, as
-    //deployment may proceed asynchronously (e.g. in streaming-lite)
+  def actionFinishedNotification(id: String, actionType: ProcessActionType, name: ProcessName): Notification = {
+    // We don't want to display this notification, because user already see that status icon was changed
     Notification(id, Some(name), s"${displayableActionName(actionType)} finished", None, List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state))
   }
 

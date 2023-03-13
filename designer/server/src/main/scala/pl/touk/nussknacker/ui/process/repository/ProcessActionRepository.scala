@@ -146,7 +146,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     run(query.result.map(_.toSet))
   }
 
-  def getUserActionsAfter(user: LoggedUser, possibleStates: Set[ProcessActionState], possibleActionTypes: Set[ProcessActionType], limit: Instant): F[Seq[(ProcessActionEntityData, ProcessName)]] = {
+  def getUserActionsAfter(user: LoggedUser, possibleActionTypes: Set[ProcessActionType], possibleStates: Set[ProcessActionState], limit: Instant): F[Seq[(ProcessActionEntityData, ProcessName)]] = {
     run(
       processActionsTable
         .filter(a => a.user === user.username && a.state.inSet(possibleStates) && a.action.inSet(possibleActionTypes) && a.performedAt > Timestamp.from(limit))
