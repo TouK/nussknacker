@@ -222,8 +222,8 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   // This method in contrary to getProcessState doesn't invoke target DeploymentManager - it only compute state
   // based on information available in DB
   // TODO: add caching of state returned by DeploymentManager
-  override def getDbProcessState(processDetails: BaseProcessDetails[_])
-                                (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] = {
+  override def getInternalProcessState(processDetails: BaseProcessDetails[_])
+                                      (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] = {
     dbioRunner.run(for {
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
       result <- getProcessState(processDetails, inProgressActionTypes) {

@@ -33,10 +33,10 @@ trait ProcessStateService {
                      (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState]
 
   // This method in contrary to getProcessState doesn't invoke target DeploymentManager - it only compute state
-  // based on information available in DB
+  // based on information available internally in Nussknacker (in DB)
   // TODO: add caching of state returned by DeploymentManager
-  def getDbProcessState(processDetails: BaseProcessDetails[_])
-                       (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState]
+  def getInternalProcessState(processDetails: BaseProcessDetails[_])
+                             (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState]
 
 }
 

@@ -16,8 +16,8 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
                               (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
     Future.successful(states(processIdWithName.name))
 
-  override def getDbProcessState(processDetails: processdetails.BaseProcessDetails[_])
-                                (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
+  override def getInternalProcessState(processDetails: processdetails.BaseProcessDetails[_])
+                                      (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
     Future.successful(states(processDetails.idWithName.name))
 
   override def deployProcessAsync(id: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])

@@ -266,7 +266,7 @@ class ProcessesResources(
 
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS])
                                                                           (implicit user: LoggedUser): Future[BaseProcessDetails[PS]] = {
-    deploymentService.getDbProcessState(process).map(state => process.copy(state = Some(state)))
+    deploymentService.getInternalProcessState(process).map(state => process.copy(state = Some(state)))
   }
 
   private def withJson(processId: ProcessId, version: VersionId)
