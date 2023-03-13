@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NU_DOCKER_UPDATE_LATEST: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
-      SBT_OPTS: "-J-Xss6M -J-Xms4G -J-Xmx4G -J-XX:ReservedCodeCacheSize=256M -J-XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
+      JVM_OPTS: "-J-Xss6M -J-Xms4G -J-Xmx4G -J-XX:ReservedCodeCacheSize=256M -J-XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
     steps:
       - name: "Output variables"
         run: |
@@ -49,7 +49,7 @@ jobs:
       - run: sbt sbtVersion
 
       - name: "Build"
-        run: sbt ${{ env.SBT_OPTS }} release skip-tests
+        run: sbt ${{ env.JVM_OPTS }} release skip-tests
 
       - name: "Push to master"
         if: ${{ env.NU_DOCKER_UPDATE_LATEST }}
