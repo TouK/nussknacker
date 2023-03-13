@@ -21,7 +21,7 @@ jobs:
       SBT_OPTS: "-J-Xss6M -J-Xms4G -J-Xmx4G -J-XX:ReservedCodeCacheSize=256M -J-XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
     steps:
       - name: "Output variables"
-      - run: |
+        run: |
           echo Backport release is ${{ inputs.backport_release }}, Release Candidate is ${{ inputs.release_candidate }}.
           echo Docker update latest is ${{ env.NU_DOCKER_UPDATE_LATEST }}
 
