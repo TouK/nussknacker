@@ -187,9 +187,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           processToolbarService = configProcessToolbarService,
           processResolving = processResolving,
           processAuthorizer = processAuthorizer,
-          processChangeListener = processChangeListener,
-          typeToConfig = typeToConfig
-        ),
+          processChangeListener = processChangeListener),
         new NodesResources(futureProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
         new ProcessesExportResources(futureProcessRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, futureProcessRepository, processAuthorizer),
