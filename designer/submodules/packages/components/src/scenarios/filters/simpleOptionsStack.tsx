@@ -10,7 +10,7 @@ export interface FiltersParams<V extends string = string, T = string> {
     onChange?: (value: V[]) => void;
 }
 
-export function SimpleOptionsStack(props: FiltersParams<string, { name: string; icon?: string }>): JSX.Element {
+export function SimpleOptionsStack(props: FiltersParams<string, { name: string; icon?: string; displayableName?: string }>): JSX.Element {
     const { options = [], value = [], onChange } = props;
     return (
         <OptionsStack {...props}>
