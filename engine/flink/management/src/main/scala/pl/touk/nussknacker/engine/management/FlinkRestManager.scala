@@ -115,7 +115,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   }
 
   override protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit] = {
-    config.waitForDuringDeployFinish.map { config =>
+    config.waitForDuringDeployFinish.toEnabledConfig.map { config =>
       retry.Pause(config.maxChecks, config.delay).apply {
         findJobStatus(processName).map {
           case Some(state) if state.status.isDuringDeploy => Left(())
