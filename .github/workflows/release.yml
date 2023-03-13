@@ -46,6 +46,11 @@ jobs:
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
 
+      - name: "Config git"
+        run: |
+          git config --global user.name "GitHub Action Release bot"
+          git config --global user.email "support@nussknacker.io"
+
       - name: "Build"
         run: sbt 'release release-version 1.8.2-RC1 next-version 1.9.0-SNAPSHOT skip-tests'
 
