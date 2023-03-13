@@ -1,7 +1,7 @@
 import React, {useCallback, useMemo} from "react"
 import {Scrollbars} from "react-custom-scrollbars"
 import {useDispatch, useSelector} from "react-redux"
-import {fetchProcessToDisplay} from "../actions/nk"
+import {fetchProcessToDisplay} from "../actions/nk/process"
 import {unsavedProcessChanges} from "../common/DialogMessages"
 import {getFetchedProcessDetails, isSaveDisabled} from "../reducers/selectors/graph"
 import styles from "../stylesheets/processHistory.styl"
