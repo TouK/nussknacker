@@ -50,6 +50,6 @@ jobs:
         run: sbt ${{ env.SBT_OPTS }} release skip-tests
 
       - name: "Push to master"
-        if: ${{ NU_DOCKER_UPDATE_LATEST }}
+        if: ${{ env.NU_DOCKER_UPDATE_LATEST }}
         run: echo "TBD git push origin HEAD:master -f && ./dockerhub/pulishReadme.sh"
 
