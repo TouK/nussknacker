@@ -1,18 +1,17 @@
 import HttpService from "../../http/HttpService"
-import {importProcess} from "./index"
-import {withoutHackOfEmptyEdges} from "../../components/graph/GraphPartialsInTS/EdgeUtils"
-import {Process, ProcessId} from "../../types"
-import {ProcessVersionId} from "../../components/Process/types"
+import {ProcessId} from "../../types"
 import {ThunkAction} from "../reduxTypes"
 
-export function importFiles(files: File[], processId: ProcessId): ThunkAction {
+export function importFiles(processId: ProcessId, files: File[]): ThunkAction {
   return (dispatch) => {
-    files.forEach(
-      file => dispatch(importProcess(processId, file)),
-    )
-    return {
-      type: "IMPORT_FILES",
-    }
+    files.forEach(async (file: File) => {
+      try {
+        dispatch({type: "PROCESS_LOADING"})
+        const process = await HttpService.importProcess(processId, file)
+        dispatch({type: "UPDATE_IMPORTED_PROCESS", processJson: process.data})
+      } catch (error) {
+        dispatch({type: "LOADING_FAILED"})
+      }
+    })
   }
 }
-

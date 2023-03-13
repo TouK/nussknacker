@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessS
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -14,6 +15,10 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   override def getProcessState(processIdWithName: ProcessIdWithName)
                               (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
     Future.successful(states(processIdWithName.name))
+
+  override def getInternalProcessState(processDetails: processdetails.BaseProcessDetails[_])
+                                      (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
+    Future.successful(states(processDetails.idWithName.name))
 
   override def deployProcessAsync(id: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])
                                  (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] =
@@ -26,5 +31,4 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
     Future.successful(List.empty)
 
   override def invalidateInProgressActions(): Unit = {}
-
 }

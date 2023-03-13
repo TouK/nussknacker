@@ -302,25 +302,33 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldBe List(asList(4, 3, 2, 1), asList(7, 6, 5), asList(8))
+
+    val nodeResults = runCollectOutputVariables(id, model, testProcess)
+    nodeResults.flatMap(_.variableTyped[TestRecord]("input")) shouldBe Nil
   }
 
-  test("sum session aggregate on event") {
+  test("sum session aggregate on event with context") {
     val id = "1"
 
-    val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 2, 2, "d"),
-      //gap
-      TestRecord(id, 6, 3, "b"),
-      TestRecord(id, 6, 4, "stop"),
-      //stop condition
-      TestRecord(id, 6, 5, "a")
-    ))
+    val testRecords =
+      List(
+        TestRecord(id, 0, 1, "a"),
+        TestRecord(id, 2, 2, "d"),
+        //gap
+        TestRecord(id, 6, 3, "b"),
+        TestRecord(id, 6, 4, "stop"),
+        //stop condition
+        TestRecord(id, 6, 5, "a")
+      )
+    val model = modelData(testRecords)
     val testProcess = session("#AGG.list",
       "#input.eId", SessionWindowTrigger.OnEvent, "#input.str == 'stop'")
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldBe List(asList(1), asList(2, 1), asList(3), asList(4, 3), asList(5))
+
+    val nodeResults = runCollectOutputVariables(id, model, testProcess)
+    nodeResults.flatMap(_.variableTyped[TestRecord]("input")) shouldBe testRecords
   }
 
   test("map aggregate") {

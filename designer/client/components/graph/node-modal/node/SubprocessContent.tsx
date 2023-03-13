@@ -1,17 +1,16 @@
 import React, {useEffect, useState} from "react"
 import {useSelector} from "react-redux"
 import HttpService from "../../../../http/HttpService"
-import {getProcessCounts, getProcessToDisplay} from "../../../../reducers/selectors/graph"
-import {SubprocessNodeType} from "../../../../types"
+import {getProcessCounts} from "../../../../reducers/selectors/graph"
+import {Process, SubprocessNodeType} from "../../../../types"
 import ErrorBoundary from "../../../common/ErrorBoundary"
-import {ProcessType} from "../../../Process/types"
 import NodeUtils from "../../NodeUtils"
 import {SubProcessGraph as BareGraph} from "../../SubProcessGraph"
 
 export function SubprocessContent({nodeToDisplay}: { nodeToDisplay: SubprocessNodeType }): JSX.Element {
   const processCounts = useSelector(getProcessCounts)
 
-  const [subprocessContent, setSubprocessContent] = useState<ProcessType>(null)
+  const [subprocessContent, setSubprocessContent] = useState<Process>(null)
 
   useEffect(
     () => {
