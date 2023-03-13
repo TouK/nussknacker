@@ -18,7 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NU_DOCKER_UPDATE_LATEST: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
-      JVM_OPTS: "-J-Xss6M -J-Xms4G -J-Xmx4G -J-XX:ReservedCodeCacheSize=256M -J-XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
+      OLD_JVM_OPTS: "-J-Xss6M -J-Xms4G -J-Xmx4G -J-XX:ReservedCodeCacheSize=256M -J-XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
+      JVM_OPTS: "-J-Xms2g -J-Xmx2g -J-XX:+UnlockExperimentalVMOptions -J-XX:-UseJVMCICompiler -DdockerUpLatest=false"
     steps:
       - name: "Output variables"
         run: |
