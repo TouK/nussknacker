@@ -46,6 +46,8 @@ jobs:
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
 
+      - run: sbt sbtVersion
+
       - name: "Build"
         run: sbt ${{ env.SBT_OPTS }} release skip-tests
 
