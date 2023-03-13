@@ -14,11 +14,42 @@ on:
         type: boolean
 
 jobs:
-  setup:
+  build:
     runs-on: ubuntu-latest
     env:
       NU_DOCKER_UPDATE_LATEST: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
+      SBT_OPTS: "-J-Xss6M -J-Xms4G -J-Xmx4G -J-XX:ReservedCodeCacheSize=256M -J-XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
     steps:
-      - run: echo Backport release is ${{ inputs.backport_release }}, Release Candidate is ${{ inputs.release_candidate }}.
-      - run: echo Docker update latest is ${{ env.NU_DOCKER_UPDATE_LATEST }}
+      - name: "Output variables"
+      - run: |
+          echo Backport release is ${{ inputs.backport_release }}, Release Candidate is ${{ inputs.release_candidate }}.
+          echo Docker update latest is ${{ env.NU_DOCKER_UPDATE_LATEST }}
+
+      - name: Cancel previous runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/checkout@v3
+
+      - uses: coursier/setup-action@v1
+        with:
+          jvm: temurin:1.11.0.17
+
+      - name: Cache ivy packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.cache/coursier
+            ~/.sbt
+          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
+          restore-keys: sbt
+
+      - name: "Build"
+        run: sbt ${{ env.SBT_OPTS }} release skip-tests
+
+      - name: "Push to master"
+        if: ${{ NU_DOCKER_UPDATE_LATEST }}
+        echo: "TBD: git push origin HEAD:master -f && ./dockerhub/pulishReadme.sh"
 
