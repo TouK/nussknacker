@@ -46,10 +46,8 @@ jobs:
           key: sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: sbt
 
-      - run: sbt sbtVersion
-
       - name: "Build"
-        run: sbt release release-version 1.8.2-RC1 next-version 1.9.0-SNAPSHOT skip-tests with-defaults
+        run: sbt 'release release-version 1.8.2-RC1 next-version 1.9.0-SNAPSHOT skip-tests'
 
       - name: "Push to master"
         if: ${{ env.NU_DOCKER_UPDATE_LATEST }}
