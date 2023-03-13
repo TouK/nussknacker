@@ -33,7 +33,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   - there MUST be at most 1 job in *non-terminal* state with given name
   - deployment is possible IFF there is NO job in *non-terminal* state with given name
  */
-  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = withJobOverview(name)(
+  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = withJobOverview(name)(
     whenNone = Future.successful(None),
     whenDuplicates = duplicates => Future.successful(Some(processStateDefinitionManager.processState(
       //we cannot have e.g. Failed here as we don't want to allow more jobs
@@ -117,7 +117,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   override protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit] = {
     config.waitForDuringDeployFinish.toEnabledConfig.map { config =>
       retry.Pause(config.maxChecks, config.delay).apply {
-        findJobStatus(processName).map {
+        getFreshProcessState(processName).map {
           case Some(state) if state.status.isDuringDeploy => Left(())
           case _ => Right(())
         }

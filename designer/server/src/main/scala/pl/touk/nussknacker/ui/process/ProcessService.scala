@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -121,6 +121,7 @@ class DBProcessService(deploymentService: DeploymentService,
 
   override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't rename archived scenario.") { process =>
+      implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
       withNotRunningState(process, "Can't change name still running scenario.") { _ =>
         dbioRunner.runInTransaction(
           processRepository
@@ -243,7 +244,8 @@ class DBProcessService(deploymentService: DeploymentService,
     doArchive(process)
 
   private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(callback: BaseProcessDetails[_] => Future[EmptyResponse])
-                                          (implicit user: LoggedUser): Future[EmptyResponse] =
+                                          (implicit user: LoggedUser): Future[EmptyResponse] = {
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     deploymentService.getProcessState(process.idWithName).flatMap(state => {
       if (state.allowedActions.contains(actionToCheck)) {
         callback(process)
@@ -251,6 +253,7 @@ class DBProcessService(deploymentService: DeploymentService,
         Future(Left(ProcessIllegalAction(actionToCheck, process.idWithName, state)))
       }
     })
+  }
 
   private def doArchive(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =
     dbioRunner.runInTransaction(DBIOAction.seq(
@@ -291,6 +294,7 @@ class DBProcessService(deploymentService: DeploymentService,
     if (process.isDeployed) {
       Future(Left(ProcessIllegalAction(errorMessage)))
     } else {
+      implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
       deploymentService.getProcessState(process.idWithName).flatMap(ps => {
         if (ps.status.isRunning) {
           Future(Left(ProcessIllegalAction(errorMessage)))

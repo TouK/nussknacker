@@ -20,7 +20,6 @@
 * [#4101](https://github.com/TouK/nussknacker/pull/4101) Notifications fixes:
   * Scenario state wasn't refreshed after deploy/cancel action was successfully finished (was only after failure)
   * Notification "Deployment of ... failed ..." was presented even for cancel action 
-* [#4100](https://github.com/TouK/nussknacker/pull/4100) "In progress" state is now presented not only inside scenario editor but also on scenarios list
 * [#4102](https://github.com/TouK/nussknacker/pull/4102) Flink deploy now wait until job is started on TaskManagers before reporting that is finished - 
   thanks to that status and versions panel are refreshed with "DEPLOYED" state in the same time
 * [#3992](https://github.com/TouK/nussknacker/pull/3992) Fix for compiling scenarios containing filter node with only 'false' edge
@@ -29,6 +28,10 @@
   * Add state definitions to `ProcessStateDefinitionManager`
   * Add `ProcessResources` endpoint that returns state definitions with default state properties (such as displayable name, icon and description), 
     to allow filtering by state in UI.
+* [#4100](https://github.com/TouK/nussknacker/pull/4100)[#4104](https://github.com/TouK/nussknacker/pull/4104)
+  Before the change, in scenario list, were presented "local" scenario states - based only on Nussknacker's actions log.
+  On the other hand, state presented in editor, was based on engine (e.g. Flink) state.
+  After the change, all possible scenario states are now presented not only inside scenario editor but also in scenarios list.
 
 1.8.1 (28 Feb 2023)
 ------------------------

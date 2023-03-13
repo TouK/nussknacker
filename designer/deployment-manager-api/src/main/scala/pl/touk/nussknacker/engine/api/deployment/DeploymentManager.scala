@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits._
 
 trait DeploymentManager extends AutoCloseable {
 
@@ -26,7 +27,7 @@ trait DeploymentManager extends AutoCloseable {
 
   def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]]
 
-  def findJobStatus(name: ProcessName): Future[Option[ProcessState]]
+  def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
@@ -39,5 +40,15 @@ trait DeploymentManager extends AutoCloseable {
 
   //TODO: savepointPath is very flink specific, we should handle it via custom action
   def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult]
+
+}
+
+trait AlwaysFreshProcessState { self: DeploymentManager =>
+
+  def getProcessState(name: ProcessName)
+                     (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
+    getFreshProcessState(name).map(WithDataFreshnessStatus(_, cached = false))
+
+  protected def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]]
 
 }

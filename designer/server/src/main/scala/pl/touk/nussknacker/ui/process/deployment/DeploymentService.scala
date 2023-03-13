@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeployedScenarioData, ProcessState}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
@@ -30,13 +30,10 @@ trait DeploymentService extends ProcessStateService {
 trait ProcessStateService {
 
   def getProcessState(processIdWithName: ProcessIdWithName)
-                     (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState]
+                     (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
-  // This method in contrary to getProcessState doesn't invoke target DeploymentManager - it only compute state
-  // based on information available internally in Nussknacker (in DB)
-  // TODO: add caching of state returned by DeploymentManager
-  def getInternalProcessState(processDetails: BaseProcessDetails[_])
-                             (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState]
+  def getProcessState(processDetails: BaseProcessDetails[_])
+                     (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState]
 
 }
 

@@ -144,7 +144,10 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     dbioRunner.runInTransaction(for {
       _ <- actionRepository.lockActionsTable
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      processState <- getProcessState(processDetails, inProgressActionTypes)(checkStateInDeploymentManager(processDetails))
+      processState <- {
+        implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+        getProcessState(processDetails, inProgressActionTypes)
+      }
       _ = checkIfCanPerformActionInState(actionType, processDetails, processState)
       actionId <- actionRepository.addInProgressAction(processDetails.processId, actionType, versionOnWhichActionIsDone, buildInfoProcessIngType)
     } yield actionId)
@@ -210,34 +213,25 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   // TODO: check deployment id to be sure that returned status is for given deployment
   override def getProcessState(processIdWithName: ProcessIdWithName)
-                              (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] = {
+                              (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       processDetails <- processDataExistOrFail(processDetailsOpt, processIdWithName.id)
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      result <- getProcessState(processDetails, inProgressActionTypes)(checkStateInDeploymentManager(processDetails))
+      result <- getProcessState(processDetails, inProgressActionTypes)
     } yield result)
   }
 
-  // This method in contrary to getProcessState doesn't invoke target DeploymentManager - it only compute state
-  // based on information available in DB
-  // TODO: add caching of state returned by DeploymentManager
-  override def getInternalProcessState(processDetails: BaseProcessDetails[_])
-                                      (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] = {
+  override def getProcessState(processDetails: BaseProcessDetails[_])
+                              (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      result <- getProcessState(processDetails, inProgressActionTypes) {
-        val manager = dispatcher.deploymentManager(processDetails.processingType)
-        val status = manager.processStateDefinitionManager.mapActionToStatus(processDetails.lastAction.map(_.action))
-        logger.debug(s"Status for: '${processDetails.name}' is: $status (last action: ${processDetails.lastAction.map(_.action)})")
-        DBIOAction.successful(manager.processStateDefinitionManager.processState(status))
-      }
+      result <- getProcessState(processDetails, inProgressActionTypes)
     } yield result)
   }
 
   private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType])
-                             (checkStateWhenNoInProgressActions: => DB[ProcessState])
-                             (implicit ec: ExecutionContext): DB[ProcessState] = {
+                             (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     val manager = dispatcher.deploymentManager(processDetails.processingType)
     if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
       logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
@@ -246,20 +240,20 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
       DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringCancel))
     } else {
-      checkStateWhenNoInProgressActions
+      checkStateInDeploymentManager(processDetails)
     }
   }
 
   private def checkStateInDeploymentManager(processDetails: BaseProcessDetails[_])
-                                           (implicit ec: ExecutionContext): DB[ProcessState] = {
+                                           (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     val manager = dispatcher.deploymentManager(processDetails.processingType)
     for {
       state <- DBIOAction.from(getStateFromEngine(manager, processDetails.idWithName))
-      cancelActionOpt <- handleFinishedProcess(processDetails, state)
+      cancelActionOpt <- handleFinishedProcess(processDetails, state.value)
     } yield {
       val lastAction = cancelActionOpt.orElse(processDetails.lastAction)
-      val finalState = ObsoleteStateDetector.handleObsoleteStatus(state, lastAction)
-      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.map(_.status)}, last action: ${lastAction.map(_.action)})")
+      val finalState = ObsoleteStateDetector.handleObsoleteStatus(state.value, lastAction)
+      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${lastAction.map(_.action)})")
       finalState
     }
   }
@@ -272,11 +266,13 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   }
 
   private def getStateFromEngine(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName)
-                                (implicit ec: ExecutionContext): Future[Option[ProcessState]] =
-    deploymentManager.findJobStatus(processIdWithName.name).recover {
+                                (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
+    deploymentManager.getProcessState(processIdWithName.name).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName}: ${e.getMessage}", e)
-        Some(SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.FailedToGet))
+        WithDataFreshnessStatus(
+          Some(SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.FailedToGet)),
+          cached = false)
     }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history

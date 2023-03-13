@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.deployment.User
 
 import scala.concurrent.Future
 
-trait BaseDeploymentManager extends DeploymentManager {
+trait BaseDeploymentManager extends DeploymentManager with AlwaysFreshProcessState {
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
     Future.failed(new UnsupportedOperationException(s"Cannot make savepoint with ${getClass.getSimpleName}"))

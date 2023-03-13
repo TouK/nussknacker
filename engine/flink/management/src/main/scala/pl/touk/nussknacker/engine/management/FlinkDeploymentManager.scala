@@ -18,7 +18,7 @@ import ModelData._
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
-  extends DeploymentManager with LazyLogging {
+  extends DeploymentManager with AlwaysFreshProcessState with LazyLogging {
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
 
@@ -66,7 +66,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   private def checkOldJobStatus(processVersion: ProcessVersion): Future[Option[ProcessState]] = {
     val processName = processVersion.processName
     for {
-      oldJob <- findJobStatus(processName)
+      oldJob <- getFreshProcessState(processName)
       _ <- if (oldJob.exists(!_.allowedActions.contains(ProcessActionType.Deploy)))
         Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.map(_.status.name).getOrElse("")}")) else Future.successful(Some(()))
     } yield oldJob
@@ -97,7 +97,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   private def requireRunningProcess[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value
-    findJobStatus(processName).flatMap {
+    getFreshProcessState(processName).flatMap {
       case Some(ProcessState(Some(deploymentId), status, _, _, _, _, _, _, _, _)) if status.isRunning =>
         action(deploymentId)
       case Some(state) =>

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.k8s.manager
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
+import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator}
@@ -22,7 +23,9 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Any],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
-    new K8sDeploymentManager(modelData.asInvokableModelData, K8sDeploymentManagerConfig.parse(config))
+    CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
+      new K8sDeploymentManager(modelData.asInvokableModelData, K8sDeploymentManagerConfig.parse(config)),
+      config)
   }
 
   override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String = {

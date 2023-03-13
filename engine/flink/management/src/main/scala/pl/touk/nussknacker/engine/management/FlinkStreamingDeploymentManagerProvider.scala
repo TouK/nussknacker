@@ -5,6 +5,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,7 +21,9 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
                                        sttpBackend: SttpBackend[Future, Any],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val flinkConfig = config.rootAs[FlinkConfig]
-    new FlinkStreamingRestManager(flinkConfig, modelData)
+    CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
+      new FlinkStreamingRestManager(flinkConfig, modelData),
+      config)
   }
 
   override def name: String = "flinkStreaming"

@@ -37,7 +37,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
   private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[ProcessState] =
     Some(SimpleProcessStateDefinitionManager.processState(status, Some(ExternalDeploymentId("1")), version))
 
-  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
+  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] =
     Future.successful(managerProcessState.getOrDefault(name, prepareProcessState(defaultProcessStateStatus)))
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,

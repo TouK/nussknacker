@@ -24,7 +24,8 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
-class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentManager with LazyLogging {
+class DevelopmentDeploymentManager(actorSystem: ActorSystem)
+  extends DeploymentManager with AlwaysFreshProcessState with LazyLogging {
 
   import SimpleStateStatus._
 
@@ -114,7 +115,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
+  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] =
     Future.successful(memory.get(name))
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =

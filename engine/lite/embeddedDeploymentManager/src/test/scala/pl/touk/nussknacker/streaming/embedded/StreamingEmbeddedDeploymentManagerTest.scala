@@ -23,6 +23,8 @@ import scala.jdk.CollectionConverters._
 class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploymentManagerTest
   with OptionValues with EitherValuesDetailedMessage {
 
+  protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+
   import KafkaUniversalComponentTransformer._
 
   test("Deploys scenario and cancels") {
@@ -40,7 +42,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     }
 
     eventually {
-      manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      manager.getProcessState(name).futureValue.value.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
 
     val input = obj("productId" -> fromInt(10))
@@ -50,7 +52,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     wrapInFailingLoader {
       manager.cancel(name, User("a", "b")).futureValue
     }
-    manager.findJobStatus(name).futureValue shouldBe None
+    manager.getProcessState(name).futureValue.value shouldBe None
   }
 
   test("Run persisted scenario deployments") {
@@ -67,7 +69,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
     eventually {
-      manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      manager.getProcessState(name).futureValue.value.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
 
     val input = obj("productId" -> fromInt(10))
@@ -76,7 +78,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
 
     manager.cancel(name, User("a", "b")).futureValue
 
-    manager.findJobStatus(name).futureValue shouldBe None
+    manager.getProcessState(name).futureValue.value shouldBe None
   }
 
   test("Run persisted scenario deployment with scenario json incompatible with current component API") {
@@ -93,7 +95,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val deployedScenarioData = DeployedScenarioData(ProcessVersion.empty.copy(processName = name), DeploymentData.empty, scenarioWithIncompatibleParameters)
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
-    manager.findJobStatus(name).futureValue.map(_.status) should matchPattern {
+    manager.getProcessState(name).futureValue.value.map(_.status) should matchPattern {
       case Some(DetailedFailedStateStatus(msg)) if msg.contains(TopicParamName) =>
     }
   }
@@ -153,7 +155,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     fixture.deployScenario(scenarioForOutput("next"))
 
     eventually {
-      manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      manager.getProcessState(name).futureValue.value.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
 
     kafkaClient.sendMessage(inputTopic, message("2")).futureValue
@@ -165,7 +167,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
 
     manager.cancel(name, User("a", "b")).futureValue
 
-    manager.findJobStatus(name).futureValue shouldBe None
+    manager.getProcessState(name).futureValue.value shouldBe None
   }
 
   test("Performs test from file") {

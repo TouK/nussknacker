@@ -38,6 +38,7 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
         val manager = dispatcher.deploymentManager(process.processingType)
         manager.customActions.find(_.name == actionName) match {
           case Some(customAction) =>
+            implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
             processStateService.getProcessState(id).flatMap { status =>
               if (customAction.allowedStateStatusNames.contains(status.status.name)) {
                 manager.invokeCustomAction(actionReq, process.json)

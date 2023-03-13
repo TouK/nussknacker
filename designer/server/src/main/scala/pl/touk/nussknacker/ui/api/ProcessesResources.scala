@@ -9,7 +9,7 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -88,6 +88,8 @@ class ProcessesResources(
           get {
             processesQuery { query =>
               complete {
+                // To not overload engine, for list of processes we provide statuses that can be cached
+                implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
                 processRepository.fetchProcessesDetails[Unit](query.toRepositoryQuery)
                   .flatMap(_.map(enrichDetailsWithProcessState[Unit]).sequence).toBasicProcess
               }
@@ -156,6 +158,7 @@ class ProcessesResources(
               }
             } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
               complete {
+                implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
                 processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).flatMap[ToResponseMarshallable] {
                   case Some(process) if skipValidateAndResolve => enrichDetailsWithProcessState(process).map(toProcessDetails)
                   case Some(process) => enrichDetailsWithProcessState(process).map(validateAndReverseResolve)
@@ -180,6 +183,7 @@ class ProcessesResources(
         } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
           (get & processId(processName) & skipValidateAndResolveParameter) { (processId, skipValidateAndResolve) =>
             complete {
+              implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
               processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId).flatMap[ToResponseMarshallable] {
                 case Some(process) if skipValidateAndResolve => enrichDetailsWithProcessState(process).map(toProcessDetails)
                 case Some(process) => enrichDetailsWithProcessState(process).map(validateAndReverseResolve)
@@ -205,6 +209,7 @@ class ProcessesResources(
         } ~ path("processes" / Segment / "status") { processName =>
           (get & processId(processName)) { processId =>
             complete {
+              implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
               deploymentService.getProcessState(processId).map(ToResponseMarshallable(_))
             }
           }
@@ -260,13 +265,16 @@ class ProcessesResources(
   }
 
   private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
+    // To not overload engine, for list of processes we provide statuses that can be cached
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
     processes.map(process => deploymentService.getProcessState(process.idWithName).map(status => process.name -> status))
       .sequence[Future, (String, ProcessState)].map(_.toMap)
   }
 
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS])
-                                                                          (implicit user: LoggedUser): Future[BaseProcessDetails[PS]] = {
-    deploymentService.getInternalProcessState(process).map(state => process.copy(state = Some(state)))
+                                                                          (implicit user: LoggedUser,
+                                                                           freshnessPolicy: DataFreshnessPolicy): Future[BaseProcessDetails[PS]] = {
+    deploymentService.getProcessState(process).map(state => process.copy(state = Some(state)))
   }
 
   private def withJson(processId: ProcessId, version: VersionId)

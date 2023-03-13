@@ -1440,7 +1440,9 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-actor" % akkaV,
-        "com.softwaremill.sttp.client3" %% "core" % sttpV
+        "com.softwaremill.sttp.client3" %% "core" % sttpV,
+        "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
+        "org.scalatestplus" %% "mockito-4-6" % scalaTestPlusV % "test"
       )
     }
   )
