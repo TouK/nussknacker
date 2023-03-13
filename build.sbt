@@ -1621,7 +1621,7 @@ lazy val root = (project in file("."))
       commitReleaseVersion,
       tagRelease,
       releaseStepCommand("buildClient"),
-      releaseStepCommandAndRemaining("+publishSigned"),
+      releaseStepCommandAndRemaining("+OkpublishSigned"),
       releaseStepCommand("dist/Universal/packageZipTarball"),
       releaseStepCommandAndRemaining("+dist/Docker/publish"),
       releaseStepCommandAndRemaining("+liteEngineRuntimeApp/Docker/publish"),
