@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
-import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.{SubprocessDefinitionExtractor, SubprocessDetails => ExtractorSubprocessDetails}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -70,11 +70,11 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
           implicit val requestDecoder: Decoder[NodeValidationRequest] = NodesResources.prepareNodeRequestDecoder(modelData)
           entity(as[NodeValidationRequest]) { nodeData =>
             complete {
-              val subprocessesDetails = subprocessRepository.loadSubprocesses(Map.empty, process.processCategory)
+              val uiSubprocessesDetails = subprocessRepository.loadSubprocesses(Map.empty, process.processCategory)
               val componentsConfig: Map[String, SingleComponentConfig] = ComponentsUiConfigExtractor.extract(modelData.processConfig)
+              // TODO: consult naming convention and ui->engine dependencies
               val subprocessDefinitionExtractor = SubprocessDefinitionExtractor(
-                category = process.processCategory,
-                subprocessesDetails = subprocessesDetails.map { d => pl.touk.nussknacker.engine.definition.SubprocessDetails(d.canonical, d.category) },
+                subprocessesDetails = uiSubprocessesDetails.map { d => ExtractorSubprocessDetails(d.canonical, d.category) },
                 subprocessesConfig = componentsConfig,
                 classLoader = modelData.modelClassLoader.classLoader
               )

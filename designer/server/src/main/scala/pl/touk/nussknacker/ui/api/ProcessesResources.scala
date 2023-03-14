@@ -166,8 +166,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
                     val classLoader = processTypeData.map(_.modelData).map(_.modelClassLoader).map(_.classLoader).get
                     val subprocessesConfig:Map[String,SingleComponentConfig] = ComponentsUiConfigExtractor.extract(processConfig)
                     val subprocessesDetails = subprocessRepository.loadSubprocesses(Map.empty, process.processCategory)
-                    val subprocessDefinitionExtractor = SubprocessDefinitionExtractor.apply(
-                      category = process.processCategory,
+                    // TODO: use extractor in process validation
+                    val subprocessDefinitionExtractor = SubprocessDefinitionExtractor(
                       subprocessesDetails = subprocessesDetails.map { d => pl.touk.nussknacker.engine.definition.SubprocessDetails(d.canonical, d.category)},
                       subprocessesConfig  = subprocessesConfig,
                       classLoader         = classLoader

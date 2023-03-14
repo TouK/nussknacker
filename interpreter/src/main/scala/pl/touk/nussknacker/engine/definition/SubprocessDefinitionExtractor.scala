@@ -19,31 +19,29 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.Subproces
 case class SubprocessDetails(canonical: CanonicalProcess, category: String)
 
 
-class SubprocessDefinitionExtractor(category: String, subprocessesDetails: Set[SubprocessDetails], componentsConfig: Map[String, SingleComponentConfig], classLoader: ClassLoader) {
+class SubprocessDefinitionExtractor(subprocessesDetails: Set[SubprocessDetails], componentsConfig: Map[String, SingleComponentConfig], classLoader: ClassLoader) {
 
   def extractBySubprocessId(subprocessId: String): List[Parameter] = {
     extract.getOrElse(subprocessId, ObjectDefinition.withParams(List.empty)).parameters
   }
 
   protected def extract: Map[String, ObjectDefinition] = {
-    val subprocessInputs = subprocessesDetails.collect {
+    subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, FragmentSpecificData(docsUrl), _, _), FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>
         val config = componentsConfig.getOrElse(id, SingleComponentConfig.zero).copy(docsUrl = docsUrl)
         val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
         val objectDefinition = new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], Some(List(category)), config)
         (id, objectDefinition)
     }.toMap
-    subprocessInputs
   }
 }
 
 object SubprocessDefinitionExtractor {
 
-  implicit val dummyExtractor = SubprocessDefinitionExtractor(category = "dummy", subprocessesDetails = Set.empty, Map.empty, classLoader = this.getClass.getClassLoader)
+  implicit val dummyExtractor = SubprocessDefinitionExtractor(subprocessesDetails = Set.empty, Map.empty, classLoader = this.getClass.getClassLoader)
 
-  def apply(category: String, subprocessesDetails: Set[SubprocessDetails], subprocessesConfig: Map[String, SingleComponentConfig], classLoader: ClassLoader): SubprocessDefinitionExtractor = {
+  def apply(subprocessesDetails: Set[SubprocessDetails], subprocessesConfig: Map[String, SingleComponentConfig], classLoader: ClassLoader): SubprocessDefinitionExtractor = {
     new SubprocessDefinitionExtractor(
-      category = category,
       subprocessesDetails = subprocessesDetails,
       componentsConfig  = subprocessesConfig,
       classLoader = classLoader

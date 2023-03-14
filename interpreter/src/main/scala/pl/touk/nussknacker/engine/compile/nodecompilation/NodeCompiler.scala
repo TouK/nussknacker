@@ -140,11 +140,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)
                             (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
     val ref = subprocessInput.ref
-    val parametersDefinition = subprocessDefinitionExtractor.extractBySubprocessId(nodeId.id)
+    val parametersDefinition = subprocessDefinitionExtractor.extractBySubprocessId(ref.id)
 
     val validParamDefs: ValidatedNel[PartSubGraphCompilationError, List[Parameter]] =
       Validations
-        .validateParametersSafe(parametersDefinition, ref.parameters)
+        .validateParameters(parametersDefinition, ref.parameters)
         .andThen(_ =>  ref.parameters.map(p => validateSubprocessInputParamType(subprocessInput, p.name)).sequence)
 
     val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>

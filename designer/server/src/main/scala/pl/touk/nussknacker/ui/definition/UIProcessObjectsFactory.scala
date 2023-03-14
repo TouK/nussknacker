@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
@@ -111,13 +112,14 @@ object UIProcessObjectsFactory {
     UIClazzDefinition(definition.clazzName, methodsWithHighestArity, staticMethodsWithHighestArity)
   }
 
+  // TODO: this method should be moved to SubprocessDefinitionExtractor
   private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails],
                                     classLoader: ClassLoader,
                                     fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, FragmentObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case fragment@SubprocessDetails(CanonicalProcess(MetaData(id, FragmentSpecificData(docsUrl), _, _), FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>
         val config = fixedComponentsConfig.getOrElse(id, SingleComponentConfig.zero).copy(docsUrl = docsUrl)
-        val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
+        val typedParameters = parameters.map(SubprocessDefinitionExtractor.extractSubprocessParam(classLoader, config))
 
 
         //Figure outputs parameter
@@ -129,29 +131,6 @@ object UIProcessObjectsFactory {
         (id, FragmentObjectDefinition(objectDefinition, outputParameters))
     }.toMap
     subprocessInputs
-  }
-
-  private def extractSubprocessParam(classLoader: ClassLoader, componentConfig: SingleComponentConfig)(p: SubprocessParameter): Parameter = {
-    val runtimeClass = p.typ.toRuntimeClass(classLoader)
-    //TODO: currently if we cannot parse parameter class we assume it's unknown
-    val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
-    val config = componentConfig.params.flatMap(_.get(p.name)).getOrElse(ParameterConfig.empty)
-    val parameterData = ParameterData(typ, Nil)
-    val extractedEditor = EditorExtractor.extract(parameterData, config)
-    Parameter(
-      name = p.name,
-      typ = typ,
-      editor = extractedEditor,
-      validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional = true, config, extractedEditor)),
-      // TODO: ability to pick default value from gui
-      defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(parameterData, isOptional = true, config, extractedEditor)),
-      additionalVariables = Map.empty,
-      variablesToHide = Set.empty,
-      branchParam = false,
-      isLazyParameter = false,
-      scalaOptionParameter = false,
-      javaOptionalParameter = false
-    )
   }
 
   case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[String])

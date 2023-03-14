@@ -115,7 +115,7 @@ class ValidationsSpec extends AnyFunSuite with Matchers with Inside {
         definition.Parameter[String]("P3").copy(validators = List(MandatoryParameterValidator), defaultValue = Some("'kuku'"))
       )),
     )
-    new SubprocessDefinitionExtractor(category = "RTM", subprocessesDetails = Set.empty, Map.empty, classLoader = this.getClass.getClassLoader) {
+    new SubprocessDefinitionExtractor(subprocessesDetails = Set.empty, Map.empty, classLoader = this.getClass.getClassLoader) {
       override def extract: Map[String, ObjectDefinition] = subprocesses
     }
   }
