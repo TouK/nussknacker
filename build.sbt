@@ -95,6 +95,10 @@ lazy val publishSettings = Seq(
   },
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
+  credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
+    host, propOrEnv("SONATYPE_USER", "touk"), propOrEnv("SONATYPE_PASSWORD", null))
+    // otherwise ~/.sbt/1.0/sonatype.sbt will be used
+  ).toSeq
 )
 
 def modelMergeStrategy: String => MergeStrategy = {
@@ -597,8 +601,6 @@ lazy val flinkDevModel = (project in flink("management/dev-model")).
   ).
   dependsOn(flinkSchemedKafkaComponentsUtils,
     flinkComponentsUtils % Provided,
-    // We use some components for testing with embedded engine, because of that we need dependency to this api
-    liteComponentsApi,
     componentsUtils,
     //TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     interpreter % "provided",
@@ -1438,9 +1440,7 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-actor" % akkaV,
-        "com.softwaremill.sttp.client3" %% "core" % sttpV,
-        "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
-        "org.scalatestplus" %% "mockito-4-6" % scalaTestPlusV % "test"
+        "com.softwaremill.sttp.client3" %% "core" % sttpV
       )
     }
   )
