@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useCallback } from "react";
+import React, { PropsWithChildren } from "react";
 import { FiltersContextProvider } from "../common";
 import { useScenariosWithStatus } from "./useScenariosQuery";
 import { ScenariosFiltersModel } from "./filters/scenariosFiltersModel";
@@ -6,7 +6,6 @@ import { FiltersPart } from "./filters";
 import { Add } from "@mui/icons-material";
 import { Avatar, Button, SpeedDial, SpeedDialAction, SpeedDialIcon, Stack, styled } from "@mui/material";
 import { useInViewRef } from "rooks";
-import { ValueLinker } from "../common/filters/filtersContext";
 import { TablePart } from "./list/tablePart";
 import { ListPart } from "./list/listPart";
 
@@ -82,10 +81,12 @@ function Scenarios({ children, table }: PropsWithChildren<{ table?: boolean }>):
     );
 }
 
-export type ScenariosViewProps = ActionsProps;
+export interface ScenariosViewProps extends ActionsProps {
+    table?: boolean;
+}
 
-export const ScenariosView = (props: ScenariosViewProps) => (
-    <Scenarios table={false}>
+export const ScenariosView = ({ table, ...props }: ScenariosViewProps) => (
+    <Scenarios table={table}>
         <Actions {...props} />
     </Scenarios>
 );

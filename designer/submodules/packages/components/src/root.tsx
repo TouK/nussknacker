@@ -5,6 +5,7 @@ import { RootProvidersWithAuth } from "./settings";
 import { useDefaultTheme, View } from "./common";
 import { RootRoutes } from "./components/rootRoutes";
 import { BrowserRouter } from "react-router-dom";
+import { Navigation } from "./navigation";
 
 export const Root = (): JSX.Element => {
     const defaultTheme = useDefaultTheme();
@@ -14,6 +15,7 @@ export const Root = (): JSX.Element => {
             <BrowserRouter>
                 <RootProvidersWithAuth>
                     <View>
+                        <Navigation />
                         <RootRoutes />
                     </View>
                 </RootProvidersWithAuth>

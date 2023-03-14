@@ -8,7 +8,7 @@ export function ComponentsRoutes() {
         <Routes>
             <Route index element={<ComponentsView />} />
             <Route path="usages">
-                <Route index element={<Navigate to="/invalid" replace />} />
+                <Route index element={<Navigate to=".." replace />} />
                 <Route path=":componentId" element={<ComponentView />} />
             </Route>
             <Route path="*" element={<Navigate to=".." replace />} />
