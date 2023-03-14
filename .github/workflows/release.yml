@@ -60,6 +60,16 @@ jobs:
           git config --global user.name "GitHub Action Release bot"
           git config --global user.email "support@nussknacker.io"
 
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
+
+      - name: List keys
+        run: gpg -K
+
       - name: "Build"
         run: sbt 'release release-version 1.8.2-RC1 next-version 1.9.0-SNAPSHOT skip-tests'
 
