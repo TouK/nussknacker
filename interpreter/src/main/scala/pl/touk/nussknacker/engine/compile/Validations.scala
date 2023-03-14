@@ -15,8 +15,7 @@ object Validations {
   def validateParametersSafe(defParams: List[Parameter], actualParams: List[evaluatedparam.Parameter])(implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
     if (defParams.isEmpty) {
       valid(())
-    }
-    else {
+    } else {
       Validations.validateParameters(defParams, actualParams)
     }
   }

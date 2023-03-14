@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SubprocessOutput}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
@@ -252,6 +253,26 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
+
+  test("should validate fragment parameters with validators") {
+    val subprocessId = "frInput"
+    val subInput = SubprocessInput(subprocessId, SubprocessRef("fragment1", List(Parameter("P1", "")), Map("out1" -> "test1")))
+    val getFragment: String => Option[CanonicalProcess] = Map("fragment1" -> CanonicalProcess(MetaData("fragment", FragmentSpecificData()), List(
+      FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("P1", SubprocessClazzRef[Short])))),
+      FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
+    ))).get
+    val subprocesses = Map(
+      subprocessId -> ObjectDefinition.withParams(List(
+        definition.Parameter[Short]("P1").copy(validators = List(MandatoryParameterValidator), defaultValue = None),
+      )),
+    )
+    inside(
+      validateSubprocess(subInput, ValidationContext.empty, outgoingEdges = List(OutgoingEdge("any", Some(SubprocessOutput("out1")))), getFragment = getFragment, subprocesses = subprocesses)
+    ) {
+      case ValidationPerformed(List(EmptyMandatoryParameter(_, _, "P1", subprocessId)), None, None) =>
+    }
+  }
+
   test("should validate output parameters") {
 
     val incorrectVarName = "very bad var name"
@@ -312,6 +333,21 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
     ))
     NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs, Map("fragment1" -> fragmentDef).get, outgoingEdges,SubprocessDefinitionExtractor.dummyExtractor)(MetaData("id", StreamMetaData()))
+  }
+
+  private def validateSubprocess(nodeData: NodeData,
+                       ctx: ValidationContext,
+                       branchCtxs: Map[String, ValidationContext] = Map.empty,
+                       outgoingEdges: List[OutgoingEdge] = Nil,
+                       getFragment: String => Option[CanonicalProcess],
+                       subprocesses: Map[String, ObjectDefinition]): ValidationResponse = {
+    NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs, getFragment, outgoingEdges, getSubprocessDefinitionExtractor(subprocesses))(MetaData("id", StreamMetaData()))
+  }
+
+  def getSubprocessDefinitionExtractor(subprocesses: Map[String, ObjectDefinition]) = {
+    new SubprocessDefinitionExtractor(category = "RTM", subprocessesDetails = Set.empty, Map.empty, classLoader = this.getClass.getClassLoader) {
+      override def extract: Map[String, ObjectDefinition] = subprocesses
+    }
   }
 
   private def par(name: String, expr: String): Parameter = Parameter(name, Expression("spel", expr))
