@@ -601,6 +601,8 @@ lazy val flinkDevModel = (project in flink("management/dev-model")).
   ).
   dependsOn(flinkSchemedKafkaComponentsUtils,
     flinkComponentsUtils % Provided,
+    // We use some components for testing with embedded engine, because of that we need dependency to this api
+    liteComponentsApi,
     componentsUtils,
     //TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     interpreter % "provided",

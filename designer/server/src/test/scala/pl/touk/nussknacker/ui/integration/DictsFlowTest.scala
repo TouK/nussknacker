@@ -39,7 +39,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
 
   implicit val timeout: RouteTestTimeout = RouteTestTimeout(2.minutes)
 
-  override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
+  override def testConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
   private val DictId = "dict"
   private val VariableNodeId = "variableCheck"
@@ -150,9 +150,9 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
     ScenarioBuilder
       .streaming(processId)
       .additionalFields(properties = Map("param1" -> "true"))
-      .source("source", "csv-source")
+      .source("source", "csv-source-lite")
       .buildSimpleVariable(VariableNodeId, VariableName, variableExpression)
-      .emptySink(EndNodeId, "monitor")
+      .emptySink(EndNodeId, "dead-end-lite")
 
   private def saveProcessAndExtractValidationResult(process: CanonicalProcess, endResultExpressionToPost: String): Json = {
     val processRootResource = s"/api/processes/${process.id}"
