@@ -267,7 +267,7 @@ class ProcessesResources(
   private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
     // To not overload engine, for list of processes we provide statuses that can be cached
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
-    processes.map(process => deploymentService.getProcessState(process.idWithName).map(status => process.name -> status))
+    processes.map(process => deploymentService.getProcessState(process).map(status => process.name -> status))
       .sequence[Future, (String, ProcessState)].map(_.toMap)
   }
 

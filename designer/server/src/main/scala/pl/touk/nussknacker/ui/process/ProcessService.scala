@@ -246,7 +246,7 @@ class DBProcessService(deploymentService: DeploymentService,
   private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(callback: BaseProcessDetails[_] => Future[EmptyResponse])
                                           (implicit user: LoggedUser): Future[EmptyResponse] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    deploymentService.getProcessState(process.idWithName).flatMap(state => {
+    deploymentService.getProcessState(process).flatMap(state => {
       if (state.allowedActions.contains(actionToCheck)) {
         callback(process)
       } else {
@@ -295,7 +295,7 @@ class DBProcessService(deploymentService: DeploymentService,
       Future(Left(ProcessIllegalAction(errorMessage)))
     } else {
       implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-      deploymentService.getProcessState(process.idWithName).flatMap(ps => {
+      deploymentService.getProcessState(process).flatMap(ps => {
         if (ps.status.isRunning) {
           Future(Left(ProcessIllegalAction(errorMessage)))
         } else {

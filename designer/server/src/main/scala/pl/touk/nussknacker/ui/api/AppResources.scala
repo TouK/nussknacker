@@ -154,6 +154,6 @@ class AppResources(config: Config,
   private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, ProcessState)]] = {
     // Problems should be detected by Healtcheck very quickly. Because of that we return fresh states for list of processes
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-    processes.map(process => deploymentService.getProcessState(process.idWithName).map((process.name, _)))
+    processes.map(process => deploymentService.getProcessState(process).map((process.name, _)))
   }
 }
