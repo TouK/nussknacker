@@ -29,9 +29,9 @@
   * Add `ProcessResources` endpoint that returns state definitions with default state properties (such as displayable name, icon and description), 
     to allow filtering by state in UI.
 * [#4100](https://github.com/TouK/nussknacker/pull/4100)[#4104](https://github.com/TouK/nussknacker/pull/4104)
-  Before the change, in scenario list, were presented "local" scenario states - based only on Nussknacker's actions log.
-  On the other hand, state presented in editor, was based on engine (e.g. Flink) state.
-  After the change, all possible scenario states are now presented not only inside scenario editor but also in scenarios list.
+  Before the change, the scenario list presented "local" states - based only on Nussknacker's actions log.
+  On the other hand, the scenario editor presented state based on engine (e.g. Flink) state.
+  After the change, in all places the state is based on engine (e.g. Flink) state - in some places like scenario list, it is cached.
 
 1.8.1 (28 Feb 2023)
 ------------------------
