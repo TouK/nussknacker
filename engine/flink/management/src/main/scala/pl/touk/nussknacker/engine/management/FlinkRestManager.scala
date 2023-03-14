@@ -114,6 +114,17 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     s == JobStatus.RUNNING || s == JobStatus.INITIALIZING
   }
 
+  override protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit] = {
+    config.waitForDuringDeployFinish.toEnabledConfig.map { config =>
+      retry.Pause(config.maxChecks, config.delay).apply {
+        findJobStatus(processName).map {
+          case Some(state) if state.status.isDuringDeploy => Left(())
+          case _ => Right(())
+        }
+      }.map(_.getOrElse(throw new IllegalStateException("Deploy execution finished, but job is still in during deploy state on Flink")))
+    }.getOrElse(Future.successful(()))
+  }
+
   //TODO: cache by jobId?
   private def withVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
     client.getJobConfig(jobId).map { executionConfig =>

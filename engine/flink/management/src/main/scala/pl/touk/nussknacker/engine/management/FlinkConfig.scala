@@ -14,4 +14,24 @@ import scala.concurrent.duration.DurationInt
 case class FlinkConfig(restUrl: String,
                        jobManagerTimeout: FiniteDuration = 1 minute,
                        shouldVerifyBeforeDeploy: Boolean = true,
-                       shouldCheckAvailableSlots: Boolean = true)
+                       shouldCheckAvailableSlots: Boolean = true,
+                       waitForDuringDeployFinish: FlinkWaitForDuringDeployFinishedConfig =
+                       FlinkWaitForDuringDeployFinishedConfig(enabled = true, Some(60), Some(1 second)))
+
+case class FlinkWaitForDuringDeployFinishedConfig(enabled: Boolean, maxChecks: Option[Int], delay: Option[FiniteDuration]) {
+
+  def toEnabledConfig: Option[EnabledFlinkWaitForDuringDeployFinishedConfig] =
+    if (enabled) {
+      (maxChecks, delay) match {
+        case (Some(definedMaxChecks), Some(definedDelay)) =>
+          Some(EnabledFlinkWaitForDuringDeployFinishedConfig(definedMaxChecks, definedDelay))
+        case _ =>
+          throw new IllegalArgumentException(s"Invalid config: $this. If you want to enable waitForDuringDeployFinish option, hou have to define both maxChecks and delay.")
+      }
+    } else {
+      None
+    }
+
+}
+
+case class EnabledFlinkWaitForDuringDeployFinishedConfig(maxChecks: Int, delay: FiniteDuration)
