@@ -3,14 +3,10 @@
 set -e
 
 cd "$(dirname -- "$0")"
-cd client
-nvm install
-npm ci && npm run build && cd -
+cd client && npm ci && npm run build && cd -
 cp -r client/.federated-types/nussknackerUi submodules/types/@remote
 
-cd submodules
-nvm install
-npm ci && CI=true npm run build && cd -
+cd submodules && npm ci && CI=true npm run build && cd -
 # Copy designer dist for purpose of further usage in server ran from Idea
 cd ..
 sbt designer/copyClientDist
