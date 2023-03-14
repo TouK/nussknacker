@@ -60,7 +60,7 @@ When writing documentation please follow these instructions:
     ```
     [Components](/about/GLOSSARY#component)
     ```
-    example of incorrect links:
+  example of incorrect links:
     ```
     [Components](/about/GLOSSARY.md#component)
     [Components](../about/GLOSSARY#component)
