@@ -4,7 +4,7 @@ import java.net.URI
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{actionStatusMap, defaultActions, statusActionsMap}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateDefinition, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 /**
@@ -22,7 +22,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
       .map(sa => actionStatusMap.getOrElse(sa, SimpleStateStatus.Unknown))
       .getOrElse(SimpleStateStatus.NotDeployed)
 
-  override def stateDefinitions(): Map[StatusName, StateDefinition] =
+  override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
     SimpleStateStatus.definitions
 
   def errorShouldBeRunningState(deployedVersionId: VersionId, user: String): ProcessState =

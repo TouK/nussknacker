@@ -82,6 +82,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             value={getFilter("STATUS", true)}
                             onChange={setFilter("STATUS")}
                         />
+                        {/*<StatusOptionsStack/>*/}
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                         <SimpleOptionsStack

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, DuringDeployStateStatus, FailedStateStatus, FinishedStateStatus, NotEstablishedStateStatus, ProcessActionType, RunningStateStatus, StateDefinition, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, DuringDeployStateStatus, FailedStateStatus, FinishedStateStatus, NotEstablishedStateStatus, ProcessActionType, RunningStateStatus, StateDefinitionDetails, StateStatus}
 
 import java.net.URI
 
@@ -45,74 +45,74 @@ object SimpleStateStatus {
     SimpleStateStatus.FailedToGet -> List(ProcessActionType.Deploy, ProcessActionType.Archive)
   )
 
-  val definitions: Map[StatusName, StateDefinition] = Map(
-    SimpleStateStatus.FailedToGet.name -> StateDefinition(
+  val definitions: Map[StatusName, StateDefinitionDetails] = Map(
+    SimpleStateStatus.FailedToGet.name -> StateDefinitionDetails(
       displayableName = "Failed to get",
       icon = Some(URI.create("/assets/states/error.svg")),
       tooltip = Some("There are problems obtaining the scenario state. Please check if your engine is working properly."),
       description = Some("Failed to get a state of the scenario.")
     ),
-    SimpleStateStatus.Unknown.name -> StateDefinition(
+    SimpleStateStatus.Unknown.name -> StateDefinitionDetails(
       displayableName = "Unknown",
       icon = Some(URI.create("/assets/states/status-unknown.svg")),
       tooltip = Some("Unknown state of the scenario. We can't recognize scenario state."),
       description = Some("Unknown state of the scenario.")
     ),
-    SimpleStateStatus.NotDeployed.name -> StateDefinition(
+    SimpleStateStatus.NotDeployed.name -> StateDefinitionDetails(
       displayableName = "Not deployed",
       icon = Some(URI.create("/assets/states/not-deployed.svg")),
       tooltip = Some("The scenario is not deployed."),
       description = Some("The scenario is not deployed.")
     ),
-    SimpleStateStatus.DuringDeploy.name -> StateDefinition(
+    SimpleStateStatus.DuringDeploy.name -> StateDefinitionDetails(
       displayableName = "During deploy",
       icon = Some(URI.create("/assets/states/deploy-running-animated.svg")),
       tooltip = Some("The scenario has been already started and currently is being deployed."),
       description = Some("The scenario is being deployed.")
     ),
-    SimpleStateStatus.Running.name -> StateDefinition(
+    SimpleStateStatus.Running.name -> StateDefinitionDetails(
       displayableName = "Running",
       icon = Some(URI.create("/assets/states/deploy-success.svg")),
       tooltip = Some("The scenario has been successfully deployed and currently is running."),
       description = Some("The scenario is running.")
     ),
-    SimpleStateStatus.Canceled.name -> StateDefinition(
+    SimpleStateStatus.Canceled.name -> StateDefinitionDetails(
       displayableName = "Canceled",
       icon = Some(URI.create("/assets/states/stopping-success.svg")),
       tooltip = Some("The scenario has been successfully cancelled."),
       description = Some("The scenario is canceled.")
     ),
-    SimpleStateStatus.Restarting.name -> StateDefinition(
+    SimpleStateStatus.Restarting.name -> StateDefinitionDetails(
       displayableName = "Restarting",
       icon = Some(URI.create("/assets/states/deploy-restart-animated.svg")),
       tooltip = Some("Scenario was deployed but now is restarting..."),
       description = Some("Scenario is restarting...")
     ),
-    SimpleStateStatus.DuringCancel.name -> StateDefinition(
+    SimpleStateStatus.DuringCancel.name -> StateDefinitionDetails(
       displayableName = "During cancel",
       icon = Some(URI.create("/assets/states/stopping-running-animated.svg")),
       tooltip = Some("The scenario currently is being canceled."),
       description = Some("The scenario is being canceled.")
     ),
-    SimpleStateStatus.Failed.name -> StateDefinition(
+    SimpleStateStatus.Failed.name -> StateDefinitionDetails(
       displayableName = "Failed",
       icon = Some(URI.create("/assets/states/failed.svg")),
       tooltip = Some("There are some problems with scenario."),
       description = Some("There are some problems with scenario.")
     ),
-    SimpleStateStatus.Finished.name -> StateDefinition(
+    SimpleStateStatus.Finished.name -> StateDefinitionDetails(
       displayableName = "Finished",
       icon = Some(URI.create("/assets/states/success.svg")),
       tooltip = Some("The scenario completed successfully."),
       description = Some("The scenario has finished.")
     ),
-    SimpleStateStatus.Error.name -> StateDefinition(
+    SimpleStateStatus.Error.name -> StateDefinitionDetails(
       displayableName = "Error",
       icon = Some(URI.create("/assets/states/error.svg")),
       tooltip = Some("There are some errors. Please check if everything is okay with scenario!"),
       description = Some("There are errors establishing a scenario state.")
     ),
-    SimpleStateStatus.Warning.name -> StateDefinition(
+    SimpleStateStatus.Warning.name -> StateDefinitionDetails(
       displayableName = "Warning",
       icon = Some(URI.create("/assets/states/warning.svg")),
       tooltip = Some("There are some warnings. Please check if everything is okay with scenario!"),

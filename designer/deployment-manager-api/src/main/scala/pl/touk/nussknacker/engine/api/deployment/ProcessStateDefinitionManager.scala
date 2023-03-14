@@ -10,15 +10,20 @@ import java.net.URI
 
 //@TODO: In future clean up it.
 /**
-  * Provides state definitions, state transitions and status property transformations for UI visualization.
+  * Used to specify status definitions (for filtering and scenario status visualization) and status transitions (actions).
   */
 trait ProcessStateDefinitionManager {
 
   /**
-    * Default set of state definitions that provides state defaults
-    * and allows filtering by fixed set of status IDs (see [[ProcessState]] and [[StateStatus.name]]).
+    * Dictionary of state definitions with default properties.
+    * Usages:
+    * <ul>
+    * <li>fixed set of filter options for scenario filtering by state.
+    * <li>default values of status properties
+    * </ul>
+    * To handle dynamic state properties (e.g. descriptions) use statusDescription, statusTooltip or statusIcon.
     */
-  def stateDefinitions(): Map[StatusName, StateDefinition]
+  def stateDefinitions: Map[StatusName, StateDefinitionDetails]
 
   /**
     * Status properties that describe how the state is transformed in order to be displayed in UI for each scenario.
@@ -27,13 +32,13 @@ trait ProcessStateDefinitionManager {
     * e.g. handle schedule date in [[PeriodicProcessStateDefinitionManager]]
     */
   def statusTooltip(stateStatus: StateStatus): Option[String] =
-    stateDefinitions()(stateStatus.name).tooltip
+    stateDefinitions(stateStatus.name).tooltip
 
   def statusDescription(stateStatus: StateStatus): Option[String] =
-    stateDefinitions()(stateStatus.name).description
+    stateDefinitions(stateStatus.name).description
 
   def statusIcon(stateStatus: StateStatus): Option[URI] =
-    stateDefinitions()(stateStatus.name).icon
+    stateDefinitions(stateStatus.name).icon
 
   /**
     * Allowed transitions between states.

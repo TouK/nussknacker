@@ -4,5 +4,5 @@ import pl.touk.nussknacker.engine.api.deployment.OverridingProcessStateDefinitio
 
 object FlinkProcessStateDefinitionManager extends OverridingProcessStateDefinitionManager(
   statusActionsPF = FlinkStateStatus.statusActionsPF,
-  stateDefinitions = FlinkStateStatus.customStateDefinitions
+  customStateDefinitions = FlinkStateStatus.customStateDefinitions
 )

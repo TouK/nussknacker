@@ -2,11 +2,11 @@ package pl.touk.nussknacker.development.manager
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, OverridingProcessStateDefinitionManager, ProcessActionType, ProcessStateDefinitionManager, StateDefinition, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, OverridingProcessStateDefinitionManager, ProcessActionType, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
 
 class DevelopmentProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager) extends OverridingProcessStateDefinitionManager(
   statusActionsPF = DevelopmentStateStatus.statusActionsPF,
-  stateDefinitions = DevelopmentStateStatus.customStateDefinitions,
+  customStateDefinitions = DevelopmentStateStatus.customStateDefinitions,
   delegate = delegate
 )
 
@@ -18,20 +18,20 @@ object DevelopmentStateStatus {
     case DevelopmentStateStatus.TestStatus => List(ProcessActionType.Deploy)
   }
 
-  val customStateDefinitions: Map[StatusName, StateDefinition] = Map(
-    AfterRunningStatus.name -> StateDefinition(
+  val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
+    AfterRunningStatus.name -> StateDefinitionDetails(
       displayableName = "After running",
       icon = None,
       tooltip = Some("External running."),
       description = Some("External running.")
     ),
-    PreparingResourcesStatus.name -> StateDefinition(
+    PreparingResourcesStatus.name -> StateDefinitionDetails(
       displayableName = "Preparing resources",
       icon = None,
       tooltip = Some("Preparing external resources."),
       description = Some("Preparing external resources.")
     ),
-    TestStatus.name -> StateDefinition(
+    TestStatus.name -> StateDefinitionDetails(
       displayableName = "Test",
       icon = None,
       tooltip = Some("Preparing external resources."),
