@@ -96,7 +96,7 @@ lazy val publishSettings = Seq(
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
   credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
-    host, propOrEnv("nexusUser", "touk"), propOrEnv("nexusPassword", null))
+    host, propOrEnv("SONATYPE_USER", "touk"), propOrEnv("SONATYPE_PASSWORD", null))
     // otherwise ~/.sbt/1.0/sonatype.sbt will be used
   ).toSeq
 )
