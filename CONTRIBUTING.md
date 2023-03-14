@@ -52,7 +52,7 @@ When writing documentation please follow these instructions:
     ```
     [main configuration file](./Common#configuration-areas) 
     ```
-* all links to `https://docs.nussknacker.io/`, but other than `Documentation` section in that page, e.g. to `About` or `Quicsktart` sections: 
+* all links to `https://nussknacker.io/documentation/`, but other than `Documentation` section in that page, e.g. to `About` or `Quicsktart` sections: 
   * should **not** point to `md` or `mdx` files
   * should **not** be relative
     
