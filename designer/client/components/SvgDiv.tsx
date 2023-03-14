@@ -2,17 +2,19 @@ import React, {ComponentType, DetailedHTMLProps, HTMLAttributes} from "react"
 import loadable from "@loadable/component"
 import ErrorBoundary from "react-error-boundary"
 import styled from "@emotion/styled"
+import {absoluteBePath} from "../common/UrlUtils"
 
-const svgExp = /\.svg$/i
-const absoluteExp = /^((https?:)?\/)?\//i
+const absoluteExp = /^(?<root>(?<proto>(https?:)?\/)?\/)?.*\.svg$/i
 
 const AsyncSvg = loadable.lib(async ({src}: { src: string }) => {
-  if (!svgExp.test(src)) {
+  const match = src.match(absoluteExp)
+
+  if (!match) {
     throw `${src} is not svg path`
   }
 
-  if (absoluteExp.test(src)) {
-    const response = await fetch(src)
+  if (match.groups.root) {
+    const response = await fetch(match.groups.proto ? src : absoluteBePath(src))
     return await response.text()
   }
 
@@ -32,10 +34,15 @@ export interface InlineSvgProps extends DetailedHTMLProps<HTMLAttributes<HTMLDiv
   FallbackComponent?: ComponentType,
 }
 
-export const InlineSvg = ({FallbackComponent, src, ...rest}: InlineSvgProps): JSX.Element => (
+export const InlineSvg = ({FallbackComponent, src, id, ...rest}: InlineSvgProps): JSX.Element => (
   <ErrorBoundary FallbackComponent={FallbackComponent}>
     <AsyncSvg src={src}>
-      {(__html => <Flex {...rest} dangerouslySetInnerHTML={{__html}}/>)}
+      {(__html => (
+        <Flex
+          {...rest}
+          dangerouslySetInnerHTML={{__html: id ? __html.replace("<svg ", `<svg id="${id}"`) : __html}}
+        />
+      ))}
     </AsyncSvg>
   </ErrorBoundary>
 )

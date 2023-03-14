@@ -1,8 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import css from "!raw-loader!./export.styl"
-import {dia, util, V, Vectorizer} from "jointjs"
-import {memoize} from "lodash"
-import {svgTowDataURL, toXml} from "../../../common/SVGUtils"
+import {dia, V, Vectorizer} from "jointjs"
+import {toXml} from "../../../common/SVGUtils"
 
 function createStyle() {
   const style = V("style").node
@@ -10,48 +9,31 @@ function createStyle() {
   return style
 }
 
-const getDataUrl = memoize(async (url: string) => {
-  const response = await fetch(url)
-  const svgStr = await response.text()
-  return {dataurl: svgTowDataURL(svgStr), id: util.uniqueId("img")}
-})
-
 function _debugInWindow(svg: string | SVGElement) {
   const svgString = typeof svg === "string" ? svg : toXml(svg)
   window.open(null).document.write(svgString)
-}
-
-async function embedImage(image: Vectorizer) {
-  const href = image.attr("xlink:href")
-  const {dataurl, id} = await getDataUrl(href)
-  image.attr("xlink:href", dataurl)
-  return {dataurl, id}
 }
 
 function createDefInNeeded(image: Vectorizer, id: string) {
   const defs = image.defs()
   const existingDef = defs.findOne(`#${id}`)
   if (!existingDef) {
-    const def = V(image.clone(), {id})
-    defs.append(def)
-    return def
+    const svg = document.getElementById(id)?.outerHTML
+    if (svg) {
+      const def = V(svg, {id})
+      defs.append(def)
+    }
   }
-  return existingDef
-}
-
-async function replaceWithDef(img: Vectorizer) {
-  const {id} = await embedImage(img)
-  const def = createDefInNeeded(img, id)
-  const use = V("use", {["xlink:href"]: `#${def.id}`})
-  return img.node.replaceWith(use.node)
 }
 
 function embedImages(svg: SVGElement) {
-  const images = V(svg)
-    .find("image[*|href]")
-    .filter(i => !i.attr("xlink:href").startsWith("data:image"))
-
-  return Promise.all(images.map(replaceWithDef))
+  const paper = V(svg)
+  paper
+    .find("use[*|href^='#']")
+    .forEach(image => {
+      const id = image.attr("xlink:href").replace(/^#/, "")
+      createDefInNeeded(paper, id)
+    })
 }
 
 function hasSize(el: SVGGraphicsElement) {
@@ -108,7 +90,7 @@ export async function prepareSvg(options: Pick<dia.Paper, "options" | "defs">, m
 
   addStyles(svg, height, width)
   removeHiddenNodes(svg)
-  await embedImages(svg)
+  embedImages(svg)
 
   placeholder.remove()
   return toXml(svg)
