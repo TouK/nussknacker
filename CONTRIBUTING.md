@@ -41,6 +41,31 @@ New features and components should have appropriate [Documentation](docs). In pa
 should be documented (with type, default values etc.) in appropriate sections of
 [Configuration documentation](docs/installation_configuration_guide/README.md).
 
+When writing documentation please follow these instructions:
+* all links to other sections in documentation (in this repo) should point to `md` or `mdx` files 
+    
+  example of correct link:
+    ```
+    [main configuration file](./Common.md#configuration-areas)
+    ```
+  example of incorrect link:
+    ```
+    [main configuration file](./Common#configuration-areas) 
+    ```
+* all links to `https://docs.nussknacker.io/`, but other than `Documentation` section in that page, e.g. to `About` or `Quicsktart` sections: 
+  * should **not** point to `md` or `mdx` files
+  * should **not** be relative
+    
+  example of correct link:
+    ```
+    [Components](/about/GLOSSARY#component)
+    ```
+    example of incorrect links:
+    ```
+    [Components](/about/GLOSSARY.md#component)
+    [Components](../about/GLOSSARY#component)
+    ```
+
 ## Working with code
 
 ### Setup
