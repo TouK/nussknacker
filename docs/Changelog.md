@@ -24,6 +24,7 @@
 * [#4102](https://github.com/TouK/nussknacker/pull/4102) Flink deploy now wait until job is started on TaskManagers before reporting that is finished - 
   thanks to that status and versions panel are refreshed with "DEPLOYED" state in the same time
 * [#3992](https://github.com/TouK/nussknacker/pull/3992) Fix for compiling scenarios containing filter node with only 'false' edge
+* [#4109](https://github.com/TouK/nussknacker/pull/4109) Fix: make RecordFormatterSupportDispatcher serializable
 
 1.8.1 (28 Feb 2023)
 ------------------------

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.nio.charset.StandardCharsets
 
-class RecordFormatterSupportDispatcher(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient) {
+class RecordFormatterSupportDispatcher(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient) extends Serializable {
 
   private val supportBySchemaType =
     UniversalSchemaSupportDispatcher(kafkaConfig).supportBySchemaType
