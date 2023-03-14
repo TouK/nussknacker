@@ -6,7 +6,6 @@ import {
   unknownDescription,
   unknownTooltip,
 } from "./messages"
-import {absoluteBePath} from "../../common/UrlUtils"
 
 export const unknownIcon = "/assets/states/status-unknown.svg"
 const subprocessIcon = "/assets/process/subprocess.svg"
@@ -46,18 +45,18 @@ class ProcessStateUtils {
     isStateLoaded: boolean
   ): string {
     if (isArchived) {
-      return absoluteBePath(archivedIcon)
+      return archivedIcon
     }
 
     if (isSubprocess) {
-      return absoluteBePath(subprocessIcon)
+      return subprocessIcon
     }
 
     if (isStateLoaded) {
-      return absoluteBePath(processState?.icon || unknownIcon)
+      return processState?.icon || unknownIcon
     }
 
-    return absoluteBePath(state?.icon || unknownIcon)
+    return state?.icon || unknownIcon
   }
 
   getStatusTooltip(
