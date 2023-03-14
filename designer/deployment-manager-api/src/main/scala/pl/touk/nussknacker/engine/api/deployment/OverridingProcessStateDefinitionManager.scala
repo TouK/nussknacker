@@ -8,20 +8,24 @@ import java.net.URI
 
 /**
   * Wrapper for delegate [[ProcessStateDefinitionManager]], used to enhance base state definitions and actions
-  * with custom states and actions (default delegate is [[SimpleProcessStateDefinitionManager]]).
-  * Use statusIconsPF, statusTooltipsPF and statusDescriptionsPF to customize varying state properties.
-  * The order of handlers:
+  * with custom states and custom actions. Default delegate is [[SimpleProcessStateDefinitionManager]]).
+  *
+  * Use statusIconsPF, statusTooltipsPF and statusDescriptionsPF to customize dynamic state properties.
+  * Use customStateDefinitions to extend or override delegate definitions.
+  *
+  * The order of overriding handler executions:
   * <li>handle state via statusIconsPF, statusTooltipsPF and statusDescriptionsPF or else
-  * <li>use custom default definitions from stateDefinitions or else
-  * <li>use delegate
-  * @param stateDefinitions Set of definitions that extends or overwrites delegate definitions
+  * <li>use custom definitions from stateDefinitions or else
+  * <li>use delegate methods statusIcons, statusTooltips and statusDescriptions
+  *
+  * @param customStateDefinitions Set of definitions that extends or overwrites delegate definitions
   */
 class OverridingProcessStateDefinitionManager(statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = PartialFunction.empty,
                                               mapActionToStatusPF: PartialFunction[Option[ProcessActionType], StateStatus] = PartialFunction.empty,
                                               statusIconsPF: PartialFunction[StateStatus, Option[URI]] = PartialFunction.empty,
                                               statusTooltipsPF: PartialFunction[StateStatus, Option[String]] = PartialFunction.empty,
                                               statusDescriptionsPF: PartialFunction[StateStatus, Option[String]] = PartialFunction.empty,
-                                              stateDefinitions: Map[StatusName, StateDefinition] = Map.empty,
+                                              customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty,
                                               delegate: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager)
   extends ProcessStateDefinitionManager {
 
@@ -40,10 +44,10 @@ class OverridingProcessStateDefinitionManager(statusActionsPF: PartialFunction[S
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusDescriptionsPF.orElse(stateDefinitionsPF(_.description)).applyOrElse(stateStatus, delegate.statusDescription)
 
-  override def stateDefinitions(): Map[StatusName, StateDefinition] =
-    delegate.stateDefinitions() ++ stateDefinitions
+  override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
+    delegate.stateDefinitions ++ customStateDefinitions
 
-  private def stateDefinitionsPF[T](map: StateDefinition => Option[T]): PartialFunction[StateStatus, Option[T]] = {
+  private def stateDefinitionsPF[T](map: StateDefinitionDetails => Option[T]): PartialFunction[StateStatus, Option[T]] = {
     case stateStatus if stateDefinitions.contains(stateStatus.name) => stateDefinitions.get(stateStatus.name).flatMap(map)
   }
 

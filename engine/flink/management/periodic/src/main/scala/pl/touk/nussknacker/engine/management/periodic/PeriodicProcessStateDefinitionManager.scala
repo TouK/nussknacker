@@ -6,6 +6,6 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
   statusActionsPF = PeriodicStateStatus.statusActionsPF,
   statusTooltipsPF = PeriodicStateStatus.statusTooltipsPF,
   statusDescriptionsPF = PeriodicStateStatus.statusDescriptionsPF,
-  stateDefinitions = PeriodicStateStatus.customStateDefinitions,
+  customStateDefinitions = PeriodicStateStatus.customStateDefinitions,
   delegate = delegate
 )

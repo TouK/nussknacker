@@ -106,7 +106,19 @@ final case class FailedStateStatus(name: StatusName) extends StateStatus {
 // TODO: we should find places where StateStatuses are encoded and decoded and replace them with some DTOs for this purpose
 class CustomStateStatus(val name: StatusName) extends StateStatus
 
-@JsonCodec case class StateDefinition(displayableName: String,
-                                      icon: Option[URI],
-                                      tooltip: Option[String],
-                                      description: Option[String])
+/**
+  * It is used to specify:
+  * <ul>
+  *   <li>fixed default properties of a status: icon, tooltip, descripition
+  *   <li>fixed set of properties of filtering options: displayableName, icon tooltip
+  * </ul>
+  * When a status has dynamic properties use ProcessStateDefinitionManager to handle them.
+  *
+  * @see default values of a status in [[ProcessStateDefinitionManager]]
+  * @see filtering options in [[UIStateDefinition]]
+  * @see overriding state definitions in [[OverridingProcessStateDefinitionManager]]
+  */
+case class StateDefinitionDetails(displayableName: String,
+                                  icon: Option[URI],
+                                  tooltip: Option[String],
+                                  description: Option[String])

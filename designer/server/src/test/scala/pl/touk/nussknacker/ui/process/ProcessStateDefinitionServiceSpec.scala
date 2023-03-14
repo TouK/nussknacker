@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, OverridingProcessStateDefinitionManager, ProcessStateDefinitionManager, StateDefinition}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, OverridingProcessStateDefinitionManager, ProcessStateDefinitionManager, StateDefinitionDetails}
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificInitialData}
@@ -44,22 +44,31 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     val service = new ProcessStateDefinitionService(providerWithUniqueStateDefinitions, categoryService)
     val definitions = service.fetchStateDefinitions()
 
+    val expectedCommon = streamingProcessStateDefinitionManager.stateDefinitions("COMMON")
     definitions should contain(UIStateDefinition(
       name = "COMMON",
-      definition = streamingProcessStateDefinitionManager.stateDefinitions()("COMMON"),
-      categories = Set(Category1, Category2, TestCat, TestCat2)
+      displayableName = expectedCommon.displayableName,
+      icon = expectedCommon.icon,
+      tooltip = expectedCommon.tooltip,
+      categories = List(Category1, Category2, TestCat, TestCat2)
     ))
 
+    val expectedCustomStreaming = streamingProcessStateDefinitionManager.stateDefinitions("CUSTOM_STREAMING")
     definitions should contain(UIStateDefinition(
       name = "CUSTOM_STREAMING",
-      definition = streamingProcessStateDefinitionManager.stateDefinitions()("CUSTOM_STREAMING"),
-      categories = Set(Category1, Category2)
+      displayableName = expectedCustomStreaming.displayableName,
+      icon = expectedCustomStreaming.icon,
+      tooltip = expectedCustomStreaming.tooltip,
+      categories = List(Category1, Category2)
     ))
 
+    val expectedCustomFraud = fraudProcessStateDefinitionManager.stateDefinitions("CUSTOM_FRAUD")
     definitions should contain(UIStateDefinition(
       name = "CUSTOM_FRAUD",
-      definition = fraudProcessStateDefinitionManager.stateDefinitions()("CUSTOM_FRAUD"),
-      categories = Set(TestCat, TestCat2)
+      displayableName = expectedCustomFraud.displayableName,
+      icon = expectedCustomFraud.icon,
+      tooltip = expectedCustomFraud.tooltip,
+      categories = List(TestCat, TestCat2)
     ))
   }
 
@@ -73,8 +82,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     )
 
     intercept[IllegalStateException]{
-      val service = new ProcessStateDefinitionService(providerWithInvalidStateDefinitions, categoryService)
-      service.fetchStateDefinitions()
+      ProcessStateDefinitionService.validate(providerWithInvalidStateDefinitions.all)
     }.getMessage should include("State definitions are not unique")
   }
 
@@ -84,11 +92,11 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
                                                        tooltip: Option[String] = None,
                                                        description: Option[String] = Some("This definition is common for all processing types")
                                                       ) extends OverridingProcessStateDefinitionManager(
-    stateDefinitions = Map(
-      "COMMON" -> StateDefinition(
+    customStateDefinitions = Map(
+      "COMMON" -> StateDefinitionDetails(
         displayableName = displayableName, icon = icon, tooltip = tooltip, description = description
       ),
-      "CUSTOM_STREAMING" -> StateDefinition(
+      "CUSTOM_STREAMING" -> StateDefinitionDetails(
         displayableName = "Streaming", icon = None, tooltip = None, description = Some("This definition is specific for stremaing")
       ),
     )
@@ -99,11 +107,11 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
                                                    tooltip: Option[String] = None,
                                                    description: Option[String] = Some("This definition is common for all processing types")
                                                   ) extends OverridingProcessStateDefinitionManager(
-    stateDefinitions = Map(
-      "COMMON" -> StateDefinition(
+    customStateDefinitions = Map(
+      "COMMON" -> StateDefinitionDetails(
         displayableName = displayableName, icon = icon, tooltip = tooltip, description = description
       ),
-      "CUSTOM_FRAUD" -> StateDefinition(
+      "CUSTOM_FRAUD" -> StateDefinitionDetails(
         displayableName = "Fraud", icon = None, tooltip = None, description = Some("This definition is specific for Fraud")
       ),
     )

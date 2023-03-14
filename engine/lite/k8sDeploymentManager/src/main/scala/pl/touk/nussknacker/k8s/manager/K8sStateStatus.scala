@@ -8,8 +8,8 @@ import java.net.URI
 object K8sStateStatus  {
   val MultipleJobsRunning: StateStatus = NotEstablishedStateStatus("MULTIPLE_JOBS_RUNNING")
 
-  val customStateDefinitions: Map[StatusName, StateDefinition] = Map(
-    MultipleJobsRunning.name -> StateDefinition(
+  val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
+    MultipleJobsRunning.name -> StateDefinitionDetails(
       displayableName = "More than one deployment running",
       icon = Some(URI.create("/assets/states/error.svg")),
       tooltip = Some("More than one deployment running"),

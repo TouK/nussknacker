@@ -30,14 +30,14 @@ object FlinkStateStatus {
     case FlinkStateStatus.MultipleJobsRunning => List(ProcessActionType.Cancel)
   }
 
-  val customStateDefinitions: Map[StatusName, StateDefinition] = Map(
-    Failing.name -> StateDefinition(
+  val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
+    Failing.name -> StateDefinitionDetails(
       displayableName = "Failing",
       icon = Some(URI.create("/assets/states/error.svg")),
       tooltip = Some("Failing"),
       description = Some("Failing")
     ),
-    MultipleJobsRunning.name -> StateDefinition(
+    MultipleJobsRunning.name -> StateDefinitionDetails(
       displayableName = "More than one deployment running",
       icon = Some(URI.create("/assets/states/error.svg")),
       tooltip = Some("More than one deployment running"),

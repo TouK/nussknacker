@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, FailedStateStatus, ProcessActionType, RunningStateStatus, StateDefinition, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, FailedStateStatus, ProcessActionType, RunningStateStatus, StateDefinitionDetails, StateStatus}
 
 import java.net.URI
 import java.time.LocalDateTime
@@ -32,18 +32,18 @@ object PeriodicStateStatus {
     case ScheduledStatus(nextRunAt) => Some(s"Scheduled at ${nextRunAt.pretty}")
   }
 
-  val customStateDefinitions: Map[StatusName, StateDefinition] = Map(
-    ScheduledStatus.name -> StateDefinition(
+  val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
+    ScheduledStatus.name -> StateDefinitionDetails(
       displayableName = "Scheduled",
       icon = Some(URI.create("/assets/states/scheduled.svg")),
       tooltip = Some("Scheduled"),
-      description = Some("Scheduled")
+      description = None
     ),
-    WaitingForScheduleStatus.name -> StateDefinition(
+    WaitingForScheduleStatus.name -> StateDefinitionDetails(
       displayableName = "Waiting for reschedule",
       icon = Some(URI.create("/assets/states/wait-reschedule.svg")),
       tooltip = Some("Finished. Waiting for reschedule"),
-      description = Some("Finished. Waiting for reschedule")
+      description = None
     ),
   )
 

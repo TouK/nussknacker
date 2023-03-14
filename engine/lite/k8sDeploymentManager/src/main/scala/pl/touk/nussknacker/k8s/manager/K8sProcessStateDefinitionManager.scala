@@ -6,5 +6,5 @@ object K8sProcessStateDefinitionManager extends OverridingProcessStateDefinition
   statusActionsPF = {
     case K8sStateStatus.MultipleJobsRunning => List(ProcessActionType.Cancel)
   },
-  stateDefinitions = K8sStateStatus.customStateDefinitions
+  customStateDefinitions = K8sStateStatus.customStateDefinitions
 )
