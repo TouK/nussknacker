@@ -22,7 +22,7 @@ object splittednode {
 
   case class SplitNode(data: Split, nexts: List[Next]) extends SubsequentNode[Split]
 
-  case class FilterNode(data: Filter, nextTrue: Next, nextFalse: Option[Next] = None) extends SubsequentNode[Filter]
+  case class FilterNode(data: Filter, nextTrue: Option[Next], nextFalse: Option[Next] = None) extends SubsequentNode[Filter]
 
   case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[Next] = None) extends SubsequentNode[Switch]
 
