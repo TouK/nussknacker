@@ -104,6 +104,11 @@ module.exports = {
       "/be-static": {
         target: process.env.BACKEND_DOMAIN,
         changeOrigin: true,
+        onProxyRes: (proxyRes, req) => {
+          if (req.headers?.origin) {
+            proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin
+          }
+        },
         pathRewrite: {
           "^/be-static": "/static",
         },
@@ -224,6 +229,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales", noErrorOnMissing: true},
+        {from: "assets/img/icons/license", to: "license", noErrorOnMissing: true},
       ],
     }),
     new PreloadWebpackPlugin({

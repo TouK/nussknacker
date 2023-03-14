@@ -19,7 +19,7 @@ export function LinkButton({url, icon, name, title, disabled}: LinkButtonProps):
         name={name}
         title={title || name}
         disabled={disabled}
-        icon={<UrlIcon path={icon}><FallbackIcon/></UrlIcon>}
+        icon={<UrlIcon src={icon} FallbackComponent={FallbackIcon}/>}
       />
     </PlainStyleLink>
   )

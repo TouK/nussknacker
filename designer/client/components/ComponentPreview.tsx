@@ -2,7 +2,15 @@ import {css, cx} from "@emotion/css"
 import React from "react"
 import customAttrs from "../assets/json/nodeAttributes.json"
 import {NodeType} from "../types"
-import {BORDER_RADIUS, CONTENT_COLOR, CONTENT_PADDING, iconBackgroundSize, iconSize, RECT_HEIGHT, RECT_WIDTH} from "./graph/EspNode/esp"
+import {
+  BORDER_RADIUS,
+  CONTENT_COLOR,
+  CONTENT_PADDING,
+  iconBackgroundSize,
+  iconSize,
+  RECT_HEIGHT,
+  RECT_WIDTH,
+} from "./graph/EspNode/esp"
 import NodeUtils from "./graph/NodeUtils"
 import {ComponentIcon} from "./toolbars/creator/ComponentIcon"
 
@@ -42,7 +50,7 @@ export function ComponentPreview({
     padding: iconSize / 2,
     borderBottomLeftRadius: BORDER_RADIUS - 2,
     borderTopLeftRadius: BORDER_RADIUS - 2,
-    "> img": {
+    "> svg": {
       height: iconSize,
       width: iconSize,
     },
@@ -50,6 +58,7 @@ export function ComponentPreview({
 
   const imageColors = css({
     background: customAttrs[node?.type]?.styles.fill,
+    color: "white",
   })
 
   const contentStyles = css({

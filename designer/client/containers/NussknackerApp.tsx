@@ -15,6 +15,7 @@ import {contentGetter} from "../windowManager"
 import {WindowManagerProvider} from "@touk/window-manager"
 import {Notifications} from "./Notifications"
 import DragArea from "../components/DragArea"
+import {Global} from "@emotion/react"
 
 function UsageReportingImage() {
   const featuresSettings = useSelector(getFeatureSettings)
@@ -45,6 +46,15 @@ export function NussknackerApp() {
           className={css({flex: 1, display: "flex"})}
         >
           <NkThemeProvider>
+            <Global styles={theme => ({
+              ":root": {
+                "--warnColor": theme.colors.warning,
+                "--errorColor": theme.colors.error,
+                "--successColor": theme.colors.sucess,
+                "--infoColor": theme.colors.accent,
+              },
+            })}
+            />
             <div
               id="app-container"
               className={css({

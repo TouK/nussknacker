@@ -28,6 +28,7 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(({
   const styles = css({
     minHeight: 300,
     minWidth: 300,
+    color: "white",
   })
 
   return (

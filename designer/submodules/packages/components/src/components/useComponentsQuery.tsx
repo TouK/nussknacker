@@ -2,26 +2,18 @@ import type { ComponentType, ComponentUsageType } from "nussknackerUi/HttpServic
 import { useContext, useMemo } from "react";
 import { useQuery } from "react-query";
 import { UseQueryResult } from "react-query/types/react/types";
-import { NkApiContext, NkIconsContext } from "../settings/nkApiProvider";
+import { NkApiContext } from "../settings/nkApiProvider";
 import { DateTime } from "luxon";
-import { ProcessStateType, ProcessType } from "nussknackerUi/components/Process/types";
+import { ProcessStateType } from "nussknackerUi/components/Process/types";
 import { useScenariosStatusesQuery } from "../scenarios/useScenariosQuery";
 
 export function useComponentsQuery(): UseQueryResult<ComponentType[]> {
     const api = useContext(NkApiContext);
-    const { getComponentIconSrc } = useContext(NkIconsContext);
     return useQuery({
         queryKey: "components",
         queryFn: async () => {
             const { data } = await api.fetchComponents();
-            return data.map((component) => ({
-                ...component,
-                icon: getComponentIconSrc(component.icon),
-                links: component.links.map((link) => ({
-                    ...link,
-                    icon: getComponentIconSrc(link.icon),
-                })),
-            }));
+            return data;
         },
         enabled: !!api,
         refetchInterval: 60000,

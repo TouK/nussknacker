@@ -24,4 +24,7 @@ module.exports = {
   testMatch: [
     "**/*test.[tj]s?(x)",
   ],
+  snapshotSerializers: [
+    "@emotion/jest/serializer",
+  ],
 }

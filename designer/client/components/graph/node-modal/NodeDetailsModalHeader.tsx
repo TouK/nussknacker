@@ -5,10 +5,10 @@ import nodeAttributes from "../../../assets/json/nodeAttributes.json"
 import NkModalStyles from "../../../common/NkModalStyles"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {NodeType} from "../../../types"
-import SvgDiv from "../../SvgDiv"
 import {ComponentIcon} from "../../toolbars/creator/ComponentIcon"
 import NodeUtils from "../NodeUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
+import {ReactComponent as Icon} from "../../../assets/img/documentation.svg"
 
 enum HeaderType {
   SUBTYPE_DOCS,
@@ -41,7 +41,7 @@ const Docs = (props: PropsWithChildren<{ className: string, docsUrl: string }>) 
     <a className="docsLink" target="_blank" href={docsUrl} title="Documentation" rel="noreferrer">
       <div className={className}>
         {children && <span>{children}</span>}
-        <SvgDiv className="docsIcon" svgFile={"documentation.svg"}/>
+        <Icon className="docsIcon"/>
       </div>
     </a>
   )

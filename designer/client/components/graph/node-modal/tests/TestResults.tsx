@@ -1,6 +1,6 @@
 import {isEmpty, isObject, join} from "lodash"
 import React from "react"
-import InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
+import {ReactComponent as TipsInfo} from "../../../../assets/img/icons/tipsInfo.svg"
 import NodeTip from "../NodeTip"
 import TestValue from "./TestValue"
 import {useTestResults} from "../TestResultsWrapper"
@@ -18,7 +18,7 @@ export default function TestResults({nodeId}: { nodeId: NodeId }): JSX.Element {
     <NodeTableBody className="node-test-results">
       <div className="node-row">
         <div className="node-label">
-          <NodeTip title={"Variables in test case"} icon={InlinedSvgs.tipsInfo}/>
+          <NodeTip title={"Variables in test case"} icon={<TipsInfo/>}/>
         </div>
       </div>
       {

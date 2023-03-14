@@ -2,7 +2,8 @@ import React, {useCallback} from "react"
 import Dropzone from "react-dropzone"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import InlinedSvgs from "../assets/icons/InlinedSvgs"
+import {ReactComponent as ButtonDownload} from "../assets/img/icons/buttonDownload.svg"
+import {ReactComponent as ButtonUpload} from "../assets/img/icons/buttonUpload.svg"
 import {NkButton} from "./NkButton"
 import HttpService from "../http/HttpService"
 import {RootState} from "../reducers"
@@ -19,9 +20,10 @@ function AttachmentEl({data}: { data: Attachment }) {
       <div className="download-attachment">
         <NkButton
           className="download-button"
-          dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonDownload}}
           onClick={() => HttpService.downloadAttachment(data.processId, data.processVersionId, data.id, data.fileName)}
-        />
+        >
+          <ButtonDownload/>
+        </NkButton>
       </div>
       <div className={"attachment-details"}>
         <div className="header">
@@ -51,8 +53,9 @@ function AddAttachment() {
           <FocusOutline className="attachments-container" {...getRootProps()}>
             <FocusOutline
               className={"attachment-drop-zone attachment-button"}
-              dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}}
-            />
+            >
+              <ButtonUpload/>
+            </FocusOutline>
             <div className="attachment-button-text">
               <span>{t("attachments.buttonText", "drop or choose a file")}</span>
             </div>

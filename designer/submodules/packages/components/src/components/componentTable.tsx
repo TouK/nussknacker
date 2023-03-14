@@ -4,8 +4,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { CategoriesCell, FilterLinkCell, NameCell, UsageCountCell } from "./cellRenderers";
 import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
-import { ExternalLink } from "../common";
-import { IconImg } from "./utils";
+import { ExternalLink, NuIcon } from "../common";
 import { filterRules } from "./filterRules";
 import { ComponentsFiltersModel } from "./filters";
 
@@ -58,7 +57,7 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                             component={ExternalLink}
                             key={link.id}
                             href={link.url}
-                            icon={<IconImg src={link.icon} titleAccess={link.title} />}
+                            icon={<NuIcon src={link.icon} title={link.title} sx={{ fontSize: "1.5rem", verticalAlign: "middle" }} />}
                             label={link.title}
                             showInMenu={i > 0}
                             target="_blank"

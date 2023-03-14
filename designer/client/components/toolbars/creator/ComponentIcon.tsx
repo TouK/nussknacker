@@ -2,25 +2,23 @@ import {isString, memoize} from "lodash"
 import React from "react"
 import {useSelector} from "react-redux"
 import ProcessUtils from "../../../common/ProcessUtils"
-import {absoluteBePath} from "../../../common/UrlUtils"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {NodeType, ProcessDefinitionData} from "../../../types"
-import SvgDiv from "../../SvgDiv"
+import {ReactComponent as PropertiesSvg} from "../../../assets/img/properties.svg"
+import ReactDOM from "react-dom"
+import {InlineSvg} from "../../SvgDiv"
 
-const preloadImage = memoize((href: string) => new Promise<string>(resolve => {
-  const image = new Image()
-  image.src = href
-  return image.onload = () => resolve(href)
-}))
-
-function preloadBeImage(icon: string): string | null {
-  if (!icon) {
+const preloadBeImage = memoize((src: string): string | null => {
+  if (!src) {
     return null
   }
-  const src = absoluteBePath(icon)
-  preloadImage(src)
-  return src
-}
+
+  const id = `svg${Date.now()}`
+  const div = document.createElement("div")
+  ReactDOM.render(<InlineSvg src={src} id={id} style={{display: "none"}}/>, div)
+  document.body.appendChild(div)
+  return `#${id}`
+})
 
 function getIconFromDef(nodeOrPath: NodeType, processDefinitionData: ProcessDefinitionData): string | null {
   const nodeComponentId = ProcessUtils.findNodeConfigName(nodeOrPath)
@@ -33,23 +31,51 @@ function getIconFromDef(nodeOrPath: NodeType, processDefinitionData: ProcessDefi
 export const getComponentIconSrc: {
   (path: string): string,
   (node: NodeType, processDefinitionData: ProcessDefinitionData): string | null,
-} = memoize((nodeOrPath, processDefinitionData?) => {
+} = (nodeOrPath, processDefinitionData?) => {
   if (nodeOrPath) {
     const icon = isString(nodeOrPath) ? nodeOrPath : getIconFromDef(nodeOrPath, processDefinitionData)
     return preloadBeImage(icon)
   }
   return null
-})
-
-export function useComponentIcon(node: NodeType): string {
-  const processDefinitionData = useSelector(getProcessDefinitionData)
-  return getComponentIconSrc(node, processDefinitionData)
 }
 
-export function ComponentIcon({node, className}: { node: NodeType, className?: string }): JSX.Element {
-  const icon = useComponentIcon(node)
-  if (!icon) {
-    return <SvgDiv className={className} svgFile={"properties.svg"}/>
+interface Created extends ComponentIconParops {
+  processDefinition: ProcessDefinitionData,
+}
+
+class Icon extends React.Component<Created> {
+  private icon: string
+
+  constructor(props) {
+    super(props)
+    this.icon = getComponentIconSrc(props.node, props.processDefinition)
   }
-  return <img src={icon} alt={node.type} className={className}/>
+
+  componentDidUpdate() {
+    this.icon = getComponentIconSrc(this.props.node, this.props.processDefinition)
+  }
+
+  render(): JSX.Element {
+    const {icon, props: {className}} = this
+
+    if (!icon) {
+      return <PropertiesSvg className={className}/>
+    }
+
+    return (
+      <svg className={className}>
+        <use href={icon}/>
+      </svg>
+    )
+  }
+}
+
+interface ComponentIconParops {
+  node: NodeType,
+  className?: string,
+}
+
+export const ComponentIcon = (props: ComponentIconParops) => {
+  const processDefinitionData = useSelector(getProcessDefinitionData)
+  return <Icon {...props} processDefinition={processDefinitionData}/>
 }

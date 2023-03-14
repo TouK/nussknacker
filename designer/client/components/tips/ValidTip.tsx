@@ -1,14 +1,13 @@
-import React from "react"
-import HeaderIcon from "./HeaderIcon"
+import React, {ComponentType, SVGProps} from "react"
 
-export default function ValidTip({icon, message}: {
-  icon: string,
+export default function ValidTip({icon: Icon, message}: {
+  icon: ComponentType<SVGProps<SVGSVGElement>>,
   message: string,
 }) {
 
   return (
     <div className={"valid-tip"}>
-      <HeaderIcon className={"icon"} icon={icon}/>
+      <Icon className={"icon"}/>
       <span>{message}</span>
     </div>
   )
