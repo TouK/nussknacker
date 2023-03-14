@@ -325,7 +325,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidation = mockWithSubprocessValidation(Set(invalidSubprocess))
+    val processValidation = mockProcessValidation(Set(invalidSubprocess))
     val validationResult = processValidation.validate(process, Category1)
 
     validationResult should matchPattern {
@@ -361,7 +361,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidation = mockWithSubprocessValidation(Set(invalidSubprocess))
+    val processValidation = mockProcessValidation(Set(invalidSubprocess))
 
     val validationResult = processValidation.validate(process, Category1)
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
@@ -404,7 +404,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidation = mockWithSubprocessValidation(Set(subprocess))
+    val processValidation = mockProcessValidation(Set(subprocess))
     val validationResult = processValidation.validate(process, Category1)
 
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
@@ -509,7 +509,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidation = mockWithSubprocessValidation(Set(subprocess))
+    val processValidation = mockProcessValidation(Set(subprocess))
 
     val validationResult = processValidation.validate(process, Category1)
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
@@ -548,7 +548,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidation = mockWithSubprocessValidation(Set(subprocess))
+    val processValidation = mockProcessValidation(Set(subprocess))
     val validationResult = processValidation.validate(process, Category1)
     validationResult.errors.invalidNodes.size shouldBe 1
     validationResult.saveAllowed shouldBe true
@@ -562,7 +562,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       .emptySink("sink", existingSinkFactory)
 
     val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
-    val validationResult = mockWithSubprocessValidation(Set.empty).validate(displayable, Category1)
+    val validationResult = mockProcessValidation(Set.empty).validate(displayable, Category1)
 
     validationResult.errors.processPropertiesErrors shouldBe List(PrettyValidationErrors.formatErrorMessage(SampleCustomProcessValidator.badNameError))
   }
@@ -631,7 +631,7 @@ private object ProcessValidationSpec {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`, Some(category))
   }
 
-  def mockWithSubprocessValidation(subprocesses: Set[CanonicalProcess]): ProcessValidation = {
+  def mockProcessValidation(subprocesses: Set[CanonicalProcess]): ProcessValidation = {
     import ProcessDefinitionBuilder._
 
     import scala.jdk.CollectionConverters._
