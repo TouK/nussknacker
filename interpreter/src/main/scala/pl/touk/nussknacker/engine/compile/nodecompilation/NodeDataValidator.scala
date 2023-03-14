@@ -39,7 +39,6 @@ object NodeDataValidator {
   def validate(nodeData: NodeData, modelData: ModelData,
                validationContext: ValidationContext,
                branchContexts: Map[String, ValidationContext],
-               getFragment: String => Option[CanonicalProcess],
                outgoingEdges: List[OutgoingEdge],
                subprocessDefinitionExtractor: SubprocessDefinitionExtractor
               )(implicit metaData: MetaData): ValidationResponse = {
@@ -66,7 +65,7 @@ object NodeDataValidator {
         case a: Switch => toValidationResponse(compiler.compileSwitch(Applicative[Option].product(a.exprVal, a.expression), outgoingEdges.collect {
           case OutgoingEdge(k, Some(NextSwitch(expression))) => (k, expression)
         }, validationContext))
-        case a: SubprocessInput => SubprocessResolver(getFragment).resolveInput(a).fold(
+        case a: SubprocessInput => SubprocessResolver(k => subprocessDefinitionExtractor.getFragment(k)).resolveInput(a).fold(
           errors => ValidationPerformed(errors.toList, None, None),
           { case InputValidationResponse(params, outputs) =>
             val outputFieldsValidationErrors = outputs.collect { case Output(name, true) => name }.map { output =>

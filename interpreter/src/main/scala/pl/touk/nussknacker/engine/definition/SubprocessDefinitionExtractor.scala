@@ -25,6 +25,8 @@ class SubprocessDefinitionExtractor(subprocessesDetails: Set[SubprocessDetails],
     extract.getOrElse(subprocessId, ObjectDefinition.withParams(List.empty)).parameters
   }
 
+  def getFragment(id: String): Option[CanonicalProcess] = subprocessesDetails.collectFirst { case sd if sd.canonical.id.equals(id) => sd.canonical }
+
   protected def extract: Map[String, ObjectDefinition] = {
     subprocessesDetails.collect {
       case SubprocessDetails(CanonicalProcess(MetaData(id, FragmentSpecificData(docsUrl), _, _), FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>

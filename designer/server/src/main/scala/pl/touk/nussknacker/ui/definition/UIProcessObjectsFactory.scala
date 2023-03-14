@@ -14,11 +14,6 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinitio
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
-import pl.touk.nussknacker.engine.definition.parameter.ParameterData
-import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
-import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
-import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
@@ -133,6 +128,7 @@ object UIProcessObjectsFactory {
     subprocessInputs
   }
 
+  // TODO: if engine (e.g. node compile) requires access to outputsDefinition consider moving this class to engine.definition
   case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[String])
 
   def createUIObjectDefinition(objectDefinition: ObjectDefinition, processCategoryService: ProcessCategoryService): UIObjectDefinition = {

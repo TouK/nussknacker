@@ -346,7 +346,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val extractor = new SubprocessDefinitionExtractor(Set(SubprocessDetails(fragmentDefinition, "dummy category")), componentsConfig, classLoader = this.getClass.getClassLoader)
     def getFragment: String => Option[CanonicalProcess] = Map(fragmentDefinition.id -> fragmentDefinition).get
 
-    NodeDataValidator.validate(nodeData, modelData(config), ctx, branchCtxs, getFragment, outgoingEdges, extractor)(MetaData("id", StreamMetaData()))
+    NodeDataValidator.validate(nodeData, modelData(config), ctx, branchCtxs, outgoingEdges, extractor)(MetaData("id", StreamMetaData()))
   }
 
   private def par(name: String, expr: String): Parameter = Parameter(name, Expression("spel", expr))
