@@ -81,7 +81,7 @@ jobs:
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        run: sbt 'release release-version 1.8.2-RC1 next-version 1.9.0-SNAPSHOT skip-tests'
+        run: sbt 'release release-version 1.8.2-RC2 next-version 1.9.0-SNAPSHOT skip-tests'
 
       - name: "Push to master"
         if: ${{ env.NU_DOCKER_UPDATE_LATEST }}
