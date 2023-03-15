@@ -20,8 +20,6 @@ jobs:
       NU_DOCKER_UPDATE_LATEST: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
       JAVA_OPTS: "-Xss6M -Xms4G -Xmx4G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
       JVM_OPTS: "-Xss6M -Xms4G -Xmx4G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
-      SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
-      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
     steps:
       - name: "Output variables"
         run: |
@@ -80,7 +78,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: "Build"
-        run: SONATYPE_USERNAME='${{ secrets.SONATYPE_USER }}' SONATYPE_PASSWORD='${{ secrets.SONATYPE_PASSWORD }}' sbt 'release release-version 1.8.2-RC1 next-version 1.9.0-SNAPSHOT skip-tests'
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        run: sbt 'release release-version 1.8.2-RC1 next-version 1.9.0-SNAPSHOT skip-tests'
 
       - name: "Push to master"
         if: ${{ env.NU_DOCKER_UPDATE_LATEST }}
