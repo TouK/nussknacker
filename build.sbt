@@ -96,7 +96,7 @@ lazy val publishSettings = Seq(
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
   credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
-    host, propOrEnv("SONATYPE_USER", "touk"), propOrEnv("SONATYPE_PASSWORD", null))
+    host, propOrEnv("SONATYPE_USERNAME", "touk"), propOrEnv("SONATYPE_PASSWORD", null))
     // otherwise ~/.sbt/1.0/sonatype.sbt will be used
   ).toSeq
 )
@@ -1598,7 +1598,7 @@ lazy val root = (project in file("."))
   .settings(commonSettings)
   .settings(
     // crossScalaVersions must be set to Nil on the aggregating project
-    releaseCrossBuild := true,
+    releaseCrossBuild := false,
     publish / skip := true,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
@@ -1619,13 +1619,13 @@ lazy val root = (project in file("."))
       tagRelease,
       releaseStepCommand("buildClient"),
       releaseStepCommandAndRemaining("+publishSigned"),
-      releaseStepCommand("dist/Universal/packageZipTarball"),
+//      releaseStepCommand("dist/Universal/packageZipTarball"),
 //      releaseStepCommandAndRemaining("+dist/Docker/publish"),
-      releaseStepCommandAndRemaining("+liteEngineRuntimeApp/Docker/publish"),
+//      releaseStepCommandAndRemaining("+liteEngineRuntimeApp/Docker/publish"),
       releaseStepCommand("sonatypeBundleRelease"),
-      setNextVersion,
-      commitNextVersion,
-      pushChanges
+//      setNextVersion,
+//      commitNextVersion,
+//      pushChanges
     )
   )
 
