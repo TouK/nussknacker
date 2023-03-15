@@ -75,14 +75,3 @@ export type StatusType = {
   name: string,
   type: string,
 }
-
-export type StatusDefinitionType = {
-  name: string,
-  definition: {
-    displayableName: string,
-    icon?: string,
-    tooltip?: string,
-    description?: string
-  },
-  categories: Array<string>
-}
