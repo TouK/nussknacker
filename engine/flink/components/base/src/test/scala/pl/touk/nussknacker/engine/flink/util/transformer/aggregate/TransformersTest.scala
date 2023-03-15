@@ -8,6 +8,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
@@ -500,7 +501,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         ) )),
         canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "aggregate", List(Field("key", asSpelExpression("#key")),Field("aggresult", asSpelExpression("#aggresult")))))), List.empty)
 
-    SubprocessResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
+    SubprocessResolver(Set(fragmentWithTumblingAggregate), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(scenario).toOption.get
   }
 }
 

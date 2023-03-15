@@ -1,24 +1,83 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.{Invalid, Valid, invalidNel, valid}
 import cats.data._
 import cats.implicits._
-import pl.touk.nussknacker.engine.api.NodeId
+import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
+import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.compile.SubprocessResolver.{extractSubprocessDefinition, toSubprocessParameter}
+import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
+import pl.touk.nussknacker.engine.definition.parameter.ParameterData
+import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
+import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
+import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 
-
 object SubprocessResolver {
-  def apply(subprocesses: Iterable[CanonicalProcess]): SubprocessResolver =
-    SubprocessResolver(subprocesses.map(a => a.metaData.id -> a).toMap.get _)
+  def apply(subprocesses: String => Option[CanonicalProcess], modelConfig: Config, classLoader: ClassLoader): SubprocessResolver = {
+    val componentsConfig = ComponentsUiConfigExtractor.extract(modelConfig)
+    SubprocessResolver(subprocesses, componentsConfig.get _, classLoader)
+  }
+
+  def apply(subprocesses: Iterable[CanonicalProcess], componentConfig: Map[String, SingleComponentConfig], classLoader: ClassLoader): SubprocessResolver = {
+    val subprocessMap = subprocesses.map(a => a.metaData.id -> a).toMap
+    SubprocessResolver(subprocessMap.get _, componentConfig.get _, classLoader)
+  }
+
+  private def extractSubprocessDefinition(componentConfig: String => Option[SingleComponentConfig], classLoader: ClassLoader)
+                                         (subprocess: CanonicalProcess) = {
+    subprocess.allStartNodes.collectFirst {
+      case FlatNode(SubprocessInputDefinition(_, subprocessParameters, _)) :: nodes =>
+        val additionalBranches = subprocess.allStartNodes.collect {
+          case a@FlatNode(_: Join) :: _ => a
+        }
+        val docsUrl = subprocess.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
+        val config = componentConfig(subprocess.id).getOrElse(SingleComponentConfig.zero).copy(docsUrl = docsUrl)
+
+        val parameters = subprocessParameters.map(toParameter(classLoader, config))
+
+        (parameters, nodes, additionalBranches)
+    }
+  }
+
+  private def toParameter(classLoader: ClassLoader, componentConfig: SingleComponentConfig)(p: SubprocessParameter): Parameter = {
+    val runtimeClass = p.typ.toRuntimeClass(classLoader)
+    //FIXME: currently if we cannot parse parameter class we assume it's unknown
+    val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
+    val config = componentConfig.params.flatMap(_.get(p.name)).getOrElse(ParameterConfig.empty)
+    val parameterData = ParameterData(typ, Nil)
+    val extractedEditor = EditorExtractor.extract(parameterData, config)
+    Parameter(
+      name = p.name,
+      typ = typ,
+      editor = extractedEditor,
+      validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional = true, config, extractedEditor)),
+      // TODO: ability to pick default value from gui
+      defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(parameterData, isOptional = true, config, extractedEditor)),
+      additionalVariables = Map.empty,
+      variablesToHide = Set.empty,
+      branchParam = false,
+      isLazyParameter = false,
+      scalaOptionParameter = false,
+      javaOptionalParameter = false)
+  }
+
+  private def toSubprocessParameter(p: Parameter): SubprocessParameter = {
+    SubprocessParameter(p.name, SubprocessClazzRef(p.typ.asInstanceOf[SingleTypingResult].objType.klass.getName))
+  }
+
 }
 
-case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) {
+case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess], componentConfig: String => Option[SingleComponentConfig], classLoader: ClassLoader) {
 
   type CompilationValid[A] = ValidatedNel[ProcessCompilationError, A]
 
@@ -51,11 +110,11 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
   }
 
   def resolveInput(subprocessInput: SubprocessInput): CompilationValid[InputValidationResponse] =
-    initialSubprocessChecks(subprocessInput).map { case (l, v, v2) =>
-      val names = (v :: v2).flatten.flatMap(canonicalnode.collectAllNodes).collect {
+    initialSubprocessChecks(subprocessInput).map { case (parameters, nodes, additionalBranches) =>
+      val names = (nodes :: additionalBranches).flatten.flatMap(canonicalnode.collectAllNodes).collect {
         case SubprocessOutputDefinition(_, name, fields, _) => Output(name, fields.nonEmpty)
       }.toSet
-      InputValidationResponse(l,  names)
+      InputValidationResponse(parameters.map(p => p.name -> p).toMap,  names)
     }
 
   private def resolveCanonical(idPrefix: List[String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
@@ -92,25 +151,21 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
                 replacement(nextResolved).mapWritten(_ ++ resolvedAdditional)
               }
             }
-          //now, this is a bit dirty trick - we pass subprocess parameter types to subprocessInput node to enable proper validation etc.
-          nexts.map(replaced => FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(subprocessInput.copy(subprocessParams = Some(parameters)))) :: replaced)
+          //now, this is a bit dirty trick - we pass subprocess parameter types to subprocessInput node to handle parameter types by interpreter
+          nexts.map(replaced => FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(subprocessInput.copy(subprocessParams = Some(parameters.map(toSubprocessParameter))))) :: replaced)
         }
     }, NodeDataFun.nodeIdPrefix(idPrefix))
   }
 
   //we do initial validation of existence of subprocess, its parameters and we extract all branches
-  private def initialSubprocessChecks(subprocessInput: SubprocessInput): CompilationValid[(List[SubprocessInputDefinition.SubprocessParameter], CanonicalBranch, List[CanonicalBranch])] = {
+  private def initialSubprocessChecks(subprocessInput: SubprocessInput): CompilationValid[(List[Parameter], CanonicalBranch, List[CanonicalBranch])] = {
     Validated.fromOption(subprocesses.apply(subprocessInput.ref.id), NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
       .andThen { subprocess =>
-        val additionalBranches = subprocess.allStartNodes.collect {
-          case a@FlatNode(_: Join) :: _ => a
-        }
-        Validated.fromOption(subprocess.allStartNodes.collectFirst {
-          case FlatNode(SubprocessInputDefinition(_, parameters, _)) :: nodes => (parameters, nodes, additionalBranches)
-        }, NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
+        val subprocessDefinitionOpt: Option[(List[Parameter], List[CanonicalNode], List[List[CanonicalNode]])] = extractSubprocessDefinition(componentConfig, classLoader)(subprocess)
+        subprocessDefinitionOpt.map(valid).getOrElse(invalidNel(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
       }
     .andThen { case a@(parameters, nodes, additionalBranches) =>
-      val parametersResult = checkProcessParameters(subprocessInput.ref, parameters.map(_.name), subprocessInput.id)
+      val parametersResult = checkProcessParameters(subprocessInput.ref, parameters, subprocessInput.id)
       val duplicatesResult = detectMultipleOutputsWithSameName(subprocessInput.id, nodes, additionalBranches)
       (parametersResult, duplicatesResult).mapN { case (_, _) => a }
     }
@@ -126,8 +181,8 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
     }
   }
 
-  private def checkProcessParameters(ref: SubprocessRef, parameters: List[String], nodeId: String): ValidatedNel[ProcessCompilationError, Unit] = {
-    Validations.validateSubProcessParameters(parameters.toSet, ref.parameters.map(_.name).toSet)(NodeId(nodeId))
+  private def checkProcessParameters(ref: SubprocessRef, parameters: List[Parameter], nodeId: String): ValidatedNel[ProcessCompilationError, Unit] = {
+    Validations.validateParameters(parameters, ref.parameters)(NodeId(nodeId))
   }
 
   //we replace outputs in subprocess with part of parent process
@@ -164,7 +219,7 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
         (
           nexts.map(cas => listFun(cas.nodes).map(replaced => canonicalnode.Case(cas.expression, replaced))).sequence[ValidatedWithBranches, canonicalnode.Case],
           listFun(defaultNext)
-          ).mapN { (resolvedCases, resolvedDefault) =>
+        ).mapN { (resolvedCases, resolvedDefault) =>
           List(canonicalnode.SwitchNode(dataAction(data), resolvedCases, resolvedDefault))
         }
       case canonicalnode.Subprocess(data, nodes) =>
@@ -202,6 +257,6 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
 
 }
 
-case class InputValidationResponse(parameters: List[SubprocessParameter], outputs: Set[Output])
+case class InputValidationResponse(parameters: Map[String, Parameter], outputs: Set[Output])
 
 case class Output(name: String, nonEmptyFields: Boolean)

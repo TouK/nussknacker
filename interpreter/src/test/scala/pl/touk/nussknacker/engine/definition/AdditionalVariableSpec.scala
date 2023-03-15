@@ -34,8 +34,8 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
 
   test("doesn't allow LazyParameter with fixed value") {
     val modelData = LocalModelData(ConfigFactory.empty(), new CreatorWithComponent(new IncorrectService2))
-    val result = NodeDataValidator.validate(node.Source("sid", SourceRef("one", evaluatedparam.Parameter("toFail", "''") :: Nil)),
-        modelData, ValidationContext.empty, Map.empty, _ => None, Nil)(MetaData("scenario", StreamMetaData()))
+    val result = new NodeDataValidator(modelData, _ => None).validate(node.Source("sid", SourceRef("one", evaluatedparam.Parameter("toFail", "''") :: Nil)),
+      ValidationContext.empty, Map.empty, Nil)(MetaData("scenario", StreamMetaData()))
     result.asInstanceOf[ValidationPerformed]
       .errors.distinct shouldBe CannotCreateObjectError("AdditionalVariableWithFixedValue should not be used with LazyParameters", "sid") :: Nil
 

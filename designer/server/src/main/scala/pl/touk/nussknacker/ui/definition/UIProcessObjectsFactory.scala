@@ -131,6 +131,7 @@ object UIProcessObjectsFactory {
     subprocessInputs
   }
 
+  // FIXME: remove
   private def extractSubprocessParam(classLoader: ClassLoader, componentConfig: SingleComponentConfig)(p: SubprocessParameter): Parameter = {
     val runtimeClass = p.typ.toRuntimeClass(classLoader)
     //TODO: currently if we cannot parse parameter class we assume it's unknown

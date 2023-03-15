@@ -183,7 +183,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           f = compiledNext => compiledgraph.node.CustomNode(id, nodeType, compiledNext))
 
       case subprocessInput: SubprocessInput =>
-        val NodeCompilationResult(typingInfo, parameters, newCtx, combinedValidParams, _) = nodeCompiler.compileSubprocessInput(subprocessInput, ctx)
+        val NodeCompilationResult(typingInfo, parameters, newCtx, combinedValidParams, _) = nodeCompiler.compileSubprocessInputWithoutValidatorsChecking(subprocessInput, ctx)
         CompilationResult.map2(toCompilationResult(combinedValidParams, typingInfo, parameters), compile(next, newCtx.getOrElse(ctx)))((params, next) =>
           compiledgraph.node.FragmentUsageStart(subprocessInput.id, params, next))
 

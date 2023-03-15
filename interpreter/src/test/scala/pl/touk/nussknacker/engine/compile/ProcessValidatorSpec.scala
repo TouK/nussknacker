@@ -1189,7 +1189,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val fragment = ScenarioBuilder
       .fragment("frag1")
       .fragmentOutput("out", "output1", "field1" -> "''")
-    val resolver = SubprocessResolver(Set(fragment))
+    val resolver = SubprocessResolver(Set(fragment), Map.empty[String, SingleComponentConfig], getClass.getClassLoader)
 
     val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
     withNonUsed shouldBe Symbol("valid")

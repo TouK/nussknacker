@@ -10,6 +10,7 @@ import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor}
@@ -382,7 +383,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           List(FlatNode(Variable("result", resultVariable, "'deadEnd'")), FlatNode(Sink("deadEnd", SinkRef("dummySink", List()))))
         ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolved = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -409,7 +410,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
       ), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolved = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -433,7 +434,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         FlatNode(SubprocessOutputDefinition("out1", "output", List(Field("result", "#param"))))
       ), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolved = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -461,7 +462,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           SubprocessRef("subProcess1", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output", List.empty)))))), List.empty
     )
 
-    val resolved = SubprocessResolver(Set(subprocess, nested)).resolve(process)
+    val resolved = SubprocessResolver(Set(subprocess, nested), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -488,7 +489,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         )
       ), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolved = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -508,7 +509,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         FlatNode(Variable("result", "result", "'result'")),
         FlatNode(Sink("end", SinkRef("dummySink", List())))), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolved = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
 
     resolved shouldBe Symbol("valid")
 
@@ -532,7 +533,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         )
       ), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolved = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
     resolved shouldBe Symbol("valid")
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List.empty) shouldBe "8"
   }

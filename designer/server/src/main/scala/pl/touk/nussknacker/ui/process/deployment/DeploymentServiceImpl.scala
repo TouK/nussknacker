@@ -55,7 +55,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
         // TODO: Correct deploymentId from action id
         val deploymentData = prepareDeploymentData(deployingUser, DeploymentId(""))
-        val deployedScenarioDataTry = scenarioResolver.resolveScenario(details.json, details.processCategory).map { resolvedScenario =>
+        val deployedScenarioDataTry = scenarioResolver.resolveScenario(details.json, details.processCategory, details.processingType).map { resolvedScenario =>
           DeployedScenarioData(details.toEngineProcessVersion, deploymentData, resolvedScenario)
         }
         deployedScenarioDataTry match {
@@ -110,7 +110,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     val deploymentManager = dispatcher.deploymentManager(processDetails.processingType)
     for {
       // TODO: scenario was already resolved during validation - use it here
-      resolvedCanonicalProcess <- Future.fromTry(scenarioResolver.resolveScenario(processDetails.json, processDetails.processCategory))
+      resolvedCanonicalProcess <- Future.fromTry(scenarioResolver.resolveScenario(processDetails.json, processDetails.processCategory, processDetails.processingType))
       deploymentData = prepareDeploymentData(user.toManagerUser, DeploymentId(actionId.value.toString))
       _ <- deploymentManager.validate(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
