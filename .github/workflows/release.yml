@@ -21,7 +21,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      SBT_RELEASE_NEXT_VERSION: ${{ (inputs.release_version && 'release-version ' + inputs.release_version) || 'with-defaults' }
+      SBT_RELEASE_NEXT_VERSION: ${{ (inputs.release_version && 'release-version ' + inputs.release_version) || 'with-defaults' }}
       NU_DOCKER_UPDATE_LATEST: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
       JAVA_OPTS: "-Xss6M -Xms4G -Xmx4G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
       JVM_OPTS: "-Xss6M -Xms4G -Xmx4G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
