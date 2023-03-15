@@ -78,12 +78,23 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: "Build"
+        if: ${{ env.NU_DOCKER_UPDATE_LATEST }}
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: sbt 'release release-version 1.8.2-RC2 next-version 1.9.0-SNAPSHOT skip-tests'
 
+      - name: "Build test"
+        run: echo ${{ github.sha }} > release.txt
+
       - name: "Push to master"
         if: ${{ env.NU_DOCKER_UPDATE_LATEST }}
         run: echo "TBD git push origin HEAD:master -f && ./dockerhub/pulishReadme.sh"
+
+      - name: "Release"
+        uses: softprops/action-gh-release@v1
+        with:
+          files: rel*.txt
+          draft: true
+          generate_release_notes: true
 
