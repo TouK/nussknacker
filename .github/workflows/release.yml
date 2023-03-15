@@ -25,6 +25,9 @@ jobs:
         run: |
           echo Backport release is ${{ inputs.backport_release }}, Release Candidate is ${{ inputs.release_candidate }}.
           echo Docker update latest is ${{ env.NU_DOCKER_UPDATE_LATEST }}
+          echo Test 1 ${{ env.NU_DOCKER_UPDATE_LATEST }}
+          echo Test 2 ${{ env.NU_DOCKER_UPDATE_LATEST == true }}
+          echo Test 3 ${{ env.NU_DOCKER_UPDATE_LATEST == 'true' }}
 
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.11.0
@@ -78,7 +81,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: "Build"
-        if: ${{ env.NU_DOCKER_UPDATE_LATEST }}
+        if: ${{ env.NU_DOCKER_UPDATE_LATEST == true }}
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
@@ -88,7 +91,7 @@ jobs:
         run: echo ${{ github.sha }} > release.txt
 
       - name: "Push to master"
-        if: ${{ env.NU_DOCKER_UPDATE_LATEST }}
+        if: ${{ env.NU_DOCKER_UPDATE_LATEST == true }}
         run: echo "TBD git push origin HEAD:master -f && ./dockerhub/pulishReadme.sh"
 
       - name: "Release"
