@@ -95,10 +95,11 @@ lazy val publishSettings = Seq(
   },
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
-//  credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
-//    host, propOrEnv("SONATYPE_USERNAME", "touk"), propOrEnv("SONATYPE_PASSWORD", null))
-//    // otherwise ~/.sbt/1.0/sonatype.sbt will be used
-//  ).toSeq
+  // This didn't work with GitHub Actions release. Without this credentials are taken from env properly.
+  //  credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
+  //    host, propOrEnv("SONATYPE_USERNAME", "touk"), propOrEnv("SONATYPE_PASSWORD", null))
+  //    // otherwise ~/.sbt/1.0/sonatype.sbt will be used
+  //  ).toSeq
 )
 
 def modelMergeStrategy: String => MergeStrategy = {
@@ -1584,17 +1585,16 @@ lazy val bom = (project in file("bom"))
     ))
   ).dependsOn(modules.map(k => k: ClasspathDep[ProjectReference]): _*)
 
-//lazy val modules = List[ProjectReference](
-//  requestResponseRuntime, liteEngineRuntimeApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
-//  openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
-//  flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi, flinkScalaUtils,
-//  requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
-//  restmodel, listenerApi, deploymentManagerApi, designer, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
-//  liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteKafkaComponentsTests, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest,
-//  liteDeploymentManager, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
-//  liteRequestResponseComponents, liteRequestResponseComponentsTests, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit, mathUtils
-//)
-lazy val modules = List[ProjectReference](liteEngineRuntimeApp)
+lazy val modules = List[ProjectReference](
+  requestResponseRuntime, liteEngineRuntimeApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
+  openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
+  flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi, flinkScalaUtils,
+  requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
+  restmodel, listenerApi, deploymentManagerApi, designer, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
+  liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteKafkaComponentsTests, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest,
+  liteDeploymentManager, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
+  liteRequestResponseComponents, liteRequestResponseComponentsTests, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit, mathUtils
+)
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
 lazy val root = (project in file("."))
@@ -1602,7 +1602,7 @@ lazy val root = (project in file("."))
   .settings(commonSettings)
   .settings(
     // crossScalaVersions must be set to Nil on the aggregating project
-    releaseCrossBuild := false,
+    releaseCrossBuild := true,
     publish / skip := true,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
@@ -1621,15 +1621,15 @@ lazy val root = (project in file("."))
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
-//      releaseStepCommand("buildClient"),
+      releaseStepCommand("buildClient"),
       releaseStepCommandAndRemaining("+publishSigned"),
-//      releaseStepCommand("dist/Universal/packageZipTarball"),
-//      releaseStepCommandAndRemaining("+dist/Docker/publish"),
-//      releaseStepCommandAndRemaining("+liteEngineRuntimeApp/Docker/publish"),
+      releaseStepCommand("dist/Universal/packageZipTarball"),
+      releaseStepCommandAndRemaining("+dist/Docker/publish"),
+      releaseStepCommandAndRemaining("+liteEngineRuntimeApp/Docker/publish"),
       releaseStepCommand("sonatypeBundleRelease"),
-//      setNextVersion,
-//      commitNextVersion,
-//      pushChanges
+      setNextVersion,
+      commitNextVersion,
+      pushChanges
     )
   )
 
