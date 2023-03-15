@@ -45,8 +45,8 @@ trait DeploymentManager extends AutoCloseable {
 
 trait AlwaysFreshProcessState { self: DeploymentManager =>
 
-  def getProcessState(name: ProcessName)
-                     (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
+  final override def getProcessState(name: ProcessName)
+                                    (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
     getFreshProcessState(name).map(WithDataFreshnessStatus(_, cached = false))
 
   protected def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]]
