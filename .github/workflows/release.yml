@@ -19,6 +19,8 @@ jobs:
     env:
       NU_DOCKER_UPDATE_LATEST: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
       JAVA_OPTS: "-Xss6M -Xms4G -Xmx4G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false -Dsbt.task.timings=true -Dsbt.task.timings.on.shutdown=false"
+      SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
     steps:
       - name: "Output variables"
         run: |
