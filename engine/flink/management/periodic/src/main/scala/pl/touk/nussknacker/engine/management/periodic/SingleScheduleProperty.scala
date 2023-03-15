@@ -75,5 +75,6 @@ object SingleScheduleProperty {
 
 object CronScheduleProperty {
   private lazy val parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
+  // TODO: by default it should be space
   final val CronExpressionSeparator: Char = '|'
 }

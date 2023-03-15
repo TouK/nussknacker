@@ -457,10 +457,11 @@ modelArtifacts := {
   )
 }
 
-lazy val devModelArtifacts = taskKey[List[(File, String)]]("dev model artifacts")
-devModelArtifacts := {
+lazy val devArtifacts = taskKey[List[(File, String)]]("dev artifacts")
+devArtifacts := {
   modelArtifacts.value ++ List(
-    (flinkDevModel / assembly).value -> "model/devModel.jar"
+    (flinkDevModel / assembly).value -> "model/devModel.jar",
+    (devPeriodicDM / assembly).value -> "managers/devPeriodicDM.jar"
   )
 }
 
@@ -482,7 +483,7 @@ lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
     Universal / mappings ++= (root / managerArtifacts).value
       ++ (root / componentArtifacts).value
       ++ (if (addDevArtifacts) Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar") else Nil)
-      ++ (if (addDevArtifacts) (root / devModelArtifacts).value: @sbtUnchecked else (root / modelArtifacts).value: @sbtUnchecked),
+      ++ (if (addDevArtifacts) (root / devArtifacts).value: @sbtUnchecked else (root / modelArtifacts).value: @sbtUnchecked),
     Universal / packageZipTarball / mappings := {
       val universalMappings = (Universal / mappings).value
       //we don't want docker-* stuff in .tgz
@@ -635,6 +636,17 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java")).
       )
     }
   ).dependsOn(flinkComponentsUtils % Provided, componentsUtils)
+
+lazy val devPeriodicDM = (project in flink("management/dev-periodic-dm")).
+  settings(commonSettings).
+  settings(assemblyNoScala("devPeriodicDm.jar"): _*).
+  settings(
+    name := "nussknacker-dev-periodic-dm",
+    libraryDependencies ++= {
+      Seq(
+      )
+    }
+  ).dependsOn(flinkPeriodicDeploymentManager, deploymentManagerApi % "provided")
 
 lazy val flinkTests = (project in flink("tests")).
   settings(commonSettings).
@@ -1558,6 +1570,7 @@ lazy val designer = (project in file("designer/server"))
     schemedKafkaComponentsUtils % "provided",
     requestResponseRuntime % "provided",
     developmentTestsDeploymentManager % "provided",
+    devPeriodicDM % "provided",
   )
 
 /*
@@ -1599,7 +1612,7 @@ lazy val bom = (project in file("bom"))
   ).dependsOn(modules.map(k => k: ClasspathDep[ProjectReference]): _*)
 
 lazy val modules = List[ProjectReference](
-  requestResponseRuntime, liteEngineRuntimeApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
+  requestResponseRuntime, liteEngineRuntimeApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, devPeriodicDM, defaultModel,
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi, flinkScalaUtils,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
@@ -1649,7 +1662,7 @@ lazy val root = (project in file("."))
 lazy val prepareDev = taskKey[Unit]("Prepare components and model for running from IDE")
 prepareDev := {
   val workTarget = (designer / baseDirectory).value / "work"
-  val artifacts = componentArtifacts.value ++ devModelArtifacts.value ++ developmentTestsDeployManagerArtifacts.value ++
+  val artifacts = componentArtifacts.value ++ devArtifacts.value ++ developmentTestsDeployManagerArtifacts.value ++
     Def.taskDyn(if (addManagerArtifacts) managerArtifacts else Def.task[List[(File, String)]](Nil)).value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (designer / copyClientDist).value
