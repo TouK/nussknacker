@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo } from "react";
-import { flatten, uniq, uniqBy, sortBy } from "lodash";
+import { flatten, uniq, uniqBy } from "lodash";
 import { useFilterContext } from "../../common";
 import {ScenariosFiltersModel, ScenariosFiltersModelDeployed, ScenariosFiltersModelType} from "./scenariosFiltersModel";
-import { useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
+import { useUserQuery } from "../useScenariosQuery";
 import { QuickFilter } from "./quickFilter";
 import { FilterMenu } from "./filterMenu";
 import { SimpleOptionsStack } from "./simpleOptionsStack";
@@ -16,7 +16,6 @@ import { useTranslation } from "react-i18next";
 export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[]; isLoading?: boolean; withSort?: boolean }): JSX.Element {
     const { t } = useTranslation();
     const { data: userData } = useUserQuery();
-    const { data: statusDefinitions = [] } = useStatusDefinitions();
 
     const filterableKeys = useMemo(() => ["createdBy", "modifiedBy"], []);
     const filterableValues = useMemo(() => {
@@ -26,15 +25,15 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
             author: uniq(["modifiedBy", "createdBy"].flatMap((k) => data.flatMap((v) => v[k])))
                 .sort()
                 .map((v) => ({ name: v })),
-            status: sortBy(
-                statusDefinitions.map((v) => ({ name: v.name, icon: v.definition.icon, displayableName: v.definition.displayableName })),
-                (v) => v.displayableName || v.name
-            ),
+            status: uniqBy(
+                data.map((v) => ({ name: v.state?.status.name, icon: v.state?.icon })),
+                "name",
+            ).sort(),
             processCategory: (userData?.categories || []).map((name) => ({ name })),
         };
     }, [data, filterableKeys, userData?.categories]);
 
-    const statusLabels = statusDefinitions.reduce((map, obj) => {map[obj.name] = obj.definition.displayableName || obj.name; return map;}, {})
+    const statusFilters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED"];
     const { getFilter, setFilter, activeKeys } = useFilterContext<ScenariosFiltersModel>();
 
     const getLabel = useCallback(
@@ -57,9 +56,6 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                         case ScenariosFiltersModelDeployed.NOT_DEPLOYED:
                             return t("table.filter.NOT_DEPLOYED", "Not deployed");
                     }
-                    break;
-                case "STATUS":
-                    return t("table.filter.status." + value, statusLabels[value]);
             }
 
             if (value?.toString().length) {
@@ -68,21 +64,26 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
 
             return name;
         },
-        [t, statusLabels],
+        [t],
     );
 
     return (
         <>
             <QuickFilter<ScenariosFiltersModel> isLoading={isLoading} filter="NAME">
                 <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-                    <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
-                        <SimpleOptionsStack
-                            label={t("table.filter.STATUS", "Status")}
-                            options={filterableValues["status"]}
-                            value={getFilter("STATUS", true)}
-                            onChange={setFilter("STATUS")}
-                        />
-                        {/*<StatusOptionsStack/>*/}
+                    {/*<FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>*/}
+                    {/*    <SimpleOptionsStack*/}
+                    {/*        label={t("table.filter.STATUS", "Status")}*/}
+                    {/*        options={filterableValues["status"]}*/}
+                    {/*        value={getFilter("STATUS", true)}*/}
+                    {/*        onChange={setFilter("STATUS")}*/}
+                    {/*    />*/}
+                    {/*</FilterMenu>*/}
+                    <FilterMenu
+                        label={t("table.filter.STATUS", "Status")}
+                        count={getFilter("DEPLOYED", true).length + statusFilters.filter((k) => getFilter(k)).length}
+                    >
+                        <StatusOptionsStack />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                         <SimpleOptionsStack

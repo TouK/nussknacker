@@ -1,7 +1,7 @@
 import { UserData } from "nussknackerUi/common/models/User";
 import { useContext, useMemo } from "react";
 import { NkApiContext } from "../settings/nkApiProvider";
-import {ProcessType, StatusDefinitionType} from "nussknackerUi/components/Process/types";
+import { ProcessType } from "nussknackerUi/components/Process/types";
 import { StatusesType } from "nussknackerUi/HttpService";
 import { useQuery } from "react-query";
 import { UseQueryResult } from "react-query/types/react/types";
@@ -31,19 +31,6 @@ export function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
         queryKey: ["scenariosStatuses"],
         queryFn: async () => {
             const { data } = await api.fetchProcessesStates();
-            return data;
-        },
-        enabled: !!api,
-        refetchInterval: 15000,
-    });
-}
-
-export function useStatusDefinitions(): UseQueryResult<StatusDefinitionType[]> {
-    const api = useContext(NkApiContext);
-    return useQuery({
-        queryKey: ["statusDefinitions"],
-        queryFn: async () => {
-            const { data } = await api.fetchStatusDefinitions();
             return data;
         },
         enabled: !!api,
