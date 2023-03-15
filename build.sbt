@@ -95,10 +95,10 @@ lazy val publishSettings = Seq(
   },
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
-  credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
-    host, propOrEnv("SONATYPE_USERNAME", "touk"), propOrEnv("SONATYPE_PASSWORD", null))
-    // otherwise ~/.sbt/1.0/sonatype.sbt will be used
-  ).toSeq
+//  credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
+//    host, propOrEnv("SONATYPE_USERNAME", "touk"), propOrEnv("SONATYPE_PASSWORD", null))
+//    // otherwise ~/.sbt/1.0/sonatype.sbt will be used
+//  ).toSeq
 )
 
 def modelMergeStrategy: String => MergeStrategy = {
