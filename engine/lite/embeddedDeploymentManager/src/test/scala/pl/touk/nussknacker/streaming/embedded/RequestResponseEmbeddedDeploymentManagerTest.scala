@@ -31,7 +31,8 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
 
     val modelData = LocalModelData(ConfigFactory.empty()
       .withValue("components.kafka.disabled", fromAnyRef(true))
-      .withValue("components.mockKafka.disabled", fromAnyRef(true)), new EmptyProcessConfigCreator)
+      .withValue("components.mockKafkaLite.disabled", fromAnyRef(true))
+      .withValue("components.mockKafkaFlink.disabled", fromAnyRef(true)), new EmptyProcessConfigCreator)
     implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
     implicit val as: ActorSystem = ActorSystem(getClass.getSimpleName)
     implicit val dummyBackend: SttpBackend[Future, Any] = null
