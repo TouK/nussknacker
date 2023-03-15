@@ -74,7 +74,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               val componentsConfig: Map[String, SingleComponentConfig] = ComponentsUiConfigExtractor.extract(modelData.processConfig)
               // TODO: consult naming convention and ui->engine dependencies
               val subprocessDefinitionExtractor = SubprocessDefinitionExtractor(
-                subprocessesDetails = uiSubprocessesDetails.map { d => ExtractorSubprocessDetails(d.canonical, d.category) },
+                subprocessesDetails = uiSubprocessesDetails.map { d => ExtractorSubprocessDetails(d.canonical, d.category) }.toList,
                 subprocessesConfig = componentsConfig,
                 classLoader = modelData.modelClassLoader.classLoader
               )

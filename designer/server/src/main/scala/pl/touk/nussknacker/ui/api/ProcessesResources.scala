@@ -7,12 +7,9 @@ import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
-import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
@@ -160,22 +157,8 @@ class ProcessesResources(val processRepository: FetchingProcessRepository[Future
               complete {
                 processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
                   case Some(process) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(process))
-                  case Some(process) => {
-                    val processTypeData = typeToConfig.forType(process.processingType)
-                    val processConfig = processTypeData.map(_.modelData).map(_.processConfig).get
-                    val classLoader = processTypeData.map(_.modelData).map(_.modelClassLoader).map(_.classLoader).get
-                    val subprocessesConfig:Map[String,SingleComponentConfig] = ComponentsUiConfigExtractor.extract(processConfig)
-                    val subprocessesDetails = subprocessRepository.loadSubprocesses(Map.empty, process.processCategory)
-                    // TODO: use extractor in process validation
-                    val subprocessDefinitionExtractor = SubprocessDefinitionExtractor(
-                      subprocessesDetails = subprocessesDetails.map { d => pl.touk.nussknacker.engine.definition.SubprocessDetails(d.canonical, d.category)},
-                      subprocessesConfig  = subprocessesConfig,
-                      classLoader         = classLoader
-                    )
-                    val subprocessesDefinition = subprocessDefinitionExtractor.extractBySubprocessId(process.id)
+                  case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process))
 
-                    validateAndReverseResolve(enrichDetailsWithProcessState(process))
-                  }
                   case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
                 }
               }

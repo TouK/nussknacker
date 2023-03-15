@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValue}
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -261,7 +261,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
-  test("should validate fragment parameters with validators") {
+  test("should validate fragment parameters with validators -  - P1 as mandatory param with missing actual value") {
     import scala.jdk.CollectionConverters._
 
     val subprocessId = "fragmentInputId"
@@ -280,6 +280,87 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, config = configWithValidators)
     ) {
       case ValidationPerformed(List(EmptyMandatoryParameter(_, _, "P1", subprocessId)), None, None) =>
+    }
+  }
+
+  test("should validate fragment parameters with validators - P1 as mandatory param with some actual value") {
+    import scala.jdk.CollectionConverters._
+
+    val subprocessId = "fragmentInputId"
+
+    val nodeToBeValidated = SubprocessInput("nameOfTheNode", SubprocessRef(subprocessId, List(Parameter("P1", "123")), Map("out1" -> "test1")))
+
+    val fragmentDefinitionWithValidators: CanonicalProcess = CanonicalProcess(MetaData(subprocessId, FragmentSpecificData()), List(
+      FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("P1", SubprocessClazzRef[Short])))),
+      FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
+    ))
+
+    val configWithValidators: Config = defaultConfig
+      .withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
+
+    inside(
+      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, config = configWithValidators)
+    ) {
+      case ValidationPerformed(List(),None,None) =>
+    }
+  }
+
+
+  test("should validate fragment parameters with validators - P1 and P2 as mandatory param with missing actual value") {
+    import scala.jdk.CollectionConverters._
+
+    val subprocessId = "fragmentInputId"
+
+    val nodeToBeValidated = SubprocessInput("nameOfTheNode", SubprocessRef(subprocessId, List(
+      Parameter("P1", ""),
+      Parameter("P2", ""),
+    ), Map("out1" -> "test1")))
+
+    val fragmentDefinitionWithValidators: CanonicalProcess = CanonicalProcess(MetaData(subprocessId, FragmentSpecificData()), List(
+      FlatNode(SubprocessInputDefinition("in", List(
+        SubprocessParameter("P1", SubprocessClazzRef[Short]),
+        SubprocessParameter("P2", SubprocessClazzRef[String])
+      ))),
+      FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
+    ))
+
+    val configWithValidators: Config = defaultConfig
+      .withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
+      .withValue(s"componentsUiConfig.$subprocessId.params.P2.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
+
+    inside(
+      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, config = configWithValidators)
+    ) {
+      case ValidationPerformed(List(EmptyMandatoryParameter(_, _, "P1", "nameOfTheNode"), EmptyMandatoryParameter(_, _,"P2", "nameOfTheNode")),None,None) =>
+    }
+  }
+
+  test("should validate fragment parameters with validators - P1 and P2 as mandatory param with missing actual value") {
+    import scala.jdk.CollectionConverters._
+
+    val subprocessId = "fragmentInputId"
+
+    val nodeToBeValidated = SubprocessInput("nameOfTheNode", SubprocessRef(subprocessId, List(
+      Parameter("P1", ""),
+      Parameter("P2", ""),
+    ), Map("out1" -> "test1")))
+
+    val fragmentDefinitionWithValidators: CanonicalProcess = CanonicalProcess(MetaData(subprocessId, FragmentSpecificData()), List(
+      FlatNode(SubprocessInputDefinition("in", List(
+        SubprocessParameter("P1", SubprocessClazzRef[Short]),
+        SubprocessParameter("P2", SubprocessClazzRef[String])
+      ))),
+      FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
+    ))
+
+    val configWithValidators: Config = defaultConfig
+      .withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
+      .withValue(s"componentsUiConfig.$subprocessId.params.P2.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
+
+    inside(
+      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, config = configWithValidators)
+    ) {
+      case ValidationPerformed(List(EmptyMandatoryParameter(_, _, "P1", "nameOfTheNode"), EmptyMandatoryParameter(_, _, "P2", "nameOfTheNode")), None, None) =>
     }
   }
 
