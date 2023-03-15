@@ -80,7 +80,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: "Build"
-        run: SONATYPE_USER='${{ secrets.SONATYPE_USER }}' SONATYPE_PASSWORD='${{ secrets.SONATYPE_PASSWORD }}' sbt 'release release-version 1.8.2-RC1 next-version 1.9.0-SNAPSHOT skip-tests'
+        run: SONATYPE_USERNAME='${{ secrets.SONATYPE_USER }}' SONATYPE_PASSWORD='${{ secrets.SONATYPE_PASSWORD }}' sbt 'release release-version 1.8.2-RC1 next-version 1.9.0-SNAPSHOT skip-tests'
 
       - name: "Push to master"
         if: ${{ env.NU_DOCKER_UPDATE_LATEST }}
