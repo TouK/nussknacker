@@ -1,4 +1,5 @@
 ---
+title: Designer
 sidebar_position: 4
 ---
 # Designer configuration
@@ -33,31 +34,31 @@ for detailed list of configuration options.
 
 The table below presents most important options, or the ones that have Nussknacker specific defaults.
 
-| Parameter name       | Importance | Type   | Default value                                             | Description                                                                                                                                                                                                                                            |
-|----------------------|------------|--------|-----------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| db.url               | High       | string | "jdbc:hsqldb:file:"${storageDir}"/db;sql.syntax_ora=true" | Default HSQL location                                                                                                                                                                                                                                  |
-| db.driver            | High       | string | "org.hsqldb.jdbc.JDBCDriver"                              | "org.postgresql.Driver" in case of PostgreSQL  |
-| db.user              | High       | string | "SA"                                                      |                                                                                                                                                                                                                                                        |
-| db.password          | High       | string | ""                                                        |                                                                                                                                                                                                                                                        |
-| db.connectionTimeout | Low        | int    | 30000                                                     |                                                                                                                                                                                                                                                        |
-| db.maximumPoolSize   | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application                                                                                                                                                            |
-| db.minimumIdle       | Low        | int    | 1                                                         | We have lower limits than default config, since then Designer is not heavy-load application                                                                                                                                                            |
-| db.numThreads        | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application                                                                                                                                                            |
+| Parameter name       | Importance | Type   | Default value                                             | Description                                                                                 |
+|----------------------|------------|--------|-----------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| db.url               | High       | string | "jdbc:hsqldb:file:"${storageDir}"/db;sql.syntax_ora=true" | Default HSQL location                                                                       |
+| db.driver            | High       | string | "org.hsqldb.jdbc.JDBCDriver"                              | "org.postgresql.Driver" in case of PostgreSQL                                               |
+| db.user              | High       | string | "SA"                                                      |                                                                                             |
+| db.password          | High       | string | ""                                                        |                                                                                             |
+| db.connectionTimeout | Low        | int    | 30000                                                     |                                                                                             |
+| db.maximumPoolSize   | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
+| db.minimumIdle       | Low        | int    | 1                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
+| db.numThreads        | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
 
 ## Metrics settings
-                                                                     
+
 ### Metric dashboard
 
 Each scenario can have a link to Grafana dashboard. In [Docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/common/grafana) we
 provide a sample `nussknacker-scenario` dashboard.
 You can modify/configure your own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display metrics for particular scenario.
 
-Each scenario type can have different dashboard, this is configured by 
+Each scenario type can have different dashboard, this is configured by
 `metricsSettings.scenarioTypeToDashboard` settings. If no mapping is configured, `metricsSettings.defaultDashboard` is used.
-Actual link for particular scenario is created by replacing 
+Actual link for particular scenario is created by replacing
 - `$dashboard` with configured dashboard
 - `$scenarioName` with scenario name
-in `metricsSettings.url` setting.
+  in `metricsSettings.url` setting.
 
 | Parameter name                          | Importance | Type   | Default value                                                                                      | Description                                                                                                                    |
 |-----------------------------------------|------------|--------|----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
@@ -66,17 +67,17 @@ in `metricsSettings.url` setting.
 | metricsSettings.scenarioTypeToDashboard | Low        | map    |                                                                                                    | Mapping of scenario types to dashboard                                                                                         |
 
 
-### Counts                                                 
+### Counts
 
-Counts are based on InfluxDB metrics, stored in ```nodeCount``` measurement by default.
-```countsSettings.queryMode``` setting can be used to choose metric computation algorithm:
+Counts are based on InfluxDB metrics, stored in `nodeCount` measurement by default.
+`countsSettings.queryMode` setting can be used to choose metric computation algorithm:
 - `OnlySingleDifference` - subtracts values between end and beginning of requested range. Fast method, but if restart
-  in the requested time range is detected error is returned. We assume the job was restarted when event counter at the source 
+  in the requested time range is detected error is returned. We assume the job was restarted when event counter at the source
   decreases.
-- `OnlySumOfDifferences` - difference is computed by summing differences in measurements for requested time range. 
+- `OnlySumOfDifferences` - difference is computed by summing differences in measurements for requested time range.
   This method works a bit better for restart situations, but can be slow for large diagrams and wide time ranges.
 - `SumOfDifferencesForRestarts` - if restart is detected, the metrics are computed with `OnlySumDifferences`, otherwise - with `OnlySingleDifferences`
-       
+
 If you have custom metrics settings which result in different fields or tags (e.g. you have different telegraf configuration), you can configure required values
 with the settings presented below:
 
@@ -99,7 +100,7 @@ with the settings presented below:
 
 Nussknacker Designer can be configured to replace certain values in comments to links that can point e.g. to external issue tracker like
 GitHub issues or Jira. For example, `MARKETING-555` will change to link `https://jira.organization.com/jira/browse/MARKETING-555`.
-See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L104) for example configuration.                                 
+See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L104) for example configuration.
 
 
 | Parameter name                              | Importance | Type   | Default value | Description                                                                                                                                                                          |
@@ -111,13 +112,15 @@ See [development configuration](https://github.com/TouK/nussknacker/blob/staging
 
 ## Security
 
-Nussknacker has pluggable security architecture - by default we support two type of authentication: BasicAuth and
-OAuth2. You can either use default authentication provider, based on Basic authentication and static user configuration
-or integrate with other authentication mechanisms such as custom SSO implementation.
 
-### Users and permissions
+### Overview
+Nussknacker has pluggable security architecture - we support three types of authentication: BasicAuth, OAuth2 and OpenID Connect (OIDC). Configuration specific to each of these three types of authentication mechanism is described in the dedicated sections.
 
-Each user has id and set of permissions for every scenario category. There are following permissions:
+Nussknacker supports roles; the roles permissions are defined in the users configuration file.
+
+### Users, roles and permissions
+
+Each user has id and set of permissions for every scenario category. The following permissions are supported:
 
 * Read - user can view scenarios in category
 * Write - user can modify/add new scenarios in category
@@ -137,7 +140,9 @@ Currently supported permissions:
 * AdminTab - shows Admin tab in the UI (right now there are some useful things kept there including search components
   functionality).
 
-### Configuration parameters 
+### Common configuration parameters
+
+The table below contains parameters common to all the supported authentication methods.
 
 | Parameter name                   | Importance | Type        | Default value | Description                                                                                                                                                        |
 |----------------------------------|------------|-------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -146,6 +151,10 @@ Currently supported permissions:
 | authentication.anonymousUserRole | optional   | string      |               | Role assigned to an unauthenticated user if the selected authentication provider permits anonymous access. No anonymous access allowed unless a value is provided. |
 
 #### Users' file format:
+
+The association of the users to the roles is in the users' configuration file; in the case of OIDC it can additionally be supplemented by the list of roles provided by the OpenId provider.
+
+If OpenID Connect (OIDC) authentication is used, the information about the user identity is stored in the field `sub` (subject) of the OIDC token - make sure that these values match.
 
 ```hocon
 users: [
@@ -185,8 +194,8 @@ rules: [
 
 ### BasicAuth security module
 
-In order to use Basic authentication you just need to set  `authentication.method` to `BasicAuth` and 
-provide either plain or encrypted passwords for users additionally to the `usersFile`'s content as follows:  
+In order to use Basic authentication you just need to set  `authentication.method` to `BasicAuth` and
+provide either plain or encrypted passwords for users additionally to the `usersFile`'s content as follows:
 
 ```hocon
 users: [
@@ -205,12 +214,12 @@ users: [
 
 #### Encrypted hashes
 
-Encryption of passwords uses BCrypt algorithm. You can generate sample hash using command: 
+Encryption of passwords uses BCrypt algorithm. You can generate sample hash using command:
 
 ```shell
 python -c 'import bcrypt; print(bcrypt.hashpw("password".encode("utf8"), bcrypt.gensalt(rounds=12, prefix="2a")))'
 ```
-If you don't have bcrypt installed, use `pip install bcrypt`. 
+If you don't have bcrypt installed, use `pip install bcrypt`.
 
 Be aware that usage of BCrypt hashes will cause significant CPU overhead for processing of each http request, because we
 don't have sessions and all requests are authenticated. To avoid this overhead you can configure cashing of hashes using
@@ -229,10 +238,10 @@ authentication: {
 This workaround causes that passwords are kept in the memory, and it will introduce risk that someone with access to
 content of heap will see cached passwords.
 
-### OpenID Connect security module
+### OpenID Connect (OIDC) security module
 
 When talking about OAuth2 in the context of authentication, most people probably mean OpenID Connect, an identity layer
-built on top of it. Nussknacker provides a separate authentication provider for OIDC with simple configuration 
+built on top of it. Nussknacker provides a separate authentication provider for OIDC with simple configuration
 and provider discovery. The only supported flow is the authorization code flow with client secret.
 
 You can select this authentication method by setting the `authentication.method` parameter to `Oidc`
@@ -243,7 +252,7 @@ You can select this authentication method by setting the `authentication.method`
 | authentication.clientId              | required    | string         |                             | Client identifier valid at the authorization server                                                           |
 | authentication.clientSecret          | required    | string         |                             | Secret corresponding to the client identifier at the authorization server                                     |
 | authentication.audience              | recommended | string         |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                    |
-| authentication.rolesClaims           | recommended | list of string |                             | ID Token claims used for mapping users to roles instead of or additionally to the ones defined in `usersFile` |
+| authentication.rolesClaims           | recommended | list of string |                             | Name of the field in the ID token which contains list of user roles. This list supplements roles defined in the `usersFile` |
 | authentication.redirectUri           | optional    | url            | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                    |
 | authentication.scope                 | optional    | string         | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                   |
 | authentication.authorizationEndpoint | auxiliary   | url or path    | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider             |
@@ -260,7 +269,7 @@ Assuming `${nussknackerUrl}` is the location of your deployment, in your Auth0 t
 
 - Create a "Regular Web Application" with the "Allowed Callback URL's" field set to `${nussknackerUrl}`
 - Create an "API" with the "Identifier" field preferably set to `${nussknackerUrl}/api`
-- Create an Auth Pipeline Rule with the content: 
+- Create an Auth Pipeline Rule with the content:
 ```javascript
 function (user, context, callback) {
   const assignedRoles = (context.authorization || {}).roles || ['User'];
@@ -349,7 +358,7 @@ By default, access token request is sent using `application/json` content type, 
 to `application/x-www-form-urlencoded`) use `accessTokenRequestContentType` config.
 
 Subconfig `jwt` is also optional. However, if it is present and `enabled` is set to
-true, the `audience` and one of the `publicKey`, `publicKeyFile`, `certificate`, `certificateFile`, 
+true, the `audience` and one of the `publicKey`, `publicKeyFile`, `certificate`, `certificateFile`,
 fields have to be provided.
 
 Access tokens are introspected only once and then stored in a cache for the expiration time.
@@ -384,7 +393,7 @@ No token refreshing nor revoking is implemented.
 ```
 ### OAuth2 security module - GitHub example with code flow
 
-#### Configuration in following format:
+#### Configuration example:
 
 ```
 authentication: {
@@ -410,7 +419,7 @@ authentication: {
 }
 ```
 
-#### Users file in following format:
+#### Users file example:
 
 ```
 users: [ //Special settings by user email
@@ -606,7 +615,7 @@ processToolbarConfig {
 ```
 
 ### Main menu configuration
-                      
+
 Tabs (in main menu bar, such as Scenarios etc.) can be configured in the following way:
 ```
  tabs: ${tabs} [
@@ -635,7 +644,7 @@ The types of tabs can be as follows (see `dev-application.conf` for some example
 - IFrame - contents of the url parameter will be embedded as IFrame
 - Local - redirect to Designer page (`/admin`, `/processes` etc., see [code](https://github.com/TouK/nussknacker/blob/staging/designer/client/containers/NussknackerApp.tsx#L118)
   for other options)
-- Remote - [module federation](https://webpack.js.org/concepts/module-federation/) can be used to embed external tabs, url should be in form: `{module}/{path}@{host}/{remoteEntry}.js`  
+- Remote - [module federation](https://webpack.js.org/concepts/module-federation/) can be used to embed external tabs, url should be in form: `{module}/{path}@{host}/{remoteEntry}.js`
 - Url - redirect to external page/url
 
 ## Environment configuration
@@ -645,11 +654,11 @@ Nussknacker installation may consist of more than one environment. Typical examp
   only scenarios that are currently worked on
 - production environment
 
-You can configure `secondaryEnvironment` to allow for 
+You can configure `secondaryEnvironment` to allow for
 - easy migration of scenarios
 - comparing scenarios between environments
 - testing (currently only via REST API) if all scenarios from secondary environment are valid with model configuration from this environment (useful for testing configuration etc.)
-Currently, you can only configure secondary environment if it uses BASIC authentication - technical user is needed to access REST API.
+  Currently, you can only configure secondary environment if it uses BASIC authentication - technical user is needed to access REST API.
 
 | Parameter name                              | Importance | Type                                                                | Default value | Description                                                                                                                                                                                             |
 |---------------------------------------------|------------|---------------------------------------------------------------------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -662,7 +671,7 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 | secondaryEnvironment.password               | Medium     | string                                                              |               | Password of the user that should be used for migration/comparison                                                                                                                                       |
 | secondaryEnvironment.targetEnvironmentId    | Low        | string                                                              |               | Name of the secondary environment (used mainly for messages for user)                                                                                                                                   |
 
-## Testing 
+## Testing
 
 | Parameter name                     | Importance | Type | Default value | Description                                                   |
 |------------------------------------|------------|------|---------------|---------------------------------------------------------------|
@@ -673,18 +682,18 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 
 ## Other configuration options
 
-| Parameter name                         | Importance | Type    | Default value | Description                                                                                                                                                                                                                 |
-|----------------------------------------|------------|---------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| attachments.maxSizeInBytes             | Medium     | long    | 10485760      | Limits max size of scenario attachment, by default to 10mb                                                                                                                                                                  |
-| analytics.engine                       | Low        | Matomo  |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                                                                                                                                                  |
-| analytics.url                          | Low        | string  |               | URL of Matomo server                                                                                                                                                                                                        |
-| analytics.siteId                       | Low        | string  |               | [Site id](https://matomo.org/faq/general/faq_19212/)                                                                                                                                                                        |
-| intervalTimeSettings.processes         | Low        | int     | 20000         | How often frontend reloads scenario list                                                                                                                                                                                    |
-| intervalTimeSettings.healthCheck       | Low        | int     | 30000         | How often frontend reloads checks scenarios states                                                                                                                                                                          |
-| developmentMode                        | Medium     | boolean | false         | For development mode we disable some security features like CORS. **Don't** use in production                                                                                                                               |
-| enableConfigEndpoint                   | Medium     | boolean | false         | Expose config over http (GET /api/app/config/) - requires admin permission. Please mind, that config often contains password or other confidential data - this feature is meant to be used only on 'non-prod' envrionments. |
-| redirectAfterArchive                   | Low        | boolean | true          | Redirect to scenarios list after archive operation.                                                                                                                                                                         |
-| usageStatisticsReports.enabled         | Low        | boolean | true          | When enabled browser will send anonymous usage statistics reports to `stats.nussknacker.io`                                                                                                                                     |
+| Parameter name                   | Importance | Type    | Default value | Description                                                                                                                                                                                                                 |
+|----------------------------------|------------|---------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| attachments.maxSizeInBytes       | Medium     | long    | 10485760      | Limits max size of scenario attachment, by default to 10mb                                                                                                                                                                  |
+| analytics.engine                 | Low        | Matomo  |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                                                                                                                                                  |
+| analytics.url                    | Low        | string  |               | URL of Matomo server                                                                                                                                                                                                        |
+| analytics.siteId                 | Low        | string  |               | [Site id](https://matomo.org/faq/general/faq_19212/)                                                                                                                                                                        |
+| intervalTimeSettings.processes   | Low        | int     | 20000         | How often frontend reloads scenario list                                                                                                                                                                                    |
+| intervalTimeSettings.healthCheck | Low        | int     | 30000         | How often frontend reloads checks scenarios states                                                                                                                                                                          |
+| developmentMode                  | Medium     | boolean | false         | For development mode we disable some security features like CORS. **Don't** use in production                                                                                                                               |
+| enableConfigEndpoint             | Medium     | boolean | false         | Expose config over http (GET /api/app/config/) - requires admin permission. Please mind, that config often contains password or other confidential data - this feature is meant to be used only on 'non-prod' envrionments. |
+| redirectAfterArchive             | Low        | boolean | true          | Redirect to scenarios list after archive operation.                                                                                                                                                                         |
+| usageStatisticsReports.enabled   | Low        | boolean | true          | When enabled browser will send anonymous usage statistics reports to `stats.nussknacker.io`                                                                                                                                 |
 
 ## Scenario type, categories
 
@@ -700,7 +709,7 @@ categoriesConfig: {
 
 For each category you have to define its scenario type (`streaming` in examples above). Scenario type configuration consists of two parts:
 - `deploymentConfig` - [deployment manager configuration](./DeploymentManagerConfiguration.md)
-- `modelConfig` - [model configuration](./model/ModelConfiguration.md)
+- `modelConfig` - [model configuration](./ModelConfiguration.md)
 
 In Nussknacker distribution there are preconfigured scenario types:
 - `streaming` - using Flink Deployment Manager providing both stateful and stateless streaming components
@@ -709,5 +718,5 @@ In Nussknacker distribution there are preconfigured scenario types:
 
 And one `Default` category using `streaming` by default (can be configured via `DEFAULT_SCENARIO_TYPE` environment variable)
 
-See [example](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) 
+See [example](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33)
 from development config for more complex examples.
