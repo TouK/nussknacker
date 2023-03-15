@@ -111,7 +111,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
             List()
           ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val diamondSubprocess = CanonicalProcess(MetaData("diamondSubprocess", StreamMetaData()),
+    val diamondSubprocess = CanonicalProcess(MetaData("diamondSubprocess", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.SplitNode(Split("split"),
@@ -129,7 +129,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       ):: Nil
     )
 
-    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(scenario)
+    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess)).resolve(scenario)
 
     resolved shouldBe Symbol("valid")
     resolved.toOption.get

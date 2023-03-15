@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, InputValidationResponse, Output, SubprocessResolver}
+import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
@@ -37,8 +38,7 @@ object NodeDataValidator {
 
 }
 
-// TODO: encapsulate subprocess definition providing into some class
-class NodeDataValidator(modelData: ModelData, getFragment: String => Option[CanonicalProcess]) {
+class NodeDataValidator(modelData: ModelData, subprocessResolver: SubprocessResolver) {
 
   def validate(nodeData: NodeData,
                validationContext: ValidationContext,
@@ -79,7 +79,7 @@ class NodeDataValidator(modelData: ModelData, getFragment: String => Option[Cano
                                  compiler: NodeCompiler,
                                  a: SubprocessInput)
                                 (implicit nodeId: NodeId) = {
-    SubprocessResolver(getFragment, modelData.processConfig, modelData.modelClassLoader.classLoader).resolveInput(a).map {
+    subprocessResolver.resolveInput(a).map {
       case InputValidationResponse(params, outputs) =>
         val outputFieldsValidationErrors = outputs.collect { case Output(name, true) => name }.map { output =>
           val maybeOutputName: Option[String] = a.ref.outputVariableNames.get(output)

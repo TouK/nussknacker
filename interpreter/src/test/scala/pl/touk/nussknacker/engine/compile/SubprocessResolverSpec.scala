@@ -40,7 +40,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))) , List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
+    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
@@ -74,7 +74,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
         SubprocessRef("subProcess2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output", List.empty)))))), List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess, nested), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
+    val resolvedValidated = SubprocessResolver(Set(subprocess, nested)).resolve(process)
 
 
     resolvedValidated shouldBe Symbol("valid")
@@ -103,7 +103,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
+    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(RedundantParameters(Set("badala"), "sub"), MissingParameters(Set("param"), "sub")))
 
@@ -122,7 +122,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "badoutput", List.empty))), List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
+    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(FragmentOutputNotDefined("badoutput", Set("sub-out1", "sub"))))
 
@@ -151,7 +151,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
       ), List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
+    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingManyOutputsSubprocess("sub", Set("output1", "output2"))))
 
@@ -171,7 +171,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
       ), List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
+    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingNoOutputsSubprocess("sub")))
 
@@ -206,7 +206,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
         FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
       ), List.empty
     )
-    val resolver = SubprocessResolver(Set(subprocess, emptySubprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader)
+    val resolver = SubprocessResolver(Set(subprocess, emptySubprocess))
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
       case Valid(CanonicalProcess(_, flatNodes, additional)) =>
         flatNodes(0) match {
@@ -249,7 +249,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
       .filter("f1", "false")
       .emptySink("end", "sink1")
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
+    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
@@ -264,7 +264,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
       .subprocessOneOut("nodeSubprocessId", "subProcessId", "fragmentResult", "output")
       .emptySink("id2", "sink")
 
-    val resolvedValidated = SubprocessResolver(subprocesses = Set(), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process)
+    val resolvedValidated = SubprocessResolver(subprocesses = Set()).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownSubprocess(id = "subProcessId", nodeId = "nodeSubprocessId")))
   }
@@ -290,7 +290,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
       ):: Nil
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(process).toOption.get.allStartNodes
+    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process).toOption.get.allStartNodes
     resolvedValidated should have length 2
   }
 
@@ -309,7 +309,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
         "output2" -> GraphBuilder.emptySink("id2", "sink"),
       ))
     
-    val resolvedValidated = SubprocessResolver(Set(fragment), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(scenario)
+    val resolvedValidated = SubprocessResolver(Set(fragment)).resolve(scenario)
     resolvedValidated shouldBe Symbol("valid")
 
   }
@@ -327,7 +327,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
       .subprocessOneOut("fragment", "fragment1", "output1", "outVar1")
       .emptySink("id1", "sink")
 
-    val resolvedValidated = SubprocessResolver(Set(fragment), Map.empty[String, SingleComponentConfig], getClass.getClassLoader).resolve(scenario)
+    val resolvedValidated = SubprocessResolver(Set(fragment)).resolve(scenario)
     resolvedValidated shouldBe Invalid(NonEmptyList.of(MultipleOutputsForName("output1", "fragment")))
 
   }
