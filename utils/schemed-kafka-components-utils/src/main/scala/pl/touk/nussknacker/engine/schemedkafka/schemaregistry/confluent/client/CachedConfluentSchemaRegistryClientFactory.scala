@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.kafka.{SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryClient, SchemaRegistryClientFactory, SchemaWithMetadata}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache, SingleValueCache}
@@ -18,7 +17,7 @@ class CachedConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFac
   @transient private lazy val caches = mutable.Map[SchemaRegistryClientKafkaConfig, SchemaRegistryCaches]()
 
   override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
-    val client = confluentClient(config)
+    val client = DefaultConfluentSchemaRegistryClientFactory.createConfluentClient(config)
     val cache = synchronized {
       caches.getOrElseUpdate(config, {
         new SchemaRegistryCaches(config.cacheConfig)
@@ -27,7 +26,6 @@ class CachedConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFac
     new CachedConfluentSchemaRegistryClient(client, cache)
   }
 
-  protected def confluentClient(config: SchemaRegistryClientKafkaConfig): CSchemaRegistryClient = CachedSchemaRegistryClient(config)
 }
 
 class SchemaRegistryCaches(cacheConfig: SchemaRegistryCacheConfig) extends LazyLogging {
