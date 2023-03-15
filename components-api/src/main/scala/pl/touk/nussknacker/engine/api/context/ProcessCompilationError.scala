@@ -4,6 +4,7 @@ import cats.Applicative
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.definition.Parameter
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]

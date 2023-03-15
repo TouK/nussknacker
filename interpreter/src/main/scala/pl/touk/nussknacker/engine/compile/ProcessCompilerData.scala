@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
@@ -10,17 +9,17 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{LazyInterpreterDependencies, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{LazyInterpreterDependencies, ProcessDefinitionExtractor, SubprocessDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter, TypeDefinitionSet}
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /*
   This is helper class, which collects pieces needed for various stages of compilation process
@@ -30,12 +29,12 @@ object ProcessCompilerData {
 
   def prepare(process: CanonicalProcess,
               definitions: ProcessDefinition[ObjectWithMethodDef],
+              subprocessDefinitionExtractor: SubprocessDefinitionExtractor,
               listeners: Seq[ProcessListener],
               userCodeClassLoader: ClassLoader,
               resultsCollector: ResultCollector,
               componentUseCase: ComponentUseCase,
-              customProcessValidator: CustomProcessValidator
-             )(implicit defaultAsyncValue: DefaultAsyncInterpretationValue): ProcessCompilerData = {
+              customProcessValidator: CustomProcessValidator): ProcessCompilerData = {
     val servicesDefs = definitions.services
 
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
@@ -44,7 +43,7 @@ object ProcessCompilerData {
     val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
     //for testing environment it's important to take classloader from user jar
-    val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, userCodeClassLoader, resultsCollector, componentUseCase)
+    val nodeCompiler = new NodeCompiler(definitions, subprocessDefinitionExtractor, expressionCompiler, userCodeClassLoader, resultsCollector, componentUseCase)
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler, customProcessValidator)
 

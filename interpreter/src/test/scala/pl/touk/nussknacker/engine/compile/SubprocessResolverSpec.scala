@@ -5,10 +5,11 @@ import cats.data.Validated.{Invalid, Valid}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, Subprocess}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -87,25 +88,6 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
     resolved.nodes.find(_.id == "sub") shouldBe Symbol("defined")
     resolved.nodes.find(_.id == "sub-sub2") shouldBe Symbol("defined")
     resolved.nodes.find(_.id == "sub-sub2-f1") shouldBe Symbol("defined")
-  }
-
-  test("not resolve fragment with missing parameters") {
-
-    val process = ScenarioBuilder.streaming("test")
-      .source("source", "source1")
-      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "badala" -> "'makota'")
-      .emptySink("sink", "sink1")
-
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
-      List(
-        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
-    )
-
-    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
-
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(RedundantParameters(Set("badala"), "sub"), MissingParameters(Set("param"), "sub")))
-
   }
 
   test("not resolve fragment with bad outputs") {

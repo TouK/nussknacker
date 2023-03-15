@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExc
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, SubprocessDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.{DefaultExpressionId, branchParameterExpressionId}
@@ -32,8 +32,6 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
-
-import scala.util.{Failure, Success}
 
 object NodeCompiler {
 
@@ -58,16 +56,18 @@ object NodeCompiler {
     val expressionTypingInfo: Map[String, ExpressionTypingInfo] =
       typedExpression.map(te => (fieldName, te.typingInfo)).toMap
   }
+
 }
 
 class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
+                   subprocessDefinitionExtractor: SubprocessDefinitionExtractor,
                    objectParametersExpressionCompiler: ExpressionCompiler,
                    classLoader: ClassLoader,
                    resultCollector: ResultCollector,
                    componentUseCase: ComponentUseCase) {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
-    new NodeCompiler(definitions, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, componentUseCase)
+    new NodeCompiler(definitions, subprocessDefinitionExtractor, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, componentUseCase)
   }
 
   type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
@@ -135,24 +135,23 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
   }
 
-  def compileSubprocessInput(subprocessInput: SubprocessInput, ctx: ValidationContext)
+  def compileSubprocessInput(subprocessInput: SubprocessInput,
+                             ctx: ValidationContext)
                             (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
 
     val ref = subprocessInput.ref
-    val validParamDefs = ref.parameters.map(p => getSubprocessParamDefinition(subprocessInput, p.name)).sequence
-    val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>
-      ps.map(p => (p.name, p.typ))
-    }.getOrElse(ref.parameters.map(p => (p.name, Unknown)))
+    val validParamDefs = subprocessDefinitionExtractor.extractParametersDefinition(subprocessInput)
 
     val childCtx = ctx.pushNewContext()
-    val newCtx = paramNamesWithType.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx)) {
-      case (acc, (paramName, typ)) => acc.andThen(_.withVariable(OutputVar.variable(paramName), typ))
+    val newCtx = validParamDefs.value.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx)) {
+      case (acc, paramDef) => acc.andThen(_.withVariable(OutputVar.variable(paramDef.name), paramDef.typ))
     }
-    val validParams = validParamDefs.andThen { paramDefs =>
-      objectParametersExpressionCompiler.compileEagerObjectParameters(paramDefs, ref.parameters, ctx)
-    }
+    val validParams = objectParametersExpressionCompiler.compileEagerObjectParameters(validParamDefs.value, ref.parameters, ctx)
+    val validParamsCombinedErrors = validParams.combine(
+      NonEmptyList.fromList(validParamDefs.written).map(invalid).getOrElse(valid(List.empty[compiledgraph.evaluatedparam.Parameter]))
+    )
     val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
-    NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
+    NodeCompilationResult(expressionTypingInfo, None, newCtx, validParamsCombinedErrors)
   }
 
   //expression is deprecated, will be removed in the future
@@ -325,18 +324,6 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
   }
 
-
-  private def getSubprocessParamDefinition(subprocessInput: SubprocessInput, paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
-    val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
-    subParam.typ.toRuntimeClass(classLoader) match {
-      case Success(runtimeClass) =>
-        valid(Parameter.optional(paramName, Typed(runtimeClass)))
-      case Failure(_) =>
-        invalid(
-          SubprocessParamClassLoadError(paramName, subParam.typ.refClazzName, subprocessInput.id)
-        ).toValidatedNel
-    }
-  }
 
   //TODO: better classloader error handling
   private def loadFromParameter(subprocessParameter: SubprocessParameter)(implicit nodeId: NodeId) =

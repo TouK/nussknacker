@@ -81,7 +81,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
     //It's copied from registrar.register only for handling compilation errors..
     //TODO: figure how to get compilation result on highest level - registrar.register?
     val compiler = new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData)
-    val compileProcessData = compiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, ProductionServiceInvocationCollector, getClass.getClassLoader)
+    val compileProcessData = compiler.compileProcess(scenario, ProcessVersion.empty, ProductionServiceInvocationCollector, getClass.getClassLoader)
 
     compileProcessData.compileProcess().map { _ =>
       val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))

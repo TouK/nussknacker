@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor, SubprocessDefinitionExtractor}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
@@ -57,6 +57,7 @@ object ScenarioInterpreterFactory {
     val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
+    val subprocessDefinitionExtractor = SubprocessDefinitionExtractor(modelData.processConfig, modelData.modelClassLoader.classLoader)
 
     val allNodes = process.collectAllNodes
     val countingListeners = List(new NodeCountingListener(allNodes.map(_.id)), new ExceptionCountingListener, new EndCountingListener(allNodes))
@@ -64,12 +65,11 @@ object ScenarioInterpreterFactory {
 
     val compilerData = ProcessCompilerData.prepare(process,
       definitions,
+      modelData.subprocessDefinitionExtractor,
       listeners,
       modelData.modelClassLoader.classLoader, resultCollector,
       componentUseCase,
-      modelData.customProcessValidator
-      // defaultAsyncValue is not important here because it isn't used in base mode (??)
-    )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
+      modelData.customProcessValidator)
 
     compilerData.compile().andThen { compiledProcess =>
       val components = extractComponents(compiledProcess.sources.toList)

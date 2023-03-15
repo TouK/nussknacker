@@ -12,17 +12,21 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
+// FIXME: why everywhere pass Map.empty as a version - looks like it can be cleaned
+// FIXME: Map[id->process] instead of Sets to avoid unnecessary hashcode computation overhead and easier usage
 trait SubprocessRepository {
 
   def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails]
 
   def loadSubprocesses(versions: Map[String, VersionId], category: String): Set[SubprocessDetails]
 
+  // FIXME: get by id in DB
+  def get(id: String): Option[SubprocessDetails] = loadSubprocesses().find(_.canonical.metaData.id == id)
+
+  // FIXME: load only ids from DB
+  def loadSubprocessIds(): List[String] = loadSubprocesses(Map.empty).map(_.canonical.metaData.id).toList
+
   def loadSubprocesses(): Set[SubprocessDetails] = loadSubprocesses(Map.empty)
-
-  def get(id: String) : Option[SubprocessDetails] = loadSubprocesses().find(_.canonical.metaData.id == id)
-
-  def get(id: String, version: VersionId) : Option[SubprocessDetails] = loadSubprocesses(Map(id -> version)).find(_.canonical.metaData.id == id)
 
 }
 

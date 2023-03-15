@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.Applicative
-import cats.data.Validated.Valid
+import cats.data.Validated.{invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
@@ -12,9 +13,9 @@ import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, InputValidationResponse, Output, SubprocessResolver}
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, Output, SubprocessResolver}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
@@ -34,12 +35,13 @@ object NodeDataValidator {
 
   case class OutgoingEdge(target: String, edgeType: Option[EdgeType])
 
+}
 
+class NodeDataValidator(modelData: ModelData, subprocessResolver: SubprocessResolver) {
 
-  def validate(nodeData: NodeData, modelData: ModelData,
+  def validate(nodeData: NodeData,
                validationContext: ValidationContext,
                branchContexts: Map[String, ValidationContext],
-               getFragment: String => Option[CanonicalProcess],
                outgoingEdges: List[OutgoingEdge]
               )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
@@ -47,7 +49,7 @@ object NodeDataValidator {
       val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
-      val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
+      val compiler = new NodeCompiler(modelData.processWithObjectsDefinition, modelData.subprocessDefinitionExtractor,
         expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
@@ -65,26 +67,37 @@ object NodeDataValidator {
         case a: Switch => toValidationResponse(compiler.compileSwitch(Applicative[Option].product(a.exprVal, a.expression), outgoingEdges.collect {
           case OutgoingEdge(k, Some(NextSwitch(expression))) => (k, expression)
         }, validationContext))
-        case a: SubprocessInput => SubprocessResolver(getFragment).resolveInput(a).fold(
-          errors => ValidationPerformed(errors.toList, None, None),
-          { case InputValidationResponse(params, outputs) =>
-            val outputFieldsValidationErrors = outputs.collect { case Output(name, true) => name }.map { output =>
-              val maybeOutputName: Option[String] = a.ref.outputVariableNames.get(output)
-              val outputName = Validated.fromOption(maybeOutputName, NonEmptyList.one(UnknownFragmentOutput(output, Set(a.id))))
-              outputName.andThen(name => validationContext.withVariable(OutputVar.fragmentOutput(output, name), Unknown))
-            }.toList.sequence.swap.toList.flatMap(_.toList)
-            val outgoingEdgesErrors = outputs.collect {
-              case Output(name, _) if !outgoingEdges.exists(_.edgeType.contains(EdgeType.SubprocessOutput(name))) =>
-                FragmentOutputNotDefined(name, Set(a.id))
-            }
-            val parametersResponse = toValidationResponse(compiler.compileSubprocessInput(a.copy(subprocessParams = Some(params)), validationContext))
-            parametersResponse.copy(errors = parametersResponse.errors ++ outputFieldsValidationErrors ++ outgoingEdgesErrors)
-          }
-        )
+        case a: SubprocessInput => validateSubprocess(validationContext, outgoingEdges, compiler, a)
         case _ => ValidationNotPerformed
       }
     }
   }
+
+  private def validateSubprocess(validationContext: ValidationContext,
+                                 outgoingEdges: List[OutgoingEdge],
+                                 compiler: NodeCompiler,
+                                 a: SubprocessInput)
+                                (implicit nodeId: NodeId) = {
+    subprocessResolver.resolveInput(a).map { definition =>
+      val outputErrors = definition.validOutputs.andThen { outputs =>
+        val outputFieldsValidated = outputs.collect { case Output(name, true) => name }.map { output =>
+          val maybeOutputName: Option[String] = a.ref.outputVariableNames.get(output)
+          val outputName = Validated.fromOption(maybeOutputName, NonEmptyList.one(UnknownFragmentOutput(output, Set(a.id))))
+          outputName.andThen(name => validationContext.withVariable(OutputVar.fragmentOutput(output, name), Unknown))
+        }.toList.sequence
+        val outgoingEdgesValidated = outputs.map {
+          case Output(name, _) if !outgoingEdges.exists(_.edgeType.contains(EdgeType.SubprocessOutput(name))) =>
+            invalidNel(FragmentOutputNotDefined(name, Set(a.id)))
+          case _ =>
+            valid(())
+        }.toList.sequence
+        (outputFieldsValidated, outgoingEdgesValidated).mapN { case (_, _) => () }
+      }.swap.map(_.toList).valueOr(_ => List.empty)
+      val parametersResponse = toValidationResponse(compiler.compileSubprocessInput(a.copy(subprocessParams = Some(definition.subprocessParameters)), validationContext))
+      parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors)
+    }.valueOr(errors => ValidationPerformed(errors.toList, None, None))
+  }
+
 
   private def toValidationResponse[T<:TypedValue](nodeCompilationResult: NodeCompilationResult[_]): ValidationPerformed =
     ValidationPerformed(nodeCompilationResult.errors, nodeCompilationResult.parameters, expressionType = nodeCompilationResult.expressionType)

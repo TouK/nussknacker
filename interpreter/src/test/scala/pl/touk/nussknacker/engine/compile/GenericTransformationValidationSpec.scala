@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessDefinitionExtractor}
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
@@ -55,7 +55,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(MyProcessConfigCreator,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
-  private val validator = ProcessValidator.default(objectWithMethodDef, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator)
+  private val subprocessDefinitionExtractor = SubprocessDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+  private val validator = ProcessValidator.default(objectWithMethodDef, subprocessDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator)
 
   private val expectedGenericParameters = List(
     Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),

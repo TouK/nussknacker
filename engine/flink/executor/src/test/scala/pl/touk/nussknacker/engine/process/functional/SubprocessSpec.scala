@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.functional
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -110,7 +111,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
             List()
           ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val diamondSubprocess = CanonicalProcess(MetaData("diamondSubprocess", StreamMetaData()),
+    val diamondSubprocess = CanonicalProcess(MetaData("diamondSubprocess", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
         canonicalnode.SplitNode(Split("split"),
