@@ -29,7 +29,7 @@ export function createPaper(options: dia.Paper.Options): dia.Paper {
         startDirections: [`bottom`],
         endDirections: [`top`],
         excludeTypes: [`basic.Rect`],
-        step: 10,
+        step: 30,
         padding: 20,
       },
     },

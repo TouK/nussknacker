@@ -59,12 +59,12 @@ export const makeLink = (edge: Edge & { index: number }, arrowMarkerId: string):
     .source({
       id: edge.from, port: "Out",
       anchor: {name: "bottom", args: {dy: -4}},
-      connectionPoint: {name: "boundary", args: {offset: 2, sticky: true}},
+      connectionPoint: {name: "boundary", args: {offset: 2}},
     })
     .target({
       id: edge.to, port: "In",
       anchor: {name: "top", args: {dy: 4}},
-      connectionPoint: {name: "boundary", args: {offset: 5, sticky: true}},
+      connectionPoint: {name: "boundary", args: {offset: 5}},
     })
     .labels(labels)
     .prop("edgeData", edge)
