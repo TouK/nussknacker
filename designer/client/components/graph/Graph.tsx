@@ -488,9 +488,8 @@ export class Graph extends React.Component<Props> {
     })
   }
 
-  moveSelectedNodesRelatively(element: shapes.devs.Model, position: Position): void {
+  moveSelectedNodesRelatively(movedNodeId: string, position: Position): dia.Cell[] {
     this.redrawing = true
-    const movedNodeId = element.id.toString()
     const nodeIdsToBeMoved = without(this.props.selectionState, movedNodeId)
     const cellsToBeMoved = nodeIdsToBeMoved.map(nodeId => this.graph.getCell(nodeId))
     const {position: originalPosition} = this.findNodeInLayout(movedNodeId)
@@ -500,6 +499,7 @@ export class Graph extends React.Component<Props> {
       cell.position(originalPosition.x + offset.x, originalPosition.y + offset.y)
     })
     this.redrawing = false
+    return cellsToBeMoved
   }
 
   findNodeInLayout(nodeId: NodeId): NodePosition {
@@ -530,9 +530,19 @@ export class Graph extends React.Component<Props> {
 
   private bindNodesMoving(): void {
     this.graph.on(Events.CHANGE_POSITION, (element: dia.Cell, position: Position) => {
-      if (!this.redrawing && this.props.selectionState?.includes(element.id.toString()) && isModelElement(element)) {
-        this.moveSelectedNodesRelatively(element, position)
+      if (this.redrawing || !isModelElement(element)) {
+        return
       }
+
+      const movingCells: dia.Cell[] = [element]
+      const nodeId = element.id.toString()
+
+      if (this.props.selectionState?.includes(nodeId)) {
+        const movedNodes = this.moveSelectedNodesRelatively(nodeId, position)
+        movingCells.push(...movedNodes)
+      }
+
+      this.panAndZoom.panToCells(movingCells)
     })
   }
 }
