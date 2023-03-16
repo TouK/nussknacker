@@ -28,6 +28,7 @@ export function FiltersPart({
                 <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
                     <StatusOptionsStack
                         options={filterableValues["status"]}
+                        withArchived={false}
                     />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>

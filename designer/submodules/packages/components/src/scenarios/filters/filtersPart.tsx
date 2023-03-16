@@ -70,6 +70,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                     <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
                         <StatusOptionsStack
                             options={filterableValues["status"]}
+                            withArchived={true}
                         />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
