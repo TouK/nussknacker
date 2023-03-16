@@ -84,14 +84,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: "Build"
-        if: ${{ env.NU_DOCKER_UPDATE_LATEST == true }}
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: sbt 'release ${{ SBT_RELEASE_NEXT_VERSION }} skip-tests'
-
-      - name: "Build test"
-        run: echo ${{ github.sha }} > release.txt
 
       - name: "Push to master"
         if: ${{ env.NU_DOCKER_UPDATE_LATEST == true }}
