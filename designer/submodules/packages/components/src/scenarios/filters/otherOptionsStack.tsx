@@ -1,11 +1,13 @@
 import { useFilterContext } from "../../common";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {ScenariosFiltersModel, ScenariosFiltersModelDeployed, ScenariosFiltersModelType} from "./scenariosFiltersModel";
+import {ScenariosFiltersModel, ScenariosFiltersModelType} from "./scenariosFiltersModel";
 import {FilterListItem, FilterListItemSwitch} from "./filterListItem";
 import { OptionsStack } from "./optionsStack";
 import { Divider } from "@mui/material";
 import { some, xor } from "lodash";
+import {FiltersParams} from "./simpleOptionsStack";
+import {FilterListItemLabel} from "./filterListItemLabel";
 
 export function OtherOptionsStack(): JSX.Element {
     const { t } = useTranslation();
@@ -39,11 +41,18 @@ export function OtherOptionsStack(): JSX.Element {
     );
 }
 
-export function StatusOptionsStack(): JSX.Element {
+export interface StatusFiltersParams<V extends string = string, T = string> {
+    options?: T[];
+}
+
+export function StatusOptionsStack(props: StatusFiltersParams<string, { name: string; displayableName: string; icon?: string; tooltip?: string }>): JSX.Element {
+    const { options = [] } = props;
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
-    const filters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED", "DEPLOYED"];
-    const getDeployedFilter = () => getFilter("DEPLOYED", true);
+    const filters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED", "STATUS"];
+
+    const value = getFilter("STATUS", true);
+    const onChange = setFilter("STATUS");
 
     return (
         <OptionsStack
@@ -55,18 +64,13 @@ export function StatusOptionsStack(): JSX.Element {
                 .map(toString)}
             onChange={(v) => filters.forEach((k: keyof ScenariosFiltersModel) => setFilter(k, v))}
         >
-            <FilterListItem
-                color="default"
-                checked={getFilter("DEPLOYED", true)?.includes(ScenariosFiltersModelDeployed.DEPLOYED)}
-                onChange={() => setFilter("DEPLOYED", xor([ScenariosFiltersModelDeployed.DEPLOYED], getDeployedFilter()))}
-                label={t("table.filter.DEPLOYED", "Deployed")}
-            />
-            <FilterListItem
-                color="default"
-                checked={getFilter("DEPLOYED", true)?.includes(ScenariosFiltersModelDeployed.NOT_DEPLOYED)}
-                onChange={() => setFilter("DEPLOYED", xor([ScenariosFiltersModelDeployed.NOT_DEPLOYED], getDeployedFilter()))}
-                label={t("table.filter.NOT_DEPLOYED", "Not deployed")}
-            />
+            {options.map((option) => {
+                const isSelected = value.includes(option.name);
+                const onClick = (checked: boolean) => onChange(checked ? [...value, option.name] : value.filter((v) => v !== option.name));
+                return (
+                    <FilterListItem key={option.name} checked={isSelected} onChange={onClick} label={<FilterListItemLabel {...option} />} />
+                );
+            })}
             <Divider />
             <FilterListItemSwitch
                 checked={getFilter("ARCHIVED") === true}

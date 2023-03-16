@@ -20,14 +20,15 @@ export function FiltersPart({
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
 
-    const statusFilters: Array<keyof UsagesFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED"];
     const otherFilters: Array<keyof UsagesFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
 
     return (
         <QuickFilter<UsagesFiltersModel> isLoading={isLoading} filter="TEXT">
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-                <FilterMenu label={t("table.filter.STATUS", "Status")} count={statusFilters.filter((k) => getFilter(k)).length}>
-                    <StatusOptionsStack />
+                <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
+                    <StatusOptionsStack
+                        options={filterableValues["status"]}
+                    />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                     <SimpleOptionsStack
