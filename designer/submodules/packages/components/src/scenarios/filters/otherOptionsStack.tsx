@@ -43,10 +43,11 @@ export function OtherOptionsStack(): JSX.Element {
 
 export interface StatusFiltersParams<V extends string = string, T = string> {
     options?: T[];
+    withArchived: boolean
 }
 
 export function StatusOptionsStack(props: StatusFiltersParams<string, { name: string; displayableName: string; icon?: string; tooltip?: string }>): JSX.Element {
-    const { options = [] } = props;
+    const { options = [], withArchived } = props;
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
     const filters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED", "STATUS"];
@@ -71,12 +72,16 @@ export function StatusOptionsStack(props: StatusFiltersParams<string, { name: st
                     <FilterListItem key={option.name} checked={isSelected} onChange={onClick} label={<FilterListItemLabel {...option} />} />
                 );
             })}
-            <Divider />
-            <FilterListItemSwitch
-                checked={getFilter("ARCHIVED") === true}
-                onChange={(checked) => setFilter("ARCHIVED", checked)}
-                label={t("table.filter.ARCHIVED", "Archived")}
-            />
+            {withArchived ? (
+                <>
+                    <Divider />
+                    <FilterListItemSwitch
+                        checked={getFilter("ARCHIVED") === true}
+                        onChange={(checked) => setFilter("ARCHIVED", checked)}
+                        label={t("table.filter.ARCHIVED", "Archived")}
+                    />
+                </>
+            ) : null }
         </OptionsStack>
     );
 }
