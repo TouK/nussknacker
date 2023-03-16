@@ -51,7 +51,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
 
   test("stubbing for verification purpose should stub all sources") {
     val verificationCompiler = new VerificationFlinkProcessCompiler(scenarioWithMultipleSources, SampleConfigCreator, minimalFlinkConfig, DefaultNamespacedObjectNaming)
-    val compiledProcess = verificationCompiler.compileProcess(scenarioWithMultipleSources, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
+    val compiledProcess = verificationCompiler.compileProcess(scenarioWithMultipleSources, ProcessVersion.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.obj
     }
@@ -100,7 +100,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData) = {
     val testCompiler = new TestFlinkProcessCompiler(SampleConfigCreator, minimalFlinkConfig, ResultsCollectingListenerHolder.registerRun(identity),
       scenario, scenarioTestData, DefaultNamespacedObjectNaming)
-    testCompiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
+    testCompiler.compileProcess(scenario, ProcessVersion.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
   }
 
   object SampleConfigCreator extends BaseSampleConfigCreator[Int](List.empty) {

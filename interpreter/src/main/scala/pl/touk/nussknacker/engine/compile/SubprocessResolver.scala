@@ -59,12 +59,6 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess], 
     }
   }
 
-  def resolveInput(subprocessInput: SubprocessInput): CompilationValid[InputValidationResponse] =
-    initialSubprocessChecks(subprocessInput).map {
-      case (definition, validOutputs) =>
-        InputValidationResponse(definition.parameters.map(p => p.name -> p).toMap, validOutputs)
-    }
-
   private def resolveCanonical(idPrefix: List[String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
       case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.size > 1 =>
@@ -82,46 +76,38 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess], 
       case canonicalnode.Subprocess(subprocessInput: SubprocessInput, nextNodes) =>
 
         //subprocessNodes contain Input
-        additionalApply(initialSubprocessChecks(subprocessInput)).andThen {
-          case (definition, _) =>
-            //we resolve what follows after subprocess, and all its branches
-            val nextResolvedV = nextNodes.map { case (k, v) =>
-              resolveCanonical(idPrefix)(v).map((k, _))
-            }.toList.sequence[ValidatedWithBranches, (String, List[CanonicalNode])].map(_.toMap)
+        additionalApply(resolveInput(subprocessInput)).andThen { definition =>
+          //we resolve what follows after subprocess, and all its branches
+          val nextResolvedV = nextNodes.map { case (k, v) =>
+            resolveCanonical(idPrefix)(v).map((k, _))
+          }.toList.sequence[ValidatedWithBranches, (String, List[CanonicalNode])].map(_.toMap)
 
-            val subResolvedV = resolveCanonical(idPrefix :+ subprocessInput.id)(definition.nodes)
-            val additionalResolved = definition.additionalBranches.map(resolveCanonical(idPrefix :+ subprocessInput.id)).sequence
+          val subResolvedV = resolveCanonical(idPrefix :+ subprocessInput.id)(definition.nodes)
+          val additionalResolved = definition.additionalBranches.map(resolveCanonical(idPrefix :+ subprocessInput.id)).sequence
 
-            //we replace subprocess outputs with following nodes from parent process
-            val nexts = (nextResolvedV, subResolvedV, additionalResolved)
-              .mapN { (nodeResolved, nextResolved, additionalResolved) => (replaceCanonicalList(nodeResolved, subprocessInput.id, subprocessInput.ref.outputVariableNames), nextResolved, additionalResolved) }
-              .andThen { case (replacement, nextResolved, additionalResolved) =>
-                additionalResolved.map(replacement).sequence.andThen { resolvedAdditional =>
-                  replacement(nextResolved).mapWritten(_ ++ resolvedAdditional)
-                }
+          //we replace subprocess outputs with following nodes from parent process
+          val nexts = (nextResolvedV, subResolvedV, additionalResolved, additionalApply(definition.validOutputs(NodeId(subprocessInput.id))))
+            .mapN { (nodeResolved, nextResolved, additionalResolved, _) => (replaceCanonicalList(nodeResolved, subprocessInput.id, subprocessInput.ref.outputVariableNames), nextResolved, additionalResolved) }
+            .andThen { case (replacement, nextResolved, additionalResolved) =>
+              additionalResolved.map(replacement).sequence.andThen { resolvedAdditional =>
+                replacement(nextResolved).mapWritten(_ ++ resolvedAdditional)
               }
-            // now, this is a bit dirty trick - we pass subprocess parameter types to subprocessInput node to handle parameter types by interpreter
-            // we can't just change subprocessParams type to List[Parameter] because Parameter is not a serializable, scenario-api accessible class
-            nexts.map { replaced =>
-              val withParametersForInterpreter = subprocessInput.copy(subprocessParams = Some(definition.parameters.map(SubprocessDefinitionExtractor.toSubprocessParameter)))
-              FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(withParametersForInterpreter)) :: replaced
             }
+          // now, this is a bit dirty trick - we pass subprocess parameter types to subprocessInput node to handle parameter types by interpreter
+          // we can't just change subprocessParams type to List[Parameter] because Parameter is not a serializable, scenario-api accessible class
+          nexts.map { replaced =>
+            val withParametersForInterpreter = subprocessInput.copy(subprocessParams = Some(definition.subprocessParameters))
+            FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(withParametersForInterpreter)) :: replaced
+          }
         }
     }, NodeDataFun.nodeIdPrefix(idPrefix))
   }
 
-  //we do initial validation of existence of subprocess, its parameters and we extract all branches
-  private def initialSubprocessChecks(subprocessInput: SubprocessInput): CompilationValid[(SubprocessDefinition, Set[Output])] = {
+  def resolveInput(subprocessInput: SubprocessInput): CompilationValid[SubprocessDefinition] = {
     implicit val nodeId: NodeId = NodeId(subprocessInput.id)
     subprocesses.apply(subprocessInput.ref.id)
       .map(valid).getOrElse(invalidNel(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = nodeId.id)))
       .map(definitionExtractor.extractSubprocessDefinition)
-      .andThen { definition =>
-        val parametersPassingValidationResult = Validations.validateParameters(definition.parameters, subprocessInput.ref.parameters)
-        (definition.parametersValidationErrors, parametersPassingValidationResult, definition.validOutputs).mapN {
-          case (_, _, outputs) => (definition, outputs)
-        }
-      }
   }
 
   //we replace outputs in subprocess with part of parent process
@@ -195,7 +181,5 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess], 
   }
 
 }
-
-case class InputValidationResponse(parameters: Map[String, Parameter], outputs: Set[Output])
 
 case class Output(name: String, nonEmptyFields: Boolean)

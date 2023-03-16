@@ -11,7 +11,6 @@ import org.springframework.core.convert.support.DefaultConversionService
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.Interpreter.IOShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
@@ -24,9 +23,9 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.text.ParseException
-import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 
 class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with OptionValues {
 
@@ -80,8 +79,8 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
 
   private def interpret(process: CanonicalProcess, spelCustomConversionsProviderOpt: Option[SpelConversionsProvider], inputValue: Any) = {
     val modelData = LocalModelData(ConfigFactory.empty(), new MyProcessConfigCreator(spelCustomConversionsProviderOpt))
-    val compilerData = ProcessCompilerData.prepare(process, modelData.processWithObjectsDefinition, Seq.empty, getClass.getClassLoader,
-      ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime, CustomProcessValidatorLoader.emptyCustomProcessValidator)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
+    val compilerData = ProcessCompilerData.prepare(process, modelData.processWithObjectsDefinition, modelData.subprocessDefinitionExtractor, Seq.empty, getClass.getClassLoader,
+      ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime, CustomProcessValidatorLoader.emptyCustomProcessValidator)
     val parts = compilerData.compile().value
     val source = parts.sources.head
     val compiledNode = compilerData.subPartCompiler.compile(source.node, source.validationContext)(process.metaData).result.value

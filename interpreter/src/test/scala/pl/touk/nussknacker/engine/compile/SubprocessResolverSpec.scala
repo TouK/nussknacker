@@ -90,25 +90,6 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
     resolved.nodes.find(_.id == "sub-sub2-f1") shouldBe Symbol("defined")
   }
 
-  test("not resolve fragment with missing parameters") {
-
-    val process = ScenarioBuilder.streaming("test")
-      .source("source", "source1")
-      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "badala" -> "'makota'")
-      .emptySink("sink", "sink1")
-
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
-      List(
-        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
-    )
-
-    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
-
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(RedundantParameters(Set("badala"), "sub"), MissingParameters(Set("param"), "sub")))
-
-  }
-
   test("not resolve fragment with bad outputs") {
 
     val process = ScenarioBuilder.streaming("test")

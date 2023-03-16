@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.Applicative
-import cats.data.Validated.valid
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{invalidNel, valid}
+import cats.data.{NonEmptyList, Validated}
+import cats.implicits.catsSyntaxTuple2Semigroupal
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, InputValidationResponse, Output, SubprocessResolver}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, Output, SubprocessResolver}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
@@ -48,7 +49,7 @@ class NodeDataValidator(modelData: ModelData, subprocessResolver: SubprocessReso
       val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
-      val compiler = new NodeCompiler(modelData.processWithObjectsDefinition,
+      val compiler = new NodeCompiler(modelData.processWithObjectsDefinition, modelData.subprocessDefinitionExtractor,
         expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 
@@ -77,25 +78,23 @@ class NodeDataValidator(modelData: ModelData, subprocessResolver: SubprocessReso
                                  compiler: NodeCompiler,
                                  a: SubprocessInput)
                                 (implicit nodeId: NodeId) = {
-    subprocessResolver.resolveInput(a).map {
-      case InputValidationResponse(params, outputs) =>
-        val outputFieldsValidationErrors = outputs.collect { case Output(name, true) => name }.map { output =>
+    subprocessResolver.resolveInput(a).map { definition =>
+      val outputErrors = definition.validOutputs.andThen { outputs =>
+        val outputFieldsValidated = outputs.collect { case Output(name, true) => name }.map { output =>
           val maybeOutputName: Option[String] = a.ref.outputVariableNames.get(output)
           val outputName = Validated.fromOption(maybeOutputName, NonEmptyList.one(UnknownFragmentOutput(output, Set(a.id))))
           outputName.andThen(name => validationContext.withVariable(OutputVar.fragmentOutput(output, name), Unknown))
-        }.toList.sequence.swap.toList.flatMap(_.toList)
-        val outgoingEdgesErrors = outputs.collect {
+        }.toList.sequence
+        val outgoingEdgesValidated = outputs.map {
           case Output(name, _) if !outgoingEdges.exists(_.edgeType.contains(EdgeType.SubprocessOutput(name))) =>
-            FragmentOutputNotDefined(name, Set(a.id))
-        }
-        def getSubprocessParamDefinition(paramName: String): ValidatedNel[ProcessCompilationError, Parameter] = {
-          valid(params.getOrElse(
-            paramName,
-            // It shouldn't happen because on this stage we have parameters already validated by SubprocessResolver
-            throw new IllegalStateException(s"Missing parameter definition: $paramName for node: $a")))
-        }
-        val parametersResponse = toValidationResponse(compiler.compileSubprocessInput(a, getSubprocessParamDefinition, validationContext))
-        parametersResponse.copy(errors = parametersResponse.errors ++ outputFieldsValidationErrors ++ outgoingEdgesErrors)
+            invalidNel(FragmentOutputNotDefined(name, Set(a.id)))
+          case _ =>
+            valid(())
+        }.toList.sequence
+        (outputFieldsValidated, outgoingEdgesValidated).mapN { case (_, _) => () }
+      }.swap.map(_.toList).valueOr(_ => List.empty)
+      val parametersResponse = toValidationResponse(compiler.compileSubprocessInput(a.copy(subprocessParams = Some(definition.subprocessParameters)), validationContext))
+      parametersResponse.copy(errors = parametersResponse.errors ++ outputErrors)
     }.valueOr(errors => ValidationPerformed(errors.toList, None, None))
   }
 

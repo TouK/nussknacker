@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Invalid, Valid, invalid}
+import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
@@ -60,13 +60,14 @@ object NodeCompiler {
 }
 
 class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
+                   subprocessDefinitionExtractor: SubprocessDefinitionExtractor,
                    objectParametersExpressionCompiler: ExpressionCompiler,
                    classLoader: ClassLoader,
                    resultCollector: ResultCollector,
                    componentUseCase: ComponentUseCase) {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
-    new NodeCompiler(definitions, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, componentUseCase)
+    new NodeCompiler(definitions, subprocessDefinitionExtractor, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, componentUseCase)
   }
 
   type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
@@ -134,37 +135,23 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
   }
 
-  def compileSubprocessInputWithoutValidatorsChecking(subprocessInput: SubprocessInput, ctx: ValidationContext)
-                                                     (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
-    val definitionExtractor = new SubprocessDefinitionExtractor(_ => None, classLoader)
-    def getSubprocessParamDefinition(paramName: String): ValidatedNel[ProcessCompilationError, Parameter] = {
-      val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
-      definitionExtractor.extractParameterDefinitionWithoutComponentConfig(subParam)
-    }
-    compileSubprocessInput(subprocessInput, getSubprocessParamDefinition, ctx)
-  }
-
   def compileSubprocessInput(subprocessInput: SubprocessInput,
-                             // TODO: can this function + subprocessInput.subprocessParams be replaced with some better definition of subprocess?
-                             getSubprocessParamDefinition: String => ValidatedNel[ProcessCompilationError, Parameter],
                              ctx: ValidationContext)
                             (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
 
     val ref = subprocessInput.ref
-    val validParamDefs = ref.parameters.map(p => getSubprocessParamDefinition(p.name)).sequence
-    val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>
-      ps.map(p => (p.name, p.typ))
-    }.getOrElse(ref.parameters.map(p => (p.name, Unknown)))
+    val validParamDefs = subprocessDefinitionExtractor.extractParametersDefinition(subprocessInput)
 
     val childCtx = ctx.pushNewContext()
-    val newCtx = paramNamesWithType.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx)) {
-      case (acc, (paramName, typ)) => acc.andThen(_.withVariable(OutputVar.variable(paramName), typ))
+    val newCtx = validParamDefs.value.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx)) {
+      case (acc, paramDef) => acc.andThen(_.withVariable(OutputVar.variable(paramDef.name), paramDef.typ))
     }
-    val validParams = validParamDefs.andThen { paramDefs =>
-      objectParametersExpressionCompiler.compileEagerObjectParameters(paramDefs, ref.parameters, ctx)
-    }
+    val validParams = objectParametersExpressionCompiler.compileEagerObjectParameters(validParamDefs.value, ref.parameters, ctx)
+    val validParamsCombinedErrors = validParams.combine(
+      NonEmptyList.fromList(validParamDefs.written).map(invalid).getOrElse(valid(List.empty[compiledgraph.evaluatedparam.Parameter]))
+    )
     val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
-    NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
+    NodeCompilationResult(expressionTypingInfo, None, newCtx, validParamsCombinedErrors)
   }
 
   //expression is deprecated, will be removed in the future
