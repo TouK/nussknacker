@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {dia, shapes} from "jointjs"
+import {dia, g, shapes} from "jointjs"
 import {cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without} from "lodash"
 import React from "react"
 import {findDOMNode} from "react-dom"
@@ -542,7 +542,18 @@ export class Graph extends React.Component<Props> {
         movingCells.push(...movedNodes)
       }
 
-      this.panAndZoom.panToCells(movingCells)
+      this.panAndZoom.panToCells(movingCells, this.adjustViewport())
+    })
+  }
+
+  private viewportAdjustment: {left: number, right:number} = {left: 0, right: 0}
+  adjustViewport = (adjustment:{left?: number, right?:number} = {}) => {
+    this.viewportAdjustment = {...this.viewportAdjustment, ...adjustment}
+    const {x, y, height, width} = this.processGraphPaper.el.getBoundingClientRect()
+    return new g.Rect({
+      y, height,
+      x: x + this.viewportAdjustment.left,
+      width: width - this.viewportAdjustment.left - this.viewportAdjustment.right,
     })
   }
 }
