@@ -5,14 +5,8 @@ export interface ScenariosFiltersModel extends SortableFiltersModel {
     CATEGORY?: string[];
     ARCHIVED?: boolean;
     TYPE?: string[];
-    DEPLOYED?: string[];
     CREATED_BY?: string[];
     STATUS?: string[];
-}
-
-export enum ScenariosFiltersModelDeployed {
-    DEPLOYED = "DEPLOYED",
-    NOT_DEPLOYED = "NOT_DEPLOYED",
 }
 
 export enum ScenariosFiltersModelType {
