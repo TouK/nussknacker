@@ -112,12 +112,15 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess], 
 
   //we do initial validation of existence of subprocess, its parameters and we extract all branches
   private def initialSubprocessChecks(subprocessInput: SubprocessInput): CompilationValid[(SubprocessDefinition, Set[Output])] = {
+    implicit val nodeId: NodeId = NodeId(subprocessInput.id)
     subprocesses.apply(subprocessInput.ref.id)
-      .map(valid).getOrElse(invalidNel(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
+      .map(valid).getOrElse(invalidNel(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = nodeId.id)))
       .map(definitionExtractor.extractSubprocessDefinition)
       .andThen { definition =>
-        val parametersResult = Validations.validateParameters(definition.parameters, subprocessInput.ref.parameters)(NodeId(subprocessInput.id))
-        (parametersResult, definition.validOutputs).mapN { case (_, outputs) => (definition, outputs) }
+        val parametersPassingValidationResult = Validations.validateParameters(definition.parameters, subprocessInput.ref.parameters)
+        (definition.parametersValidationErrors, parametersPassingValidationResult, definition.validOutputs).mapN {
+          case (_, _, outputs) => (definition, outputs)
+        }
       }
   }
 

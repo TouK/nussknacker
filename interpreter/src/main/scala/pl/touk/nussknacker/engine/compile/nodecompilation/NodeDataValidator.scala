@@ -1,22 +1,20 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.Applicative
-import cats.data.Validated.{Valid, invalidNel, valid}
+import cats.data.Validated.valid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
-import pl.touk.nussknacker.engine.api.context.{OutputVar, PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, InputValidationResponse, Output, SubprocessResolver}
-import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
@@ -90,13 +88,13 @@ class NodeDataValidator(modelData: ModelData, subprocessResolver: SubprocessReso
           case Output(name, _) if !outgoingEdges.exists(_.edgeType.contains(EdgeType.SubprocessOutput(name))) =>
             FragmentOutputNotDefined(name, Set(a.id))
         }
-        def getSubprocessParamDefinition(paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
+        def getSubprocessParamDefinition(paramName: String): ValidatedNel[ProcessCompilationError, Parameter] = {
           valid(params.getOrElse(
             paramName,
             // It shouldn't happen because on this stage we have parameters already validated by SubprocessResolver
             throw new IllegalStateException(s"Missing parameter definition: $paramName for node: $a")))
         }
-        val parametersResponse = toValidationResponse(compiler.compileSubprocessInput(a.copy(subprocessParams = None), getSubprocessParamDefinition, validationContext))
+        val parametersResponse = toValidationResponse(compiler.compileSubprocessInput(a, getSubprocessParamDefinition, validationContext))
         parametersResponse.copy(errors = parametersResponse.errors ++ outputFieldsValidationErrors ++ outgoingEdgesErrors)
     }.valueOr(errors => ValidationPerformed(errors.toList, None, None))
   }

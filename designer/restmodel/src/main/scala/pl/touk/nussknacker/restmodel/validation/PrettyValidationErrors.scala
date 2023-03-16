@@ -25,7 +25,7 @@ object PrettyValidationErrors {
     error match {
       case ExpressionParserCompilationError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
         s"There is problem with expression in field $fieldName - it could not be parsed.", fieldName = fieldName)
-      case SubprocessParamClassLoadError(fieldName, refClazzName, nodeId) =>
+      case SubprocessParamClassLoadError(fieldName, refClazzName, _) =>
         node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
       case DuplicatedNodeIds(ids) => node("Two nodes cannot have same id", s"Duplicate node ids: ${ids.mkString(", ")}", errorType = NodeValidationErrorType.RenderNotAllowed)
       case ScenarioNameValidationError(message, description) => node(message, description

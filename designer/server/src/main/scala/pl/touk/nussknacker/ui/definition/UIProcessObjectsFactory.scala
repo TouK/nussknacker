@@ -109,9 +109,8 @@ object UIProcessObjectsFactory {
     val definitionExtractor = new SubprocessDefinitionExtractor(fixedComponentsConfig.get, classLoader)
     subprocessesDetails.map { details =>
       val definition = definitionExtractor.extractSubprocessDefinition(details.canonical)
-      val outputParameterNames = definition.allOutputs.map(_.name).sorted
       val objectDefinition = new ObjectDefinition(definition.parameters, Typed[java.util.Map[String, Any]], Some(List(details.category)), definition.config)
-      details.canonical.id -> FragmentObjectDefinition(objectDefinition, outputParameterNames)
+      details.canonical.id -> FragmentObjectDefinition(objectDefinition, definition.outputNames)
     }.toMap
   }
 

@@ -1,17 +1,19 @@
 package pl.touk.nussknacker.engine.definition
 
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.Id
 import cats.data.Validated.{invalid, valid}
-import cats.implicits.toFoldableOps
+import cats.data.{NonEmptyList, ValidatedNel, WriterT}
+import cats.implicits.{toFoldableOps, toTraverseOps}
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.FragmentSpecificData
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MultipleOutputsForName
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MultipleOutputsForName, SubprocessParamClassLoadError}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, Unknown}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.compile.Output
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
@@ -33,36 +35,43 @@ class SubprocessDefinitionExtractor(componentConfig: String => Option[SingleComp
         val docsUrl = subprocess.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
         val config = componentConfig(subprocess.id).getOrElse(SingleComponentConfig.zero).copy(docsUrl = docsUrl)
 
-        val parameters = subprocessParameters.map(toParameter(classLoader, config))
+        val parameters = subprocessParameters.map(toParameter(config)(_)).sequence
 
         val outputs = subprocess.collectAllNodes.collect {
           case SubprocessOutputDefinition(_, name, fields, _) => Output(name, fields.nonEmpty)
         }
 
-        new SubprocessDefinition(subprocess.id, parameters, nodes, additionalBranches, outputs, config)
+        new SubprocessDefinition(parameters, nodes, additionalBranches, outputs, config)
     }.getOrElse(throw new IllegalStateException(s"Illegal fragment structure: $subprocess"))
   }
 
-  private def toParameter(classLoader: ClassLoader, componentConfig: SingleComponentConfig)(p: SubprocessParameter): Parameter = {
+  def extractParameterDefinitionWithoutComponentConfig(subprocessParameter: SubprocessParameter)
+                                                      (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Parameter] = {
+    val validatedParameter = toParameter(SingleComponentConfig.zero)(subprocessParameter)
+    SubprocessDefinitionExtractor.toParameterValidationErrors(validatedParameter).map(_ => validatedParameter.value)
+  }
+
+  private def toParameter(componentConfig: SingleComponentConfig)(p: SubprocessParameter): WriterT[Id, List[SubprocessParamClassLoadErrorData], Parameter] = {
     val runtimeClass = p.typ.toRuntimeClass(classLoader)
-    //FIXME: currently if we cannot parse parameter class we assume it's unknown
-    val typ = runtimeClass.map(Typed(_)).getOrElse(Unknown)
-    val config = componentConfig.params.flatMap(_.get(p.name)).getOrElse(ParameterConfig.empty)
+    val paramName = p.name
+
+    runtimeClass.map(Typed(_))
+      .map(WriterT.value[Id, List[SubprocessParamClassLoadErrorData], TypingResult])
+      .getOrElse(WriterT
+        .value[Id, List[SubprocessParamClassLoadErrorData], TypingResult](Unknown)
+        .tell(List(SubprocessParamClassLoadErrorData(paramName, p.typ.refClazzName)))
+      ).map(toParameter(componentConfig, paramName, _))
+  }
+
+  private def toParameter(componentConfig: SingleComponentConfig, paramName: String, typ: typing.TypingResult) = {
+    val config = componentConfig.params.flatMap(_.get(paramName)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
     val extractedEditor = EditorExtractor.extract(parameterData, config)
-    Parameter(
-      name = p.name,
-      typ = typ,
+    Parameter.optional(paramName, typ).copy(
       editor = extractedEditor,
       validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional = true, config, extractedEditor)),
-      // TODO: ability to pick default value from gui
-      defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(parameterData, isOptional = true, config, extractedEditor)),
-      additionalVariables = Map.empty,
-      variablesToHide = Set.empty,
-      branchParam = false,
-      isLazyParameter = false,
-      scalaOptionParameter = false,
-      javaOptionalParameter = false)
+      // TODO: ability to pick a default value from gui
+      defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(parameterData, isOptional = true, config, extractedEditor)))
   }
 
 }
@@ -82,20 +91,36 @@ object SubprocessDefinitionExtractor {
     SubprocessParameter(p.name, SubprocessClazzRef(p.typ.asInstanceOf[SingleTypingResult].objType.klass.getName))
   }
 
+  private[definition] def toParameterValidationErrors(validatedParameters: WriterT[Id, List[SubprocessParamClassLoadErrorData], _])
+                                                     (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] =
+    NonEmptyList.fromList(validatedParameters.written)
+      .map(_.map(data => SubprocessParamClassLoadError(data.fieldName, data.refClazzName, nodeId.id)))
+      .map(invalid)
+      .getOrElse(valid(()))
+
 }
 
-class SubprocessDefinition(id: String,
-                           val parameters: List[Parameter],
+class SubprocessDefinition(validatedParameters: WriterT[Id, List[SubprocessParamClassLoadErrorData], List[Parameter]],
                            val nodes: List[CanonicalNode],
                            val additionalBranches: List[List[CanonicalNode]],
-                           val allOutputs: List[Output],
+                           allOutputs: List[Output],
                            val config: SingleComponentConfig) {
 
-  def validOutputs: ValidatedNel[ProcessCompilationError, Set[Output]] = {
+  def validOutputs(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Set[Output]] = {
     NonEmptyList.fromList(allOutputs.groupBy(_.name).filter(_._2.size > 1).toList) match {
-      case Some(groups) => invalid(groups.map(gr => MultipleOutputsForName(gr._1, id)))
+      case Some(groups) => invalid(groups.map(gr => MultipleOutputsForName(gr._1, nodeId.id)))
       case None => valid(allOutputs.toSet)
     }
   }
 
+  def outputNames: List[String] = allOutputs.map(_.name).sorted
+
+  // It is always a full list, potentially with fallbacks in case of validation error
+  def parameters: List[Parameter] = validatedParameters.value
+
+  def parametersValidationErrors(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] =
+    SubprocessDefinitionExtractor.toParameterValidationErrors(validatedParameters)
+
 }
+
+case class SubprocessParamClassLoadErrorData(fieldName: String, refClazzName: String)

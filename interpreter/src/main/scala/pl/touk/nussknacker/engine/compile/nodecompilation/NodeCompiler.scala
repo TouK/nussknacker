@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
-import cats.data.Validated.{Invalid, Valid, invalid, valid}
+import cats.data.Validated.{Invalid, Valid, invalid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExc
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, SubprocessDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.{DefaultExpressionId, branchParameterExpressionId}
@@ -32,8 +32,6 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import pl.touk.nussknacker.engine.{api, compiledgraph}
 import shapeless.Typeable
 import shapeless.syntax.typeable._
-
-import scala.util.{Failure, Success}
 
 object NodeCompiler {
 
@@ -136,27 +134,19 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
   }
 
-  // FIXME: Figure out if this method is really needed
   def compileSubprocessInputWithoutValidatorsChecking(subprocessInput: SubprocessInput, ctx: ValidationContext)
                                                      (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
-    // FIXME: Move to SubprocessResolver
-    def getSubprocessParamDefinitionSimple(paramName: String): ValidatedNel[PartSubGraphCompilationError, Parameter] = {
+    val definitionExtractor = new SubprocessDefinitionExtractor(_ => None, classLoader)
+    def getSubprocessParamDefinition(paramName: String): ValidatedNel[ProcessCompilationError, Parameter] = {
       val subParam = subprocessInput.subprocessParams.get.find(_.name == paramName).get
-      subParam.typ.toRuntimeClass(classLoader) match {
-        case Success(runtimeClass) =>
-          valid(Parameter.optional(paramName, Typed(runtimeClass)))
-        case Failure(_) =>
-          invalid(
-            SubprocessParamClassLoadError(paramName, subParam.typ.refClazzName, subprocessInput.id)
-          ).toValidatedNel
-      }
+      definitionExtractor.extractParameterDefinitionWithoutComponentConfig(subParam)
     }
-    compileSubprocessInput(subprocessInput, getSubprocessParamDefinitionSimple, ctx)
+    compileSubprocessInput(subprocessInput, getSubprocessParamDefinition, ctx)
   }
 
   def compileSubprocessInput(subprocessInput: SubprocessInput,
                              // TODO: can this function + subprocessInput.subprocessParams be replaced with some better definition of subprocess?
-                             getSubprocessParamDefinition: String => ValidatedNel[PartSubGraphCompilationError, Parameter],
+                             getSubprocessParamDefinition: String => ValidatedNel[ProcessCompilationError, Parameter],
                              ctx: ValidationContext)
                             (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
 
