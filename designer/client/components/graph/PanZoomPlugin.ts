@@ -19,7 +19,7 @@ export class PanZoomPlugin {
   private instance: SvgPanZoom.Instance
   private animationClassHolder: HTMLElement
 
-  constructor(paper: dia.Paper) {
+  constructor(private paper: dia.Paper) {
     this.cursorMask = new CursorMask()
     this.instance = svgPanZoom(paper.svg, {
       fit: false,
@@ -108,4 +108,39 @@ export class PanZoomPlugin {
   zoomOut = throttle((): void => {
     this.setAnimationClass({enabled: true})
     this.instance.zoomOut()
-  }, 500)}
+  }, 500)
+
+  private pan = throttle((point: { x: number, y: number }) => {
+    requestAnimationFrame(() => {
+      this.instance.panBy(point)
+    })
+  }, 16 /*~60 pleasant fps*/)
+
+  panToCells = (cells: dia.Cell[]) => {
+    const paper = this.paper
+    const viewport = paper.clientToLocalRect(paper.el.getBoundingClientRect())
+    const cellsBBox = paper.model.getCellsBBox(cells).inflate(10, 50)
+
+    if (viewport.containsRect(cellsBBox)) {
+      return
+    }
+
+    const [top, right, bottom, left] = [
+      -viewport.topLine().pointOffset(cellsBBox.topMiddle()),
+      -viewport.rightLine().pointOffset(cellsBBox.rightMiddle()),
+      viewport.bottomLine().pointOffset(cellsBBox.bottomMiddle()),
+      viewport.leftLine().pointOffset(cellsBBox.leftMiddle()),
+    ].map(offset => Math.min(20, Math.max(0, offset) / 20))
+
+    const panOffset = {
+      y: top - bottom,
+      x: left - right,
+    }
+
+    this.pan(panOffset)
+    requestAnimationFrame(() => {
+      this.panToCells(cells)
+    })
+  }
+}
+
