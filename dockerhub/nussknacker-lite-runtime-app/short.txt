@@ -1,1 +1,1 @@
-Application used by Nussknacker designer to run scenarios on Lite engine. Test
+Application used by Nussknacker designer to run scenarios on Lite engine.
