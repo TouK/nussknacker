@@ -98,7 +98,7 @@ jobs:
         run: echo "::set-output name=short::$(cat dockerhub/nussknacker/short.txt)"
 
       - name: "Dockerhub publish readme nussknacker XD"
-        if: !env.NU_DOCKER_UPDATE_LATEST
+        if: env.NU_DOCKER_UPDATE_LATEST != true
         uses: peter-evans/dockerhub-description@v3
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
