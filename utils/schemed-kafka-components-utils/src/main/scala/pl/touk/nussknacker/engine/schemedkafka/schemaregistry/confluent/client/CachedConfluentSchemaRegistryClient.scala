@@ -70,16 +70,3 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
 
 }
 
-private[client] object CachedSchemaRegistryClient {
-
-  import scala.jdk.CollectionConverters._
-
-  def apply(c: SchemaRegistryClientKafkaConfig): CCachedSchemaRegistryClient = {
-    val config = new KafkaAvroDeserializerConfig(c.kafkaProperties.asJava)
-    val urls = config.getSchemaRegistryUrls
-    val maxSchemaObject = config.getMaxSchemasPerSubject
-    val originals = config.originalsWithPrefix("")
-    val schemaProviders: List[SchemaProvider] = List(new JsonSchemaProvider(), new AvroSchemaProvider())
-    new CCachedSchemaRegistryClient(urls, maxSchemaObject, schemaProviders.asJava, originals)
-  }
-}
