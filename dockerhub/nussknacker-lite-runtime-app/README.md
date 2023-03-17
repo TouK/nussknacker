@@ -28,6 +28,8 @@ tasksCount: 2
 
 Both Kafka and schema registry can be exposed e.g. using `docker-compose-env.yml` inside [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart)
 
+Test
+
 # License
 
 This image is published under Apache License 2.0.
