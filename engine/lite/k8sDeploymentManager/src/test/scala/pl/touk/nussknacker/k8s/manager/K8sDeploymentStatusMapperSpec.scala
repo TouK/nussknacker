@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.util.ResourceLoader
 import play.api.libs.json.{Format, Json}
 import skuber.{ListResource, Pod}
 import skuber.apps.v1.Deployment
@@ -23,7 +24,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
   private val version = ProcessVersion(VersionId(4), ProcessName("AAAAA"), ProcessId(7), "admin", Some(2))
 
   private def parseResource[T](source: String)(implicit format: Format[T]): T = {
-    val value = Json.parse(IOUtils.toString(getClass.getResourceAsStream(s"/k8sResponses/$source")))
+    val value = Json.parse(ResourceLoader.load(s"/k8sResponses/$source"))
     format.reads(value).get
   }
 

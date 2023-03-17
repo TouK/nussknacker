@@ -16,6 +16,7 @@ import org.testcontainers.containers.Network
 import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.deployment.User
+import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties}
 
@@ -48,9 +49,7 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
 
   private def prepareFlinkImage(): ImageFromDockerfile = {
     List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "log4j-console.properties").foldLeft(new ImageFromDockerfile()) { case (image, file) =>
-      val clazz = getClass
-      val rezz = clazz.getResourceAsStream(s"/docker/$file")
-      val resource = IOUtils.toString(rezz)
+      val resource = ResourceLoader.load(s"/docker/$file")
 
       val flinkLibTweakCommand = ScalaMajorVersionConfig.scalaMajorVersion match {
         case "2.12" => ""

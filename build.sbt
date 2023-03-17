@@ -298,7 +298,7 @@ val ficusV = "1.4.7"
 val configV = "1.4.2"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
-val commonsIOV = "2.4"
+val commonsIOV = "2.6"
 //we want to use 5.x for lite metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc11"
@@ -869,6 +869,7 @@ lazy val commonUtils = (project in utils("utils")).
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "commons-io" % "commons-io" % commonsIOV,
         "org.slf4j" % "jul-to-slf4j" % slf4jV,
         "com.iheart" %% "ficus" % ficusV,
       )

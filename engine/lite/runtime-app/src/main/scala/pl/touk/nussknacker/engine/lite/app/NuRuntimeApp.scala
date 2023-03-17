@@ -6,11 +6,10 @@ import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.server.Directives
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
-import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
+import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, ResourceLoader, SLF4JBridgeHandlerRegistrar}
 
 import java.nio.file.Path
 import scala.concurrent.duration._
@@ -103,7 +102,7 @@ object NuRuntimeApp extends App with LazyLogging {
   }
 
   private def parseScenario(location: Path): CanonicalProcess = {
-    val scenarioString = FileUtils.readFileToString(location.toFile)
+    val scenarioString = ResourceLoader.load(location)
     logger.info(s"Running scenario: $scenarioString")
 
     val parsedScenario = ScenarioParser.parse(scenarioString)
