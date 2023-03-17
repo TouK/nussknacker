@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
@@ -21,7 +22,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import java.net.URL
 import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.io.Source
 
 class OpenAPIServiceSpec extends FixtureAnyFunSuite with BeforeAndAfterAll with Matchers with LazyLogging with PatientScalaFutures {
 
@@ -32,7 +32,7 @@ class OpenAPIServiceSpec extends FixtureAnyFunSuite with BeforeAndAfterAll with 
   type FixtureParam = EagerServiceWithStaticParametersAndReturnType
 
   def withFixture(test: OneArgTest): Outcome = {
-    val definition = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("customer-swagger.json")).mkString
+    val definition = ResourceLoader.load("/customer-swagger.json")
 
 
     val client = new DefaultAsyncHttpClient()

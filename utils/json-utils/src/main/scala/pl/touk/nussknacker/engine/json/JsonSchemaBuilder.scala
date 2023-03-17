@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.json
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
+import pl.touk.nussknacker.engine.util.ResourceLoader
 
 object JsonSchemaBuilder {
 
@@ -29,5 +30,8 @@ object JsonSchemaBuilder {
       .build()
       .asInstanceOf[T]
   }
+
+  def loadSchemaFromResource(path: String): Schema =
+    parseSchema(ResourceLoader.load(path))
 
 }

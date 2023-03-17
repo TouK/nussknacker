@@ -4,6 +4,7 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.FileUtils
 import org.asynchttpclient.DefaultAsyncHttpClient
+import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.openapi.http.backend.HttpClientConfig
 import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
@@ -41,7 +42,7 @@ class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Fu
   ): List[Validated[ServiceParseError, SwaggerService]] = {
     val discoveryUrl = openAPIsConfig.url
     val definition = if (discoveryUrl.getProtocol == "file") {
-      FileUtils.readFileToString(new File(discoveryUrl.getPath), StandardCharsets.UTF_8)
+      ResourceLoader.load(new File(discoveryUrl.getPath))
     } else {
       Await
         .result(basicRequest.get(Uri(discoveryUrl.toURI)).send(), 20 seconds)

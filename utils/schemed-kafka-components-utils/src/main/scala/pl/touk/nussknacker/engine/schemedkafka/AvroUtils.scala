@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.schemedkafka
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaUtils}
-import io.confluent.kafka.schemaregistry.client.SchemaMetadata
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderPr
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.ResourceLoader
 
 import java.io.{ByteArrayOutputStream, OutputStream}
 import java.nio.ByteBuffer
@@ -90,6 +90,9 @@ object AvroUtils extends LazyLogging {
 
   def parseSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
+
+  def loadSchemaFromResource(path: String): Schema =
+    parseSchema(ResourceLoader.load(path))
 
   def toParsedSchema(schemaType: String, schemaContent: String): ParsedSchema =
     schemaType match {

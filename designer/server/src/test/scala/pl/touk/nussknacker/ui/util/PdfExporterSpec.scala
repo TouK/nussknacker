@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessVersion
 import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestCategories, TestProcessUtil, TestProcessingTypes}
@@ -13,9 +14,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Comment, ProcessActivity}
 
 import java.io.FileOutputStream
-import java.nio.charset.StandardCharsets
 import java.time.Instant
-import scala.io.Source
 
 class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
@@ -36,7 +35,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
     val activities = ProcessActivity(comments, List())
 
-    val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svg/svgTest.svg"), StandardCharsets.UTF_8.name()).getLines().mkString("")
+    val svg: String = ResourceLoader.load("/svg/svgTest.svg")
     val exported = PdfExporter.exportToPdf(svg, details, activities)
 
     IOUtils.write(exported, new FileOutputStream("/tmp/out.pdf"))
@@ -49,7 +48,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
     val details = createDetails(displayable)
 
     val activities = ProcessActivity(List(), List())
-    val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svg/svgTest.svg"), StandardCharsets.UTF_8.name()).getLines().mkString("")
+    val svg: String = ResourceLoader.load("/svg/svgTest.svg")
     val exported = PdfExporter.exportToPdf(svg, details, activities)
 
     IOUtils.write(exported, new FileOutputStream("/tmp/empty.pdf"))
@@ -62,7 +61,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
     val details = createDetails(displayable)
 
     val activities = ProcessActivity(List(), List())
-    val svg: String = Source.fromInputStream(getClass.getResourceAsStream("/svg/unsafe.svg"), StandardCharsets.UTF_8.name()).getLines().mkString("")
+    val svg: String = ResourceLoader.load("/svg/unsafe.svg")
     val ex = intercept[Exception] {
       PdfExporter.exportToPdf(svg, details, activities)
     }
