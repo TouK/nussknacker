@@ -19,7 +19,7 @@ class CronEditorTest extends AnyFunSuite with Matchers {
 
   test("parses cron expression") {
     val expression = "new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('0 0 00 1/1 * ? *')"
-    val result = compiler.compile(Expression("spel", expression), None, ValidationContext.empty, Unknown)(NodeId(""))
+    val result = compiler.compile(Expression.spel(expression), None, ValidationContext.empty, Unknown)(NodeId(""))
     result shouldBe Symbol("valid")
   }
 

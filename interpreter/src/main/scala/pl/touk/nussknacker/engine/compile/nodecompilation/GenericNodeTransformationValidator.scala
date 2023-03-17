@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{Validated, ValidatedNel}
-import cats.implicits.toTraverseOps
+import cats.data.ValidatedNel
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, MissingParameters}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -131,7 +130,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         }
       } else {
         val (singleParam, extraNodeParamOpt) = nodeParameters.find(_.name == parameter.name).map((_, None)).getOrElse {
-          val paramToAdd = evaluatedparam.Parameter(parameter.name, Expression("spel", parameter.defaultValue.getOrElse("")))
+          val paramToAdd = evaluatedparam.Parameter(parameter.name, parameter.defaultValue.getOrElse(Expression.spel("")))
           (paramToAdd, Some(paramToAdd))
         }
         Validations.validate(parameter, singleParam).map(_ => singleParam).andThen { singleParam =>

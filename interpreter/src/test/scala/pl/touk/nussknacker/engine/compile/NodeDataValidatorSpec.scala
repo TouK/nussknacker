@@ -313,6 +313,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs, Map("fragment1" -> fragmentDef).get, outgoingEdges)(MetaData("id", StreamMetaData()))
   }
 
-  private def par(name: String, expr: String): Parameter = Parameter(name, Expression("spel", expr))
+  private def par(name: String, expr: String): Parameter = Parameter(name, Expression.spel(expr))
 
 }

@@ -32,11 +32,7 @@ object JsonDefaultExpressionDeterminer {
 
 class JsonDefaultExpressionDeterminer(handleNotSupported: Boolean) {
 
-  private implicit def asSpelExpression(expression: String): Expression =
-    Expression(
-      language = "spel",
-      expression = expression
-    )
+  private implicit def asSpelExpression(expression: String): Expression = Expression.spel(expression)
 
   private val validatedNullExpression: ValidatedNel[CustomNodeError, Option[Expression]] =
     Valid(Option(asSpelExpression("null")))

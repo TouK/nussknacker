@@ -18,5 +18,5 @@ object EvaluatedParameterPreparer {
   }
 
   private def createSpelExpressionParameter(parameter: UIParameter): Parameter =
-    Parameter(parameter.name, Expression("spel", parameter.defaultValue))
+    Parameter(parameter.name, parameter.defaultValue)
 }

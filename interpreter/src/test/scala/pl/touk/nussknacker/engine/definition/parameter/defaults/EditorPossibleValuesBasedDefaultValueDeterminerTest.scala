@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite with Matchers {
 
@@ -16,7 +17,7 @@ class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite wi
       FixedExpressionValue("expr2", "label2")
     )))
 
-    determine(fixedValuesEditor) shouldBe Some("expr1")
+    determine(fixedValuesEditor) shouldBe Some(Expression.spel("expr1"))
   }
 
   test("determine default param value from first value from fixed values editor possible values in dual mode") {
@@ -25,7 +26,7 @@ class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite wi
       FixedExpressionValue("expr2", "label2")
     )), DualEditorMode.SIMPLE))
 
-    determine(fixedValuesEditor) shouldBe Some("expr1")
+    determine(fixedValuesEditor) shouldBe Some(Expression.spel("expr1"))
   }
 
   test("not determine default param value from editors without possible values") {

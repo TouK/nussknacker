@@ -15,6 +15,7 @@ import CronEditor from "./Cron/CronEditor"
 import TextareaEditor from "./TextareaEditor"
 import JsonEditor from "./JsonEditor"
 import DualParameterEditor from "./DualParameterEditor"
+import SpelTemplateEditor from "./SpelTemplateEditor";
 
 type ValuesType = Array<string>
 export type EditorProps = {
@@ -51,7 +52,8 @@ export enum EditorType {
   CRON_EDITOR = "CronParameterEditor",
   TEXTAREA_PARAMETER_EDITOR = "TextareaParameterEditor",
   JSON_PARAMETER_EDITOR = "JsonParameterEditor",
-  SQL_PARAMETER_EDITOR = "SqlParameterEditor"
+  SQL_PARAMETER_EDITOR = "SqlParameterEditor",
+  SPEL_TEMPLATE_PARAMETER_EDITOR = "SpelTemplateParameterEditor"
 }
 
 const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
@@ -98,4 +100,5 @@ export const editors: Record<EditorType, Editor> = {
   [EditorType.TEXTAREA_PARAMETER_EDITOR]: TextareaEditor,
   [EditorType.TIME]: TimeEditor,
   [EditorType.SQL_PARAMETER_EDITOR]: SqlEditor,
+  [EditorType.SPEL_TEMPLATE_PARAMETER_EDITOR]: SpelTemplateEditor,
 }

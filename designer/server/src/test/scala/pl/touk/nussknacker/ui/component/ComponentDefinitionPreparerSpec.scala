@@ -54,7 +54,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
     edgeTypes.toSet shouldBe Set(
       NodeEdges(NodeTypeId("Split"), List(), true, false),
-      NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression("spel", "true")), SwitchDefault), true, false),
+      NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression.spel("true")), SwitchDefault), true, false),
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), false, false),
       NodeEdges(NodeTypeId("SubprocessInput", Some("sub1")), List(SubprocessOutput("out1"), SubprocessOutput("out2")), false, false)
     )
@@ -118,8 +118,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   }
 
   test("return default value defined in parameter") {
-    val defaultValue = "'fooDefault'"
-    val parameter = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValue))
+    val defaultValueExpression = Expression("fooLang", "'fooDefault'")
+    val parameter = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValueExpression))
     val definition = ProcessDefinitionBuilder.empty.withCustomStreamTransformer("fooTransformer", classOf[Object],
       CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true), parameter)
 
@@ -127,7 +127,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val transformerGroup = groups.find(_.name == ComponentGroupName("optionalEndingCustom")).value
     inside(transformerGroup.components.head.node) {
       case withParameters: WithParameters =>
-        withParameters.parameters.head.expression.expression shouldEqual defaultValue
+        withParameters.parameters.head.expression shouldEqual defaultValueExpression
     }
   }
 

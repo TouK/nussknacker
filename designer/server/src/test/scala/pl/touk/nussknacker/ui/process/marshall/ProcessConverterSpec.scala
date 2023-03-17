@@ -85,7 +85,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   test("be able to convert process ending not properly") {
     forAll(Table(
       "unexpectedEnd",
-      Filter("e", Expression("spel", "0")),
+      Filter("e", Expression.spel("0")),
       Switch("e"),
       Enricher("e", ServiceRef("ref", List()), "out"),
       Split("e")
@@ -117,7 +117,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     val process = ValidatedDisplayableProcess(
       meta.id,
       ProcessProperties(meta.typeSpecificData),
-      List(Source("s", SourceRef("sourceRef", List())), Variable("v", "test", Expression("spel", "''")), Filter("e", Expression("spel", "''"))),
+      List(Source("s", SourceRef("sourceRef", List())), Variable("v", "test", Expression.spel("''")), Filter("e", Expression.spel("''"))),
       List(Edge("s", "v", None), Edge("v", "e", None)),
       TestProcessingTypes.Streaming,
       TestCategories.Category1,

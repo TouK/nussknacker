@@ -61,7 +61,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
 
   it should "invoke migration for found scenario" in {
     val category = TestCat
-    val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression("spel", "#input == 4"))))
+    val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression.spel("#input == 4"))))
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
     val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, futureFetchingProcessRepository, processAuthorizer), readWritePermissions)

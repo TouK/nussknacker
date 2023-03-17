@@ -19,7 +19,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers {
       StreamMetaData(), Some(ProcessAdditionalFields(Some("a"), Map("field1" -> "value1")))
     ), List(
       SubprocessInputDefinition("proc1", List(SubprocessParameter("param1", SubprocessClazzRef[String]))),
-      CustomNode("id", Some("out1"), "typ1", List(Parameter("name1", Expression("spel", "11"))),
+      CustomNode("id", Some("out1"), "typ1", List(Parameter("name1", Expression.spel("11"))),
         Some(UserDefinedAdditionalNodeFields(Some("desc"), None)))
     ), List(
       Edge("from1", "to1", None)

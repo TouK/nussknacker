@@ -26,7 +26,7 @@ class SpelSecurityBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) 
 
   private val validationContext = ValidationContext(vars.mapValuesNow(Typed.fromInstance), Map.empty)
 
-  private val compiledExpression = expressionCompiler.compile(Expression(language = "spel", expression = expression),
+  private val compiledExpression = expressionCompiler.compile(Expression.spel(expression),
     None, validationContext, Unknown)(NodeId("")) match {
     case Valid(a) => a.expression
     case Invalid(e) => throw new IllegalArgumentException(s"Failed to parse: $e")

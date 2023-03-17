@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.definition
 
 import cats.data.Validated.Valid
-
-import java.time.Duration
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -13,12 +11,13 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{process, _}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{GenericNodeTransformationMethodDef, StandardObjectWithMethodDef}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
+import java.time.Duration
 import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -79,7 +78,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
 
     definition.objectDefinition.parameters should have size 1
     val parameter = definition.objectDefinition.parameters.head
-    parameter.defaultValue shouldEqual Some("'foo'")
+    parameter.defaultValue shouldEqual Some(Expression.spel("'foo'"))
   }
 
   test("default value from annotation should have higher priority than optionality") {
@@ -87,7 +86,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
 
     definition.objectDefinition.parameters should have size 1
     val parameter = definition.objectDefinition.parameters.head
-    parameter.defaultValue shouldEqual Some("'foo'")
+    parameter.defaultValue shouldEqual Some(Expression.spel("'foo'"))
   }
 
   test("extract definition with branch params") {

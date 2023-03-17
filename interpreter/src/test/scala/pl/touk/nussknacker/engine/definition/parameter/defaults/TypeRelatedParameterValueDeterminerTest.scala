@@ -8,26 +8,26 @@ import pl.touk.nussknacker.engine.definition.parameter.defaults.TypeRelatedParam
 class TypeRelatedParameterValueDeterminerTest extends AnyFunSuite with Matchers with OptionValues {
 
   test("defaults for common types") {
-    determineTypeRelatedDefaultParamValue(classOf[Int]).value shouldBe "0"
-    determineTypeRelatedDefaultParamValue(classOf[Short]).value shouldBe "0"
-    determineTypeRelatedDefaultParamValue(classOf[Long]).value shouldBe "0"
-    determineTypeRelatedDefaultParamValue(classOf[java.lang.Long]).value shouldBe "0"
-    determineTypeRelatedDefaultParamValue(classOf[java.lang.Short]).value shouldBe "0"
-    determineTypeRelatedDefaultParamValue(classOf[java.lang.Integer]).value shouldBe "0"
-    determineTypeRelatedDefaultParamValue(classOf[java.math.BigInteger]).value shouldBe "0"
+    determineTypeRelatedDefaultParamValue(None, classOf[Int]).value.expression shouldBe "0"
+    determineTypeRelatedDefaultParamValue(None, classOf[Short]).value.expression shouldBe "0"
+    determineTypeRelatedDefaultParamValue(None, classOf[Long]).value.expression shouldBe "0"
+    determineTypeRelatedDefaultParamValue(None, classOf[java.lang.Long]).value.expression shouldBe "0"
+    determineTypeRelatedDefaultParamValue(None, classOf[java.lang.Short]).value.expression shouldBe "0"
+    determineTypeRelatedDefaultParamValue(None, classOf[java.lang.Integer]).value.expression shouldBe "0"
+    determineTypeRelatedDefaultParamValue(None, classOf[java.math.BigInteger]).value.expression shouldBe "0"
 
-    determineTypeRelatedDefaultParamValue(classOf[Float]).value shouldBe "0.0"
-    determineTypeRelatedDefaultParamValue(classOf[Double]).value shouldBe "0.0"
-    determineTypeRelatedDefaultParamValue(classOf[java.lang.Float]).value shouldBe "0.0"
-    determineTypeRelatedDefaultParamValue(classOf[java.lang.Double]).value shouldBe "0.0"
-    determineTypeRelatedDefaultParamValue(classOf[java.math.BigDecimal]).value shouldBe "0.0"
+    determineTypeRelatedDefaultParamValue(None, classOf[Float]).value.expression shouldBe "0.0"
+    determineTypeRelatedDefaultParamValue(None, classOf[Double]).value.expression shouldBe "0.0"
+    determineTypeRelatedDefaultParamValue(None, classOf[java.lang.Float]).value.expression shouldBe "0.0"
+    determineTypeRelatedDefaultParamValue(None, classOf[java.lang.Double]).value.expression shouldBe "0.0"
+    determineTypeRelatedDefaultParamValue(None, classOf[java.math.BigDecimal]).value.expression shouldBe "0.0"
 
-    determineTypeRelatedDefaultParamValue(classOf[String]).value shouldBe "''"
-    determineTypeRelatedDefaultParamValue(classOf[Boolean]).value shouldBe "true"
-    determineTypeRelatedDefaultParamValue(classOf[java.util.List[_]]).value shouldBe "{}"
-    determineTypeRelatedDefaultParamValue(classOf[java.util.Map[_, _]]).value shouldBe "{:}"
+    determineTypeRelatedDefaultParamValue(None, classOf[String]).value.expression shouldBe "''"
+    determineTypeRelatedDefaultParamValue(None, classOf[Boolean]).value.expression shouldBe "true"
+    determineTypeRelatedDefaultParamValue(None, classOf[java.util.List[_]]).value.expression shouldBe "{}"
+    determineTypeRelatedDefaultParamValue(None, classOf[java.util.Map[_, _]]).value.expression shouldBe "{:}"
 
-    determineTypeRelatedDefaultParamValue(classOf[SomeClass]) shouldBe empty
+    determineTypeRelatedDefaultParamValue(None, classOf[SomeClass]) shouldBe empty
   }
 
   trait SomeClass

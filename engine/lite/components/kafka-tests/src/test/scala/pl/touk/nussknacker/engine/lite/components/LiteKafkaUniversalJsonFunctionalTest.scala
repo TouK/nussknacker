@@ -274,7 +274,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
         SinkRawEditorParamName -> "false",
-      ) ++ fieldsExpressions).mapValuesNow(Expression("spel", _))
+      ) ++ fieldsExpressions).mapValuesNow(Expression.spel)
 
       ScenarioBuilder
         .streamingLite("check json validation")
