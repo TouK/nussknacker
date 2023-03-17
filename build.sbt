@@ -461,7 +461,8 @@ lazy val devArtifacts = taskKey[List[(File, String)]]("dev artifacts")
 devArtifacts := {
   modelArtifacts.value ++ List(
     (flinkDevModel / assembly).value -> "model/devModel.jar",
-    (devPeriodicDM / assembly).value -> "managers/devPeriodicDM.jar"
+    (devPeriodicDM / assembly).value -> "managers/devPeriodicDM.jar",
+    (gptComponents / assembly).value -> "components/common/gpt.jar"
   )
 }
 
@@ -1421,6 +1422,24 @@ lazy val sqlComponents = (project in component("sql")).
     ),
   ).dependsOn(componentsUtils % Provided, componentsApi % Provided, commonUtils % Provided, requestResponseRuntime % "test,it", requestResponseComponentsUtils % "test,it", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
 
+// TODO: move into nussknacker-contrib repo?
+lazy val gptComponents = (project in component("gpt")).
+  configs(IntegrationTest).
+  settings(itSettings()).
+  settings(commonSettings).
+  settings(assemblyNoScala("gpt.jar"): _*).
+  settings(publishAssemblySettings: _*).
+  settings(
+    name := "nussknacker-gpt",
+    libraryDependencies ++= Seq(
+      "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV excludeAll (
+        ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
+      ),
+      "io.netty" % "netty-transport-native-epoll" % nettyV,
+      "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
+    ),
+  ).dependsOn(componentsApi % Provided, jsonUtils % Provided, httpUtils, liteComponentsTestkit % "it,test")
+
 lazy val flinkBaseComponents = (project in flink("components/base")).
   configs(IntegrationTest).
   settings(itSettings()).
@@ -1618,7 +1637,7 @@ lazy val modules = List[ProjectReference](
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi, flinkScalaUtils,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, designer, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
+  restmodel, listenerApi, deploymentManagerApi, designer, sqlComponents, gptComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteKafkaComponentsTests, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest,
   liteDeploymentManager, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents, liteRequestResponseComponentsTests, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit, mathUtils
