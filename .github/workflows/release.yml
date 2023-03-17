@@ -82,11 +82,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-#      - name: "Build"
-#        env:
-#          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
-#          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-#        run: sbt 'release ${{ env.SBT_RELEASE_NEXT_VERSION }} skip-tests'
+      - name: "Build"
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        run: sbt 'release ${{ env.SBT_RELEASE_NEXT_VERSION }} skip-tests'
 
       - name: "Push to master"
         if: ${{ env.NU_DOCKER_UPDATE_LATEST == true }}
