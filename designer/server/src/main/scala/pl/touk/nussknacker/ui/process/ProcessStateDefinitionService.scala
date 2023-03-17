@@ -7,20 +7,26 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.processingTypeStateDefinitions
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.net.URI
 
 class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
                                     categoryService: ProcessCategoryService) {
 
-  def fetchStateDefinitions(): List[UIStateDefinition] = {
+  def fetchStateDefinitions(implicit user: LoggedUser): List[UIStateDefinition] = {
+    val userAccessibleCategories = categoryService.getUserCategories(user)
     processingTypeStateDefinitions(typeToConfig.all)
       .groupBy { case (_, statusName, _) => statusName }
       .map { case (statusName, stateDefinitionsByName) =>
         // here we assume it is asserted that all definitions are unique
         val stateDefinition = stateDefinitionsByName.map { case (_, _, sd) => sd }.head
         val categoriesWhereStateAppears = stateDefinitionsByName
-          .flatMap { case (processingType, _, _) => categoryService.getProcessingTypeCategories(processingType) }
+          .flatMap { case (processingType, _, _) =>
+            categoryService
+              .getProcessingTypeCategories(processingType)
+              .intersect(userAccessibleCategories)
+          }
         UIStateDefinition(
           statusName,
           stateDefinition.displayableName,
@@ -29,6 +35,7 @@ class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[Pro
           categoriesWhereStateAppears
         )
       }
+      .collect { case d if d.categories.nonEmpty => d }
       .toList
   }
 }
@@ -45,7 +52,7 @@ object ProcessStateDefinitionService {
     * states with the same StatusName and different UI configurations (displayable name and icon). Here is an assertion
     * that this does not happen and each state has the same definition across all processingTypes.
     */
-  def validate(processingTypes: Map[ProcessingType, ProcessingTypeData]): Unit = {
+  def checkUnsafe(processingTypes: Map[ProcessingType, ProcessingTypeData]): Unit = {
     val countDefinitionsForName = processingTypeStateDefinitions(processingTypes)
       .groupBy { case (_, statusName, _) => statusName }
       .map { case (statusName, stateDefinitionsForOneName) =>

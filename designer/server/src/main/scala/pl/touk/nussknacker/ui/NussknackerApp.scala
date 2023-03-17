@@ -190,7 +190,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           processResolving = processResolving,
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener,
-          categoryService = processCategoryService,
           stateDefinitionService = stateDefinitionService
         ),
         new NodesResources(futureProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),

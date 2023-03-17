@@ -45,7 +45,6 @@ class ProcessesResources(
   processResolving: UIProcessResolving,
   val processAuthorizer:AuthorizeProcess,
   processChangeListener: ProcessChangeListener,
-  categoryService: ProcessCategoryService,
   stateDefinitionService: ProcessStateDefinitionService
 )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
@@ -109,7 +108,7 @@ class ProcessesResources(
         } ~ path("statusDefinitions") {
           get {
             complete {
-              fetchAllStateDefinitions
+              stateDefinitionService.fetchStateDefinitions
             }
           }
         } ~ path("processes" / "status") {
@@ -275,14 +274,6 @@ class ProcessesResources(
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS])
                                                                           (implicit user: LoggedUser): Future[BaseProcessDetails[PS]] = {
     deploymentService.getInternalProcessState(process).map(state => process.copy(state = Some(state)))
-  }
-
-  private def fetchAllStateDefinitions(implicit user: LoggedUser): List[UIStateDefinition] = {
-    val userCategories = categoryService.getUserCategories(user)
-    stateDefinitionService.fetchStateDefinitions()
-      .map(rawDefinition =>
-        rawDefinition.copy(categories = userCategories.intersect(rawDefinition.categories))
-      )
   }
 
   private def withJson(processId: ProcessId, version: VersionId)

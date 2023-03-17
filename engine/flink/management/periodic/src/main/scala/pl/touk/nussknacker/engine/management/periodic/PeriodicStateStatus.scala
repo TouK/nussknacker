@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter
 object PeriodicStateStatus {
 
   //without seconds because we do not deploy with that precision
-  private val format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+  val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
   implicit class RichLocalDateTime(ldt: LocalDateTime) {
     def pretty: String = ldt.format(format)

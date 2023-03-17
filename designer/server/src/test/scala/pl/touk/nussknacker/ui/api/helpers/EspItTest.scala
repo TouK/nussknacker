@@ -134,7 +134,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processResolving = processResolving,
     processAuthorizer = processAuthorizer,
     processChangeListener = processChangeListener,
-    categoryService = processCategoryService,
     stateDefinitionService = new ProcessStateDefinitionService(typeToConfig, processCategoryService)
   )
 

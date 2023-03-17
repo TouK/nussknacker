@@ -31,7 +31,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
     // to assert the loaded configuration is correct (fail-fast approach).
-    ProcessStateDefinitionService.validate(valueMap)
+    ProcessStateDefinitionService.checkUnsafe(valueMap)
 
     new MapBasedProcessingTypeDataProvider[ProcessingTypeData](valueMap)
   }
