@@ -132,8 +132,8 @@ export class PanZoomPlugin {
     ].map(offset => Math.min(20, Math.max(0, offset) / 20))
 
     const panOffset = {
-      y: top - bottom,
-      x: left - right,
+      y: Math.round(top - bottom),
+      x: Math.round(left - right),
     }
 
     this.pan(panOffset)
