@@ -44,8 +44,7 @@ class ProcessesResources(
   processToolbarService: ProcessToolbarService,
   processResolving: UIProcessResolving,
   val processAuthorizer:AuthorizeProcess,
-  processChangeListener: ProcessChangeListener,
-  stateDefinitionService: ProcessStateDefinitionService
+  processChangeListener: ProcessChangeListener
 )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -103,12 +102,6 @@ class ProcessesResources(
               } else {
                 validateAndReverseResolveAll(processes)
               }
-            }
-          }
-        } ~ path("statusDefinitions") {
-          get {
-            complete {
-              stateDefinitionService.fetchStateDefinitions
             }
           }
         } ~ path("processes" / "status") {

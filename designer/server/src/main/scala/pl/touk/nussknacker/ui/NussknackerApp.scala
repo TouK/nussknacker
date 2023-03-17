@@ -189,8 +189,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           processToolbarService = configProcessToolbarService,
           processResolving = processResolving,
           processAuthorizer = processAuthorizer,
-          processChangeListener = processChangeListener,
-          stateDefinitionService = stateDefinitionService
+          processChangeListener = processChangeListener
         ),
         new NodesResources(futureProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
         new ProcessesExportResources(futureProcessRepository, processActivityRepository, processResolving),
@@ -204,7 +203,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         appResources,
         new TestInfoResources(processAuthorizer, futureProcessRepository, scenarioTestService),
         new ComponentResource(componentService),
-        new AttachmentResources(new ProcessAttachmentService(AttachmentsConfig.create(resolvedConfig), processActivityRepository), futureProcessRepository, processAuthorizer)
+        new AttachmentResources(new ProcessAttachmentService(AttachmentsConfig.create(resolvedConfig), processActivityRepository), futureProcessRepository, processAuthorizer),
+        new StatusResources(stateDefinitionService),
       )
 
       val optionalRoutes = List(

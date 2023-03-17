@@ -133,8 +133,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     processToolbarService = configProcessToolbarService,
     processResolving = processResolving,
     processAuthorizer = processAuthorizer,
-    processChangeListener = processChangeListener,
-    stateDefinitionService = new ProcessStateDefinitionService(typeToConfig, processCategoryService)
+    processChangeListener = processChangeListener
   )
 
   protected val processActivityRoute = new ProcessActivityResource(processActivityRepository, futureFetchingProcessRepository, processAuthorizer)
