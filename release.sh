@@ -30,5 +30,5 @@ elif [[ "$RC" == "true" ]]; then
 else
   echo "Normal release - Updating master and dockerhub readme"
   git push origin HEAD:master -f
-  ./dockerhub/pulishReadme.sh
+  ./dockerhub/publishReadme.sh
 fi
