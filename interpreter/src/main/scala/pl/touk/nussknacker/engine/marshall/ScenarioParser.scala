@@ -4,6 +4,7 @@ import cats.data.{Validated, ValidatedNel}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.util.ResourceLoader
 
 object ScenarioParser {
 
@@ -14,6 +15,9 @@ object ScenarioParser {
   def parse(jsonString: String): ValidatedNel[String, CanonicalProcess] =
     Validated.fromEither(CirceUtil.decodeJson[Json](jsonString)).leftMap(_.getMessage).toValidatedNel[String, Json]
       .andThen(ProcessMarshaller.fromJson(_).toValidatedNel)
+
+  def loadFromResource(path: String): CanonicalProcess =
+    parseUnsafe(ResourceLoader.load(path))
 
 }
 

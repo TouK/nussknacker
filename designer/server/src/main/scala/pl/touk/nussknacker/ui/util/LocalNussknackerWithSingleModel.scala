@@ -13,6 +13,7 @@ import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitia
 import sttp.client3.SttpBackend
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
@@ -67,7 +68,7 @@ object LocalNussknackerWithSingleModel  {
         |    isAdmin: true
         |  }
         |]
-        |""".stripMargin)
+        |""".stripMargin, StandardCharsets.UTF_8)
     file.deleteOnExit()
     file
   }

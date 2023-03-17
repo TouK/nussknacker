@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.flink.test
 
 import cats.data.NonEmptyList
 import cats.implicits.toFunctorOps
-import io.circe.Decoder.Result
+
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, HCursor, Json, Printer}
 import io.circe.syntax._
-import org.apache.commons.io.{FileUtils, IOUtils}
+import org.apache.commons.io.FileUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.Inside
@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import java.io.File
 import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.util.ResourceLoader
 
 trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
 
@@ -63,7 +64,7 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
       FileUtils.write(new File(s"/tmp/${getClass.getSimpleName}-result.json"), encode(types), StandardCharsets.UTF_8)
     }
 
-    val parsed =  parse(IOUtils.toString(getClass.getResourceAsStream(outputResource))).toOption.get
+    val parsed =  parse(ResourceLoader.load(outputResource)).toOption.get
     val decoded = decode(parsed)
     checkGeneratedClasses(types, decoded)
   }

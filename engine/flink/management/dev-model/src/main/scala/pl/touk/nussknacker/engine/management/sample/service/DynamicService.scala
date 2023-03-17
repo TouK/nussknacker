@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
+import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Properties
@@ -30,7 +31,7 @@ class DynamicService extends EagerServiceWithStaticParametersAndReturnType {
   //we load parameters only *once* per service creation
   override val parameters: List[Parameter] = {
     val paramNames = if (fileWithDefinition.exists()) {
-      FileUtils.readLines(fileWithDefinition).asScala.toList
+      FileUtils.readLines(fileWithDefinition, StandardCharsets.UTF_8).asScala.toList
     } else Nil
     paramNames.map(name => Parameter[String](name).copy(isLazyParameter = true))
   }

@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.internal.{Az
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryClientFactoryWithRegistration, SchemaRegistryClientWithRegistration, SchemaRegistryError, SchemaRegistryUnknownError, SchemaTopicError, SchemaVersionError, SchemaWithMetadata}
 import reactor.core.publisher.Mono
 
+import java.nio.charset.StandardCharsets
 import scala.compat.java8.FunctionConverters._
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
@@ -87,7 +88,7 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
 
   private def toSchemaWithMetadata(response: SchemasGetByIdResponse) = {
     val schemaId = SchemaId.fromString(response.getDeserializedHeaders.getSchemaId)
-    SchemaWithMetadata(new AvroSchema(IOUtils.toString(response.getValue)), schemaId)
+    SchemaWithMetadata(new AvroSchema(IOUtils.toString(response.getValue, StandardCharsets.UTF_8)), schemaId)
   }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] = {

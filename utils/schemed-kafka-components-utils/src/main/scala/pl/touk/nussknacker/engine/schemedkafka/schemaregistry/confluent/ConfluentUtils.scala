@@ -9,6 +9,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import org.apache.kafka.common.errors.SerializationException
 import org.everit.json.schema.{Schema => EveritSchema}
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaWithMetadata}
 
@@ -42,8 +43,14 @@ object ConfluentUtils extends LazyLogging {
     SchemaWithMetadata.fromRawSchema(schemaMetadata.getSchemaType, schemaMetadata.getSchema, SchemaId.fromInt(schemaMetadata.getId))
   }
 
+  def loadAvroSchemaFromResource(path: String): AvroSchema =
+    convertToAvroSchema(AvroUtils.loadSchemaFromResource(path))
+
   def convertToAvroSchema(schema: Schema, version: Option[Int] = None): AvroSchema =
     version.map(new AvroSchema(schema, _)).getOrElse(new AvroSchema(schema))
+
+  def loadJsonSchemaFromResource(path: String): JsonSchema =
+    convertToJsonSchema(JsonSchemaBuilder.loadSchemaFromResource(path))
 
   def convertToJsonSchema(schema: EveritSchema, version: Option[Int] = None): JsonSchema =
     version.map(new JsonSchema(schema, _)).getOrElse(new JsonSchema(schema))
