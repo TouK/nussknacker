@@ -93,7 +93,7 @@ jobs:
         run: git push origin HEAD:master
 
       - name: "Read nussknacker short description from file"
-        if: env.NU_DOCKER_UPDATE_LATEST == false
+        if: env.NU_DOCKER_UPDATE_LATEST != true
         id: short_nu
         run: echo "::set-output name=short::$(cat dockerhub/nussknacker/short.txt)"
 
@@ -108,12 +108,12 @@ jobs:
           readme-filepath: "dockerhub/nussknacker/README.md"
 
       - name: "Read nussknacker-lite-runtime-app short description from file"
-        if: ${{ env.NU_DOCKER_UPDATE_LATEST == false }}
+        if: env.NU_DOCKER_UPDATE_LATEST != true
         id: short_nu_lite
         run: echo "::set-output name=short::$(cat dockerhub/nussknacker-lite-runtime-app/short.txt)"
 
       - name: "Dockerhub publish readme nussknacker-lite-runtime-app"
-        if: ${{ env.NU_DOCKER_UPDATE_LATEST == false }}
+        if: env.NU_DOCKER_UPDATE_LATEST != true
         uses: peter-evans/dockerhub-description@v3
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
