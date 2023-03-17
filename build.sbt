@@ -95,11 +95,6 @@ lazy val publishSettings = Seq(
   },
   organization := "pl.touk.nussknacker",
   homepage := Some(url(s"https://github.com/touk/nussknacker")),
-  // This didn't work with GitHub Actions release. Without this credentials are taken from env properly.
-  //  credentials := nexusHostFromProps.map(host => Credentials("Sonatype Nexus Repository Manager",
-  //    host, propOrEnv("SONATYPE_USERNAME", "touk"), propOrEnv("SONATYPE_PASSWORD", null))
-  //    // otherwise ~/.sbt/1.0/sonatype.sbt will be used
-  //  ).toSeq
 )
 
 def modelMergeStrategy: String => MergeStrategy = {
