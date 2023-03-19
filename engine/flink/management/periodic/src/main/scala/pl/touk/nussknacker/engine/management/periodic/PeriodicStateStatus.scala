@@ -11,10 +11,10 @@ import java.time.format.DateTimeFormatter
 object PeriodicStateStatus {
 
   //without seconds because we do not deploy with that precision
-  val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+  val Format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
   implicit class RichLocalDateTime(ldt: LocalDateTime) {
-    def pretty: String = ldt.format(format)
+    def pretty: String = ldt.format(Format)
   }
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {

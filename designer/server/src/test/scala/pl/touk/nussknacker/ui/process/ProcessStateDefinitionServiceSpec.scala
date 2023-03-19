@@ -14,12 +14,25 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2, TestCat, TestCat2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
-import pl.touk.nussknacker.ui.process.ProcessStateDefinitionServiceSpec.{createStateDefinitionManager, testStateDefinitions}
 import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
+
+  private val categoryConfig = ConfigFactory.parseString(
+    s"""
+       |{
+       |  categoriesConfig: {
+       |    "$Category1": "$Streaming",
+       |    "$Category2": "$Streaming",
+       |    "$TestCat": "$Fraud",
+       |    "$TestCat2": "$Fraud"
+       |  }
+       |}
+       |""".stripMargin)
+
+  private val categoryService = new ConfigProcessCategoryService(categoryConfig)
 
   test("should fetch state definitions when definitions with the same name are unique") {
     val streamingProcessStateDefinitionManager = createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_STREAMING" -> "Streaming"))
@@ -105,31 +118,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     }.getMessage should include("State definitions are not unique")
   }
 
-}
-
-object ProcessStateDefinitionServiceSpec {
-
-  private val categoryConfig = ConfigFactory.parseString(
-    s"""
-       |{
-       |  categoriesConfig: {
-       |    "$Category1": "$Streaming",
-       |    "$Category2": "$Streaming",
-       |    "$TestCat": "$Fraud",
-       |    "$TestCat2": "$Fraud"
-       |  }
-       |}
-       |""".stripMargin)
-
-  private val categoryService = new ConfigProcessCategoryService(categoryConfig)
-
-  private val emptyStateDefinitionManager = new ProcessStateDefinitionManager {
-    override def stateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty
-    override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
-    override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus = FailedStateStatus("dummy")
-  }
-
-  def createStateDefinitionManager(definitions: Map[String, String]) = new OverridingProcessStateDefinitionManager(
+  private def createStateDefinitionManager(definitions: Map[String, String]) = new OverridingProcessStateDefinitionManager(
     customStateDefinitions = definitions.map { case (name, displayableName) =>
       name -> StateDefinitionDetails(
         displayableName = displayableName, icon = None, tooltip = None, description = Some(s"Description for ${displayableName}")
@@ -138,11 +127,17 @@ object ProcessStateDefinitionServiceSpec {
     delegate = emptyStateDefinitionManager
   )
 
-  def testStateDefinitions(user: LoggedUser, streamingProcessStateDefinitionManager: OverridingProcessStateDefinitionManager, fraudProcessStateDefinitionManager: OverridingProcessStateDefinitionManager): List[UIStateDefinition] = {
+  private def testStateDefinitions(user: LoggedUser, streamingProcessStateDefinitionManager: OverridingProcessStateDefinitionManager, fraudProcessStateDefinitionManager: OverridingProcessStateDefinitionManager): List[UIStateDefinition] = {
     val typeToConfig = processingTypeDataProvider(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
     val service = new ProcessStateDefinitionService(typeToConfig, categoryService)
     ProcessStateDefinitionService.checkUnsafe(typeToConfig.all)
     service.fetchStateDefinitions(user)
+  }
+
+  private val emptyStateDefinitionManager = new ProcessStateDefinitionManager {
+    override def stateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty
+    override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
+    override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus = FailedStateStatus("dummy")
   }
 
   private def processingTypeDataProvider(streaming: ProcessStateDefinitionManager,
