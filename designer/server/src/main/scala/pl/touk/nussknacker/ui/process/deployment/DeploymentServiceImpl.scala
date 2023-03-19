@@ -271,7 +271,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName}: ${e.getMessage}", e)
         WithDataFreshnessStatus(
-          Some(SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.FailedToGet)),
+          Some(SimpleProcessStateDefinitionManager.errorFailedToGet),
           cached = false)
     }
 

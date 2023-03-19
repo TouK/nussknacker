@@ -27,6 +27,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   which provide the same interface as the previous one, with only method name changed.
   Especially, when you use 'PeriodicDeploymentManagerProvider', `delegate` should already return `DeploymentManager` wrapped by caching mechanism.
 * [#4131](https://github.com/TouK/nussknacker/pull/4131) `Parameter.defaultValue` now holds `Option[Expression]` instead of `Option[String]`. You have to wrap a `String` with `Expression.spel()`
+* [#4132](https://github.com/TouK/nussknacker/pull/4132) 
+  * Within the base set of statuses used in Embedded, Flink, K8 and Periodic mode (`SimpleStateStatus`), statuses `Failing`, `Failed`, `Error`, `Warning`, `FailedToGet` and `MulipleJobsRunning`
+    are replaced by one `ProblemStateStatus` which is parametrized by specific message. `ProblemStateStatus` provides several builder methods, one for each corresponding removed state.
+    Those builders allow to preserve the exact moments when each state appears in the scenario lifecycle. 
+  * Displayed tooltip and description of `ProblemStateStatus` have the same value. 
+  * Removed `SimpleStateStatus.Undefined`
+  * Parameter `delegate` in `OverridingProcessStateDefinitionManager` now has no default value. For clarity it should be provided explicitly.
 
 ### Other changes
 

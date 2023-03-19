@@ -7,7 +7,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionType, ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
-import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -54,11 +54,6 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   private val listener = new TestProcessChangeListener
 
   private val deploymentService = new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, TestFactory.scenarioResolver, listener)
-
-  val newProcessPreparer = new NewProcessPreparer(
-    mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
-    mapProcessingTypeDataProvider("streaming" -> Map.empty)
-  )
 
   test("should return state correctly when state is deployed") {
     val processName: ProcessName = generateProcessName
@@ -203,10 +198,11 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Warning
-      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
+      val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
+      state.status shouldBe expectedStatus
+      state.icon shouldBe Some(ProblemStateStatus.icon)
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(true))
+      state.description shouldBe Some(expectedStatus.description)
     }
   }
 
@@ -217,10 +213,11 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Warning
-      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
+      val expectedStatus = ProblemStateStatus.shouldNotBeRunning(false)
+      state.status shouldBe expectedStatus
+      state.icon shouldBe Some(ProblemStateStatus.icon)
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(SimpleProcessStateDefinitionManager.shouldNotBeRunningMessage(false))
+      state.description shouldBe Some(expectedStatus.description)
     }
   }
 
@@ -231,10 +228,11 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringCancel) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Warning
-      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.notDeployedWarningIcon)
+      val expectedStatus = ProblemStateStatus.processWithoutAction
+      state.status shouldBe expectedStatus
+      state.icon shouldBe Some(ProblemStateStatus.icon)
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
+      state.description shouldBe Some(expectedStatus.description)
     }
   }
 
@@ -256,9 +254,10 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Finished) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Warning
+      val expectedStatus = ProblemStateStatus.processWithoutAction
+      state.status shouldBe expectedStatus
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(SimpleProcessStateDefinitionManager.processWithoutActionMessage)
+      state.description shouldBe Some(expectedStatus.description)
     }
   }
 
@@ -271,9 +270,10 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessState(processName, Some(state)) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Warning
+      val expectedStatus = ProblemStateStatus.processWithoutAction
+      state.status shouldBe expectedStatus
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some("Scenario state error - no actions found!")
+      state.description shouldBe Some(expectedStatus.description)
     }
   }
 
@@ -299,10 +299,11 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Error
-      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
+      val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
+      state.status shouldBe expectedStatus
+      state.icon shouldBe Some(ProblemStateStatus.icon)
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription)
+      state.description shouldBe Some(expectedStatus.description)
     }
   }
 
@@ -313,25 +314,27 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withEmptyProcessState(processName) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Error
-      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
+      val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
+      state.status shouldBe expectedStatus
+      state.icon shouldBe Some(ProblemStateStatus.icon)
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription)
+      state.description shouldBe Some(expectedStatus.description)
     }
   }
 
   test("Should return error state when state is running and process is deployed with mismatch versions") {
     val processName: ProcessName = generateProcessName
     val id =  prepareDeployedProcess(processName).dbioActionValues
-    val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
+    val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "other", modelVersion = None))
 
     deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.Running, version) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Error
-      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
+      val expectedStatus = ProblemStateStatus.mismatchDeployedVersion(VersionId(2L), VersionId(1L), "admin")
+      state.status shouldBe expectedStatus
+      state.icon shouldBe Some(ProblemStateStatus.icon)
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(SimpleProcessStateDefinitionManager.mismatchDeployedVersionDescription)
+      state.description shouldBe Some(expectedStatus.description)
     }
   }
 
@@ -340,10 +343,11 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id =  prepareDeployedProcess(processName).dbioActionValues
     val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
-    deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.Failed, version) {
+    // FIXME: doesnt check recover from failed verifications ???
+    deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.failed, version) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Failed
+      state.status shouldBe ProblemStateStatus.failed
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     }
   }
@@ -355,10 +359,11 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.Running, Option.empty) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Warning
-      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployWarningIcon)
+      val expectedStatus = ProblemStateStatus.missingDeployedVersion(VersionId(1L), "admin")
+      state.status shouldBe expectedStatus
+      state.icon shouldBe Some(ProblemStateStatus.icon)
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(SimpleProcessStateDefinitionManager.missingDeployedVersionDescription)
+      state.description shouldBe Some(expectedStatus.description)
     }
   }
 
@@ -366,13 +371,15 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id =  prepareDeployedProcess(processName).dbioActionValues
 
-    deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.FailedToGet, Option.empty) {
+    // FIXME: doesnt check recover from failed future of findJobStatus ???
+    deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.failedToGet, Option.empty) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Error
-      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.deployFailedIcon)
+      val expectedStatus = ProblemStateStatus.failedToGet
+      state.status shouldBe expectedStatus
+      state.icon shouldBe Some(ProblemStateStatus.icon)
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(SimpleProcessStateDefinitionManager.shouldBeRunningDescription)
+      state.description shouldBe Some(expectedStatus.description)
     }
   }
 
@@ -442,8 +449,9 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe SimpleStateStatus.Warning
-      state.icon shouldBe Some(SimpleProcessStateDefinitionManager.stoppingWarningIcon)
+      val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
+      state.status shouldBe expectedStatus
+      state.icon shouldBe Some(ProblemStateStatus.icon)
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     }
   }

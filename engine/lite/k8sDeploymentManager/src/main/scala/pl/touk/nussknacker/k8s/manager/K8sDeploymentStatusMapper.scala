@@ -3,6 +3,7 @@ package pl.touk.nussknacker.k8s.manager
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper.{availableCondition, crashLoopBackOffReason, newReplicaSetAvailable, progressingCondition, replicaFailureCondition, trueConditionStatus}
@@ -31,9 +32,7 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
     deployments match {
       case Nil => None
       case one :: Nil => Some(status(one, pods))
-      case duplicates =>
-        val errors = List(s"Expected one deployment, instead: ${duplicates.map(_.metadata.name).mkString(", ")}")
-        Some(definitionManager.processState(K8sStateStatus.MultipleJobsRunning, errors = errors))
+      case duplicates => Some(K8sProcessStateDefinitionManager.errorMultipleJobsRunning(duplicates))
     }
   }
 
@@ -57,8 +56,8 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
         logger.debug(s"Some containers are in waiting state with CrashLoopBackOff reason - returning Restarting status. Pods: $pods")
         (SimpleStateStatus.Restarting, None, Nil)
       case (_, Some(progressing), _) if isTrue(progressing) => (SimpleStateStatus.DuringDeploy, None, Nil)
-      case (_, _, Some(replicaFailure)) if isTrue(replicaFailure) => (SimpleStateStatus.Failed, None, replicaFailure.message.toList)
-      case (a, b, _) => (SimpleStateStatus.Failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)
+      case (_, _, Some(replicaFailure)) if isTrue(replicaFailure) => (ProblemStateStatus.failed, None, replicaFailure.message.toList)
+      case (a, b, _) => (ProblemStateStatus.failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)
     }
   }
 

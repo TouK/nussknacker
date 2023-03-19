@@ -137,8 +137,8 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
   override def customActions: List[CustomAction] = {
     import SimpleStateStatus._
     List(
-      CustomAction(name = "hello", allowedStateStatusNames = List(Warning.name, NotDeployed.name)),
-      CustomAction(name = "not-implemented", allowedStateStatusNames = List(Warning.name, NotDeployed.name)),
+      CustomAction(name = "hello", allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)),
+      CustomAction(name = "not-implemented", allowedStateStatusNames = List(ProblemStateStatus.name, NotDeployed.name)),
       CustomAction(name = "invalid-status", allowedStateStatusNames = Nil)
     )
   }

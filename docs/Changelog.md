@@ -33,6 +33,8 @@
   On the other hand, the scenario editor presented state based on engine (e.g. Flink) state.
   After the change, in all places the state is based on engine (e.g. Flink) state - in some places like scenario list, it is cached.
 * [#4131](https://github.com/TouK/nussknacker/pull/4131) Support for components using other languages than SpEL, added basic support for SpEL in template mode
+* [#4132](https://github.com/TouK/nussknacker/pull/4132) Combine statuses Failing, Failed, Error, Warning, FailedToGet and MulipleJobsRunning into one status that represents a "Problem".
+
 
 1.8.1 (28 Feb 2023)
 ------------------------

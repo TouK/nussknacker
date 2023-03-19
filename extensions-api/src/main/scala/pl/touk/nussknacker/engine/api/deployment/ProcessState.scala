@@ -49,6 +49,8 @@ object ProcessActionType extends Enumeration {
   val Archive: Value = Value("ARCHIVE")
   val UnArchive: Value = Value("UNARCHIVE")
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
+
+  val defaultActions: List[ProcessActionType] = Nil
 }
 
 object ProcessActionState extends Enumeration {

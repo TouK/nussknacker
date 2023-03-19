@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
@@ -135,7 +136,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
     val state = f.periodicDeploymentManager.getProcessState(processName).futureValue.value
 
     val status = state.value.status
-    status shouldBe SimpleStateStatus.Failed
+    status shouldBe ProblemStateStatus.failed
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
 
@@ -186,21 +187,21 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
   test("should get status of failed job") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
 
     val state = f.periodicDeploymentManager.getProcessState(processName).futureValue.value
 
     val status = state.value.status
-    status shouldBe SimpleStateStatus.Failed
+    status shouldBe ProblemStateStatus.failed
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
 
   test("should redeploy failed scenario") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
     val failedProcessState = f.periodicDeploymentManager.getProcessState(processName).futureValue.value.value
-    failedProcessState.status shouldBe FlinkStateStatus.Failed
+    failedProcessState.status shouldBe ProblemStateStatus.failed
     failedProcessState.allowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None).futureValue
@@ -251,12 +252,12 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
   test("should cancel failed job after RescheduleActor handles finished") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
 
     //this one is cyclically called by RescheduleActor
     f.periodicProcessService.handleFinished.futureValue
 
-    f.periodicDeploymentManager.getProcessState(processName).futureValue.value.value.status shouldBe SimpleStateStatus.Failed
+    f.periodicDeploymentManager.getProcessState(processName).futureValue.value.value.status shouldBe ProblemStateStatus.failed
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
     f.repository.processEntities.loneElement.active shouldBe true
 
@@ -270,7 +271,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
   test("should reschedule failed job after RescheduleActor handles finished when configured") {
     val f = new Fixture(executionConfig = PeriodicExecutionConfig(rescheduleOnFailure = true))
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
 
     //this one is cyclically called by RescheduleActor
     f.periodicProcessService.handleFinished.futureValue
@@ -284,7 +285,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
   test("should cancel failed job before RescheduleActor handles finished") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
 
     f.periodicDeploymentManager.cancel(processName, User("test", "Tester")).futureValue
 
@@ -296,7 +297,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
   test("should cancel failed scenario after disappeared from Flink console") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
 
     //this one is cyclically called by RescheduleActor
     f.periodicProcessService.handleFinished.futureValue
@@ -304,7 +305,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
     //after some time Flink stops returning job status
     f.delegateDeploymentManagerStub.jobStatus = None
 
-    f.periodicDeploymentManager.getProcessState(processName).futureValue.value.value.status shouldBe SimpleStateStatus.Failed
+    f.periodicDeploymentManager.getProcessState(processName).futureValue.value.value.status shouldBe ProblemStateStatus.failed
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
     f.repository.processEntities.loneElement.active shouldBe true
 

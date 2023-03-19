@@ -5,6 +5,7 @@ import org.apache.flink.api.common.JobStatus
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -35,14 +36,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
  */
   override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = withJobOverview(name)(
     whenNone = Future.successful(None),
-    whenDuplicates = duplicates => Future.successful(Some(processStateDefinitionManager.processState(
-      //we cannot have e.g. Failed here as we don't want to allow more jobs
-      FlinkStateStatus.MultipleJobsRunning,
-      Some(ExternalDeploymentId(duplicates.head.jid)),
-      version = Option.empty,
-      attributes = Option.empty,
-      startTime = Some(duplicates.head.`start-time`),
-      errors = List(s"Expected one job, instead: ${duplicates.map(job => s"${job.jid} - ${job.state}").mkString(", ")}"))
+    //we cannot have e.g. Failed here as we don't want to allow more jobs
+    whenDuplicates = duplicates => Future.successful(Some(
+      FlinkProcessStateDefinitionManager.errorMultipleJobsRunning(duplicates)
     )),
     whenSingle = job => withVersion(job.jid, name).map { version =>
       //TODO: return error when there's no correct version in process
@@ -94,8 +90,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
       case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
       //The job is not technically running, but should be in a moment
       case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
-      case JobStatus.FAILING => FlinkStateStatus.Failing
-      case JobStatus.FAILED => FlinkStateStatus.Failed
+      case JobStatus.FAILING => ProblemStateStatus.failed // redeploy allowed, handle with restartStrategy
+      case JobStatus.FAILED => ProblemStateStatus.failed // redeploy allowed, handle with restartStrategy
       case _ => throw new IllegalStateException() // todo: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
     }
 

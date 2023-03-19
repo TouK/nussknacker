@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -155,7 +156,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
     def createFailedProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
       processStateDefinitionManager.processState(
-        status = SimpleStateStatus.Failed,
+        status = ProblemStateStatus.failed,
         Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
         startTime = Option.empty,
