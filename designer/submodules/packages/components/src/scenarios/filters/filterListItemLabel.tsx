@@ -20,9 +20,9 @@ export function FilterListItemLabel({ name, displayableName, icon, tooltip }: { 
     }, [name, t]);
 
     return icon ? (
-        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-            <span>{label}</span>
+        <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-start">
             <NuIcon title={tooltip} src={icon} sx={{ fontSize: "1.2em", color: "inherit" }} />
+            <span>{label}</span>
         </Stack>
     ) : (
         <>{label}</>
