@@ -601,6 +601,8 @@ lazy val flinkDevModel = (project in flink("management/dev-model")).
   ).
   dependsOn(flinkSchemedKafkaComponentsUtils,
     flinkComponentsUtils % Provided,
+    // We use some components for testing with embedded engine, because of that we need dependency to this api
+    liteComponentsApi,
     componentsUtils,
     //TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
     interpreter % "provided",
@@ -1440,7 +1442,9 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-actor" % akkaV,
-        "com.softwaremill.sttp.client3" %% "core" % sttpV
+        "com.softwaremill.sttp.client3" %% "core" % sttpV,
+        "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
+        "org.scalatestplus" %% "mockito-4-6" % scalaTestPlusV % "test"
       )
     }
   )

@@ -48,20 +48,23 @@ trait SourceFactory extends Serializable with Component
 object SourceFactory {
 
   def noParam(source: Source, inputType: TypingResult): SourceFactory =
-    NoParamSourceFactory(source, inputType)
+    NoParamSourceFactory(_ => source, inputType)
 
   def noParam[T: TypeTag](source: Source)(implicit ev: T =:!= Nothing): SourceFactory =
-    NoParamSourceFactory(source, Typed.fromDetailedType[T])
+    NoParamSourceFactory(_ => source, Typed.fromDetailedType[T])
+
+  def noParam[T: TypeTag](createSource: NodeId => Source)(implicit ev: T =:!= Nothing): SourceFactory =
+    NoParamSourceFactory(createSource, Typed.fromDetailedType[T])
 
   def noParamFromClassTag[T: ClassTag](source: Source)(implicit ev: T =:!= Nothing): SourceFactory =
-    NoParamSourceFactory(source, Typed.apply[T])
+    NoParamSourceFactory(_ => source, Typed.apply[T])
 
-  case class NoParamSourceFactory(source: Source, inputType: TypingResult) extends SourceFactory {
+  case class NoParamSourceFactory(createSource: NodeId => Source, inputType: TypingResult) extends SourceFactory {
 
     @MethodToInvoke
     def create()(implicit nodeId: NodeId): ContextTransformation = ContextTransformation
       .definedBy(vc => vc.withVariable(VariableConstants.InputVariableName, inputType, None))
-      .implementedBy(source)
+      .implementedBy(createSource(nodeId))
   }
 
 }

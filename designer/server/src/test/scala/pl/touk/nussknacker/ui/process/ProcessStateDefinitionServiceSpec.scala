@@ -137,7 +137,6 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   private val emptyStateDefinitionManager = new ProcessStateDefinitionManager {
     override def stateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty
     override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
-    override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus = FailedStateStatus("dummy")
   }
 
   private def processingTypeDataProvider(streaming: ProcessStateDefinitionManager,

@@ -1,5 +1,4 @@
 
-
 # Migration guide
 
 To see the biggest differences please consult the [changelog](Changelog.md).
@@ -19,6 +18,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     from corresponding state-definition-managers (see example `FlinkProcessStateDefinitionManager`).
   * Type `CustomStateStatus.name` renamed to `StatusName`
   * `ProcessResources` exposes new endpoint `/api/procecesses/statusDefinitions`
+* [#4104](https://github.com/TouK/nussknacker/pull/4104) `DeploymentManager.findJobStatus` was renamed to `getProcessState`. New `DataFreshnessPolicy`
+  parameter was added. Returned type was changed to `WithDataFreshnessStatus[T]` where `T` is the previous value and `cached: Boolean` is additional
+  information that should be provided.
+  If you provide `DeploymentManager` which communicate remotely with some service, and you want to use standard build-in caching for `ProcessState`,
+  wrap your `DeploymentManager` using `CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded` in your `DeploymentManagerProvider`.
+  Thanks to that, caching will be handled as expected, and your `DeploymentManager` just should extend `AlwaysFreshProcessState`
+  which provide the same interface as the previous one, with only method name changed.
+  Especially, when you use 'PeriodicDeploymentManagerProvider', `delegate` should already return `DeploymentManager` wrapped by caching mechanism.
 
 ### Other changes
 

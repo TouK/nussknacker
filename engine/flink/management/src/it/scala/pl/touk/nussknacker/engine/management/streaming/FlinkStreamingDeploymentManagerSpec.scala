@@ -5,6 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
@@ -142,8 +143,8 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
       val savepointPath = deploymentManager.stop(ProcessName(processId), savepointDir = None, user = userToAct).map(_.path)
       eventually {
-        val status = deploymentManager.findJobStatus(ProcessName(processId)).futureValue
-        status.map(_.status) shouldBe Some(FlinkStateStatus.Finished)
+        val status = deploymentManager.getProcessState(ProcessName(processId)).futureValue
+        status.value.map(_.status) shouldBe Some(FlinkStateStatus.Finished)
       }
 
       deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
@@ -212,5 +213,5 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
   }
 
   private def processVersion(processId: ProcessName): Option[ProcessVersion] =
-    deploymentManager.findJobStatus(processId).futureValue.flatMap(_.version)
+    deploymentManager.getProcessState(processId).futureValue.value.flatMap(_.version)
 }

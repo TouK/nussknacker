@@ -175,7 +175,7 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
     }
   }
 
-  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
+  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
       deployments <- k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
@@ -249,9 +249,9 @@ object K8sDeploymentManager {
   val resourceTypeLabel: String = "nussknacker.io/resourceType"
 
   /*
-    We use name label to find deployment to cancel/findStatus, we append short hash to reduce collision risk
+    We use name label to find deployment to cancel/getProcessState, we append short hash to reduce collision risk
     if sanitized names are similar (e.g. they differ only in truncated part or non-alphanumeric characters
-    TODO: Maybe it would be better to just pass ProcessId in findJobStatus/cancel?
+    TODO: Maybe it would be better to just pass ProcessId in getProcessState/cancel?
    */
   private[manager] def scenarioNameLabelValue(processName: ProcessName) = {
     val name = processName.value

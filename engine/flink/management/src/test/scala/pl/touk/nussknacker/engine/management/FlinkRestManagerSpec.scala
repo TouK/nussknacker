@@ -260,7 +260,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)), JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("1111"), FlinkStateStatus.MultipleJobsRunning, startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
     ))
   }
@@ -269,7 +269,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)), JobOverview("1111", "p1", 30L, 30L, JobStatus.RESTARTING.name(), tasksOverview()))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("1111"), FlinkStateStatus.MultipleJobsRunning, startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
     ))
   }
@@ -278,7 +278,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 20L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)), JobOverview("1111", "p1", 30L, 5L, JobStatus.CANCELED.name(), tasksOverview(canceled = 1)))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("2343"), FlinkStateStatus.Running, startTime = Some(10L)
     ))
   }
@@ -287,7 +287,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)), JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, startTime = Some(10L)
     ))
 
@@ -297,7 +297,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)), JobOverview("1111", "p1", 35L, 30L, JobStatus.RESTARTING.name(), tasksOverview()))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("1111"), FlinkStateStatus.Restarting, startTime = Some(30L)
     ))
   }
@@ -317,7 +317,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
                                                 "user" -> fromString(user))))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(processName).futureValue shouldBe Some(processState(
+    manager.getFreshProcessState(processName).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, Some(ProcessVersion(VersionId(version), processName, processId, user, None)), Some(10L)
     ))
   }

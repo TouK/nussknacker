@@ -19,7 +19,6 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
       DefaultStateToOverride.name -> StateDefinitionDetails("Default to override", None, None, Some("Default description to override"))
     )
     override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
-    override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus = FailedStateStatus("UNKNOWN_ACTION")
   }
 
   test("should combine delegate state definitions with custom overrides") {

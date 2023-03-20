@@ -21,7 +21,7 @@ import scala.language.higherKinds
 class SslBindingSpec extends AnyFlatSpec with Matchers {
 
   it should "connect to api via SSL" in {
-    implicit val system: ActorSystem = ActorSystem("SslBindingSpec", ConfigWithScalaVersion.TestsConfig)
+    implicit val system: ActorSystem = ActorSystem("SslBindingSpec", ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine)
     implicit val materializer: Materializer = Materializer(system)
 
     val (route, closeables) = NusskanckerDefaultAppRouter.create(

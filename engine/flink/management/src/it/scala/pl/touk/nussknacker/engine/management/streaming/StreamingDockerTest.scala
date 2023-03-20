@@ -21,6 +21,8 @@ import scala.concurrent.Future
 
 trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
 
+  protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+
   private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
   implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
   implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
@@ -45,7 +47,7 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
   protected def deployProcessAndWaitIfRunning(process: CanonicalProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
     deployProcess(process, processVersion, savepointPath)
     eventually {
-      val jobStatus = deploymentManager.findJobStatus(ProcessName(process.id)).futureValue
+      val jobStatus = deploymentManager.getProcessState(ProcessName(process.id)).futureValue.value
       logger.debug(s"Waiting for deploy: ${process.id}, $jobStatus")
 
       jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
@@ -61,8 +63,8 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
     deploymentManager.cancel(ProcessName(processId), user = userToAct).futureValue
     eventually {
       val statusOpt = deploymentManager
-        .findJobStatus(ProcessName(processId))
-        .futureValue
+        .getProcessState(ProcessName(processId))
+        .futureValue.value
       val runningOrDurringCancelJobs = statusOpt
         .filter(state => state.status.isRunning || state.status == SimpleStateStatus.DuringCancel)
 

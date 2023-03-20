@@ -10,7 +10,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessState}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
@@ -151,6 +151,9 @@ class AppResources(config: Config,
     }
   }
 
-  private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, ProcessState)]] =
-    processes.map(process => deploymentService.getProcessState(process.idWithName).map((process.name, _)))
+  private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, ProcessState)]] = {
+    // Problems should be detected by Healtcheck very quickly. Because of that we return fresh states for list of processes
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    processes.map(process => deploymentService.getProcessState(process).map((process.name, _)))
+  }
 }

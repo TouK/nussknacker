@@ -15,7 +15,7 @@ import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DeploymentManagerStub extends DeploymentManager {
+class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessState {
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
 
@@ -29,7 +29,7 @@ class DeploymentManagerStub extends DeploymentManager {
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(None)
+  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = Future.successful(None)
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(""))
 

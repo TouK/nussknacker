@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeployedScenarioData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -24,6 +24,8 @@ import sttp.model.StatusCode
 import scala.concurrent.Future
 
 class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matchers with VeryPatientScalaFutures {
+
+  protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
   private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
@@ -88,7 +90,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
     fixture.deployScenario(scenario)
 
     eventually {
-      manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      manager.getProcessState(name).futureValue.value.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
 
     request.body("""{ productId: 15 }""").send(backend).body shouldBe Right("""{"transformed":15}""")
@@ -99,7 +101,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
 
     manager.cancel(name, User("a", "b")).futureValue
 
-    manager.findJobStatus(name).futureValue shouldBe None
+    manager.getProcessState(name).futureValue.value shouldBe None
     request.body("""{ productId: 15 }""").send(backend).code shouldBe StatusCode.NotFound
   }
 

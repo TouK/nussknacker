@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecor
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.management.sample.service._
+import pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
@@ -70,6 +71,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     Map(
       "sendSms" -> all(new SingleValueSinkFactory(new DiscardingSink)),
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
+      "dead-end-lite" -> categories(SinkFactory.noParam(LiteDeadEndSink)),
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[AnyRef](_, String.valueOf), processObjectDependencies, FlinkKafkaSinkImplFactory)),
       "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(schemaRegistryFactory, avroPayloadSerdeProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
@@ -101,6 +103,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "oneSource" -> categories(SourceFactory.noParam[String](new OneSource)),
       "communicationSource" -> categories(DynamicParametersSource),
       "csv-source" -> categories(SourceFactory.noParam[CsvRecord](new CsvSource)),
+      "csv-source-lite" -> categories(SourceFactory.noParam[CsvRecord](new LiteCsvSource(_))),
       "genericSourceWithCustomVariables" -> categories(GenericSourceWithCustomVariablesSample),
       "sql-source" -> categories(SqlSource),
       "classInstanceSource" -> all(new ReturningClassInstanceSource)

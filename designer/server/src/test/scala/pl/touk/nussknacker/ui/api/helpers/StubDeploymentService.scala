@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeployedScenarioData, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
@@ -12,13 +12,13 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends DeploymentService {
-  override def getProcessState(processIdWithName: ProcessIdWithName)
-                              (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
-    Future.successful(states(processIdWithName.name))
+  override def getProcessState(processDetails: processdetails.BaseProcessDetails[_])
+                              (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
+    getProcessState(processDetails.idWithName)
 
-  override def getInternalProcessState(processDetails: processdetails.BaseProcessDetails[_])
-                                      (implicit user: LoggedUser, ec: ExecutionContext): Future[ProcessState] =
-    Future.successful(states(processDetails.idWithName.name))
+  override def getProcessState(processIdWithName: ProcessIdWithName)
+                              (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
+    Future.successful(states(processIdWithName.name))
 
   override def deployProcessAsync(id: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])
                                  (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] =

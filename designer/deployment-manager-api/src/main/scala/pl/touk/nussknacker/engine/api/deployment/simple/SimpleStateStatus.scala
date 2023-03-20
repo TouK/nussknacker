@@ -22,13 +22,6 @@ object SimpleStateStatus {
 
   val defaultActions: List[ProcessActionType] = Nil
 
-  val actionStatusMap: Map[ProcessActionType, StateStatus] = Map(
-    ProcessActionType.Deploy -> SimpleStateStatus.Running,
-    ProcessActionType.Cancel -> SimpleStateStatus.Canceled,
-    ProcessActionType.Archive -> SimpleStateStatus.NotDeployed,
-    ProcessActionType.UnArchive -> SimpleStateStatus.NotDeployed
-  )
-
   val statusActionsMap: Map[StateStatus, List[ProcessActionType]] = Map(
     SimpleStateStatus.Unknown -> List(ProcessActionType.Deploy),
     SimpleStateStatus.NotDeployed -> List(ProcessActionType.Deploy, ProcessActionType.Archive),
