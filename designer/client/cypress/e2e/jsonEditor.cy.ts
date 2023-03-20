@@ -2,11 +2,11 @@ describe("JSON editor", () => {
   const seed = "json"
 
   before(() => {
-    // cy.deleteAllTestProcesses({filter: seed, force: true})
+    cy.deleteAllTestProcesses({filter: seed, force: true})
   })
 
   after(() => {
-    // cy.deleteAllTestProcesses({filter: seed})
+    cy.deleteAllTestProcesses({filter: seed})
   })
 
   it("should display colorfull json", () => {
