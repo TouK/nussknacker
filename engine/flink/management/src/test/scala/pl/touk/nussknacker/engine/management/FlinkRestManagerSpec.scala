@@ -1,11 +1,16 @@
 package pl.touk.nussknacker.engine.management
 
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
 import io.circe.Json.fromString
 import org.apache.flink.api.common.JobStatus
+import org.scalatest.{Inside, OptionValues}
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import org.scalatest.time.Span.convertSpanToDuration
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
@@ -14,7 +19,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client3.testing.SttpBackendStub
 import sttp.client3.{Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
@@ -24,9 +30,11 @@ import java.util.concurrent.TimeoutException
 import java.util.{Collections, UUID}
 import scala.collection.mutable
 import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.{Failure, Try}
 
 //TODO move some tests to FlinkHttpClientTest
-class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
+class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures with Inside with OptionValues {
 
   import scala.concurrent.ExecutionContext.Implicits._
 
@@ -321,6 +329,43 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     manager.getFreshProcessState(processName).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, Some(ProcessVersion(VersionId(version), processName, processId, user, None)), Some(10L)
     ))
+  }
+
+  test("return process state respecting a short timeout for this operation") {
+    val wireMockServer = AvailablePortFinder.withAvailablePortsBlocked(1)(l => new WireMockServer(l.head))
+    wireMockServer.start()
+    try {
+      def stubWithFixedDelay(delay: FiniteDuration): Unit = {
+        wireMockServer.stubFor(
+          get(urlPathEqualTo("/jobs/overview")).willReturn(
+            aResponse()
+              .withBody(
+                """{
+                  |"jobs": []
+                  |}""".stripMargin)
+              .withFixedDelay(delay.toMillis.toInt)))
+      }
+      implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
+      val manager = new FlinkRestManager(
+        config = config.copy(restUrl = wireMockServer.baseUrl()),
+        modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"
+      )
+
+      val clientTimeout = 1.seconds // FIXME: set in configuration
+      val durationLongerThanExpectedClientTimeout = clientTimeout.plus(convertSpanToDuration(patienceConfig.timeout))
+      stubWithFixedDelay(durationLongerThanExpectedClientTimeout)
+
+      inside(Try(manager.getFreshProcessState(ProcessName("p1")).futureValue(Timeout(durationLongerThanExpectedClientTimeout.plus(100 millis))))) {
+        case Failure(ex: TestFailedException) =>
+          Option(ex.getCause).value shouldBe a[SttpClientException.TimeoutException]
+      }
+
+      stubWithFixedDelay(0.seconds)
+      val resultWithoutDelay = manager.getFreshProcessState(ProcessName("p1")).futureValue(Timeout(durationLongerThanExpectedClientTimeout.plus(100 millis)))
+      resultWithoutDelay shouldEqual None
+    } finally {
+      wireMockServer.stop()
+    }
   }
 
   private def createManagerWithBackend(backend: SttpBackend[Future, Any]): FlinkRestManager = {

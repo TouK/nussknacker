@@ -24,7 +24,7 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
                                        sttpBackend: SttpBackend[Future, Any],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
-      new K8sDeploymentManager(modelData.asInvokableModelData, K8sDeploymentManagerConfig.parse(config)),
+      new K8sDeploymentManager(modelData.asInvokableModelData, K8sDeploymentManagerConfig.parse(config), config),
       config)
   }
 
