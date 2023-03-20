@@ -71,9 +71,10 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends AnyFunSuite with Schema
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors"))
       .withValue("components.kafka.enabled", fromAnyRef(false))
       .withValue("components.kafka.disabled", fromAnyRef(true))
-      .withValue("components.mockKafka.disabled", fromAnyRef(false))
+      .withValue("components.mockKafkaFlink.disabled", fromAnyRef(true))
+      .withValue("components.mockKafkaLite.disabled", fromAnyRef(false))
       .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
-      .withValue("components.mockKafka.kafkaProperties", fromMap(Map[String, Any](
+      .withValue("components.mockKafkaFlink.kafkaProperties", fromMap(Map[String, Any](
         //        This timeout controls how long the kafka producer initialization in pl.touk.nussknacker.engine.lite.kafka.KafkaSingleScenarioTaskRun.init.
         //        So it has to be set to a reasonably low value for the restarting test to finish before ScalaFutures patience runs out.
         "max.block.ms" -> 2000,
