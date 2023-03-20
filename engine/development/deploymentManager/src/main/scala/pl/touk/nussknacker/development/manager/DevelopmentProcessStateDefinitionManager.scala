@@ -1,41 +1,50 @@
 package pl.touk.nussknacker.development.manager
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
-import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, NotEstablishedStateStatus, ProcessActionType, ProcessStateDefinitionManager, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, OverridingProcessStateDefinitionManager, ProcessActionType, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
 
-import java.net.URI
+class DevelopmentProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager) extends OverridingProcessStateDefinitionManager(
+  statusActionsPF = DevelopmentStateStatus.statusActionsPF,
+  customStateDefinitions = DevelopmentStateStatus.customStateDefinitions,
+  delegate = delegate
+)
 
-case object AfterRunningStatus extends CustomStateStatus("AFTER") {
-  override def isRunning: Boolean = true
-}
+object DevelopmentStateStatus {
 
-case object PreparingResourcesStatus extends CustomStateStatus("PREPARING")
-
-case object TestStatus extends CustomStateStatus("TEST")
-
-class DevelopmentProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager) extends ProcessStateDefinitionManager {
-
-  override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = stateStatus match {
-    case AfterRunningStatus => List(ProcessActionType.Cancel)
-    case PreparingResourcesStatus => List(ProcessActionType.Deploy)
-    case TestStatus => List(ProcessActionType.Deploy)
-    case _ => delegate.statusActions(stateStatus)
+  val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
+    case DevelopmentStateStatus.AfterRunningStatus => List(ProcessActionType.Cancel)
+    case DevelopmentStateStatus.PreparingResourcesStatus => List(ProcessActionType.Deploy)
+    case DevelopmentStateStatus.TestStatus => List(ProcessActionType.Deploy)
   }
 
-  override def statusTooltip(stateStatus: StateStatus): Option[String] =
-    statusDescription(stateStatus)
+  val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
+    AfterRunningStatus.name -> StateDefinitionDetails(
+      displayableName = "After running",
+      icon = None,
+      tooltip = Some("External running."),
+      description = Some("External running.")
+    ),
+    PreparingResourcesStatus.name -> StateDefinitionDetails(
+      displayableName = "Preparing resources",
+      icon = None,
+      tooltip = Some("Preparing external resources."),
+      description = Some("Preparing external resources.")
+    ),
+    TestStatus.name -> StateDefinitionDetails(
+      displayableName = "Test",
+      icon = None,
+      tooltip = Some("Preparing external resources."),
+      description = Some("Preparing external resources.")
+    ),
+  )
 
-  override def statusDescription(stateStatus: StateStatus): Option[String] = stateStatus match {
-    case AfterRunningStatus => Some(s"External running.")
-    case PreparingResourcesStatus => Some(s"Preparing external resources.")
-    case TestStatus => Some(s"Run testing mode.")
-    case _ => delegate.statusDescription(stateStatus)
+  case object AfterRunningStatus extends CustomStateStatus("AFTER") {
+    override def isRunning: Boolean = true
   }
 
-  override def statusIcon(stateStatus: StateStatus): Option[URI] =
-    delegate.statusIcon(stateStatus)
+  case object PreparingResourcesStatus extends CustomStateStatus("PREPARING")
 
-  override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
-    delegate.mapActionToStatus(stateAction)
+  case object TestStatus extends CustomStateStatus("TEST")
+
 }

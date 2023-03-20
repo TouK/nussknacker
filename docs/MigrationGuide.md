@@ -1,4 +1,5 @@
 
+
 # Migration guide
 
 To see the biggest differences please consult the [changelog](Changelog.md).
@@ -11,6 +12,24 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ModelConfigLoader.resolveInputConfigDuringExecution` takes `ConfigWithUnresolvedVersion` instead of `Config`. Use `ConfigWithUnresolvedVersion.apply`
     for easy transition between those classes
 * [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`. It affects `MetaData`, `ProcessMetaDataBuilder` and `DisplayableProcess` properties. 
+* [#4122](https://github.com/TouK/nussknacker/pull/4122)
+  * Use `ProcessStateDefinitionManager.stateDefinitions` to describe states: 1) their default properties 2) how the states are presented in filter-by-status options.  
+    (see an example of basic definitions in `SimpleProcessStateDefinitionManager` and `SimpleStateStatus`).
+  * State defaults and allowed actions are moved to `SimpleStateStatus`, `FlinkStateStatus`, `PeriodicStateStatus`, `EmbeddedStateStatus` and `K8sStateStatus`
+    from corresponding state-definition-managers (see example `FlinkProcessStateDefinitionManager`).
+  * Type `CustomStateStatus.name` renamed to `StatusName`
+  * `ProcessResources` exposes new endpoint `/api/procecesses/statusDefinitions`
+
+### Other changes
+
+* [#4122](https://github.com/TouK/nussknacker/pull/4122) Changes in state definitions:
+  * In `ProcessStateDefinitionManager` default behaviour of methods `statusTooltip`, `statusDescription` and `statusIcon` is to return default properties defined via `stateDefinitions`.
+    It is not necessary to override those methods when all definitions have fixed default properties.
+  * To introduce custom status properties, extensions to basic definitions, use `OverridingProcessStateDefinitionManager`.
+  * `OverridingProcessStateDefinitionManager` allows to specify delegate (previously only `SimpleProcessStateDefinitionManager` was available) and custom state definitions.
+  * There is additional validation when all processing types are reloaded from configuration: check if all processing types state definitions configuration is correct.
+    (see comment in `ProcessStateDefinitionService`)
+
 
 ### Other changes
 * [#3675](https://github.com/TouK/nussknacker/pull/3675) Improvements: Normalize kafka components params name

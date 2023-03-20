@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
@@ -226,12 +227,4 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
     customActionsProvider.invokeCustomAction(actionRequest, canonicalProcess)
-}
-
-case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus("SCHEDULED") {
-  override def isRunning: Boolean = true
-}
-
-case object WaitingForScheduleStatus extends CustomStateStatus("WAITING_FOR_SCHEDULE") {
-  override def isRunning: Boolean = true
 }

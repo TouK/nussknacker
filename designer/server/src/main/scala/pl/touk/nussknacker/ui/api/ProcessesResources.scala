@@ -44,7 +44,7 @@ class ProcessesResources(
   processToolbarService: ProcessToolbarService,
   processResolving: UIProcessResolving,
   val processAuthorizer:AuthorizeProcess,
-  processChangeListener: ProcessChangeListener,
+  processChangeListener: ProcessChangeListener
 )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport

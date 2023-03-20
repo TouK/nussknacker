@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessStateDefinitionService}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import sttp.client3.SttpBackend
 
@@ -28,6 +28,11 @@ trait ProcessingTypeDataReader extends LazyLogging {
         case (name, typeConfig) =>
           name -> createProcessingTypeData(name, typeConfig)
       }
+
+    // Here all processing types are loaded and we are ready to perform additional configuration validations
+    // to assert the loaded configuration is correct (fail-fast approach).
+    ProcessStateDefinitionService.checkUnsafe(valueMap)
+
     new MapBasedProcessingTypeDataProvider[ProcessingTypeData](valueMap)
   }
 
