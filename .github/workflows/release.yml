@@ -85,7 +85,7 @@ jobs:
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          JVM_OPTS: "-Xss6M -Xms4G -Xmx4G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2500M -DdockerUpLatest=${{ env.NU_DOCKER_UPDATE_LATEST }}"
+          JAVA_OPTS: "-Xss6M -Xms4G -Xmx4G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2500M -DdockerUpLatest=${{ env.NU_DOCKER_UPDATE_LATEST }}"
         run: sbt 'release ${{ env.SBT_RELEASE_NEXT_VERSION }} skip-tests'
 
       - name: "Push to master"
