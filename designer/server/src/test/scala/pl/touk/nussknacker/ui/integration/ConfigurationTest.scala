@@ -26,7 +26,6 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
 
   test("defaultConfig works") {
     DesignerConfigLoader.load(globalConfig, classLoader).resolved.getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
-    DesignerConfigLoader.load(globalConfig, classLoader).resolved.getString("attachmentsPath") shouldBe "/tmp/attachments"
   }
 
   test("should be possible to config entries defined in default ui config from passed config") {
@@ -39,7 +38,6 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
 
   test("defaultConfig is not accessible from model") {
     modelDataConfig.hasPath("db.driver") shouldBe false
-    modelDataConfig.hasPath("attachmentsPath") shouldBe false
   }
 
   test("model config is accessible from modelData") {
