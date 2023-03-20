@@ -23,7 +23,6 @@ jobs:
     env:
       SBT_RELEASE_NEXT_VERSION: ${{ (inputs.release_version && format('{0} {1} with-defaults', 'release-version', inputs.release_version)) || 'with-defaults' }}
       NU_DOCKER_UPDATE_LATEST: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
-      JVM_OPTS: "-Xss6M -Xms4G -Xmx4G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2500M -DdockerUpLatest=false"
     steps:
       - name: "Output variables"
         run: |
@@ -86,6 +85,7 @@ jobs:
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          JVM_OPTS: "-Xss6M -Xms4G -Xmx4G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2500M -DdockerUpLatest=${{ env.NU_DOCKER_UPDATE_LATEST }}"
         run: sbt 'release ${{ env.SBT_RELEASE_NEXT_VERSION }} skip-tests'
 
       - name: "Push to master"
@@ -97,7 +97,7 @@ jobs:
         id: short_nu
         run: echo "::set-output name=short::$(cat dockerhub/nussknacker/short.txt)"
 
-      - name: "Dockerhub publish readme nussknacker XD"
+      - name: "Dockerhub publish readme nussknacker"
         if: env.NU_DOCKER_UPDATE_LATEST == true
         uses: peter-evans/dockerhub-description@v3
         with:
