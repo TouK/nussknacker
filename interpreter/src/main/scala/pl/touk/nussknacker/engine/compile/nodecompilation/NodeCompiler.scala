@@ -144,7 +144,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
     val validParamDefs: ValidatedNel[PartSubGraphCompilationError, List[Parameter]] =
       Validations
-        .validateParameters(parametersDefinition.get, ref.parameters)
+        .validateParameters(parametersDefinition.getOrElse(List.empty), ref.parameters)
         .andThen(_ =>  ref.parameters.map(p => validateSubprocessInputParamType(subprocessInput, p.name)).sequence)
 
     val paramNamesWithType: List[(String, TypingResult)] = validParamDefs.map { ps =>
