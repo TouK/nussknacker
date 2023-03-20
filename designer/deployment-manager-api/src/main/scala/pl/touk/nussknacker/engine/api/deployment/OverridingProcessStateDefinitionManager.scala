@@ -32,9 +32,6 @@ class OverridingProcessStateDefinitionManager(statusActionsPF: PartialFunction[S
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsPF.applyOrElse(stateStatus, delegate.statusActions)
 
-  override def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus =
-    mapActionToStatusPF.applyOrElse(stateAction, delegate.mapActionToStatus)
-
   override def statusIcon(stateStatus: StateStatus): Option[URI] =
     statusIconsPF.orElse(stateDefinitionsPF(_.icon)).applyOrElse(stateStatus, delegate.statusIcon)
 

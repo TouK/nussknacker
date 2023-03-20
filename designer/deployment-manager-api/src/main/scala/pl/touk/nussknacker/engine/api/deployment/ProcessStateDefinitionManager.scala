@@ -44,8 +44,6 @@ trait ProcessStateDefinitionManager {
     * Allowed transitions between states.
     */
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
-  //Temporary mapping ProcessActionType to StateStatus. TODO: Remove it when we will support state cache
-  def mapActionToStatus(stateAction: Option[ProcessActionType]): StateStatus
 
   /**
     * Enhances raw [[StateStatus]] with scenario properties, including deployment info.
