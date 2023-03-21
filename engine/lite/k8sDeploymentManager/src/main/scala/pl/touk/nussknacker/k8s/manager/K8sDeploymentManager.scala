@@ -50,9 +50,9 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
   // root level ActorSystem configuration. Unfortunatelly Skuber uses ActorSystem.settings for http client configuration
   // See KubernetesClientImpl.invoke and K8sDeploymentManagerOnMocksTest for details.
   // It is not acceptable for us, because we want to have configuration separation for each DM.
-  // TODO: Figure out how to resolve this problem. Maybe we need to fork skuber or change the client?
-  //       After doing that, we should provide other configuration for getFreshProcessState to make sure
-  //       that this operation is fast
+  // TODO: Upgrade skuber after this change will be merged: https://github.com/hagay3/skuber/pull/275
+  //       After doing that, provide client for getFreshProcessState with lower idle-timeout in connectionPoolSettings
+  //       to make sure that this operation is fast
   private val effectiveSkuberAppConfig = rawConfig.withFallback(ConfigFactory.defaultReference())
 
   private lazy val k8sUtils = new K8sUtils(k8sClient)

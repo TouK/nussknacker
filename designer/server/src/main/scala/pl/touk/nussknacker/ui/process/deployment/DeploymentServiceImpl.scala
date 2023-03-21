@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUse
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{DbProcessActionRepository, DeploymentComment, FetchingProcessRepository, ProcessDBQueryRepository, DBIOActionRunner}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository, DeploymentComment, FetchingProcessRepository, ProcessDBQueryRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.dbio.DBIOAction
@@ -40,7 +41,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                             processValidation: ProcessValidation,
                             scenarioResolver: ScenarioResolver,
                             processChangeListener: ProcessChangeListener,
-                            clock: Clock = Clock.systemUTC()) extends DeploymentService with LazyLogging {
+                            scenarioStateTimeout: Option[FiniteDuration],
+                            clock: Clock = Clock.systemUTC())
+                           (implicit system: ActorSystem) extends DeploymentService with LazyLogging {
 
   def getDeployedScenarios(processingType: ProcessingType)
                           (implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
@@ -266,14 +269,33 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   }
 
   private def getStateFromEngine(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName)
-                                (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
-    deploymentManager.getProcessState(processIdWithName.name).recover {
+                                (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+    lazy val failedToGetResult =
+      WithDataFreshnessStatus(
+        Option(SimpleProcessStateDefinitionManager.errorFailedToGet),
+        cached = false)
+
+    @volatile var statusFetchCompleted = false
+    val stateFromEngineFuture = deploymentManager.getProcessState(processIdWithName.name).recover {
       case NonFatal(e) =>
-        logger.warn(s"Failed to get status of ${processIdWithName}: ${e.getMessage}", e)
-        WithDataFreshnessStatus(
-          Some(SimpleProcessStateDefinitionManager.errorFailedToGet),
-          cached = false)
+        logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
+        failedToGetResult
+    }.transform { result =>
+      statusFetchCompleted = true
+      result
     }
+
+    scenarioStateTimeout.map { timeout =>
+      Future.firstCompletedOf(Seq(
+        stateFromEngineFuture,
+        akka.pattern.after(timeout) {
+          if (!statusFetchCompleted) {
+            logger.warn(s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name}")
+          }
+          Future.successful(failedToGetResult)
+        }))
+    }.getOrElse(stateFromEngineFuture)
+  }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.

@@ -334,6 +334,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
   test("return process state respecting a short timeout for this operation") {
     val wireMockServer = AvailablePortFinder.withAvailablePortsBlocked(1)(l => new WireMockServer(l.head))
     wireMockServer.start()
+    val clientRequestTimeout = 1.seconds
     try {
       def stubWithFixedDelay(delay: FiniteDuration): Unit = {
         wireMockServer.stubFor(
@@ -341,27 +342,26 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
             aResponse()
               .withBody(
                 """{
-                  |"jobs": []
+                  |  "jobs": []
                   |}""".stripMargin)
               .withFixedDelay(delay.toMillis.toInt)))
       }
       implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
       val manager = new FlinkRestManager(
-        config = config.copy(restUrl = wireMockServer.baseUrl()),
+        config = config.copy(
+          restUrl = wireMockServer.baseUrl(),
+          scenarioStateRequestTimeout = clientRequestTimeout),
         modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"
       )
 
-      val clientTimeout = 1.seconds // FIXME: set in configuration
-      val durationLongerThanExpectedClientTimeout = clientTimeout.plus(convertSpanToDuration(patienceConfig.timeout))
+      val durationLongerThanExpectedClientTimeout = clientRequestTimeout.plus(convertSpanToDuration(patienceConfig.timeout))
       stubWithFixedDelay(durationLongerThanExpectedClientTimeout)
-
-      inside(Try(manager.getFreshProcessState(ProcessName("p1")).futureValue(Timeout(durationLongerThanExpectedClientTimeout.plus(100 millis))))) {
-        case Failure(ex: TestFailedException) =>
-          Option(ex.getCause).value shouldBe a[SttpClientException.TimeoutException]
+      a[SttpClientException.TimeoutException] shouldBe thrownBy {
+        manager.getFreshProcessState(ProcessName("p1")).futureValueEnsuringInnerException(durationLongerThanExpectedClientTimeout)
       }
 
       stubWithFixedDelay(0.seconds)
-      val resultWithoutDelay = manager.getFreshProcessState(ProcessName("p1")).futureValue(Timeout(durationLongerThanExpectedClientTimeout.plus(100 millis)))
+      val resultWithoutDelay = manager.getFreshProcessState(ProcessName("p1")).futureValue(Timeout(durationLongerThanExpectedClientTimeout.plus(1 second)))
       resultWithoutDelay shouldEqual None
     } finally {
       wireMockServer.stop()

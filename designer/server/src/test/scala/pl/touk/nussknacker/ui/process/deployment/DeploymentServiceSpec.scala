@@ -27,6 +27,7 @@ import slick.dbio.DBIOAction
 
 import java.util.UUID
 import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.duration._
 
 class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with DBIOActionValues
   with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting with EitherValuesDetailedMessage {
@@ -53,7 +54,11 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   private val listener = new TestProcessChangeListener
 
-  private val deploymentService = new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, TestFactory.scenarioResolver, listener)
+  private val deploymentService = createDeploymentService(None)
+
+  private def createDeploymentService(processStateTimeout: Option[FiniteDuration]): DeploymentService = {
+    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, TestFactory.scenarioResolver, listener, scenarioStateTimeout = processStateTimeout)
+  }
 
   test("should return state correctly when state is deployed") {
     val processName: ProcessName = generateProcessName
@@ -461,14 +466,33 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareProcess(processName).dbioActionValues
 
     deploymentManager.withEmptyProcessState(processName) {
-      val sinkInitialStatus = SimpleStateStatus.NotDeployed
-      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe sinkInitialStatus
+      val initialStatus = SimpleStateStatus.NotDeployed
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe initialStatus
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
         deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
 
         deploymentService.invalidateInProgressActions()
-        deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe sinkInitialStatus
+        deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe initialStatus
+      }
+    }
+  }
+
+  test("should return problem after occurring timeout during waiting on DM response") {
+    val processName: ProcessName = generateProcessName
+    val id = prepareProcess(processName).dbioActionValues
+
+    val timeout = 1.second
+    val serviceWithTimeout = createDeploymentService(Some(timeout))
+
+    deploymentManager.withEmptyProcessState(processName) {
+      val initialStatus = SimpleStateStatus.NotDeployed
+      val processIdName = ProcessIdWithName(id, processName)
+      serviceWithTimeout.getProcessState(processIdName).futureValue.status shouldBe initialStatus
+
+      val durationLongerThanClientTimeout = timeout.plus(patienceConfig.timeout)
+      deploymentManager.withDelayBeforeStatusReturn(durationLongerThanClientTimeout) {
+        serviceWithTimeout.getProcessState(processIdName).futureValueEnsuringInnerException(durationLongerThanClientTimeout).status shouldBe ProblemStateStatus.failedToGet
       }
     }
   }

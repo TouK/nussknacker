@@ -83,7 +83,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def findJobsByName(jobName: String): Future[List[JobOverview]] = {
     basicRequest
-      .readTimeout(1 second) // FIXME: from configuration
+      .readTimeout(config.scenarioStateRequestTimeout)
       .get(flinkUrl.addPath("jobs", "overview"))
       .response(asJson[JobsResponse])
       .send(backend)

@@ -5,8 +5,6 @@ import akka.stream.scaladsl.TcpIdleTimeoutException
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span.convertSpanToDuration
@@ -18,7 +16,6 @@ import skuber.api.Configuration
 import skuber.api.client.KubernetesClient
 
 import scala.concurrent.duration._
-import scala.util.{Failure, Try}
 
 class K8sDeploymentManagerOnMocksTest extends AnyFunSuite with BeforeAndAfterAll with PatientScalaFutures
   with Inside with Matchers with OptionValues {
@@ -28,7 +25,9 @@ class K8sDeploymentManagerOnMocksTest extends AnyFunSuite with BeforeAndAfterAll
   // Here we've got a trouble. The only way to configure skuber's http client is to provide configuration
   // on the root level (in our case on designer root config level). See KubernetesClientImpl.invoke for details.
   // It is not acceptable for us, because we want to have configuration separation for each DM.
-  // TODO: Figure out how to resolve this problem. Maybe we need to fork skuber or change the client?
+  // TODO: Upgrade skuber after this change will be merged: https://github.com/hagay3/skuber/pull/275
+  //       After doing that, provide client for getFreshProcessState with lower idle-timeout in connectionPoolSettings
+  //       to make sure that this operation is fast
   protected implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName, ConfigFactory.parseString(
     s"""akka.http.client {
        |  idle-timeout: ${clientIdleTimeout.toMillis} ms
@@ -69,13 +68,12 @@ class K8sDeploymentManagerOnMocksTest extends AnyFunSuite with BeforeAndAfterAll
 
     val durationLongerThanExpectedClientTimeout = clientIdleTimeout.plus(convertSpanToDuration(patienceConfig.timeout))
     stubWithFixedDelay(durationLongerThanExpectedClientTimeout)
-    inside(Try(manager.getFreshProcessState(ProcessName("foo")).futureValue(Timeout(durationLongerThanExpectedClientTimeout.plus(100 millis))))) {
-      case Failure(ex: TestFailedException) =>
-        Option(ex.getCause).value shouldBe a[TcpIdleTimeoutException]
+    a[TcpIdleTimeoutException] shouldBe thrownBy {
+      manager.getFreshProcessState(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanExpectedClientTimeout)
     }
 
     stubWithFixedDelay(0 seconds)
-    val result = manager.getFreshProcessState(ProcessName("foo")).futureValue(Timeout(durationLongerThanExpectedClientTimeout.plus(100 millis)))
+    val result = manager.getFreshProcessState(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanExpectedClientTimeout)
     result shouldEqual None
   }
 
