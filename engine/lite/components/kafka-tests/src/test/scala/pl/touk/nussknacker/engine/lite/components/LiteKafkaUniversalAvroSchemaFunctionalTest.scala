@@ -86,7 +86,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
       (sConfig(sampleInteger, integerSchema, sampleString), invalidTypes(s"actual: '${typedStr.display}' expected: 'Integer'")),
       (sConfig(sampleInteger, integerSchema, sampleBoolean), invalidTypes(s"actual: '${typedBool.display}' expected: 'Integer'")),
       (sConfig(sampleInteger, integerSchema, sampleFloat), invalidTypes(s"actual: '${typedFloat.display}' expected: 'Integer'")),
-      (sConfig(sampleInteger, integerSchema, double(1)), invalidTypes(s"actual: 'Double' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, sampleDouble), invalidTypes(s"actual: '${typedDouble.display}' expected: 'Integer'")),
     ))
   }
 
@@ -113,7 +113,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
       (sConfig(sampleLong, longSchema, sampleString), invalidTypes(s"actual: '${typedStr.display}' expected: 'Long'")),
       (sConfig(sampleLong, longSchema, sampleBoolean), invalidTypes(s"actual: '${typedBool.display}' expected: 'Long'")),
       (sConfig(sampleLong, longSchema, sampleFloat), invalidTypes(s"actual: '${typedFloat.display}' expected: 'Long'")),
-      (sConfig(sampleLong, longSchema, double(1)), invalidTypes("actual: 'Double' expected: 'Long'"))
+      (sConfig(sampleLong, longSchema, sampleDouble), invalidTypes(s"actual: '${typedDouble.display}' expected: 'Long'")),
     ))
   }
 
@@ -318,7 +318,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
       ("config", "result"),
       (rConfig(sampleUUID, recordUUIDSchema, recordUUIDSchema, Input), rValid(sampleUUID, recordUUIDSchema)),
       (rConfig(sampleUUID.toString, recordStringSchema, recordUUIDSchema, Input), rValid(sampleUUID, recordUUIDSchema)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordUUIDSchema, uuid(sampleUUID.toString)), rValid(sampleUUID, recordUUIDSchema)),
+      (rConfig(sampleInteger, recordIntegerSchema, recordUUIDSchema, sampleUUID), rValid(sampleUUID, recordUUIDSchema)),
       (rConfig(sampleInteger, recordIntegerSchema, recordUUIDSchema, sampleUUID.toString), rValid(sampleUUID, recordUUIDSchema)),
       (rConfig(sampleInteger, recordIntegerSchema, recordUUIDSchema, Input), invalidTypes("path 'field' actual: 'Integer' expected: 'UUID | String'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordUUIDSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'UUID | String'")),
@@ -330,8 +330,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
     testEnd2End(Table(
       ("config", "result"),
       (rConfig(sampleDecimal, recordDecimalSchema, recordDecimalSchema, Input), rValid(sampleDecimal, recordDecimalSchema)),
-      (rConfig(sampleString, recordStringSchema, recordDecimalSchema, bigDecimal(1, 2)), rValid(sampleDecimal, recordDecimalSchema)),
-      (rConfig(sampleString, recordStringSchema, recordDecimalSchema, sampleDecimal), invalidTypes(s"path 'field' actual: 'Double{1.0}' expected: 'BigDecimal | ByteBuffer'")),
+      (rConfig(sampleString, recordStringSchema, recordDecimalSchema, sampleDecimal), rValid(sampleDecimal, recordDecimalSchema)),
+      (rConfig(sampleString, recordStringSchema, recordDecimalSchema, sampleDouble), invalidTypes(s"path 'field' actual: 'Double{$sampleDouble}' expected: 'BigDecimal | ByteBuffer'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordDecimalSchema, Input), invalidTypes("path 'field' actual: 'Integer' expected: 'BigDecimal | ByteBuffer'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordDecimalSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'BigDecimal | ByteBuffer'")),
     ))
@@ -341,7 +341,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
     testEnd2End(Table(
       ("config", "result"),
       (rConfig(sampleDate, recordDateSchema, recordDateSchema, Input), rValid(sampleDate, recordDateSchema)),
-      (rConfig(sampleString, recordStringSchema, recordDateSchema, localDate(sampleDate)), rValid(sampleDate, recordDateSchema)),
+      (rConfig(sampleString, recordStringSchema, recordDateSchema, sampleDate), rValid(sampleDate, recordDateSchema)),
       (rConfig(sampleDate.toEpochDay, recordIntegerSchema, recordDateSchema, Input), rValid(sampleDate, recordDateSchema)),
       (rConfig(sampleString, recordStringSchema, recordDateSchema, sampleDate.toEpochDay.toInt), rValid(sampleDate, recordDateSchema)),
       (rConfig(sampleString, recordStringSchema, recordDateSchema, Input), invalidTypes("path 'field' actual: 'String' expected: 'LocalDate | Integer'")),
@@ -353,7 +353,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
     testEnd2End(Table(
       ("config", "result"),
       (rConfig(sampleMillisLocalTime, recordTimeMillisSchema, recordTimeMillisSchema, Input), rValid(sampleMillisLocalTime, recordTimeMillisSchema)),
-      (rConfig(sampleString, recordStringSchema, recordTimeMillisSchema, localTime(sampleMillisLocalTime)), rValid(sampleMillisLocalTime, recordTimeMillisSchema)),
+      (rConfig(sampleString, recordStringSchema, recordTimeMillisSchema, sampleMillisLocalTime), rValid(sampleMillisLocalTime, recordTimeMillisSchema)),
       (rConfig(sampleMillisLocalTime.toMillis, recordIntegerSchema, recordTimeMillisSchema, Input), rValid(sampleMillisLocalTime, recordTimeMillisSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimeMillisSchema, sampleMillisLocalTime.toMillis), rValid(sampleMillisLocalTime, recordTimeMillisSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimeMillisSchema, Input), invalidTypes("path 'field' actual: 'String' expected: 'LocalTime | Integer'")),
@@ -365,7 +365,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
     testEnd2End(Table(
       ("config", "result"),
       (rConfig(sampleMicrosLocalTime, recordTimeMicrosSchema, recordTimeMicrosSchema, Input), rValid(sampleMicrosLocalTime, recordTimeMicrosSchema)),
-      (rConfig(sampleString, recordStringSchema, recordTimeMicrosSchema, localTime(sampleMicrosLocalTime)), rValid(sampleMicrosLocalTime, recordTimeMicrosSchema)),
+      (rConfig(sampleString, recordStringSchema, recordTimeMicrosSchema, sampleMicrosLocalTime), rValid(sampleMicrosLocalTime, recordTimeMicrosSchema)),
       (rConfig(sampleMicrosLocalTime.toMicros, recordLongSchema, recordTimeMicrosSchema, Input), rValid(sampleMicrosLocalTime, recordTimeMicrosSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimeMicrosSchema, sampleMicrosLocalTime.toMicros), rValid(sampleMicrosLocalTime, recordTimeMicrosSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimeMicrosSchema, Input), invalidTypes("path 'field' actual: 'String' expected: 'LocalTime | Long'")),
@@ -377,7 +377,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
     testEnd2End(Table(
       ("config", "result"),
       (rConfig(sampleMillisInstant, recordTimestampMillisSchema, recordTimestampMillisSchema, Input), rValid(sampleMillisInstant, recordTimestampMillisSchema)),
-      (rConfig(sampleString, recordStringSchema, recordTimestampMillisSchema, instant(sampleMillisInstant)), rValid(sampleMillisInstant, recordTimestampMillisSchema)),
+      (rConfig(sampleString, recordStringSchema, recordTimestampMillisSchema, sampleMillisInstant), rValid(sampleMillisInstant, recordTimestampMillisSchema)),
       (rConfig(sampleMillisInstant.toEpochMilli, recordLongSchema, recordTimestampMillisSchema, Input), rValid(sampleMillisInstant, recordTimestampMillisSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimestampMillisSchema, sampleMillisInstant.toEpochMilli), rValid(sampleMillisInstant, recordTimestampMillisSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimestampMillisSchema, Input), invalidTypes("path 'field' actual: 'String' expected: 'Instant | Long'")),
@@ -390,7 +390,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
     testEnd2End(Table(
       ("config", "result"),
       (rConfig(sampleMicrosInstant, recordTimestampMicrosSchema, recordTimestampMicrosSchema, Input), rValid(sampleMicrosInstant, recordTimestampMicrosSchema)),
-      (rConfig(sampleString, recordStringSchema, recordTimestampMicrosSchema, instant(sampleMicrosInstant.toMicrosFromEpoch, sampleMicrosInstant.toNanoAdjustment)), rValid(sampleMicrosInstant, recordTimestampMicrosSchema)),
+      (rConfig(sampleString, recordStringSchema, recordTimestampMicrosSchema, sampleMicrosInstant), rValid(sampleMicrosInstant, recordTimestampMicrosSchema)),
       (rConfig(sampleMicrosInstant.toMicros, recordLongSchema, recordTimestampMicrosSchema, Input), rValid(sampleMicrosInstant, recordTimestampMicrosSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimestampMicrosSchema, sampleMicrosInstant.toMicros), rValid(sampleMicrosInstant, recordTimestampMicrosSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimestampMicrosSchema, Input), invalidTypes("path 'field' actual: 'String' expected: 'Instant | Long'")),

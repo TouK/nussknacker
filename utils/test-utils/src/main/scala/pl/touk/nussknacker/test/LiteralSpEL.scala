@@ -2,8 +2,9 @@ package pl.touk.nussknacker.test
 
 import pl.touk.nussknacker.test.SpecialSpELElement.EmptyMap
 
-import java.time.{Instant, LocalDate, LocalTime}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime}
 import java.util
+import java.util.UUID
 
 trait LiteralSpEL {
 
@@ -26,6 +27,13 @@ trait LiteralSpEL {
       case collection: util.Collection[_] =>
         toSpELLiteral(collection.asScala)
       case element: SpecialSpELElement => element.value
+      case ldt: LocalDateTime => s"T(java.time.LocalDateTime).parse('${ldt.toString}')"
+      case ltm: LocalTime => s"T(java.time.LocalTime).parse('${ltm.toString}')"
+      case ld: LocalDate =>s"T(java.time.LocalDate).parse('${ld.toString}')"
+      case ins: Instant => s"T(java.time.Instant).parse('${ins.toString}')"
+      case uuid: UUID => s"T(java.util.UUID).fromString('${uuid.toString}')"
+      case bd: BigDecimal => s"T(java.math.BigDecimal).valueOf(${bd.doubleValue}).setScale(${bd.scale})"
+      case bd: java.math.BigDecimal => s"T(java.math.BigDecimal).valueOf(${bd.doubleValue}).setScale(${bd.scale})"
       case str: String => s"'$str'"
       case long: Long => s"${long}l"
       case db: Double => s"${db}d"
@@ -49,26 +57,5 @@ object SpecialSpELElement {
 
   val Input: SpecialSpELElement = SpecialSpELElement("#input")
   val EmptyMap: SpecialSpELElement = SpecialSpELElement("{:}")
-
-  def double(value: Any): SpecialSpELElement =
-    SpecialSpELElement(s"T(java.lang.Double).valueOf($value)")
-
-  def bigDecimal(value: Long, scale: Int): SpecialSpELElement =
-    SpecialSpELElement(s"T(java.math.BigDecimal).valueOf(${value}l).setScale($scale)")
-
-  def uuid(uuid: String): SpecialSpELElement =
-    SpecialSpELElement(s"""T(java.util.UUID).fromString("$uuid")""")
-
-  def localTime(localTime: LocalTime): SpecialSpELElement =
-    SpecialSpELElement(s"T(java.time.LocalTime).ofNanoOfDay(${localTime.toNanoOfDay}l)")
-
-  def localDate(localDate: LocalDate): SpecialSpELElement =
-    SpecialSpELElement(s"T(java.time.LocalDate).ofEpochDay(${localDate.toEpochDay})")
-
-  def instant(instant: Instant): SpecialSpELElement =
-    SpecialSpELElement(s"T(java.time.Instant).ofEpochMilli(${instant.toEpochMilli}l)")
-
-  def instant(epochSecond: Long, nanoAdjustment: Long): SpecialSpELElement =
-    SpecialSpELElement(s"T(java.time.Instant).ofEpochSecond(${epochSecond}l, ${nanoAdjustment}l)")
 
 }
