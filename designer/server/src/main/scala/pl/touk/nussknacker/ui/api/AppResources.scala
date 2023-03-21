@@ -10,6 +10,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessState}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
@@ -72,13 +73,13 @@ class AppResources(config: Config,
       path("healthCheck" / "process" / "deployment") {
         get {
           complete {
-            notRunningProcessesThatShouldRun.map[Future[HttpResponse]] { set =>
+            processesWithProblemStateStatus.map[Future[HttpResponse]] { set =>
               if (set.isEmpty) {
                 createHealthCheckHttpResponse(OK)
               } else {
-                logger.warn(s"Scenarios not running: ${set.keys}")
-                logger.debug(s"Scenarios not running - more details: $set")
-                createHealthCheckHttpResponse(ERROR, Some("Deployed scenarios not running (probably failed)"), Some(set.keys.toSet))
+                logger.warn(s"Alerting scenarios: ${set.keys}")
+                logger.debug(s"Alerting scenarios: $set")
+                createHealthCheckHttpResponse(ERROR, Some("Alerting scenarios"), Some(set.keys.toSet))
               }
             }.recover[Future[HttpResponse]] {
               case NonFatal(e) =>
@@ -129,17 +130,14 @@ class AppResources(config: Config,
       }
     }
 
-  private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser): Future[Map[String, ProcessState]] = {
+  private def processesWithProblemStateStatus(implicit ec: ExecutionContext, user: LoggedUser): Future[Map[String, ProcessState]] = {
     for {
       processes <- processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.deployed)
-      statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
-    } yield {
-      statusMap.filterNot{
-        case (_, status) => status.isDeployed
-      }.map{
-        case (process, status) => (process.name, status)
+      statusMap <- Future.sequence(mapNameToProcessState(processes)).map(_.toMap)
+      withProblem = statusMap.collect {
+        case (name, processStatus@ProcessState(_, _@ProblemStateStatus(_, _), _, _, _, _, _, _, _, _)) => (name, processStatus)
       }
-    }
+    } yield withProblem
   }
 
   private def processesWithValidationErrors(implicit ec: ExecutionContext, user: LoggedUser): Future[List[String]] = {
@@ -151,7 +149,7 @@ class AppResources(config: Config,
     }
   }
 
-  private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, ProcessState)]] = {
+  private def mapNameToProcessState(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, ProcessState)]] = {
     // Problems should be detected by Healtcheck very quickly. Because of that we return fresh states for list of processes
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     processes.map(process => deploymentService.getProcessState(process).map((process.name, _)))
