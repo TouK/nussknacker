@@ -70,23 +70,23 @@ function Actions({ addScenario, addFragment }: ActionsProps): JSX.Element {
     );
 }
 
-function Scenarios({ children, table }: PropsWithChildren<{ table?: boolean }>): JSX.Element {
+function Scenarios({ children, withTable }: PropsWithChildren<{ withTable?: boolean }>): JSX.Element {
     const { data = [], isLoading, isFetching } = useScenariosWithStatus();
     return (
         <FiltersContextProvider<ScenariosFiltersModel>>
             {children}
-            <FiltersPart data={data} isLoading={isFetching} withSort={!table} />
-            {table ? <TablePart data={data} isLoading={isLoading} /> : <ListPart data={data} isLoading={isLoading} />}
+            <FiltersPart data={data} isLoading={isFetching} withSort={!withTable} />
+            {withTable ? <TablePart data={data} isLoading={isLoading} /> : <ListPart data={data} isLoading={isLoading} />}
         </FiltersContextProvider>
     );
 }
 
 export interface ScenariosViewProps extends ActionsProps {
-    table?: boolean;
+    withTable?: boolean;
 }
 
-export const ScenariosView = ({ table, ...props }: ScenariosViewProps) => (
-    <Scenarios table={table}>
+export const ScenariosView = ({ withTable, ...props }: ScenariosViewProps) => (
+    <Scenarios withTable={withTable}>
         <Actions {...props} />
     </Scenarios>
 );
