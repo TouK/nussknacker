@@ -56,8 +56,8 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   private val deploymentService = createDeploymentService(None)
 
-  private def createDeploymentService(processStateTimeout: Option[FiniteDuration]): DeploymentService = {
-    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, TestFactory.scenarioResolver, listener, scenarioStateTimeout = processStateTimeout)
+  private def createDeploymentService(scenarioStateTimeout: Option[FiniteDuration]): DeploymentService = {
+    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, TestFactory.scenarioResolver, listener, scenarioStateTimeout = scenarioStateTimeout)
   }
 
   test("should return state correctly when state is deployed") {
@@ -491,7 +491,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       serviceWithTimeout.getProcessState(processIdName).futureValue.status shouldBe initialStatus
 
       val durationLongerThanClientTimeout = timeout.plus(patienceConfig.timeout)
-      deploymentManager.withDelayBeforeStatusReturn(durationLongerThanClientTimeout) {
+      deploymentManager.withDelayBeforeStateReturn(durationLongerThanClientTimeout) {
         serviceWithTimeout.getProcessState(processIdName).futureValueEnsuringInnerException(durationLongerThanClientTimeout).status shouldBe ProblemStateStatus.failedToGet
       }
     }

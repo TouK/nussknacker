@@ -40,7 +40,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
 
   override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = {
     Future {
-      Thread.sleep(delayBeforeStatusReturn.toMillis)
+      Thread.sleep(delayBeforeStateReturn.toMillis)
       managerProcessState.getOrDefault(name, prepareProcessState(defaultProcessStateStatus))
     }
   }
@@ -66,7 +66,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
   private val managerProcessState = new ConcurrentHashMap[ProcessName, Option[ProcessState]]
 
   @volatile
-  private var delayBeforeStatusReturn: FiniteDuration = 0 seconds
+  private var delayBeforeStateReturn: FiniteDuration = 0 seconds
 
   //queue of invocations to e.g. check that deploy was already invoked in "ProcessManager"
   val deploys = new ConcurrentLinkedQueue[ProcessName]()
@@ -111,12 +111,12 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     }
   }
 
-  def withDelayBeforeStatusReturn[T](delay: FiniteDuration)(action: => T): T = {
-    delayBeforeStatusReturn = delay
+  def withDelayBeforeStateReturn[T](delay: FiniteDuration)(action: => T): T = {
+    delayBeforeStateReturn = delay
     try {
       action
     } finally {
-      delayBeforeStatusReturn = 0 seconds
+      delayBeforeStateReturn = 0 seconds
     }
   }
 
