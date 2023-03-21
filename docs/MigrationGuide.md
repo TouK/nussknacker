@@ -11,13 +11,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ModelConfigLoader.resolveInputConfigDuringExecution` takes `ConfigWithUnresolvedVersion` instead of `Config`. Use `ConfigWithUnresolvedVersion.apply`
     for easy transition between those classes
 * [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`. It affects `MetaData`, `ProcessMetaDataBuilder` and `DisplayableProcess` properties. 
-* [#4122](https://github.com/TouK/nussknacker/pull/4122)
+* [#4122](https://github.com/TouK/nussknacker/pull/4122), [#4132](https://github.com/TouK/nussknacker/pull/4132)
   * Use `ProcessStateDefinitionManager.stateDefinitions` to describe states: 1) their default properties 2) how the states are presented in filter-by-status options.  
     (see an example of basic definitions in `SimpleProcessStateDefinitionManager` and `SimpleStateStatus`).
   * State defaults and allowed actions are moved to `SimpleStateStatus`, `FlinkStateStatus`, `PeriodicStateStatus`, `EmbeddedStateStatus` and `K8sStateStatus`
     from corresponding state-definition-managers (see example `FlinkProcessStateDefinitionManager`).
   * Type `CustomStateStatus.name` renamed to `StatusName`
   * `ProcessResources` exposes new endpoint `/api/procecesses/statusDefinitions`
+  * Within the base set of statuses used in Embedded, Flink, K8 and Periodic mode (`SimpleStateStatus`), statuses `Failing`, `Failed`, `Error`, `Warning`, `FailedToGet` and `MulipleJobsRunning`
+    are replaced by one `ProblemStateStatus` which is parametrized by specific message. `ProblemStateStatus` provides several builder methods, one for each corresponding removed state.
+    Those builders allow to preserve the exact moments when each state appears in the scenario lifecycle.
+  * Displayed tooltip and description of `ProblemStateStatus` have the same value.
+  * Removed `SimpleStateStatus.Unknown`
 * [#4104](https://github.com/TouK/nussknacker/pull/4104) `DeploymentManager.findJobStatus` was renamed to `getProcessState`. New `DataFreshnessPolicy`
   parameter was added. Returned type was changed to `WithDataFreshnessStatus[T]` where `T` is the previous value and `cached: Boolean` is additional
   information that should be provided.
@@ -27,21 +32,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   which provide the same interface as the previous one, with only method name changed.
   Especially, when you use 'PeriodicDeploymentManagerProvider', `delegate` should already return `DeploymentManager` wrapped by caching mechanism.
 * [#4131](https://github.com/TouK/nussknacker/pull/4131) `Parameter.defaultValue` now holds `Option[Expression]` instead of `Option[String]`. You have to wrap a `String` with `Expression.spel()`
-* [#4132](https://github.com/TouK/nussknacker/pull/4132) 
-  * Within the base set of statuses used in Embedded, Flink, K8 and Periodic mode (`SimpleStateStatus`), statuses `Failing`, `Failed`, `Error`, `Warning`, `FailedToGet` and `MulipleJobsRunning`
-    are replaced by one `ProblemStateStatus` which is parametrized by specific message. `ProblemStateStatus` provides several builder methods, one for each corresponding removed state.
-    Those builders allow to preserve the exact moments when each state appears in the scenario lifecycle. 
-  * Displayed tooltip and description of `ProblemStateStatus` have the same value. 
-  * Removed `SimpleStateStatus.Undefined`
-  * Parameter `delegate` in `OverridingProcessStateDefinitionManager` now has no default value. For clarity it should be provided explicitly.
+
 
 ### Other changes
 
-* [#4122](https://github.com/TouK/nussknacker/pull/4122) Changes in state definitions:
+* [#4122](https://github.com/TouK/nussknacker/pull/4122), [#4132](https://github.com/TouK/nussknacker/pull/4132) Changes in state definitions:
   * In `ProcessStateDefinitionManager` default behaviour of methods `statusTooltip`, `statusDescription` and `statusIcon` is to return default properties defined via `stateDefinitions`.
     It is not necessary to override those methods when all definitions have fixed default properties.
   * To introduce custom status properties, extensions to basic definitions, use `OverridingProcessStateDefinitionManager`.
   * `OverridingProcessStateDefinitionManager` allows to specify delegate (previously only `SimpleProcessStateDefinitionManager` was available) and custom state definitions.
+  * Parameter `delegate` in `OverridingProcessStateDefinitionManager` has no default value, it should be provided explicitly.
   * There is additional validation when all processing types are reloaded from configuration: check if all processing types state definitions configuration is correct.
     (see comment in `ProcessStateDefinitionService`)
 
