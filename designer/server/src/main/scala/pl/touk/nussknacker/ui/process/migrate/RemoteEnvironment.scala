@@ -103,6 +103,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       validation <- EitherT(validateProcess(localProcess))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
       _ <- createRemoteProcessIfNotExist(localProcess, category)
+      //isArchivedOnTargetEnv
       _ <- EitherT.right[EspError](saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")))
     } yield ()).value
   }

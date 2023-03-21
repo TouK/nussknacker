@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toValidatedDisplayable
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{emptySubprocess, toValidatedDisplayable}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
@@ -193,6 +193,22 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       result.swap.toOption.get.getMessage shouldBe "Cannot migrate, following errors occurred: n1 - message"
     }
 
+  }
+
+  it should "not migrate existing scenario when archived in target environment" in {
+    var migrated: Option[Future[UpdateProcessCommand]] = None
+    val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
+      ProcessTestData.validProcess.id,
+      ProcessTestData.archivedValidProcessDetails.processCategory,
+      ProcessTestData.archivedValidProcessDetails.id :: Nil,
+      migrationFuture => migrated = Some(migrationFuture)
+    )
+
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
+      result shouldBe Symbol("left")
+      result.swap.toOption.get shouldBe MigrationValidationError(ValidationErrors(Map.empty, List.empty, List.empty))
+      result.swap.toOption.get.getMessage shouldBe "Cannot migrate, following errors occurred: scenario is archived on target environment"
+    }
   }
 
   it should "handle spaces in scenario id" in {
