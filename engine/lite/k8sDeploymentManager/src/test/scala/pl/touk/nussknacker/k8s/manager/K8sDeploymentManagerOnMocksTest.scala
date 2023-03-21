@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.TcpIdleTimeoutException
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span.convertSpanToDuration
@@ -13,25 +13,13 @@ import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, Proces
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
 import skuber.api.Configuration
-import skuber.api.client.KubernetesClient
 
 import scala.concurrent.duration._
 
 class K8sDeploymentManagerOnMocksTest extends AnyFunSuite with BeforeAndAfterAll with PatientScalaFutures
   with Inside with Matchers with OptionValues {
 
-  private val clientIdleTimeout = 1.second
-
-  // Here we've got a trouble. The only way to configure skuber's http client is to provide configuration
-  // on the root level (in our case on designer root config level). See KubernetesClientImpl.invoke for details.
-  // It is not acceptable for us, because we want to have configuration separation for each DM.
-  // TODO: Upgrade skuber after this change will be merged: https://github.com/hagay3/skuber/pull/275
-  //       After doing that, provide client for getFreshProcessState with lower idle-timeout in connectionPoolSettings
-  //       to make sure that this operation is fast
-  protected implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName, ConfigFactory.parseString(
-    s"""akka.http.client {
-       |  idle-timeout: ${clientIdleTimeout.toMillis} ms
-       |}""".stripMargin))
+  protected implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
   import system.dispatcher
 
   private var wireMockServer: WireMockServer = _
@@ -60,20 +48,20 @@ class K8sDeploymentManagerOnMocksTest extends AnyFunSuite with BeforeAndAfterAll
                 |}""".stripMargin)
             .withHeader("Content-Type", "application/json")))
     }
-    val manager = new K8sDeploymentManager(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), K8sDeploymentManagerConfig(), ConfigFactory.empty()) {
-      override protected def createK8sClient(skuberAppConfig: Config): KubernetesClient = {
-        skuber.k8sInit(Configuration.useLocalProxyOnPort(wireMockServer.port()), skuberAppConfig)
-      }
+    val clientIdleTimeout = 1.second
+    val k8sConfig = K8sDeploymentManagerConfig(scenarioStateIdleTimeout = clientIdleTimeout)
+    val manager = new K8sDeploymentManager(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), k8sConfig, ConfigFactory.empty()) {
+      override protected def k8sConfiguration: Configuration = Configuration.useLocalProxyOnPort(wireMockServer.port())
     }
 
-    val durationLongerThanExpectedClientTimeout = clientIdleTimeout.plus(convertSpanToDuration(patienceConfig.timeout))
-    stubWithFixedDelay(durationLongerThanExpectedClientTimeout)
+    val durationLongerThanClientTimeout = clientIdleTimeout.plus(patienceConfig.timeout)
+    stubWithFixedDelay(durationLongerThanClientTimeout)
     a[TcpIdleTimeoutException] shouldBe thrownBy {
-      manager.getFreshProcessState(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanExpectedClientTimeout)
+      manager.getFreshProcessState(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     }
 
     stubWithFixedDelay(0 seconds)
-    val result = manager.getFreshProcessState(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanExpectedClientTimeout)
+    val result = manager.getFreshProcessState(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     result shouldEqual None
   }
 

@@ -490,9 +490,9 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       val processIdName = ProcessIdWithName(id, processName)
       serviceWithTimeout.getProcessState(processIdName).futureValue.status shouldBe initialStatus
 
-      val durationLongerThanClientTimeout = timeout.plus(patienceConfig.timeout)
-      deploymentManager.withDelayBeforeStateReturn(durationLongerThanClientTimeout) {
-        serviceWithTimeout.getProcessState(processIdName).futureValueEnsuringInnerException(durationLongerThanClientTimeout).status shouldBe ProblemStateStatus.failedToGet
+      val durationLongerThanTimeout = timeout.plus(patienceConfig.timeout)
+      deploymentManager.withDelayBeforeStateReturn(durationLongerThanTimeout) {
+        serviceWithTimeout.getProcessState(processIdName).futureValueEnsuringInnerException(durationLongerThanTimeout).status shouldBe ProblemStateStatus.failedToGet
       }
     }
   }

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.api.Configuration
-import skuber.api.client.KubernetesClient
+import skuber.api.client.{KubernetesClient, LoggingConfig}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
@@ -40,20 +41,22 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
   extends LiteDeploymentManager with LazyLogging {
 
   // lazy initialization to allow starting application even if k8s is not available - e.g. in case if multiple DeploymentManagers configured
-  private lazy val k8sClient = createK8sClient(effectiveSkuberAppConfig)
+  private lazy val k8sClient = createK8sClient(effectiveSkuberAppConfig, ConnectionPoolSettings(effectiveSkuberAppConfig))
 
-  protected def createK8sClient(skuberAppConfig: Config): KubernetesClient = {
-    k8sInit(Configuration.defaultK8sConfig, skuberAppConfig)
+  private lazy val scenarioStateK8sClient = createK8sClient(effectiveSkuberAppConfig,
+    ConnectionPoolSettings(effectiveSkuberAppConfig).withUpdatedConnectionSettings(_.withIdleTimeout(config.scenarioStateIdleTimeout)))
+
+  private def createK8sClient(skuberAppConfig: Config, connectionPoolSettings: ConnectionPoolSettings): KubernetesClient = {
+    skuber.api.client.init(k8sConfiguration.currentContext, LoggingConfig(), None, skuberAppConfig, Some(connectionPoolSettings))
+  }
+
+  protected def k8sConfiguration: Configuration = {
+    Configuration.defaultK8sConfig
   }
 
   // We pass rawConfig and compute this effective skuber app config to make sure that skuber doesn't use
-  // root level ActorSystem configuration. Unfortunatelly Skuber uses ActorSystem.settings for http client configuration
-  // See KubernetesClientImpl.invoke and K8sDeploymentManagerOnMocksTest for details.
-  // It is not acceptable for us, because we want to have configuration separation for each DM.
-  // TODO: Upgrade skuber after this change will be merged: https://github.com/hagay3/skuber/pull/275
-  //       After doing that, provide client for getFreshProcessState with lower idle-timeout in connectionPoolSettings
-  //       to make sure that this operation is fast
-  private val effectiveSkuberAppConfig = rawConfig.withFallback(ConfigFactory.defaultReference())
+  // root level ActorSystem configuration
+  private val effectiveSkuberAppConfig = rawConfig.withFallback(ConfigFactory.defaultReference(getClass.getClassLoader))
 
   private lazy val k8sUtils = new K8sUtils(k8sClient)
   private val deploymentPreparer = new DeploymentPreparer(config)
@@ -194,8 +197,8 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
   override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
-      deployments <- k8sClient.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
-      pods <- k8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
+      deployments <- scenarioStateK8sClient.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
+      pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
     } yield mapper.findStatusForDeploymentsAndPods(deployments, pods)
   }
 

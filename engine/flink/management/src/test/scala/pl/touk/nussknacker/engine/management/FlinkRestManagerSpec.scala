@@ -5,9 +5,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
 import io.circe.Json.fromString
 import org.apache.flink.api.common.JobStatus
-import org.scalatest.{Inside, OptionValues}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.exceptions.TestFailedException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.Span.convertSpanToDuration
@@ -31,10 +29,9 @@ import java.util.{Collections, UUID}
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{Failure, Try}
 
 //TODO move some tests to FlinkHttpClientTest
-class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures with Inside with OptionValues {
+class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   import scala.concurrent.ExecutionContext.Implicits._
 
@@ -354,14 +351,14 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"
       )
 
-      val durationLongerThanExpectedClientTimeout = clientRequestTimeout.plus(convertSpanToDuration(patienceConfig.timeout))
-      stubWithFixedDelay(durationLongerThanExpectedClientTimeout)
+      val durationLongerThanClientTimeout = clientRequestTimeout.plus(patienceConfig.timeout)
+      stubWithFixedDelay(durationLongerThanClientTimeout)
       a[SttpClientException.TimeoutException] shouldBe thrownBy {
-        manager.getFreshProcessState(ProcessName("p1")).futureValueEnsuringInnerException(durationLongerThanExpectedClientTimeout)
+        manager.getFreshProcessState(ProcessName("p1")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
       }
 
       stubWithFixedDelay(0.seconds)
-      val resultWithoutDelay = manager.getFreshProcessState(ProcessName("p1")).futureValue(Timeout(durationLongerThanExpectedClientTimeout.plus(1 second)))
+      val resultWithoutDelay = manager.getFreshProcessState(ProcessName("p1")).futureValue(Timeout(durationLongerThanClientTimeout.plus(1 second)))
       resultWithoutDelay shouldEqual None
     } finally {
       wireMockServer.stop()
