@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleCompo
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -43,7 +44,7 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) case class UIBasicParameter(name: String, refClazz: TypingResult)
 
-  @JsonCodec(encodeOnly = true) case class UIParameter(name: String, typ: TypingResult, editor: ParameterEditor, validators: List[ParameterValidator], defaultValue: String, additionalVariables: Map[String, TypingResult], variablesToHide: Set[String], branchParam: Boolean) {
+  @JsonCodec(encodeOnly = true) case class UIParameter(name: String, typ: TypingResult, editor: ParameterEditor, validators: List[ParameterValidator], defaultValue: Expression, additionalVariables: Map[String, TypingResult], variablesToHide: Set[String], branchParam: Boolean) {
 
     def isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 

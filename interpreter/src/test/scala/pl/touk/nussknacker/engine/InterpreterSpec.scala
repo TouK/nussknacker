@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor, SpelTemplateParameterEditor}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
@@ -57,6 +57,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     "dictService" -> NameDictService,
     "spelNodeService" -> SpelNodeService,
     "withExplicitMethod" -> WithExplicitDefinitionService,
+    "spelTemplateService" -> ServiceUsingSpelTemplate,
     "optionTypesService" -> OptionTypesService,
     "optionalTypesService" -> OptionalTypesService,
     "nullableTypesService" -> NullableTypesService,
@@ -580,6 +581,15 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretProcess(process, Transaction()) should equal("12333")
   }
 
+  test("invokes services using spel template") {
+
+    val process = ScenarioBuilder.streaming("test").source("start", "transaction-source")
+      .enricher("ex", "out", "spelTemplateService", "template" -> Expression.spelTemplate("Hello #{#input.msisdn}"))
+      .buildSimpleVariable("result-end", resultVariable, "#out").emptySink("end-end", "dummySink")
+
+    interpretProcess(process, Transaction(msisdn = "foo")) should equal("Hello foo")
+  }
+
   test("uses configured expression languages") {
     val testExpression = "literal expression, no need for quotes"
 
@@ -772,6 +782,27 @@ object InterpreterSpec {
 
     override def parameters: List[api.definition.Parameter]
     = List(api.definition.Parameter[Long]("param1"))
+
+    override def returnType: typing.TypingResult = Typed[String]
+
+    override def invoke(params: Map[String, Any])(implicit ec: ExecutionContext,
+                                                  collector: InvocationCollectors.ServiceInvocationCollector,
+                                                  contextId: ContextId,
+                                                  metaData: MetaData,
+                                                  componentUseCase: ComponentUseCase): Future[AnyRef] = {
+      Future.successful(params.head._2.toString)
+    }
+
+  }
+
+  object ServiceUsingSpelTemplate extends EagerServiceWithStaticParametersAndReturnType {
+
+    private val spelTemplateParameter = api.definition.Parameter
+      .optional[String]("template")
+      .copy(
+        isLazyParameter = true,
+        editor = Some(SpelTemplateParameterEditor))
+    override def parameters: List[api.definition.Parameter] = List(spelTemplateParameter)
 
     override def returnType: typing.TypingResult = Typed[String]
 

@@ -99,7 +99,7 @@ object ProcessTestData {
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")
 
-  val validProcessWithEmptyExpr: CanonicalProcess = validProcessWithParam("fooProcess", "expression" -> Expression("spel", ""))
+  val validProcessWithEmptyExpr: CanonicalProcess = validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
 
   val validDisplayableProcess: ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
 

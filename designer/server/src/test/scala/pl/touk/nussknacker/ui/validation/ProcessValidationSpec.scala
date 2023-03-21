@@ -117,7 +117,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         Sink("out", SinkRef(existingSinkFactory, List())),
-        Filter("loose", Expression("spel", "true"))
+        Filter("loose", Expression.spel("true"))
       ),
       List(Edge("in", "out", None))
 
@@ -132,7 +132,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         Sink("out", SinkRef(existingSinkFactory, List())),
-        Filter("filter", Expression("spel", "true"))
+        Filter("filter", Expression.spel("true"))
       ),
       List(
         Edge("in", "filter", None),
@@ -152,7 +152,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
         Sink("out", SinkRef(existingSinkFactory, List())),
-        Filter("filter", Expression("spel", "true"), isDisabled = Some(true))
+        Filter("filter", Expression.spel("true"), isDisabled = Some(true))
       ),
       List(
         Edge("in", "filter", None),
@@ -183,7 +183,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val process = createProcess(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
-        Filter("inID", Expression("spel", "''")),
+        Filter("inID", Expression.spel("''")),
         Sink("out", SinkRef(existingSinkFactory, List()))
       ),
       List(Edge("inID", "inID", None), Edge("inID", "out", None))
@@ -204,7 +204,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       List(
         Edge("in", "switchID", None),
         Edge("switchID", "out", Some(SwitchDefault)),
-        Edge("switchID", "switch", Some(NextSwitch(Expression("spel", "''"))))
+        Edge("switchID", "switch", Some(NextSwitch(Expression.spel("''"))))
       )
     )
 
@@ -435,7 +435,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val process = createProcess(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
-        Enricher("custom", ServiceRef("fooService3", List(evaluatedparam.Parameter("expression", Expression("spel", "")))), "out"),
+        Enricher("custom", ServiceRef("fooService3", List(evaluatedparam.Parameter("expression", Expression.spel("")))), "out"),
         Sink("out", SinkRef(existingSinkFactory, List()))
       ),
       List(Edge("inID", "custom", None), Edge("custom", "out", None))
@@ -452,7 +452,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
   test("check for wrong fixed expression value in node parameter") {
     val process: DisplayableProcess = createProcessWithParams(
-      List(evaluatedparam.Parameter("expression", Expression("spel", "wrong fixed value"))), Map.empty
+      List(evaluatedparam.Parameter("expression", Expression.spel("wrong fixed value"))), Map.empty
     )
 
     val result = validator.validate(process)

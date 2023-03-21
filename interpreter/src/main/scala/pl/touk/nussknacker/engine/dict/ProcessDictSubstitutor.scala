@@ -20,7 +20,7 @@ class ProcessDictSubstitutor(dictRegistry: DictRegistry,
                              prepareSubstitutionsCollector: (ExpressionTypingInfo, ReplacingStrategy) => Option[ExpressionSubstitutionsCollector]) extends LazyLogging {
 
   def substitute(process: CanonicalProcess, processTypingInfo: Map[String, Map[String, ExpressionTypingInfo]]): CanonicalProcess = {
-    val rewriter = ProcessNodesRewriter.rewritingAllExpressions { exprIdWithMetadata =>expr =>
+    val rewriter = ProcessNodesRewriter.rewritingAllExpressions { exprIdWithMetadata => expr =>
       val nodeExpressionId = exprIdWithMetadata.expressionId
       val nodeTypingInfo = processTypingInfo.getOrElse(nodeExpressionId.nodeId.id, Map.empty)
       val optionalExpressionTypingInfo = nodeTypingInfo.get(nodeExpressionId.expressionId)

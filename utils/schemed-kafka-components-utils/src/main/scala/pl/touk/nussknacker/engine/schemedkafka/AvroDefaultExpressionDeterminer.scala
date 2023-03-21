@@ -114,10 +114,6 @@ class AvroDefaultExpressionDeterminer(handleNotSupported: Boolean) {
       case None => Invalid(NullNotAllowed).toValidatedNel
     }
 
-  private implicit def asSpelExpression(expression: String): Expression =
-    Expression(
-      language = "spel",
-      expression = expression
-    )
+  private implicit def asSpelExpression(expression: String): Expression = Expression.spel(expression)
 
 }

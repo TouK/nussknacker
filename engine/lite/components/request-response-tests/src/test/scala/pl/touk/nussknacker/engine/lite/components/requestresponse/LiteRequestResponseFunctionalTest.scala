@@ -329,7 +329,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
       val sinkParams = (Map(
         SinkRawEditorParamName -> "false",
         SinkValidationModeParameterName -> s"'${cfg.validationModeName}'",
-      ) ++ sinkFields).mapValuesNow(Expression("spel", _))
+      ) ++ sinkFields).mapValuesNow(Expression.spel)
       val scenario = ScenarioBuilder
         .requestResponse("test")
         .additionalFields(properties = Map(

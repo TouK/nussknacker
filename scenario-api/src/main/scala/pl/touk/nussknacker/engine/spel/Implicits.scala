@@ -6,10 +6,6 @@ import scala.language.implicitConversions
 
 object Implicits {
 
-  implicit def asSpelExpression(expression: String): Expression =
-    Expression(
-      language = "spel",
-      expression = expression
-    )
+  implicit def asSpelExpression(expression: String): Expression = Expression.spel(expression)
 
 }

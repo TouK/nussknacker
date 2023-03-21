@@ -44,7 +44,10 @@ export interface UIParameter {
   typ: TypingResult,
   editor: $TodoType,
   validators: $TodoType,
-  defaultValue: string,
+  defaultValue: {
+    language: string,
+    expression: string
+  },
   additionalVariables: TypingInfo,
   variablesToHide: Array<string>,
   branchParam: boolean,

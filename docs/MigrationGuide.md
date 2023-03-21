@@ -26,6 +26,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Thanks to that, caching will be handled as expected, and your `DeploymentManager` just should extend `AlwaysFreshProcessState`
   which provide the same interface as the previous one, with only method name changed.
   Especially, when you use 'PeriodicDeploymentManagerProvider', `delegate` should already return `DeploymentManager` wrapped by caching mechanism.
+* [#4131](https://github.com/TouK/nussknacker/pull/4131) `Parameter.defaultValue` now holds `Option[Expression]` instead of `Option[String]`. You have to wrap a `String` with `Expression.spel()`
 
 ### Other changes
 

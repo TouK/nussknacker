@@ -58,11 +58,11 @@ object ComponentDefinitionPreparer {
 
     //TODO: make it possible to configure other defaults here.
     val base = ComponentGroup(BaseGroupName, List(
-      ComponentTemplate.create(ComponentType.Filter, Filter("", Expression("spel", "true")), userProcessingTypeCategories),
+      ComponentTemplate.create(ComponentType.Filter, Filter("", Expression.spel("true")), userProcessingTypeCategories),
       ComponentTemplate.create(ComponentType.Split, Split(""), userProcessingTypeCategories),
       ComponentTemplate.create(ComponentType.Switch, Switch(""), userProcessingTypeCategories).copy(label = "choice"),
-      ComponentTemplate.create(ComponentType.Variable, Variable("", "varName", Expression("spel", "'value'")), userProcessingTypeCategories),
-      ComponentTemplate.create(ComponentType.MapVariable, VariableBuilder("", "mapVarName", List(Field("varName", Expression("spel", "'value'")))), userProcessingTypeCategories),
+      ComponentTemplate.create(ComponentType.Variable, Variable("", "varName", Expression.spel("'value'")), userProcessingTypeCategories),
+      ComponentTemplate.create(ComponentType.MapVariable, VariableBuilder("", "mapVarName", List(Field("varName", Expression.spel("'value'")))), userProcessingTypeCategories),
     ))
 
     val services = ComponentGroup(ServicesGroupName,
@@ -201,7 +201,7 @@ object ComponentDefinitionPreparer {
     List(
       NodeEdges(NodeTypeId("Split"), List(), canChooseNodes = true, isForInputDefinition = false),
       NodeEdges(NodeTypeId("Switch"), List(
-        EdgeType.NextSwitch(Expression("spel", "true")), EdgeType.SwitchDefault), canChooseNodes = true, isForInputDefinition = false),
+        EdgeType.NextSwitch(Expression.spel("true")), EdgeType.SwitchDefault), canChooseNodes = true, isForInputDefinition = false),
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false, isForInputDefinition = false)
     ) ++ subprocessOutputs ++ joinInputs
   }

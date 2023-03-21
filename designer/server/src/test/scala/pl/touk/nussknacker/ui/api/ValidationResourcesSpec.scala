@@ -112,7 +112,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
 
   it should "find errors in scenario of bad shape" in {
     val invalidShapeProcess = newDisplayableProcess("p1",
-      List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Filter("f1", Expression("spel", "false"))),
+      List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Filter("f1", Expression.spel("false"))),
       List(Edge("s1", "f1", None))
     )
 
@@ -146,7 +146,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
   it should "warn if scenario has disabled filter or processor" in {
     val nodes = List(
       node.Source("source1", SourceRef(ProcessTestData.existingSourceFactory, List())),
-      node.Filter("filter1", Expression("spel", "false"), isDisabled = Some(true)),
+      node.Filter("filter1", Expression.spel("false"), isDisabled = Some(true)),
       node.Processor("proc1", ServiceRef(ProcessTestData.existingServiceId, List.empty), isDisabled = Some(true)),
       node.Sink("sink1", SinkRef(ProcessTestData.existingSinkFactory, List.empty))
     )

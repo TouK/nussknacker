@@ -1,6 +1,7 @@
 export enum ExpressionLang {
   SQL = "sql",
   SpEL = "spel",
+  SpELTemplate = "spelTemplate",
   String = "string",
   JSON = "json"
 }

@@ -12,9 +12,10 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.concurrent.Future
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object validationHelpers {
 
@@ -367,11 +368,11 @@ object validationHelpers {
                                       (implicit nodeId: NodeId): NodeTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(List(
-          Parameter("moreParams", Typed[Boolean]).copy(defaultValue = Some("true"))
+          Parameter("moreParams", Typed[Boolean]).copy(defaultValue = Some(Expression.spel("true")))
         ))
       case TransformationStep(("moreParams", DefinedEagerParameter(true, _)) :: Nil, _) =>
         NextParameters(List(
-          Parameter("extraParam", Typed[String]).copy(defaultValue = Some(s"'$defaultExtraParamValue'")))
+          Parameter("extraParam", Typed[String]).copy(defaultValue = Some(Expression.spel(s"'$defaultExtraParamValue'"))))
         )
       case TransformationStep(("moreParams", _) :: ("extraParam", DefinedEagerParameter(extraParamValue: String, _)) :: Nil, _) =>
         FinalResults(context, state = Some(extraParamValue))

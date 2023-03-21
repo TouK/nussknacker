@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
 import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSinkValueParameter}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
@@ -26,7 +27,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
   import JsonRequestResponseSink._
   override type State = EditorTransformationState
   private val jsonSchemaExtractor = new JsonSchemaExtractor()
-  private val rawModeParam: Parameter = Parameter[Boolean](SinkRawEditorParamName).copy(defaultValue = Some("false"), editor = Some(BoolParameterEditor), validators = List(MandatoryParameterValidator))
+  private val rawModeParam: Parameter = Parameter[Boolean](SinkRawEditorParamName).copy(defaultValue = Some(Expression.spel("false")), editor = Some(BoolParameterEditor), validators = List(MandatoryParameterValidator))
   private val rawValueParam = ParameterWithExtractor.lazyMandatory[AnyRef](SinkRawValueParamName)
   private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(
     editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))

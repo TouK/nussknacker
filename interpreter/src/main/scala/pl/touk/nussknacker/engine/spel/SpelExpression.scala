@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompil
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.{TypeDefinitionSet, api}
+import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util
@@ -174,9 +175,9 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
 object SpelExpressionParser extends LazyLogging {
 
   sealed abstract class Flavour(val languageId: String, val parserContext: Option[ParserContext])
-  object Standard extends Flavour("spel", None)
+  object Standard extends Flavour(GraphExpression.Language.Spel, None)
   //TODO: should we enable other prefixes/suffixes?
-  object Template extends Flavour("spelTemplate", Some(ParserContext.TEMPLATE_EXPRESSION))
+  object Template extends Flavour(GraphExpression.Language.SpelTemplate, Some(ParserContext.TEMPLATE_EXPRESSION))
 
   private[spel] final val LazyValuesProviderVariableName: String = "$lazy"
   private[spel] final val LazyContextVariableName: String = "$lazyContext"

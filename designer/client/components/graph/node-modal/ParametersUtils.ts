@@ -47,7 +47,7 @@ export function adjustParameters(node: NodeType, parameterDefinitions: Array<UIP
     const currentParam = currentParameters.find(p => p.name == def.name)
     const parameterFromDefinition = {
       name: def.name,
-      expression: {expression: def.defaultValue, language: ExpressionLang.SpEL},
+      expression: def.defaultValue,
     }
     return currentParam || parameterFromDefinition
   })

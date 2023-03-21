@@ -174,7 +174,7 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
       "endResult" -> Json.obj("language" -> Json.fromString("spel"), "expression" -> Json.fromString("#someInput"))
     )
     val nodeData = nodeDataCodec.decodeJson(oldFormat).fold(k => throw new IllegalArgumentException(k), identity)
-    nodeData.asInstanceOf[Sink].legacyEndResultExpression shouldBe Some(Expression("spel", "#someInput"))
+    nodeData.asInstanceOf[Sink].legacyEndResultExpression shouldBe Some(Expression.spel("#someInput"))
 
     nodeDataCodec(nodeData).deepDropNullValues shouldBe oldFormat
   }
