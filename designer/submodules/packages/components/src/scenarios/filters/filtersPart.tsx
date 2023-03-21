@@ -26,15 +26,12 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
             author: uniq(["modifiedBy", "createdBy"].flatMap((k) => data.flatMap((v) => v[k])))
                 .sort()
                 .map((v) => ({ name: v })),
-            status: sortBy(
-                statusDefinitions.map((v) => ({ name: v.name, displayableName: v.displayableName, icon: v.icon, tooltip: v.tooltip })),
-                (v) => v.displayableName || v.name
-            ),
+            status: sortBy(statusDefinitions, (v) => v.displayableName),
             processCategory: (userData?.categories || []).map((name) => ({ name })),
         };
     }, [data, filterableKeys, userData?.categories]);
 
-    const statusFilterLabels = statusDefinitions.reduce((map, obj) => {map[obj.name] = obj.displayableName || obj.name; return map;}, {})
+    const statusFilterLabels = statusDefinitions.reduce((map, obj) => {map[obj.name] = obj.displayableName; return map;}, {})
     const { getFilter, setFilter, activeKeys } = useFilterContext<ScenariosFiltersModel>();
 
     const getLabel = useCallback(

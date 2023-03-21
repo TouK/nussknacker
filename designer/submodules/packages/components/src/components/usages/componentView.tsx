@@ -45,15 +45,12 @@ function Component(): JSX.Element {
                 .sort()
                 .map((v) => ({ name: v })),
             CATEGORY: (userData?.categories || []).map((name) => ({ name })),
-            status: sortBy(
-                statusDefinitions.map((v) => ({ name: v.name, displayableName: v.displayableName, icon: v.icon, tooltip: v.tooltip })),
-                (v) => v.displayableName || v.name
-            ),
+            status: sortBy(statusDefinitions, (v) => v.displayableName),
         }),
         [data, userData],
     );
 
-    const statusFilterLabels = statusDefinitions.reduce((map, obj) => {map[obj.name] = obj.displayableName || obj.name; return map;}, {})
+    const statusFilterLabels = statusDefinitions.reduce((map, obj) => {map[obj.name] = obj.displayableName; return map;}, {})
     const { activeKeys } = useFilterContext<UsagesFiltersModel>();
 
     const getLabel = useCallback(
