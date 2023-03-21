@@ -12,12 +12,120 @@ on:
         required: true
         default: true
         type: boolean
+      release_version:
+        description: "Fill it if backport or RC. Otherwise with-defaults will be used"
+        required: false
+        type: string
 
 jobs:
-  setup:
+  build:
     runs-on: ubuntu-latest
     env:
+      SBT_RELEASE_NEXT_VERSION: ${{ (inputs.release_version && format('{0} {1} with-defaults', 'release-version', inputs.release_version)) || 'with-defaults' }}
       NU_DOCKER_UPDATE_LATEST: ${{ inputs.backport_release == false && inputs.release_candidate == false }}
     steps:
-      - run: echo Docker update latest is ${{ env.NU_DOCKER_UPDATE_LATEST }}
+      - name: "Output variables"
+        run: |
+          echo Backport release is ${{ inputs.backport_release }}, Release Candidate is ${{ inputs.release_candidate }}.
+          echo Docker update latest is ${{ env.NU_DOCKER_UPDATE_LATEST }}
+          echo SBT release next version is ${{ env.SBT_RELEASE_NEXT_VERSION }}
+
+      - name: Cancel previous runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/checkout@v3
+
+      - uses: coursier/setup-action@v1
+        with:
+          jvm: temurin:1.11.0.17
+
+      - name: Get Node.js version
+        id: nvm
+        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+
+      - name: Cache ivy packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.cache/coursier
+            ~/.sbt
+          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
+          restore-keys: sbt
+
+      - name: "Config git"
+        run: |
+          git config --global user.name "GitHub Action Release bot"
+          git config --global user.email "support@nussknacker.io"
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
+
+      - name: List keys
+        run: gpg -K
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: "Build"
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          JAVA_OPTS: "-Xss6M -Xms4G -Xmx4G -XX:ReservedCodeCacheSize=256M -XX:MaxMetaspaceSize=2500M -DdockerUpLatest=${{ env.NU_DOCKER_UPDATE_LATEST }}"
+        run: sbt 'release ${{ env.SBT_RELEASE_NEXT_VERSION }} skip-tests'
+
+      - name: "Push to master"
+        if: env.NU_DOCKER_UPDATE_LATEST == true
+        run: git push origin HEAD:master -f
+
+      - name: "Read nussknacker short description from file"
+        if: env.NU_DOCKER_UPDATE_LATEST == true
+        id: short_nu
+        run: echo "::set-output name=short::$(cat dockerhub/nussknacker/short.txt)"
+
+      - name: "Dockerhub publish readme nussknacker"
+        if: env.NU_DOCKER_UPDATE_LATEST == true
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: "touk/nussknacker"
+          short-description: ${{ steps.short_nu.outputs.short }}
+          readme-filepath: "dockerhub/nussknacker/README.md"
+
+      - name: "Read nussknacker-lite-runtime-app short description from file"
+        if: env.NU_DOCKER_UPDATE_LATEST == true
+        id: short_nu_lite
+        run: echo "::set-output name=short::$(cat dockerhub/nussknacker-lite-runtime-app/short.txt)"
+
+      - name: "Dockerhub publish readme nussknacker-lite-runtime-app"
+        if: env.NU_DOCKER_UPDATE_LATEST == true
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: "touk/nussknacker-lite-runtime-app"
+          short-description: ${{ steps.short_nu_lite.outputs.short }}
+          readme-filepath: "dockerhub/nussknacker-lite-runtime-app/README.md"
+
+      - name: "Release"
+        uses: softprops/action-gh-release@v1
+        with:
+          files: nussknacker-dist/target/universal/nussknacker-*.tgz
+          draft: true
+          generate_release_notes: true
 
