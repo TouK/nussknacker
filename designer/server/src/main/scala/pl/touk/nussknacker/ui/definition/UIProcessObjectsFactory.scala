@@ -197,7 +197,7 @@ object UIProcessObjectsFactory {
   }
 
   def createUIParameter(parameter: Parameter): UIParameter = {
-    val defaultValue = parameter.defaultValue.getOrElse(Expression(Language.Spel, ""))
+    val defaultValue = parameter.defaultValue.getOrElse(Expression.spel(""))
     UIParameter(name = parameter.name, typ = parameter.typ, editor = parameter.editor.getOrElse(RawParameterEditor), validators = parameter.validators, defaultValue = defaultValue,
       additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult), variablesToHide = parameter.variablesToHide, branchParam = parameter.branchParam)
   }
