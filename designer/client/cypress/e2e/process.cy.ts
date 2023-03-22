@@ -86,7 +86,7 @@ describe("Process", () => {
     it("should allow drag node", () => {
       cy.get("[title='toggle left panel']").click()
       cy.layoutScenario()
-      cy.dragNode("dynamicService", {x: 50, y: 50})
+      cy.dragNode("dynamicService", {x: 25, y: 50})
       cy.get("[data-testid=graphPage]").matchImage({...screenshotOptions, maxDiffThreshold: 0.01})
     })
 
