@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
 import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, CustomStateStatus, DuringDeployStateStatus, FinishedStateStatus, NotEstablishedStateStatus, ProcessActionType, RunningStateStatus, StateDefinitionDetails, StateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
@@ -10,13 +11,14 @@ import java.net.URI
 object SimpleStateStatus {
 
   // Represents general problem.
-  case class ProblemStateStatus(description: String, isRedeployable: Boolean = true) extends CustomStateStatus(ProblemStateStatus.name) {
+  case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions) extends CustomStateStatus(ProblemStateStatus.name) {
     override def isFailed: Boolean = true
   }
   case object ProblemStateStatus {
     val name: String = "PROBLEM"
     val icon: URI = URI.create("/assets/states/error.svg")
     val defaultDescription = "There are some problems with scenario."
+    val defaultActions = List(ProcessActionType.Deploy, ProcessActionType.Cancel)
 
     // Problem factory methods
 
@@ -44,7 +46,7 @@ object SimpleStateStatus {
       ProblemStateStatus("Scenario state error - no actions found.")
 
     def multipleJobsRunning: ProblemStateStatus =
-      ProblemStateStatus("More than one deployment is running.", isRedeployable = false)
+      ProblemStateStatus("More than one deployment is running.", List(ProcessActionType.Cancel))
 
   }
 
@@ -65,8 +67,7 @@ object SimpleStateStatus {
     case SimpleStateStatus.Finished => List(ProcessActionType.Deploy, ProcessActionType.Archive)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
-    case SimpleStateStatus.ProblemStateStatus(_, true) => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-    case SimpleStateStatus.ProblemStateStatus(_, _) => List(ProcessActionType.Cancel)
+    case SimpleStateStatus.ProblemStateStatus(_, allowedActions) => allowedActions
   }
 
   val definitions: Map[StatusName, StateDefinitionDetails] = Map(
