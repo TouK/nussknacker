@@ -373,8 +373,8 @@ jobs:
       - name: Download node modules
         if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
         run: |
-          npm ci --loglevel verbose --no-audit --prefix designer/client
-          npm ci --loglevel verbose --no-audit --prefix designer/submodules
+          npm ci --no-audit --prefix designer/client
+          npm ci --no-audit --prefix designer/submodules
       - name: Test FE
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         run: (cd designer/client; npm run test:unit)
@@ -423,8 +423,8 @@ jobs:
           jvm: temurin:1.11.0.17
       - name: Download node modules
         run: |
-          npm ci --no-audit --prefix designer/client
-          npm ci --no-audit --prefix designer/submodules
+          npm ci --loglevel verbose --no-audit --prefix designer/client
+          npm ci --loglevel verbose --no-audit --prefix designer/submodules
       - uses: actions/download-artifact@v3
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
