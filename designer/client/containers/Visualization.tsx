@@ -59,7 +59,6 @@ function useProcessState(time = 10000) {
   useEffect(() => {
     let processStateIntervalId
     if (id && !isSubprocess && !isArchived) {
-      fetch()
       processStateIntervalId = setInterval(fetch, time)
     }
     return () => {
