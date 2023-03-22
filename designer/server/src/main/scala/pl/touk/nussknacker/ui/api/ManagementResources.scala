@@ -110,7 +110,7 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
         canDeploy(processId) {
           complete {
             convertSavepointResultToResponse(
-              dispatcher.deploymentManager(processId.id)(ec, user).flatMap(_.savepoint(processId.name, savepointDir)))
+              dispatcher.deploymentManagerUnsafe(processId.id)(ec, user).flatMap(_.savepoint(processId.name, savepointDir)))
           }
         }
       }
@@ -120,7 +120,7 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
           canDeploy(processId) {
             complete {
               convertSavepointResultToResponse(
-                dispatcher.deploymentManager(processId.id)(ec, user).flatMap(_.stop(processId.name, savepointDir, user.toManagerUser)))
+                dispatcher.deploymentManagerUnsafe(processId.id)(ec, user).flatMap(_.stop(processId.name, savepointDir, user.toManagerUser)))
             }
           }
         }

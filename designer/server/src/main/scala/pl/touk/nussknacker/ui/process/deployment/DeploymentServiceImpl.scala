@@ -78,7 +78,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     checkCanPerformActionAndAddInProgressAction[Unit](processId.id, actionType, _.lastDeployedAction.map(_.processVersionId), _ => None).flatMap {
       case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
         runDeploymentActionWithNotifications(actionType, actionId, processId, versionOnWhichActionIsDone, deploymentComment, buildInfoProcessIngType) {
-          dispatcher.deploymentManager(processDetails.processingType).cancel(processId.name, user.toManagerUser)
+          dispatcher.deploymentManagerUnsafe(processDetails.processingType).cancel(processId.name, user.toManagerUser)
         }
     }
   }
@@ -100,7 +100,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
           case Success(validationResult) =>
             //we notify of deployment finish/fail only if initial validation succeeded
             val deploymentFuture = runDeploymentActionWithNotifications(actionType, actionId, processIdWithName, versionOnWhichActionIsDone, deploymentComment, buildInfoProcessIngType) {
-              dispatcher.deploymentManager(processDetails.processingType)
+              dispatcher.deploymentManagerUnsafe(processDetails.processingType)
                 .deploy(validationResult.processVersion, validationResult.deploymentData, validationResult.resolvedScenario, savepointPath)
             }
             Future.successful(deploymentFuture)
@@ -111,7 +111,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   protected def validateBeforeDeploy(processDetails: BaseProcessDetails[CanonicalProcess], actionId: ProcessActionId)
                                     (implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
     validateProcess(processDetails)
-    val deploymentManager = dispatcher.deploymentManager(processDetails.processingType)
+    val deploymentManager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
     for {
       // TODO: scenario was already resolved during validation - use it here
       resolvedCanonicalProcess <- Future.fromTry(scenarioResolver.resolveScenario(processDetails.json, processDetails.processCategory))
@@ -236,23 +236,23 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType])
                              (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
-    val manager = dispatcher.deploymentManager(processDetails.processingType)
-    if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
-      logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
-      DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy))
-    } else if (inProgressActionTypes.contains(ProcessActionType.Cancel)) {
-      logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
-      DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringCancel))
-    } else {
-      checkStateInDeploymentManager(processDetails)
-    }
+    dispatcher.deploymentManager(processDetails.processingType).map { manager =>
+      if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy))
+      } else if (inProgressActionTypes.contains(ProcessActionType.Cancel)) {
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringCancel))
+      } else {
+        checkStateInDeploymentManager(manager, processDetails)
+      }
+    }.getOrElse(DBIOAction.successful(SimpleProcessStateDefinitionManager.errorFailedToGet))
   }
 
-  private def checkStateInDeploymentManager(processDetails: BaseProcessDetails[_])
+  private def checkStateInDeploymentManager(deploymentManager: DeploymentManager, processDetails: BaseProcessDetails[_])
                                            (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
-    val manager = dispatcher.deploymentManager(processDetails.processingType)
     for {
-      state <- DBIOAction.from(getStateFromEngine(manager, processDetails.idWithName))
+      state <- DBIOAction.from(getStateFromEngine(deploymentManager, processDetails.idWithName))
       cancelActionOpt <- handleFinishedProcess(processDetails, state.value)
     } yield {
       val lastAction = cancelActionOpt.orElse(processDetails.lastAction)
