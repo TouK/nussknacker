@@ -36,7 +36,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
-  private val config: Config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
+  private val defaultConfig: Config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
     .foldLeft(ConfigFactory.empty())((c, n) =>
       c.withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'")))
 
@@ -47,7 +47,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
   ))
   private val defaultFragmentOutgoingEdges: List[OutgoingEdge] = List(OutgoingEdge("any", Some(SubprocessOutput("out1"))))
 
-  def getModelData(aConfig: Config = config): LocalModelData = {
+  def getModelData(aConfig: Config = defaultConfig): LocalModelData = {
     LocalModelData(aConfig, new EmptyProcessConfigCreator {
       override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
         "genericJoin" -> WithCategories(DynamicParameterJoinTransformer),
@@ -273,10 +273,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("P1", SubprocessClazzRef[Short])))),
       FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
     ))
-    val configWithValidators: Config = config.withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
+    val configWithValidators: Config = defaultConfig.withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
 
     inside(
-      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, aConfig = configWithValidators, aModelData = getModelData(configWithValidators))
+      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, config = configWithValidators, aModelData = getModelData(configWithValidators))
     ) {
       case ValidationPerformed(List(),None,None) =>
     }
@@ -292,9 +292,9 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("P1", SubprocessClazzRef[Short])))),
       FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
     ))
-    val configWithValidators: Config = config.withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
+    val configWithValidators: Config = defaultConfig.withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
     inside(
-      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, aConfig = configWithValidators, aModelData = getModelData(configWithValidators))
+      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, config = configWithValidators, aModelData = getModelData(configWithValidators))
     ) {
       case ValidationPerformed(List(EmptyMandatoryParameter(_, _, "P1", subprocessId)), None, None) =>
     }
@@ -318,12 +318,12 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
     ))
 
-    val configWithValidators: Config = config
+    val configWithValidators: Config = defaultConfig
       .withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
       .withValue(s"componentsUiConfig.$subprocessId.params.P2.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
 
     inside(
-      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, aConfig = configWithValidators, aModelData = getModelData(configWithValidators))
+      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, config = configWithValidators, aModelData = getModelData(configWithValidators))
     ) {
       case ValidationPerformed(List(EmptyMandatoryParameter(_, _, "P1", "nameOfTheNode"), EmptyMandatoryParameter(_, _, "P2", "nameOfTheNode")), None, None) =>
     }
@@ -385,10 +385,10 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
                        branchCtxs: Map[String, ValidationContext] = Map.empty,
                        outgoingEdges: List[OutgoingEdge] = Nil,
                        fragmentDefinition: CanonicalProcess = defaultFragmentDef,
-                       aConfig: Config = config,
+                       config: Config = defaultConfig,
                        aModelData: LocalModelData = modelData
                       ): ValidationResponse = {
-    val extractor = SubprocessDefinitionExtractor(aConfig, getClass.getClassLoader)
+    val extractor = SubprocessDefinitionExtractor(config, getClass.getClassLoader)
     val subprocessResolver = SubprocessResolver(Map(fragmentDefinition.id -> fragmentDefinition).get _, extractor)
     new NodeDataValidator(aModelData, subprocessResolver).validate(nodeData, ctx, branchCtxs, outgoingEdges)(MetaData("id", StreamMetaData()))
   }
