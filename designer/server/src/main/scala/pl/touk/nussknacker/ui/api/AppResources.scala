@@ -77,9 +77,9 @@ class AppResources(config: Config,
               if (set.isEmpty) {
                 createHealthCheckHttpResponse(OK)
               } else {
-                logger.warn(s"Alerting scenarios: ${set.keys}")
-                logger.debug(s"Alerting scenarios: $set")
-                createHealthCheckHttpResponse(ERROR, Some("Alerting scenarios"), Some(set.keys.toSet))
+                logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
+                logger.debug(s"Scenarios with status PROBLEM: $set")
+                createHealthCheckHttpResponse(ERROR, Some("Scenarios with status PROBLEM"), Some(set.keys.toSet))
               }
             }.recover[Future[HttpResponse]] {
               case NonFatal(e) =>
