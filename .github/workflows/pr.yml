@@ -535,12 +535,12 @@ jobs:
     env:
       #TODO: shouldn't be needed...
       nexusUrl: https://oss.sonatype.org/content/repositories/snapshots
-      nexusUser: ${{ secrets.SONATYPE_USER }}
-      nexusPassword: ${{ secrets.SONATYPE_PASSWORD }}
       # We add dev model to staging because it is used in dev used on this environment, but we also add it for other branches for purpose of cypress tests
       addDevArtifacts: true
       NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
       GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
