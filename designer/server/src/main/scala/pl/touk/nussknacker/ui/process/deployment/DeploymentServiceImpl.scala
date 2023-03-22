@@ -22,6 +22,7 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.Proces
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository, DeploymentComment, FetchingProcessRepository, ProcessDBQueryRepository}
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.ui.util.FutureUtils._
 import slick.dbio.DBIOAction
 
 import java.time.Clock
@@ -275,25 +276,20 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         Option(SimpleProcessStateDefinitionManager.errorFailedToGet),
         cached = false)
 
-    @volatile var statusFetchCompleted = false
     val stateFromEngineFuture = deploymentManager.getProcessState(processIdWithName.name).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
         failedToGetResult
-    }.transform { result =>
-      statusFetchCompleted = true
-      result
     }
 
     scenarioStateTimeout.map { timeout =>
-      Future.firstCompletedOf(Seq(
-        stateFromEngineFuture,
-        akka.pattern.after(timeout) {
-          if (!statusFetchCompleted) {
-            logger.warn(s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name}")
-          }
-          Future.successful(failedToGetResult)
-        }))
+      stateFromEngineFuture.withTimeout(timeout, timeoutResult = failedToGetResult).map {
+        case CompletedNormally(value) =>
+          value
+        case CompletedByTimeout(value) =>
+          logger.warn(s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name}")
+          value
+      }
     }.getOrElse(stateFromEngineFuture)
   }
 
