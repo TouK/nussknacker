@@ -23,49 +23,29 @@ object SimpleStateStatus {
     def failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
 
     def failedToGet: ProblemStateStatus =
-      ProblemStateStatus(errorFailToGetStatus)
+      ProblemStateStatus(s"Failed to get a state of the scenario.")
 
     def shouldBeRunning(deployedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(shouldBeRunningTooltip(deployedVersionId.value, user))
+      ProblemStateStatus(s"Scenario deployed in version $deployedVersionId (by $user), should be running.")
 
     def mismatchDeployedVersion(deployedVersionId: VersionId, exceptedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(mismatchDeployedVersionTooltip(deployedVersionId.value, exceptedVersionId.value, user))
+      ProblemStateStatus(s"Scenario deployed in version $deployedVersionId (by $user), expected version $exceptedVersionId!")
 
-    def shouldNotBeRunning(deployed: Boolean): ProblemStateStatus =
-      ProblemStateStatus(shouldNotBeRunningMessage(deployed))
+    def shouldNotBeRunning(deployed: Boolean): ProblemStateStatus = {
+      val shouldNotBeRunningMessage = if (deployed) "Scenario has been canceled but still is running."
+      else "Scenario has been never deployed but now is running."
+      ProblemStateStatus(shouldNotBeRunningMessage)
+    }
 
     def missingDeployedVersion(exceptedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(missingDeployedVersionTooltip(exceptedVersionId.value, user))
+      ProblemStateStatus(s"Scenario deployed without version (by $user), expected version $exceptedVersionId.")
 
     def processWithoutAction: ProblemStateStatus =
-      ProblemStateStatus(processWithoutActionMessage)
+      ProblemStateStatus("Scenario state error - no actions found.")
 
     def multipleJobsRunning: ProblemStateStatus =
-      ProblemStateStatus(errorMultipleJobsMessage, isRedeployable = false)
+      ProblemStateStatus("More than one deployment is running.", isRedeployable = false)
 
-    // Problem descriptions
-
-    private def errorFailToGetStatus: String =
-      s"Failed to get a state of the scenario."
-
-    private def shouldBeRunningTooltip(deployedVersionId: Long, user: String): String =
-      s"Scenario deployed in version $deployedVersionId (by $user), should be running."
-
-    private def mismatchDeployedVersionTooltip(deployedVersionId: Long, exceptedVersionId: Long, user: String): String =
-      s"Scenario deployed in version $deployedVersionId (by $user), expected version $exceptedVersionId!"
-
-    private def missingDeployedVersionTooltip(exceptedVersionId: Long, user: String): String =
-      s"Scenario deployed without version (by $user), expected version $exceptedVersionId."
-
-    private def processWithoutActionMessage: String =
-      "Scenario state error - no actions found."
-
-    private def shouldNotBeRunningMessage(deployed: Boolean): String =
-      if (deployed) "Scenario has been canceled but still is running."
-      else "Scenario has been never deployed but now is running."
-
-    private def errorMultipleJobsMessage: String =
-      "More than one deployment is running."
   }
 
   val NotDeployed: StateStatus = AllowDeployStateStatus("NOT_DEPLOYED")
