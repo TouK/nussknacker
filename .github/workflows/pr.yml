@@ -423,8 +423,8 @@ jobs:
           jvm: temurin:1.11.0.17
       - name: Download node modules
         run: |
-          npm ci --loglevel verbose --no-audit --prefix designer/client
-          npm ci --loglevel verbose --no-audit --prefix designer/submodules
+          npm ci --no-audit --prefix designer/client
+          npm ci --no-audit --prefix designer/submodules
       - uses: actions/download-artifact@v3
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
