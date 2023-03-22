@@ -6,6 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import play.api.libs.json.{Format, Json}
@@ -48,7 +49,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
   test("detects scenario without progress") {
     val state = mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("progressFailed.json") :: Nil, Nil)
     state shouldBe Some(
-      K8sProcessStateDefinitionManager.processState(SimpleStateStatus.Failed, None, Some(version), Some(timestamp), None,
+      K8sProcessStateDefinitionManager.processState(ProblemStateStatus.failed, None, Some(version), Some(timestamp), None,
         List("Deployment does not have minimum availability.",
           "ReplicaSet \"scenario-7-processname-aaaaa-x-5c799f64b8\" has timed out progressing.")
       )
@@ -71,7 +72,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     val state = mapper.findStatusForDeploymentsAndPods(deployment :: deployment2 :: Nil, Nil)
 
     state shouldBe Some(
-      K8sProcessStateDefinitionManager.processState(K8sStateStatus.MultipleJobsRunning, None, None, None, None,
+      K8sProcessStateDefinitionManager.processState(ProblemStateStatus.multipleJobsRunning, None, None, None, None,
         "Expected one deployment, instead: scenario-7-processname-aaaaa-x, otherName" :: Nil)
     )
     state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Cancel)

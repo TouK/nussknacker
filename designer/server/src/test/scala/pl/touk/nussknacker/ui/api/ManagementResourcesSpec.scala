@@ -392,7 +392,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     customAction(SampleProcess.process.id, CustomActionRequest("invalid-status")) ~> check {
       status shouldBe StatusCodes.Forbidden
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Scenario status: WARNING is not allowed for action invalid-status")
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Scenario status: PROBLEM is not allowed for action invalid-status")
     }
   }
 

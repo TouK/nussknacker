@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import java.net.URI
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{ProcessActionType, defaultActions}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{defaultActions, statusActionsMap}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{ProblemStateStatus, statusActionsPF}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
@@ -15,70 +15,36 @@ import pl.touk.nussknacker.engine.api.process.VersionId
 object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager {
 
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
-    statusActionsMap.getOrElse(stateStatus, defaultActions)
+    statusActionsPF.applyOrElse(stateStatus, (_: StateStatus) => defaultActions)
+
+  override def statusDescription(stateStatus: StateStatus): Option[String] = stateStatus match {
+    case _@ProblemStateStatus(message, _) => Some(message)
+    case _ => SimpleStateStatus.definitions(stateStatus.name).description
+  }
+
+  override def statusTooltip(stateStatus: StateStatus): Option[String] = stateStatus match {
+    case _@ProblemStateStatus(message, _) => Some(message)
+    case _ => SimpleStateStatus.definitions(stateStatus.name).tooltip
+  }
 
   override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
     SimpleStateStatus.definitions
 
+  def errorFailedToGet: ProcessState =
+    processState(failedToGet)
+
   def errorShouldBeRunningState(deployedVersionId: VersionId, user: String): ProcessState =
-    processState(SimpleStateStatus.Error).copy(
-      icon = Some(deployFailedIcon),
-      tooltip = Some(shouldBeRunningTooltip(deployedVersionId.value, user)),
-      description = Some(shouldBeRunningDescription))
+    processState(ProblemStateStatus.shouldBeRunning(deployedVersionId, user))
 
   def errorMismatchDeployedVersionState(deployedVersionId: VersionId, exceptedVersionId: VersionId, user: String): ProcessState =
-    processState(SimpleStateStatus.Error).copy(
-      icon = Some(deployFailedIcon),
-      tooltip = Some(mismatchDeployedVersionTooltip(deployedVersionId.value, exceptedVersionId.value, user)),
-      description = Some(mismatchDeployedVersionDescription))
+    processState(ProblemStateStatus.mismatchDeployedVersion(deployedVersionId, exceptedVersionId, user))
 
   def warningShouldNotBeRunningState(deployed: Boolean): ProcessState =
-    processState(SimpleStateStatus.Warning).copy(
-      icon = Some(shouldNotBeRunningIcon(deployed)),
-      tooltip = Some(shouldNotBeRunningMessage(deployed)),
-      description = Some(shouldNotBeRunningMessage(deployed)))
+    processState(ProblemStateStatus.shouldNotBeRunning(deployed))
 
   def warningMissingDeployedVersionState(exceptedVersionId: VersionId, user: String): ProcessState =
-    processState(SimpleStateStatus.Warning).copy(
-      icon = Some(deployWarningIcon),
-      tooltip = Some(missingDeployedVersionTooltip(exceptedVersionId.value, user)),
-      description = Some(missingDeployedVersionDescription))
+    processState(ProblemStateStatus.missingDeployedVersion(exceptedVersionId, user))
 
-  lazy val warningProcessWithoutActionState: ProcessState =
-    processState(SimpleStateStatus.Warning).copy(
-      icon = Some(notDeployedWarningIcon),
-      tooltip = Some(processWithoutActionMessage),
-      description = Some(processWithoutActionMessage))
-  
-  def shouldBeRunningTooltip(deployedVersionId: Long, user: String): String =
-    s"Scenario deployed in version ${deployedVersionId} (by ${user}), should be running!"
-
-  def mismatchDeployedVersionTooltip(deployedVersionId: Long, exceptedVersionId: Long, user: String): String =
-    s"Scenario deployed in version ${deployedVersionId} (by ${user}), expected version ${exceptedVersionId}!"
-
-  def missingDeployedVersionTooltip(exceptedVersionId: Long, user: String): String =
-    s"Scenario deployed without version (by ${user}), expected version ${exceptedVersionId}!"
-
-  val shouldBeRunningDescription: String = "Scenario currently is not running!"
-
-  val mismatchDeployedVersionDescription: String = "Deployed scenario mismatch version!"
-
-  val missingDeployedVersionDescription: String = "Missing version of deployed scenario!"
-
-  val processWithoutActionMessage: String = "Scenario state error - no actions found!"
-
-  val deployFailedIcon: URI = URI.create("/assets/states/deploy-failed.svg")
-
-  val deployWarningIcon: URI = URI.create("/assets/states/deploy-warning.svg")
-
-  val stoppingWarningIcon: URI = URI.create("/assets/states/stopping-warning.svg")
-
-  val notDeployedWarningIcon: URI = URI.create("/assets/states/not-deployed-warning.svg")
-
-  def  shouldNotBeRunningMessage(deployed: Boolean): String =
-    if (deployed) "Scenario has been canceled but still is running!"
-    else "Scenario has been never deployed but now is running!"
-
-  def shouldNotBeRunningIcon(deployed: Boolean): URI =
-    if (deployed) stoppingWarningIcon else notDeployedWarningIcon
+  def warningProcessWithoutActionState: ProcessState =
+    processState(ProblemStateStatus.processWithoutAction)
 }

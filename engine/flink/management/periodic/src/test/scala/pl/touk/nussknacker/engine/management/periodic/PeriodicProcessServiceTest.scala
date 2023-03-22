@@ -8,6 +8,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
@@ -186,7 +187,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
   test("handleFinished - should mark as failed for failed Flink job") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
 
     f.periodicProcessService.handleFinished.futureValue
 

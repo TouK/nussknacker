@@ -9,6 +9,7 @@ import io.circe.syntax.EncoderOps
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
@@ -46,7 +47,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
     createDeployedProcess(ProcessName("id2"))
     createDeployedProcess(ProcessName("id3"))
     val statuses = Map(
-      ProcessName("id1") -> SimpleStateStatus.FailedToGet,
+      ProcessName("id1") -> ProblemStateStatus.failedToGet,
       ProcessName("id2") -> SimpleStateStatus.Running,
       ProcessName("id3") -> SimpleStateStatus.NotDeployed,
     )
