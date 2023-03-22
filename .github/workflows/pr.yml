@@ -138,8 +138,8 @@ jobs:
       - name: Download node modules
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: |
-          npm ci --no-audit --prefix designer/client
-          npm ci --no-audit --prefix designer/submodules
+          npm ci --loglevel verbose --no-audit --prefix designer/client
+          npm ci --loglevel verbose --no-audit --prefix designer/submodules
       - name: Build FE
         run: (cd designer/client; npm run build)
       - name: Build FE submodules
