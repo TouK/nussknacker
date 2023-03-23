@@ -230,11 +230,8 @@ object SwaggerObject {
 
     val additionalProperties = schema.getAdditionalProperties match {
       case null => AdditionalPropertiesEnabled(SwaggerAny)
-      case additionalPropertyEnabled if additionalPropertyEnabled == true => AdditionalPropertiesEnabled(SwaggerAny)
-      case additionalPropertyEnabled if additionalPropertyEnabled == false => AdditionalPropertiesDisabled
-      case additionalPropertySchema: Schema[_] =>
-        val typed = AdditionalPropertiesEnabled(SwaggerTyped(additionalPropertySchema, swaggerRefSchemas, usedRefs))
-        typed
+      case schema: Schema[_] if schema.getBooleanSchemaValue == false => AdditionalPropertiesDisabled
+      case schema: Schema[_] => AdditionalPropertiesEnabled(SwaggerTyped(schema, swaggerRefSchemas, usedRefs))
     }
     SwaggerObject(properties, additionalProperties, patternProperties)
   }
