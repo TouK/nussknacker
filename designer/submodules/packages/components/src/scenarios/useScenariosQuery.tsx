@@ -32,15 +32,15 @@ function useScenariosQuery(): UseQueryResult<ProcessType[]> {
         } else {
             return {};
         }
-    }, [query.dataUpdatedAt]);
+    }, [query.dataUpdatedAt, query.data, query.isFetched]);
 
-    const queryClient = useQueryClient()
+    const queryClient = useQueryClient();
 
     useEffect(() => {
         queryClient.setQueryData<StatusesType>(scenarioStatusesQueryKey, data);
     }, [data, queryClient]);
 
-    return query
+    return query;
 }
 
 export function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
