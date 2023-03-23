@@ -673,7 +673,7 @@ lazy val interpreter = (project in file("interpreter")).
     name := "nussknacker-interpreter",
     libraryDependencies ++= {
       Seq(
-        "org.typelevel" %% "cats-effect" % "2.5.3",
+        "org.typelevel" %% "cats-effect" % "2.5.5",
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.avro" % "avro" % avroV % "test",
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
