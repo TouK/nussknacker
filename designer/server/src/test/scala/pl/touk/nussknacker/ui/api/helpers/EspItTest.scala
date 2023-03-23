@@ -12,6 +12,7 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder, Json, parser}
+import io.circe.syntax._
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -22,6 +23,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
@@ -41,11 +43,10 @@ import pl.touk.nussknacker.ui.process.subprocess.DbSubprocessRepository
 import pl.touk.nussknacker.ui.process.test.{ScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
-import sttp.client3.SttpBackend
-import sttp.client3.akkahttp.AkkaHttpBackend
-import pl.touk.nussknacker.engine.{BaseModelData, ConfigWithUnresolvedVersion, ModelData, ProcessingTypeConfig, ProcessingTypeData}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 import slick.dbio.DBIOAction
+import _root_.sttp.client3.SttpBackend
+import _root_.sttp.client3.akkahttp.AkkaHttpBackend
 
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
@@ -249,6 +250,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected def customAction(processName: String, reqPayload: CustomActionRequest): RouteTestResult =
     Post(s"/processManagement/customAction/$processName", TestFactory.posting.toRequest(reqPayload)) ~>
       withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
+
+  protected def testScenario(scenario: CanonicalProcess, testDataContent: String): RouteTestResult = {
+    val displayableProcess = ProcessConverter.toDisplayable(scenario, TestProcessingTypes.Streaming, Category1)
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> displayableProcess.asJson.noSpaces)()
+    Post(s"/processManagement/test/${scenario.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
+  }
 
   protected def getProcesses: RouteTestResult =
     Get(s"/processes") ~> withPermissions(processesRoute, testPermissionRead)

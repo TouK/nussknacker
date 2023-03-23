@@ -58,7 +58,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
     for {
       _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}")
       generatedData <- testInfoProvider.generateTestData(canonical, testSampleSize).toRight("Test data could not be generated for scenario")
-      rawTestData <- scenarioTestDataSerDe.serializeTestData(generatedData)
+      rawTestData <- scenarioTestDataSerDe.serialize(generatedData)
     } yield rawTestData
   }
 
@@ -67,10 +67,13 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
                      rawTestData: RawScenarioTestData,
                      testResultsVariableEncoder: Any => T)
                     (implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
+    val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
     for {
-      scenarioTestData <- scenarioTestDataSerDe.prepareTestData(rawTestData)
+      preliminaryScenarioTestData <- scenarioTestDataSerDe.deserialize(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       canonical = toCanonicalProcess(displayableProcess)
+      scenarioTestData <- testInfoProvider.prepareTestData(preliminaryScenarioTestData, canonical)
+        .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       testResults <- testExecutorService.testProcess(idWithName, canonical, displayableProcess.category, scenarioTestData, testResultsVariableEncoder)
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
