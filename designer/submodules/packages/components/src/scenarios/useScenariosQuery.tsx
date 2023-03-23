@@ -1,5 +1,5 @@
 import { UserData } from "nussknackerUi/common/models/User";
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo } from "react";
 import { NkApiContext } from "../settings/nkApiProvider";
 import { ProcessType } from "nussknackerUi/components/Process/types";
 import { StatusesType } from "nussknackerUi/HttpService";
@@ -11,27 +11,39 @@ const scenarioStatusesQueryKey = "scenariosStatuses";
 
 function useScenariosQuery(): UseQueryResult<ProcessType[]> {
     const api = useContext(NkApiContext);
-    const queryClient = useQueryClient()
-    return useQuery({
+    const query = useQuery({
         queryKey: ["scenarios"],
         queryFn: async () => {
             const results = await api.fetchProcesses();
-            const statuses = Object.fromEntries(results.data.map((scenario) => [scenario.name, scenario.state]));
-            // Update statuses cache to reduce number of refetches
-            queryClient.setQueryData(scenarioStatusesQueryKey, statuses);
             return results.data.map(({ createdAt, modificationDate, ...row }) => ({
                 ...row,
                 createdAt: createdAt && DateTime.fromISO(createdAt).toFormat("yyyy-MM-dd HH:mm:ss"),
                 modificationDate: modificationDate && DateTime.fromISO(modificationDate).toFormat("yyyy-MM-dd HH:mm:ss"),
-            }))
-;
+            }));
         },
         enabled: !!api,
         refetchInterval: 60000,
     });
+
+    // Update statuses cache to reduce number of refetches
+    const data = useMemo(() => {
+        if (query.isFetched) {
+            return Object.fromEntries(query.data?.map((scenario) => [scenario.name, scenario.state]));
+        } else {
+            return {};
+        }
+    }, [query.dataUpdatedAt]);
+
+    const queryClient = useQueryClient()
+
+    useEffect(() => {
+        queryClient.setQueryData<StatusesType>(scenarioStatusesQueryKey, data);
+    }, [data, queryClient]);
+
+    return query
 }
 
-export function useScenariosStatusesQuery(additionalEnabled: boolean = true): UseQueryResult<StatusesType> {
+export function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
     const api = useContext(NkApiContext);
     return useQuery({
         queryKey: [scenarioStatusesQueryKey],
@@ -39,10 +51,11 @@ export function useScenariosStatusesQuery(additionalEnabled: boolean = true): Us
             const { data } = await api.fetchProcessesStates();
             return data;
         },
-        enabled: !!api && additionalEnabled,
+        enabled: !!api,
         refetchInterval: 15000,
-        // We have to define staleTime because we set cache manually via queryClient.setQueryData (because we want to avoid unnecessary refetch)
-        staleTime: 15000,
+        // We have to define staleTime because we set cache manually via queryClient.setQueryData during fetching scenario
+        // details (because we want to avoid unnecessary refetch)
+        staleTime: 10000,
     });
 }
 
@@ -61,14 +74,14 @@ export function useUserQuery(): UseQueryResult<UserData> {
 
 export function useScenariosWithStatus(): UseQueryResult<ProcessType[]> {
     const scenarios = useScenariosQuery();
-    const statuses = useScenariosStatusesQuery(!!scenarios.data);
+    const statuses = useScenariosStatusesQuery();
     return useMemo(() => {
         const { data = [] } = scenarios;
         return {
             ...scenarios,
             data: data.map((scenario) => ({
                 ...scenario,
-                state: statuses?.data?.[scenario.id] || scenario.state,
+                state: statuses?.data?.[scenario.id],
             })),
         } as UseQueryResult<ProcessType[]>;
     }, [scenarios, statuses]);
