@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus}
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -49,7 +49,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
     val statuses = Map(
       ProcessName("id1") -> ProblemStateStatus.failedToGet,
       ProcessName("id2") -> SimpleStateStatus.Running,
-      ProcessName("id3") -> SimpleStateStatus.NotDeployed,
+      ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
     )
 
     val resources = prepareBasicAppResources(statuses)
@@ -57,7 +57,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
-      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Deployed scenarios not running (probably failed)"), Some(Set("id1", "id3")))
+      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Alerting scenarios"), Some(Set("id1", "id3")))
       entityAs[HealthCheckProcessResponse] shouldBe expectedResponse
     }
   }
@@ -66,7 +66,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
     createDeployedCanceledProcess(ProcessName("id1"))
     createDeployedProcess(ProcessName("id2"))
     val statuses = Map(
-      ProcessName("id2") -> SimpleStateStatus.NotDeployed,
+      ProcessName("id2") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
     )
 
     val resources = prepareBasicAppResources(statuses)
@@ -74,7 +74,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
-      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Deployed scenarios not running (probably failed)"), Some(Set("id2")))
+      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Alerting scenarios"), Some(Set("id2")))
       entityAs[HealthCheckProcessResponse] shouldBe expectedResponse
     }
   }

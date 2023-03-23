@@ -34,6 +34,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4131](https://github.com/TouK/nussknacker/pull/4131) `Parameter.defaultValue` now holds `Option[Expression]` instead of `Option[String]`. You have to wrap a `String` with `Expression.spel()`
 
 
+
 ### Other changes
 
 * [#4122](https://github.com/TouK/nussknacker/pull/4122), [#4132](https://github.com/TouK/nussknacker/pull/4132) Changes in state definitions:
