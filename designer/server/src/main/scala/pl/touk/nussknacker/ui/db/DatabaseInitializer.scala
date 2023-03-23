@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.db
 
 import com.typesafe.config.Config
 import org.flywaydb.core.Flyway
-import org.flywaydb.core.internal.jdbc.DriverDataSource.DriverType
+import org.flywaydb.core.internal.database.hsqldb.HSQLDBDatabaseType
+import org.flywaydb.core.internal.database.postgresql.PostgreSQLDatabaseType
 
 object DatabaseInitializer {
 
@@ -19,11 +20,13 @@ object DatabaseInitializer {
   def initDatabase(url: String, user: String, password: String, schema: Option[String] = None): Unit =
     Flyway
       .configure()
+      .locations("db/migration/{vendor}", "db/migration/common")
+      .failOnMissingLocations(true)
       .locations(
         (url match {
-          case hsqldbUrl if DriverType.HSQL.matches(hsqldbUrl) => Array("db/migration/hsql", "db/migration/common")
-          case postgresqlUrl if DriverType.POSTGRESQL.matches(postgresqlUrl) => Array("db/migration/postgres", "db/migration/common")
-          case _ => throw new IllegalArgumentException(s"Unsuported database url: $url . Use either PostgreSQL or HSQLDB.")
+          case url if (new HSQLDBDatabaseType).handlesJDBCUrl(url) => Array("db/migration/hsql", "db/migration/common")
+          case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => Array("db/migration/postgres", "db/migration/common")
+          case _ => throw new IllegalArgumentException(s"Unsupported database url: $url. Use either PostgreSQL or HSQLDB.")
         }): _*
       )
       .dataSource(url, user, password)
