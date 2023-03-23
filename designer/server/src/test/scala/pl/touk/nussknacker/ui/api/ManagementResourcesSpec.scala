@@ -53,12 +53,12 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
    test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> check {
+    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-        deployProcess(SampleProcess.process.id) ~> check {
+        deployProcess(SampleProcess.process.id) ~> checkThatEventually {
           getProcess(processName) ~> check {
             decodeDetails.lastAction shouldBe deployedWithVersions(2)
           }
@@ -121,12 +121,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> check {
-      eventually {
-        getProcess(processName) ~> check {
-          val processDetails = responseAs[ProcessDetails]
-          processDetails.isDeployed shouldBe true
-        }
+    deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> checkThatEventually {
+      getProcess(processName) ~> check {
+        val processDetails = responseAs[ProcessDetails]
+        processDetails.isDeployed shouldBe true
       }
       cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))), comment = Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
@@ -162,18 +160,19 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("deploy technical process and mark it as deployed") {
     createValidProcess(processName, TestCat, false)
 
-    deployProcess(processName.value) ~> check { status shouldBe StatusCodes.OK }
-
-    getProcess(processName) ~> check {
-      val processDetails = responseAs[ProcessDetails]
-      processDetails.lastAction shouldBe deployedWithVersions(1)
-      processDetails.isDeployed shouldBe true
+    deployProcess(processName.value) ~> checkThatEventually {
+      status shouldBe StatusCodes.OK
+      getProcess(processName) ~> check {
+        val processDetails = responseAs[ProcessDetails]
+        processDetails.lastAction shouldBe deployedWithVersions(1)
+        processDetails.isDeployed shouldBe true
+      }
     }
   }
 
   test("recognize process cancel in deployment list") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> check {
+    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
@@ -189,7 +188,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("recognize process deploy and cancel in global process list") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> check {
+    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
 
       forScenariosReturned(ProcessesQuery.empty) { processes =>
@@ -397,4 +396,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   def decodeDetails: ProcessDetails = responseAs[ProcessDetails]
+
+  def checkThatEventually[T](body: => T): RouteTestResult => T = check(eventually(body))
+
 }

@@ -26,17 +26,17 @@
 * [#4127](https://github.com/TouK/nussknacker/pull/4127) ResourceLoader and bumps commons io 2.4 -> to 2.6
 * [#4122](https://github.com/TouK/nussknacker/pull/4122) 
   * Add state definitions to `ProcessStateDefinitionManager`
-  * Add `ProcessResources` endpoint that returns state definitions with default state properties (such as displayable name, icon and description), 
+  * Add `StatusResources` endpoint `/statusDefinitions` that returns state definitions with default state properties (such as displayable name, icon and description), 
     to allow filtering by state in UI.
-* [#4100](https://github.com/TouK/nussknacker/pull/4100)[#4104](https://github.com/TouK/nussknacker/pull/4104)
-  Before the change, the scenario list presented "local" states - based only on Nussknacker's actions log.
-  On the other hand, the scenario editor presented state based on engine (e.g. Flink) state.
-  After the change, in all places the state is based on engine (e.g. Flink) state - in some places like scenario list, it is cached.
+* [#4100](https://github.com/TouK/nussknacker/pull/4100)[#4104](https://github.com/TouK/nussknacker/pull/4104)[#4150](https://github.com/TouK/nussknacker/pull/4150)
+  Before the change, the scenario list for a moment presented "local" states - based only on Nussknacker's actions log.
+  After the change, we always present state is based on engine (e.g. Flink) state - in some places like scenario list, it is cached.
 * [#4131](https://github.com/TouK/nussknacker/pull/4131) Support for components using other languages than SpEL, added basic support for SpEL in template mode
 * [#4132](https://github.com/TouK/nussknacker/pull/4132) Combine statuses Failing, Failed, Error, Warning, FailedToGet and MulipleJobsRunning into one status that represents a "Problem".
   Status "Unknown" is removed.
 * [#4135](https://github.com/TouK/nussknacker/pull/4135) Added timeout configuration for fetching scenario state and bumps skuber 3.0.2 -> 3.0.5
-
+* [#4143](https://github.com/TouK/nussknacker/pull/4143) Use `ProcessStateStatus` to detect alerting scenarios in healthcheck `/healthCheck/process/deployment`.
+  After this change healthcheck alerts all types of deployment problems based on `ProcessStateStatus`, including "deployed and not running".
 
 1.8.1 (28 Feb 2023)
 ------------------------
