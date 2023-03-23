@@ -57,7 +57,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
-      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Alerting scenarios"), Some(Set("id1", "id3")))
+      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Scenarios with status PROBLEM"), Some(Set("id1", "id3")))
       entityAs[HealthCheckProcessResponse] shouldBe expectedResponse
     }
   }
@@ -74,7 +74,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
 
     result ~> check {
       status shouldBe StatusCodes.InternalServerError
-      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Alerting scenarios"), Some(Set("id2")))
+      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Scenarios with status PROBLEM"), Some(Set("id2")))
       entityAs[HealthCheckProcessResponse] shouldBe expectedResponse
     }
   }
