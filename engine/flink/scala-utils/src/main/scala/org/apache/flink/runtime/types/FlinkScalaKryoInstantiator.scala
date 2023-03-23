@@ -155,6 +155,10 @@ class ScalaCollectionsRegistrar extends IKryoRegistrar {
       .forTraversableSubclass(MSet.empty[Any], isImmutable = false)
   }
 }
+class JavaWrapperMapRegistrar extends IKryoRegistrar {
+  def apply(newK: Kryo): Unit =
+    newK.register(JavaMapWrapperSerializer.wrapperClass, new JavaMapWrapperSerializer)
+}
 
 /** Registers all the scala (and java) serializers we have */
 class AllScalaRegistrar extends IKryoRegistrar {
@@ -164,6 +168,9 @@ class AllScalaRegistrar extends IKryoRegistrar {
 
     val jcol = new JavaWrapperCollectionRegistrar
     jcol(k)
+
+    val jmap = new JavaWrapperMapRegistrar
+    jmap(k)
 
     // Register all 22 tuple serializers and specialized serializers
     ScalaTupleSerialization.register(k)
