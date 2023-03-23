@@ -28,10 +28,9 @@
   * Add state definitions to `ProcessStateDefinitionManager`
   * Add `StatusResources` endpoint `/statusDefinitions` that returns state definitions with default state properties (such as displayable name, icon and description), 
     to allow filtering by state in UI.
-* [#4100](https://github.com/TouK/nussknacker/pull/4100)[#4104](https://github.com/TouK/nussknacker/pull/4104)
-  Before the change, the scenario list presented "local" states - based only on Nussknacker's actions log.
-  On the other hand, the scenario editor presented state based on engine (e.g. Flink) state.
-  After the change, in all places the state is based on engine (e.g. Flink) state - in some places like scenario list, it is cached.
+* [#4100](https://github.com/TouK/nussknacker/pull/4100)[#4104](https://github.com/TouK/nussknacker/pull/4104)[#4150](https://github.com/TouK/nussknacker/pull/4150)
+  Before the change, the scenario list for a moment presented "local" states - based only on Nussknacker's actions log.
+  After the change, we always present state is based on engine (e.g. Flink) state - in some places like scenario list, it is cached.
 * [#4131](https://github.com/TouK/nussknacker/pull/4131) Support for components using other languages than SpEL, added basic support for SpEL in template mode
 * [#4132](https://github.com/TouK/nussknacker/pull/4132) Combine statuses Failing, Failed, Error, Warning, FailedToGet and MulipleJobsRunning into one status that represents a "Problem".
   Status "Unknown" is removed.
