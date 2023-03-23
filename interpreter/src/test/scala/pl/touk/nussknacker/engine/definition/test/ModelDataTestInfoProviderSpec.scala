@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition
+package pl.touk.nussknacker.engine.definition.test
 
 import com.typesafe.config.ConfigFactory
 import io.circe.Json

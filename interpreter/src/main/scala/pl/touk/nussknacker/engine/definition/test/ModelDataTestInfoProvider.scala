@@ -1,8 +1,6 @@
-package pl.touk.nussknacker.engine.definition
+package pl.touk.nussknacker.engine.definition.test
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.{Decoder, Encoder, Json}
-import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
@@ -15,51 +13,6 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
-
-
-trait TestInfoProvider {
-
-  def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities
-
-  def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData]
-
-  def prepareTestData(preliminaryTestData: PreliminaryScenarioTestData, scenario: CanonicalProcess): Either[String, ScenarioTestData]
-
-}
-
-@JsonCodec case class TestingCapabilities(canBeTested: Boolean, canGenerateTestData: Boolean)
-
-case class PreliminaryScenarioTestData(testRecords: List[PreliminaryScenarioTestRecord])
-
-sealed trait PreliminaryScenarioTestRecord
-
-object PreliminaryScenarioTestRecord {
-  case class Simplified(record: Json) extends PreliminaryScenarioTestRecord
-  @JsonCodec case class Standard(sourceId: String, record: Json, timestamp: Option[Long] = None) extends PreliminaryScenarioTestRecord
-
-  implicit val simplifiedEncoder: Encoder[Simplified] = Encoder.instance(_.record)
-
-  implicit val simplifiedDecoder: Decoder[Simplified] = Decoder.decodeJson.map(Simplified)
-
-  implicit val encoder: Encoder[PreliminaryScenarioTestRecord] = Encoder.instance {
-    case record: Standard => implicitly[Encoder[Standard]].apply(record).dropNullValues
-    case record: Simplified => implicitly[Encoder[Simplified]].apply(record)
-  }
-
-  implicit val decoder: Decoder[PreliminaryScenarioTestRecord] = {
-    val standardDecoder: Decoder[PreliminaryScenarioTestRecord] = implicitly[Decoder[Standard]].map(identity)
-    val simplifiedDecoder: Decoder[PreliminaryScenarioTestRecord] = implicitly[Decoder[Simplified]].map(identity)
-    standardDecoder.or(simplifiedDecoder)
-  }
-
-  def apply(scenarioTestRecord: ScenarioTestRecord): PreliminaryScenarioTestRecord = {
-    Standard(scenarioTestRecord.sourceId.id, scenarioTestRecord.record.json, scenarioTestRecord.record.timestamp)
-  }
-}
-
-object TestingCapabilities {
-  val Disabled: TestingCapabilities = TestingCapabilities(canBeTested = false, canGenerateTestData = false)
-}
 
 class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider with LazyLogging {
 

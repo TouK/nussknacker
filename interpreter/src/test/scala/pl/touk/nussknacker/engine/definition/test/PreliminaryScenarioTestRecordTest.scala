@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.engine.definition
+package pl.touk.nussknacker.engine.definition.test
 
 import io.circe.Json
 import io.circe.parser.decode
+import io.circe.syntax._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import io.circe.syntax._
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 class PreliminaryScenarioTestRecordTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {

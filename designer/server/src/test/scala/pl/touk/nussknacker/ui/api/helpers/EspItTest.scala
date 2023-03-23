@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -47,6 +46,7 @@ import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 import slick.dbio.DBIOAction
 import _root_.sttp.client3.SttpBackend
 import _root_.sttp.client3.akkahttp.AkkaHttpBackend
+import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
 
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}

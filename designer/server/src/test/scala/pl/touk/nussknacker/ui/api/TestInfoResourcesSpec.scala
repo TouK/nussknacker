@@ -11,7 +11,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord, TestInfoProvider, TestingCapabilities}
+import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat

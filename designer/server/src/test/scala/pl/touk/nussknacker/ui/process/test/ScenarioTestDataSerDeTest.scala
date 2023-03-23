@@ -4,7 +4,7 @@ import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
-import pl.touk.nussknacker.engine.definition.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord}
+import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.api.TestDataSettings
 
