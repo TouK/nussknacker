@@ -190,19 +190,19 @@ object aggregates {
       case (field, aggregator) => field -> aggregator.merge(agg1.getOrElse(field, aggregator.zero), agg2.getOrElse(field, aggregator.zero))
     }
 
-    override def result(finalAggregate: Aggregate): AnyRef = scalaFields.map {
+    override def result(finalAggregate: Aggregate): AnyRef = new java.util.HashMap(scalaFields.map {
       case (field, aggregator) => field -> aggregator.getResult(finalAggregate.getOrElse(field, aggregator.zero))
-    }.asJava
+    }.asJava)
 
 
     override def alignToExpectedType(value: AnyRef, outputType: TypingResult): AnyRef = {
       outputType match {
         case typedObj: TypedObjectTypingResult =>
           //here we assume the fields in value are equal to Aggregator fields
-          value.asInstanceOf[java.util.Map[String, AnyRef]].asScala.map {
+          new java.util.HashMap(value.asInstanceOf[java.util.Map[String, AnyRef]].asScala.map {
             case (field, value) =>
               field -> scalaFields(field).alignToExpectedType(value, typedObj.fields(field))
-          }.asJava
+          }.asJava)
         case _ => value
       }
     }
