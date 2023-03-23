@@ -10,9 +10,9 @@ import scala.concurrent.duration._
 trait BasePatientScalaFutures extends ScalaFutures with Eventually {
 
   implicit class FutureOps[T](future: Future[T]) {
-    // Sometimes we know how long should take time after which some Future will be completed. In this case
-    // we want to wait a little big longer than this time, to make sure that in case of Failure, inner Failure won't
-    // be suppressed by exception "A timeout occurred waiting for a future to complete" and extract this inner exception
+    // Sometimes we know the maximum time after which a particular Future will complete. In this case,
+    // we want to wait a little longer, to make sure that in case of a Failure, the inner Failure won't
+    // be suppressed by exception "A timeout occurred waiting for a future to complete"
     def futureValueEnsuringInnerException(innerOperationDuration: FiniteDuration): T = {
       try {
         future.futureValue(Timeout(innerOperationDuration.plus(patienceConfig.timeout)))
