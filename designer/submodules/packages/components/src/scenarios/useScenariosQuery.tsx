@@ -25,20 +25,13 @@ function useScenariosQuery(): UseQueryResult<ProcessType[]> {
         refetchInterval: 60000,
     });
 
-    // Update statuses cache to reduce number of refetches
-    const data = useMemo(() => {
-        if (query.isFetched) {
-            return Object.fromEntries(query.data?.map((scenario) => [scenario.name, scenario.state]));
-        } else {
-            return {};
-        }
-    }, [query.dataUpdatedAt, query.data, query.isFetched]);
-
     const queryClient = useQueryClient();
 
+    // Update statuses cache to reduce number of refetches
     useEffect(() => {
+        const data = query.isFetched ? Object.fromEntries(query.data?.map((scenario) => [scenario.name, scenario.state])) : {};
         queryClient.setQueryData<StatusesType>(scenarioStatusesQueryKey, data);
-    }, [data, queryClient]);
+    }, [query.dataUpdatedAt, query.data, query.isFetched, queryClient]);
 
     return query;
 }
