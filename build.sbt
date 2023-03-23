@@ -1292,7 +1292,7 @@ lazy val security = (project in file("security")).
       "com.auth0" % "jwks-rsa" % "0.21.3", // a tool library for reading a remote JWK store, not an Auth0 service dependency
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-      "com.github.dasniko" % "testcontainers-keycloak" % "2.5.0" % "it,test"
+      "com.github.dasniko" % "testcontainers-keycloak" % "2.0.0" % "it,test"
     )
   )
   .dependsOn(utilsInternal, httpUtils, testUtils % "it,test")
@@ -1351,7 +1351,7 @@ lazy val httpUtils = (project in utils("http-utils")).
   ).dependsOn(componentsApi % Provided, testUtils % "test")
 
 val swaggerParserV = "2.1.12"
-val swaggerIntegrationV = "2.2.8"
+val swaggerIntegrationV = "2.2.9"
 
 lazy val openapiComponents = (project in component("openapi")).
   configs(IntegrationTest).
