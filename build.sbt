@@ -231,7 +231,7 @@ lazy val commonSettings =
         "commons-io" % "commons-io" % commonsIOV,
         //we stick to version in Flink to avoid nasty bugs in process runtime...
         //NOTE: commons-text (in api) uses 3.9...
-        "org.apache.commons" % "commons-lang3" % commonsLangV,
+        "org.apache.commons" % "commons-lang3" % commonsLang3V,
 
         "io.circe" %% "circe-core" % circeV,
         "io.circe" %% "circe-parser" % circeV,
@@ -270,37 +270,38 @@ lazy val commonSettings =
     )
 
 val flinkV = "1.16.1"
-val avroV = "1.11.0"
+val avroV = "1.11.1"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 val kafkaV = "3.3.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
-val springV = "5.2.21.RELEASE"
+val springV = "5.2.23.RELEASE"
 val scalaTestV = "3.2.15"
 val scalaCheckV = "1.17.0"
 val scalaCheckVshort = scalaCheckV.take(4).replace(".","-")
 val scalaTestPlusV = "3.2.15.0" //has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
-val circeV = "0.14.3"
-val jwtCirceV = "9.1.2"
-val jacksonV = "2.13.4"
+val circeV = "0.14.5"
+val circeGenericExtrasV = "0.14.3"
+val jwtCirceV = "9.2.0"
+val jacksonV = "2.14.2"
 val catsV = "2.8.0"
-val scalaParsersV = "1.0.4"
-val everitSchemaV = "1.14.1"
+val everitSchemaV = "1.14.2"
 val slf4jV = "1.7.36"
 val scalaLoggingV = "3.9.5"
 val scalaCompatV = "1.0.2"
 val ficusV = "1.4.7"
 val configV = "1.4.2"
-val commonsLangV = "3.3.2"
-val commonsTextV = "1.8"
-val commonsIOV = "2.6"
+val commonsLang3V = "3.12.0"
+val commonsTextV = "1.10.0"
+val commonsIOV = "2.11.0"
 //we want to use 5.x for lite metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
-val dropWizardV = "5.0.0-rc11"
+// rc16+ depend on slf4j 2.x
+val dropWizardV = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.9.0"
 val testcontainersScalaV = "0.40.10"
-val nettyV = "4.1.48.Final"
+val nettyV = "4.1.90.Final"
 
 val akkaV = "2.6.20"
 val akkaHttpV = "10.2.10"
@@ -309,17 +310,17 @@ val akkaHttpCirceV = "1.39.2"
 val slickV = "3.4.1"
 val hikariCpV = "5.0.1"
 val hsqldbV = "2.7.1"
-val postgresV = "42.5.1"
-val flywayV = "6.3.3"
-val confluentV = "7.3.0"
-val azureKafkaSchemaRegistryV = "1.0.0-beta.9"
-val azureSchemaRegistryV = "1.3.1"
-val azureIdentityV = "1.7.3"
+val postgresV = "42.6.0"
+val flywayV = "9.16.1"
+val confluentV = "7.3.2"
+val azureKafkaSchemaRegistryV = "1.1.0-beta.1"
+val azureSchemaRegistryV = "1.3.4"
+val azureIdentityV = "1.8.1"
 val bcryptV = "0.10.2"
 val cronParserV = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV = "2.0.1.Final"
-val caffeineCacheV = "3.1.2"
-val sttpV = "3.8.11"
+val caffeineCacheV = "3.1.5"
+val sttpV = "3.8.13"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.16.1"
@@ -1257,7 +1258,7 @@ lazy val commonApi = (project in file("common-api")).
       "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
       "io.circe" %% "circe-parser" % circeV,
       "io.circe" %% "circe-generic" % circeV,
-      "io.circe" %% "circe-generic-extras" % circeV
+      "io.circe" %% "circe-generic-extras" % circeGenericExtrasV
     )
   )
 
@@ -1266,7 +1267,7 @@ lazy val scenarioApi = (project in file("scenario-api")).
   settings(
     name := "nussknacker-scenario-api",
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-lang3" % commonsLangV,
+      "org.apache.commons" % "commons-lang3" % commonsLang3V,
     )
   ).dependsOn(commonApi, testUtils % "test")
 

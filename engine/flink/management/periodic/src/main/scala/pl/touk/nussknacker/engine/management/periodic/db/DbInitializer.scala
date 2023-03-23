@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.configuration.FluentConfiguration
-import org.flywaydb.core.internal.jdbc.DriverDataSource.DriverType
+import org.flywaydb.core.internal.database.postgresql.PostgreSQLDatabaseType
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
 object DbInitializer extends LazyLogging {
@@ -30,7 +30,7 @@ object DbInitializer extends LazyLogging {
         ( profile match {
           case HsqldbProfile => Array("db/batch_periodic/migration/hsql", "db/batch_periodic/migration/common")
           case PostgresProfile => Array("db/batch_periodic/migration/postgres", "db/batch_periodic/migration/common")
-          case _ => throw new IllegalArgumentException(s"Unsuported database url: $url . Use either PostgreSQL or HSQLDB.")
+          case _ => throw new IllegalArgumentException(s"Unsupported database url: $url. Use either PostgreSQL or HSQLDB.")
         }): _*
       )
       .dataSource(url, configDb.as[String]("user"), configDb.as[String]("password"))
@@ -44,7 +44,7 @@ object DbInitializer extends LazyLogging {
 
   private def chooseDbProfile(dbUrl: String): JdbcProfile = {
     dbUrl match {
-      case url if DriverType.POSTGRESQL.matches(url) => PostgresProfile
+      case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => PostgresProfile
       case _ => HsqldbProfile
     }
   }
