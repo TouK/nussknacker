@@ -285,7 +285,7 @@ val circeV = "0.14.5"
 val circeGenericExtrasV = "0.14.3"
 val jwtCirceV = "9.2.0"
 val jacksonV = "2.14.2"
-val catsV = "2.8.0"
+val catsV = "2.9.0"
 val everitSchemaV = "1.14.2"
 val slf4jV = "1.7.36"
 val scalaLoggingV = "3.9.5"
@@ -300,7 +300,7 @@ val commonsIOV = "2.11.0"
 // rc16+ depend on slf4j 2.x
 val dropWizardV = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.9.0"
-val testcontainersScalaV = "0.40.10"
+val testcontainersScalaV = "0.40.14"
 val nettyV = "4.1.90.Final"
 
 val akkaV = "2.6.20"
@@ -323,7 +323,7 @@ val caffeineCacheV = "3.1.5"
 val sttpV = "3.8.13"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
-val jmxPrometheusJavaagentV = "0.16.1"
+val jmxPrometheusJavaagentV = "0.18.0"
 
 lazy val commonDockerSettings = {
   Seq(
@@ -1181,7 +1181,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     name := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
       Seq(
-        "io.github.hagay3" %% "skuber" % "3.0.2",
+        "io.github.hagay3" %% "skuber" % "3.0.5",
         "com.github.julien-truffaut" %% "monocle-core" % monocleV,
         "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
         "com.typesafe.akka" %% "akka-slf4j" % akkaV % "test"
@@ -1289,7 +1289,7 @@ lazy val security = (project in file("security")).
       "com.auth0" % "jwks-rsa" % "0.21.3", // a tool library for reading a remote JWK store, not an Auth0 service dependency
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-      "com.github.dasniko" % "testcontainers-keycloak" % "2.0.0" % "it,test"
+      "com.github.dasniko" % "testcontainers-keycloak" % "2.5.0" % "it,test"
     )
   )
   .dependsOn(utilsInternal, httpUtils, testUtils % "it,test")
@@ -1329,7 +1329,7 @@ lazy val processReports = (project in file("designer/processReports")).
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-influxdb" % testcontainersScalaV % "it,test",
-        "org.influxdb" % "influxdb-java" % "2.21" % "it,test"
+        "org.influxdb" % "influxdb-java" % "2.23" % "it,test"
       )
     }
   ).dependsOn(httpUtils, commonUtils, testUtils % "it,test")
@@ -1347,8 +1347,8 @@ lazy val httpUtils = (project in utils("http-utils")).
     }
   ).dependsOn(componentsApi % Provided, testUtils % "test")
 
-val swaggerParserV = "2.1.1"
-val swaggerIntegrationV = "2.2.1"
+val swaggerParserV = "2.1.12"
+val swaggerIntegrationV = "2.2.8"
 
 lazy val openapiComponents = (project in component("openapi")).
   configs(IntegrationTest).
@@ -1383,8 +1383,8 @@ lazy val sqlComponents = (project in component("sql")).
     libraryDependencies ++= Seq(
       "com.zaxxer" % "HikariCP" % hikariCpV,
       //      It won't run on Java 16 as Hikari will fail while trying to load IgniteJdbcThinDriver https://issues.apache.org/jira/browse/IGNITE-14888
-      "org.apache.ignite" % "ignite-core" % "2.10.0" % Provided,
-      "org.apache.ignite" % "ignite-indexing" % "2.10.0" % Provided,
+      "org.apache.ignite" % "ignite-core" % "2.14.0" % Provided,
+      "org.apache.ignite" % "ignite-indexing" % "2.14.0" % Provided,
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
       "org.hsqldb" % "hsqldb" % hsqldbV % "it,test",
     ),
@@ -1511,7 +1511,7 @@ lazy val designer = (project in file("designer/server"))
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
-        "org.apache.xmlgraphics" % "fop" % "2.3",
+        "org.apache.xmlgraphics" % "fop" % "2.8",
 
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
