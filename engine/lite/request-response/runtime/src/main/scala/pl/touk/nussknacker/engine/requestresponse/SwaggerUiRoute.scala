@@ -10,11 +10,9 @@ object SwaggerUiRoute extends Directives with LazyLogging {
     pathPrefix("swagger-ui") {
       get {
         encodeResponse {
-          respondWithHeader(`Cache-Control`(List(CacheDirectives.public, CacheDirectives.`max-age`(0)))) {
-            pathEndOrSingleSlash {
-              getFromResource("swagger-ui/index.html")
-            } ~ getFromResourceDirectory(s"swagger-ui")
-          }
+          pathEndOrSingleSlash {
+            getFromResource("swagger-ui/index.html")
+          } ~ getFromResourceDirectory(s"swagger-ui")
         }
       }
     }
