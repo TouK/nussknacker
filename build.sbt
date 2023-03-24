@@ -253,14 +253,27 @@ lazy val commonSettings =
 
         "io.netty" % "netty-handler" % nettyV,
         "io.netty" % "netty-codec" % nettyV,
+        "io.netty" % "netty-codec-http" % nettyV,
+        "io.netty" % "netty-codec-socks" % nettyV,
+        "io.netty" % "netty-handler-proxy" % nettyV,
         "io.netty" % "netty-transport-native-epoll" % nettyV,
 
-        // Jackson is used by openapi and jwks-rsa
+        // For async-http-client
+        "com.typesafe.netty" % "netty-reactive-streams" % nettyReactiveStreamsV,
+
+        // Jackson is used by: openapi, jwks-rsa, kafka-json-schema-provider
         "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonV,
         "com.fasterxml.jackson.core" % "jackson-core" % jacksonV,
         "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
+        "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % jacksonV,
+        "com.fasterxml.jackson.dataformat" % "jackson-dataformat-toml" % jacksonV,
         "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonV,
+        "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonV,
+        "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonV,
+        "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonV,
         "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonV,
+        "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % jacksonV,
+        "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonV,
 
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-json" % dropWizardV,
@@ -302,6 +315,7 @@ val dropWizardV = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.9.0"
 val testcontainersScalaV = "0.40.14"
 val nettyV = "4.1.90.Final"
+val nettyReactiveStreamsV = "2.0.8"
 
 val akkaV = "2.6.20"
 val akkaHttpV = "10.2.10"
