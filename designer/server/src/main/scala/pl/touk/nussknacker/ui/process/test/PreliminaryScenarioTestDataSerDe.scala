@@ -4,7 +4,7 @@ import io.circe.parser
 import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord}
 import pl.touk.nussknacker.ui.api.TestDataSettings
 
-class ScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
+class PreliminaryScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
 
   def serialize(scenarioTestData: PreliminaryScenarioTestData): Either[String, RawScenarioTestData] = {
     import io.circe.syntax._

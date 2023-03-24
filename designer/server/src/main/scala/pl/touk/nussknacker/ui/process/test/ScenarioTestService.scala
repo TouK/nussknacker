@@ -28,7 +28,7 @@ object ScenarioTestService {
     new ScenarioTestService(
       providers.mapValues(new ModelDataTestInfoProvider(_)),
       testDataSettings,
-      new ScenarioTestDataSerDe(testDataSettings),
+      new PreliminaryScenarioTestDataSerDe(testDataSettings),
       processResolving,
       processCounter,
       testExecutorService,
@@ -39,7 +39,7 @@ object ScenarioTestService {
 
 class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider],
                           testDataSettings: TestDataSettings,
-                          scenarioTestDataSerDe: ScenarioTestDataSerDe,
+                          preliminaryScenarioTestDataSerDe: PreliminaryScenarioTestDataSerDe,
                           processResolving: UIProcessResolving,
                           processCounter: ProcessCounter,
                           testExecutorService: ScenarioTestExecutorService,
@@ -58,7 +58,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
     for {
       _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}")
       generatedData <- testInfoProvider.generateTestData(canonical, testSampleSize).toRight("Test data could not be generated for scenario")
-      rawTestData <- scenarioTestDataSerDe.serialize(generatedData)
+      rawTestData <- preliminaryScenarioTestDataSerDe.serialize(generatedData)
     } yield rawTestData
   }
 
@@ -69,7 +69,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
                     (implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
     for {
-      preliminaryScenarioTestData <- scenarioTestDataSerDe.deserialize(rawTestData)
+      preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe.deserialize(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       canonical = toCanonicalProcess(displayableProcess)
       scenarioTestData <- testInfoProvider.prepareTestData(preliminaryScenarioTestData, canonical)

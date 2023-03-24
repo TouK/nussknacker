@@ -39,7 +39,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeD
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.DbSubprocessRepository
-import pl.touk.nussknacker.ui.process.test.{ScenarioTestDataSerDe, ScenarioTestService}
+import pl.touk.nussknacker.ui.process.test.{PreliminaryScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
@@ -152,7 +152,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     )
 
   protected def createScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider]): ScenarioTestService =
-    new ScenarioTestService(testInfoProviders, featureTogglesConfig.testDataSettings, new ScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
+    new ScenarioTestService(testInfoProviders, featureTogglesConfig.testDataSettings, new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
       processResolving, new ProcessCounter(TestFactory.prepareSampleSubprocessRepository), testExecutorService)
 
   protected def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) = new ManagementResources(
