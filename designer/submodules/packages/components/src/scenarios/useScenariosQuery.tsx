@@ -61,7 +61,7 @@ export function useStatusDefinitions(): UseQueryResult<StatusDefinitionType[]> {
             return data;
         },
         enabled: !!api,
-        refetchInterval: 15000,
+        refetchInterval: false,
     });
 }
 
