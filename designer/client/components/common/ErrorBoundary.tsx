@@ -22,7 +22,7 @@ const svgStyle: CSSProperties = {
   margin: "0 15% 0 15%",
 }
 
-const ErrorBoundaryFallbackComponent = () => (
+export const ErrorBoundaryFallbackComponent = () => (
   <div style={style}>
     <svg style={svgStyle} viewBox="0 0 500 500" preserveAspectRatio="xMidYMid" xmlns="http://www.w3.org/2000/svg">
       <path

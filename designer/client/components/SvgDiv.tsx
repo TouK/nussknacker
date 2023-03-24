@@ -7,7 +7,7 @@ import {absoluteBePath} from "../common/UrlUtils"
 const absoluteExp = /^(?<root>(?<proto>(https?:)?\/)?\/)?.*\.svg$/i
 
 const AsyncSvg = loadable.lib(async ({src}: { src: string }) => {
-  const match = src.match(absoluteExp)
+  const match = src?.match(absoluteExp)
 
   if (!match) {
     throw `${src} is not svg path`
@@ -15,7 +15,11 @@ const AsyncSvg = loadable.lib(async ({src}: { src: string }) => {
 
   if (match.groups.root) {
     const response = await fetch(match.groups.proto ? src : absoluteBePath(src))
-    return await response.text()
+    const html = await response.text()
+    if (!html.trim().endsWith("</svg>")) {
+      throw "response text is not valid svg"
+    }
+    return html
   }
 
   // assume not absolute paths as local webpack paths
