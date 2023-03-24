@@ -35,7 +35,7 @@ class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig
       })
 
   private def getOverriddenComponentId(processingType: ProcessingType, componentName: String, defaultComponentId: ComponentId): ComponentId = {
-    def getComponentId(namespace: String) = configs.get(processingType).flatMap(_.get(namespace)).flatMap(_.componentId)
+    def getComponentId(name: String): Option[ComponentId] = configs.get(processingType).flatMap(_.get(name)).flatMap(_.componentId)
 
     val componentId = getComponentId(componentName)
 

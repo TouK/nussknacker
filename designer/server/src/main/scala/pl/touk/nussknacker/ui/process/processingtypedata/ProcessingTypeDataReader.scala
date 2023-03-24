@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.component.{ComponentsValidator, DefaultComponentService}
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessStateDefinitionService}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import sttp.client3.SttpBackend

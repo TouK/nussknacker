@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 import scala.collection.immutable.ListMap
 
@@ -38,7 +39,7 @@ object ComponentDefinitionPreparer {
                                  componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                                  processCategoryService: ProcessCategoryService,
                                  customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData],
-                                 processingType: String
+                                 processingType: ProcessingType
                                 ): List[ComponentGroup] = {
     val userCategories = processCategoryService.getUserCategories(user)
     val processingTypeCategories = processCategoryService.getProcessingTypeCategories(processingType)
