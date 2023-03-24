@@ -82,7 +82,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
         process.stateStatus shouldBe Some(SimpleStateStatus.Running.name)
         process.stateTooltip shouldBe SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running)
         process.stateDescription shouldBe SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running)
-        process.stateIcon shouldBe SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running)
+        process.stateIcon shouldBe Some(SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running))
       }
     }
   }

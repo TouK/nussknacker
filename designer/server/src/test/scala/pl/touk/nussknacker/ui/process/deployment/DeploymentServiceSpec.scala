@@ -205,7 +205,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -220,7 +220,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(false)
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -235,7 +235,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.processWithoutAction
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -306,7 +306,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -321,7 +321,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -337,7 +337,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.mismatchDeployedVersion(VersionId(2L), VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -366,7 +366,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.missingDeployedVersion(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -382,7 +382,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.failedToGet
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -456,7 +456,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     }
   }

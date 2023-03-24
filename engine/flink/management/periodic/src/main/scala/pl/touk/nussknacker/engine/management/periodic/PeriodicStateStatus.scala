@@ -37,13 +37,13 @@ object PeriodicStateStatus {
   val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
     ScheduledStatus.name -> StateDefinitionDetails(
       displayableName = "Scheduled",
-      icon = Some(URI.create("/assets/states/scheduled.svg")),
+      icon = URI.create("/assets/states/scheduled.svg"),
       tooltip = Some("Scheduled"),
       description = None
     ),
     WaitingForScheduleStatus.name -> StateDefinitionDetails(
       displayableName = "Waiting for reschedule",
-      icon = Some(URI.create("/assets/states/wait-reschedule.svg")),
+      icon = URI.create("/assets/states/wait-reschedule.svg"),
       tooltip = Some("Finished. Waiting for reschedule"),
       description = None
     ),

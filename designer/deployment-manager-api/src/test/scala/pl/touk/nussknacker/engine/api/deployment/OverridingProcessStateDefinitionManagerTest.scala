@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.unknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
 class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Matchers {
@@ -13,10 +14,12 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
   case object CustomState extends CustomStateStatus("CUSTOM_STATE")
   case object CustomStateThatOverrides extends CustomStateStatus("OVERRIDE_THIS_STATE")
 
+  private val icon = unknownIcon
+
   private val defaultStateDefinitionManager: ProcessStateDefinitionManager = new ProcessStateDefinitionManager {
     override def stateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
-      DefaultState.name -> StateDefinitionDetails("Default", None, None, Some("Default description")),
-      DefaultStateToOverride.name -> StateDefinitionDetails("Default to override", None, None, Some("Default description to override"))
+      DefaultState.name -> StateDefinitionDetails("Default", icon, None, Some("Default description")),
+      DefaultStateToOverride.name -> StateDefinitionDetails("Default to override", icon, None, Some("Default description to override"))
     )
     override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
   }
@@ -29,8 +32,8 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
         case CustomState => Some("Calculated description for custom, e.g. schedule date")
       },
       customStateDefinitions = Map(
-        CustomState.name -> StateDefinitionDetails("Custom", None, None, Some("Custom description")),
-        CustomStateThatOverrides.name -> StateDefinitionDetails("Custom that overrides", None, None, Some("Custom description that overrides"))
+        CustomState.name -> StateDefinitionDetails("Custom", icon, None, Some("Custom description")),
+        CustomStateThatOverrides.name -> StateDefinitionDetails("Custom that overrides", icon, None, Some("Custom description that overrides"))
       ),
       delegate = defaultStateDefinitionManager
     )

@@ -63,7 +63,7 @@ export type ProcessStateType = {
   status: StatusType,
   deploymentId?: string,
   allowedActions: Array<ActionType>,
-  icon?: string,
+  icon: string,
   tooltip?: string,
   description?: string,
   startTime?: Date,

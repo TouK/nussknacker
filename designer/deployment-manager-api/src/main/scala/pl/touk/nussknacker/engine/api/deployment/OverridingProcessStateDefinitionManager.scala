@@ -21,7 +21,7 @@ import java.net.URI
   */
 class OverridingProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager,
                                               statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = PartialFunction.empty,
-                                              statusIconsPF: PartialFunction[StateStatus, Option[URI]] = PartialFunction.empty,
+                                              statusIconsPF: PartialFunction[StateStatus, URI] = PartialFunction.empty,
                                               statusTooltipsPF: PartialFunction[StateStatus, Option[String]] = PartialFunction.empty,
                                               statusDescriptionsPF: PartialFunction[StateStatus, Option[String]] = PartialFunction.empty,
                                               customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty)
@@ -30,8 +30,9 @@ class OverridingProcessStateDefinitionManager(delegate: ProcessStateDefinitionMa
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsPF.applyOrElse(stateStatus, delegate.statusActions)
 
-  override def statusIcon(stateStatus: StateStatus): Option[URI] =
-    statusIconsPF.orElse(stateDefinitionsPF(_.icon)).applyOrElse(stateStatus, delegate.statusIcon)
+  override def statusIcon(stateStatus: StateStatus): URI =
+    statusIconsPF.orElse(stateDefinitionIconPF)
+      .applyOrElse(stateStatus, delegate.statusIcon)
 
   override def statusTooltip(stateStatus: StateStatus): Option[String] =
     statusTooltipsPF.orElse(stateDefinitionsPF(_.tooltip)).applyOrElse(stateStatus, delegate.statusTooltip)
@@ -41,6 +42,10 @@ class OverridingProcessStateDefinitionManager(delegate: ProcessStateDefinitionMa
 
   override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
     delegate.stateDefinitions ++ customStateDefinitions
+
+  private def stateDefinitionIconPF: PartialFunction[StateStatus, URI] = {
+    case stateStatus: StateStatus if customStateDefinitions.contains(stateStatus.name) => customStateDefinitions(stateStatus.name).icon
+  }
 
   private def stateDefinitionsPF[T](map: StateDefinitionDetails => Option[T]): PartialFunction[StateStatus, Option[T]] = {
     case stateStatus if customStateDefinitions.contains(stateStatus.name) => customStateDefinitions.get(stateStatus.name).flatMap(map)
