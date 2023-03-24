@@ -31,6 +31,10 @@ const AsyncSvg = loadable.lib(async ({src}: { src: string }) => {
 
 const Flex = styled.div({
   display: "flex",
+  svg: {
+    width: "auto",
+    height: "auto",
+  },
 })
 
 export interface InlineSvgProps extends DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
