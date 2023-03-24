@@ -36,9 +36,21 @@ function useScenariosQuery(): UseQueryResult<ProcessType[]> {
     return query;
 }
 
+// FIXME: it's BE's job
+function addDefaultIcon(data: StatusesType): StatusesType {
+    const entries = Object.entries(data).map(([key, { icon, ...state }]) => [
+        key,
+        {
+            ...state,
+            icon: icon || "/assets/states/status-unknown.svg",
+        },
+    ]);
+    return Object.fromEntries(entries);
+}
+
 export function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
     const api = useContext(NkApiContext);
-    return useQuery({
+    return useQuery<StatusesType>({
         queryKey: [scenarioStatusesQueryKey],
         queryFn: async () => {
             const { data } = await api.fetchProcessesStates();
@@ -49,6 +61,7 @@ export function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
         // We have to define staleTime because we set cache manually via queryClient.setQueryData during fetching scenario
         // details (because we want to avoid unnecessary refetch)
         staleTime: 10000,
+        select: addDefaultIcon,
     });
 }
 
