@@ -40,6 +40,8 @@ private object JavaWrapperScala2_13Serializers {
   // The class returned by asJava (scala.collection.convert.Wrappers$MapWrapper).
   private val mapWrapperClass: Class[_ <: JMap[Int, Int]] = mutable.Map.empty[Int, Int].asJava.getClass
   val mapSerializer = new JavaWrapperScala2_13Serializer[JMap[_, _]](mapWrapperClass, {
+    case scalaMap: Map[_, _] =>
+      scalaMap.asJava
     case scalaMap: mutable.Map[_, _] =>
       scalaMap.asJava
     case javaMap: JMap[_, _] =>
@@ -48,6 +50,8 @@ private object JavaWrapperScala2_13Serializers {
 
   private val listWrapperClass: Class[_ <: JList[Int]] = mutable.Buffer.empty[Int].asJava.getClass
   val listSerializer = new JavaWrapperScala2_13Serializer[JList[_]](listWrapperClass, {
+    case scalaList: List[_] =>
+      scalaList.asJava
     case scalaList: mutable.Buffer[_] =>
       scalaList.asJava
     case javaList: JList[_] =>
@@ -56,6 +60,8 @@ private object JavaWrapperScala2_13Serializers {
 
   private val setWrapperClass: Class[_ <: JSet[Int]] = mutable.Set.empty[Int].asJava.getClass
   val setSerializer = new JavaWrapperScala2_13Serializer[JSet[_]](setWrapperClass, {
+    case scalaSet: Set[_] =>
+      scalaSet.asJava
     case scalaSet: mutable.Set[_] =>
       scalaSet.asJava
     case javaSet: JSet[_] =>
