@@ -35,7 +35,7 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
           processVersion = process.toEngineProcessVersion,
           user = user.toManagerUser,
           params = params)
-        val manager = dispatcher.deploymentManager(process.processingType)
+        val manager = dispatcher.deploymentManagerUnsafe(process.processingType)
         manager.customActions.find(_.name == actionName) match {
           case Some(customAction) =>
             implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh

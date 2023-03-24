@@ -323,6 +323,7 @@ val sttpV = "3.8.11"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.16.1"
+val wireMockV = "2.35.0"
 
 lazy val commonDockerSettings = {
   Seq(
@@ -548,7 +549,8 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         "com.softwaremill.retry" %% "retry" % "0.3.6",
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test"
+        "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test",
+        "com.github.tomakehurst" % "wiremock-jre8" % wireMockV % Test
       )
     }
   ).dependsOn(deploymentManagerApi % "provided",
@@ -1180,10 +1182,11 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     name := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
       Seq(
-        "io.github.hagay3" %% "skuber" % "3.0.2",
+        "io.github.hagay3" %% "skuber" % "3.0.5",
         "com.github.julien-truffaut" %% "monocle-core" % monocleV,
         "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
-        "com.typesafe.akka" %% "akka-slf4j" % akkaV % "test"
+        "com.typesafe.akka" %% "akka-slf4j" % akkaV % "test",
+        "com.github.tomakehurst" % "wiremock-jre8" % wireMockV % Test
       )
     },
     buildAndImportRuntimeImageToK3d := {

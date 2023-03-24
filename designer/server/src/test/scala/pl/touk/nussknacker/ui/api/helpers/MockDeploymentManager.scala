@@ -14,6 +14,7 @@ import shapeless.syntax.typeable.typeableOps
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.concurrent.{Future, Promise}
 import scala.util.Try
 
@@ -37,8 +38,12 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
   private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[ProcessState] =
     Some(SimpleProcessStateDefinitionManager.processState(status, Some(ExternalDeploymentId("1")), version))
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] =
-    Future.successful(managerProcessState.getOrDefault(name, prepareProcessState(defaultProcessStateStatus)))
+  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = {
+    Future {
+      Thread.sleep(delayBeforeStateReturn.toMillis)
+      managerProcessState.getOrDefault(name, prepareProcessState(defaultProcessStateStatus))
+    }
+  }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
@@ -59,6 +64,9 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
   private var cancelResult: Future[Unit] = Future.successful(())
 
   private val managerProcessState = new ConcurrentHashMap[ProcessName, Option[ProcessState]]
+
+  @volatile
+  private var delayBeforeStateReturn: FiniteDuration = 0 seconds
 
   //queue of invocations to e.g. check that deploy was already invoked in "ProcessManager"
   val deploys = new ConcurrentLinkedQueue[ProcessName]()
@@ -100,6 +108,15 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
       synchronized {
         deployResult.remove(name, future)
       }
+    }
+  }
+
+  def withDelayBeforeStateReturn[T](delay: FiniteDuration)(action: => T): T = {
+    delayBeforeStateReturn = delay
+    try {
+      action
+    } finally {
+      delayBeforeStateReturn = 0 seconds
     }
   }
 

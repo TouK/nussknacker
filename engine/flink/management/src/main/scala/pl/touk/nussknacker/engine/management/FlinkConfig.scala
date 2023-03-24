@@ -16,7 +16,8 @@ case class FlinkConfig(restUrl: String,
                        shouldVerifyBeforeDeploy: Boolean = true,
                        shouldCheckAvailableSlots: Boolean = true,
                        waitForDuringDeployFinish: FlinkWaitForDuringDeployFinishedConfig =
-                       FlinkWaitForDuringDeployFinishedConfig(enabled = true, Some(60), Some(1 second)))
+                       FlinkWaitForDuringDeployFinishedConfig(enabled = true, Some(60), Some(1 second)),
+                       scenarioStateRequestTimeout: FiniteDuration = 3 seconds)
 
 case class FlinkWaitForDuringDeployFinishedConfig(enabled: Boolean, maxChecks: Option[Int], delay: Option[FiniteDuration]) {
 

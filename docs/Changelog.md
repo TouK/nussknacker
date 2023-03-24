@@ -34,6 +34,7 @@
 * [#4131](https://github.com/TouK/nussknacker/pull/4131) Support for components using other languages than SpEL, added basic support for SpEL in template mode
 * [#4132](https://github.com/TouK/nussknacker/pull/4132) Combine statuses Failing, Failed, Error, Warning, FailedToGet and MulipleJobsRunning into one status that represents a "Problem".
   Status "Unknown" is removed.
+* [#4135](https://github.com/TouK/nussknacker/pull/4135) Added timeout configuration for fetching scenario state and bumps skuber 3.0.2 -> 3.0.5
 * [#4143](https://github.com/TouK/nussknacker/pull/4143) Use `ProcessStateStatus` to detect alerting scenarios in healthcheck `/healthCheck/process/deployment`.
   After this change healthcheck alerts all types of deployment problems based on `ProcessStateStatus`, including "deployed and not running".
 

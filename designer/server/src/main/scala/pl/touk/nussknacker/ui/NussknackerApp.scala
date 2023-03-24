@@ -135,7 +135,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     val dmDispatcher = new DeploymentManagerDispatcher(managers, futureProcessRepository)
 
-    deploymentService = new DeploymentServiceImpl(dmDispatcher, processRepository, actionRepository, dbioRunner, processValidation, scenarioResolver, processChangeListener)
+    deploymentService = new DeploymentServiceImpl(dmDispatcher, processRepository, actionRepository, dbioRunner,
+      processValidation, scenarioResolver, processChangeListener, featureTogglesConfig.scenarioStateTimeout)
     deploymentService.invalidateInProgressActions()
     reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
     val processActivityRepository = new DbProcessActivityRepository(dbConfig)
