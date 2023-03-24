@@ -32,7 +32,7 @@ object Serializers extends LazyLogging {
 
     override def clazz: Class[_] = classOf[Product]
 
-    override def write(kryo: Kryo, output: Output, obj: Product) = {
+    override def write(kryo: Kryo, output: Output, obj: Product): Unit = {
       // this method handles case classes with implicit parameters and also inner classes.
       // their constructor takes different parameters than usual case class constructor
       def handleObjWithDifferentParamsCountConstructor(constructorParamsCount: Int) = {
@@ -66,12 +66,12 @@ object Serializers extends LazyLogging {
       }
     }
 
-    override def read(kryo: Kryo, input: Input, obj: Class[Product]) = {
+    override def read(kryo: Kryo, input: Input, obj: Class[Product]): Product = {
       val constructorParamsCount = input.readInt()
       val constructors = obj.getConstructors
 
       if (constructorParamsCount == 0 && constructors.isEmpty) {
-        Try(EspTypeUtils.companionObject(obj)).recover {
+        Try(EspTypeUtils.companionObject(obj)).recoverWith {
           case e => logger.error(s"Failed to load companion for ${obj.getClass}"); Failure(e)
         }.get
       } else {
@@ -79,12 +79,12 @@ object Serializers extends LazyLogging {
           val cons = constructors(0)
           val params = (1 to constructorParamsCount).map(_ => kryo.readClassAndObject(input)).toArray[AnyRef]
           cons.newInstance(params: _*).asInstanceOf[Product]
-        }).recover {
+        }).recoverWith {
           case e => logger.error(s"Failed to load obj of class ${obj.getClass.getName}", e); Failure(e)
         }.get
       }
     }
 
-    override def copy(kryo: Kryo, original: Product) = original
+    override def copy(kryo: Kryo, original: Product): Product = original
   }
 }
