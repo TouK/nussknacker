@@ -10,7 +10,7 @@ describe("JSON editor", () => {
   })
 
   it("should display colorfull json", () => {
-    cy.visitNewProcess(seed, "rr", "RequestResponseK8s")
+    cy.visitNewProcess(seed, "rr", "RequestResponse")
     cy.contains(/^properties/i).should("be.enabled").click()
     cy.get("[data-testid=window]").as("modal")
     cy.get("[title='Input schema']").next().find(".ace_editor").should("be.visible").as("editor")
