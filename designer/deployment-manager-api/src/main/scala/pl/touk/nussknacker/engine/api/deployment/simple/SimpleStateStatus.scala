@@ -28,10 +28,10 @@ object SimpleStateStatus {
       ProblemStateStatus(s"Failed to get a state of the scenario.")
 
     def shouldBeRunning(deployedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(s"Scenario deployed in version ${deployedVersionId.value} by $user is not running.")
+      ProblemStateStatus(s"Scenario deployed in version $deployedVersionId by $user is not running.")
 
     def mismatchDeployedVersion(deployedVersionId: VersionId, exceptedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(s"Scenario deployed in version ${deployedVersionId.value} by $user, expected version ${exceptedVersionId.value}.")
+      ProblemStateStatus(s"Scenario deployed in version $deployedVersionId by $user, expected version $exceptedVersionId.")
 
     def shouldNotBeRunning(deployed: Boolean): ProblemStateStatus = {
       val shouldNotBeRunningMessage = if (deployed) "Scenario has been canceled but still is running."
@@ -40,7 +40,7 @@ object SimpleStateStatus {
     }
 
     def missingDeployedVersion(exceptedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(s"Scenario deployed without version by $user, expected version ${exceptedVersionId.value}.")
+      ProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
 
     def processWithoutAction: ProblemStateStatus =
       ProblemStateStatus("Scenario state error - no actions found.")

@@ -4,6 +4,8 @@ import io.circe.{Decoder, Encoder}
 
 final case class VersionId(value: Long) {
   def increase: VersionId = VersionId(value + 1)
+
+  override def toString: String = value.toString
 }
 
 object VersionId {
