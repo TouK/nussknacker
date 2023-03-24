@@ -1,7 +1,7 @@
 import { UserData } from "nussknackerUi/common/models/User";
 import { useContext, useEffect, useMemo } from "react";
 import { NkApiContext } from "../settings/nkApiProvider";
-import { ProcessType } from "nussknackerUi/components/Process/types";
+import {ProcessType, StatusDefinitionType} from "nussknackerUi/components/Process/types";
 import { StatusesType } from "nussknackerUi/HttpService";
 import { useQuery, useQueryClient } from "react-query";
 import { UseQueryResult } from "react-query/types/react/types";
@@ -49,6 +49,19 @@ export function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
         // We have to define staleTime because we set cache manually via queryClient.setQueryData during fetching scenario
         // details (because we want to avoid unnecessary refetch)
         staleTime: 10000,
+    });
+}
+
+export function useStatusDefinitions(): UseQueryResult<StatusDefinitionType[]> {
+    const api = useContext(NkApiContext);
+    return useQuery({
+        queryKey: ["statusDefinitions"],
+        queryFn: async () => {
+            const { data } = await api.fetchStatusDefinitions();
+            return data;
+        },
+        enabled: !!api,
+        refetchInterval: false,
     });
 }
 

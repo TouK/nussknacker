@@ -115,8 +115,6 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 },
                 HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
                 HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
-                HIDE_DEPLOYED: (row, filter) => (filter ? row.lastAction?.action !== "DEPLOY" : true),
-                HIDE_NOT_DEPLOYED: (row, filter) => (filter ? row.lastAction?.action === "DEPLOY" : true),
             }),
         [columns, visibleColumns],
     );
