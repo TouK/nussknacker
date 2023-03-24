@@ -423,7 +423,8 @@ jobs:
           jvm: temurin:1.11.0.17
       - name: Download node modules
         run: |
-          export npm_config_cache=$(mktemp -d) 
+          export npm_config_cache=$(mktemp -d)
+          npm config ls -l | grep cache
           npm ci --no-audit --prefix designer/client
           npm ci --no-audit --prefix designer/submodules
           rm -rf $npm_config_cache
