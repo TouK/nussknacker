@@ -5,6 +5,7 @@ import org.apache.flink.api.common.JobStatus
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -82,14 +83,14 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   //NOTE: Flink <1.10 compatibility - protected to make it easier to work with Flink 1.9, JobStatus changed package, so we use String in case class
   protected def mapJobStatus(overview: JobOverview): StateStatus = {
     toJobStatus(overview) match {
-      case JobStatus.RUNNING if ensureTasksRunning(overview) => FlinkStateStatus.Running
-      case s if checkDuringDeployForNotRunningJob(s) => FlinkStateStatus.DuringDeploy
-      case JobStatus.FINISHED => FlinkStateStatus.Finished
-      case JobStatus.RESTARTING => FlinkStateStatus.Restarting
-      case JobStatus.CANCELED => FlinkStateStatus.Canceled
-      case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
+      case JobStatus.RUNNING if ensureTasksRunning(overview) => SimpleStateStatus.Running
+      case s if checkDuringDeployForNotRunningJob(s) => SimpleStateStatus.DuringDeploy
+      case JobStatus.FINISHED => SimpleStateStatus.Finished
+      case JobStatus.RESTARTING => SimpleStateStatus.Restarting
+      case JobStatus.CANCELED => SimpleStateStatus.Canceled
+      case JobStatus.CANCELLING => SimpleStateStatus.DuringCancel
       //The job is not technically running, but should be in a moment
-      case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
+      case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => SimpleStateStatus.Running
       case JobStatus.FAILING => ProblemStateStatus.failed // redeploy allowed, handle with restartStrategy
       case JobStatus.FAILED => ProblemStateStatus.failed // redeploy allowed, handle with restartStrategy
       case _ => throw new IllegalStateException() // todo: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check

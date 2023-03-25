@@ -3,11 +3,10 @@ package pl.touk.nussknacker.engine.management.streaming
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.management.FlinkStateStatus
 
 import scala.concurrent.duration._
 
@@ -28,7 +27,7 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
 
     eventually {
       val jobStatus = deploymentManager.getProcessState(ProcessName(process.id)).futureValue.value
-      jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
+      jobStatus.map(_.status.name) shouldBe Some(SimpleStateStatus.Running.name)
       jobStatus.map(_.status.isRunning) shouldBe Some(true)
     }
 

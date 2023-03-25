@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
-import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStateStatus, FlinkStreamingDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStreamingDeploymentManagerProvider}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client3.SttpBackend
 
@@ -50,7 +50,7 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
       val jobStatus = deploymentManager.getProcessState(ProcessName(process.id)).futureValue.value
       logger.debug(s"Waiting for deploy: ${process.id}, $jobStatus")
 
-      jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
+      jobStatus.map(_.status.name) shouldBe Some(SimpleStateStatus.Running.name)
       jobStatus.map(_.status.isRunning) shouldBe Some(true)
     }
   }
