@@ -11,7 +11,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ModelConfigLoader.resolveInputConfigDuringExecution` takes `ConfigWithUnresolvedVersion` instead of `Config`. Use `ConfigWithUnresolvedVersion.apply`
     for easy transition between those classes
 * [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`. It affects `MetaData`, `ProcessMetaDataBuilder` and `DisplayableProcess` properties. 
-* [#4122](https://github.com/TouK/nussknacker/pull/4122), [#4132](https://github.com/TouK/nussknacker/pull/4132)
+* [#4122](https://github.com/TouK/nussknacker/pull/4122), [#4132](https://github.com/TouK/nussknacker/pull/4132), [#4179](https://github.com/TouK/nussknacker/pull/4179)
   * Use `ProcessStateDefinitionManager.stateDefinitions` to describe states: 1) their default properties 2) how the states are presented in filter-by-status options.  
     (see an example of basic definitions in `SimpleProcessStateDefinitionManager` and `SimpleStateStatus`).
   * State defaults and allowed actions are moved to `SimpleStateStatus`, `FlinkStateStatus`, `PeriodicStateStatus`, `EmbeddedStateStatus` and `K8sStateStatus`
@@ -23,6 +23,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     Those builders allow to preserve the exact moments when each state appears in the scenario lifecycle.
   * Displayed tooltip and description of `ProblemStateStatus` have the same value.
   * Removed `SimpleStateStatus.Unknown`
+  * Removed status `FailedStateStatus`. Use `ProblemStateStatus` instead.
 * [#4104](https://github.com/TouK/nussknacker/pull/4104) `DeploymentManager.findJobStatus` was renamed to `getProcessState`. New `DataFreshnessPolicy`
   parameter was added. Returned type was changed to `WithDataFreshnessStatus[T]` where `T` is the previous value and `cached: Boolean` is additional
   information that should be provided.
@@ -32,7 +33,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   which provide the same interface as the previous one, with only method name changed.
   Especially, when you use 'PeriodicDeploymentManagerProvider', `delegate` should already return `DeploymentManager` wrapped by caching mechanism.
 * [#4131](https://github.com/TouK/nussknacker/pull/4131) `Parameter.defaultValue` now holds `Option[Expression]` instead of `Option[String]`. You have to wrap a `String` with `Expression.spel()`
-
 
 
 ### Other changes
