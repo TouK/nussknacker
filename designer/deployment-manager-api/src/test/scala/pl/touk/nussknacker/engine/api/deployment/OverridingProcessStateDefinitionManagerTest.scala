@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.unknownIcon
+import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
 class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Matchers {
@@ -14,7 +14,7 @@ class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Match
   case object CustomState extends CustomStateStatus("CUSTOM_STATE")
   case object CustomStateThatOverrides extends CustomStateStatus("OVERRIDE_THIS_STATE")
 
-  private val icon = unknownIcon
+  private val icon = UnknownIcon
 
   private val defaultStateDefinitionManager: ProcessStateDefinitionManager = new ProcessStateDefinitionManager {
     override def stateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(

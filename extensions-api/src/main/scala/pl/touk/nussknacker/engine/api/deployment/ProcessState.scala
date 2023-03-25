@@ -126,5 +126,5 @@ case class StateDefinitionDetails(displayableName: String,
                                   description: Option[String])
 
 object StateDefinitionDetails {
-  val unknownIcon: URI = URI.create("/assets/states/status-unknown.svg")
+  val UnknownIcon: URI = URI.create("/assets/states/status-unknown.svg")
 }

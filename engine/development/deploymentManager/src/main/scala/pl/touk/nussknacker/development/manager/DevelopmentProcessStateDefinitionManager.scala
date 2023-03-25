@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.development.manager
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.unknownIcon
+import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, OverridingProcessStateDefinitionManager, ProcessActionType, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
 
@@ -22,19 +22,19 @@ object DevelopmentStateStatus {
   val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
     AfterRunningStatus.name -> StateDefinitionDetails(
       displayableName = "After running",
-      icon = unknownIcon,
+      icon = UnknownIcon,
       tooltip = Some("External running."),
       description = Some("External running.")
     ),
     PreparingResourcesStatus.name -> StateDefinitionDetails(
       displayableName = "Preparing resources",
-      icon = unknownIcon,
+      icon = UnknownIcon,
       tooltip = Some("Preparing external resources."),
       description = Some("Preparing external resources.")
     ),
     TestStatus.name -> StateDefinitionDetails(
       displayableName = "Test",
-      icon = unknownIcon,
+      icon = UnknownIcon,
       tooltip = Some("Preparing external resources."),
       description = Some("Preparing external resources.")
     ),

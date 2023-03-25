@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.unknownIcon
+import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -21,7 +21,7 @@ class DeploymentManagerStub extends BaseDeploymentManager {
       status = status,
       version = None,
       allowedActions = Nil,
-      icon = unknownIcon,
+      icon = UnknownIcon,
       tooltip = None,
       description = None,
       startTime = None,
