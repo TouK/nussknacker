@@ -9,6 +9,20 @@ import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import java.net.URI
 
+/**
+  * Represents status of a scenario.
+  * Contains:
+  * - status itself and its evaluation moment: status, startTime
+  * - how to display in UI: icon, tooltip, description
+  * - deployment info: deploymentId, version
+  * - which actions are allowed: allowedActions
+  * - additional properties: attributes, errors
+  *
+  * Statuses definition, allowed actions and current scenario ProcessState is defined by [[ProcessStateDefinitionManager]].
+  * @param description Short message displayed in top right panel of scenario diagram panel.
+  * @param tooltip Message displayed when mouse is hoovering over an icon (both scenarios and diagram panel).
+  *                May contain longer, detailed status description.
+  */
 @JsonCodec case class ProcessState(deploymentId: Option[ExternalDeploymentId],
                                    status: StateStatus,
                                    version: Option[ProcessVersion],
@@ -79,6 +93,8 @@ object StateStatus {
 
   def isRunning: Boolean = false
   def isFailed: Boolean = false
+
+  // Status identifier, should be unique among all states registered within all processing types.
   def name: StatusName
 
 }
@@ -97,10 +113,6 @@ final case class FinishedStateStatus(name: StatusName) extends StateStatus {
 
 final case class RunningStateStatus(name: StatusName) extends StateStatus {
   override def isRunning: Boolean = true
-}
-
-final case class FailedStateStatus(name: StatusName) extends StateStatus {
-  override def isFailed: Boolean = true
 }
 
 // This status class is a walk around for fact that StateStatus is encoded and decoded. It causes that there is no easy option
