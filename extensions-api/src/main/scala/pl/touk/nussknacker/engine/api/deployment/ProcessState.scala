@@ -93,9 +93,15 @@ object StateStatus {
     .default
     .withDefaults
     .withDiscriminator("type")
+
+  // Temporary encoder/decoder
+  implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeString.contramap(_.name)
+  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.map(statusName => new StateStatus {
+    override def name: StatusName = statusName
+  })
 }
 
-@ConfiguredJsonCodec sealed trait StateStatus {
+sealed trait StateStatus {
   //used for filtering processes (e.g. shouldBeRunning)
   def isDuringDeploy: Boolean = false
   //used for handling finished

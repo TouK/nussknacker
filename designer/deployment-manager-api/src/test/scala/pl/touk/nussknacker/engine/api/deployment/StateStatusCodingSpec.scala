@@ -13,35 +13,27 @@ class StateStatusCodingSpec extends AnyFunSuite with Matchers with EitherValuesD
   test("simple status coding") {
     val givenStatus: StateStatus = SimpleStateStatus.Running
     val statusJson = givenStatus.asJson
-    statusJson.hcursor.get[String]("type").rightValue shouldEqual "RunningStateStatus"
-    statusJson.hcursor.get[String]("name").rightValue shouldEqual "RUNNING"
+    statusJson shouldEqual Json.fromString("RUNNING")
 
-    val decodedStatus = Json.obj(
-      "type" -> Json.fromString("RunningStateStatus"),
-      "name" -> Json.fromString("RUNNING")
-    ).as[StateStatus].rightValue
-    decodedStatus shouldEqual givenStatus
+    val decodedStatus = Json.fromString("RUNNING").as[StateStatus].rightValue
+    decodedStatus.name shouldEqual givenStatus.name
   }
 
   test("custom status coding") {
     val givenStatus: StateStatus = MyCustomStateStatus("fooBar")
 
     val statusJson = givenStatus.asJson
-    statusJson.hcursor.get[String]("type").rightValue shouldEqual "CustomStateStatus"
-    statusJson.hcursor.get[String]("name").rightValue shouldEqual "CUSTOM"
+    statusJson shouldEqual Json.fromString("CUSTOM")
     // we don't encode custom state statuses fields be design
-    statusJson.hcursor.get[String]("someField").toOption shouldBe empty
 
-    val decodedStatus = Json.obj(
-      "type" -> Json.fromString("CustomStateStatus"),
-      "name" -> Json.fromString("CUSTOM")
-    ).as[StateStatus].rightValue
+    val decodedStatus = Json.fromString("CUSTOM").as[StateStatus].rightValue
     // we don't decode correctly custom statuses be design - their role is to encapsulate business status of process which will be
     // then presented by ProcessStateDefinitionManager
+    decodedStatus.name shouldEqual givenStatus.name
     decodedStatus should not equal givenStatus
   }
 
-  case class MyCustomStateStatus(someField: String) extends CustomStateStatus("CUSTOM") {
+  case class MyCustomStateStatus(someField: String) extends StateStatus("CUSTOM") {
     override def isRunning: Boolean = true
   }
 
