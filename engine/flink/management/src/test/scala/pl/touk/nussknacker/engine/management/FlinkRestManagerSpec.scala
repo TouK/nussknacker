@@ -8,8 +8,8 @@ import org.apache.flink.api.common.JobStatus
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.time.Span.convertSpanToDuration
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
@@ -285,7 +285,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val manager = createManager(statuses)
     manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
-      manager, ExternalDeploymentId("2343"), FlinkStateStatus.Running, startTime = Some(10L)
+      manager, ExternalDeploymentId("2343"), SimpleStateStatus.Running, startTime = Some(10L)
     ))
   }
 
@@ -294,7 +294,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val manager = createManager(statuses)
     manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
-      manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, startTime = Some(10L)
+      manager, ExternalDeploymentId("2343"), SimpleStateStatus.Finished, startTime = Some(10L)
     ))
 
   }
@@ -304,7 +304,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val manager = createManager(statuses)
     manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
-      manager, ExternalDeploymentId("1111"), FlinkStateStatus.Restarting, startTime = Some(30L)
+      manager, ExternalDeploymentId("1111"), SimpleStateStatus.Restarting, startTime = Some(30L)
     ))
   }
 
@@ -324,7 +324,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val manager = createManager(statuses)
     manager.getFreshProcessState(processName).futureValue shouldBe Some(processState(
-      manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, Some(ProcessVersion(VersionId(version), processName, processId, user, None)), Some(10L)
+      manager, ExternalDeploymentId("2343"), SimpleStateStatus.Finished, Some(ProcessVersion(VersionId(version), processName, processId, user, None)), Some(10L)
     ))
   }
 

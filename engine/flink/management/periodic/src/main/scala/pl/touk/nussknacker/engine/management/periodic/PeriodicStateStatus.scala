@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, FailedStateStatus, ProcessActionType, RunningStateStatus, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, ProcessActionType, RunningStateStatus, StateDefinitionDetails, StateStatus}
 
 import java.net.URI
 import java.time.LocalDateTime
@@ -22,7 +22,6 @@ object PeriodicStateStatus {
     case _: RunningStateStatus => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
     case _: ScheduledStatus => List(ProcessActionType.Cancel, ProcessActionType.Deploy)
     case WaitingForScheduleStatus => List(ProcessActionType.Cancel) //or maybe should it be empty??
-    case _: FailedStateStatus => List(ProcessActionType.Cancel) //redeploy is not allowed
     case _: ProblemStateStatus => List(ProcessActionType.Cancel) //redeploy is not allowed
   }
 

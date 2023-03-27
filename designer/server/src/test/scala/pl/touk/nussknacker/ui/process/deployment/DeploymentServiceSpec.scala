@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAc
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
+import pl.touk.nussknacker.engine.management.FlinkProcessStateDefinitionManager
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
@@ -270,7 +270,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).dbioActionValues
 
-    val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+    val state = FlinkProcessStateDefinitionManager.processState(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessState(processName, Some(state)) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -286,12 +286,12 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id = prepareDeployedProcess(processName).dbioActionValues
 
-    val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+    val state = FlinkProcessStateDefinitionManager.processState(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessState(processName, Some(state)) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe FlinkStateStatus.Restarting
+      state.status shouldBe SimpleStateStatus.Restarting
       state.allowedActions shouldBe List(ProcessActionType.Cancel)
       state.description shouldBe Some("Scenario is restarting...")
     }

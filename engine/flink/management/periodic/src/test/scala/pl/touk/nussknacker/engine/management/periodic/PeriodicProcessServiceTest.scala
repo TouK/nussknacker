@@ -8,10 +8,10 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository.createPeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
@@ -115,7 +115,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
   test("handleFinished - should reschedule for finished Flink job") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Finished)
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -131,7 +131,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
   test("handleFinished - should deactivate process if there are no future schedules") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed, scheduleProperty = cronInPast)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Finished)
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
 
     f.periodicProcessService.handleFinished.futureValue
 

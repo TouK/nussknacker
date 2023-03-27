@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, FailedStateStatus, OverridingProcessStateDefinitionManager, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, OverridingProcessStateDefinitionManager, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificInitialData}
