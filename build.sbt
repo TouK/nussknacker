@@ -572,6 +572,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
   interpreter % "provided",
   componentsApi % "provided",
   httpUtils % "provided",
+  flinkScalaUtils % "provided",
   kafkaTestUtils % "it,test")
 
 lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic")).
