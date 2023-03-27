@@ -37,6 +37,8 @@
 * [#4135](https://github.com/TouK/nussknacker/pull/4135) Added timeout configuration for fetching scenario state and bumps skuber 3.0.2 -> 3.0.5
 * [#4143](https://github.com/TouK/nussknacker/pull/4143) Use `ProcessStateStatus` to detect alerting scenarios in healthcheck `/healthCheck/process/deployment`.
   After this change healthcheck alerts all types of deployment problems based on `ProcessStateStatus`, including "deployed and not running".
+* [#4160](https://github.com/TouK/nussknacker/pull/4160) Testing using events from file accepts simplified test record format. 
+  SourceId and timestamp fields can be omitted from the test record and record field can be inlined. The simplified format works only for scenarios with only one source.
 
 1.8.1 (28 Feb 2023)
 ------------------------

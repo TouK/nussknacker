@@ -25,6 +25,18 @@ Each line of this file represents the next ongoing event and specify which sourc
 A scenario can be tested with events coming from a file; this can be very handy if several test passes on the same input events are needed before the scenario is deemed ready. Similarly, as with test data capture, this feature also works with multiple sources.
 All you need to do is to reuse file you already have from the `Test data capture` step or prepare such file manually e.g. for the **Request-Response** processing mode.
 
+Designer accepts the following formats of test records:
+- standard records that are generated using `generate` button and have `sourceId`, `record` and optional `timestamp` fields
+- simplified records that have only `record` JSON inlined. Simplified format can be helpful in **Request-Response**
+  or when source records are persisted in logs and can be copied directly to the test file. Note, this format can be
+  used only if the tested scenario has exactly one source.
+
+For example, the below records can be used to test if the scenario has exactly one source:
+```json
+{"sourceId":"kafka1","record":{"keySchemaId":null,"valueSchemaId":null,"consumerRecord":{"key":null,"value":{"clientId":"4","amount":30,"eventDate":1674548921},"topic":"transactions","partition":0,"offset":58209,"timestamp":1674548933921,"timestampType":"CreateTime","headers":{},"leaderEpoch":0}},"timestamp":1674548933921}
+{"keySchemaId":null,"valueSchemaId":null,"consumerRecord":{"key":null,"value":{"clientId":"4","amount":30,"eventDate":1674548921},"topic":"transactions","partition":0,"offset":58209,"timestamp":1674548933921,"timestampType":"CreateTime","headers":{},"leaderEpoch":0}}
+```
+
 If you want to read more than 20 records from file, you will need to change [testing settings](../installation_configuration_guide/DesignerConfiguration.md#testing).
 
 
