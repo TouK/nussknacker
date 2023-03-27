@@ -72,7 +72,7 @@ object Serializers extends LazyLogging {
 
       if (constructorParamsCount == 0 && constructors.isEmpty) {
         Try(EspTypeUtils.companionObject(obj)).recoverWith {
-          case e => logger.error(s"Failed to load companion for ${obj.getClass}"); Failure(e)
+          case e => logger.error(s"Failed to load companion for $obj"); Failure(e)
         }.get
       } else {
         Try({
@@ -80,7 +80,7 @@ object Serializers extends LazyLogging {
           val params = (1 to constructorParamsCount).map(_ => kryo.readClassAndObject(input)).toArray[AnyRef]
           cons.newInstance(params: _*).asInstanceOf[Product]
         }).recoverWith {
-          case e => logger.error(s"Failed to load obj of class ${obj.getClass.getName}", e); Failure(e)
+          case e => logger.error(s"Failed to load obj of class $obj", e); Failure(e)
         }.get
       }
     }
