@@ -845,7 +845,6 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
         status shouldEqual StatusCodes.OK
         val stateStatusResponse = parseStateResponse(responseAs[Json])
         stateStatusResponse.name shouldBe SimpleStateStatus.Running.name
-        stateStatusResponse.`type` shouldBe SimpleStateStatus.Running.getClass.getSimpleName
       }
     }
   }
@@ -878,20 +877,14 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  case class StateStatusResponse(name: String, `type`: String)
+  case class StateStatusResponse(name: String)
 
   private def parseStateResponse(stateResponse: Json): StateStatusResponse = {
     val name = stateResponse.hcursor
       .downField("status")
-      .downField("name")
       .as[String].toOption.get
 
-    val statusType = stateResponse.hcursor
-      .downField("status")
-      .downField("type")
-      .as[String].toOption.get
-
-    StateStatusResponse(name, statusType)
+    StateStatusResponse(name)
   }
 
   private def checkSampleProcessRootIdEquals(expected: String): Assertion = {
