@@ -62,7 +62,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def categories[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2")
 
-  private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT" , "DevelopmentTests")
+  private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT" , "DevelopmentTests", "Periodic")
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     val schemaRegistryFactory = createSchemaRegistryClientFactory(processObjectDependencies)
@@ -99,7 +99,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "real-kafka-avro" -> all(avroSourceFactory),
       "kafka" -> all(universalSourceFactory),
       "kafka-transaction" -> all(SourceFactory.noParam[String](new NoEndingSource)),
-      "boundedSource" -> categories(BoundedSource),
+      "boundedSource" -> all(BoundedSource),
       "oneSource" -> categories(SourceFactory.noParam[String](new OneSource)),
       "communicationSource" -> categories(DynamicParametersSource),
       "csv-source" -> categories(SourceFactory.noParam[CsvRecord](new CsvSource)),
@@ -160,7 +160,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "meetingService" -> features(MeetingService),
     "dynamicService" -> categories(new DynamicService),
     "customValidatedService" -> categories(new CustomValidatedService),
-    "modelConfigReader" -> categories(new ModelConfigReaderService(processObjectDependencies.config))
+    "modelConfigReader" -> categories(new ModelConfigReaderService(processObjectDependencies.config)),
+    "log" -> all(LoggingService)
   )
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
