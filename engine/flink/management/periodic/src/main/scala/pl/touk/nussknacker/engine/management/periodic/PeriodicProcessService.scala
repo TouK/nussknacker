@@ -115,7 +115,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   //Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
   private def checkIfNotRunning(toDeploy: PeriodicProcessDeployment): Future[Option[PeriodicProcessDeployment]] = {
     delegateDeploymentManager.getProcessState(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh).map(_.value).map {
-      case Some(state) if state.isDeployed =>
+      case Some(state) if state.status.isDeployed =>
         logger.debug(s"Deferring run of ${toDeploy.display} as scenario is currently running")
         None
       case _ => Some(toDeploy)

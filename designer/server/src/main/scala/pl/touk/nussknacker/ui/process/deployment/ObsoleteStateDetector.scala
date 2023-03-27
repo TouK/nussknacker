@@ -14,7 +14,7 @@ object ObsoleteStateDetector {
       case (Some(state), _) if state.status.isFailed => state
       case (Some(state), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastAction)
       case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
-      case (Some(state), _) if state.isDeployed => handleFollowingDeployState(state, lastAction)
+      case (Some(state), _) if state.status.isDeployed => handleFollowingDeployState(state, lastAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
       case (Some(state), _) => handleState(state, lastAction)
       case (None, Some(_)) => SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
@@ -65,7 +65,7 @@ object ObsoleteStateDetector {
     processState match {
       case Some(state) =>
         state.version match {
-          case _ if !state.isDeployed =>
+          case _ if !state.status.isDeployed =>
             state.withStatusDetails(SimpleProcessStateDefinitionManager.errorShouldBeRunningState(action.processVersionId, action.user))
           case Some(ver) if ver.versionId != action.processVersionId =>
             state.withStatusDetails(SimpleProcessStateDefinitionManager.errorMismatchDeployedVersionState(ver.versionId, action.processVersionId, action.user))

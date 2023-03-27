@@ -34,8 +34,6 @@ import java.net.URI
                                    attributes: Option[Json],
                                    errors: List[String]) {
 
-  def isDeployed: Boolean = status.isRunning || status.isDuringDeploy
-
   // TODO: those methods shouldn't be needed after refactors in DeploymentManager: split getProcessState into
   //       fetching only details, and enriching details with presentation properties like icon, tooltip etc.
   def toStatusDetails: StatusDetails = StatusDetails(
@@ -109,6 +107,8 @@ sealed trait StateStatus {
 
   def isRunning: Boolean = false
   def isFailed: Boolean = false
+
+  def isDeployed: Boolean = isRunning || isDuringDeploy
 
   // Status identifier, should be unique among all states registered within all processing types.
   def name: StatusName
