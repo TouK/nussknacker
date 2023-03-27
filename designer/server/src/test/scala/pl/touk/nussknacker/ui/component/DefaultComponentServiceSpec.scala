@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import akka.actor.ActorSystem
+import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -29,9 +30,10 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import sttp.client.{NothingT, SttpBackend}
+import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
+import sttp.client3.SttpBackend
 
-import java.time.Duration
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
@@ -219,7 +221,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   private object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
     override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                         sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
+                                         sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
       new MockDeploymentManager
   }
 
@@ -368,8 +370,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()),
       Map.empty,
       Nil,
-      None,
-      supportsSignals = false)
+      ProcessingTypeUsageStatistics("stubManager", None))
   })
 
   it should "return components for each user" in {
@@ -444,8 +445,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
         MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()),
         Map.empty,
         Nil,
-        None,
-        supportsSignals = false)
+        ProcessingTypeUsageStatistics("stubManager", None))
     })
 
     val processService = createDbProcessService(categoryService, List(MarketingProcess))
@@ -519,12 +519,11 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   private def createDbProcessService(processCategoryService: ProcessCategoryService, processes: List[ProcessWithJson] = Nil): DBProcessService =
     new DBProcessService(
-      managerActor = TestFactory.newDummyManagerActor(),
-      requestTimeLimit = Duration.ofMinutes(1),
+      deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,
-      repositoryManager = TestFactory.newDummyRepositoryManager(),
+      dbioRunner = TestFactory.newDummyDBIOActionRunner(),
       fetchingProcessRepository = new MockFetchingProcessRepository(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),

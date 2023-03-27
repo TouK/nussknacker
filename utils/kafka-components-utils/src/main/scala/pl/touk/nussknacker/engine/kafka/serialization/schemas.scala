@@ -5,7 +5,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.Headers
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
+import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatterFactory
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -45,14 +45,14 @@ object schemas {
                                          headersSerializer: ToHeadersSerializer[T])
     extends KafkaSerializationSchema[T] {
 
-    def this(topic: String, valueSerializer: T => String, keySerializer: T => String = (_: T) => null, headersSerializer: T => Headers = (_: T) => ConsumerRecordUtils.emptyHeaders) = {
+    def this(topic: String, valueSerializer: T => String, keySerializer: T => String = (_: T) => null, headersSerializer: T => Headers = (_: T) => KafkaRecordUtils.emptyHeaders) = {
       this(topic, ToStringSerializer(valueSerializer), ToStringSerializer(keySerializer), ToHeaderMapSerializer(headersSerializer))
     }
 
     override def serialize(element: T, timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
       val value = valueSerializer.serialize(element)
       val key = Option(keySerializer).map(_.serialize(element)).orNull
-      val headers = Option(headersSerializer).map(_.serialize(element)).getOrElse(ConsumerRecordUtils.emptyHeaders)
+      val headers = Option(headersSerializer).map(_.serialize(element)).getOrElse(KafkaRecordUtils.emptyHeaders)
       KafkaProducerHelper.createRecord(topic, safeBytes(key), safeBytes(value), timestamp, headers)
     }
   }
@@ -73,7 +73,7 @@ object schemas {
 
   // deserialization
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private implicit val mapEncoder: Encoder[java.util.Map[_, _]] = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader).circeEncoder.contramap(identity)
 
@@ -103,7 +103,7 @@ object schemas {
     //TODO: how to handle fractions here? using BigDecimal is not always good way to go...
     jsonNumber = number => {
       val d = number.toDouble
-      if (d.isWhole()) d.toLong else d
+      if (d.isWhole) d.toLong else d
     },
     jsonString = identity,
     jsonArray = _.map(jsonToMap).asJava,

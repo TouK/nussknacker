@@ -3,18 +3,18 @@ package pl.touk.nussknacker.engine.schemedkafka
 import org.apache.avro.specific.SpecificRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.schemedkafka.schema.{GeneratedAvroClassSample, GeneratedAvroClassWithLogicalTypes}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.schemedkafka.sink.flink.{FlinkKafkaAvroSinkImplFactory, FlinkKafkaUniversalSinkImplFactory}
-import pl.touk.nussknacker.engine.schemedkafka.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
-import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ExtractAndTransformTimestamp
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
+import pl.touk.nussknacker.engine.schemedkafka.schema.{GeneratedAvroClassSample, GeneratedAvroClassWithLogicalTypes}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.schemedkafka.sink.flink.{FlinkKafkaAvroSinkImplFactory, FlinkKafkaUniversalSinkImplFactory}
+import pl.touk.nussknacker.engine.schemedkafka.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
+import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 
 import scala.reflect.ClassTag
 
@@ -24,7 +24,7 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
     SinkForInputMeta.clear()
   }
 
-  private val universalPayload = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
+  private val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     val schemaBasedMessagesSerdeProvider = createSchemaBasedMessagesSerdeProvider
@@ -65,7 +65,7 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
-  protected def schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory = CachedConfluentSchemaRegistryClientFactory
+  protected def schemaRegistryClientFactory: SchemaRegistryClientFactory
 
   protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryClientFactory)
 

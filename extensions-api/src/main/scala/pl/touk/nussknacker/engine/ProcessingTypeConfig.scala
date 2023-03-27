@@ -9,7 +9,7 @@ import java.net.URL
 case class ProcessingTypeConfig(engineType: String,
                                 classPath: List[URL],
                                 deploymentConfig: Config,
-                                modelConfig: Config)
+                                modelConfig: ConfigWithUnresolvedVersion)
 
 object ProcessingTypeConfig {
 
@@ -22,13 +22,11 @@ object ProcessingTypeConfig {
       (if (uri.isAbsolute) uri else new File(uri.getSchemeSpecificPart).toURI).toURL
     }
 
-  implicit val reader: ValueReader[ProcessingTypeConfig] = ValueReader.relative(read)
-
-  def read(config: Config): ProcessingTypeConfig =
+  def read(config: ConfigWithUnresolvedVersion): ProcessingTypeConfig =
     ProcessingTypeConfig(
-      config.getString("deploymentConfig.type"),
-      config.as[List[URL]]("modelConfig.classPath"),
-      config.getConfig("deploymentConfig"),
+      config.resolved.getString("deploymentConfig.type"),
+      config.resolved.as[List[URL]]("modelConfig.classPath"),
+      config.resolved.getConfig("deploymentConfig"),
       config.getConfig("modelConfig")
     )
 }

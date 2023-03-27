@@ -1,12 +1,14 @@
 import {Action} from "../actions/reduxTypes"
-import {Instant} from "../types/common";
+import {Instant} from "../types/common"
+import {ProcessId} from "../types"
+import {ProcessVersionId} from "../components/Process/types"
 
 export type User = string
 
 export type Attachment = {
-  processId: $TodoType,
-  processVersionId: $TodoType,
-  id: $TodoType,
+  processId: ProcessId,
+  processVersionId: ProcessVersionId,
+  id: string,
   createDate: Instant,
   user: User,
   fileName: string,
@@ -14,13 +16,12 @@ export type Attachment = {
 
 export type Comment = {
   id: number,
-  processId: string
+  processId: string,
   processVersionId: string,
   user: User,
   content: string,
   createDate: Instant,
 }
-
 
 export type ProcessActivityState = {
   comments: $TodoType[],

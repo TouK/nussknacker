@@ -8,7 +8,7 @@ module.exports = {
         overrides: {
           //We inline styles because otherwise those styles are globally visible and can cause some unexpected behaviour
           inlineStyles: {
-            onlyMatchedOnce: false,
+            onlyMatchedOnce: true,
           },
           removeUselessStrokeAndFill: {
             removeNone: true,
@@ -17,10 +17,17 @@ module.exports = {
       },
     },
     "removeOffCanvasPaths",
+    "convertStyleToAttrs",
     {
       name: "removeAttrs",
       params: {
         attrs: "(,*vectornator.*)",
+      },
+    },
+    {
+      name: "convertColors",
+      params: {
+        currentColor: /#ccc|#fff/,
       },
     },
   ],

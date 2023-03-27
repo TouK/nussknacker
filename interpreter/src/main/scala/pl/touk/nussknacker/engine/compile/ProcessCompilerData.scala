@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.{CustomProcessValidator, Interpreter, TypeDefi
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /*
   This is helper class, which collects pieces needed for various stages of compilation process
@@ -60,7 +61,7 @@ object ProcessCompilerData {
       interpreter,
       process,
       listeners,
-      servicesDefs.mapValues(_.obj.asInstanceOf[Lifecycle])
+      servicesDefs.mapValuesNow(_.obj.asInstanceOf[Lifecycle])
     )
 
   }
@@ -84,7 +85,7 @@ class ProcessCompilerData(compiler: ProcessCompiler,
     val componentIds = nodesToUse.collect {
       case e:WithComponent => e.componentId
     }
-    listeners ++ services.filterKeys(componentIds.contains).values
+    listeners ++ services.filterKeysNow(componentIds.contains).values
   }
 
   def metaData: MetaData = process.metaData

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import cats.implicits.toTraverseOps
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
@@ -61,12 +60,17 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         //unfortunatelly, this cast is needed as we have no easy way to statically check if Parameter definitions
         //are branch or not...
         .map(a => (a._1.name, a._2.asInstanceOf[transformer.DefinedParameter])), stateForFar)
+
+      def returnUnmatchedFallback() = {
+        logger.debug(s"Transformer $transformer hasn't handled context transformation step: $transformationStep. " +
+          s"Will return fallback result with fallback context and errors collected during parameters validation.")
+        val fallbackResult = transformer.handleUnmatchedTransformationStep(transformationStep, inputContext, outputVariable)
+        Valid(TransformationResult(errors ++ fallbackResult.errors, evaluatedSoFar.map(_._1), fallbackResult.finalContext, fallbackResult.state, nodeParameters))
+      }
+
       Try(definition.lift.apply(transformationStep)) match {
         case Success(None) =>
-          logger.debug(s"Transformer $transformer hasn't handled context transformation step: $transformationStep. " +
-            s"Will be returned fallback result with fallback context and errors collected during parameters validation.")
-          val fallbackResult = transformer.handleUnmatchedTransformationStep(transformationStep, inputContext, outputVariable)
-          Valid(TransformationResult(errors ++ fallbackResult.errors, evaluatedSoFar.map(_._1), fallbackResult.finalContext, fallbackResult.state, nodeParameters))
+          returnUnmatchedFallback()
         case Success(Some(nextPart)) =>
           val errorsCombined = errors ++ nextPart.errors
           nextPart match {
@@ -74,6 +78,8 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
               //we add distinct here, as multi-step, partial validation of parameters can cause duplicate errors if implementation is not v. careful
               val allErrors = (errorsCombined ++ errors).distinct
               Valid(TransformationResult(allErrors, evaluatedSoFar.map(_._1), finalContext, state, nodeParameters))
+            case transformer.NextParameters(Nil, _, _) =>
+              returnUnmatchedFallback()
             case transformer.NextParameters(newParameters, newParameterErrors, state) =>
               val enrichedParameters = StandardParameterEnrichment.enrichParameterDefinitions(newParameters, componentConfig)
               val (parametersCombined, newErrorsCombined, newNodeParameters) = enrichedParameters.foldLeft((evaluatedSoFar, errorsCombined ++ newParameterErrors, nodeParameters)) {
@@ -124,7 +130,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         }
       } else {
         val (singleParam, extraNodeParamOpt) = nodeParameters.find(_.name == parameter.name).map((_, None)).getOrElse {
-          val paramToAdd = evaluatedparam.Parameter(parameter.name, Expression("spel", parameter.defaultValue.getOrElse("")))
+          val paramToAdd = evaluatedparam.Parameter(parameter.name, parameter.defaultValue.getOrElse(Expression.spel("")))
           (paramToAdd, Some(paramToAdd))
         }
         Validations.validate(parameter, singleParam).map(_ => singleParam).andThen { singleParam =>

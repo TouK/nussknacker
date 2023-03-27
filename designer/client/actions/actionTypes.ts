@@ -1,5 +1,4 @@
 export type ActionTypes =
-  | "USER_TRACKING"
   | "LAYOUT_CHANGED"
   | "TOGGLE_LEFT_PANEL"
   | "TOGGLE_RIGHT_PANEL"
@@ -17,9 +16,7 @@ export type ActionTypes =
   | "NODES_DISCONNECTED"
   | "NODE_ADDED"
   | "NODES_WITH_EDGES_ADDED"
-  | "VALIDATION_STARTED"
   | "VALIDATION_RESULT"
-  | "URL_CHANGED"
   | "COPY_SELECTION"
   | "CUT_SELECTION"
   | "PASTE_SELECTION"
@@ -27,7 +24,6 @@ export type ActionTypes =
   | "EXPAND_SELECTION"
   | "RESET_SELECTION"
   | "CLOSE_MODALS"
-  | "IMPORT_FILES"
   | "EDIT_NODE"
   | "PROCESS_RENAME"
   | "SHOW_METRICS"

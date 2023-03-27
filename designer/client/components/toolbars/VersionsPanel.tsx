@@ -3,15 +3,15 @@ import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {getCapabilities} from "../../reducers/selectors/other"
 import ProcessHistory from "../ProcessHistory"
-import {CollapsibleToolbar} from "../toolbarComponents/CollapsibleToolbar"
+import {ToolbarWrapper} from "../toolbarComponents/ToolbarWrapper"
 
 export function VersionsPanel(): JSX.Element {
   const {t} = useTranslation()
   const capabilities = useSelector(getCapabilities)
 
   return (
-    <CollapsibleToolbar id="versions-panel" title={t("panels.versions.title", "Versions")}>
+    <ToolbarWrapper id="versions-panel" title={t("panels.versions.title", "Versions")}>
       <ProcessHistory isReadOnly={!capabilities.editFrontend}/>
-    </CollapsibleToolbar>
+    </ToolbarWrapper>
   )
 }

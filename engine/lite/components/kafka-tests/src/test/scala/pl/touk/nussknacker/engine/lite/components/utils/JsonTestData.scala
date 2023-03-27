@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.components.utils
 
 import io.circe.Json
 import io.circe.Json._
+import org.everit.json.schema.regexp.JavaUtilRegexpFactory
 import org.everit.json.schema.{ArraySchema, CombinedSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema}
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.SpecialSpELElement
@@ -10,29 +11,23 @@ import java.time.Year
 
 object JsonTestData {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   val ObjectFieldName: String = "field"
 
   val OutputField: SpecialSpELElement = SpecialSpELElement(s"#input.$ObjectFieldName")
 
-  val schemaPerson: Schema = JsonSchemaBuilder.parseSchema(
-    """{
-      |  "type": "object",
-      |  "properties": {
-      |    "first": {
-      |      "type": "string"
-      |    },
-      |    "last": {
-      |      "type": "string"
-      |    },
-      |    "age": {
-      |      "type": "integer"
-      |    }
-      |  },
-      |  "additionalProperties": false
-      |}""".stripMargin)
+  val schemaPerson: Schema = schemaPerson(None, None)
 
+  val schemaPersonWithLimits: Schema = schemaPerson(Some(10), Some(200))
+
+  val schemaPersonWithUpperLimits: Schema = schemaPerson(None, Some(201), exclusiveMaximum = true)
+
+  val schemaPersonWithLowerLimits: Schema = schemaPerson(Some(300), None, exclusiveMinimum = true)
+
+  val trueSchema: Schema = JsonSchemaBuilder.parseSchema("true")
+
+  val emptySchema: Schema = JsonSchemaBuilder.parseSchema("{}")
 
   val schemaNull: Schema = NullSchema.INSTANCE
 
@@ -46,6 +41,17 @@ object JsonTestData {
     .requiresInteger(true)
     .minimum(Integer.MIN_VALUE)
     .maximum(Integer.MAX_VALUE)
+    .build()
+
+  val schemaIntegerRange0to100: Schema = NumberSchema.builder()
+    .requiresInteger(true)
+    .minimum(0)
+    .maximum(100)
+    .build()
+
+  val schemaIntegerRangeTo100: Schema = NumberSchema.builder()
+    .requiresInteger(true)
+    .maximum(100)
     .build()
 
   val nameAndLastNameSchema: Schema = nameAndLastNameSchema(true)
@@ -76,6 +82,8 @@ object JsonTestData {
 
   val schemaMapObjPerson: ObjectSchema = createMapSchema(schemaPerson)
 
+  val schemaMapObjPersonWithLimits: ObjectSchema = createMapSchema(schemaPersonWithLimits)
+
   val schemaObjMapAny: ObjectSchema = createObjSchema(schemaMapAny)
 
   val schemaObjMapInt: ObjectSchema = createObjSchema(schemaMapInt)
@@ -90,6 +98,11 @@ object JsonTestData {
 
   val schemaObjMapObjPerson: ObjectSchema = createObjSchema(schemaMapObjPerson)
 
+  val schemaEnumAB: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", "B" ] }""".stripMargin)
+  val schemaEnumABC: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", "B", "C"] }""".stripMargin)
+  val schemaEnumAB1: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", "B", 1] }""".stripMargin)
+  val schemaEnumStrOrObj: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", {"x":"A", "y": [1,2]}] }""".stripMargin)
+  val schemaEnumStrOrList: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", [1,2,3] ] }""".stripMargin)
 
   /* SpEL sink output configuration */
   val sampleInt = 13
@@ -125,9 +138,13 @@ object JsonTestData {
 
   val sampleJInt: Json = fromInt(sampleInt)
 
+  val sampleJMinInt: Json = fromInt(Int.MinValue)
+
   val sampleJStr: Json = fromString(sampleStr)
 
   val samplePerson: Json = obj("first" -> fromString(strNu), "last" -> fromString(strTouK), "age" -> sampleJInt)
+
+  val sampleInvalidPerson: Json = obj("first" -> fromString(strNu), "last" -> fromString(strTouK), "age" -> fromInt(300))
 
   val sampleArrayInt: Json = arr(sampleJInt)
 
@@ -203,4 +220,40 @@ object JsonTestData {
         throw new IllegalArgumentException(s"Unknown `additionalProperties` value: $additionalProperties.")
     }
   }
+
+  private def schemaPerson(minimum: Option[Int], maximum: Option[Int], exclusiveMinimum: Boolean = false, exclusiveMaximum: Boolean = false): Schema =
+    JsonSchemaBuilder.parseSchema(
+      s"""{
+         |  "type": "object",
+         |  "properties": {
+         |    "first": {
+         |      "type": "string"
+         |    },
+         |    "last": {
+         |      "type": "string"
+         |    },
+         |    "age": {
+         |      "type": "integer",
+         |      ${minimum.fold("")(x => s""" "${if (exclusiveMinimum) "exclusiveMinimum" else "minimum"}": $x,""")}
+         |      ${maximum.fold("")(x => s""" ${if (exclusiveMaximum) "exclusiveMaximum" else "maximum"}: $x""")}
+         |    }
+         |  },
+         |  "additionalProperties": false
+         |}""".stripMargin)
+
+  def createObjectSchemaWithPatternProperties(patternProperties: Map[String, Schema], additionalPropertySchema: Option[Schema] = None, definedProperties: Map[String, Schema] = Map.empty): Schema = {
+    val builder = ObjectSchema.builder()
+    definedProperties.foreach { case (propertyName, schema) =>
+      builder.addPropertySchema(propertyName, schema)
+    }
+    val regexpFactory = new JavaUtilRegexpFactory
+    patternProperties.foreach { case (pattern, schema) =>
+      builder.patternProperty(regexpFactory.createHandler(pattern), schema)
+    }
+    additionalPropertySchema.foreach { additionalPropertySchema =>
+      builder.schemaOfAdditionalProperties(additionalPropertySchema)
+    }
+    builder.build()
+  }
+
 }

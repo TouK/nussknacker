@@ -3,10 +3,8 @@ const progressBar = require("./progressBar.js")
 const bootstrap = require("bootstrap")
 const path = require("path")
 const webpack = require("webpack")
-const childProcess = require("child_process")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 const HtmlWebpackHarddiskPlugin = require("html-webpack-harddisk-plugin")
-const TerserPlugin = require("terser-webpack-plugin")
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
 const federationConfig = require("./federation.config.json")
 const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
@@ -44,20 +42,10 @@ const fileLoader = {
   },
 }
 const outputPath = path.join(process.cwd(), "dist")
+const {dependencies} = require("./package.json")
 
 module.exports = {
   mode: NODE_ENV,
-  optimization: {
-    minimizer: [new TerserPlugin({
-      parallel: true,
-      //Reactable bug: https://github.com/abdulrahman-khankan/reactable/issues/3
-      terserOptions: {
-        mangle: {
-          reserved: ["Td", "Tr", "Th", "Thead", "Table"],
-        },
-      },
-    })],
-  },
   performance: {
     maxEntrypointSize: 3000000,
     maxAssetSize: 3000000,
@@ -68,8 +56,6 @@ module.exports = {
       path: require.resolve("path-browserify"), //reason: react-markdown
       crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
       stream: require.resolve("stream-browserify"), //reason: jsonwebtoken
-      http: require.resolve("stream-http"), //reason: matomo-tracker
-      https: require.resolve("https-browserify"), //reason: matomo-tracker
       fs: false,
     },
   },
@@ -106,9 +92,23 @@ module.exports = {
           }
         },
       },
+      "/grafana": {
+        target: process.env.BACKEND_DOMAIN,
+        changeOrigin: true,
+        onProxyRes: (proxyRes, req) => {
+          if (req.headers?.origin) {
+            proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin
+          }
+        },
+      },
       "/be-static": {
         target: process.env.BACKEND_DOMAIN,
         changeOrigin: true,
+        onProxyRes: (proxyRes, req) => {
+          if (req.headers?.origin) {
+            proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin
+          }
+        },
         pathRewrite: {
           "^/be-static": "/static",
         },
@@ -118,6 +118,13 @@ module.exports = {
         changeOrigin: true,
         pathRewrite: {
           "^/submodules/components": "/",
+        },
+      },
+      "/submodules/legacy_scenarios": {
+        target: "http://localhost:5002",
+        changeOrigin: true,
+        pathRewrite: {
+          "^/submodules/legacy_scenarios": "/",
         },
       },
       "/submodules": {
@@ -168,18 +175,32 @@ module.exports = {
       // it's also good method to connect all places where `name` is needed.
       ...federationConfig,
       shared: {
-        ...require("./package.json").dependencies,
-        "@touk/window-manager": {singleton: true},
-        "@emotion/react": {singleton: true},
-        "@mui/private-theming/ThemeProvider": {singleton: true},
-        "@mui/private-theming/useTheme": {singleton: true},
+        ...dependencies,
+        "@touk/window-manager": {
+          singleton: true,
+          requiredVersion: dependencies["@touk/window-manager"],
+        },
+        "@emotion/react": {
+          singleton: true,
+          requiredVersion: dependencies["@emotion/react"],
+        },
+        "@mui/private-theming/ThemeProvider": {
+          singleton: true,
+          requiredVersion: dependencies["@mui/private-theming/ThemeProvider"],
+        },
+        "@mui/private-theming/useTheme": {
+          singleton: true,
+          requiredVersion: dependencies["@mui/private-theming/useTheme"],
+        },
         react: {
           eager: true,
           singleton: true,
+          requiredVersion: dependencies["react"],
         },
         "react-dom": {
           eager: true,
           singleton: true,
+          requiredVersion: dependencies["react-dom"],
         },
       },
     }),
@@ -193,6 +214,7 @@ module.exports = {
     }),
     new HtmlWebpackHarddiskPlugin(),
     new WebpackShellPluginNext({
+      swallowError: !isProd,
       onAfterDone: {
         scripts: [
           `rm -rf .federated-types/*`,
@@ -207,6 +229,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales", noErrorOnMissing: true},
+        {from: "assets/img/icons/license", to: "license", noErrorOnMissing: true},
       ],
     }),
     new PreloadWebpackPlugin({

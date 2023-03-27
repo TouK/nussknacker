@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo } from "react";
-import { flatten, uniq, uniqBy } from "lodash";
+import { flatten, uniq, uniqBy, sortBy } from "lodash";
 import { useFilterContext } from "../../common";
-import { ScenariosFiltersModel } from "./scenariosFiltersModel";
-import { useUserQuery } from "../useScenariosQuery";
+import {ScenariosFiltersModel, ScenariosFiltersModelType} from "./scenariosFiltersModel";
+import { useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
 import { QuickFilter } from "./quickFilter";
 import { FilterMenu } from "./filterMenu";
 import { SimpleOptionsStack } from "./simpleOptionsStack";
@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[]; isLoading?: boolean; withSort?: boolean }): JSX.Element {
     const { t } = useTranslation();
     const { data: userData } = useUserQuery();
+    const { data: statusDefinitions = [] } = useStatusDefinitions();
 
     const filterableKeys = useMemo(() => ["createdBy", "modifiedBy"], []);
     const filterableValues = useMemo(() => {
@@ -25,34 +26,29 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
             author: uniq(["modifiedBy", "createdBy"].flatMap((k) => data.flatMap((v) => v[k])))
                 .sort()
                 .map((v) => ({ name: v })),
-            status: uniqBy(
-                data.map((v) => ({ name: v.state?.status.name, icon: v.state?.icon })),
-                "name",
-            ).sort(),
+            status: sortBy(statusDefinitions, (v) => v.displayableName),
             processCategory: (userData?.categories || []).map((name) => ({ name })),
         };
     }, [data, filterableKeys, userData?.categories]);
 
-    const statusFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
+    const statusFilterLabels = statusDefinitions.reduce((map, obj) => {map[obj.name] = obj.displayableName; return map;}, {})
     const { getFilter, setFilter, activeKeys } = useFilterContext<ScenariosFiltersModel>();
-
-    const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
 
     const getLabel = useCallback(
         (name: keyof ScenariosFiltersModel, value?: string | number) => {
             switch (name) {
-                case "HIDE_ACTIVE":
-                    return t("table.filter.desc.HIDE_ACTIVE", "Active hidden");
-                case "HIDE_FRAGMENTS":
-                    return t("table.filter.desc.HIDE_FRAGMENTS", "Fragments hidden");
-                case "HIDE_SCENARIOS":
-                    return t("table.filter.desc.HIDE_SCENARIOS", "Scenarios hidden");
-                case "SHOW_ARCHIVED":
-                    return t("table.filter.desc.SHOW_ARCHIVED", "Archived visible");
-                case "HIDE_DEPLOYED":
-                    return t("table.filter.desc.HIDE_DEPLOYED", "Deployed hidden");
-                case "HIDE_NOT_DEPLOYED":
-                    return t("table.filter.desc.HIDE_NOT_DEPLOYED", "Not deployed hidden");
+                case "TYPE":
+                    switch (value) {
+                        case ScenariosFiltersModelType.FRAGMENTS:
+                            return t("table.filter.FRAGMENTS", "Fragments");
+                        case ScenariosFiltersModelType.SCENARIOS:
+                            return t("table.filter.SCENARIOS", "Scenarios");
+                    }
+                    break;
+                case "ARCHIVED":
+                    return t("table.filter.ARCHIVED", "Archived");
+                case "STATUS":
+                    return t("table.filter.status." + value, statusFilterLabels[value]);
             }
 
             if (value?.toString().length) {
@@ -61,23 +57,18 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
 
             return name;
         },
-        [t],
+        [t, statusFilterLabels],
     );
 
     return (
         <>
             <QuickFilter<ScenariosFiltersModel> isLoading={isLoading} filter="NAME">
                 <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
-                    {/*<FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>*/}
-                    {/*    <SimpleOptionsStack*/}
-                    {/*        label={t("table.filter.STATUS", "Status")}*/}
-                    {/*        options={filterableValues["status"]}*/}
-                    {/*        value={getFilter("STATUS", true)}*/}
-                    {/*        onChange={setFilter("STATUS")}*/}
-                    {/*    />*/}
-                    {/*</FilterMenu>*/}
-                    <FilterMenu label={t("table.filter.STATUS", "Status")} count={statusFilters.filter((k) => getFilter(k)).length}>
-                        <StatusOptionsStack />
+                    <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
+                        <StatusOptionsStack
+                            options={filterableValues["status"]}
+                            withArchived={true}
+                        />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                         <SimpleOptionsStack
@@ -95,7 +86,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             onChange={setFilter("CREATED_BY")}
                         />
                     </FilterMenu>
-                    <FilterMenu label={t("table.filter.other", "Type")} count={otherFilters.filter((k) => getFilter(k)).length}>
+                    <FilterMenu label={t("table.filter.other", "Type")} count={getFilter("TYPE", true).length}>
                         <OtherOptionsStack />
                     </FilterMenu>
                     {withSort ? (

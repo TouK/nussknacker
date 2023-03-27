@@ -7,7 +7,6 @@ import {
   DisplayProcessCountsAction,
   HandleHTTPErrorAction,
   NodeActions,
-  ReportEventAction,
   SelectionActions,
 } from "./nk"
 import {FeatureFlagsActions} from "./nk/featureFlags"
@@ -23,7 +22,6 @@ import {DisplayTestResultsDetailsAction} from "./nk/displayTestResults"
 
 type TypedAction =
   | HandleHTTPErrorAction
-  | ReportEventAction
   | UiActions
   | SettingsActions
   | DisplayProcessActivityAction

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.json.swagger
 
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.node.{BaseJsonNode, ObjectNode}
 import io.swagger.v3.oas.models.media
 import io.swagger.v3.parser.ObjectMapperFactory
 import io.swagger.v3.parser.util.OpenAPIDeserializer
@@ -12,15 +12,17 @@ object OpenAPISchemaParser {
   private val mapper: ObjectMapper = ObjectMapperFactory.createJson()
 
   def parseSchema(schema: String): media.Schema[_] = {
-    val jsonNode = mapper.readTree(schema)
-    parseSchema(jsonNode)
+    mapper.readTree(schema) match {
+      case objectNode: ObjectNode => parseSchema(objectNode)
+      case node => throw new IllegalArgumentException(s"Schema must be in object representation at this point, but was: ${node.getNodeType}")
+    }
   }
 
-  def parseSchema(jsonNode: JsonNode): media.Schema[_] = {
+  def parseSchema(jsonNode: ObjectNode): media.Schema[_] = {
     val deserializer: OpenAPIDeserializer = new OpenAPIDeserializer()
     val parseResult = new OpenAPIDeserializer.ParseResult()
     parseResult.setOpenapi31(true)
     // it looks like location is not important on this level
-    deserializer.getSchema(jsonNode.asInstanceOf[ObjectNode], "", parseResult)
+    deserializer.getSchema(jsonNode, "", parseResult)
   }
 }

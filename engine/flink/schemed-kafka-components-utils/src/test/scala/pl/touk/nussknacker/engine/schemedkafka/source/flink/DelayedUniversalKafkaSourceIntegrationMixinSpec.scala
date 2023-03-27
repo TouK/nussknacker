@@ -15,11 +15,11 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, TopicParamName}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, TopicParamName, SinkValueParamName}
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{MockSchemaRegistryClientFactory, UniversalSchemaBasedSerdeProvider}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.source.delayed.DelayedUniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -28,13 +28,11 @@ import java.time.Instant
 
 trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin with BeforeAndAfter  {
 
-  private lazy val creator: ProcessConfigCreator = new DelayedKafkaUniversalProcessConfigCreator {
-    override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
-  }
+  private lazy val creator: ProcessConfigCreator = new DelayedKafkaUniversalProcessConfigCreator
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
+  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -71,7 +69,7 @@ trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin
         s"$TimestampFieldParamName" -> s"${timestampField}",
         s"$DelayParameterName" -> s"${delay}"
       )
-      .emptySink("out", "sinkForLongs", "value" -> "T(java.time.Instant).now().toEpochMilli()")
+      .emptySink("out", "sinkForLongs", SinkValueParamName -> "T(java.time.Instant).now().toEpochMilli()")
   }
 
 }
@@ -98,6 +96,8 @@ class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConf
     super.expressionConfig(processObjectDependencies).copy(additionalClasses = List(classOf[Instant]))
   }
 
-  override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
+  override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
+
+  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
 }

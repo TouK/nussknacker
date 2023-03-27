@@ -15,8 +15,13 @@ class SpelSubstitutionsCollector(typeForNode: SpelNode => Option[TypingResult],
 
   private lazy val parser = new org.springframework.expression.spel.standard.SpelExpressionParser
 
-  override def collectSubstitutions(expression: Expression): List[ExpressionSubstitution] =
-    if(StringUtils.isBlank(expression.expression)) List.empty else collectSubstitutions(expression.expression)
+  override def collectSubstitutions(expression: Expression): List[ExpressionSubstitution] = {
+    // TODO: handle other languages, especially spel template
+    if (expression.language != Expression.Language.Spel || StringUtils.isBlank(expression.expression))
+      List.empty
+    else
+      collectSubstitutions(expression.expression)
+  }
 
   private[engine] def collectSubstitutions(expression: String): List[ExpressionSubstitution] =
     collectSubstitutions(parser.parseRaw(expression).getAST, Nil, Nil)._2

@@ -29,16 +29,17 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestCategories}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCategories.TestCat))
+  private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.TestCat)
 
   private val validation = ProcessValidation(typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators), new SubprocessResolver(subprocessRepository))
-  private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), validation)
+  private val nodeRoute = new NodesResources(futureFetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), validation)
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
   = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
@@ -49,7 +50,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   //see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {
     saveProcess(testProcess) {
-      val data: NodeData = Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression("spel", "'a'")))), "out", None)
+      val data: NodeData = Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression.spel("'a'")))), "out", None)
       Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[AdditionalInfo] should matchPattern {
           case MarkdownAdditionalInfo(content) if content.contains("http://touk.pl?id=a") =>
@@ -65,7 +66,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
 
   test("validates filter nodes") {
     saveProcess(testProcess) {
-      val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
+      val data: node.Filter = node.Filter("id", Expression.spel("#existButString"))
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
@@ -81,8 +82,8 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   test("validates sink expression") {
     saveProcess(testProcess) {
       val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(
-        Parameter("value", Expression("spel", "notvalidspelexpression")),
-        Parameter("topic", Expression("spel", "'test-topic'")))),
+        Parameter(SinkValueParamName, Expression.spel("notvalidspelexpression")),
+        Parameter(TopicParamName, Expression.spel("'test-topic'")))),
         None, None)
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
@@ -91,7 +92,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
           parameters = None,
           expressionType = None,
           validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
-            data.id, Some("value"), "notvalidspelexpression"))),
+            data.id, Some(SinkValueParamName), "notvalidspelexpression"))),
           validationPerformed = true)
       }
     }
@@ -99,7 +100,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
 
   test("validates nodes using dictionaries") {
     saveProcess(testProcess) {
-      val data: node.Filter = node.Filter("id", Expression("spel", "#DICT.Bar != #DICT.Foo"))
+      val data: node.Filter = node.Filter("id", Expression.spel("#DICT.Bar != #DICT.Foo"))
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {

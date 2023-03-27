@@ -22,10 +22,16 @@ trait FunctionalTestMixin {
   protected def invalidTypes(typeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
     invalid(typeErrors.toList, Nil, Nil)
 
-  protected def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String]): Invalid[NonEmptyList[CustomNodeError]] = {
-    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(typeFieldErrors, missingFieldsError, redundantFieldsError)
+  protected def invalidRanges(rangeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
+    invalid(Nil, Nil, Nil, rangeErrors.toList)
+
+  protected def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String], rangeFieldErrors: List[String]): Invalid[NonEmptyList[CustomNodeError]] = {
+    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(typeFieldErrors, missingFieldsError, redundantFieldsError, rangeFieldErrors)
     Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(KafkaUniversalComponentTransformer.SinkValueParamName))))
   }
+
+  protected def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String]): Invalid[NonEmptyList[CustomNodeError]] =
+    invalid(typeFieldErrors, missingFieldsError, redundantFieldsError, Nil)
 
   protected def valid[T](data: T): Valid[RunListResult[T]] =
     Valid(RunResult.success(data))

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializatio
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
 
-import scala.collection.JavaConverters.mapAsJavaMapConverter
+import scala.jdk.CollectionConverters._
 
 class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  {
 

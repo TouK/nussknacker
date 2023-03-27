@@ -1,43 +1,17 @@
 import HttpService from "../../http/HttpService"
-import {importProcess} from "./index"
-import {reportEvent} from "./reportEvent"
-import {withoutHackOfEmptyEdges} from "../../components/graph/GraphPartialsInTS/EdgeUtils";
-import {Process, ProcessId} from "../../types";
-import {ProcessVersionId} from "../../components/Process/types";
-import {ThunkAction} from "../reduxTypes";
+import {ProcessId} from "../../types"
+import {ThunkAction} from "../reduxTypes"
 
-export function importFiles(files: File[], processId: ProcessId): ThunkAction {
+export function importFiles(processId: ProcessId, files: File[]): ThunkAction {
   return (dispatch) => {
-    files.forEach(
-      file => dispatch(importProcess(processId, file)),
-    )
-    return {
-      type: "IMPORT_FILES",
-    }
-  }
-}
-
-export function exportProcessToJSON(process: Process, versionId: ProcessVersionId): ThunkAction {
-  return (dispatch) => {
-    let noEmptyEdges = withoutHackOfEmptyEdges(process)
-    HttpService.exportProcess(noEmptyEdges, versionId)
-
-    return dispatch(reportEvent({
-      category: "right_panel",
-      action: "button_click",
-      name: "export_to_json",
-    }))
-  }
-}
-
-export function exportProcessToPdf(processId, versionId, data): ThunkAction {
-  return (dispatch) => {
-    HttpService.exportProcessToPdf(processId, versionId, data)
-
-    return dispatch(reportEvent({
-      category: "right_panel",
-      action: "button_click",
-      name: "export_to_pdf",
-    }))
+    files.forEach(async (file: File) => {
+      try {
+        dispatch({type: "PROCESS_LOADING"})
+        const process = await HttpService.importProcess(processId, file)
+        dispatch({type: "UPDATE_IMPORTED_PROCESS", processJson: process.data})
+      } catch (error) {
+        dispatch({type: "LOADING_FAILED"})
+      }
+    })
   }
 }

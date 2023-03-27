@@ -19,12 +19,15 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
     encoder.encode(1) shouldEqual fromLong(1)
     encoder.encode(BigDecimal.valueOf(2.34)) shouldEqual fromBigDecimal(BigDecimal.valueOf(2.34))
     encoder.encode(new java.math.BigDecimal("12.34")) shouldEqual fromBigDecimal(new java.math.BigDecimal("12.34"))
+    encoder.encode(BigDecimal("12.34")) shouldEqual fromBigDecimal(BigDecimal("12.34"))
     encoder.encode(new java.math.BigInteger("1234")) shouldEqual fromBigInt(new java.math.BigInteger("1234"))
+    encoder.encode(BigInt("1234")) shouldEqual fromBigInt(BigInt("1234"))
     encoder.encode(12.34f) shouldEqual fromFloatOrNull(12.34f)
     encoder.encode(java.math.BigDecimal.valueOf(2.0)) shouldEqual fromBigDecimal(BigDecimal.valueOf(2.0))
     encoder.encode(2.0) shouldEqual fromBigDecimal(BigDecimal.valueOf(2.0))
     encoder.encode("ala") shouldEqual fromString("ala")
     encoder.encode(true) shouldEqual fromBoolean(true)
+    encoder.encode(java.lang.Boolean.TRUE) shouldEqual fromBoolean(true)
     encoder.encode(LocalDateTime.of(2020, 9, 12,
       11, 55, 33, 0)) shouldEqual fromString("2020-09-12T11:55:33")
 

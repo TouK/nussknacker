@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.security.basicauth
 
 import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
-import org.mindrot.jbcrypt.BCrypt
+import at.favre.lib.crypto.bcrypt.BCrypt
 import pl.touk.nussknacker.engine.util.cache.DefaultCache
 import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser, RulesSet}
 import pl.touk.nussknacker.ui.security.basicauth.BasicHttpAuthenticator.{EncryptedPassword, PlainPassword, UserWithPassword}
@@ -42,8 +42,12 @@ class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration) ex
   }
 
   protected def computeBCryptHash(receivedSecret: String, encryptedPassword: String): String = {
-    // it uses salting strategy which is saved on the beginning of encryptedPassword
-    BCrypt.hashpw(receivedSecret, encryptedPassword)
+    // It uses salting strategy which is saved on the beginning of encryptedPassword.
+    // The BCrypt library used for hashing doesn't expose a parser for extracting this salting strategy. Parser
+    // implementation is the same for all BCrypt versions so we are using the Version_2A just to access this general
+    // parser.
+    val hash = BCrypt.Version.VERSION_2A.parser.parse(encryptedPassword.getBytes)
+    new String(BCrypt.`with`(hash.version).hash(hash.cost, hash.rawSalt, receivedSecret.getBytes()))
   }
 
   private def prepareUsers(): Map[String, UserWithPassword] = {

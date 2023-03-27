@@ -10,7 +10,6 @@ import React, {
     useState,
 } from "react";
 import { __, CurriedFunction1, CurriedFunction2, curry, isArray, pickBy, toNumber } from "lodash";
-import { useDebounce } from "rooks";
 import { useSearchParams } from "react-router-dom";
 
 function serializeToQuery<T>(filterModel: T): [string, string][] {
@@ -19,7 +18,7 @@ function serializeToQuery<T>(filterModel: T): [string, string][] {
         .map(({ key, value }) => [key, value]);
 }
 
-function deserializeFromQuery<T extends Record<Uppercase<string>, any>>(params: URLSearchParams): T {
+function deserializeFromQuery<T>(params: URLSearchParams): T {
     return [...params].reduce((result, [key, _value]) => {
         const value = _value === "true" || toNumber(_value) || _value;
         return {
@@ -130,15 +129,11 @@ interface Props<M> {
 }
 
 export function FiltersContextProvider<M>({ children, getValueLinker }: PropsWithChildren<Props<M>>): JSX.Element {
-    const [searchParams, _setSearchParams] = useSearchParams();
-    const setSearchParams = useDebounce(_setSearchParams, 100);
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    const [model = {}, setModel] = useState<M>(window.location.search ? deserializeFromQuery(searchParams) : ({} as M));
-
-    useEffect(() => {
-        const fromQuery = deserializeFromQuery<M>(searchParams);
-        setModel((model) => (model !== fromQuery ? fromQuery : model));
-    }, [searchParams]);
+    const [model, setModel] = useState<M>(() => {
+        return window.location.search ? deserializeFromQuery<M>(searchParams) : ({} as M);
+    });
 
     useEffect(() => {
         setSearchParams(serializeToQuery(model), { replace: true });

@@ -11,4 +11,5 @@ export enum WindowKind {
   generateTestData,
   compareVersions,
   customAction,
+  survey,
 }

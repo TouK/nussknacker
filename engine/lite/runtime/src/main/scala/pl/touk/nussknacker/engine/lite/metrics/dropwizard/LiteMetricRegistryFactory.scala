@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.influxdb.LiteEngineInf
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
-import scala.jdk.CollectionConverters.mapAsJavaMapConverter
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLogging {

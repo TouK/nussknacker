@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSp
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
 //it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
@@ -18,11 +18,12 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
                                          nodes: List[NodeData],
                                          edges: List[Edge],
                                          processingType: ProcessingType,
-                                         category: Option[String]) { //todo: category can be marked as required after some time for installation of version with endpoints returning category
+                                         category: String) {
 
   val metaData: MetaData = properties.toMetaData(id)
 
   val processName: ProcessName = ProcessName(id)
+
 }
 
 @JsonCodec case class ValidatedDisplayableProcess(id: String,
@@ -30,7 +31,7 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
                                                   nodes: List[NodeData],
                                                   edges: List[Edge],
                                                   processingType: ProcessingType,
-                                                  category: Option[String], // optional - see the comment for a field with the same name in DisplayableProcess
+                                                  category: String,
                                                   validationResult: ValidationResult) {
 
   def this(displayableProcess: DisplayableProcess, validationResult: ValidationResult) =
@@ -50,14 +51,12 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
 @JsonCodec(decodeOnly = true)
 case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
-                             additionalFields: Option[ProcessAdditionalFields] = None,
-                             subprocessVersions: Map[String, Long] = Map.empty) { //TODO: field subprocessVersions is deprecate - to remove
+                             additionalFields: Option[ProcessAdditionalFields] = None) {
 
   def toMetaData(id: String): MetaData = MetaData(
     id = id,
     typeSpecificData = typeSpecificProperties,
-    additionalFields = additionalFields,
-    subprocessVersions = subprocessVersions
+    additionalFields = additionalFields
   )
   val isSubprocess: Boolean = typeSpecificProperties.isSubprocess
 
@@ -65,7 +64,7 @@ case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
 
 object ProcessProperties {
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =
-    Encoder.forProduct4("typeSpecificProperties", "isSubprocess", "additionalFields", "subprocessVersions") { p =>
-    (p.typeSpecificProperties, p.isSubprocess, p.additionalFields, p.subprocessVersions)
+    Encoder.forProduct3("typeSpecificProperties", "isSubprocess", "additionalFields") { p =>
+    (p.typeSpecificProperties, p.isSubprocess, p.additionalFields)
   }
 }

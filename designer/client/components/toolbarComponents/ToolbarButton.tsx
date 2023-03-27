@@ -3,7 +3,6 @@ import React, {ReactEventHandler, useContext} from "react"
 import Dropzone, {DropEvent} from "react-dropzone"
 import {ButtonWithFocus, InputWithFocus} from "../withFocus"
 import styles from "./ToolbarButton.styl"
-import ToolbarButtonIcon from "./ToolbarButtonIcon"
 import {ButtonsVariant, ToolbarButtonsContext} from "./ToolbarButtons"
 
 export interface ToolbarButtonProps {
@@ -17,7 +16,7 @@ export interface ToolbarButtonProps {
   onDrop?: <T extends File>(acceptedFiles: T[], rejectedFiles: T[], event: DropEvent) => void,
   onMouseOver?: ReactEventHandler,
   onMouseOut?: ReactEventHandler,
-  onClick: ReactEventHandler,
+  onClick?: ReactEventHandler,
   hasError?: boolean,
   isActive?: boolean,
 }
@@ -37,7 +36,7 @@ function ToolbarButton({onDrop, title, className, iconClassName, labelClassName,
     title: title || name,
     children: (
       <>
-        <ToolbarButtonIcon className={cn(styles.icon, iconClassName)} icon={icon} title={title}/>
+        <div className={cn(styles.icon, iconClassName)} title={title}>{icon}</div>
         <div className={cn(styles.label, labelClassName)}>{name}</div>
       </>
     ),

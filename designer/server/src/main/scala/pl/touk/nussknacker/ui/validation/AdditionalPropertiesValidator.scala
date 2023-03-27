@@ -36,7 +36,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
         getMissingRequiredPropertyValidationResults(config, additionalProperties),
         getUnknownPropertyValidationResults(config, additionalProperties)
         )
-        .mapN { (_, _, _) => Unit }
+        .mapN { (_, _, _) => () }
 
       val processPropertiesErrors = validated match {
         case Invalid(e) => e.map(error => PrettyValidationErrors.formatErrorMessage(error)).toList
@@ -59,7 +59,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
     propertiesWithConfiguredValidator.collect {
       case (property, Some(config), validator: ParameterValidator) =>
         validator.isValid(property._1, property._2, config.label).toValidatedNel
-    }.sequence.map(_ => Unit)
+    }.sequence.map(_ => ())
   }
 
   private def getMissingRequiredPropertyValidationResults(config: PropertyConfig, additionalProperties: List[(String, String)]) = {
@@ -70,7 +70,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
       .toList.map {
       case (propertyName, config, validator) => validator.isValid(propertyName, config.label).toValidatedNel
     }
-      .sequence.map(_ => Unit)
+      .sequence.map(_ => ())
   }
 
   private def getUnknownPropertyValidationResults(config: PropertyConfig, additionalProperties: List[(String, String)]) = {
@@ -79,7 +79,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
       .map {
         case (propertyName, validator) => validator.isValid(propertyName).toValidatedNel
       }
-      .sequence.map(_ => Unit)
+      .sequence.map(_ => ())
   }
 }
 
@@ -88,7 +88,7 @@ private case class MissingRequiredPropertyValidator(actualPropertyNames: List[St
   def isValid(propertyName: String, label: Option[String] = None)
              (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
 
-    if (actualPropertyNames.contains(propertyName)) valid(Unit) else invalid(MissingRequiredProperty(propertyName, label))
+    if (actualPropertyNames.contains(propertyName)) valid(()) else invalid(MissingRequiredProperty(propertyName, label))
   }
 }
 
@@ -97,7 +97,7 @@ private case class UnknownPropertyValidator(config: Map[String, AdditionalProper
   def isValid(propertyName: String)
              (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
 
-    if (config.get(propertyName).nonEmpty) valid(Unit) else invalid(UnknownProperty(propertyName))
+    if (config.get(propertyName).nonEmpty) valid(()) else invalid(UnknownProperty(propertyName))
   }
 }
 

@@ -11,12 +11,12 @@ import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{TypingResultValidator, SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
 
 import scala.collection.immutable.ListMap
 
 object AvroSinkValueParameter {
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   type FieldName = String
 
@@ -77,8 +77,10 @@ object AvroSinkSingleValueParameter {
       if (schema.isNullable) Parameter.optional(name, typing) else Parameter(name, typing)
       ).copy(
       isLazyParameter = true,
-      defaultValue = defaultValue.map(_.expression)
+      defaultValue = defaultValue
     )
-    SinkSingleValueParameter(parameter)
+    //todo: for now we don't use SchemaOutputValidator for avro in editor mode,
+    // but we can add it in the future in combination with accepting unknown/any in enums fields to allow passing enums in editor mode
+    SinkSingleValueParameter(parameter, TypingResultValidator.emptyValidator)
   }
 }

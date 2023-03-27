@@ -2,9 +2,11 @@ package pl.touk.nussknacker.ui.process.subprocess
 
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
+import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.duration._
@@ -27,6 +29,9 @@ trait SubprocessRepository {
 case class SubprocessDetails(canonical: CanonicalProcess, category: String)
 
 class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends SubprocessRepository {
+
+  private val dbioRunner = DBIOActionRunner(db)
+
   //TODO: make it return Future?
   override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] = {
     Await.result(listSubprocesses(versions, None), 10 seconds)
@@ -36,9 +41,9 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     Await.result(listSubprocesses(versions, Some(category)), 10 seconds)
   }
 
-  import db.driver.api._
+  import db.profile.api._
   val espTables = new EspTables {
-    override implicit val profile: JdbcProfile = db.driver
+    override implicit val profile: JdbcProfile = db.profile
   }
 
   import espTables._
@@ -54,7 +59,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     val fetchedSubprocesses = for {
       subprocesses <- versionSubprocesses
       latestSubprocesses <- listLatestSubprocesses(category)
-    } yield latestSubprocesses.groupBy(_.canonical.metaData.id).mapValues(_.head) ++ subprocesses.groupBy(_.canonical.metaData.id).mapValues(_.head)
+    } yield latestSubprocesses.groupBy(_.canonical.metaData.id).mapValuesNow(_.head) ++ subprocesses.groupBy(_.canonical.metaData.id).mapValuesNow(_.head)
 
     fetchedSubprocesses.map(_.values.toSet)
   }
@@ -70,8 +75,8 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     } yield latestProcesses.map { case ((_, processVersion), process) =>
       createSubprocessDetails(process, processVersion)
     }
-    db.run(action).map(_.flatten.toSet)
-    db.run(action).map(_.flatten.toSet)
+    dbioRunner.run(action).map(_.flatten.toSet)
+    dbioRunner.run(action).map(_.flatten.toSet)
   }
 
   private def fetchSubprocess(subprocessName: ProcessName, version: VersionId, category: Option[String]) : Future[SubprocessDetails] = {
@@ -84,7 +89,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
       createSubprocessDetails(process, processVersion)
     }
 
-    db.run(action).flatMap {
+    dbioRunner.run(action).flatMap {
       case Some(subproc) => Future.successful(subproc)
       case None => Future.failed(new Exception(s"Fragment $subprocessName, version: $version not found"))
     }

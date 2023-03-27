@@ -8,8 +8,7 @@ import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
 import {useSearchQuery} from "../containers/hooks/useSearchQuery"
 import {DynamicTabData} from "../containers/DynamicTab"
-import {CustomTabBasePath} from "../containers/paths"
-import {absoluteBePath} from "../common/UrlUtils";
+import {absoluteBePath} from "../common/UrlUtils"
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -26,27 +25,29 @@ function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Di
   return [value, setValue]
 }
 
-function TabElement(props: {tab: DynamicTabData}): JSX.Element {
-  const {id, type, url, title} = props.tab
+function TabElement({tab}: { tab: DynamicTabData }): JSX.Element {
+  const {id, type, url, title} = tab
   switch (type) {
     case "Local":
-      return <NavLink to={url} >{title}</NavLink>
+      return <NavLink to={url}>{title}</NavLink>
     case "Url":
-      return <a href={url} >{title}</a>
+      return <a href={url}>{title}</a>
     default:
-      return <NavLink to={`${CustomTabBasePath}/${id}`} >{title}</NavLink>
+      return <NavLink to={`/${id}`}>{title}</NavLink>
   }
 }
 
 function Menu({onClick}: { onClick: () => void }): JSX.Element {
   const tabs = useSelector(getTabs)
   const loggedUser = useSelector(getLoggedUser)
-  const dynamicTabData = tabs.filter(({requiredPermission}) => !requiredPermission || loggedUser.hasGlobalPermission(requiredPermission))
+  const dynamicTabData = tabs
+    .filter(({requiredPermission}) => !requiredPermission || loggedUser.hasGlobalPermission(requiredPermission))
+    .filter(({title}) => !!title)
   return (
     <ul id="menu-items" onClick={onClick}>
       {dynamicTabData.map(tab => (
         <li key={tab.id}>
-          <TabElement tab={tab} />
+          <TabElement tab={tab}/>
         </li>
       ))}
     </ul>
@@ -57,12 +58,17 @@ function InstanceLogo() {
   const [validLogo, setValidLogo] = useState(false)
   return (
     <div className={validLogo ? "navbar-instance" : ""}>
-      <img src={absoluteBePath("/assets/img/instance-logo.svg")} alt="" style={validLogo ? {display: "flex"} : {display: "none"}}
-           className={validLogo ? "navbar-instance-logo" : ""} onLoad={(e) => {
-        setValidLogo(true);
-      }}/>
+      <img
+        src={absoluteBePath("/assets/img/instance-logo.svg")}
+        alt=""
+        style={validLogo ? {display: "flex"} : {display: "none"}}
+        className={validLogo ? "navbar-instance-logo" : ""}
+        onLoad={(e) => {
+          setValidLogo(true)
+        }}
+      />
     </div>
-  );
+  )
 }
 
 type Props = {

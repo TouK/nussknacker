@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{ConnectedStreams, DataStream}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
@@ -12,10 +13,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.flink.api.process.SignalSenderKey
-import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
-import pl.touk.nussknacker.engine.flink.util.source.EmptySourceFunction
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
 
@@ -29,15 +26,12 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  override protected def signalSenders(processDefinition: ProcessDefinition[ObjectWithMethodDef]): Map[SignalSenderKey, FlinkProcessSignalSender] =
-    super.signalSenders(processDefinition).mapValuesNow(_ => DummyFlinkSignalSender)
-
   override protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
     val createdDefinitions = super.definitions(processObjectDependencies)
 
-    val collectedSources = checkSources(process.allStartNodes.map(_.head.data).collect {
+    val collectedSources = process.allStartNodes.map(_.head.data).collect {
       case source: Source => source
-    })
+    }
 
     val usedSourceTypes = collectedSources.map(_.ref.typ)
     val stubbedSources =
@@ -55,18 +49,22 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
         services = stubbedServices)
   }
 
-  protected def checkSources(sources: List[Source]): List[Source] = sources
-
   protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef
 
   protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef
 
 
-  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, overrideFromOriginalAndType: (Any, TypingResult) => Any): ObjectWithMethodDef =
+  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, overrideFromOriginalAndType: (Any, TypingResult, NodeId) => Any): ObjectWithMethodDef =
     new OverriddenObjectWithMethodDef(original) {
       override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
         //this is needed to be able to handle dynamic types in tests
-        def transform(impl: Any): Any = overrideFromOriginalAndType(impl, impl.cast[ReturningType].map(_.returnType).getOrElse(original.returnType))
+        def transform(impl: Any): Any = {
+          val typingResult = impl.cast[ReturningType].map(_.returnType).getOrElse(original.returnType)
+          val nodeId = additional.collectFirst {
+            case nodeId: NodeId => nodeId
+          }.getOrElse(throw new IllegalArgumentException("Node id is missing in additional parameters"))
+          overrideFromOriginalAndType(impl, typingResult, nodeId)
+        }
 
         val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
         originalValue match {
@@ -78,11 +76,3 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
     }
 
 }
-
-
-private object DummyFlinkSignalSender extends FlinkProcessSignalSender {
-  override def connectWithSignals[InputType, SignalType: TypeInformation](start: DataStream[InputType], processId: String, nodeId: String, schema: DeserializationSchema[SignalType]): ConnectedStreams[InputType, SignalType] = {
-    start.connect(start.getExecutionEnvironment.addSource(new EmptySourceFunction[SignalType], implicitly[TypeInformation[SignalType]]))
-  }
-}
-

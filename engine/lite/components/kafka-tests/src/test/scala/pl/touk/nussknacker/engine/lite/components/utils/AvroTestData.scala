@@ -34,12 +34,6 @@ object AvroTestData {
     private val LongSchema = Schema.create(Schema.Type.LONG)
 
     def toMicros: Long = InstantConverter.toLong(time, LongSchema, LogicalTypes.timestampMicros())
-
-    //See org.apache.avro.date.TimeConversions.TimestampMicrosConversion.fromLong
-    def toMicrosFromEpoch: Long = toMicros / 1000000L
-
-    //See org.apache.avro.date.TimeConversions.TimestampMicrosConversion.fromLong
-    def toNanoAdjustment: Long = toMicros % 1000000L * 1000L
   }
 
   val RecordFieldName: String = "field"

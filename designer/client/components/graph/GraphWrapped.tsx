@@ -31,7 +31,7 @@ export interface GraphProps {
 
   processToDisplay: Process,
   divId: string,
-  nodeIdPrefixForSubprocessTests: string,
+  nodeIdPrefixForSubprocessTests?: string,
   processCounts: ProcessCounts,
   capabilities: Capabilities,
   fetchedProcessDetails: ProcessType,

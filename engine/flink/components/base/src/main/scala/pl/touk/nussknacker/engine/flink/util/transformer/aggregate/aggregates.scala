@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.util.MathUtils
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
 import java.util
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /*
   This class lists some simple aggregates

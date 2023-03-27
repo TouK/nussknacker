@@ -55,7 +55,7 @@ const border: dia.MarkupNodeJSON = {
 
 const icon: dia.MarkupNodeJSON = {
   selector: "icon",
-  tagName: "image",
+  tagName: "use",
   attributes: {
     width: iconSize,
     height: iconSize,

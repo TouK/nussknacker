@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsEx
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.testing.SttpBackendStub
-import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
+import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
 import java.net.ConnectException
@@ -22,7 +22,7 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-  private val config = FlinkConfig("http://test.pl", None)
+  private val config = FlinkConfig("http://test.pl")
 
   private val availableSlotsCount = 1000
 
@@ -66,7 +66,7 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
                                  clusterOverviewResult: Try[ClusterOverview] = Success(ClusterOverview(`slots-total` = 1000, `slots-available` = availableSlotsCount)),
                                  jobManagerConfigResult: Try[Configuration] = Success(Configuration.fromMap(Collections.emptyMap())) // be default used config with all default values
                                 ): FlinkSlotsChecker = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val slotsChecker = createSlotsCheckerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
       val toReturn = (req.uri.path, req.method) match {
         case (List("jobs", "overview"), Method.GET) =>
@@ -75,22 +75,23 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
           JobConfig(jobId, ExecutionConfig(`job-parallelism` = 1, `user-config` = Map.empty))
         case (List("overview"), Method.GET) =>
           clusterOverviewResult.recoverWith {
-            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(ex).get)
+            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(req, ex).get)
           }.get
         case (List("jobmanager", "config"), Method.GET) =>
           jobManagerConfigResult.map(_.toMap.asScala.toList.map {
             case (key, value) => KeyValueEntry(key, value)
           }).recoverWith {
-            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(ex).get)
+            case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(req, ex).get)
           }.get
+        case _ => throw new IllegalStateException()
       }
       Response(Right(toReturn), statusCode)
     })
     slotsChecker
   }
 
-  private def createSlotsCheckerWithBackend(backend: SttpBackend[Future, Nothing, NothingT]): FlinkSlotsChecker = {
-    implicit val b: SttpBackend[Future, Nothing, NothingT] = backend
+  private def createSlotsCheckerWithBackend(backend: SttpBackend[Future, Any]): FlinkSlotsChecker = {
+    implicit val b: SttpBackend[Future, Any] = backend
     new FlinkSlotsChecker(new HttpFlinkClient(config))
   }
 

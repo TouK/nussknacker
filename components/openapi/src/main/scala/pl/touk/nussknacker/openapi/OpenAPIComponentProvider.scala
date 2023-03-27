@@ -16,7 +16,7 @@ import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnr
 import pl.touk.nussknacker.openapi.parser.ServiceParseError
 import sttp.model.StatusCode
 
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
@@ -24,7 +24,8 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
   override def providerName: String = "openAPI"
 
   override def resolveConfigForExecution(config: Config): Config = {
-    val openAPIsConfig = config.rootAs[OpenAPIServicesConfig]
+    // we need to load config to resolve url which can be potentially a system env variable
+    val openAPIsConfig = ConfigFactory.load(config).rootAs[OpenAPIServicesConfig]
     val services = try {
       SwaggerOpenApiDefinitionDiscovery.discoverOpenAPIServices(openAPIsConfig)
     } catch {

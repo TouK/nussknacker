@@ -11,9 +11,10 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
 
-import scala.jdk.CollectionConverters.{iterableAsScalaIterableConverter, mapAsScalaMapConverter}
+import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 import scala.util.Try
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 //this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
 //only here we care about context classloaders
@@ -35,7 +36,7 @@ class RequestResponseHttpHandler[Effect[_]: Monad](
       case (source: RequestResponsePostSource[Any], HttpMethods.POST) =>
         source.parse(entity)
       case (source: RequestResponseGetSource[Any], HttpMethods.GET) =>
-        val paramsMultiMap = request.getUri().query().toMultiMap.asScala.toMap.mapValues(_.asScala.toList)
+        val paramsMultiMap = request.getUri().query().toMultiMap.asScala.toMap.mapValuesNow(_.asScala.toList)
         source.parse(paramsMultiMap)
       case (_, method) =>
         throw new IllegalArgumentException(s"Method $method is not handled")

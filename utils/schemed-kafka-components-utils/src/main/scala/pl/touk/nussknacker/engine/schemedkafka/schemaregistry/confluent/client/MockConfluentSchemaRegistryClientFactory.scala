@@ -1,15 +1,21 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryClientKafkaConfig}
+import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
+import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactoryWithRegistration, SchemaRegistryClientWithRegistration}
 
 /**
- * MockSchemaRegistryClient must be passed by name, because schemaRegistryMockClient is not serializable.
+ * SchemaRegistryClient must be passed by name, because schemaRegistryMockClient is not serializable.
+ * This class do not use caching - mocks are already fast
  */
-class MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient: => MockSchemaRegistryClient)
-  extends ConfluentSchemaRegistryClientFactory {
+class MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient: => CSchemaRegistryClient)
+  extends SchemaRegistryClientFactoryWithRegistration {
 
-  override def create(config: SchemaRegistryClientKafkaConfig): ConfluentSchemaRegistryClient = {
-    new DefaultConfluentSchemaRegistryClient(schemaRegistryMockClient, config)
+
+  override type SchemaRegistryClientT = SchemaRegistryClientWithRegistration with ConfluentSchemaRegistryClient
+
+  override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
+    new DefaultConfluentSchemaRegistryClient(schemaRegistryMockClient)
   }
 
 }

@@ -1,7 +1,7 @@
 export { DefaultSuspense } from "./defaultSuspense";
 export { useDefaultTheme } from "./defaultTheme";
 export { HistoryProvider, useHistory, useBackHref } from "./historyContext";
-export { MonoNuIcon, NuIcon } from "./nuIcon";
+export { NuIcon } from "./nuIcon";
 export { TextFieldWithClear, InputWithClear } from "./forms";
 export { CategoryChip } from "./categoryChip";
 export { useFilterContext, FiltersContextProvider, createFilterRules } from "./filters";

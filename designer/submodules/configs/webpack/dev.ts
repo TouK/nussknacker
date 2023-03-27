@@ -16,6 +16,9 @@ export default merge(commonConfig, {
                 ignored: [outputPath],
             },
         },
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+        },
         client: {
             logging: "error",
             overlay: false,

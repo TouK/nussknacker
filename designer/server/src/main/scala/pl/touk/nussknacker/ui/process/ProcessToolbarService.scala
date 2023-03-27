@@ -119,5 +119,5 @@ private [process] object ToolbarHelper {
 
   //When we should match all conditions and expected condition is empty (not set) then we ignore this condition
   private def verifyCondition(toVerify: Boolean, expected: Option[Boolean], shouldMatchAllOfConditions: Boolean): Boolean =
-    (shouldMatchAllOfConditions && expected.isEmpty) || expected.exists(_.equals(toVerify))
+    (shouldMatchAllOfConditions && expected.isEmpty) || expected.contains(toVerify)
 }

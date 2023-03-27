@@ -3,14 +3,17 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaWithMetadata.unknownVersion
+import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
+import io.confluent.kafka.schemaregistry.{ParsedSchema, SchemaProvider}
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
+import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLogging {
 
@@ -23,31 +26,54 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
       valid(data)
     } catch {
       case exc: RestClientException if exc.getErrorCode == subjectNotFoundCode =>
-        invalid(SchemaSubjectNotFound("Schema subject doesn't exist."))
+        invalid(SchemaTopicError("Schema subject doesn't exist."))
       case exc: RestClientException if exc.getErrorCode == versionNotFoundCode =>
-        invalid(SchemaVersionNotFound("Schema version doesn't exist."))
+        invalid(SchemaVersionError("Schema version doesn't exist."))
       case exc: RestClientException if exc.getErrorCode == schemaNotFoundCode =>
-        invalid(SchemaNotFound("Schema doesn't exist."))
+        invalid(SchemaError("Schema doesn't exist."))
       case exc: Throwable =>
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data.", exc))
     }
 }
 
-class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient, config: SchemaRegistryClientKafkaConfig) extends ConfluentSchemaRegistryClient {
+object DefaultConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
+
+  import scala.jdk.CollectionConverters._
+
+  override type SchemaRegistryClientT = SchemaRegistryClientWithRegistration with ConfluentSchemaRegistryClient
+
+  override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
+    val schemaRegistryClient = createConfluentClient(config)
+    new DefaultConfluentSchemaRegistryClient(schemaRegistryClient)
+  }
+
+  def createConfluentClient(c: SchemaRegistryClientKafkaConfig): CCachedSchemaRegistryClient = {
+    val config = new KafkaAvroDeserializerConfig(c.kafkaProperties.asJava)
+    val urls = config.getSchemaRegistryUrls
+    val maxSchemaObject = config.getMaxSchemasPerSubject
+    val originals = config.originalsWithPrefix("")
+    val schemaProviders: List[SchemaProvider] = List(new JsonSchemaProvider(), new AvroSchemaProvider())
+    new CCachedSchemaRegistryClient(urls, maxSchemaObject, schemaProviders.asJava, originals)
+  }
+}
+
+class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient)
+    extends ConfluentSchemaRegistryClient
+    with SchemaRegistryClientWithRegistration {
 
   override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
-      SchemaWithMetadata(schemaMetadata, config)
+      ConfluentUtils.toSchemaWithMetadata(schemaMetadata)
     }
 
-  override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
+  override def getByTopicAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getSchemaMetadata(subject, version)
-      SchemaWithMetadata(schemaMetadata, config)
+      ConfluentUtils.toSchemaWithMetadata(schemaMetadata)
     }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
@@ -61,16 +87,20 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
       client.getAllVersions(subject).asScala.toList
     }
 
-  override def getSchemaById(id: Int): SchemaWithMetadata = {
-    val rawSchema = client.getSchemaById(id)
-    SchemaWithMetadata(new SchemaMetadata(id, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
+  override def getSchemaById(id: SchemaId): SchemaWithMetadata = {
+    val schema = client.getSchemaById(id.asInt)
+    SchemaWithMetadata(schema, id)
   }
 
-  override def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, Int] = getLatestFreshSchema(topic, isKey).map(_.id)
+  override def registerSchema(topic: String, isKey: Boolean, schema: ParsedSchema): SchemaId = {
+    val subject = ConfluentUtils.topicSubject(topic, isKey)
+    SchemaId.fromInt(client.register(subject, schema))
+  }
+
 }
 
 object ConfluentSchemaRegistryClient {
-  //The most common codes from https://docs.confluent.io/current/schema-registry/develop/api.html
+  // The most common codes from https://docs.confluent.io/current/schema-registry/develop/api.html
   val subjectNotFoundCode = 40401
   val versionNotFoundCode = 40402
   val schemaNotFoundCode = 40403

@@ -99,3 +99,21 @@ export const useNkTheme: () => { withFocus: string, theme: NkTheme } = () => {
 
   return {theme, withFocus}
 }
+
+export function getContrastColor(color: string, contrast = 5, ratio = .1) {
+  const baseColor = Color(color)
+  const resultColor = baseColor.isDark() ? baseColor.lighten(ratio) : baseColor.darken(ratio)
+  if (baseColor.contrast(resultColor) < contrast && resultColor.lightness() % 100 !== 0) {
+    return getContrastColor(color, contrast, ratio * 1.1)
+  }
+  return resultColor.hex()
+}
+
+export function getDarkenContrastColor(color: string, contrast = 5, ratio = .1) {
+  const baseColor = Color(color)
+  const resultColor = baseColor.darken(ratio)
+  if (baseColor.contrast(resultColor) < contrast && resultColor.lightness() > 0) {
+    return getDarkenContrastColor(color, contrast, ratio * 1.1)
+  }
+  return resultColor.hex()
+}

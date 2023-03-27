@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
@@ -18,7 +18,7 @@ import ModelData._
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
-  extends DeploymentManager with LazyLogging {
+  extends DeploymentManager with AlwaysFreshProcessState with LazyLogging {
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
 
@@ -57,13 +57,16 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
         prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, canonicalProcess),
         savepointPath.orElse(maybeSavepoint)
       )
+      _ <- waitForDuringDeployFinished(processName)
     } yield runResult
   }
+
+  protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit]
 
   private def checkOldJobStatus(processVersion: ProcessVersion): Future[Option[ProcessState]] = {
     val processName = processVersion.processName
     for {
-      oldJob <- findJobStatus(processName)
+      oldJob <- getFreshProcessState(processName)
       _ <- if (oldJob.exists(!_.allowedActions.contains(ProcessActionType.Deploy)))
         Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.map(_.status.name).getOrElse("")}")) else Future.successful(Some(()))
     } yield oldJob
@@ -83,8 +86,8 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     }
   }
 
-  override def test[T](processName: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestResults[T]] = {
-    testRunner.test(processName, canonicalProcess, testData, variableEncoder)
+  override def test[T](processName: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]] = {
+    testRunner.test(canonicalProcess, scenarioTestData, variableEncoder)
   }
 
   override def customActions: List[CustomAction] = List.empty
@@ -94,7 +97,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   private def requireRunningProcess[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value
-    findJobStatus(processName).flatMap {
+    getFreshProcessState(processName).flatMap {
       case Some(ProcessState(Some(deploymentId), status, _, _, _, _, _, _, _, _)) if status.isRunning =>
         action(deploymentId)
       case Some(state) =>

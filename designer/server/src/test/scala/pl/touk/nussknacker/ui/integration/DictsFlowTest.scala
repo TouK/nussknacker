@@ -11,6 +11,7 @@ import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -29,7 +30,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
-    system.settings.config,
+    ConfigWithUnresolvedVersion(system.settings.config),
     NussknackerAppInitializer.initDb(system.settings.config),
     new MetricRegistry
   )
@@ -38,7 +39,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
 
   implicit val timeout: RouteTestTimeout = RouteTestTimeout(2.minutes)
 
-  override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
+  override def testConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
   private val DictId = "dict"
   private val VariableNodeId = "variableCheck"
@@ -136,7 +137,8 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
   private def saveProcessAndTestIt(process: CanonicalProcess, expressionUsingDictWithLabel: String, expectedResult: String) = {
     saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel).asObject.value shouldBe empty
 
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
+    val testDataContent = """{"sourceId":"source","record":"field1|field2"}"""
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       val endInvocationResult = extractedVariableResult()
@@ -148,9 +150,9 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
     ScenarioBuilder
       .streaming(processId)
       .additionalFields(properties = Map("param1" -> "true"))
-      .source("source", "csv-source")
+      .source("source", "csv-source-lite")
       .buildSimpleVariable(VariableNodeId, VariableName, variableExpression)
-      .emptySink(EndNodeId, "monitor")
+      .emptySink(EndNodeId, "dead-end-lite")
 
   private def saveProcessAndExtractValidationResult(process: CanonicalProcess, endResultExpressionToPost: String): Json = {
     val processRootResource = s"/api/processes/${process.id}"
@@ -225,7 +227,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
       .as[Json].rightValue
   }
 
-  def checkWithClue[T](body: ⇒ T): RouteTestResult ⇒ T = check {
+  def checkWithClue[T](body: => T): RouteTestResult => T = check {
     withClue(responseAs[String]) {
       body
     }

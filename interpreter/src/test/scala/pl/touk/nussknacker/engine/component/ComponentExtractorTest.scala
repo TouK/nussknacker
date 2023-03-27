@@ -5,6 +5,7 @@ import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.Ficus._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentProvider, NussknackerVersion, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
@@ -13,8 +14,9 @@ import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object ComponentExtractorTest {
 
@@ -145,7 +147,7 @@ class ComponentExtractorTest extends AnyFunSuite with Matchers {
       (classOf[ComponentProvider], classOf[SameNameDifferentComponentTypeProvider]),
       (classOf[ComponentProvider], classOf[AutoLoadedProvider])), getClass.getClassLoader) { cl =>
       val extractor = makeExtractor(cl)
-      val resolved = loader.resolveInputConfigDuringExecution(fromMap(map.toSeq: _*), cl)
+      val resolved = loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(map.toSeq: _*)), cl)
       extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
     }
   }
@@ -153,12 +155,12 @@ class ComponentExtractorTest extends AnyFunSuite with Matchers {
   private def extractProvider(providers: List[(Class[_], Class[_])], config: Map[String, Any] = Map()) = {
     ClassLoaderWithServices.withCustomServices(providers, getClass.getClassLoader) { cl =>
       val extractor = ComponentExtractor(cl)
-      val resolved = loader.resolveInputConfigDuringExecution(fromMap(config.toSeq: _*), cl)
+      val resolved = loader.resolveInputConfigDuringExecution(ConfigWithUnresolvedVersion(fromMap(config.toSeq: _*)), cl)
       extractor.extractComponents(ProcessObjectDependencies(resolved.config, DefaultNamespacedObjectNaming))
     }
   }
 
-  private def fromMap(map: (String, Any)*): Config = ConfigFactory.parseMap(map.toMap.mapValues {
+  private def fromMap(map: (String, Any)*): Config = ConfigFactory.parseMap(map.toMap.mapValuesNow {
     case map: Map[String, Any]@unchecked => fromMap(map.toSeq: _*).root()
     case other => other
   }.asJava)

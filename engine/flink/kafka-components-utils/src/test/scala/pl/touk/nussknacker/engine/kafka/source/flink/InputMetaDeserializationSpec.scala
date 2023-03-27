@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInf
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class InputMetaDeserializationSpec extends AnyFunSuite with Matchers with FlinkTypeInformationSerializationMixin{
 

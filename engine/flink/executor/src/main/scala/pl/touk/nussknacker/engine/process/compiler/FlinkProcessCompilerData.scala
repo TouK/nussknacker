@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.definition.LazyInterpreterDependencies
-import pl.touk.nussknacker.engine.flink.api.process.FlinkProcessSignalSenderProvider
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -30,7 +29,6 @@ class FlinkProcessCompilerData(compiledProcess: ProcessCompilerData,
                                val jobData: JobData,
                                // Exception handler is not opened and closed in this class. Use prepareExceptionHandler.
                                exceptionHandler: FlinkExceptionHandler,
-                               val signalSenders: FlinkProcessSignalSenderProvider,
                                val asyncExecutionContextPreparer: AsyncExecutionContextPreparer,
                                val processTimeout: FiniteDuration,
                                val componentUseCase: ComponentUseCase

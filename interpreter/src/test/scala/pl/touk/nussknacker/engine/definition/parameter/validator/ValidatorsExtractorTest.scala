@@ -39,43 +39,43 @@ class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
   private val minimalAndMaximalValueIntegerParam = getFirstParam("minimalAndMaximalValueIntegerAnnotatedParam", classOf[Int])
   private val minimalAndMaximalValueBigDecimalParam = getFirstParam("minimalAndMaximalValueBigDecimalAnnotatedParam", classOf[BigDecimal])
 
-  private def notAnnotated(param: String) {}
+  private def notAnnotated(param: String) = ()
 
-  private def nullableAnnotated(@Nullable nullableParam: LocalDate) {}
-
-
-  private def optionParam(stringOption: Option[String]) {}
-
-  private def optionalParam(stringOptional: Optional[String]) {}
+  private def nullableAnnotated(@Nullable nullableParam: LocalDate) = ()
 
 
-  private def nullableNotBlankAnnotatedParam(@Nullable @NotBlank notBlank: String) {}
+  private def optionParam(stringOption: Option[String]) = ()
 
-  private def notBlankAnnotatedParam(@NotBlank notBlank: String) {}
-
-
-  private def literalIntAnnotatedParam(@Literal intParam: Int) {}
-
-  private def literalIntegerAnnotatedParam(@Literal integerParam: Integer) {}
-
-  private def literalNullableIntegerAnnotatedParam(@Nullable @Literal integerParam: Integer) {}
-
-  private def literalStringAnnotatedParam(@Literal stringParam: String) {}
+  private def optionalParam(stringOptional: Optional[String]) = ()
 
 
-  private def minimalValueIntegerAnnotatedParam(@Min(value = 0) minimalValue: Int) {}
+  private def nullableNotBlankAnnotatedParam(@Nullable @NotBlank notBlank: String) = ()
 
-  private def minimalValueBigDecimalAnnotatedParam(@Min(value = 0) minimalValue: BigDecimal) {}
-
-
-  private def maximalValueIntegerAnnotatedParam(@Max(value = 0) maximalValue: Int) {}
-
-  private def maximalValueBigDecimalAnnotatedParam(@Max(value = 0) maximalValue: BigDecimal) {}
+  private def notBlankAnnotatedParam(@NotBlank notBlank: String) = ()
 
 
-  private def minimalAndMaximalValueIntegerAnnotatedParam(@Min(value = 0) @Max(value = 1) value: Int) {}
+  private def literalIntAnnotatedParam(@Literal intParam: Int) = ()
 
-  private def minimalAndMaximalValueBigDecimalAnnotatedParam(@Min(value = 0) @Max(value = 1) value: BigDecimal) {}
+  private def literalIntegerAnnotatedParam(@Literal integerParam: Integer) = ()
+
+  private def literalNullableIntegerAnnotatedParam(@Nullable @Literal integerParam: Integer) = ()
+
+  private def literalStringAnnotatedParam(@Literal stringParam: String) = ()
+
+
+  private def minimalValueIntegerAnnotatedParam(@Min(value = 0) minimalValue: Int) = ()
+
+  private def minimalValueBigDecimalAnnotatedParam(@Min(value = 0) minimalValue: BigDecimal) = ()
+
+
+  private def maximalValueIntegerAnnotatedParam(@Max(value = 0) maximalValue: Int) = ()
+
+  private def maximalValueBigDecimalAnnotatedParam(@Max(value = 0) maximalValue: BigDecimal) = ()
+
+
+  private def minimalAndMaximalValueIntegerAnnotatedParam(@Min(value = 0) @Max(value = 1) value: Int) = ()
+
+  private def minimalAndMaximalValueBigDecimalAnnotatedParam(@Min(value = 0) @Max(value = 1) value: BigDecimal) = ()
 
 
   private def getFirstParam(name: String, params: Class[_]*) = {

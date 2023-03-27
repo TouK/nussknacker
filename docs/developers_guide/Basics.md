@@ -8,33 +8,33 @@ The main way of adding customizations to Nussknacker is [ServiceLoader](https://
 **Please make sure to put jars with custom code on right classpath**
 - Customizations of model (in particular `ComponentProviders`) can be loaded by adding libs/classes to dedicated `components/common/extra`, 
   `components/lite/extra` or `components/flink/extra` directory. For advanced usages, you can configure `modelConfig.classPath` 
-  in [Model config](../installation_configuration_guide/Configuration).
+  in [Model config](../installation_configuration_guide/model/ModelConfiguration.md).
 - Code of Designer customizations should go to the main designer classpath (e.g. put the jars in the `lib` folder)
  
 ## Types
 
 Types of expressions are based on Java types. Nussknacker provides own abstraction of type, which can contain more information about given type than pure Java class - e.g. object type (like in [Typescript](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#object-types)) is represented in runtime as Java `Map`, but during compilation we know the structure of this map. 
-We also handle union types (again, similar to [Typescript](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types)) and we have `Unknown` type which is represented as Java `Object` in runtime, but behaves a bit like [Typescript any](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any) (please note that `Unknown` should be avoided as default [Security settings](./Security) settings prohibit omitting typechecking with `Unknown`.
+We also handle union types (again, similar to [Typescript](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types)) and we have `Unknown` type which is represented as Java `Object` in runtime, but behaves a bit like [Typescript any](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any) (please note that `Unknown` should be avoided as default [Security settings](../installation_configuration_guide/DesignerConfiguration.md#security) settings prohibit omitting typechecking with `Unknown`.
  
 `TypingResult` is the main class (sealed trait) that represents type of expression in Nussknacker.
 `Typed` object has many methods for constructing `TypingResult`
       
 ## Components and ComponentProviders
 
-[Components](https://nussknacker.io/documentation/about/GLOSSARY#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
+[Components](/about/GLOSSARY#component) are main method of customizing Nussknacker. Components are created by configured `ComponentProvider` instances. 
 There are following types of components:
 - `SourceFactory`
 - `SinkFactory`
 - `CustomStreamTransformer` - types of transformations depend on type of Engine
 - `Service` - mainly for defining stateless enrichments
-To read more see [ComponentProvider API](./Components)
+To read more see [ComponentProvider API](./Components.md)
 
 ## Deployment of scenarios
 
 The Designer uses [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/designer/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
 interface to perform actions on scenarios (deploy / cancel / etc.). All providers that are available in distribution deployment are located in `managers` directory and are added to the designer classpath.
 If you want to implement own `DeploymentManager`, you should implement this interface, package it, add to classpath and configure scenario type to use it. More info you can find on 
-[DeploymentManagerConfiguration page](../installation_configuration_guide/DeploymentManagerConfiguration) 
+[DeploymentManagerConfiguration page](../installation_configuration_guide/DeploymentManagerConfiguration.md) 
 
 ## Other SPIs for Nussknacker customization (documentation will follow soon...)
 
@@ -74,7 +74,7 @@ The diagram below shows dependencies between modules. You can see two main group
 
 On the other hand *Utils* modules contain classes built on top of API which can be used in extensions but are not mandatory. **API of *Utils* modules can be changed more often than API inside API modules**
 
-Both *API modules* and *Utils modules* have several modules with `-components` part in name. They should be used to build own [Components](./Components)
+Both *API modules* and *Utils modules* have several modules with `-components` part in name. They should be used to build own [Components](./Components.md)
 
 `nussknacker-scenario-api` contains classes needed to operate on scenarios: creating it via DSL, marshalling to JSON, etc.
 

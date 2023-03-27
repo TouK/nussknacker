@@ -15,7 +15,7 @@ import java.time.{Instant, LocalDate, LocalTime}
 import java.time.format.DateTimeFormatter
 import java.util
 import java.util.concurrent.TimeUnit
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 class JsonPayloadToAvroConverter(specificClass: Option[Class[SpecificRecordBase]]) {

@@ -10,7 +10,7 @@ assignees: ''
 <!--
   ! PLEASE HELP US HELP YOU !
   Make it obvious to understand and reproduce this bug.
-  Please submit one bug per issue
+  Please submit one bug per issue.
 -->
 
 **Describe the bug**
@@ -19,11 +19,11 @@ A clear and concise description of what the bug is
 **To Reproduce**
 Steps to reproduce the behavior.
 
-**Environment (please complete the following information):**
+**Environment (please fill in the following information):**
  - OS: [e.g. Ubuntu 18.04]
  - Nussknacker version [branch name]
  - Flink version
  - Java version
  - Scala version
- - Method of ran of components [e.g. in docker, lite, flink]
- - Browser type and version [e.g. chrome 73]
+ - Method of running of components [e.g. in Docker, lite, flink]
+ - Browser type and version [e.g. Chrome 73]

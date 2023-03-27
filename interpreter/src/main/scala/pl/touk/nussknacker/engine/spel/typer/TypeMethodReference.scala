@@ -46,9 +46,9 @@ class TypeMethodReference(methodName: String,
 
   private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition]): Either[ExpressionParseError, TypingResult] = {
     val validatedType = for {
-      nonEmptyClassDefinitions <- validateClassDefinitionsNonEmpty(clazzDefinitions).right
-      nonEmptyMethods <- validateMethodsNonEmpty(nonEmptyClassDefinitions).right
-      returnTypesForMatchingParams <- validateMethodParameterTypes(nonEmptyMethods).right
+      nonEmptyClassDefinitions <- validateClassDefinitionsNonEmpty(clazzDefinitions)
+      nonEmptyMethods <- validateMethodsNonEmpty(nonEmptyClassDefinitions)
+      returnTypesForMatchingParams <- validateMethodParameterTypes(nonEmptyMethods)
     } yield Typed(returnTypesForMatchingParams.toSet)
 
     validatedType match {

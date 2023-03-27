@@ -26,5 +26,5 @@ object ConfiguratorService extends Service with Serializable {
              @Nullable
              jsonConfig: String
             ): Future[Unit]
-    = Future.successful(Unit)
+    = Future.successful(())
 }

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.json
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
+import pl.touk.nussknacker.engine.util.ResourceLoader
 
 object JsonSchemaBuilder {
 
@@ -10,8 +11,14 @@ object JsonSchemaBuilder {
     parseSchemaAs(rawJsonSchema, useDefaults = true)
 
   //TODO: parsing schema should be consistent with [io.confluent.kafka.schemaregistry.json.JsonSchema.rawSchema]
+  //TODO: Remove strict setting DRAFT7
   def parseSchemaAs[T <: Schema](rawJsonSchema: String, useDefaults: Boolean): T = {
-    val rawSchema: JSONObject = new JSONObject(rawJsonSchema)
+    val trimmedRawSchema = rawJsonSchema.trim
+    val rawSchema: Object = if (trimmedRawSchema != "true") {
+      new JSONObject(rawJsonSchema)
+    } else {
+      true.asInstanceOf[Object]
+    }
 
     SchemaLoader
       .builder()
@@ -23,5 +30,8 @@ object JsonSchemaBuilder {
       .build()
       .asInstanceOf[T]
   }
+
+  def loadSchemaFromResource(path: String): Schema =
+    parseSchema(ResourceLoader.load(path))
 
 }

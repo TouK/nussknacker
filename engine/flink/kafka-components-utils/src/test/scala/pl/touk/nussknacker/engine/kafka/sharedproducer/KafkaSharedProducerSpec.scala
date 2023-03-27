@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.kafka.MockProducerCreator
 
 import java.nio.charset.StandardCharsets
 import scala.concurrent.ExecutionContext.Implicits._
-import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
+import scala.jdk.CollectionConverters._
 
 class KafkaSharedProducerSpec extends AnyFunSuite with Matchers {
 

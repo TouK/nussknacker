@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
   import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   test("string default") {
     verify("stringField_0")(

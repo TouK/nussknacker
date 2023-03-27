@@ -4,11 +4,12 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.FileUtils
 import org.asynchttpclient.DefaultAsyncHttpClient
+import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.openapi.http.backend.HttpClientConfig
 import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client.{SttpBackend, basicRequest}
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client3.{SttpBackend, basicRequest}
 import sttp.model.Uri
 
 import java.io.File
@@ -33,7 +34,7 @@ object SwaggerOpenApiDefinitionDiscovery
       )
     )
 
-class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Future, Nothing, Nothing])
+class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Future, Any])
     extends LazyLogging {
 
   def discoverOpenAPIServices(
@@ -41,10 +42,10 @@ class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Fu
   ): List[Validated[ServiceParseError, SwaggerService]] = {
     val discoveryUrl = openAPIsConfig.url
     val definition = if (discoveryUrl.getProtocol == "file") {
-      FileUtils.readFileToString(new File(discoveryUrl.getPath), StandardCharsets.UTF_8)
+      ResourceLoader.load(new File(discoveryUrl.getPath))
     } else {
       Await
-        .result(basicRequest.get(Uri(discoveryUrl.toURI)).send(), 20 seconds)
+        .result(basicRequest.get(Uri(discoveryUrl.toURI)).send(httpBackend), 20 seconds)
         .body
         .fold(left => throw new IllegalStateException(s"Invalid response from discovery API: $left"), identity)
     }

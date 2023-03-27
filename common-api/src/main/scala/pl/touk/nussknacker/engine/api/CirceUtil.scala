@@ -4,10 +4,10 @@ import io.circe
 import io.circe.generic.extras.Configuration
 import io.circe._
 
-import java.net.URI
+import java.net.{URI, URL}
 import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object CirceUtil {
 
@@ -18,16 +18,24 @@ object CirceUtil {
 
 
   def decodeJson[T: Decoder](json: String): Either[circe.Error, T]
-  = io.circe.parser.parse(json).right.flatMap(Decoder[T].decodeJson)
+  = io.circe.parser.parse(json).flatMap(Decoder[T].decodeJson)
 
   def decodeJson[T: Decoder](json: Array[Byte]): Either[circe.Error, T] = decodeJson(new String(json, StandardCharsets.UTF_8))
 
+  def decodeJsonUnsafe[T: Decoder](json: String): T = unsafe(decodeJson(json))
+
   def decodeJsonUnsafe[T: Decoder](json: String, message: String): T = unsafe(decodeJson(json), message)
 
-  def decodeJsonUnsafe[T: Decoder](json: Array[Byte]): T = unsafe(decodeJson(json), "")
+  def decodeJsonUnsafe[T: Decoder](json: Array[Byte]): T = unsafe(decodeJson(json))
 
-  private def unsafe[T](result: Either[circe.Error, T], message: String) = result match {
-    case Left(error) => throw DecodingError(s"Failed to decode - $message, error: ${error.getMessage}", error)
+  def decodeJsonUnsafe[T: Decoder](json: Array[Byte], message: String): T = unsafe(decodeJson(json), message)
+
+  def decodeJsonUnsafe[T: Decoder](json: Json): T = unsafe(Decoder[T].decodeJson(json))
+
+  def decodeJsonUnsafe[T: Decoder](json: Json, message: String): T = unsafe(Decoder[T].decodeJson(json), message)
+
+  private def unsafe[T](result: Either[circe.Error, T], message: String = "") = result match {
+    case Left(error) => throw DecodingError(s"Failed to decode${if (message.isBlank) "" else s" - $message"}, error: ${error.getMessage}", error)
     case Right(data) => data
   }
 
@@ -40,6 +48,8 @@ object CirceUtil {
     implicit lazy val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
     implicit lazy val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
 
+    implicit val urlEncoder: Encoder[URL] = Encoder.encodeString.contramap(_.toExternalForm)
+    implicit val urlDecoder: Decoder[URL] = Decoder.decodeString.map(new URL(_))
   }
 
   implicit class RichACursor(cursor: ACursor) {

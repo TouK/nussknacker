@@ -5,21 +5,21 @@ import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtra
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
-import scala.collection.JavaConverters
+import scala.jdk.CollectionConverters._
 
-object JsonSchemaOutputValidatorPrinter {
+class JsonSchemaOutputValidatorPrinter(parentSchema: Schema) {
 
   import OutputValidatorErrorsMessageFormatter._
-  import JsonSchemaOutputValidator._
+  import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
-  import JavaConverters._
+
 
   private implicit class ListTypesPrinter(list: List[String]) {
     def printType: String = list.mkString(TypesSeparator)
   }
 
   def print(schema: Schema): String = schema match {
-    case s: ObjectSchema if s.representsMap =>
+    case s: ObjectSchema if s.hasOnlyAdditionalProperties =>
       val valuesType = Option(s.getSchemaOfAdditionalProperties).map(print).getOrElse("Any")
       s"Map[String, ${valuesType}]"
     case s: ObjectSchema => s.getPropertySchemas.asScala.map {
@@ -35,7 +35,7 @@ object JsonSchemaOutputValidatorPrinter {
   }
 
   private def baseDisplayType(schema: Schema) = SwaggerBasedJsonSchemaTypeDefinitionExtractor
-    .swaggerType(schema).typingResult.display
+    .swaggerType(schema, parentSchema = Some(parentSchema)).typingResult.display
 
   //todo: remove duplication - JsonSchemaTypeDefinitionExtractor
   private def printLogicalType(schema: Schema): Option[String] = Option(schema match {

@@ -1,12 +1,15 @@
 describe("Fragment", () => {
   const seed = "fragment"
   before(() => {
-    cy.viewport(1440, 1000)
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })
 
   after(() => {
     cy.deleteAllTestProcesses({filter: seed})
+  })
+  
+  beforeEach(() => {
+    cy.viewport(1440, 1200)
   })
 
   it("should allow adding input parameters and display used fragment graph in modal", () => {
@@ -23,7 +26,7 @@ describe("Fragment", () => {
     cy.contains(/^ok$/i).click()
 
     cy.visitNewProcess(seed, "testProcess")
-    cy.contains(/^layout$/i).click()
+    cy.layoutScenario()
 
     cy.contains(/^fragments$/).should("be.visible").click()
     cy.contains("fragment-test")
@@ -31,7 +34,7 @@ describe("Fragment", () => {
       .should("be.visible")
       .move({x: 800, y: 600, position: "right", force: true})
       .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
-    cy.contains(/^layout$/i).click()
+    cy.layoutScenario()
 
     cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick")
     cy.get("#nk-graph-subprocess [model-id='input']").should("be.visible")
@@ -42,7 +45,7 @@ describe("Fragment", () => {
     cy.contains(/^apply/i).should("be.enabled").click()
 
     cy.wait(750)
-    cy.get(".graphPage").matchImage({
+    cy.get("[data-testid=graphPage]").matchImage({
       screenshotConfig: {
         blackout: [
           "> :not(#nk-graph-main) > div",
@@ -63,7 +66,7 @@ describe("Fragment", () => {
     cy.get("[data-testid=window]").matchImage()
   })
 
-  it.skip("should add documentation url in fragment properties and show it in modal within scenario", () => {
+  it("should add documentation url in fragment properties and show it in modal within scenario", () => {
     const seed2 = "fragment2"
     cy.visitNewFragment(seed2, "fragment").as("fragmentName")
     cy.contains(/^properties/i).should("be.enabled").click()
@@ -85,21 +88,20 @@ describe("Fragment", () => {
     cy.contains(/^ok$/i).should("not.exist")
 
     cy.visitNewProcess(seed, "testProcess")
-    cy.contains(/^layout$/i).click()
+    cy.layoutScenario()
 
     cy.contains("fragments").should("be.visible").click()
     cy.contains(`${seed2}-test`)
       .last()
       .should("be.visible")
       .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
-    cy.contains(/^layout$/i).click()
+    cy.layoutScenario()
 
     cy.get(`[model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick")
 
     cy.get("[title='Documentation']").should("have.attr", "href", docsUrl)
     cy.get("[data-testid=window]").as("window")
     cy.get("@window").contains(/^input$/).should("be.visible")
-    // FIXME: flaky check: https://github.com/TouK/nussknacker/actions/runs/1559240404
     cy.get("@window").wait(200).matchImage()
 
     cy.deleteAllTestProcesses({filter: seed2})

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import io.circe.Json
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
@@ -9,8 +10,10 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.concurrent.Future
 
@@ -225,7 +228,7 @@ object validationHelpers {
       case TransformationStep(("paramWithFixedValues", DefinedEagerParameter(paramWithFixedValues: Int, _)) :: Nil, _) =>
         FinalResults(context, state = Some(Valid(paramWithFixedValues)))
       case TransformationStep(("paramWithFixedValues", FailedToDefineParameter) :: Nil, _) =>
-        FinalResults(context, state = Some(Invalid(Unit)))
+        FinalResults(context, state = Some(Invalid(())))
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Validated[Unit, Int] = finalState.get
@@ -243,11 +246,12 @@ object validationHelpers {
 
       new Source with SourceTestSupport[String] with TestDataGenerator {
 
-        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
-          override def parseElement(testElement: String): String = testElement
-        }
+        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
-        override def generateTestData(size: Int): Array[Byte] = Array(0)
+        override def generateTestData(size: Int): TestData = TestData((for {
+          number <- 1 to size
+          record = TestRecord(Json.fromString(s"record $number"), timestamp = Some(number))
+        } yield record).toList)
       }
     }
   }
@@ -263,9 +267,7 @@ object validationHelpers {
   class GenericParametersSourceNoGenerate extends GenericParametersSource {
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source = {
       new Source with SourceTestSupport[String] {
-        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
-          override def parseElement(testElement: String): String = testElement
-        }
+        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
       }
     }
   }
@@ -338,7 +340,7 @@ object validationHelpers {
     }
 
     override protected def fallbackFinalResult(step: TransformationStep, inputContext: ValidationContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
-      val result = TypedObjectTypingResult(step.parameters.toMap.filterKeys(k => k != "par1" && k != "lazyPar1").toList.map { case (k, v) => k -> v.returnType })
+      val result = TypedObjectTypingResult(step.parameters.toMap.filterKeysNow(k => k != "par1" && k != "lazyPar1").toList.map { case (k, v) => k -> v.returnType })
       prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, result)), step.state)
     }
 
@@ -366,11 +368,11 @@ object validationHelpers {
                                       (implicit nodeId: NodeId): NodeTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         NextParameters(List(
-          Parameter("moreParams", Typed[Boolean]).copy(defaultValue = Some("true"))
+          Parameter("moreParams", Typed[Boolean]).copy(defaultValue = Some(Expression.spel("true")))
         ))
       case TransformationStep(("moreParams", DefinedEagerParameter(true, _)) :: Nil, _) =>
         NextParameters(List(
-          Parameter("extraParam", Typed[String]).copy(defaultValue = Some(s"'$defaultExtraParamValue'")))
+          Parameter("extraParam", Typed[String]).copy(defaultValue = Some(Expression.spel(s"'$defaultExtraParamValue'"))))
         )
       case TransformationStep(("moreParams", _) :: ("extraParam", DefinedEagerParameter(extraParamValue: String, _)) :: Nil, _) =>
         FinalResults(context, state = Some(extraParamValue))
@@ -395,7 +397,7 @@ object validationHelpers {
           Some("isLeft"))) else Nil
         NextParameters(
           List(Parameter[Any]("rightValue").copy(isLazyParameter = true,
-            additionalVariables = contexts(right(byBranch)).localVariables.mapValues(AdditionalVariableProvidedInRuntime(_)))), error)
+            additionalVariables = contexts(right(byBranch)).localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_)))), error)
       case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean]@unchecked, _)) :: ("rightValue", rightValue: DefinedSingleParameter) ::Nil, _)
         =>
         val out = rightValue.returnType
@@ -412,6 +414,20 @@ object validationHelpers {
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = null
 
     override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
+  }
+
+  //this is to simulate wrong implementation of GenericNodeTransformation
+  object ParamsLoopNode extends CustomStreamTransformer with SingleInputGenericNodeTransformation[String] {
+    override type State = Nothing
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                      (implicit nodeId: NodeId): NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) => NextParameters(Nil)
+    }
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): String = ""
+
+    override def nodeDependencies: List[NodeDependency] = List.empty
   }
 
 

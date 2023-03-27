@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
-import scala.jdk.CollectionConverters.asScalaSetConverter
+import scala.jdk.CollectionConverters._
 
 object RestartStrategyFromConfiguration {
 

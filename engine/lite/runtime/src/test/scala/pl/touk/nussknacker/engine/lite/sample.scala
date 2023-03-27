@@ -9,7 +9,9 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CapabilityTransformer, CustomComponentContext, LiteSource}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
@@ -19,6 +21,7 @@ import pl.touk.nussknacker.engine.lite.api.utils.transformers.ContextMappingComp
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
 
 import scala.concurrent.duration.DurationInt
@@ -59,6 +62,14 @@ object sample {
     val interpreterResult = interpreter.invoke(data)
     val resultWithInitialState = interpreterResult.runA(initialState).value
     resultWithInitialState
+  }
+
+  def test(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
+    implicit val effectUnwrapper: EffectUnwrapper[StateType] = new EffectUnwrapper[StateType] {
+      override def apply[A](fa: StateType[A]): A = fa.runA(Map.empty).value
+    }
+    val testRunner = new InterpreterTestRunner[StateType, SampleInput, AnyRef]
+    testRunner.runTest(modelData, scenarioTestData, scenario, identity)
   }
 
   class SumTransformer(name: String, outputVar: String, value: LazyParameter[java.lang.Double]) extends ContextMappingComponent {
@@ -117,9 +128,14 @@ object sample {
   object SimpleSourceFactory extends SourceFactory {
 
     @MethodToInvoke
-    def create(): Source = new LiteSource[SampleInput] {
+    def create(): Source = new LiteSource[SampleInput] with SourceTestSupport[SampleInput] {
       override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): SampleInput => ValidatedNel[ErrorType, Context] =
         input => Valid(Context(input.contextId, Map("input" -> input.value), None))
+
+      override def testRecordParser: TestRecordParser[SampleInput] = (testRecord: TestRecord) => {
+        val fields = CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
+        SampleInput(fields(0), fields(1).toInt)
+      }
     }
   }
 

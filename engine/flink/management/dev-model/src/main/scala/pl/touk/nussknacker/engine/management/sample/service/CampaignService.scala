@@ -45,6 +45,6 @@ object CampaignService extends Service with Serializable {
                )
              )
              campaignType: String
-            ): Future[Unit.type]
-  = Future.successful(Unit)
+            ): Future[Unit]
+  = Future.successful(())
 }

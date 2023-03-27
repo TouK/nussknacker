@@ -1,45 +1,64 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.BaseModelData
-import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
-import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
-import pl.touk.nussknacker.engine.testmode.TestProcess
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.deployment._
 import pl.touk.nussknacker.k8s.manager.ingress.IngressPreparer
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
+import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
+import skuber.api.Configuration
+import skuber.api.client.{KubernetesClient, LoggingConfig}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
 import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, ObjectResource, Pod, ResourceQuotaList, Secret, Service, k8sInit}
 
-import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 import scala.language.reflectiveCalls
 import scala.util.Using
 
-class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
-                          (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
+class K8sDeploymentManager(override protected val modelData: BaseModelData,
+                           config: K8sDeploymentManagerConfig,
+                           rawConfig: Config)
+                          (implicit ec: ExecutionContext, actorSystem: ActorSystem)
+  extends LiteDeploymentManager with LazyLogging {
 
-  //TODO: how to use dev-application.conf with not k8s config?
-  private lazy val k8s = k8sInit
-  private lazy val k8sUtils = new K8sUtils(k8s)
+  // lazy initialization to allow starting application even if k8s is not available - e.g. in case if multiple DeploymentManagers configured
+  private lazy val k8sClient = createK8sClient(effectiveSkuberAppConfig, ConnectionPoolSettings(effectiveSkuberAppConfig))
+
+  private lazy val scenarioStateK8sClient = createK8sClient(effectiveSkuberAppConfig,
+    ConnectionPoolSettings(effectiveSkuberAppConfig).withUpdatedConnectionSettings(_.withIdleTimeout(config.scenarioStateIdleTimeout)))
+
+  private def createK8sClient(skuberAppConfig: Config, connectionPoolSettings: ConnectionPoolSettings): KubernetesClient = {
+    skuber.api.client.init(k8sConfiguration.currentContext, LoggingConfig(), None, skuberAppConfig, Some(connectionPoolSettings))
+  }
+
+  protected def k8sConfiguration: Configuration = {
+    Configuration.defaultK8sConfig
+  }
+
+  // We pass rawConfig and compute this effective skuber app config to make sure that skuber doesn't use
+  // root level ActorSystem configuration
+  private val effectiveSkuberAppConfig = rawConfig.withFallback(ConfigFactory.defaultReference(getClass.getClassLoader))
+
+  private lazy val k8sUtils = new K8sUtils(k8sClient)
   private val deploymentPreparer = new DeploymentPreparer(config)
   private val servicePreparer = new ServicePreparer(config)
   private val scalingOptionsDeterminerOpt = K8sScalingOptionsDeterminer.create(config.scalingConfig)
@@ -48,7 +67,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   //runtime config is combined from scenarioType.modelConfig and deploymentConfig.configExecutionOverrides
   private val serializedRuntimeConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
-    val modelConfigPart = wrapInModelConfig(inputConfig.config.withoutPath("classPath"))
+    val modelConfigPart = inputConfig.config.withoutPath("classPath").atPath("modelConfig")
     //TODO: should overrides apply only to model or to whole config??
     val withOverrides = config.configExecutionOverrides.withFallback(modelConfigPart)
     inputConfig.copy(config = withOverrides).serialized
@@ -64,8 +83,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     val deploymentStrategy = deploymentPreparer.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, MountableResources("dummy", "dummy", "dummy"), scalingOptions.replicasCount)
       .spec.flatMap(_.strategy)
     for {
-      resourceQuotas <- k8s.list[ResourceQuotaList]()
-      oldDeployment <- k8s.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))
+      resourceQuotas <- k8sClient.list[ResourceQuotaList]()
+      oldDeployment <- k8sClient.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))
       _ <- Future.fromTry(K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas,
         scalingOptions.replicasCount, deploymentStrategy).toEither.toTry)
       _ <- validatePreparedService(processVersion, canonicalProcess.metaData)
@@ -94,16 +113,16 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         .getOrElse(Future.successful(None))
       //we don't wait until deployment succeeds before deleting old maps and service, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
-      _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
+      _ <- k8sClient.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
         requirementForId(processVersion.processId),
         configMapIdLabel isNotIn List(configMap, loggingConfigMap).map(_.name)
       ))
-      _ <- k8s.deleteAllSelected[ListResource[Secret]](LabelSelector(
+      _ <- k8sClient.deleteAllSelected[ListResource[Secret]](LabelSelector(
         requirementForId(processVersion.processId),
         secretIdLabel isNot secret.name
       ))
       //cleaning up after after possible slug change
-      _ <- k8s.deleteAllSelected[ListResource[Service]](LabelSelector(
+      _ <- k8sClient.deleteAllSelected[ListResource[Service]](LabelSelector(
         requirementForId(processVersion.processId),
         scenarioVersionLabel isNot processVersion.versionId.value.toString
       ))
@@ -141,7 +160,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       case None =>
         Future.successful(())
       case Some(service) =>
-        k8s.getOption[Service](service.name).flatMap {
+        k8sClient.getOption[Service](service.name).flatMap {
           case None => Future.successful(())
           case Some(existing) =>
             parseVersionAnnotation(existing) match {
@@ -162,32 +181,24 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     //We wait for deployment removal before removing configmaps,
     //in case of crash it's better to have unnecessary configmaps than deployments without config
     for {
-      ingresses <- if(config.ingress.exists(_.enabled)) k8s.deleteAllSelected[ListResource[Ingress]](selector).map(Some(_)) else Future.successful(None)
+      ingresses <- if(config.ingress.exists(_.enabled)) k8sClient.deleteAllSelected[ListResource[Ingress]](selector).map(Some(_)) else Future.successful(None)
       // we split into two steps because of missing k8s svc deletecollection feature in version <= 1.22
-      services <- k8s.listSelected[ListResource[Service]](selector)
-      _ <- Future.sequence(services.map(s => k8s.delete[Service](s.name)))
-      deployments <- k8s.deleteAllSelected[ListResource[Deployment]](selector)
-      configMaps <- k8s.deleteAllSelected[ListResource[ConfigMap]](selector)
-      secrets <- k8s.deleteAllSelected[ListResource[Secret]](selector)
+      services <- k8sClient.listSelected[ListResource[Service]](selector)
+      _ <- Future.sequence(services.map(s => k8sClient.delete[Service](s.name)))
+      deployments <- k8sClient.deleteAllSelected[ListResource[Deployment]](selector)
+      configMaps <- k8sClient.deleteAllSelected[ListResource[ConfigMap]](selector)
+      secrets <- k8sClient.deleteAllSelected[ListResource[Secret]](selector)
     } yield {
       logger.debug(s"Canceled ${name.value}, ${ingresses.map(i => s"ingresses: ${i.itemNames}, ").getOrElse("")}services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}")
       ()
     }
   }
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
-    Future {
-      modelData.asInvokableModelData.withThisAsContextClassLoader {
-        KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, canonicalProcess, variableEncoder)
-      }
-    }
-  }
-
-  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
+  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
-      deployments <- k8s.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
-      pods <- k8s.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
+      deployments <- scenarioStateK8sClient.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
+      pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
     } yield mapper.findStatusForDeploymentsAndPods(deployments, pods)
   }
 
@@ -218,15 +229,13 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       metadata = ObjectMeta(
         name = objectName,
         labels = labelsForScenario(processVersion, nussknackerInstanceName) + (secretIdLabel -> objectName) ++ additionalLabels
-      ), data = data.mapValues(_.getBytes)
+      ), data = data.mapValuesNow(_.getBytes)
     )
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = K8sProcessStateDefinitionManager
 
-  private def wrapInModelConfig(config: Config): Config = {
-    ConfigFactory.parseMap(Collections.singletonMap("modelConfig", config.root()))
-  }
+  override protected def executionContext: ExecutionContext = ec
 
 }
 
@@ -259,9 +268,9 @@ object K8sDeploymentManager {
   val resourceTypeLabel: String = "nussknacker.io/resourceType"
 
   /*
-    We use name label to find deployment to cancel/findStatus, we append short hash to reduce collision risk
+    We use name label to find deployment to cancel/getProcessState, we append short hash to reduce collision risk
     if sanitized names are similar (e.g. they differ only in truncated part or non-alphanumeric characters
-    TODO: Maybe it would be better to just pass ProcessId in findJobStatus/cancel?
+    TODO: Maybe it would be better to just pass ProcessId in getProcessState/cancel?
    */
   private[manager] def scenarioNameLabelValue(processName: ProcessName) = {
     val name = processName.value

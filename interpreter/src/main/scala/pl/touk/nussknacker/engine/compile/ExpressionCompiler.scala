@@ -175,7 +175,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
                             definition: Parameter)
                            (implicit nodeId: NodeId) = {
     val withoutVariablesToHide = ctx.copy(localVariables = ctx.localVariables
-      .filterKeys(variableName => !definition.variablesToHide.contains(variableName)))
+      .filterKeysNow(variableName => !definition.variablesToHide.contains(variableName)).toMap)
     definition.additionalVariables.foldLeft[ValidatedNel[PartSubGraphCompilationError, ValidationContext]](Valid(withoutVariablesToHide)) {
       case (acc, (name, typingResult)) => acc.andThen(_.withVariable(name, typingResult.typingResult, None))
     }

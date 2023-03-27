@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.spel.OmitAnnotationsMethodExecutor
 import java.lang.reflect.Method
 import java.util
 import java.util.Collections
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class EvaluationContextPreparer(classLoader: ClassLoader,
                                 expressionImports: List[String],

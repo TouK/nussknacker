@@ -134,7 +134,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   override def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]] =
       activePeriodicProcessWithDeploymentQuery
         .filter { case (_, d) =>
-          d.runAt <= now &&
+          d.runAt <= now() &&
           d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus)
         }
         .result
@@ -143,7 +143,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   override def findToBeRetried: Action[Seq[PeriodicProcessDeployment]] =
     activePeriodicProcessWithDeploymentQuery
       .filter { case (_, d) =>
-        d.nextRetryAt <= now &&
+        d.nextRetryAt <= now() &&
         d.status === (PeriodicProcessDeploymentStatus.RetryingDeploy: PeriodicProcessDeploymentStatus)
       }
       .result

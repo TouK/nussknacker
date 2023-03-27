@@ -3,7 +3,7 @@ import React from "react"
 import classes from "../../../../../stylesheets/graph.styl"
 import cn from "classnames"
 import {ButtonWithFocus} from "../../../../withFocus"
-import SvgDiv from "../../../../SvgDiv"
+import {ReactComponent as Icon} from "../../../../../assets/img/buttons/switch.svg"
 
 export default function SwitchIcon(props) {
 
@@ -19,8 +19,7 @@ export default function SwitchIcon(props) {
       disabled={!switchable || readOnly}
       title={title()}
     >
-      {/* Keep in mind that we base on structure of given svg in related styles */}
-      <SvgDiv svgFile={"buttons/switch.svg"}/>
+      <Icon/>
     </ButtonWithFocus>
   )
 }

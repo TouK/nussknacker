@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {dia, shapes} from "jointjs"
+import {dia, g, shapes} from "jointjs"
 import {cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without} from "lodash"
 import React from "react"
 import {findDOMNode} from "react-dom"
@@ -72,11 +72,27 @@ export class Graph extends React.Component<Props> {
     })
 
     return paper
+      //trigger new custom event on finished cell move
+      .on(Events.CELL_POINTERDOWN, (cellView: dia.CellView) => {
+        const model = cellView.model
+        const moveCallback = () => {
+          cellView.once(Events.CELL_POINTERUP, () => {
+            cellView.trigger(Events.CELL_MOVED, cellView)
+            paper.trigger(Events.CELL_MOVED, cellView)
+          })
+        }
+
+        model.once(Events.CHANGE_POSITION, moveCallback)
+        cellView.once(Events.CELL_POINTERUP, () => {
+          model.off(Events.CHANGE_POSITION, moveCallback)
+        })
+      })
       //we want to inject node during 'Drag and Drop' from graph paper
-      .on(Events.CELL_POINTERUP, (cell: dia.CellView) => {
-        this.changeLayoutIfNeeded()
+      .on(Events.CELL_MOVED, (cell: dia.CellView) => {
         if (isModelElement(cell.model)) {
-          this.handleInjectBetweenNodes(cell.model)
+          const linkBelowCell = this.getLinkBelowCell()
+          this.changeLayoutIfNeeded(!!linkBelowCell)
+          this.handleInjectBetweenNodes(cell.model, linkBelowCell)
         }
       })
       .on(Events.LINK_CONNECT, ({sourceView, targetView, model}) => {
@@ -90,6 +106,12 @@ export class Graph extends React.Component<Props> {
       .on(Events.LINK_DISCONNECT, ({model}) => {
         this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to)
       })
+  }
+
+  private getLinkBelowCell() {
+    const links = this.graph.getLinks()
+    const [linkBelowCell] = filterDragHovered(links)
+    return linkBelowCell
   }
 
   drawGraph = (process: Process, layout: Layout, processDefinitionData: ProcessDefinitionData): void => {
@@ -106,7 +128,7 @@ export class Graph extends React.Component<Props> {
 
   }
 
-  setEspGraphRef = ((instance: HTMLElement): void => {
+  setEspGraphRef = (instance: HTMLElement): void => {
     const {connectDropTarget} = this.props
     this.instance = instance
     if (connectDropTarget && instance) {
@@ -114,7 +136,7 @@ export class Graph extends React.Component<Props> {
       const node = findDOMNode(instance)
       connectDropTarget(node)
     }
-  })
+  }
   graph: dia.Graph
   processGraphPaper: dia.Paper
   highlightHoveredLink = rafThrottle((forceDisable?: boolean) => {
@@ -239,7 +261,8 @@ export class Graph extends React.Component<Props> {
     //we want to inject node during 'Drag and Drop' from toolbox
     this.graph.on(Events.ADD, (cell: dia.Element) => {
       if (isModelElement(cell)) {
-        this.handleInjectBetweenNodes(cell)
+        const linkBelowCell = this.getLinkBelowCell()
+        this.handleInjectBetweenNodes(cell, linkBelowCell)
         setLinksHovered(cell.graph)
       }
     })
@@ -328,10 +351,8 @@ export class Graph extends React.Component<Props> {
     return this.props.processToDisplay.edges.some(edge => edge.from === from && edge.to === to)
   }
 
-  handleInjectBetweenNodes = (middleMan: shapes.devs.Model): void => {
+  handleInjectBetweenNodes = (middleMan: shapes.devs.Model, linkBelowCell?: dia.Link): void => {
     const {processToDisplay, injectNode, processDefinitionData} = this.props
-    const links = this.graph.getLinks()
-    const [linkBelowCell] = filterDragHovered(links)
 
     if (linkBelowCell && middleMan) {
       const {sourceNode, targetNode} = getLinkNodes(linkBelowCell)
@@ -411,7 +432,7 @@ export class Graph extends React.Component<Props> {
     }
   }
 
-  changeLayoutIfNeeded = (): void => {
+  changeLayoutIfNeeded = (batched?: boolean): void => {
     const {layout, layoutChanged, isSubprocess} = this.props
 
     if (isSubprocess) {
@@ -429,7 +450,7 @@ export class Graph extends React.Component<Props> {
     const oldLayout = sortBy(layout, iteratee)
 
     if (!isEqual(oldLayout, newLayout)) {
-      layoutChanged(newLayout)
+      layoutChanged(newLayout, !batched)
     }
   }
 
@@ -467,9 +488,8 @@ export class Graph extends React.Component<Props> {
     })
   }
 
-  moveSelectedNodesRelatively(element: shapes.devs.Model, position: Position): void {
+  moveSelectedNodesRelatively(movedNodeId: string, position: Position): dia.Cell[] {
     this.redrawing = true
-    const movedNodeId = element.id.toString()
     const nodeIdsToBeMoved = without(this.props.selectionState, movedNodeId)
     const cellsToBeMoved = nodeIdsToBeMoved.map(nodeId => this.graph.getCell(nodeId))
     const {position: originalPosition} = this.findNodeInLayout(movedNodeId)
@@ -479,6 +499,7 @@ export class Graph extends React.Component<Props> {
       cell.position(originalPosition.x + offset.x, originalPosition.y + offset.y)
     })
     this.redrawing = false
+    return cellsToBeMoved
   }
 
   findNodeInLayout(nodeId: NodeId): NodePosition {
@@ -509,9 +530,30 @@ export class Graph extends React.Component<Props> {
 
   private bindNodesMoving(): void {
     this.graph.on(Events.CHANGE_POSITION, (element: dia.Cell, position: Position) => {
-      if (!this.redrawing && this.props.selectionState?.includes(element.id.toString()) && isModelElement(element)) {
-        this.moveSelectedNodesRelatively(element, position)
+      if (this.redrawing || !isModelElement(element)) {
+        return
       }
+
+      const movingCells: dia.Cell[] = [element]
+      const nodeId = element.id.toString()
+
+      if (this.props.selectionState?.includes(nodeId)) {
+        const movedNodes = this.moveSelectedNodesRelatively(nodeId, position)
+        movingCells.push(...movedNodes)
+      }
+
+      this.panAndZoom.panToCells(movingCells, this.adjustViewport())
+    })
+  }
+
+  private viewportAdjustment: {left: number, right:number} = {left: 0, right: 0}
+  adjustViewport = (adjustment:{left?: number, right?:number} = {}) => {
+    this.viewportAdjustment = {...this.viewportAdjustment, ...adjustment}
+    const {x, y, height, width} = this.processGraphPaper.el.getBoundingClientRect()
+    return new g.Rect({
+      y, height,
+      x: x + this.viewportAdjustment.left,
+      width: width - this.viewportAdjustment.left - this.viewportAdjustment.right,
     })
   }
 }

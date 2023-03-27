@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 
@@ -73,7 +74,7 @@ object ObsoleteStateDetector {
           case None => //TODO: we should remove Option from ProcessVersion?
             state.withStatusDetails(SimpleProcessStateDefinitionManager.warningMissingDeployedVersionState(action.processVersionId, action.user))
           case _ =>
-            SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.Error) //Generic error in other cases
+            SimpleProcessStateDefinitionManager.processState(ProblemStateStatus.failed) //Generic error in other cases
         }
       case None =>
         SimpleProcessStateDefinitionManager.errorShouldBeRunningState(action.processVersionId, action.user)

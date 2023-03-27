@@ -7,8 +7,8 @@ import org.scalatest.{Assertion, BeforeAndAfterAll}
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.testing.SttpBackendStub
-import sttp.client.{Request, Response}
+import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{Request, Response}
 import sttp.model.{HeaderNames, StatusCode}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -53,7 +53,7 @@ class SecurityTest extends AnyFunSuite with BeforeAndAfterAll with Matchers with
     }
   }
 
-  private def enrichersForSecurityConfig(backend: SttpBackendStub[Future, Nothing, Nothing], securities: Map[String, ApiKeyConfig]) = {
+  private def enrichersForSecurityConfig(backend: SttpBackendStub[Future, Any], securities: Map[String, ApiKeyConfig]) = {
     parseToEnrichers("service-security.yml", backend, baseConfig.copy(security = Some(securities)))
   }
 }

@@ -88,11 +88,11 @@ Endpoints under “admin”
 
 * `/api/processManagement/deploy/{processName} POST` - deploy scenario with given name passed as a `processName`
 * `/api/processManagement/cancel/{processName} POST` - cancel scenario with given name passed as a `processName`. Savepoint won't be saved
-* `/api/adminProcessManagement/snapshot/{processName}?savepointDir={path} POST` - make a savepoint of current scenario's state. Returns path where savepoint was saved as a plain string 
-e.g. `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`. Can be used in `deploy` endpoint as a `savepointPath` parameter
+* `/api/adminProcessManagement/snapshot/{processName}?savepointDir={path} POST` - make a savepoint of current scenario's state. Returns path where savepoint was saved as a plain string
+  e.g. `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`. Can be used in `deploy` endpoint as a `savepointPath` parameter
 * `/api/adminProcessManagement/stop/{processName}?savepointDir={path} POST` - stop scenario and make a savepoint.  Returns path where savepoint was saved as a plain string
   e.g. `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`. Can be used in `deploy` endpoint as a `savepointPath` parameter
-* `/api/adminProcessManagement/deploy/{processName}?savepointPath={path} POST` - deploy scenario from given savepoint. Example savepoint path: `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16` 
+* `/api/adminProcessManagement/deploy/{processName}?savepointPath={path} POST` - deploy scenario from given savepoint. Example savepoint path: `hdfs:///flink/savepoints/savepoint-71a39f-b2078dc48f16`
 
 ## Scenarios - monitoring and troubleshooting
 
@@ -102,10 +102,10 @@ Each scenario has its own performance characteristics and considerations. This s
 
 One of the crucial aspects of running production streaming jobs is monitoring. In this section we'll explain how the Nussknacker scenario running on the execution engine gives rise to certain metrics, how to process them and display them in Grafana.
 
-#### Metric types                     
-                   
-Below we describe common 
-                 
+#### Metric types
+
+Below we describe common
+
 | Name        | Fields reported (with InfluxDB)                              | Description                                                                                                            |
 |-------------|--------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
 | counter     | count                                                        |                                                                                                                        |
@@ -115,15 +115,15 @@ Below we describe common
 
 #### Common metrics
 
-| Measurement             | Additional tags | Metric type             | Notes                                                    |
-|-------------------------|-----------------|-------------------------|----------------------------------------------------------|
-| nodeCount               | nodeId          | counter                 | used e.g. by count functionality                         |
-| error.instantRate       | -               | instantRate             |                                                          |
-| error.instantRateByNode | nodeId          | instantRate             | nodeId is ```unknown``` if we fail to detect exact place |
-| service.OK              | serviceName     | histogram + instantRate | histogram of successful invocation times                 |
-| service.FAIL            | serviceName     | histogram + instantRate | histogram of successful invocation times                 |
-                                         
-#### Streaming metrics                          
+| Measurement             | Additional tags | Metric type             | Notes                                                   |
+|-------------------------|-----------------|-------------------------|---------------------------------------------------------|
+| nodeCount               | nodeId          | counter                 | used e.g. by count functionality                        |
+| error.instantRate       | -               | instantRate             |                                                         |
+| error.instantRateByNode | nodeId          | instantRate             | nodeId is `unknown` if we fail to detect exact place    |
+| service.OK              | serviceName     | histogram + instantRate | histogram of successful invocation times                |
+| service.FAIL            | serviceName     | histogram + instantRate | histogram of successful invocation times                |
+
+#### Streaming metrics
 
 | Measurement                 | Additional tags | Metric type           | Description                                                                    |
 |-----------------------------|-----------------|-----------------------|--------------------------------------------------------------------------------|
@@ -212,7 +212,7 @@ Common problem is when your Avro data encoding not correspond with the one Nussk
 2022-03-30 14:12:28.034 [worker-DetectLargeTransactions-1] INFO  p.t.n.e.u.e.DefaultWithExceptionExtractor - Unknown exception IllegalArgumentException:Unknown magic byte! for DetectLargeTransactions-kafka-avro-127
 ```
 Check [Schema Registry + Avro serialization
-](../integration/KafkaIntegration#schema-registry-integration) part for explanation.
+](../integration/KafkaIntegration.md#schema-registry---connection) part for explanation.
 
 ## General production readiness checklist
 
@@ -220,7 +220,7 @@ Check [Schema Registry + Avro serialization
 
 * Configure restart strategy and error handler
   * By default, scenarios are not restarted, so that errors do not go unnoticed
-  * [Kafka exception handler](../installation_configuration_guide/ModelConfiguration.md#kafka-exception-handling) should be used in production - configure error topic, with long enough retention
+  * [Kafka exception handler](../integration/KafkaIntegration.md#exception-handling) should be used in production - configure error topic, with long enough retention
 * Check if Nussknacker has access to all needed services:
   * Flink REST API
   * K8s REST API

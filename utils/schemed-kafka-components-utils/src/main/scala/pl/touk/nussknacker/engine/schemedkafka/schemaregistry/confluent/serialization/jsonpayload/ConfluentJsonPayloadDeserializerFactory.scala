@@ -4,11 +4,12 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.common.serialization.Deserializer
-import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializer
-import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializer
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedDeserializerFactory
 
 import java.lang
 import scala.reflect.ClassTag
@@ -55,14 +56,12 @@ import scala.reflect.ClassTag
   *   "time" : 11655000
   * }
   */
-trait ConfluentJsonPayloadDeserializer {
+object ConfluentJsonPayloadDeserializerFactory extends SchemaRegistryBasedDeserializerFactory {
 
-  protected def createDeserializer[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                                kafkaConfig: KafkaConfig,
-                                                schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                                isKey: Boolean): Deserializer[T] = {
-    val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
-
+  override def createDeserializer[T: ClassTag](schemaRegistryClient: SchemaRegistryClient,
+                                               kafkaConfig: KafkaConfig,
+                                               schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+                                               isKey: Boolean): Deserializer[T] = {
     val specificClass = {
       val clazz = implicitly[ClassTag[T]].runtimeClass
       //This is a bit tricky, Allegro decoder requires SpecificRecordBase instead of SpecificRecord
@@ -76,7 +75,12 @@ trait ConfluentJsonPayloadDeserializer {
       }
     }
 
-    new ConfluentKafkaAvroDeserializer[T](kafkaConfig, avroSchemaDataOpt, schemaRegistryClient, isKey, specificClass.isDefined) {
+    new ConfluentKafkaAvroDeserializer[T](
+      kafkaConfig,
+      avroSchemaDataOpt,
+      schemaRegistryClient.asInstanceOf[ConfluentSchemaRegistryClient],
+      isKey,
+      specificClass.isDefined) {
 
       private val converter = new JsonPayloadToAvroConverter(specificClass)
 
@@ -86,16 +90,5 @@ trait ConfluentJsonPayloadDeserializer {
       }
     }
   }
-
-}
-
-class ConfluentKeyValueKafkaJsonDeserializerFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends KafkaSchemaBasedKeyValueDeserializationSchemaFactory with ConfluentJsonPayloadDeserializer {
-
-  override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Deserializer[K] =
-    createDeserializer[K](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = true)
-
-  override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Deserializer[V] =
-    createDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
 
 }

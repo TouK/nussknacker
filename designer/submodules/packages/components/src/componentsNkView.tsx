@@ -1,11 +1,11 @@
-import { RootRoutes } from "./components/rootRoutes";
-import React from "react";
-import { NkView, NkViewProps } from "./common/nkView";
+import React, { memo } from "react";
+import { NkView, NkViewProps } from "./common";
+import { ComponentsRoutes } from "./components/componentsRoutes";
 
-export default function ComponentsNkView(props: NkViewProps): JSX.Element {
-    return (
-        <NkView {...props}>
-            <RootRoutes inTab />
-        </NkView>
-    );
-}
+const ComponentsNkView = ({ navigate }: NkViewProps) => (
+    <NkView navigate={navigate}>
+        <ComponentsRoutes />
+    </NkView>
+);
+
+export default memo(ComponentsNkView);

@@ -1,16 +1,29 @@
 import {WindowContentProps} from "@touk/window-manager"
-import React from "react"
+import React, {useMemo} from "react"
 import {WindowContent, WindowKind} from "../windowManager"
+import styled from "@emotion/styled"
 
-type FrameDialogProps = WindowContentProps<WindowKind, string>
+const FullSizeBorderlessIFrame = styled.iframe({
+  border: 0,
+  background: "white",
+  width: "100%",
+  height: "100%",
+  minWidth: 0,
+  minHeight: 0,
+})
 
-export function FrameDialog(props: FrameDialogProps): JSX.Element {
-  const {data} = props
+export function FrameDialog(props: WindowContentProps<WindowKind, string>): JSX.Element {
+  const {data: {meta}} = props
+  const components = useMemo(
+    () => ({
+      Content: () => <FullSizeBorderlessIFrame src={meta}/>,
+      Footer: () => null,
+    }),
+    [meta]
+  )
 
   return (
-    <WindowContent {...props}>
-      <iframe src={data.meta}></iframe>
-    </WindowContent>
+    <WindowContent {...props} components={components}/>
   )
 }
 

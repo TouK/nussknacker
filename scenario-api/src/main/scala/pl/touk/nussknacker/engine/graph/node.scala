@@ -40,7 +40,7 @@ object node {
 
   case class OneOutputSubsequentNode(data: OneOutputSubsequentNodeData, next: SubsequentNode) extends OneOutputNode with SubsequentNode
 
-  case class FilterNode(data: Filter, nextTrue: SubsequentNode, nextFalse: Option[SubsequentNode] = None) extends SubsequentNode
+  case class FilterNode(data: Filter, nextTrue: Option[SubsequentNode], nextFalse: Option[SubsequentNode] = None) extends SubsequentNode
 
   //this should never occur in process to be run (unresolved)
   case class SubprocessNode(data: SubprocessInput, nexts: Map[String, SubsequentNode]) extends SubsequentNode

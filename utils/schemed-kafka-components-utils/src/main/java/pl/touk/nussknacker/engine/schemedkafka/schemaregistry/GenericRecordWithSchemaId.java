@@ -7,19 +7,15 @@ import java.util.Objects;
 
 public class GenericRecordWithSchemaId extends GenericData.Record {
 
-    private final int schemaId;
+    private final SchemaId schemaId;
 
-    public GenericRecordWithSchemaId(Schema schema, int schemaId) {
+    public GenericRecordWithSchemaId(Schema schema, SchemaId schemaId) {
         super(schema);
-        if (schemaId < 0)
-            throw new IllegalArgumentException("schemaId must be greater than or equal to zero");
         this.schemaId = schemaId;
     }
 
-    public GenericRecordWithSchemaId(GenericData.Record other, int schemaId, boolean deepCopy) {
+    public GenericRecordWithSchemaId(GenericData.Record other, SchemaId schemaId, boolean deepCopy) {
         super(other, deepCopy);
-        if (schemaId < 0)
-            throw new IllegalArgumentException("schemaId must be greater than or equal to zero");
         this.schemaId = schemaId;
     }
 
@@ -28,7 +24,7 @@ public class GenericRecordWithSchemaId extends GenericData.Record {
         this.schemaId = other.schemaId;
     }
 
-    public Integer getSchemaId() {
+    public SchemaId getSchemaId() {
         return schemaId;
     }
 

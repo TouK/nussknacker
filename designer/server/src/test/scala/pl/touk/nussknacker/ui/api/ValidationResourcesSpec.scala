@@ -39,7 +39,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     ))
   )
 
-  private val route: Route = withPermissions(new ValidationResources(fetchingProcessRepository,
+  private val route: Route = withPermissions(new ValidationResources(futureFetchingProcessRepository,
     new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)), testPermissionRead
   )
 
@@ -95,7 +95,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(invalidCharacters) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
-      entity should include("Node id contains invalid characters")
+      entity should include("Node f1\"' contains invalid characters")
     }
 
     val duplicateIds = newDisplayableProcess("p1",
@@ -112,7 +112,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
 
   it should "find errors in scenario of bad shape" in {
     val invalidShapeProcess = newDisplayableProcess("p1",
-      List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Filter("f1", Expression("spel", "false"))),
+      List(Source("s1", SourceRef(ProcessTestData.existingSourceFactory, List())), node.Filter("f1", Expression.spel("false"))),
       List(Edge("s1", "f1", None))
     )
 
@@ -146,7 +146,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
   it should "warn if scenario has disabled filter or processor" in {
     val nodes = List(
       node.Source("source1", SourceRef(ProcessTestData.existingSourceFactory, List())),
-      node.Filter("filter1", Expression("spel", "false"), isDisabled = Some(true)),
+      node.Filter("filter1", Expression.spel("false"), isDisabled = Some(true)),
       node.Processor("proc1", ServiceRef(ProcessTestData.existingServiceId, List.empty), isDisabled = Some(true)),
       node.Sink("sink1", SinkRef(ProcessTestData.existingSinkFactory, List.empty))
     )
@@ -156,19 +156,19 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(processWithDisabledFilterAndProcessor) {
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
-      validation.warnings.invalidNodes("filter1").head.message should include("Node is disabled")
-      validation.warnings.invalidNodes("proc1").head.message should include("Node is disabled")
+      validation.warnings.invalidNodes("filter1").head.message should include("Node filter1 is disabled")
+      validation.warnings.invalidNodes("proc1").head.message should include("Node proc1 is disabled")
     }
   }
 
   private def newDisplayableProcess(id: String, nodes: List[NodeData], edges: List[Edge]): DisplayableProcess = {
     DisplayableProcess(
       id = id,
-      properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), None, subprocessVersions = Map.empty),
+      properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), None),
       nodes = nodes,
       edges = edges,
       processingType = TestProcessingTypes.Streaming,
-      Some(TestCategories.Category1)
+      TestCategories.Category1
     )
   }
 

@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 class TyperSpec extends AnyFunSuite with Matchers {
 
   test("simple expression") {
-    println(typeExpression("#x + 2", "x" -> 2).toOption.get.finalResult)
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map(
       PositionRange(0, 2) -> TypingResultWithContext(Typed.fromInstance(2)),
       PositionRange(3, 4) -> TypingResultWithContext(Typed.fromInstance(4)),
@@ -57,7 +56,7 @@ class TyperSpec extends AnyFunSuite with Matchers {
   }
 
   test("restricting simple type selection") {
-    typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").toEither.left.get.head.message shouldBe
+    typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").toEither.swap.toOption.get.head.message shouldBe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
   }
 

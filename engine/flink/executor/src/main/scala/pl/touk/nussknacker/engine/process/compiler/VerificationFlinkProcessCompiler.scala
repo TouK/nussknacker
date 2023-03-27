@@ -18,11 +18,11 @@ class VerificationFlinkProcessCompiler(process: CanonicalProcess,
   override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = Nil
 
   override protected def prepareService(service: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef =
-    overrideObjectWithMethod(service, (_, _) => null)
+    overrideObjectWithMethod(service, (_, _, _) => null)
 
   override protected def prepareSourceFactory(sourceFactory: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef =
     overrideObjectWithMethod(
       sourceFactory,
-      (_, returnType) =>  new EmptySource[Object](returnType)(TypeInformation.of(classOf[Object]))
+      (_, returnType, _) =>  new EmptySource[Object](returnType)(TypeInformation.of(classOf[Object]))
     )
 }

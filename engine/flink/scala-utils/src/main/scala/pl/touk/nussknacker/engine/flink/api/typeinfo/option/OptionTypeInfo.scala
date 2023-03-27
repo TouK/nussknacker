@@ -23,7 +23,7 @@ import org.apache.flink.api.common.typeinfo.{AtomicType, TypeInformation}
 import org.apache.flink.api.common.typeutils.{TypeComparator, TypeSerializer}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.NothingSerializer
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /** TypeInformation for [[Option]]. */
 @Public

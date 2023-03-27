@@ -9,8 +9,9 @@ import org.apache.commons.lang3.StringUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
-import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
@@ -20,29 +21,34 @@ import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
   with EspItTest with PatientScalaFutures with EitherValuesDetailedMessage {
 
-  private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
+  private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 
-    override def getTestingCapabilities(metaData: MetaData, source: node.Source): TestingCapabilities
+    override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities
     = TestingCapabilities(canBeTested = true, canGenerateTestData = true)
 
-    override def generateTestData(metaData: MetaData, source: node.Source, size: Int): Option[Array[Byte]]
-    = Some(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}".getBytes())
+    override def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData]
+    = Some(PreliminaryScenarioTestData(PreliminaryScenarioTestRecord.Standard("sourceId", Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")) :: Nil))
+
+    override def prepareTestData(preliminaryTestData: PreliminaryScenarioTestData, scenario: CanonicalProcess): Either[String, ScenarioTestData] = {
+      ???
+    }
   }
 
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
     Unmarshaller.byteArrayUnmarshaller.forContentTypes(ContentTypeRange(ContentTypes.`application/octet-stream`))
 
-  private def route(additionalDataSize: Int = 0) = new TestInfoResources(mapProcessingTypeDataProvider("streaming" -> testInfoProvider(additionalDataSize)),
-    processAuthorizer, fetchingProcessRepository, featureTogglesConfig.testDataSettings)
+  private def route(additionalDataSize: Int = 0) = new TestInfoResources(processAuthorizer, futureFetchingProcessRepository,
+    createScenarioTestService(mapProcessingTypeDataProvider("streaming" -> testInfoProvider(additionalDataSize))))
 
   test("generates data") {
     saveProcess(process) {
       Post("/testInfo/generate/5", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
+        implicit val contentUnmarshaller = Unmarshaller.stringUnmarshaller
         status shouldEqual StatusCodes.OK
-        val entity = new String(entityAs[Array[Byte]])
-        entity shouldBe s"terefereKuku-5"
+        val content = responseAs[String]
+        content shouldBe """{"sourceId":"sourceId","record":"terefereKuku-5"}"""
       }
     }
   }

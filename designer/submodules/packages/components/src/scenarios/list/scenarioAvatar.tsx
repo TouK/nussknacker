@@ -18,11 +18,10 @@ export function ScenarioAvatar({ process }: { process: Pick<ProcessType, "isSubp
                 />
             ) : state ? (
                 <NuIcon
-                    titleAccess={t("scenario.iconTitle", "{{tooltip}}", {
+                    title={t("scenario.iconTitle", "{{tooltip}}", {
                         context: state?.status.name,
                         tooltip: state?.tooltip,
                     })}
-                    sx={{ color: "primary.main" }}
                     src={state.icon}
                 />
             ) : (

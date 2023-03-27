@@ -5,8 +5,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.Response
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.Response
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 import pl.touk.nussknacker.engine.api.typed.TypedMap

@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.Json
-import org.apache.commons.lang3.StringUtils
 
 import scala.util.Try
 
@@ -34,6 +33,8 @@ case object TextareaParameterEditor extends SimpleParameterEditor
 case object JsonParameterEditor extends SimpleParameterEditor
 
 case object SqlParameterEditor extends SimpleParameterEditor
+
+case object SpelTemplateParameterEditor extends SimpleParameterEditor
 
 @JsonCodec case class DurationParameterEditor(timeRangeComponents: List[ChronoUnit]) extends SimpleParameterEditor
 

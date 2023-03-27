@@ -53,7 +53,8 @@ object KafkaTransactionalScenarioInterpreter {
                                     publishTimeout: Duration = 5 seconds,
                                     waitAfterFailureDelay: FiniteDuration = 10 seconds,
                                     kafka: KafkaConfig,
-                                    exceptionHandlingConfig: KafkaExceptionConsumerConfig)
+                                    exceptionHandlingConfig: KafkaExceptionConsumerConfig,
+                                    kafkaTransactionsEnabled: Option[Boolean] = None)
 
   private[kafka] implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 

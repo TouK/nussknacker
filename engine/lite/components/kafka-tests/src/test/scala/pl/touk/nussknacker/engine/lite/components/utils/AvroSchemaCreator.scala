@@ -9,7 +9,7 @@ object AvroSchemaCreator {
 
   val Null: AnyRef = Field.NULL_DEFAULT_VALUE
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   def createRecord(fields: Field*): Schema =
     createRecord(s"AvroRecord${Math.abs(Random.nextLong())}", fields: _*)

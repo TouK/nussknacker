@@ -2,16 +2,16 @@ package pl.touk.nussknacker.engine.flink.test
 
 import cats.data.NonEmptyList
 import cats.implicits.toFunctorOps
-import io.circe.Decoder.Result
+
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, HCursor, Json, Printer}
 import io.circe.syntax._
-import org.apache.commons.io.{FileUtils, IOUtils}
+import org.apache.commons.io.FileUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Inside}
+import org.scalatest.Inside
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
@@ -19,10 +19,12 @@ import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, StaticMethodInfo}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.util.ResourceLoader
 
 trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
 
@@ -40,7 +42,7 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
   // We need to sort methods with identical names to make checks ignore order.
   private def assertClassEquality(left: ClazzDefinition, right: ClazzDefinition): Unit = {
     def simplifyMap(m: Map[String, List[MethodInfo]]): Map[String, List[MethodInfo]] =
-      m.mapValues(_.map(simplifyMethodInfo))
+      m.mapValuesNow(_.map(simplifyMethodInfo))
 
     def assertMethodMapEquality(left: Map[String, List[MethodInfo]], right: Map[String, List[MethodInfo]]): Unit = {
       val processedLeft = simplifyMap(left)
@@ -62,7 +64,7 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
       FileUtils.write(new File(s"/tmp/${getClass.getSimpleName}-result.json"), encode(types), StandardCharsets.UTF_8)
     }
 
-    val parsed =  parse(IOUtils.toString(getClass.getResourceAsStream(outputResource))).right.get
+    val parsed =  parse(ResourceLoader.load(outputResource)).toOption.get
     val decoded = decode(parsed)
     checkGeneratedClasses(types, decoded)
   }

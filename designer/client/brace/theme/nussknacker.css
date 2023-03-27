@@ -1,3 +1,7 @@
+.ace-nussknacker.ace_editor {
+    font-family: 'Roboto Mono', 'Monaco', monospace
+}
+
 .ace-nussknacker .ace_gutter {
     background: #2F3129;
     color: #8F908A

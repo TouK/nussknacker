@@ -1,5 +1,5 @@
 import React, {PropsWithChildren, useState} from "react"
-import InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
+import {ReactComponent as TipsInfo} from "../../../../assets/img/icons/tipsInfo.svg"
 import NodeTip from "../NodeTip"
 import TestValue from "./TestValue"
 import {NodeResultsForContext} from "../../../../common/TestResultUtils"
@@ -23,7 +23,7 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
           {props.children}
           <div className="node-row node-test-results">
             <div className="node-label">
-              <NodeTip title={"Value evaluated in test case"} icon={InlinedSvgs.tipsInfo}/>
+              <NodeTip title={"Value evaluated in test case"} icon={<TipsInfo/>}/>
               {testValue.pretty ? <span className={showIconClass} onClick={() => toggleTestResults(s => !s)}/> : null}
             </div>
             <TestValue value={testValue} shouldHideTestResults={hideTestResults}/>

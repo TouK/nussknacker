@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.canonize.{MaybeArtificial, MaybeArtificialExtr
 import pl.touk.nussknacker.engine.canonize
 
 import scala.language.{higherKinds, reflectiveCalls}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 case class CompilationResult[+Result](typing: Map[String, NodeTypingInfo],
                                      result: ValidatedNel[ProcessCompilationError, Result]) {
@@ -35,14 +36,14 @@ case class CompilationResult[+Result](typing: Map[String, NodeTypingInfo],
     result.leftMap(_.toList.distinct).leftMap(NonEmptyList.fromListUnsafe))
 
   // node -> variable -> TypingResult
-  def variablesInNodes: Map[String, Map[String, TypingResult]] = typing.mapValues(_.inputValidationContext.variables)
+  def variablesInNodes: Map[String, Map[String, TypingResult]] = typing.mapValuesNow(_.inputValidationContext.variables)
 
   // node -> expressionId -> ExpressionTypingInfo
-  def expressionsInNodes: Map[String, Map[String, ExpressionTypingInfo]] = typing.mapValues(_.expressionsTypingInfo)
+  def expressionsInNodes: Map[String, Map[String, ExpressionTypingInfo]] = typing.mapValuesNow(_.expressionsTypingInfo)
 
-  def parametersInNodes: Map[String, List[Parameter]] = typing.mapValues(_.parameters).collect {
+  def parametersInNodes: Map[String, List[Parameter]] = typing.mapValuesNow(_.parameters).collect {
     case (k, Some(v)) => (k, v)
-  }
+  }.toMap
 
 }
 
@@ -70,13 +71,11 @@ object CompilationResult extends Applicative[CompilationResult] {
     }
   }
 
-  implicit def artificialExtractor[A]: MaybeArtificialExtractor[CompilationResult[A]] = new MaybeArtificialExtractor[CompilationResult[A]] {
-    override def get(errors: List[canonize.ProcessUncanonizationError], rawValue: CompilationResult[A]): CompilationResult[A] = {
-      errors match {
-        case Nil => rawValue
-        case e :: es => rawValue.copy(typing = rawValue.typing - MaybeArtificial.DummyObjectName, result = Invalid(NonEmptyList.of(
-          fromUncanonizationError(e), es.map(fromUncanonizationError): _*)))
-      }
+  implicit def artificialExtractor[A]: MaybeArtificialExtractor[CompilationResult[A]] = (errors: List[canonize.ProcessUncanonizationError], rawValue: CompilationResult[A]) => {
+    errors match {
+      case Nil => rawValue
+      case e :: es => rawValue.copy(typing = rawValue.typing.filterKeysNow(key => !key.startsWith(MaybeArtificial.DummyObjectNamePrefix)), result = Invalid(NonEmptyList.of(
+        fromUncanonizationError(e), es.map(fromUncanonizationError): _*)))
     }
   }
 

@@ -1,0 +1,6 @@
+{
+  "name": "nu_legacy_scenarios",
+  "exposes": {
+    "./list": "./src/remote"
+  }
+}

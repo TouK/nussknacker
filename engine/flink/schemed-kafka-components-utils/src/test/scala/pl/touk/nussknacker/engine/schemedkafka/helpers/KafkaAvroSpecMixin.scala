@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -31,16 +30,16 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSinkImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 
-import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
 
 trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperations with FlinkSpec with SchemaRegistryMixin with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures with Serializable {
@@ -51,10 +50,10 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
 
   protected var registrar: FlinkProcessRegistrar = _
 
-  protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
+  protected def schemaRegistryClientFactory: SchemaRegistryClientFactory
 
-  private lazy val avroPayload: SchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentClientFactory)
-  private lazy val universalPayload = ConfluentSchemaBasedSerdeProvider.universal(confluentClientFactory)
+  private lazy val avroPayload: SchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryClientFactory)
+  private lazy val universalPayload = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
   protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
     ExecutionConfigPreparer.chain(
@@ -62,7 +61,7 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
       new UnoptimizedSerializationPreparer(modelData),
       new ExecutionConfigPreparer {
         override def prepareExecutionConfig(config: ExecutionConfig)(jobData: JobData, deploymentData: DeploymentData): Unit = {
-          AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(config, confluentClientFactory, kafkaConfig)
+          AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(config, schemaRegistryClientFactory, kafkaConfig)
         }
       }
     )
@@ -72,21 +71,21 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
   protected lazy val nodeId: NodeId = NodeId("mock-node-id")
 
   protected def universalSourceFactory(useStringForKey: Boolean): KafkaSource = {
-    new UniversalKafkaSourceFactory[Any, Any](confluentClientFactory, universalPayload, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+    new UniversalKafkaSourceFactory[Any, Any](schemaRegistryClientFactory, universalPayload, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)
     }
   }
 
   // For now SpecificRecord source factory requires KafkaConfig with useStringForKey=true. Parameter is used to test scenario with wrong configuration.
   protected def specificSourceFactory[V <: SpecificRecord : ClassTag](useStringForKey: Boolean = true): KafkaSource = {
-    val factory = new SpecificRecordKafkaAvroSourceFactory[V](confluentClientFactory, avroPayload, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+    val factory = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryClientFactory, avroPayload, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey) // TODO: check what happens with false
     }
     factory.asInstanceOf[KafkaAvroSourceFactory[Any, Any]]
   }
 
   protected lazy val universalSinkFactory: UniversalKafkaSinkFactory = {
-    new UniversalKafkaSinkFactory(confluentClientFactory, universalPayload, testProcessObjectDependencies, FlinkKafkaUniversalSinkImplFactory)
+    new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalPayload, testProcessObjectDependencies, FlinkKafkaUniversalSinkImplFactory)
   }
 
   protected def validationModeParam(validationMode: ValidationMode): expression.Expression = s"'${validationMode.name}'"
@@ -133,7 +132,7 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
           "kafka",
           baseSinkParams ++ editorParams ++ validationParams ++ sink.valueParams: _*
         ),
-        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", "value" -> "#inputMeta")
+        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", "Value" -> "#inputMeta")
       )
   }
 
@@ -229,9 +228,9 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
     }
     createValidatedSource(sourceFactory, parameterValues)
       .map(source => {
-        val bytes = source.generateTestData(1)
-        info("test object: " + new String(bytes, StandardCharsets.UTF_8))
-        val deserializedObj = source.testDataParser.parseTestData(TestData(bytes, 1)).head.asInstanceOf[ConsumerRecord[Any, Any]]
+        val testData = source.generateTestData(1)
+        info("test object: " + testData)
+        val deserializedObj = source.testRecordParser.parse(testData.testRecords.head).asInstanceOf[ConsumerRecord[Any, Any]]
 
         deserializedObj.key() shouldEqual givenKey
         deserializedObj.value() shouldEqual givenValue
@@ -265,7 +264,7 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
   private def validateParamsAndInitializeState(sourceFactory: KafkaSource, parameterValues: Map[String, Any]):
   Validated[NonEmptyList[ProcessCompilationError], sourceFactory.State] = {
     implicit val nodeId: NodeId = NodeId("dummy")
-    val parameters = parameterValues.mapValues(value => DefinedEagerParameter(value, null)).toList
+    val parameters = parameterValues.mapValuesNow(value => DefinedEagerParameter(value, null)).toList
     val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val stepResult = definition(sourceFactory.TransformationStep(parameters, None))
     stepResult match {

@@ -21,7 +21,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
        |        {
        |            "type" : "Source",
        |            "id" : "start",
-       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "expression": { "language": "spel", "expression": "in.topic" }}]},
+       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "Topic", "expression": { "language": "spel", "expression": "in.topic" }}]},
        |            "additionalFields": { "description": "$someNodeDescription"}
        |        }
        |    ],"additionalBranches":[]
@@ -31,12 +31,12 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
   val processWithFullAdditionalFields: Json = parse(
     s"""
        |{
-       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "subprocessVersions": {}, "additionalFields": { "description": "$someProcessDescription", "properties": {}} },
+       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "additionalFields": { "description": "$someProcessDescription", "properties": {}} },
        |    "nodes" : [
        |        {
        |            "type" : "Source",
        |            "id" : "start",
-       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "expression": { "language": "spel", "expression": "in.topic" }}]},
+       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "Topic", "expression": { "language": "spel", "expression": "in.topic" }}]},
        |            "additionalFields": { "description": "$someNodeDescription"}
        |        }
        |    ],"additionalBranches":[]
@@ -51,7 +51,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
        |        {
        |            "type" : "Source",
        |            "id" : "start",
-       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "expression": { "language": "spel", "expression": "in.topic" }}]}
+       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "Topic", "expression": { "language": "spel", "expression": "in.topic" }}]}
        |        }
        |    ]
        |}
@@ -73,7 +73,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
     val processAfterMarshallAndUnmarshall = canonical.asJson.printWith(humanReadablePrinter)
 
-    parse(processAfterMarshallAndUnmarshall).right.get shouldBe baseProcess
+    parse(processAfterMarshallAndUnmarshall).toOption.get shouldBe baseProcess
   }
 
   it should "unmarshall json without additional fields" in {

@@ -5,30 +5,28 @@ import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchema
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
+import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.{FullNameV1, PaymentV1}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
 
-  import pl.touk.nussknacker.test.LiteralSpELImplicits._
   import KafkaAvroSinkMockSchemaRegistry._
+  import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
+  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = factory
 
   private def validate(params: (String, Expression)*): TransformationResult = {
     val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)

@@ -14,8 +14,8 @@ object BuildInfo {
   }
 
   def parseJson(json: String): Option[Map[String, String]] = {
-    parse(json).right.toOption
-      .flatMap(js => Decoder[Map[String, String]].decodeJson(js).right.toOption).map(ordered)
+    parse(json).toOption
+      .flatMap(js => Decoder[Map[String, String]].decodeJson(js).toOption).map(ordered)
   }
 
   def ordered(map: Map[String, String]): Map[String, String] = {

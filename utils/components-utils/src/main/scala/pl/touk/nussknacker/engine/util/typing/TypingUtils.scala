@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.util.typing
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.util
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 
 object TypingUtils {
@@ -15,7 +16,7 @@ object TypingUtils {
 
   def typeMapDefinition(definition: Map[String, _]): TypingResult = {
     //we force use of Map and not some implicit variants (MapLike) to avoid serialization problems...
-    TypedObjectTypingResult(definition.mapValues(typedMapDefinitionFromParameters).toList)
+    TypedObjectTypingResult(definition.mapValuesNow(typedMapDefinitionFromParameters).toList)
   }
 
   private def typedMapDefinitionFromParameters(definition: Any): TypingResult = definition match {
@@ -32,13 +33,9 @@ object TypingUtils {
     case list: Seq[_] if list.nonEmpty =>
       typeListDefinition(list)
     case list: util.List[_] if !list.isEmpty =>
-      typeListDefinition(list)
+      typeListDefinition(list.asScala.toSeq)
     case a =>
       throw new IllegalArgumentException(s"Type definition currently supports only class names, nested maps or lists, got $a instead")
-  }
-
-  private def typeListDefinition(list: util.List[_]): TypingResult = {
-    typeListDefinition(list.asScala)
   }
 
   private def typeListDefinition(list: Seq[_]): TypingResult = {

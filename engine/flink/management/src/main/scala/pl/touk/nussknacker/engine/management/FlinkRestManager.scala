@@ -5,13 +5,14 @@ import org.apache.flink.api.common.JobStatus
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
-import sttp.client._
+import sttp.client3._
 
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -19,7 +20,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)
-                      (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT])
+                      (implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
     extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName) with LazyLogging {
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
@@ -33,16 +34,11 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   - there MUST be at most 1 job in *non-terminal* state with given name
   - deployment is possible IFF there is NO job in *non-terminal* state with given name
  */
-  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = withJobOverview(name)(
+  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = withJobOverview(name)(
     whenNone = Future.successful(None),
-    whenDuplicates = duplicates => Future.successful(Some(processStateDefinitionManager.processState(
-      //we cannot have e.g. Failed here as we don't want to allow more jobs
-      FlinkStateStatus.MultipleJobsRunning,
-      Some(ExternalDeploymentId(duplicates.head.jid)),
-      version = Option.empty,
-      attributes = Option.empty,
-      startTime = Some(duplicates.head.`start-time`),
-      errors = List(s"Expected one job, instead: ${duplicates.map(job => s"${job.jid} - ${job.state}").mkString(", ")}"))
+    //we cannot have e.g. Failed here as we don't want to allow more jobs
+    whenDuplicates = duplicates => Future.successful(Some(
+      FlinkProcessStateDefinitionManager.errorMultipleJobsRunning(duplicates)
     )),
     whenSingle = job => withVersion(job.jid, name).map { version =>
       //TODO: return error when there's no correct version in process
@@ -94,8 +90,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
       case JobStatus.CANCELLING => FlinkStateStatus.DuringCancel
       //The job is not technically running, but should be in a moment
       case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
-      case JobStatus.FAILING => FlinkStateStatus.Failing
-      case JobStatus.FAILED => FlinkStateStatus.Failed
+      case JobStatus.FAILING => ProblemStateStatus.failed // redeploy allowed, handle with restartStrategy
+      case JobStatus.FAILED => ProblemStateStatus.failed // redeploy allowed, handle with restartStrategy
+      case _ => throw new IllegalStateException() // todo: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
     }
 
   }
@@ -107,9 +104,21 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     overview.tasks.running + overview.tasks.finished == overview.tasks.total
   }
 
+  // todo: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
   protected def checkDuringDeployForNotRunningJob(s: JobStatus): Boolean = {
     // Flink return running status even if some tasks are scheduled or initializing
     s == JobStatus.RUNNING || s == JobStatus.INITIALIZING
+  }
+
+  override protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit] = {
+    config.waitForDuringDeployFinish.toEnabledConfig.map { config =>
+      retry.Pause(config.maxChecks, config.delay).apply {
+        getFreshProcessState(processName).map {
+          case Some(state) if state.status.isDuringDeploy => Left(())
+          case _ => Right(())
+        }
+      }.map(_.getOrElse(throw new IllegalStateException("Deploy execution finished, but job is still in during deploy state on Flink")))
+    }.getOrElse(Future.successful(()))
   }
 
   //TODO: cache by jobId?
@@ -163,8 +172,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     client.stop(deploymentId, savepointDir)
   }
 
-  // this code is executed synchronously by ManagementActor thus we don't care that much about possible races
-  // and extraneous jar uploads introduced by asynchronous invocation
   override protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting to deploy scenario: $processName with savepoint $savepointPath")
     client.runProgram(jarFile, mainClass, args, savepointPath)

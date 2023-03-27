@@ -4,19 +4,21 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.{ProcessingTypeConfig, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, ProcessCategoryService}
-import sttp.client.akkahttp.AkkaHttpBackend
-import sttp.client.{NothingT, SttpBackend}
+import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
+import sttp.client3.akkahttp.AkkaHttpBackend
+import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
   implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
   import system.dispatcher
-  implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend.usingActorSystem(system)
+  implicit val sttpBackend: SttpBackend[Future, Any] = AkkaHttpBackend.usingActorSystem(system)
   implicit val deploymentService: DeploymentService = null
 
   test("load only scenario types assigned to configured categories") {
@@ -45,7 +47,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
         |""".stripMargin)
 
     implicit val categoriesService: ProcessCategoryService = new ConfigProcessCategoryService(config)
-    val scenarioTypes = StubbedProcessingTypeDataReader.loadProcessingTypeData(config).all
+    val scenarioTypes = StubbedProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(config)).all
 
     scenarioTypes.keySet shouldEqual Set("foo")
   }
@@ -53,8 +55,10 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
   object StubbedProcessingTypeDataReader extends ProcessingTypeDataReader {
     override protected def createProcessingTypeData(name: ProcessingType, typeConfig: ProcessingTypeConfig)
                                                    (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                                    sttpBackend: SttpBackend[Future, Nothing, NothingT],
-                                                    deploymentService: DeploymentService): ProcessingTypeData = null
+                                                    sttpBackend: SttpBackend[Future, Any],
+                                                    deploymentService: DeploymentService): ProcessingTypeData = {
+      ProcessingTypeData(new MockDeploymentManager, null, null, Map.empty, Nil, ProcessingTypeUsageStatistics("stubManager", None))
+    }
   }
 
 }

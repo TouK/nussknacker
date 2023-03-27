@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.definition
 
 import cats.data.Validated.Valid
-
-import java.time.Duration
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,16 +8,16 @@ import pl.touk.nussknacker.engine.api.context.{ContextTransformation, Validation
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableProvidedInRuntime, FixedExpressionValue, FixedValuesValidator, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.signal.{ProcessSignalSender, SignalTransformer}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{process, _}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{GenericNodeTransformationMethodDef, StandardObjectWithMethodDef}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
+import java.time.Duration
 import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,13 +26,6 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
   private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator,
       process.ProcessObjectDependencies(ConfigFactory.load(), ObjectNamingProvider(getClass.getClassLoader)))
-
-  test("extract definitions") {
-    val signal1 = processDefinition.signalsWithTransformers.get("signal1")
-    signal1 shouldBe 'defined
-    signal1.get._2 shouldBe Set("transformer1")
-    signal1.get._1.asInstanceOf[StandardObjectWithMethodDef].methodDef.name shouldBe "send1"
-  }
 
   test("extract additional variables info from annotation") {
     val methodDef = processDefinition.customStreamTransformers("transformer1")._1.asInstanceOf[StandardObjectWithMethodDef].methodDef
@@ -87,7 +78,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
 
     definition.objectDefinition.parameters should have size 1
     val parameter = definition.objectDefinition.parameters.head
-    parameter.defaultValue shouldEqual Some("'foo'")
+    parameter.defaultValue shouldEqual Some(Expression.spel("'foo'"))
   }
 
   test("default value from annotation should have higher priority than optionality") {
@@ -95,7 +86,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
 
     definition.objectDefinition.parameters should have size 1
     val parameter = definition.objectDefinition.parameters.head
-    parameter.defaultValue shouldEqual Some("'foo'")
+    parameter.defaultValue shouldEqual Some(Expression.spel("'foo'"))
   }
 
   test("extract definition with branch params") {
@@ -170,16 +161,11 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
     )
 
     override def buildInfo(): Map[String, String] = Map()
-
-    override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = Map(
-      "signal1" -> WithCategories(new Signal1, "cat")
-    )
   }
 
   object Transformer1 extends CustomStreamTransformer {
 
     @MethodToInvoke
-    @SignalTransformer(signalClass = classOf[Signal1])
     def invoke(
       @ParamName("param1")
       @AdditionalVariables(value = Array(new AdditionalVariable(name = "var1", clazz = classOf[OnlyUsedInAdditionalVariable])))
@@ -250,11 +236,6 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
     def invoke(@ParamName("param1")
                @DefaultValue("'foo'")
                @Nullable someStupidNameWithoutMeaning: String) : Unit = {}
-  }
-
-  class Signal1 extends ProcessSignalSender {
-    @MethodToInvoke
-    def send1(@ParamName("param1") param1: String) : Unit = {}
   }
 
   case class OnlyUsedInAdditionalVariable(someField: String)

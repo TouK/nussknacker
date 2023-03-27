@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -110,8 +109,6 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
       "typedMap" -> WithCategories(TypedMap(Map("aField" -> "123"))))
     ExpressionConfig(globalProcessVariables, List.empty, List.empty, dictionaries = Map(dictId -> WithCategories(dictDef)))
   }
-
-  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
 
   override def buildInfo(): Map[String, String] = Map.empty
 }

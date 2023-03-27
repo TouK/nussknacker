@@ -4,10 +4,12 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
+import cats.instances.future._
+import cats.instances.list._
+import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -24,11 +26,10 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
@@ -39,11 +40,11 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProcessesResources(
   val processRepository: FetchingProcessRepository[Future],
   processService: ProcessService,
+  deploymentService: DeploymentService,
   processToolbarService: ProcessToolbarService,
   processResolving: UIProcessResolving,
   val processAuthorizer:AuthorizeProcess,
-  processChangeListener: ProcessChangeListener,
-  typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData]
+  processChangeListener: ProcessChangeListener
 )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -87,8 +88,10 @@ class ProcessesResources(
           get {
             processesQuery { query =>
               complete {
+                // To not overload engine, for list of processes we provide statuses that can be cached
+                implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
                 processRepository.fetchProcessesDetails[Unit](query.toRepositoryQuery)
-                  .map(_.map(enrichDetailsWithProcessState[Unit])).toBasicProcess //TODO: Remove enrichProcess when we will support cache for state
+                  .flatMap(_.map(enrichDetailsWithProcessState[Unit]).sequence).toBasicProcess
               }
             }
           }
@@ -101,15 +104,6 @@ class ProcessesResources(
               } else {
                 validateAndReverseResolveAll(processes)
               }
-            }
-          }
-        } ~ path("subProcessesDetails") {
-          // To be removed in NU 1.8.
-          get {
-            complete {
-              val query = FetchProcessesDetailsQuery(isSubprocess = Some(true), isArchived = Some(false))
-              val subProcesses = processRepository.fetchProcessesDetails[CanonicalProcess](query)
-              validateAndReverseResolveAll(subProcesses)
             }
           }
         } ~ path("processes" / "status") {
@@ -164,10 +158,11 @@ class ProcessesResources(
               }
             } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
               complete {
-                processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
-                  case Some(process) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(process))
-                  case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process))
-                  case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
+                implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+                processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).flatMap[ToResponseMarshallable] {
+                  case Some(process) if skipValidateAndResolve => enrichDetailsWithProcessState(process).map(toProcessDetails)
+                  case Some(process) => enrichDetailsWithProcessState(process).map(validateAndReverseResolve)
+                  case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
                 }
               }
             }
@@ -188,16 +183,17 @@ class ProcessesResources(
         } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
           (get & processId(processName) & skipValidateAndResolveParameter) { (processId, skipValidateAndResolve) =>
             complete {
-              processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId).map[ToResponseMarshallable] {
-                case Some(process) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(process))
-                case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process))
-                case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
+              implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+              processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId).flatMap[ToResponseMarshallable] {
+                case Some(process) if skipValidateAndResolve => enrichDetailsWithProcessState(process).map(toProcessDetails)
+                case Some(process) => enrichDetailsWithProcessState(process).map(validateAndReverseResolve)
+                case None => Future.successful(HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found"))
               }
             }
           }
         } ~ path("processes" / Segment / Segment) { (processName, category) =>
           authorize(user.can(category, Permission.Write)) {
-            parameter('isSubprocess ? false) { isSubprocess =>
+            parameter(Symbol("isSubprocess") ? false) { isSubprocess =>
               post {
                 complete {
                   processService
@@ -213,7 +209,8 @@ class ProcessesResources(
         } ~ path("processes" / Segment / "status") { processName =>
           (get & processId(processName)) { processId =>
             complete {
-              processService.getProcessState(processId).map(ToResponseMarshallable(_))
+              implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+              deploymentService.getProcessState(processId).map(ToResponseMarshallable(_))
             }
           }
         } ~ path("processes" / Segment / "toolbars") { processName =>
@@ -268,22 +265,17 @@ class ProcessesResources(
   }
 
   private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
-    import cats.instances.future._
-    import cats.instances.list._
-    import cats.syntax.traverse._
-    processes.map(process => processService.getProcessState(process.idWithName).map(status => process.name -> status))
+    // To not overload engine, for list of processes we provide statuses that can be cached
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.CanBeCached
+    processes.map(process => deploymentService.getProcessState(process).map(status => process.name -> status))
       .sequence[Future, (String, ProcessState)].map(_.toMap)
   }
 
-  //This is temporary function to enriching process state data
-  //TODO: Remove it when we will support cache for state
-  private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS]): BaseProcessDetails[PS] =
-    process.copy(state = deploymentManager(process.processingType).map(m => m.processStateDefinitionManager.processState(
-      m.processStateDefinitionManager.mapActionToStatus(process.lastAction.map(_.action))
-    )))
-
-  private def deploymentManager(processingType: ProcessingType): Option[DeploymentManager] =
-    typeToConfig.forType(processingType).map(_.deploymentManager)
+  private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS])
+                                                                          (implicit user: LoggedUser,
+                                                                           freshnessPolicy: DataFreshnessPolicy): Future[BaseProcessDetails[PS]] = {
+    deploymentService.getProcessState(process).map(state => process.copy(state = Some(state)))
+  }
 
   private def withJson(processId: ProcessId, version: VersionId)
                       (process: DisplayableProcess => ToResponseMarshallable)(implicit user: LoggedUser): ToResponseMarshallable
@@ -322,28 +314,22 @@ class ProcessesResources(
 
   private def processesQuery: Directive1[ProcessesQuery] = {
     parameters(
-      'isSubprocess.as[Boolean].?,
-      'isArchived.as[Boolean].?,
-      'isDeployed.as[Boolean].?,
-      'categories.as(CsvSeq[String]).?,
-      'processingTypes.as(CsvSeq[String]).?,
-      'names.as(CsvSeq[String]).?,
+      Symbol("isSubprocess").as[Boolean].?,
+      Symbol("isArchived").as[Boolean].?,
+      Symbol("isDeployed").as[Boolean].?,
+      Symbol("categories").as(CsvSeq[String]).?,
+      Symbol("processingTypes").as(CsvSeq[String]).?,
+      Symbol("names").as(CsvSeq[String]).?,
     ).as(ProcessesQuery.apply _)
   }
 
   private def skipValidateAndResolveParameter = {
-    parameters('skipValidateAndResolve.as[Boolean].withDefault(false))
+    parameters(Symbol("skipValidateAndResolve").as[Boolean].withDefault(false))
   }
 }
 
 object ProcessesResources {
   case class UnmarshallError(message: String) extends Exception(message) with FatalError
-
-  case class WrongProcessId(processId: String, givenId: String) extends Exception(s"Scenario has id $givenId instead of $processId") with BadRequestError
-
-  case class ProcessNotInitializedError(id: String) extends Exception(s"Scenario $id is not initialized") with NotFoundError
-
-  case class NodeNotFoundError(processId: String, nodeId: String) extends Exception(s"Node $nodeId not found inside scenario $processId") with NotFoundError
 
   case class ProcessesQuery(isSubprocess: Option[Boolean],
                             isArchived: Option[Boolean],

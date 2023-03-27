@@ -25,6 +25,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingDat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, sampleResolver}
 import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -37,7 +38,6 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       sourceFactories = Map("sourceRef" -> ObjectDefinition.noParam),
       sinkFactories = Map(),
       customStreamTransformers = Map(),
-      signalsWithTransformers = Map(),
       expressionConfig = ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true,
         Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false,
         methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, spelExpressionExcludeList = SpelExpressionExcludeList.default,
@@ -61,7 +61,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
    val canonical = ProcessConverter.fromDisplayable(process)
     val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
-    new ValidatedDisplayableProcess(displayable, validation.validate(displayable, TestCategories.TestCat))
+    new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
   }
 
   test("be able to convert empty process") {
@@ -71,11 +71,11 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   }
 
   test("be able to handle different node order") {
-    val process = DisplayableProcess("t1", ProcessProperties(metaData, subprocessVersions = Map.empty),
+    val process = DisplayableProcess("t1", ProcessProperties(metaData),
       List(
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
-      ), List(Edge("s", "e", None)), TestProcessingTypes.Streaming, Some(TestCategories.Category1))
+      ), List(Edge("s", "e", None)), TestProcessingTypes.Streaming, TestCategories.Category1)
 
     displayableCanonical(process).nodes.toSet shouldBe process.nodes.toSet
     displayableCanonical(process).edges.toSet shouldBe process.edges.toSet
@@ -85,21 +85,21 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   test("be able to convert process ending not properly") {
     forAll(Table(
       "unexpectedEnd",
-      Filter("e", Expression("spel", "0")),
+      Filter("e", Expression.spel("0")),
       Switch("e"),
       Enricher("e", ServiceRef("ref", List()), "out"),
       Split("e")
     )) { unexpectedEnd =>
       val process = ValidatedDisplayableProcess(
         "t1",
-        ProcessProperties(metaData, subprocessVersions = Map.empty),
+        ProcessProperties(metaData),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
         List(Edge("s", "e", None)),
         TestProcessingTypes.Streaming,
-        Some(TestCategories.Category1),
+        TestCategories.Category1,
         ValidationResult.errors(
           Map(unexpectedEnd.id -> List(
-            NodeValidationError("InvalidTailOfBranch", "Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
+            NodeValidationError("InvalidTailOfBranch", "Scenario must end with a sink, processor or fragment", "Scenario must end with a sink, processor or fragment", None, errorType = NodeValidationErrorType.SaveAllowed))),
           List.empty,
           List.empty
         )
@@ -116,13 +116,13 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     val meta = MetaData("process", metaData, additionalFields = Some(ProcessAdditionalFields(None, Map.empty)))
     val process = ValidatedDisplayableProcess(
       meta.id,
-      ProcessProperties(meta.typeSpecificData, subprocessVersions = Map.empty),
-      List(Source("s", SourceRef("sourceRef", List())), Variable("v", "test", Expression("spel", "''")), Filter("e", Expression("spel", "''"))),
+      ProcessProperties(meta.typeSpecificData),
+      List(Source("s", SourceRef("sourceRef", List())), Variable("v", "test", Expression.spel("''")), Filter("e", Expression.spel("''"))),
       List(Edge("s", "v", None), Edge("v", "e", None)),
       TestProcessingTypes.Streaming,
-      Some(TestCategories.Category1),
+      TestCategories.Category1,
       ValidationResult.errors(
-        Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
+        Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Scenario must end with a sink, processor or fragment", "Scenario must end with a sink, processor or fragment", None, errorType = NodeValidationErrorType.SaveAllowed))),
         List.empty,
         List.empty).copy(nodeResults = Map(
           "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
@@ -135,7 +135,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     // because I'm lazy
     val displayableWithClearedTypingInfo = displayableProcess.copy(
       validationResult = displayableProcess.validationResult.copy(
-        nodeResults = displayableProcess.validationResult.nodeResults.mapValues(_.copy(typingInfo = Map.empty))
+        nodeResults = displayableProcess.validationResult.nodeResults.mapValuesNow(_.copy(typingInfo = Map.empty))
       )
     )
     displayableWithClearedTypingInfo shouldBe process
@@ -143,7 +143,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   test("convert process with branches") {
 
-    val process = DisplayableProcess("t1", ProcessProperties(metaData, subprocessVersions = Map.empty),
+    val process = DisplayableProcess("t1", ProcessProperties(metaData),
       List(
         Processor("e", ServiceRef("ref", List.empty)),
         Join("j1", Some("out1"), "joinRef", List.empty, List(BranchParameters("s1", List()))),
@@ -156,7 +156,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         Edge("j1", "e", None)
       ),
       TestProcessingTypes.Streaming,
-      Some(TestCategories.Category1)
+      TestCategories.Category1
     )
 
     val processViaBuilder =  ScenarioBuilder.streaming("t1").parallelism(metaData.parallelism.get).stateOnDisk(metaData.spillStateToDisk.get).sources(

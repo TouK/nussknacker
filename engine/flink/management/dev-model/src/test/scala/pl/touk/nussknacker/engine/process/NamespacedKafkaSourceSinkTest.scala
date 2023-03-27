@@ -6,14 +6,12 @@ import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
-import pl.touk.nussknacker.engine.management.sample.signal.RemoveLockProcessSignalFactory
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -27,6 +25,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
 
   import KafkaTestUtils._
   import spel.Implicits._
+  import KafkaFactory._
 
   override lazy val config = ConfigFactory.load()
     .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef(kafkaServer.kafkaAddress))
@@ -44,8 +43,8 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
     val process = ScenarioBuilder
       .streaming("id")
       .parallelism(1)
-      .source("input", "real-kafka", "topic" -> s"'$inputTopic'")
-      .emptySink("output", "kafka-string", "topic" -> s"'$outputTopic'", "value" -> "#input")
+      .source("input", "real-kafka", TopicParamName -> s"'$inputTopic'")
+      .emptySink("output", "kafka-string", TopicParamName -> s"'$outputTopic'", SinkValueParamName -> "#input")
 
     run(process) {
       val consumer = kafkaClient.createConsumer()
@@ -58,7 +57,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
     }
   }
 
-  private lazy val configCreator: DevProcessConfigCreator = new TestProcessConfig
+  private lazy val configCreator: DevProcessConfigCreator = new DevProcessConfigCreator
 
   private var registrar: FlinkProcessRegistrar = _
 
@@ -73,9 +72,4 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
     registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id)(action)
   }
-}
-
-class TestProcessConfig extends DevProcessConfigCreator {
-  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[RemoveLockProcessSignalFactory]] =
-    Map.empty
 }

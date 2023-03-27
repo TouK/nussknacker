@@ -49,6 +49,7 @@ object EditorExtractor {
       case SimpleEditorType.TEXTAREA_EDITOR => TextareaParameterEditor
       case SimpleEditorType.JSON_EDITOR => JsonParameterEditor
       case SimpleEditorType.SQL_EDITOR => SqlParameterEditor
+      case SimpleEditorType.SPEL_TEMPLATE_EDITOR => SpelTemplateParameterEditor
     }
   }
 }

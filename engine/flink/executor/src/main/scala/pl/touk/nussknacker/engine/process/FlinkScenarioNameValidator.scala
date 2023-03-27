@@ -13,17 +13,16 @@ class FlinkScenarioNameValidatorFactory extends CustomProcessValidatorFactory {
 
 class FlinkScenarioNameValidator(config: Config) extends CustomProcessValidator {
 
-  private lazy val flinkProcessNameValidationPattern = "[a-zA-Z0-9-_ ]+"r
+  private val flinkProcessNameValidationPattern = "[a-zA-Z0-9_-]++[a-zA-Z0-9_ -]*+(?<! )".r
 
   def validate(process: CanonicalProcess): ValidatedNel[ScenarioNameValidationError, Unit] = {
-
     val scenarioName = process.metaData.id
     if (flinkProcessNameValidationPattern.pattern.matcher(scenarioName).matches()) {
       Valid(())
     } else {
       Invalid(NonEmptyList.one(
         ScenarioNameValidationError(
-          s"Invalid scenario name $scenarioName. Only numbers, letters, underscore (_), hyphen (-) and space are allowed",
+          s"Invalid scenario name $scenarioName. Only digits, letters, underscore (_), hyphen (-) and space in the middle are allowed",
           "Provided scenario name is invalid for this category. Please enter valid name using only specified characters.")
       ))
     }

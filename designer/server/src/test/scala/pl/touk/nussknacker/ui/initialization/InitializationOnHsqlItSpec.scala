@@ -20,9 +20,9 @@ class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest wit
 
   private val migrations = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2))
 
-  private lazy val repository = TestFactory.newFetchingProcessRepository(db, Some(1))
+  private lazy val repository = TestFactory.newFutureFetchingProcessRepository(db)
 
-  private lazy val repositoryManager = TestFactory.newDBRepositoryManager(db)
+  private lazy val dbioRunner = TestFactory.newDBIOActionRunner(db)
 
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
@@ -55,7 +55,7 @@ class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest wit
   private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
     val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess)
 
-    repositoryManager
+    dbioRunner
       .runInTransaction(writeRepository.saveNewProcess(action))
       .futureValue
   }

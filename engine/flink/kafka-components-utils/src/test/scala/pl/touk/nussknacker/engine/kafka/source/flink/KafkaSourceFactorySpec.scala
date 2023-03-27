@@ -12,14 +12,13 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka.source.{KafkaContextInitializer, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaSpec, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, KafkaSpec, serialization}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.Collections.singletonMap
@@ -33,8 +32,8 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
 
   private def readLastMessage(sourceFactory: KafkaSourceFactory[Any, Any], topic: String, numberOfMessages: Int = 1): List[AnyRef] = {
     val source = createSource(sourceFactory, topic)
-    val bytes = source.generateTestData(numberOfMessages)
-    source.testDataParser.parseTestData(TestData(bytes, numberOfMessages))
+    val testData = source.generateTestData(numberOfMessages)
+    testData.testRecords.map(source.testRecordParser.parse)
   }
 
   private def createSource[K, V](sourceFactory: KafkaSourceFactory[K, V], topic: String): Source with TestDataGenerator with FlinkSourceTestSupport[ConsumerRecord[K, V]] with ReturningType = {
@@ -59,7 +58,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       ConsumerRecord.NULL_SIZE,
       null,
       givenObj,
-      ConsumerRecordUtils.emptyHeaders,
+      KafkaRecordUtils.emptyHeaders,
       Optional.of(0: Integer)
     )
     pushMessage(new SimpleSerializationSchema[Any](topic, String.valueOf), givenObj, topic, timestamp = constTimestamp)
@@ -78,7 +77,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       TimestampType.CREATE_TIME,
       null,
       givenObj,
-      ConsumerRecordUtils.emptyHeaders,
+      KafkaRecordUtils.emptyHeaders,
       Optional.of(0)
     )
     pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
@@ -97,7 +96,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       TimestampType.CREATE_TIME,
       null,
       givenObj,
-      ConsumerRecordUtils.emptyHeaders,
+      KafkaRecordUtils.emptyHeaders,
       Optional.of(0)
     )
     pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
@@ -116,7 +115,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       TimestampType.CREATE_TIME,
       sampleKey,
       sampleValue,
-      ConsumerRecordUtils.toHeaders(sampleHeadersMap),
+      KafkaRecordUtils.toHeaders(sampleHeadersMap),
       Optional.of(0)
     )
     pushMessage(objToSerializeSerializationSchema(topic), givenObj, topic, timestamp = constTimestamp)
@@ -162,10 +161,9 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
     def generatedForSource[K, V](sourceFactory: KafkaSourceFactory[K, V]): List[V] = {
       val source = createSource(sourceFactory, topic)
 
-      val data = source.generateTestData(2)
+      val testData = source.generateTestData(2)
 
-      val parsed = source.testDataParser.parseTestData(TestData(data, 2))
-      parsed.map(_.value())
+      testData.testRecords.map(source.testRecordParser.parse).map(_.value())
     }
 
     generatedForSource(new GenericJsonSourceFactory(processObjectDependencies)) shouldBe

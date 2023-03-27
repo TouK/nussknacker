@@ -40,11 +40,11 @@ abstract class TypedObjectBasedTypeInformation[T:ClassTag](informations: Array[(
   override def isKeyType: Boolean = false
 
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] =
-    createSerializer(informations.map {
+    createSerializer(serializers = informations.map {
       case (k, v) => (k, v.createSerializer(config))
-    }.asInstanceOf[Array[(String, TypeSerializer[_])]])
+    })
 
-  override def canEqual(obj: Any): Boolean = obj.isInstanceOf[TypedObjectBasedTypeInformation[T]]
+  override def canEqual(obj: Any): Boolean = obj.asInstanceOf[AnyRef].isInstanceOf[TypedObjectBasedTypeInformation[T]]
 
   def createSerializer(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[T]
 }
@@ -196,7 +196,7 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
           TypeSerializerSchemaCompatibility.incompatible()
         } else {
           logger.info(s"Schema migration needed, as fields are not equal (old keys: ${currentKeys.mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
-            s" fields compatibility is is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration")
+            s" fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration")
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
         }
       }

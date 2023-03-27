@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -47,13 +48,13 @@ object StateCompatibilityTest {
 class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with LazyLogging {
   import spel.Implicits._
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val inTopic = "state.compatibility.input"
   private val outTopic = "state.compatibility.output"
 
   private val savepointDir = {
-    val resourcesDir = Paths.get("src/test/resources/state-compatibility")
+    val resourcesDir = Paths.get(s"src/test/resources/state-compatibility/${ScalaMajorVersionConfig.scalaMajorVersion}")
     if (Files.exists(resourcesDir)) {
       // Working directory is module root directory.
       resourcesDir
@@ -156,7 +157,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
 
   private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
     val rawOutputEvent = kafkaClient.createConsumer().consume(outTopic).take(1).head.msg
-    val outputEvent = io.circe.parser.decode[OutputEvent](new String(rawOutputEvent)).right.get
+    val outputEvent = io.circe.parser.decode[OutputEvent](new String(rawOutputEvent)).toOption.get
     outputEvent.input shouldBe input
     outputEvent.previousInput shouldBe previousInput
   }

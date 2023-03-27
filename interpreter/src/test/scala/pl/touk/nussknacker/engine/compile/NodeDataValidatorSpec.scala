@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
@@ -227,7 +228,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       validate(VariableBuilder("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext(Map.empty))
     ) {
       case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
-        fields.mapValues(_.display) shouldBe Map("field1" -> Typed.fromInstance(42L).display, "field2" -> Typed.fromInstance("some string").display)
+        fields.mapValuesNow(_.display) shouldBe Map("field1" -> Typed.fromInstance(42L).display, "field2" -> Typed.fromInstance("some string").display)
     }
   }
 
@@ -236,7 +237,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       validate(SubprocessOutputDefinition("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext.empty)
     ) {
       case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
-        fields.mapValues(_.display) shouldBe Map("field1" -> Typed.fromInstance(42L).display, "field2" -> Typed.fromInstance("some string").display)
+        fields.mapValuesNow(_.display) shouldBe Map("field1" -> Typed.fromInstance(42L).display, "field2" -> Typed.fromInstance("some string").display)
     }
   }
 
@@ -312,6 +313,6 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs, Map("fragment1" -> fragmentDef).get, outgoingEdges)(MetaData("id", StreamMetaData()))
   }
 
-  private def par(name: String, expr: String): Parameter = Parameter(name, Expression("spel", expr))
+  private def par(name: String, expr: String): Parameter = Parameter(name, Expression.spel(expr))
 
 }

@@ -23,9 +23,9 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, Nu
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{DynamicPropertyAccessError, IllegalIndexingOperation, IllegalProjectionSelectionError, IllegalPropertyAccessError, InvalidMethodReference}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{ConstructionOfUnknown, NoPropertyError, NonReferenceError, UnresolvedReferenceError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{BadOperatorConstructionError, DivisionByZeroError, EmptyOperatorError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError, ModuloZeroError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.PartTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{IllegalProjectionError, IllegalSelectionError, IllegalSelectionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.TernaryOperatorError.{InvalidTernaryOperator, TernaryOperatorMismatchTypesError, TernaryOperatorNotBooleanError}
@@ -106,7 +106,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     }
 
     def withTwoChildrenOfType[A: universe.TypeTag, R: universe.TypeTag](op: (A, A) => R) = {
-      val castExpectedType = CastTypedValue[A]
+      val castExpectedType = CastTypedValue[A]()
       val resultType = Typed.fromDetailedType[R]
       withTypedChildren { typingResultWithContextList =>
         typingResultWithContextList.map(_.typingResult) match {
@@ -263,6 +263,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case Nil =>
           EmptyOperatorError(e.getOperatorName).invalidNel
+        case _ => throw new IllegalStateException("should not happen")
       }
       case e: OpModulus =>
         val op = Some((x: Number, y: Number) =>
@@ -291,6 +292,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case TypingResultWithContext(left, _) :: Nil =>
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case Nil => EmptyOperatorError(e.getOperatorName).invalidNel
+        case _ => throw new IllegalStateException("should not happen")
       }
       case e: OperatorBetween => fixed(TypingResultWithContext(Typed[Boolean]))
       case e: OperatorInstanceof => fixed(TypingResultWithContext(Typed[Boolean]))

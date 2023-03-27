@@ -3,27 +3,28 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.headers.{CacheDirectives, `Cache-Control`}
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.commons.io.{FileUtils, IOUtils}
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsHtmlSnippet
+import org.apache.commons.io.FileUtils
+import pl.touk.nussknacker.engine.util.ResourceLoader
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import scala.util.Try
 
-class WebResources(publicPath: String, usageStatisticsSnippetOpt: Option[UsageStatisticsHtmlSnippet]) extends Directives with LazyLogging {
+class WebResources(publicPath: String) extends Directives with LazyLogging {
 
   //see config.js comment
   private lazy val mainContentFile = {
     val tempMainContentFile = Files.createTempFile("nussknacker", "main.html").toFile
     tempMainContentFile.deleteOnExit()
-    val data = getClass.getClassLoader.getResourceAsStream("web/static/main.html")
-    val content = Option(data).map(IOUtils.toString).getOrElse {
+    val data = Try(ResourceLoader.load("/web/static/main.html"))
+
+    val content = data.toOption.getOrElse {
       logger.error("Failed to find web/static/main.html - probably frontend resources are not packaged in jar. Frontend won't work properly!")
       ""
     }
     val withPublicPathSubstituted = content.replace("__publicPath__", publicPath)
-    val contentAfterSubstitutions = usageStatisticsSnippetOpt
-      .map(snippet => withPublicPathSubstituted.replace("</body>", snippet.value + "</body>"))
-      .getOrElse(withPublicPathSubstituted)
-    FileUtils.writeStringToFile(tempMainContentFile, contentAfterSubstitutions)
+
+    FileUtils.writeStringToFile(tempMainContentFile, withPublicPathSubstituted, StandardCharsets.UTF_8)
     tempMainContentFile
   }
 

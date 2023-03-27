@@ -24,7 +24,7 @@ object ClassLoaderWithServices {
         Files.write(file, implementations.map(_._2.getName).mkString("\n").getBytes)
         filesToDelete.append(file)
       }
-      filesToDelete.append(servicesDir, servicesDir.getParent, tempDir)
+      filesToDelete.appendAll(List(servicesDir, servicesDir.getParent, tempDir))
       action(loader)
     } finally {
       loader.close()

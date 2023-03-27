@@ -1,37 +1,6 @@
-import {reportEvent, EventInfo} from "./nk"
-import {ThunkAction} from "./reduxTypes"
-
-export function undo(eventInfo: Partial<EventInfo>): ThunkAction {
-  return (dispatch) => {
-    dispatch(reportEvent({
-      category: eventInfo.category,
-      action: eventInfo.action,
-      name: "undo",
-    }))
-
-    dispatch({
-      type: "UNDO",
-    })
-  }
-}
-
-export function redo(eventInfo: Partial<EventInfo>): ThunkAction {
-  return (dispatch) => {
-    dispatch(reportEvent({
-      category: eventInfo.category,
-      action: eventInfo.action,
-      name: "redo",
-    }))
-
-    dispatch({
-      type: "REDO",
-    })
-  }
-}
-
-export function clear(): UndoRedoActions {
-  return {type: "CLEAR"}
-}
+export const undo = (): UndoRedoActions => ({type: "UNDO"})
+export const redo = (): UndoRedoActions => ({type: "REDO"})
+export const clear = (): UndoRedoActions => ({type: "CLEAR"})
 
 export type UndoRedoActions =
   | { type: "UNDO" }

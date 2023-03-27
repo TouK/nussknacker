@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 /**
@@ -33,7 +34,7 @@ trait ProcessingTypeDataProvider[+T] {
 
       override def forType(typ: ProcessingType): Option[Y] = ProcessingTypeDataProvider.this.forType(typ).map(fun)
 
-      override def all: Map[ProcessingType, Y] = ProcessingTypeDataProvider.this.all.mapValues(fun)
+      override def all: Map[ProcessingType, Y] = ProcessingTypeDataProvider.this.all.mapValuesNow(fun)
     }
 
   }

@@ -5,12 +5,14 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.scalatest.{BeforeAndAfterAll, TestSuite, TryValues}
 import org.testcontainers.containers.{Network, GenericContainer => JavaGenericContainer}
+import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils._
+import scala.collection.compat.immutable.LazyList
 
 import java.io.File
 import java.util.concurrent.TimeoutException
@@ -28,7 +30,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
 
   protected val schemaRegistryContainer = {
     val container = GenericContainer(
-      "confluentinc/cp-schema-registry:7.2.1",
+      "confluentinc/cp-schema-registry:7.3.0",
       exposedPorts = Seq(schemaRegistryPort),
       env = Map(
         "SCHEMA_REGISTRY_HOST_NAME" -> schemaRegistryHostname,
@@ -44,7 +46,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
   protected lazy val schemaRegistryClient = new CachedSchemaRegistryClient(mappedSchemaRegistryAddress, 10)
 
   protected val kafkaContainer: KafkaContainer = {
-    val container = KafkaContainer().configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
+    val container = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.3.0")).configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
     configureNetwork(container, kafkaHostname)
     container
   }
@@ -82,7 +84,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
     }
   }.success.value
 
-  protected def errorConsumer(secondsToWait: Int): Stream[KeyMessage[String, KafkaExceptionInfo]] = kafkaClient.createConsumer()
+  protected def errorConsumer(secondsToWait: Int): LazyList[KeyMessage[String, KafkaExceptionInfo]] = kafkaClient.createConsumer()
     .consume(fixture.errorTopic, secondsToWait = secondsToWait)
     .map(km => KeyMessage(new String(km.key()), CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](km.message()), km.timestamp))
 

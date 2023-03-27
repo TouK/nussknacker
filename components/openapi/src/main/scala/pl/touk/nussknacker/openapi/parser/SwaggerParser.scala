@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.converter.SwaggerConverter
 import io.swagger.v3.parser.core.models.ParseOptions
+import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 
 import java.util.Collections
@@ -17,6 +18,9 @@ object SwaggerParser extends LazyLogging {
     ParseToSwaggerServices(openapi, openAPIsConfig)
   }
 
+  def loadFromResource(path: String, openAPIsConfig: OpenAPIServicesConfig): List[Validated[ServiceParseError, SwaggerService]] =
+    parse(ResourceLoader.load(path), openAPIsConfig)
+
   private[parser] def parseToSwagger(rawSwagger: String): OpenAPI = {
     val swagger30 = new OpenAPIV3Parser().readContents(rawSwagger)
     Option(swagger30.getOpenAPI)
@@ -27,5 +31,6 @@ object SwaggerParser extends LazyLogging {
         } else throw new IllegalArgumentException(s"Failed to parse with swagger 3.0: ${swagger30.getMessages} and 2.0 ${swagger20.getMessages}")
       }
   }
+
 }
 

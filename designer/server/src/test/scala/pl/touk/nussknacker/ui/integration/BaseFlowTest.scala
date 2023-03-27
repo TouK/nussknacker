@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Processor, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, spel}
 import pl.touk.nussknacker.restmodel.definition.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -49,7 +49,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
-    system.settings.config,
+    ConfigWithUnresolvedVersion(system.settings.config),
     NussknackerAppInitializer.initDb(system.settings.config),
     new MetricRegistry
   )
@@ -87,7 +87,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   test("ensure nodes config is properly parsed") {
     Get("/api/processDefinitionData/streaming?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       val settingsJson = responseAs[Json].hcursor.downField("componentsConfig").focus.get
-      val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).right.get
+      val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).toOption.get
 
       val underTest = Map(
         //docs url comes from reference.conf in devModel
@@ -134,11 +134,12 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
         ),
         "providedComponent-component-v1" -> SingleComponentConfig(None, None, Some("https://nussknacker.io/Configuration.html"), None, None),
         "$properties" -> SingleComponentConfig(None, None,
-          Some("https://nussknacker.io/documentation/docs/installation_configuration_guide/ModelConfiguration/#additional-properties"), None, None)
+          Some("https://nussknacker.io/documentation/docs/installation_configuration_guide/ModelConfiguration#scenarios-additional-properties"), None, None)
       )
 
       val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }
       relevant shouldBe underTest
+      val not = other.values.filter(_.docsUrl.isDefined)
       other.values.forall(_.docsUrl.isEmpty) shouldBe true
     }
   }
@@ -148,7 +149,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
       val settingsJson = responseAs[Json].hcursor.downField("additionalPropertiesConfig").focus.get
       val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
-      val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).right.get
+      val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).toOption.get
 
       val underTest = Map(
         "environment" -> UiAdditionalPropertyConfig(
@@ -196,12 +197,12 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     val process = DisplayableProcess(
       id = processId,
-      properties = ProcessProperties(FragmentSpecificData(), subprocessVersions = Map()),
+      properties = ProcessProperties(FragmentSpecificData()),
       nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
         SubprocessOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),
       processingType = TestProcessingTypes.Streaming,
-      Some(TestCategories.Category1)
+      TestCategories.Category1
     )
 
     Post(s"$endpoint/Category1?isSubprocess=true") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
@@ -230,11 +231,12 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
       .streaming(processId)
       .source("source", "csv-source")
       .enricher("enricher", "out", "complexReturnObjectService")
-      .emptySink("end", "sendSms", "value" -> "''")
+      .emptySink("end", "sendSms", "Value" -> "''")
 
     saveProcess(process)
 
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
+    val testDataContent = """{"sourceId":"source","record":"field1|field2"}"""
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
     }
@@ -289,8 +291,9 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     //process without errors - no parameter required
     saveProcess(processWithService()).errors shouldBe ValidationErrors.success
     val dynamicServiceParametersBeforeReload = dynamicServiceParameters
-    firstInvocationResult(testProcess(processWithService(), "field1|field2")) shouldBe Some("")
+    val testDataContent = """{"sourceId":"start","record":"field1|field2"}"""
 
+    firstInvocationResult(testProcess(processWithService(), testDataContent)) shouldBe Some("")
 
     //we generate random parameter
     val parameterUUID = UUID.randomUUID().toString
@@ -312,7 +315,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     val resultAfterReload = updateProcess(processWithService(parameterUUID -> "'emptyString'"))
     resultAfterReload.errors shouldBe ValidationErrors.success
     resultAfterReload.nodeResults.get(nodeUsingDynamicServiceId).value.parameters.value.map(_.name).toSet shouldBe Set(parameterUUID)
-    firstInvocationResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
+    firstInvocationResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), testDataContent)) shouldBe Some("field1")
 
   }
 
@@ -328,41 +331,6 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
       status shouldEqual StatusCodes.OK
       headers should contain allElementsOf (CorsSupport.headers ::: SecurityHeadersSupport.headers)
     }
-  }
-
-  test("should reload model config") {
-    def invokeModelConfigReader(configPath: String): String = {
-      val serviceParameters = List(Parameter("configPath", s"'$configPath'"))
-      val entity = HttpEntity(MediaTypes.`application/json`, serviceParameters.asJson.noSpaces)
-
-      Post("/api/service/streaming/modelConfigReader", entity) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-        status shouldEqual StatusCodes.OK
-        val resultJson = entityAs[Json]
-        resultJson
-          .hcursor
-          .downField("result")
-          .as[String]
-          .fold(error => throw error, identity)
-      }
-    }
-
-    val configLoadedMsBeforeReload = invokeModelConfigReader("configLoadedMs").toLong
-    val addedConstantPropertyBeforeReload = invokeModelConfigReader("duplicatedSignalsTopic")
-    val propertyFromResourcesBeforeReload = invokeModelConfigReader("signalsTopic")
-
-    configLoadedMsBeforeReload shouldBe < (System.currentTimeMillis())
-    addedConstantPropertyBeforeReload shouldBe "nk.signals"
-    propertyFromResourcesBeforeReload shouldBe "nk.signals"
-
-    reloadModel()
-
-    val configLoadedMsAfterReload = invokeModelConfigReader("configLoadedMs").toLong
-    val addedConstantPropertyAfterReload = invokeModelConfigReader("duplicatedSignalsTopic")
-    val propertyFromResourcesAfterReload = invokeModelConfigReader("signalsTopic")
-
-    configLoadedMsAfterReload should (be < System.currentTimeMillis() and be > configLoadedMsBeforeReload)
-    addedConstantPropertyAfterReload shouldBe addedConstantPropertyBeforeReload
-    propertyFromResourcesAfterReload shouldBe propertyFromResourcesBeforeReload
   }
 
   private def saveProcess(process: CanonicalProcess): ValidationResult = {

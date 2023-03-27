@@ -10,10 +10,11 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.{Method, Uri}
 
 import java.net.URI
+import scala.concurrent.Future
 
 class OpaqueTokenAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives with FailFastCirceSupport {
 
@@ -33,7 +34,7 @@ class OpaqueTokenAuthenticationSpec extends AnyFunSpec with Matchers with Scalat
        |}""".stripMargin)
 
   private val validAccessToken = "aValidAccessToken"
-  implicit private val testingBackend: RecordingSttpBackend = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture[Nothing]
+  implicit private val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture
     .whenRequestMatches(_.uri.equals(tokenUri))
     .thenRespond(s""" { "access_token": "${validAccessToken}", "token_type": "Bearer" } """)
     .whenRequestMatches(_.uri.equals(userinfoUri))

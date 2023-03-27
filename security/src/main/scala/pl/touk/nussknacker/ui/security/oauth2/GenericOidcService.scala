@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.security.oauth2
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,6 +53,6 @@ object DefaultOidcAuthorizationData extends RelativeSecondsCodecs {
 }
 
 object GenericOidcService {
-  def apply(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]): GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData, DefaultJwtAccessToken] =
+  def apply(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any]): GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData, DefaultJwtAccessToken] =
     new GenericOidcService(OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration), configuration)
 }

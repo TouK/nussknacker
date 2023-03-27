@@ -6,6 +6,7 @@ import {WindowContent} from "./WindowContent"
 import {WindowKind} from "./WindowKind"
 import loadable from "@loadable/component"
 import LoaderSpinner from "../components/Spinner"
+import FrameDialog from "../components/FrameDialog"
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), {fallback: <LoaderSpinner show/>})
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
@@ -56,6 +57,8 @@ export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) =
       return <NodeDetails {...props}/>
     case WindowKind.viewNode:
       return <NodeDetails {...props} readOnly/>
+    case WindowKind.survey:
+      return <FrameDialog {...props}/>
     default:
       return (
         <WindowContent {...props}>

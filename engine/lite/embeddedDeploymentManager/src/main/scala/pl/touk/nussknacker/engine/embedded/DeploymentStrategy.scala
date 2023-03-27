@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 
 import scala.concurrent.ExecutionContext
@@ -25,8 +24,6 @@ trait DeploymentStrategy {
 
   def onScenarioAdded(jobData: JobData,
                       parsedResolvedScenario: CanonicalProcess)(implicit ec: ExecutionContext): Try[Deployment]
-  
-  def testRunner(implicit ec: ExecutionContext): TestRunner
 
 }
 

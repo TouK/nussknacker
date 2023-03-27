@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, Nu
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedObjectWithValue, TypingResult, Unknown}
 
 import scala.annotation.varargs
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.jdk.CollectionConverters._
 
 object DocumentationFunctions {
   @GenericType(typingFunction = classOf[HeadGenericFunction])

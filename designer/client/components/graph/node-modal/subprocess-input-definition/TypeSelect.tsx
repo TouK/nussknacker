@@ -59,10 +59,8 @@ export function TypeSelect({
         options={options}
         value={value}
         onChange={(option) => onChange(option.value)}
-        styles={{menuPortal: (base) => ({...base, zIndex: 9999})}}
         menuPortalTarget={document.body}
       />
     </NodeValue>
   )
 }
-

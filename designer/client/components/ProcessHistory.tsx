@@ -1,7 +1,7 @@
 import React, {useCallback, useMemo} from "react"
 import {Scrollbars} from "react-custom-scrollbars"
 import {useDispatch, useSelector} from "react-redux"
-import {fetchProcessToDisplay} from "../actions/nk"
+import {fetchProcessToDisplay} from "../actions/nk/process"
 import {unsavedProcessChanges} from "../common/DialogMessages"
 import {getFetchedProcessDetails, isSaveDisabled} from "../reducers/selectors/graph"
 import styles from "../stylesheets/processHistory.styl"
@@ -29,7 +29,7 @@ export function ProcessHistoryComponent(props: {isReadOnly?: boolean}): JSX.Elem
   const changeVersion = useCallback(
     (version: ProcessVersionType) => props.isReadOnly || nothingToSave ?
       doChangeVersion(version) :
-      confirm({text: unsavedProcessChanges(), onConfirmCallback: () => doChangeVersion(version), confirmText: "DISCARD", denyText: "CANCEL"}),
+      confirm({text: unsavedProcessChanges(), onConfirmCallback: (confirmed) => confirmed && doChangeVersion(version), confirmText: "DISCARD", denyText: "CANCEL"}),
     [confirm, doChangeVersion, nothingToSave, props.isReadOnly],
   )
 

@@ -1,20 +1,8 @@
 import {css, cx} from "@emotion/css"
 import React, {PropsWithChildren, useCallback, useRef} from "react"
 import {useNkTheme} from "../../containers/theme"
-import {AddonIcon} from "../table/SearchFilter"
 import {InputProps, ThemedInput} from "./ThemedInput"
-
-export const ClearIcon = () => {
-  const {theme} = useNkTheme()
-  const iconStyles = css({
-    path: {
-      fill: theme.colors.mutedColor,
-    },
-  })
-  return (
-    <AddonIcon className={iconStyles} svg="toolbarButtons/delete.svg"/>
-  )
-}
+import {ClearIcon} from "../table/SearchFilter"
 
 type Props = PropsWithChildren<InputProps> & {
   onClear?: () => void,

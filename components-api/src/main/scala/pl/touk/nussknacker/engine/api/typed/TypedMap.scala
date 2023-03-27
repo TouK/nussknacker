@@ -16,7 +16,7 @@ class TypedMap(map: ju.Map[String, Any]) extends ju.HashMap[String, Any](map) {
 
 object TypedMap {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   def apply(scalaFields: Map[String, Any]): TypedMap = {
     new TypedMap(scalaFields.asJava)

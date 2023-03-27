@@ -7,7 +7,7 @@ import java.util.ServiceLoader
 import scala.reflect.ClassTag
 
 object ScalaServiceLoader {
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   def load[T](classLoader: ClassLoader)(implicit classTag: ClassTag[T]): List[T] = {
     val claz: Class[T] = toClass(classTag)

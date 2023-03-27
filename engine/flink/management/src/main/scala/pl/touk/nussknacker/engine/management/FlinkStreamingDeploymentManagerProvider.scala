@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.management
 
+import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine._
-import _root_.sttp.client.{NothingT, SttpBackend}
+import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -18,29 +18,25 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                       sttpBackend: SttpBackend[Future, Any],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val flinkConfig = config.rootAs[FlinkConfig]
-    new FlinkStreamingRestManager(flinkConfig, modelData)
-  }
-
-  override def createQueryableClient(config: Config): Option[QueryableClient] = {
-    val flinkConfig = config.rootAs[FlinkConfig]
-    flinkConfig.queryableStateProxyUrl.map(FlinkQueryableClient(_))
+    CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded(
+      new FlinkStreamingRestManager(flinkConfig, modelData),
+      config)
   }
 
   override def name: String = "flinkStreaming"
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(Some(1)))
 
-  override def supportsSignals: Boolean = true
 }
 
 object FlinkStreamingDeploymentManagerProvider {
 
-  def defaultDeploymentManager(config: Config)
+  def defaultDeploymentManager(config: ConfigWithUnresolvedVersion)
                               (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                               sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
+                               sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val typeConfig = ProcessingTypeConfig.read(config)
     new FlinkStreamingDeploymentManagerProvider().createDeploymentManager(ModelData(typeConfig), typeConfig.deploymentConfig)
   }

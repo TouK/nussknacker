@@ -27,7 +27,7 @@ import org.apache.flink.api.java.typeutils.TupleTypeInfoBase
 
 import java.util
 import java.util.regex.{Matcher, Pattern}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
 
 /**

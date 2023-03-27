@@ -33,7 +33,7 @@ describe("Process", () => {
       cy.contains(/^archive/i).should("be.enabled").click()
       cy.contains("want to archive").should("be.visible")
       cy.contains(/^yes$/i).should("be.enabled").click()
-      cy.contains(/^archived visible$/i, {timeout: 60000}).should("be.visible")
+      cy.contains(/^archived$/i, {timeout: 60000}).should("be.visible")
       cy.contains(this.processName).should("be.visible").click({force: true})
       cy.contains(/scenario was archived/i).should("be.visible")
     })
@@ -84,33 +84,30 @@ describe("Process", () => {
     })
 
     it("should allow drag node", () => {
-      cy.contains(/^layout$/).click()
       cy.get("[title='toggle left panel']").click()
-      cy.get("[model-id=dynamicService]")
-        .should("be.visible")
-        .trigger("mousedown")
-        .trigger("mousemove", {clientX: 100, clientY: 100})
-        .trigger("mouseup", {force: true})
-      cy.get(".graphPage").matchImage(screenshotOptions)
+      cy.layoutScenario()
+      cy.dragNode("dynamicService", {x: 150, y: 150})
+      cy.get("[data-testid=graphPage]").matchImage(screenshotOptions)
     })
 
     it("should allow drag component and drop on edge", () => {
-      cy.contains(/^layout$/).click()
       cy.contains(/^custom$/)
         .should("be.visible").click()
+      cy.layoutScenario()
       cy.get("[data-testid='component:customFilter']")
         .should("be.visible")
         .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
-      cy.get(".graphPage").matchImage(screenshotOptions)
+      cy.get("[data-testid=graphPage]").matchImage(screenshotOptions)
+      //why save and test snapshot? mistake?
       cy.contains(/^save$/i).click()
       cy.get("[data-testid=window]").contains(/^ok$/i).click()
       cy.get("[data-testid=window]").should("not.exist")
       cy.get("#nk-graph-main").should("be.visible")
-      cy.wait(100)
-      cy.get(".graphPage").matchImage(screenshotOptions)
+      cy.get("[data-testid=graphPage]").matchImage(screenshotOptions)
     })
 
     it("should have counts button and modal", () => {
+      cy.viewport("macbook-15")
       cy.contains(/^counts$/i).as("button")
       cy.get("@button").should("be.visible").matchImage()
       cy.get("@button").click()
@@ -189,7 +186,7 @@ describe("Process", () => {
     })
     cy.visitNewProcess(seed, "switch")
     cy.viewport(1500, 800)
-    cy.contains(/^layout$/).click()
+    cy.layoutScenario()
 
     cy.getNode("switch")
       .click()
@@ -231,7 +228,7 @@ describe("Process", () => {
     })
     cy.visitNewProcess(seed, "filter")
     cy.viewport(1500, 800)
-    cy.contains(/^layout$/).click()
+    cy.layoutScenario()
 
     cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
     cy.wait("@validation")

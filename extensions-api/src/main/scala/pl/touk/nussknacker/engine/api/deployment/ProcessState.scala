@@ -4,6 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import java.net.URI
@@ -48,9 +49,22 @@ object ProcessActionType extends Enumeration {
   val Archive: Value = Value("ARCHIVE")
   val UnArchive: Value = Value("UNARCHIVE")
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
+
+  val defaultActions: List[ProcessActionType] = Nil
+}
+
+object ProcessActionState extends Enumeration {
+  implicit val typeEncoder: Encoder[ProcessActionState.Value] = Encoder.encodeEnumeration(ProcessActionState)
+  implicit val typeDecoder: Decoder[ProcessActionState.Value] = Decoder.decodeEnumeration(ProcessActionState)
+
+  type ProcessActionState = Value
+  val InProgress: Value = Value("IN_PROGRESS")
+  val Finished: Value = Value("FINISHED")
+  val Failed: Value = Value("FAILED")
 }
 
 object StateStatus {
+  type StatusName = String
   implicit val configuration: Configuration = Configuration
     .default
     .withDefaults
@@ -65,31 +79,48 @@ object StateStatus {
 
   def isRunning: Boolean = false
   def isFailed: Boolean = false
-  def name: String
+  def name: StatusName
 
 }
 
-final case class AllowDeployStateStatus(name: String) extends StateStatus
+final case class AllowDeployStateStatus(name: StatusName) extends StateStatus
 
-final case class NotEstablishedStateStatus(name: String) extends StateStatus
+final case class NotEstablishedStateStatus(name: StatusName) extends StateStatus
 
-final case class DuringDeployStateStatus(name: String) extends StateStatus {
+final case class DuringDeployStateStatus(name: StatusName) extends StateStatus {
   override def isDuringDeploy: Boolean = true
 }
 
-final case class FinishedStateStatus(name: String) extends StateStatus {
+final case class FinishedStateStatus(name: StatusName) extends StateStatus {
   override def isFinished: Boolean = true
 }
 
-final case class RunningStateStatus(name: String) extends StateStatus {
+final case class RunningStateStatus(name: StatusName) extends StateStatus {
   override def isRunning: Boolean = true
 }
 
-final case class FailedStateStatus(name: String) extends StateStatus {
+final case class FailedStateStatus(name: StatusName) extends StateStatus {
   override def isFailed: Boolean = true
 }
 
 // This status class is a walk around for fact that StateStatus is encoded and decoded. It causes that there is no easy option
 // to add own status with some specific fields without passing Encoders and Decoders to many places in application.
 // TODO: we should find places where StateStatuses are encoded and decoded and replace them with some DTOs for this purpose
-class CustomStateStatus(val name: String) extends StateStatus
+class CustomStateStatus(val name: StatusName) extends StateStatus
+
+/**
+  * It is used to specify:
+  * <ul>
+  *   <li>fixed default properties of a status: icon, tooltip, descripition
+  *   <li>fixed set of properties of filtering options: displayableName, icon tooltip
+  * </ul>
+  * When a status has dynamic properties use ProcessStateDefinitionManager to handle them.
+  *
+  * @see default values of a status in [[ProcessStateDefinitionManager]]
+  * @see filtering options in [[UIStateDefinition]]
+  * @see overriding state definitions in [[OverridingProcessStateDefinitionManager]]
+  */
+case class StateDefinitionDetails(displayableName: String,
+                                  icon: Option[URI],
+                                  tooltip: Option[String],
+                                  description: Option[String])

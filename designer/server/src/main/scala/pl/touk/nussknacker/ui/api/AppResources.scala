@@ -6,19 +6,21 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.SecurityDirectives
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
-import db.util.DBIOActionInstances.DB
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessState}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessService}
+import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
@@ -30,8 +32,9 @@ class AppResources(config: Config,
                    modelData: ProcessingTypeDataProvider[ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
-                   processService: ProcessService,
-                   exposeConfig: Boolean
+                   deploymentService: DeploymentService,
+                   exposeConfig: Boolean,
+                   processCategoryService: ProcessCategoryService
                   )(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with RouteWithoutUser with SecurityDirectives {
 
@@ -47,8 +50,8 @@ class AppResources(config: Config,
       get {
         complete {
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
-          val globalBuildInfo = (BuildInfo.toMap.mapValues(_.toString) ++ configuredBuildInfo).mapValues(_.asJson)
-          val modelDataInfo = modelData.all.mapValues(_.configCreator.buildInfo()).asJson
+          val globalBuildInfo = (BuildInfo.toMap.mapValuesNow(_.toString) ++ configuredBuildInfo).mapValuesNow(_.asJson)
+          val modelDataInfo = modelData.all.mapValuesNow(_.configCreator.buildInfo()).asJson
           (globalBuildInfo + ("processingType" -> modelDataInfo)).asJson
         }
       }
@@ -70,13 +73,13 @@ class AppResources(config: Config,
       path("healthCheck" / "process" / "deployment") {
         get {
           complete {
-            notRunningProcessesThatShouldRun.map[Future[HttpResponse]] { set =>
+            processesWithProblemStateStatus.map[Future[HttpResponse]] { set =>
               if (set.isEmpty) {
                 createHealthCheckHttpResponse(OK)
               } else {
-                logger.warn(s"Scenarios not running: ${set.keys}")
-                logger.debug(s"Scenarios not running - more details: $set")
-                createHealthCheckHttpResponse(ERROR, Some("Deployed scenarios not running (probably failed)"), Some(set.keys.toSet))
+                logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
+                logger.debug(s"Scenarios with status PROBLEM: $set")
+                createHealthCheckHttpResponse(ERROR, Some("Scenarios with status PROBLEM"), Some(set.keys.toSet))
               }
             }.recover[Future[HttpResponse]] {
               case NonFatal(e) =>
@@ -95,6 +98,12 @@ class AppResources(config: Config,
                 createHealthCheckHttpResponse(ERROR, Some("Scenarios with validation errors"), Some(processes.toSet))
               }
             }
+          }
+        }
+      } ~ path("config" / "categoriesWithProcessingType") {
+        get {
+          complete {
+            processCategoryService.getUserCategoriesWithType(user)
           }
         }
       } ~ path("config") {
@@ -121,28 +130,28 @@ class AppResources(config: Config,
       }
     }
 
-  private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser): Future[Map[String, ProcessState]] = {
+  private def processesWithProblemStateStatus(implicit ec: ExecutionContext, user: LoggedUser): Future[Map[String, ProcessState]] = {
     for {
       processes <- processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.deployed)
-      statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
-    } yield {
-      statusMap.filterNot{
-        case (_, status) => status.isDeployed
-      }.map{
-        case (process, status) => (process.name, status)
+      statusMap <- Future.sequence(mapNameToProcessState(processes)).map(_.toMap)
+      withProblem = statusMap.collect {
+        case (name, processStatus@ProcessState(_, _@ProblemStateStatus(_, _), _, _, _, _, _, _, _, _)) => (name, processStatus)
       }
-    }
+    } yield withProblem
   }
 
   private def processesWithValidationErrors(implicit ec: ExecutionContext, user: LoggedUser): Future[List[String]] = {
     processRepository.fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchivedProcesses).map { processes =>
       val processesWithErrors = processes
-        .map(process => new ValidatedDisplayableProcess(process.json, processValidation.validate(process.json, process.processCategory)))
+        .map(process => new ValidatedDisplayableProcess(process.json, processValidation.validate(process.json)))
         .filter(process => !process.validationResult.errors.isEmpty)
       processesWithErrors.map(_.id)
     }
   }
 
-  private def statusList(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, ProcessState)]] =
-    processes.map(process => processService.getProcessState(process.idWithName).map((process.name, _)))
+  private def mapNameToProcessState(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser) : Seq[Future[(String, ProcessState)]] = {
+    // Problems should be detected by Healtcheck very quickly. Because of that we return fresh states for list of processes
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    processes.map(process => deploymentService.getProcessState(process).map((process.name, _)))
+  }
 }

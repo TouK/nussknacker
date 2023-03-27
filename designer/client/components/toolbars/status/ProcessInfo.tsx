@@ -3,20 +3,13 @@ import React, {memo} from "react"
 import {connect} from "react-redux"
 import {SwitchTransition} from "react-transition-group"
 import {RootState} from "../../../reducers"
-import {
-  getFetchedProcessDetails,
-  getProcessUnsavedNewName,
-  isProcessRenamed,
-} from "../../../reducers/selectors/graph"
-import {
-  getProcessState,
-  isProcessStateLoaded
-} from "../../../reducers/selectors/scenarioState";
+import {getFetchedProcessDetails, getProcessUnsavedNewName, isProcessRenamed} from "../../../reducers/selectors/graph"
+import {getProcessState, isProcessStateLoaded} from "../../../reducers/selectors/scenarioState"
 import {getCustomActions} from "../../../reducers/selectors/settings"
 import {UnknownRecord} from "../../../types/common"
 import {CssFade} from "../../CssFade"
 import ProcessStateIcon from "../../Process/ProcessStateIcon"
-import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
+import {ToolbarWrapper} from "../../toolbarComponents/ToolbarWrapper"
 import {DefaultToolbarPanel, ToolbarPanelProps} from "../../toolbarComponents/DefaultToolbarPanel"
 import {DragHandle} from "../../toolbarComponents/DragHandle"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
@@ -36,20 +29,16 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
     const transitionKey = ProcessStateUtils.getTransitionKey(process, processState)
     // TODO: better styling of process info toolbar in case of many custom actions
     return (
-      <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id={this.props.id}>
+      <ToolbarWrapper title={i18next.t("panels.status.title", "Status")} id={this.props.id}>
         <DragHandle>
           <SwitchTransition>
             <CssFade key={transitionKey}>
               <div className={"panel-process-info"}>
                 <div className={"process-info-icon"}>
                   <ProcessStateIcon
-                    popover={true}
-                    animation={true}
                     process={process}
                     processState={processState}
                     isStateLoaded={isStateLoaded}
-                    height={32}
-                    width={32}
                   />
                 </div>
                 <div className={"process-info-text"}>
@@ -73,7 +62,7 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
             }
           </ToolbarButtons>
         </DragHandle>
-      </CollapsibleToolbar>
+      </ToolbarWrapper>
     )
   }
 }

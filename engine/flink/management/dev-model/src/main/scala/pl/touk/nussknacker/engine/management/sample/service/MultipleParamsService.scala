@@ -15,5 +15,5 @@ case object MultipleParamsService extends Service {
              )
              bar: String,
              @ParamName("baz") baz: String,
-             @ParamName("quax") quax: String) = Future.successful(Unit)
+             @ParamName("quax") quax: String) = Future.successful(())
 }

@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets
 
 class JsonTypedMapDeserializationTest extends AnyFunSuite with Matchers {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   test("should deserialize to java object") {
 

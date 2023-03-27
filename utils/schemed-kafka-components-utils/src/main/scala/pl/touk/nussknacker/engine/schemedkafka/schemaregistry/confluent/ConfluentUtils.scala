@@ -2,22 +2,19 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider, AvroSchemaUtils}
+import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider}
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata
 import io.confluent.kafka.schemaregistry.json.JsonSchema
-import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericContainer, GenericDatumWriter}
-import org.apache.avro.io.{DecoderFactory, EncoderFactory}
-import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
+import org.apache.avro.generic.GenericContainer
 import org.apache.kafka.common.errors.SerializationException
 import org.everit.json.schema.{Schema => EveritSchema}
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
-import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaWithMetadata}
 
 import java.io.{ByteArrayOutputStream, DataOutputStream, OutputStream}
 import java.nio.ByteBuffer
-import java.util
 
 object ConfluentUtils extends LazyLogging {
 
@@ -42,14 +39,21 @@ object ConfluentUtils extends LazyLogging {
     case ValueSubjectPattern(value) => value
   }
 
+  def toSchemaWithMetadata(schemaMetadata: SchemaMetadata): SchemaWithMetadata = {
+    SchemaWithMetadata.fromRawSchema(schemaMetadata.getSchemaType, schemaMetadata.getSchema, SchemaId.fromInt(schemaMetadata.getId))
+  }
+
+  def loadAvroSchemaFromResource(path: String): AvroSchema =
+    convertToAvroSchema(AvroUtils.loadSchemaFromResource(path))
+
   def convertToAvroSchema(schema: Schema, version: Option[Int] = None): AvroSchema =
     version.map(new AvroSchema(schema, _)).getOrElse(new AvroSchema(schema))
 
+  def loadJsonSchemaFromResource(path: String): JsonSchema =
+    convertToJsonSchema(JsonSchemaBuilder.loadSchemaFromResource(path))
+
   def convertToJsonSchema(schema: EveritSchema, version: Option[Int] = None): JsonSchema =
     version.map(new JsonSchema(schema, _)).getOrElse(new JsonSchema(schema))
-
-  def extractSchema(parsedSchema: ParsedSchema): Schema =
-    parsedSchema.rawSchema().asInstanceOf[Schema]
 
   def parsePayloadToByteBuffer(payload: Array[Byte]): Validated[IllegalArgumentException, ByteBuffer] = {
     val buffer = ByteBuffer.wrap(payload)
@@ -63,67 +67,38 @@ object ConfluentUtils extends LazyLogging {
       Validated.valid(buffer)
   }
 
-  def readIdAndGetBuffer(bytes: Array[Byte]): Validated[IllegalArgumentException, (Int, ByteBuffer)] = ConfluentUtils
+  def readIdAndGetBuffer(bytes: Array[Byte]): Validated[IllegalArgumentException, (SchemaId, ByteBuffer)] = ConfluentUtils
     .parsePayloadToByteBuffer(bytes)
-    .map(b => (b.getInt(), b))
+    .map(b => (SchemaId.fromInt(b.getInt()), b))
 
-  def readIdAndGetBufferUnsafe(bytes: Array[Byte]): (Int, ByteBuffer) = readIdAndGetBuffer(bytes)
+  def readIdAndGetBufferUnsafe(bytes: Array[Byte]): (SchemaId, ByteBuffer) = readIdAndGetBuffer(bytes)
     .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
 
-  def readId(bytes: Array[Byte]): Int = readIdAndGetBufferUnsafe(bytes)._1
+  def readId(bytes: Array[Byte]): SchemaId = readIdAndGetBufferUnsafe(bytes)._1
 
   /**
     * Based on serializeImpl from [[io.confluent.kafka.serializers.AbstractKafkaAvroSerializer]]
     */
-  def serializeContainerToBytesArray(container: GenericContainer, schemaId: Int): Array[Byte] = {
+  def serializeContainerToBytesArray(container: GenericContainer, schemaId: SchemaId): Array[Byte] = {
     val output = new ByteArrayOutputStream()
-    writeSchemaId(schemaId, output)
-
-    val data = container match {
-      case non: NonRecordContainer => non.getValue
-      case any => any
+    try {
+      writeSchemaId(schemaId, output)
+      AvroUtils.serializeContainerToBytesArray(container, output)
+      output.toByteArray
+    } finally {
+      output.close()
     }
-
-    data match {
-      case v: ByteBuffer =>
-        output.write(v.array())
-      case v: Array[Byte] =>
-        output.write(v)
-      case v =>
-        val writer = data match {
-          case _: SpecificRecord =>
-            new SpecificDatumWriter[Any](container.getSchema, AvroUtils.specificData)
-          case _ =>
-            new GenericDatumWriter[Any](container.getSchema, AvroUtils.genericData)
-        }
-
-        val encoder = EncoderFactory.get().binaryEncoder(output, null)
-        writer.write(v, encoder)
-        encoder.flush()
-    }
-
-    val bytes = output.toByteArray
-    output.close()
-    bytes
   }
 
-  def writeSchemaId(schemaId: Int, stream: OutputStream): Unit = {
+  def writeSchemaId(schemaId: SchemaId, stream: OutputStream): Unit = {
     val dos = new DataOutputStream(stream)
     dos.write(MagicByte)
-    dos.writeInt(schemaId)
+    dos.writeInt(schemaId.asInt)
   }
 
-  def deserializeSchemaIdAndData[T](payload: Array[Byte], readerWriterSchema: Schema): (Int, T) = {
+  def deserializeSchemaIdAndData[T](payload: Array[Byte], readerWriterSchema: Schema): (SchemaId, T) = {
     val schemaId = ConfluentUtils.readId(payload)
-
-    val data = if (readerWriterSchema.getType.equals(Schema.Type.BYTES)) {
-      util.Arrays.copyOfRange(payload, ConfluentUtils.HeaderSize, payload.length).asInstanceOf[T]
-    } else {
-      val decoder = DecoderFactory.get().binaryDecoder(payload, ConfluentUtils.HeaderSize, payload.length - ConfluentUtils.HeaderSize, null)
-      val reader = StringForcingDatumReaderProvider.genericDatumReader[T](readerWriterSchema, readerWriterSchema, AvroUtils.genericData)
-      reader.read(null.asInstanceOf[T], decoder)
-    }
-
+    val data = AvroUtils.deserialize[T](payload, readerWriterSchema, HeaderSize)
     (schemaId, data)
   }
 

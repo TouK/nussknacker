@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.json.swagger.extractor
 import io.circe.{Json, JsonNumber, JsonObject}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
@@ -12,11 +12,12 @@ import scala.util.Try
 // TODO: Validated
 object JsonToNuStruct {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   case class JsonToObjectError(json: Json, definition: SwaggerTyped, path: String)
     extends Exception(s"JSON returned by service has invalid type at $path. Expected: $definition. Returned json: $json")
 
+  //TODO: remove flow control using exceptions
   def apply(json: Json, definition: SwaggerTyped, path: String = ""): AnyRef = {
 
     def extract[A](fun: Json => Option[A], trans: A => AnyRef = identity[AnyRef] _): AnyRef =
@@ -24,15 +25,25 @@ object JsonToNuStruct {
 
     def addPath(next: String): String = if (path.isEmpty) next else s"$path.$next"
 
-    def extractObject(obj: SwaggerObject): AnyRef =
+    def extractObject(obj: SwaggerObject): AnyRef = {
+      object KeyMatchingPatternSchema {
+        def unapply(keyValue: (String, Json)): Option[SwaggerTyped] = {
+          val (propertyName, _) = keyValue
+          obj.patternProperties.find(_.testPropertyName(propertyName)).map(_.propertyType)
+        }
+      }
+
       extract[JsonObject](
         _.asObject,
         jo => TypedMap(
           jo.toMap.collect {
             case (key, value) if obj.elementType.contains(key) =>
               key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
+            case keyValue@KeyMatchingPatternSchema(patternPropertySchema) =>
+              val (key, value) = keyValue
+              key -> JsonToNuStruct(value, patternPropertySchema, addPath(key))
             case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled => obj.additionalProperties match {
-              case add: AdditionalPropertiesSwaggerTyped =>
+              case add: AdditionalPropertiesEnabled =>
                 key -> JsonToNuStruct(value, add.value, addPath(key))
               case _ =>
                 key -> jsonToAny(value)
@@ -40,44 +51,47 @@ object JsonToNuStruct {
           }
         )
       )
-
-    def extractMap(valuesType: Option[SwaggerTyped]): AnyRef = extract[JsonObject](
-      _.asObject,
-      jo => TypedMap(jo.toMap.collect {
-        case (key, value) if valuesType.isDefined => key -> JsonToNuStruct(value, valuesType.get, addPath(key))
-        case (key, value) => key -> jsonToAny(value)
-      })
-    )
-
-    definition match {
-      case _ if json.isNull =>
-        null
-      case SwaggerString =>
-        extract(_.asString)
-      case SwaggerEnum(_) =>
-        extract(_.asString)
-      case SwaggerBool =>
-        extract(_.asBoolean, boolean2Boolean)
-      case SwaggerLong =>
-        //FIXME: to ok?
-        extract[JsonNumber](_.asNumber, n => long2Long(n.toDouble.toLong))
-      case SwaggerDateTime =>
-        extract(_.asString, parseDateTime)
-      case SwaggerTime =>
-        extract(_.asString, parseTime)
-      case SwaggerDate =>
-        extract(_.asString, parseDate)
-      case SwaggerDouble =>
-        extract[JsonNumber](_.asNumber, n => double2Double(n.toDouble))
-      case SwaggerBigDecimal =>
-        extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
-      case SwaggerArray(elementType) =>
-        extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
-      case obj: SwaggerObject => extractObject(obj)
-      case SwaggerMap(maybeTyped) => extractMap(maybeTyped)
-      case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
-        .headOption.getOrElse(throw JsonToObjectError(json, u, path))
     }
+
+    //we handle null here to enable pattern matching exhaustive check
+    if (json.isNull) {
+      null
+    } else {
+      definition match {
+        case SwaggerString =>
+          extract(_.asString)
+        case SwaggerEnum(_) =>
+          extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
+        case SwaggerBool =>
+          extract(_.asBoolean, boolean2Boolean)
+        case SwaggerInteger =>
+          extract[JsonNumber](_.asNumber, n => int2Integer(n.toDouble.toInt))
+        case SwaggerLong =>
+          //FIXME: to ok?
+          extract[JsonNumber](_.asNumber, n => long2Long(n.toDouble.toLong))
+        case SwaggerBigInteger =>
+          extract[JsonNumber](_.asNumber, _.toBigInt.map(_.bigInteger).orNull)
+        case SwaggerDateTime =>
+          extract(_.asString, parseDateTime)
+        case SwaggerTime =>
+          extract(_.asString, parseTime)
+        case SwaggerDate =>
+          extract(_.asString, parseDate)
+        case SwaggerDouble =>
+          extract[JsonNumber](_.asNumber, n => double2Double(n.toDouble))
+        case SwaggerBigDecimal =>
+          extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
+        case SwaggerArray(elementType) =>
+          extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
+        case obj: SwaggerObject => extractObject(obj)
+        case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
+          .headOption.getOrElse(throw JsonToObjectError(json, u, path))
+        case SwaggerAny => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
+        //should not happen as we handle null above
+        case SwaggerNull => throw JsonToObjectError(json, definition, path)
+      }
+    }
+
   }
 
   //we want to accept empty string - just in case...
@@ -100,13 +114,4 @@ object JsonToNuStruct {
       OffsetTime.parse(time, DateTimeFormatter.ISO_OFFSET_TIME)
     }.orNull
   }
-
-  private def jsonToAny(json: Json): Any = json.fold(
-    jsonNull = null,
-    jsonBoolean = identity[Boolean],
-    jsonNumber = _.toBigDecimal.map(_.bigDecimal).orNull, //we need here java BigDecimal type
-    jsonString = identity[String],
-    jsonArray = _.map(jsonToAny).asJava,
-    jsonObject = _.toMap.mapValuesNow(jsonToAny).asJava
-  )
 }

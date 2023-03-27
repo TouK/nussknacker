@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CustomComponentContext, LiteCustomComponent}
 import pl.touk.nussknacker.engine.lite.api.utils.transformers.SingleElementComponent
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 
 object ForEachTransformer extends CustomStreamTransformer {

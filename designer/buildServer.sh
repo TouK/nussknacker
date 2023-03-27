@@ -3,4 +3,4 @@
 set -e
 
 cd "$(dirname -- "$0")"/..
-addDevArtifacts=true sbt "set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty; dist/Universal/stage"
+addManagerArtifacts=true sbt "designer/assembly; prepareDev"

@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.requestresponse.utils
 
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
-import pl.touk.nussknacker.engine.api.test.TestDataParser
+import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, ParamName}
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponseSourceFactory}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class TypedMapRequestResponseSourceFactory extends RequestResponseSourceFactory {
 
@@ -15,11 +16,11 @@ class TypedMapRequestResponseSourceFactory extends RequestResponseSourceFactory 
     override val nodeId: NodeId = nodeIdPassed
 
     //TODO: type conversions??
-    override def parse(parameters: Map[String, List[String]]): TypedMap = TypedMap(parameters.mapValues(_.head))
+    override def parse(parameters: Map[String, List[String]]): TypedMap = TypedMap(parameters.mapValuesNow(_.head))
 
     override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
 
-    override def testDataParser: TestDataParser[TypedMap] = new QueryStringTestDataParser
+    override def testRecordParser: TestRecordParser[TypedMap] = new QueryStringTestDataParser
   }
 
 }

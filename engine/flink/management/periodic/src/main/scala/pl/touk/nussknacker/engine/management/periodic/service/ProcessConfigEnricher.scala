@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 import pl.touk.nussknacker.engine.management.periodic.service.ProcessConfigEnricher.{DeployData, EnrichedProcessConfig, InitialScheduleData}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -55,12 +55,12 @@ object ProcessConfigEnricher {
 }
 
 trait ProcessConfigEnricherFactory {
-  def apply(config: Config)(implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext): ProcessConfigEnricher
+  def apply(config: Config)(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): ProcessConfigEnricher
 }
 
 object ProcessConfigEnricherFactory {
   def noOp: ProcessConfigEnricherFactory = new ProcessConfigEnricherFactory {
-    override def apply(config: Config)(implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext): ProcessConfigEnricher = {
+    override def apply(config: Config)(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): ProcessConfigEnricher = {
       ProcessConfigEnricher.identity
     }
   }

@@ -8,18 +8,18 @@ SEED=`date +%s`
   input_topic="input_$SEED"
   output_topic="output_$SEED"
   name="Pong-$SEED"
-
+  # wait to be sure SR is alive
+  sleep 2
   define_schema $input_topic
   create_topic $input_topic
   define_schema $output_topic
   create_topic $output_topic
 
   prepare_deployed_scenario $name $SEED
-
   message="{\"amount\":2,\"clientId\":\"1\"}"
-
   send_message $input_topic $message
-  sleep 5
+  # wait to be sure NU processed input event
+  sleep 3
   output_read=$(read_message $output_topic)
   #TODO: metryki
   [ "$output_read" = "$message" ]

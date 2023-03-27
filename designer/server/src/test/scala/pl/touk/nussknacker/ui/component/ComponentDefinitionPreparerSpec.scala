@@ -19,6 +19,7 @@ import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.FragmentObjectDefinition
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with TestPermissions with OptionValues {
 
@@ -53,7 +54,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
     edgeTypes.toSet shouldBe Set(
       NodeEdges(NodeTypeId("Split"), List(), true, false),
-      NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression("spel", "true")), SwitchDefault), true, false),
+      NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression.spel("true")), SwitchDefault), true, false),
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), false, false),
       NodeEdges(NodeTypeId("SubprocessInput", Some("sub1")), List(SubprocessOutput("out1"), SubprocessOutput("out2")), false, false)
     )
@@ -117,16 +118,16 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   }
 
   test("return default value defined in parameter") {
-    val defaultValue = "'fooDefault'"
-    val parameter = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValue))
+    val defaultValueExpression = Expression("fooLang", "'fooDefault'")
+    val parameter = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValueExpression))
     val definition = ProcessDefinitionBuilder.empty.withCustomStreamTransformer("fooTransformer", classOf[Object],
-      CustomTransformerAdditionalData(Set.empty, manyInputs = false, canBeEnding = true), parameter)
+      CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true), parameter)
 
     val groups = prepareGroups(Map.empty, Map.empty, definition)
     val transformerGroup = groups.find(_.name == ComponentGroupName("optionalEndingCustom")).value
     inside(transformerGroup.components.head.node) {
       case withParameters: WithParameters =>
-        withParameters.parameters.head.expression.expression shouldEqual defaultValue
+        withParameters.parameters.head.expression shouldEqual defaultValueExpression
     }
   }
 
@@ -155,16 +156,16 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
   test("should merge default value maps") {
     val fixed = Map(
-      "service" -> SingleComponentConfig(Some(Map("a" -> "x", "b" -> "y").mapValues(dv => ParameterConfig(Some(dv), None, None, None))), None, Some("doc"), None, None)
+      "service" -> SingleComponentConfig(Some(Map("a" -> "x", "b" -> "y").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None))), None, Some("doc"), None, None)
     )
 
     val dynamic = Map(
-      "service" -> SingleComponentConfig(Some(Map("a" -> "xx", "c" -> "z").mapValues(dv => ParameterConfig(Some(dv), None, None, None))), None, Some("doc1"), None, None)
+      "service" -> SingleComponentConfig(Some(Map("a" -> "xx", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None))), None, Some("doc1"), None, None)
     )
 
     val expected = Map(
       "service" -> SingleComponentConfig(
-        Some(Map("a" -> "x", "b" -> "y", "c" -> "z").mapValues(dv => ParameterConfig(Some(dv), None, None, None))),
+        Some(Map("a" -> "x", "b" -> "y", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None))),
         None,
         Some("doc"),
         None,
@@ -184,8 +185,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val subprocessInputs = Map[String, FragmentObjectDefinition]()
     val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty, processCategoryService)
-    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.componentConfig)
-    val fixedComponentsConfig = fixedConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
+    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
+    val fixedComponentsConfig = fixedConfig.mapValuesNow(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
     val componentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
 
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
@@ -195,7 +196,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2),
+      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2),
       TestProcessingTypes.Streaming
     )
     groups
@@ -210,7 +211,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       componentsConfig = Map(),
       componentsGroupMapping =  Map(),
       processCategoryService = processCategoryService,
-      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValues(_._2),
+      customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2),
       TestProcessingTypes.Streaming
     )
     groups

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api.state
 
 import scala.collection.immutable.TreeMap
+import scala.collection.compat._
 
 object MultiMap {
   def apply[K:Ordering, V] : MultiMap[K, V] = MultiMap(TreeMap())
@@ -36,9 +37,9 @@ case class MultiMap[K, V](map: TreeMap[K, List[V]]) {
 
   }
 
-  def from(minimalKey: K) = MultiMap(map.from(minimalKey))
+  def from(minimalKey: K) = MultiMap(map.rangeFrom(minimalKey))
 
-  def until(minimalKey: K) = MultiMap(map.until(minimalKey))
+  def until(minimalKey: K) = MultiMap(map.rangeUntil(minimalKey))
 
 
 }

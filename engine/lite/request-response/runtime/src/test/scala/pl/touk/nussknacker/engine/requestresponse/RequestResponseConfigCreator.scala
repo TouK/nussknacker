@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.NodeId
@@ -73,14 +72,12 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = ExpressionConfig(Map.empty, List.empty)
 
-  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
-
   override def buildInfo(): Map[String, String] = Map.empty
 }
 
 @JsonCodec case class Request1(field1: String, field2: String) {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   def toList: java.util.List[String] = List(field1, field2).asJava
 }
@@ -90,7 +87,7 @@ case class Request2(field12: String, field22: String)
 case class Request3(field13: String, field23: String)
 
 @JsonCodec case class RequestNumber(number: Int) {
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
   def toList: java.util.List[Int] = (0 to number).asJava
 }
 

@@ -44,9 +44,9 @@ Now head function is ready, and we can run nussknacker and see that
 
 ## Specifying parameters
 
-Sometimes we want to use parameters that are more specific than what scala or
-java can offer us. In such cases we need to manually specify types of
-parameters and result. We will write custom `plus` that will work with
+Sometimes we want to use parameters that are more specific than what Scala or
+Java can offer. In such cases we need to manually specify types of
+the parameters and the result. We will write a custom `plus` that will work with
 integers, floats and strings.
 
 We will start implementing the function itself and declaring typing function

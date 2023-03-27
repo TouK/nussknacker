@@ -1,5 +1,5 @@
 import {css} from "@emotion/css"
-import {dia} from "jointjs"
+import {dia, g} from "jointjs"
 import {debounce, throttle} from "lodash"
 import svgPanZoom from "svg-pan-zoom"
 import {CursorMask} from "./CursorMask"
@@ -19,7 +19,7 @@ export class PanZoomPlugin {
   private instance: SvgPanZoom.Instance
   private animationClassHolder: HTMLElement
 
-  constructor(paper: dia.Paper) {
+  constructor(private paper: dia.Paper) {
     this.cursorMask = new CursorMask()
     this.instance = svgPanZoom(paper.svg, {
       fit: false,
@@ -108,4 +108,38 @@ export class PanZoomPlugin {
   zoomOut = throttle((): void => {
     this.setAnimationClass({enabled: true})
     this.instance.zoomOut()
-  }, 500)}
+  }, 500)
+
+  private pan = throttle((point: { x: number, y: number }) => {
+    requestAnimationFrame(() => {
+      this.instance.panBy(point)
+    })
+  }, 16 /*~60 pleasant fps*/)
+
+  panToCells = (cells: dia.Cell[], viewport: g.Rect = new g.Rect(this.paper.el.getBoundingClientRect())) => {
+    const localViewport = this.paper.clientToLocalRect(viewport)
+    const cellsBBox = this.paper.model.getCellsBBox(cells).inflate(10, 50)
+
+    if (localViewport.containsRect(cellsBBox)) {
+      return
+    }
+
+    const [top, right, bottom, left] = [
+      -localViewport.topLine().pointOffset(cellsBBox.topMiddle()),
+      -localViewport.rightLine().pointOffset(cellsBBox.rightMiddle()),
+      localViewport.bottomLine().pointOffset(cellsBBox.bottomMiddle()),
+      localViewport.leftLine().pointOffset(cellsBBox.leftMiddle()),
+    ].map(offset => Math.min(20, Math.max(0, offset) / 20))
+
+    const panOffset = {
+      y: Math.round(top - bottom),
+      x: Math.round(left - right),
+    }
+
+    this.pan(panOffset)
+    requestAnimationFrame(() => {
+      this.panToCells(cells, viewport)
+    })
+  }
+}
+

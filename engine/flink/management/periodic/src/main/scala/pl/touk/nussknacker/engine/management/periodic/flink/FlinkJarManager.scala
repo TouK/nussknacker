@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.management.periodic.{JarManager, PeriodicBatch
 import pl.touk.nussknacker.engine.management.rest.{FlinkClient, HttpFlinkClient}
 import pl.touk.nussknacker.engine.management.{FlinkConfig, FlinkDeploymentManager, FlinkModelJar, FlinkStreamingRestManager}
 import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
@@ -20,7 +20,7 @@ private[periodic] object FlinkJarManager {
   def apply(flinkConfig: FlinkConfig,
             periodicBatchConfig: PeriodicBatchConfig,
             modelData: BaseModelData)
-           (implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext): JarManager = {
+           (implicit backend: SttpBackend[Future, Any], ec: ExecutionContext): JarManager = {
     new FlinkJarManager(
       flinkClient = new HttpFlinkClient(flinkConfig),
       jarsDir = Paths.get(periodicBatchConfig.jarsDir),

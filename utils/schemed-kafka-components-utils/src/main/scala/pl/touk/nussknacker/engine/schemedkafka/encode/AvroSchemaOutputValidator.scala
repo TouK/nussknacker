@@ -8,6 +8,7 @@ import org.apache.avro.Schema.Type
 import org.apache.avro.SchemaCompatibility.SchemaCompatibilityType
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.{LogicalTypes, Schema, SchemaCompatibility}
+import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
@@ -20,6 +21,7 @@ import java.util.UUID
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 private[encode] case class AvroSchemaExpected(schema: Schema) extends OutputValidatorExpected {
   override def expected: String = AvroSchemaOutputValidatorPrinter.print(schema)
@@ -28,7 +30,7 @@ private[encode] case class AvroSchemaExpected(schema: Schema) extends OutputVali
 class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {
 
   import cats.implicits.{catsStdInstancesForList, toTraverseOps}
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val valid = Validated.Valid(())
 
@@ -36,17 +38,11 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     LogicalTypes.timeMicros(), LogicalTypes.timestampMillis(), LogicalTypes.timestampMicros()
   )
 
-  private val additionalTypesMapping: Map[Type, Set[Class[_]]] = Map(
-    Type.LONG -> Set(classOf[java.lang.Integer]),
-    Type.FLOAT -> Set(classOf[java.lang.Integer], classOf[java.lang.Long]),
-    Type.DOUBLE -> Set(classOf[java.lang.Integer], classOf[java.lang.Long], classOf[java.lang.Float]),
-  )
-
   /**
     * see {@link pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder} for underlying avro types
     */
-  def validateTypingResultAgainstSchema(typingResult: TypingResult, parentSchema: Schema): ValidatedNel[OutputValidatorError, Unit] =
-    validateTypingResult(typingResult, parentSchema, None)
+  def validate(typingResult: TypingResult, schema: Schema): ValidatedNel[OutputValidatorError, Unit] =
+    validateTypingResult(typingResult, schema, None)
 
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema.getType) match {
@@ -117,7 +113,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       schemaFields.values.filterNot(_.hasDefaultValue).map(_.name())
     }
 
-    val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.filterKeys(schemaFields.contains)
+    val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.filterKeysNow(schemaFields.contains)
 
     def prepareFields(fields: Set[String]) = fields.flatMap(buildPath(_, path))
 
@@ -270,11 +266,8 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   private def canBeSubclassOf(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     val schemaAsTypedResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
-    val additionalTypes = additionalTypesMapping.getOrElse(schema.getType, Set.empty)
-
     (schemaAsTypedResult, typingResult) match {
-      case (schemaType: SingleTypingResult, typing: SingleTypingResult) if schemaType.objType.klass == typing.objType.klass => valid
-      case (_, typing: SingleTypingResult) if additionalTypes.contains(typing.objType.klass) => valid
+      case (schemaType: SingleTypingResult, typing: SingleTypingResult) if ClassUtils.isAssignable(typing.objType.primitiveClass, schemaType.objType.primitiveClass, false) => valid
       case _ => invalid(typingResult, schema, path)
     }
   }

@@ -14,8 +14,7 @@ import scala.concurrent.duration.Duration
 // todo: MetaData should hold ProcessName as id
 @ConfiguredJsonCodec case class MetaData(id: String,
                                          typeSpecificData: TypeSpecificData,
-                                         additionalFields: Option[ProcessAdditionalFields] = None,
-                                         subprocessVersions: Map[String, Long] = Map.empty) { //TODO: field subprocessVersions is deprecate - to remove
+                                         additionalFields: Option[ProcessAdditionalFields] = None) {
   val isSubprocess: Boolean = typeSpecificData.isSubprocess
 }
 

@@ -24,12 +24,13 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
 import java.util
-import scala.collection.convert.Wrappers.SeqWrapper
 import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.util.Using
+import scala.jdk.CollectionConverters._
 
 class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
@@ -64,7 +65,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
     val result = runProcess(process, Request1("a", "b"))
 
-    result shouldBe Valid(List("a", "b"))
+    result.validValue.toSet shouldBe Set("a", "b")
   }
 
   test("collect metrics") {
@@ -199,6 +200,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     result shouldBe Valid(List("abcd withRandomString"))
   }
 
+
   test("recognizes output types") {
 
     val process = ScenarioBuilder
@@ -217,7 +219,8 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
 
     val interpreter2 = prepareInterpreter(process = process2)
-    interpreter2.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed.fromInstance(15))))
+    interpreter2.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(
+      ListMap("str" -> Typed[String], "int" -> Typed.fromInstance(15))))
 
   }
 
@@ -310,13 +313,13 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .emptySink("sink", "response-sink", "value" -> "#outCollector")
 
     val resultE = runProcess(scenario, RequestNumber(numberOfElements))
-    resultE shouldBe 'valid
+    resultE shouldBe Symbol("valid")
     val result = resultE.map(_.asInstanceOf[List[Any]]).getOrElse(throw new AssertionError())
     val validElementList = (0 to numberOfElements).map(s => s"x = ${s * 2}").toSeq
     result should have length 1
 
     inside(result.head) {
-      case resp: SeqWrapper[_] => resp.underlying should contain allElementsOf(validElementList)
+      case resp: java.util.List[_] => resp.asScala should contain allElementsOf(validElementList)
     }
 
   }
@@ -335,22 +338,21 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .emptySink("sink", "response-sink", "value" -> "#outCollector")
 
     val resultE = runProcess(scenario, RequestNumber(numberOfElements))
-    resultE shouldBe 'valid
+    resultE shouldBe Symbol("valid")
     val result = resultE.map(_.asInstanceOf[List[Any]]).getOrElse(throw new AssertionError())
     val validElementList = (0 to numberOfElements).map(s => s"x = $s")
     result should have length 1
 
     inside(result.head) {
-      case resp: SeqWrapper[_] => resp.underlying should contain allElementsOf(validElementList ++ validElementList ++ validElementList )
+      case resp: java.util.List[_] => resp.asScala should contain allElementsOf (validElementList)
     }
-
   }
 
   def runProcess(process: CanonicalProcess,
                  input: Any,
                  creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
                  metricRegistry: MetricRegistry = new MetricRegistry,
-                 contextId: Option[String] = None): ValidatedNel[ErrorType, Any] =
+                 contextId: Option[String] = None): ValidatedNel[ErrorType, List[Any]] =
     Using.resource(prepareInterpreter(
       process = process,
       creator = creator,
@@ -375,7 +377,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val maybeinterpreter = RequestResponseInterpreter[Future](process, ProcessVersion.empty,
       engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
 
-    maybeinterpreter shouldBe 'valid
+    maybeinterpreter shouldBe Symbol("valid")
     val interpreter = maybeinterpreter.toOption.get
     interpreter
   }

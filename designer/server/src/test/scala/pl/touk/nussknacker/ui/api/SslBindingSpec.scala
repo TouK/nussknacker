@@ -9,6 +9,7 @@ import akka.stream.Materializer
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, KeyStoreConfig}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
@@ -20,11 +21,11 @@ import scala.language.higherKinds
 class SslBindingSpec extends AnyFlatSpec with Matchers {
 
   it should "connect to api via SSL" in {
-    implicit val system: ActorSystem = ActorSystem("SslBindingSpec", ConfigWithScalaVersion.TestsConfig)
+    implicit val system: ActorSystem = ActorSystem("SslBindingSpec", ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine)
     implicit val materializer: Materializer = Materializer(system)
 
     val (route, closeables) = NusskanckerDefaultAppRouter.create(
-      system.settings.config,
+      ConfigWithUnresolvedVersion(system.settings.config),
       NussknackerAppInitializer.initDb(system.settings.config),
       new MetricRegistry
     )

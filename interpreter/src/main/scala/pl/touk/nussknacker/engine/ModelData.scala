@@ -25,6 +25,10 @@ object ModelData extends LazyLogging {
   }
 
   def apply(inputConfig: Config, modelClassLoader: ModelClassLoader) : ModelData = {
+    ModelData(ConfigWithUnresolvedVersion(modelClassLoader.classLoader, inputConfig), modelClassLoader)
+  }
+
+  def apply(inputConfig: ConfigWithUnresolvedVersion, modelClassLoader: ModelClassLoader) : ModelData = {
     logger.debug("Loading model data from: " + modelClassLoader)
     ClassLoaderModelData(
       modelConfigLoader => modelConfigLoader.resolveInputConfigDuringExecution(inputConfig, modelClassLoader.classLoader),
@@ -35,8 +39,6 @@ object ModelData extends LazyLogging {
   def duringExecution(inputConfig: Config): ModelData = {
     ClassLoaderModelData(_ => InputConfigDuringExecution(inputConfig), ModelClassLoader(Nil))
   }
-
-  case class ClasspathConfig(classpath: List[URL])
 
   implicit class BaseModelDataExt(baseModelData: BaseModelData) {
     def asInvokableModelData: ModelData = baseModelData.asInstanceOf[ModelData]

@@ -31,7 +31,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
   private implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testPermissionEmpty)
 
-  private val processesExportResources = new ProcessesExportResources(fetchingProcessRepository, processActivityRepository, processResolving)
+  private val processesExportResources = new ProcessesExportResources(futureFetchingProcessRepository, processActivityRepository, processResolving)
   private val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   private val adminRoute = asAdmin(processesExportResources) ~ asAdmin(processesRoute)
 
@@ -57,7 +57,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   }
 
   private def runImportExportTest(route: Route): Unit = {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
@@ -81,7 +81,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
 
   test("export process in new version") {
     val description = "alamakota"
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
     val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Map.empty))))
 
     saveProcess(processToSave) {
@@ -99,7 +99,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
 
     Get(s"/processesExport/${processToSave.id}/3") ~> routeWithAllPermissions ~> check {
       val latestProcessVersion = io.circe.parser.parse(responseAs[String])
-      latestProcessVersion.right.get.spaces2 should include(description)
+      latestProcessVersion.toOption.get.spaces2 should include(description)
 
       Get(s"/processesExport/${processToSave.id}") ~> routeWithAllPermissions ~> check {
         io.circe.parser.parse(responseAs[String]) shouldBe latestProcessVersion
@@ -110,7 +110,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   }
 
   test("export pdf") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
 

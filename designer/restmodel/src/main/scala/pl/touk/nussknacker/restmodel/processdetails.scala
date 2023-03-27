@@ -121,21 +121,19 @@ object processdetails {
 
   type ValidatedProcessDetails = BaseProcessDetails[ValidatedDisplayableProcess]
 
-  @JsonCodec case class ProcessVersion(//processId: Long, //TODO: support it when will support processId as Long / ProcessId
-                                       processVersionId: VersionId,
+  @JsonCodec case class ProcessVersion(processVersionId: VersionId,
                                        createDate: Instant,
                                        user: String,
                                        modelVersion: Option[Int],
                                        actions: List[ProcessAction])
 
-  @JsonCodec case class ProcessAction( //processId: Long, //TODO: support it when will support processId as Long / ProcessId
-                                       processVersionId: VersionId,
-                                       performedAt: Instant,
-                                       user: String,
-                                       action: ProcessActionType,
-                                       commentId: Option[Long],
-                                       comment: Option[String],
-                                       buildInfo: Map[String, String]) {
+  @JsonCodec case class ProcessAction(processVersionId: VersionId,
+                                      performedAt: Instant,
+                                      user: String,
+                                      action: ProcessActionType,
+                                      commentId: Option[Long],
+                                      comment: Option[String],
+                                      buildInfo: Map[String, String]) {
     def isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
     def isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
   }

@@ -12,7 +12,7 @@ spec:
   chart: ingress-nginx
   repo: https://kubernetes.github.io/ingress-nginx
   targetNamespace: ingress-nginx
-  version: v4.2.5
+  version: v4.4.2
   set:
   valuesContent: |-
     fullnameOverride: ingress-nginx
@@ -31,5 +31,11 @@ spec:
         enabled: false
         serviceMonitor:
           enabled: false
+      admissionWebhooks:
+        # when default value `Failure` is set, sometimes `deployment of req-resp with ingress` test fails on creating ingress with message:
+        # Internal error occurred: failed calling webhook \"validate.nginx.ingress.kubernetes.io\": failed to call webhook: Post \"https://ingress-nginx-controller-admission.ingress-nginx.svc:443/networking/v1/ingresses?timeout=10s\": EOF"
+        # Short sleep before creating Ingress resource prevents it somehow, but we do not want to do that, so we change failurePolicy instead. 
+        # We have our own assertion whether ingress works in this test anyway.
+        failurePolicy: Ignore
       config:
         use-forwarded-headers: "true"

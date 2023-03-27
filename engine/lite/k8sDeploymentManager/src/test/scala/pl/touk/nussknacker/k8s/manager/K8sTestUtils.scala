@@ -40,7 +40,7 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
       output.append(s)
     }
     val inputSource = input.map(Source.single)
-    k8s.exec(podName, command.split(" "),
+    k8s.exec(podName, command.split(" ").toIndexedSeq,
       maybeStdout = Some(stdoutSink),
       maybeStderr = Some(stderrSink),
       maybeStdin = inputSource,
@@ -52,11 +52,6 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
     withRunningProxyPod(targetUrl) { reverseProxyPod =>
       withPortForwarded(reverseProxyPod, reverseProxyPodRemotePort)(action)
     }
-  }
-
-  def dumpClusterInfo(): Unit = {
-    val dumpProcess = new ProcessBuilder("kubectl", "cluster-info", "dump").start()
-    ProcessUtils.attachLoggingAndReturnWaitingFuture(dumpProcess).futureValue shouldBe 0
   }
 
   def withPortForwarded(obj: ObjectResource, remotePort:Int)(action: Int => Unit): Unit = {
@@ -119,11 +114,13 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
         reverseProxyConfConfigMapName, Volume.ConfigMapVolumeSource(reverseProxyConfConfigMapName)
       ))
     ))
+    // We setup keepalive_timeout to 0 to make sure that nginx won't keep any idle connection to terminating pods
     val configMap = ConfigMap(metadata = ObjectMeta(reverseProxyConfConfigMapName), data = Map("nginx.conf" ->
       s"""server {
          |  listen $reverseProxyPodRemotePort;
          |  location / {
          |    proxy_pass $targetUrl;
+         |    keepalive_timeout 0;
          |  }
          |}""".stripMargin))
     cleanupReverseProxyPod()

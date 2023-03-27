@@ -8,6 +8,8 @@ import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.Implicits.parseOptionalConfig
 import pl.touk.nussknacker.ui.process.migrate.HttpRemoteEnvironmentConfig
 
+import scala.concurrent.duration.FiniteDuration
+
 case class FeatureTogglesConfig(development: Boolean,
                                 metrics: Option[MetricsSettings],
                                 remoteEnvironment: Option[HttpRemoteEnvironmentConfig],
@@ -15,6 +17,8 @@ case class FeatureTogglesConfig(development: Boolean,
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploymentCommentSettings: Option[DeploymentCommentSettings],
+                                scenarioStateTimeout: Option[FiniteDuration],
+                                surveySettings: Option[SurveySettings],
                                 tabs: Option[List[TopTab]],
                                 intervalTimeSettings: IntervalTimeSettings,
                                 testDataSettings: TestDataSettings,
@@ -38,6 +42,8 @@ object FeatureTogglesConfig extends LazyLogging{
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploymentCommentSettings = parseOptionalConfig[DeploymentCommentSettings](config, "deploymentCommentSettings")
+    val scenarioStateTimeout = parseOptionalConfig[FiniteDuration](config, "scenarioStateTimeout")
+    val surveySettings = parseOptionalConfig[SurveySettings](config, "surveySettings")
 
     implicit val tabDecoder: ValueReader[TopTab] = FicusReaders.forDecoder
     val tabs = parseOptionalConfig[List[TopTab]](config, "tabs")
@@ -52,6 +58,8 @@ object FeatureTogglesConfig extends LazyLogging{
       counts = counts,
       commentSettings = commentSettings,
       deploymentCommentSettings = deploymentCommentSettings,
+      scenarioStateTimeout = scenarioStateTimeout,
+      surveySettings = surveySettings,
       tabs = tabs,
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,

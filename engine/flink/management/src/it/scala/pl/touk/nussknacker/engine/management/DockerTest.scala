@@ -13,15 +13,17 @@ import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.images.builder.ImageFromDockerfile
 import org.testcontainers.containers.Network
-import pl.touk.nussknacker.engine.ProcessingTypeConfig
+import org.testcontainers.utility.DockerImageName
+import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.deployment.User
+import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties}
 
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path}
 import java.util.Arrays.asList
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with ExtremelyPatientScalaFutures {
   self: Suite =>
@@ -34,26 +36,37 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
 
   private val FlinkJobManagerRestPort = 8081
 
-  private val FlinkTaskManagerQueryPort = 9069
-
   private val kafkaNetworkAlias = "kafka"
 
   protected lazy val logger: Logger = Logger(sfl4jLogger)
 
   protected val userToAct: User = User("testUser", "Test User")
 
-  private val kafka = KafkaContainer().configure { self =>
+  private val kafka = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.3.0")).configure { self =>
     self.setNetwork(network)
     self.setNetworkAliases(asList(kafkaNetworkAlias))
   }
 
   private def prepareFlinkImage(): ImageFromDockerfile = {
-    List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foldLeft(new ImageFromDockerfile()) { case (image, file) =>
-      val clazz = getClass
-      val rezz = clazz.getResourceAsStream(s"/docker/$file")
-      val resource = IOUtils.toString(rezz)
-      val withVersionReplaced = resource.replace("${scala.major.version}", ScalaMajorVersionConfig.scalaMajorVersion)
-      image.withFileFromString(file, withVersionReplaced)
+    List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "log4j-console.properties").foldLeft(new ImageFromDockerfile()) { case (image, file) =>
+      val resource = ResourceLoader.load(s"/docker/$file")
+
+      val flinkLibTweakCommand = ScalaMajorVersionConfig.scalaMajorVersion match {
+        case "2.12" => ""
+        case "2.13" =>
+          val scalaV = util.Properties.versionNumberString
+          s"""
+            |RUN rm $$FLINK_HOME/lib/flink-scala*.jar
+            |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-library/$scalaV/scala-library-$scalaV.jar -O $$FLINK_HOME/lib/scala-library-$scalaV.jar
+            |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-reflect/$scalaV/scala-reflect-$scalaV.jar -O $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
+            |RUN chown flink $$FLINK_HOME/lib/scala-library-$scalaV.jar
+            |RUN chown flink $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
+            |""".stripMargin
+        case v => throw new IllegalStateException(s"unsupported scala version: $v")
+      }
+      val withFlinkLibTweaks = resource.replace("${scala.version.flink.tweak.commands}", flinkLibTweakCommand)
+
+      image.withFileFromString(file, withFlinkLibTweaks)
     }
   }
 
@@ -85,7 +98,6 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
 
   private lazy val taskManagerContainer: GenericContainer = {
     new GenericContainer(dockerImage = prepareFlinkImage(),
-      exposedPorts = FlinkTaskManagerQueryPort :: Nil,
       command = "taskmanager" :: Nil,
       env = Map("TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Successful registration at resource manager.*"))
@@ -105,18 +117,12 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
 
   def config: Config = ConfigFactory.load()
     .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"))
-    .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.container.getHost}:${taskManagerContainer.container.getMappedPort(FlinkTaskManagerQueryPort)}"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
     .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(dockerKafkaAddress))
     .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
     .withFallback(additionalConfig)
 
-  //used for signals, etc.
-  def configWithHostKafka: Config = config
-    .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(hostKafkaAddress))
-
-
-  def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(config)
+  def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(ConfigWithUnresolvedVersion(config))
 
   protected def classPath: List[String]
 

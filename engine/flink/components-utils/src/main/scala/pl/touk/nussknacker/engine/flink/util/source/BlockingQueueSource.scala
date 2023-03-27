@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.flink.util.timestamp.BoundedOutOfOrdernessPunc
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.concurrent.TrieMap
 
 /**

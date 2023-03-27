@@ -7,11 +7,13 @@ import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
@@ -20,7 +22,7 @@ import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploym
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import slick.jdbc
 import slick.jdbc.JdbcProfile
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +39,7 @@ object PeriodicDeploymentManager {
             listenerFactory: PeriodicProcessListenerFactory,
             additionalDeploymentDataProvider: AdditionalDeploymentDataProvider,
             customActionsProviderFactory: PeriodicCustomActionsProviderFactory)
-           (implicit ec: ExecutionContext, system: ActorSystem, sttpBackend: SttpBackend[Future, Nothing, NothingT]): PeriodicDeploymentManager = {
+           (implicit ec: ExecutionContext, system: ActorSystem, sttpBackend: SttpBackend[Future, Any]): PeriodicDeploymentManager = {
 
     val clock = Clock.systemDefaultZone()
 
@@ -77,7 +79,8 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
                                                   schedulePropertyExtractor: SchedulePropertyExtractor,
                                                   customActionsProvider: PeriodicCustomActionsProvider,
                                                   toClose: () => Unit)
-                                                 (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
+                                                 (implicit val ec: ExecutionContext)
+  extends DeploymentManager with LazyLogging {
 
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
@@ -111,7 +114,8 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   }
 
   private def cancelIfJobPresent(processVersion: ProcessVersion, user: User): Future[Unit] = {
-    findJobStatus(processVersion.processName)
+    getProcessState(processVersion.processName)(DataFreshnessPolicy.Fresh)
+      .map(_.value)
       .map(_.isDefined)
       .flatMap(shouldStop => {
         if (shouldStop) {
@@ -134,10 +138,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     }
   }
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
-    delegate.test(name, canonicalProcess, testData, variableEncoder)
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
+    delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
-  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
+  override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
     def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
       processStateDefinitionManager.processState(
         status = ScheduledStatus(processDeployment.runAt),
@@ -152,7 +156,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
     def createFailedProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
       processStateDefinitionManager.processState(
-        status = SimpleStateStatus.Failed,
+        status = ProblemStateStatus.failed,
         Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
         startTime = Option.empty,
@@ -195,9 +199,9 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
       errors = state.errors
     )
 
-    delegate
-      .findJobStatus(name)
-      .flatMap {
+    for {
+      delegateState <- delegate.getProcessState(name)
+      postprocessedState <- delegateState.value match {
         // Scheduled again or waiting to be scheduled again.
         case state@Some(js) if js.status.isFinished => handleScheduled(state)
         case state@Some(js) if js.status.isFailed => handleFailed(state)
@@ -206,7 +210,9 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
         // Scheduled or never started or latest run already disappeared in Flink.
         case state@None => handleScheduled(state)
         case Some(js) => Future.successful(Some(js))
-      }.map(_.map(withPeriodicProcessState))
+      }
+      formattedByPeriodicManager = postprocessedState.map(withPeriodicProcessState)
+    } yield WithDataFreshnessStatus(formattedByPeriodicManager, delegateState.cached)
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
@@ -226,12 +232,4 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
     customActionsProvider.invokeCustomAction(actionRequest, canonicalProcess)
-}
-
-case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus("SCHEDULED") {
-  override def isRunning: Boolean = true
-}
-
-case object WaitingForScheduleStatus extends CustomStateStatus("WAITING_FOR_SCHEDULE") {
-  override def isRunning: Boolean = true
 }

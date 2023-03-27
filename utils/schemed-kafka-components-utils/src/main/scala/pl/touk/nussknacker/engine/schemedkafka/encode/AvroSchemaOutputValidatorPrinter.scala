@@ -3,16 +3,14 @@ package pl.touk.nussknacker.engine.schemedkafka.encode
 import org.apache.avro.{LogicalType, LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.schemedkafka.schema.AvroStringSettings
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.util.output.{OutputValidatorErrorsConverter, OutputValidatorErrorsMessageFormatter}
-
-import scala.collection.JavaConverters
+import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
+import scala.jdk.CollectionConverters._
 
 object AvroSchemaOutputValidatorPrinter {
 
   import OutputValidatorErrorsMessageFormatter._
   import cats._
   import implicits._
-  import JavaConverters._
 
   private implicit class ListTypesPrinter(list: List[String]) {
     def printType: String = list.mkString(TypesSeparator)

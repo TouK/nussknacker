@@ -3,13 +3,112 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.7.0 (Not released yet)
+## In version 1.9.0 (not released yet)
+
+### Code API changes
+* [#4030](https://github.com/TouK/nussknacker/pull/4030) Changes for purpose of local testing of designer with other urls than on engine side
+  * `ProcessingTypeConfig.modelConfig` now contains `ConfigWithUnresolvedVersion` instead of `Config`. Old `Config` value is in `ConfigWithUnresolvedVersion.resolved`
+  * `ModelConfigLoader.resolveInputConfigDuringExecution` takes `ConfigWithUnresolvedVersion` instead of `Config`. Use `ConfigWithUnresolvedVersion.apply`
+    for easy transition between those classes
+* [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`. It affects `MetaData`, `ProcessMetaDataBuilder` and `DisplayableProcess` properties. 
+* [#4122](https://github.com/TouK/nussknacker/pull/4122), [#4132](https://github.com/TouK/nussknacker/pull/4132)
+  * Use `ProcessStateDefinitionManager.stateDefinitions` to describe states: 1) their default properties 2) how the states are presented in filter-by-status options.  
+    (see an example of basic definitions in `SimpleProcessStateDefinitionManager` and `SimpleStateStatus`).
+  * State defaults and allowed actions are moved to `SimpleStateStatus`, `FlinkStateStatus`, `PeriodicStateStatus`, `EmbeddedStateStatus` and `K8sStateStatus`
+    from corresponding state-definition-managers (see example `FlinkProcessStateDefinitionManager`).
+  * Type `CustomStateStatus.name` renamed to `StatusName`
+  * `ProcessResources` exposes new endpoint `/api/procecesses/statusDefinitions`
+  * Within the base set of statuses used in Embedded, Flink, K8 and Periodic mode (`SimpleStateStatus`), statuses `Failing`, `Failed`, `Error`, `Warning`, `FailedToGet` and `MulipleJobsRunning`
+    are replaced by one `ProblemStateStatus` which is parametrized by specific message. `ProblemStateStatus` provides several builder methods, one for each corresponding removed state.
+    Those builders allow to preserve the exact moments when each state appears in the scenario lifecycle.
+  * Displayed tooltip and description of `ProblemStateStatus` have the same value.
+  * Removed `SimpleStateStatus.Unknown`
+* [#4104](https://github.com/TouK/nussknacker/pull/4104) `DeploymentManager.findJobStatus` was renamed to `getProcessState`. New `DataFreshnessPolicy`
+  parameter was added. Returned type was changed to `WithDataFreshnessStatus[T]` where `T` is the previous value and `cached: Boolean` is additional
+  information that should be provided.
+  If you provide `DeploymentManager` which communicate remotely with some service, and you want to use standard build-in caching for `ProcessState`,
+  wrap your `DeploymentManager` using `CachingProcessStateDeploymentManager.wrapWithCachingIfNeeded` in your `DeploymentManagerProvider`.
+  Thanks to that, caching will be handled as expected, and your `DeploymentManager` just should extend `AlwaysFreshProcessState`
+  which provide the same interface as the previous one, with only method name changed.
+  Especially, when you use 'PeriodicDeploymentManagerProvider', `delegate` should already return `DeploymentManager` wrapped by caching mechanism.
+* [#4131](https://github.com/TouK/nussknacker/pull/4131) `Parameter.defaultValue` now holds `Option[Expression]` instead of `Option[String]`. You have to wrap a `String` with `Expression.spel()`
+
+
+
+### Other changes
+
+* [#4122](https://github.com/TouK/nussknacker/pull/4122), [#4132](https://github.com/TouK/nussknacker/pull/4132) Changes in state definitions:
+  * In `ProcessStateDefinitionManager` default behaviour of methods `statusTooltip`, `statusDescription` and `statusIcon` is to return default properties defined via `stateDefinitions`.
+    It is not necessary to override those methods when all definitions have fixed default properties.
+  * To introduce custom status properties, extensions to basic definitions, use `OverridingProcessStateDefinitionManager`.
+  * `OverridingProcessStateDefinitionManager` allows to specify delegate (previously only `SimpleProcessStateDefinitionManager` was available) and custom state definitions.
+  * Parameter `delegate` in `OverridingProcessStateDefinitionManager` has no default value, it should be provided explicitly.
+  * There is additional validation when all processing types are reloaded from configuration: check if all processing types state definitions configuration is correct.
+    (see comment in `ProcessStateDefinitionService`)
+
+
+### Other changes
+* [#3675](https://github.com/TouK/nussknacker/pull/3675) Improvements: Normalize kafka components params name
+  * Renamed kafka topic param name from `topic` to `Topic`
+  * Renamed kafka value param name from `value` to `Value`
+
+## In version 1.8.0
+
+### Scenario authoring changes
+* [#3924](https://github.com/TouK/nussknacker/pull/3924) 
+  * Fixup: `{}` is now interpreted as "allow everything schema", not as "object schema". Objects schemas have to have declared `"type": "object"`.
+  * Unknown is now allowed on sinks in both validation modes if output schema is "everything allowed schema".
+
+### Code API changes
+* [#3924](https://github.com/TouK/nussknacker/pull/3924) - changes to `SwaggerTyped` hierarchy
+  * `SwaggerMap(valuesType)` -> `SwaggerObject(Map.empty, additionalProperties = AdditionalPropertiesEnabled(valuesType))`
+  * `AdditionalPropertiesSwaggerTyped` -> `AdditionalPropertiesEnabled`
+  * `AdditionalPropertiesWithoutType` -> `AdditionalPropertiesEnabled(SwaggerAny)`
+  * `SwaggerRecursiveSchema/SwaggerUnknownFallback` -> `SwaggerAny`
+
+### Other changes
+* [#3835](https://github.com/TouK/nussknacker/pull/3835) Removed Signals and QueryableState. This change affects:
+  * Configuration
+  * Components and DeploymentManager API
+  * REST API
+* [#3823](https://github.com/TouK/nussknacker/pull/3823), [#3836](https://github.com/TouK/nussknacker/pull/3836), [#3843](https://github.com/TouK/nussknacker/pull/3843) -
+  scenarios with multiple sources can be tested from file
+  * `TestDataGenerator#generateTestData` returns JSON test records instead of raw bytes. Test records are serialized to a file by designer
+    Test record can optionally contain timestamp which is used to sort records generated by many sources  
+  * `TestDataParser` was replaced with `TestRecordParser` that turns a single JSON test record into a source record
+  * `TestData.newLineSeparated` helper was removed. Scenario test records have to be created explicitly. Each scenario test record has assigned source
+  * `DeploymentManager#test` takes `ScenarioTestData` instead of `TestData`
+  * Designer configuration `testDataSettings.testDataMaxBytes` renamed to `testDataMaxLength`
+* [#3916](https://github.com/TouK/nussknacker/pull/3916) Designer configuration `environmentAlert.cssClass` renamed to `environmentAlert.color`
+* [#3922](https://github.com/TouK/nussknacker/pull/3922) Bumps: jwks: 0.19.0 -> 0.21.3, jackson: 2.11.3 -> 2.13.4
+* [#3929](https://github.com/TouK/nussknacker/pull/3929) From now, `SchemaId` value class is used in every place 
+  where schema id was represented as an Int. For conversion between `SchemaId` and `Int` use `SchemaId.fromInt` and `SchemaId.asInt`.
+  Use `ConfluentUtils.toSchemaWithMetadata` instead of `SchemaWithMetadata.apply` for conversion between Confluent's `SchemaMetadata` and ours `SchemaWithMetadata`.
+* [#3948](https://github.com/TouK/nussknacker/pull/3948) Now, we are less dependent from Confluent schema registry.
+  To make it possible, some kafka universal/avro components refactors were done. Most important changes in public API:
+  * ConfluentSchemaBasedSerdeProvider.universal was replaced by UniversalSchemaBasedSerdeProvider.create
+  
+  Some other, internal changes:
+  * Non-confluent classes renamed and moved to desired packages
+  * Extracted new class: SchemaIdFromMessageExtractor to make Confluent logic explicit and moved to top level
+  * Extracted SchemaValidator to make Confluent logic explicit and be able to compose
+  * Some renames: ConsumerRecordUtils -> KafkaRecordUtils
+  * RecordDeserializer -> AvroRecordDeserializer (also inheritance replaced by composition)
+  * (De)SerializerFactory - easier abstractions
+  * ConfluentSchemaRegistryFactory is not necessary now - removed
+
+## In version 1.7.0 
 
 ### Scenario authoring changes
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) Right now access in SpEL to not existing field on TypedMap won't throw exception, just will return `null`
 * [#3727](https://github.com/TouK/nussknacker/pull/3727) Improvements: Change RR Sink validation way:
   * Added param `Value validation mode` at RR response component
   * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
+
+### Configuration changes
+* [#3768](https://github.com/TouK/nussknacker/pull/3768) `request-response-embedded` and `streaming-lite-embedded` 
+  DeploymentManager types where replaced by one `lite-embedded` DeploymentManager type with two modes: `streaming` and `request-response`
+  like it is done in `lite-k8s` case
 
 ### Code API changes
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) 
@@ -20,8 +119,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3692](https://github.com/TouK/nussknacker/pull/3692) Rename `mockedResult` to  `externalInvocation` in test results collectors.
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. As a replacement you can use:
   * nussknacker-request-response-app in version <= 1.6
-  * Lite k8s engine with request-response processing mode
-  * `request-response-embedded` Deployment Manager
+  * Lite K8s engine with request-response processing mode
+  * `lite-embedded` Deployment Manager with request-response processing mode
 * [#3610](https://github.com/TouK/nussknacker/pull/3610) Removed deprecated code. For details see changes in pull request.
 * [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder:
   * ValidationMode moved to package `pl.touk.nussknacker.engine.api.validation` in `nussknacker-components-api`
@@ -35,6 +134,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#3576](https://github.com/TouK/nussknacker/pull/3576) `/processes` endpoint without query parameters returns all scenarios - the previous behaviour was to return only unarchived ones.
   To fetch only unarchived scenarios `isArchived=false` query parameter has to be passed.
+
+### Other changes
+* [#3824](https://github.com/TouK/nussknacker/pull/3824) Due to data serialization fix, Flink scenarios using Kafka sources with schemas may be incompatible and may need to be restarted with clean state. 
 
 ## In version 1.6.0
 * [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment's outputs
@@ -110,7 +212,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   [#3316](https://github.com/TouK/nussknacker/pull/3316) [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3328](https://github.com/TouK/nussknacker/pull/3328) [#3330](https://github.com/TouK/nussknacker/pull/3330) Changes related with UniversalKafkaSource/Sink:
   * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (AvroSchema and JsonSchema is supported).
   * `NkSerializableAvroSchema` renamed to `NkSerializableParsedSchema`
-  * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.
+  * `SchemaWithMetadata` wraps `ParsedSchema` instead of Avro `Schema`.
   * `SchemaRegistryProvider` refactoring:
     * rename `SchemaRegistryProvider` to `SchemaBasedSerdeProvider`
     * decouple `SchemaRegistryClientFactory` from `SchemaBasedSerdeProvider`
@@ -122,7 +224,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `Typed.typedClass(Class[_], List[TypingResult])` is not available anymore. You should use more explicit `Typed.genericTypeClass` instead
   * We check count of generic parameters in `Typed.genericTypeClass` - wrong number will cause throwing exception now
   * We populate generic parameters by correct number of `Unknown` in non-generic aware versions of `Typed` factory methods like `Typed.apply` or `Typed.typedClass`
-* [#3071](https://github.com/TouK/nussknacker/pull/3071) More strict avro schema validation:
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) More strict Avro schema validation:
   * `ValidationMode.allowOptional` was removed, instead of it please use `ValidationMode.lax`
   * `ValidationMode.allowRedundantAndOptional` was removed, instead of it please use `ValidationMode.lax`
   * Changes of `ValidationMode`, fields: `acceptUnfilledOptional` and `acceptRedundant` were removed
@@ -142,7 +244,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### REST API changes
 
-* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - before change it required to be an authenticated user with "read" permission.
+* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short JSON answer with "OK" status is now not secured - before change it required to be an authenticated user with "read" permission.
 
 ### Scenario authoring changes
 
@@ -365,7 +467,7 @@ Summary:
   * `KafkaAvroBaseTransformer` companion object renamed to `KafkaAvroBaseComponentTransformer` 
   * `KryoGenericRecordSchemaIdSerializationSupport` renamed to `GenericRecordSchemaIdSerializationSupport` 
 * [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
-* [#2296](https://github.com/TouK/nussknacker/pull/2296) Scenarios & Fragments have separate TypeSpecificData implementations. Also, we remove `isSubprocess` field from process json, and respectively from MetaData constructor. See corresponding db migration `V1_031__FragmentSpecificData.scala`
+* [#2296](https://github.com/TouK/nussknacker/pull/2296) Scenarios & Fragments have separate TypeSpecificData implementations. Also, we remove `isSubprocess` field from process JSON, and respectively from MetaData constructor. See corresponding db migration `V1_031__FragmentSpecificData.scala`
 * [#2368](https://github.com/TouK/nussknacker/pull/2368) `WithCategories` now takes categories as an `Option[List[String]]` instead of `List[String]`. 
 You should wrap given list of categories with `Some(...)`. `None` mean that component will be available in all categories.
 * [#2360](https://github.com/TouK/nussknacker/pull/2360) `union`, `union-memo` and `dead-end` components were extracted from `model/genericModel.jar` to `components/baseComponents.jar`
@@ -541,7 +643,7 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
   Example of source with value-only deserialization and custom timestampAssigner:
   ```
   // provide new deserializer factory with old schema definition for event's value
-  val oldSchema = new EspDeserializationSchema[SampleValue](bytes => io.circe.parser.decode[SampleValue](new String(bytes)).right.get)
+  val oldSchema = new EspDeserializationSchema[SampleValue](bytes => io.circe.parser.decode[SampleValue](new String(bytes)).toOption.get)
   val schemaFactory: KafkaDeserializationSchemaFactory[ConsumerRecord[String, SampleValue]] = new FixedValueDeserializationSchemaFactory(oldSchema)
 
   // ... provide timestampAssigner that extracts timestamp from SampleValue.customTimestampField
@@ -588,7 +690,7 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
 * [#1799](https://github.com/TouK/nussknacker/pull/1799)
   - RecordFormatterFactory instead of one, uses two type parameters: K, V
   - ConfluentAvroToJsonFormatter is produced by ConfluentAvroToJsonFormatterFactory
-  - ConfluentAvroToJsonFormatter produces test data in valid json format, does not use Separator
+  - ConfluentAvroToJsonFormatter produces test data in valid JSON format, does not use Separator
   - ConfluentAvroMessageFormatter has asJson method instead of writeTo
   - ConfluentAvroMessageReader has readJson method instead of readMessage
   Example test data object:
@@ -671,7 +773,7 @@ If you already have done some Flink's `ExecutionConfig` set up before you've reg
 * [#1039](https://github.com/TouK/nussknacker/pull/1039) `FlinkSourceFactory` doesn't take `TypeInformation` type class as a generic parameter now. Instead of this, it takes `ClassTag`.
 `TypeInformation` is determined during source creation. `typeInformation[T]` method was moved from `BasicFlinkSource` to `FlinkSource` because still must be some place to determine it for tests purpose.
 * [#965](https://github.com/TouK/nussknacker/pull/965) 'aggregate' node in generic model was renamed to 'aggregate-sliding'
-* [#922](https://github.com/TouK/nussknacker/pull/922) HealthCheck API has new structure, naming and json responses:
+* [#922](https://github.com/TouK/nussknacker/pull/922) HealthCheck API has new structure, naming and JSON responses:
   - old `/healthCheck` is moved to `/healthCheck/process/deployment`
   - old `/sanityCheck` is moved to `/healthCheck/process/validation`
   - top level `/healthCheck` indicates general "app-is-running" state
@@ -751,7 +853,7 @@ Additional changes:
 - (Refactor KafkaAvro API) Removed `FixedKafkaAvroSourceFactory` and `FixedKafkaAvroSinkFactory` (now we don't support fixed schema)
 - (Refactor Kafka API) Replaced `topics: List[String]` by `List[PreparedKafkaTopic]` and removed `processObjectDependencies` in `KafkaSource`
 
-Be aware that we are using avro 1.9.2 instead of default Flink's 1.8.2 (for java time logical types conversions purpose).
+Be aware that we are using Avro 1.9.2 instead of default Flink's 1.8.2 (for Java time logical types conversions purpose).
 
 * [#1013](https://github.com/TouK/nussknacker/pull/1013) Expression evaluation is synchronous now. It shouldn't cause any problems 
 (all languages were synchronous anyway), but some internal code may have to change.

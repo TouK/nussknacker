@@ -1,11 +1,27 @@
 import {DynamicTabData} from "../../containers/DynamicTab"
 import {AuthenticationSettings} from "../../reducers/settings"
-import {UnknownRecord} from "../../types/common"
+import type {EnvironmentTagColor} from "../../containers/EnvironmentTag"
 
 export type MetricsType = {
   url: string,
   defaultDashboard: string,
-  scenarioTypeToDashboard: UnknownRecord,
+  scenarioTypeToDashboard: Record<string, string>,
+}
+
+export type UsageStatisticsReports = {
+  enabled: boolean,
+  url: string,
+}
+
+export type SurveySettings = {
+  link: string,
+  text: string,
+  key: string,
+}
+
+export interface EnvironmentTagSettings {
+  content?: string,
+  color?: EnvironmentTagColor,
 }
 
 export type FeaturesSettings = {
@@ -13,18 +29,20 @@ export type FeaturesSettings = {
   search: { url: string },
   metrics: MetricsType,
   remoteEnvironment: { targetEnvironmentId: string },
-  environmentAlert: { content: string, cssClass: string },
+  environmentAlert: EnvironmentTagSettings,
   commentSettings: { substitutionPattern: string, substitutionLink: string },
   deploymentCommentSettings?: { exampleComment: string },
   intervalTimeSettings: { processes: number, healthCheck: number },
   tabs: DynamicTabData[],
   testDataSettings?: TestDataSettings,
   redirectAfterArchive: boolean,
-};
+  usageStatisticsReports: UsageStatisticsReports,
+  surveySettings: SurveySettings,
+}
 
 export type TestDataSettings = {
   maxSamplesCount: number,
-  testDataMaxBytes: number
+  testDataMaxLength: number,
 }
 
 type EngineData = {

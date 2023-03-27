@@ -8,13 +8,13 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.testing.SttpBackendStub
 
 import scala.concurrent.Future
 
 class BasicAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives {
 
-  implicit private val testingBackend: SttpBackendStub[Future, Nothing, Nothing] = SttpBackendStub.asynchronousFuture[Nothing]
+  implicit private val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
   private val classLoader = getClass.getClassLoader
 
   private val anonymousUserRole = "Anonymous"

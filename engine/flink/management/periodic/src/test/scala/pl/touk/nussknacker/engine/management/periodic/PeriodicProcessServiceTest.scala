@@ -8,6 +8,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
@@ -92,7 +93,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, processingType = "other")
 
-    f.periodicProcessService.findToBeDeployed.futureValue shouldBe 'empty
+    f.periodicProcessService.findToBeDeployed.futureValue shouldBe Symbol("empty")
   }
 
   // Flink job could disappear from Flink console.
@@ -165,7 +166,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
     processEntity.active shouldBe true
     f.repository.deploymentEntities should have size 1
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Deployed)
-    f.events.toList shouldBe 'empty
+    f.events.toList shouldBe Symbol("empty")
   }
 
   test("handle first schedule") {
@@ -186,7 +187,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
   test("handleFinished - should mark as failed for failed Flink job") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
 
     f.periodicProcessService.handleFinished.futureValue
 

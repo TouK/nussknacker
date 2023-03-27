@@ -30,7 +30,7 @@ class ProcessReportResources(countsReporter: CountsReporter[Future], processCoun
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
     path("processCounts" / Segment) { processName =>
-      (get & processId(processName) & parameters('dateFrom.as[Instant].optional, 'dateTo.as[Instant].optional)) { (processId, dateFrom, dateTo) =>
+      (get & processId(processName) & parameters(Symbol("dateFrom").as[Instant].optional, Symbol("dateTo").as[Instant].optional)) { (processId, dateFrom, dateTo) =>
         val request = prepareRequest(dateFrom, dateTo)
         complete {
           processRepository.fetchLatestProcessDetailsForProcessId[DisplayableProcess](processId.id).flatMap[ToResponseMarshallable] {

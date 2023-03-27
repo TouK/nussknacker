@@ -103,8 +103,6 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     val leftFieldsWithRightCommonFields = leftFields.map { case (name, leftType) =>
       name ->  (leftType :: rightIntersect.filter(name == _._1).map(_._2))
     }.flatMap {
-      case (fieldName, leftType :: Nil) =>
-        fieldName -> leftType :: Nil
       case (fieldName, leftType :: rightType :: Nil) if leftType == rightType =>
         fieldName -> leftType :: Nil
       case (fieldName, leftType :: rightType :: Nil) =>
@@ -113,6 +111,9 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
           Nil // fields type collision - skipping this field
         else
           (fieldName, leastUpperBound) :: Nil
+      case (fieldName, types) =>
+        val leftField = types.head
+        fieldName -> leftField :: Nil
     }
     leftFieldsWithRightCommonFields ++ rightDoesNotIntersect
 }

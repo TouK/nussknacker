@@ -13,7 +13,7 @@ export function UsageCountCell(props: GridRenderCellParams): JSX.Element {
             color="primary"
             cellProps={props}
             component={RouterLink}
-            to={`/usages/${props.row.id}`}
+            to={`usages/${props.row.id}`}
         >
             {!props.value ? (
                 <Box

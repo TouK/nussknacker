@@ -6,16 +6,18 @@ import io.circe.Json
 import io.circe.Json.{Null, obj}
 import org.everit.json.schema._
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers._
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
+import java.util.Collections
 
 class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val FieldName = "foo"
   
@@ -63,7 +65,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       "firstName" -> "John",
       "lastName" -> 1,
       "age" -> 1L
-    ), schema) shouldBe Invalid(NonEmptyList.of("""Not expected type: java.lang.Integer for field: 'lastName' with schema: {"type":"string"}."""))
+    ), schema) shouldBe Invalid(NonEmptyList.of("""Not expected type: Integer for field: 'lastName' with schema: {"type":"string"}."""))
   }
 
   test("should encode string") {
@@ -102,7 +104,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     val date = LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
     val encoded = encoder.encodeWithJsonValidation(date, schema)
 
-    encoded shouldBe 'invalid
+    encoded shouldBe Symbol("invalid")
   }
 
   test("should throw when wrong time") {
@@ -110,7 +112,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     val date = LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
     val encoded = encoder.encodeWithJsonValidation(date, schema)
 
-    encoded shouldBe 'invalid
+    encoded shouldBe Symbol("invalid")
   }
 
   test("should throw when wrong date") {
@@ -118,7 +120,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     val date = ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
     val encoded = encoder.encodeWithJsonValidation(date, schema)
 
-    encoded shouldBe 'invalid
+    encoded shouldBe Symbol("invalid")
   }
 
   test("should encode number") {
@@ -152,7 +154,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       (java.math.BigInteger.valueOf(1).setBit(63), invalid("Field value '9223372036854775809' is not an integer.")),
       (BigDecimal.valueOf(1.6), invalid("Field value '1.6' is not an integer.")),
       (java.math.BigDecimal.valueOf(1.6), invalid("Field value '1.6' is not an integer.")),
-      (null, invalid(s"Not expected type: null for field with schema: $schemaIntegerNumber.")),
+      (null, invalid(s"Not expected type: Null for field with schema: $schemaIntegerNumber.")),
     )) { (data, expected) =>
       encoder.encodeWithJsonValidation(data, schemaIntegerNumber) shouldBe expected
     }
@@ -183,9 +185,9 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   test("should throw when value and schema type mismatch") {
     forAll(Table(
       ("data", "schema", "expected"),
-      ("1", schemaNumber, invalid(s"Not expected type: java.lang.String for field with schema: $schemaNumber.")),
-      (Map(FieldName -> null), createSchemaObjWithFooField(true, schemaString), invalid(s"Not expected type: null for field: '$FieldName' with schema: $schemaString.")),
-      (Map(FieldName -> null), schemaObjString, invalid(s"Not expected type: null for field: 'foo' with schema: $schemaString.")),
+      ("1", schemaNumber, invalid(s"Not expected type: String for field with schema: $schemaNumber.")),
+      (Map(FieldName -> null), createSchemaObjWithFooField(true, schemaString), invalid(s"Not expected type: Null for field: '$FieldName' with schema: $schemaString.")),
+      (Map(FieldName -> null), schemaObjString, invalid(s"Not expected type: Null for field: 'foo' with schema: $schemaString.")),
     )) { (data, schema, expected) =>
       encoder.encodeWithJsonValidation(data, schema) shouldBe expected
     }
@@ -204,10 +206,10 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |}""".stripMargin)
 
     encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), schemaObjString) shouldBe Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
-    encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
+    encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe Symbol("invalid")
   }
 
-  test("should validate additionalParameters type") {
+  test("should encode additionalParameters type") {
     def schema(additionalPropertiesType: String): Schema = JsonSchemaBuilder.parseSchema(
       s"""{
         |  "type": "object",
@@ -222,10 +224,95 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |}""".stripMargin)
 
     encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> "aaa"), schema("number")) shouldBe
-      Invalid(NonEmptyList.of("""Not expected type: java.lang.String for field with schema: {"type":"number"}."""))
+      Invalid(NonEmptyList.of("""Not expected type: String for field with schema: {"type":"number"}."""))
     encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), schema("number")) shouldBe
       Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
-    encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), schema("string")) shouldBe 'invalid
+    encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), schema("string")) shouldBe Symbol("invalid")
+  }
+
+  test("should encode pattern properties with implicitly enabled additional properties fields") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "field": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "type": "integer"
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    forAll(Table(
+      ("data", "expected"),
+      (Map("field" -> "bar", "other_field" -> "other"),
+        Valid(Json.obj("field" -> Json.fromString("bar"), "other_field" -> Json.fromString("other")))),
+      (Map("field" -> "bar", "other_field" -> "other", "field_1_int" -> 42, "field_2_int" -> 84),
+        Valid(Json.obj("field" -> Json.fromString("bar"), "other_field" -> Json.fromString("other"), "field_1_int" -> Json.fromLong(42L), "field_2_int" -> Json.fromLong(84L)))),
+    )) { (data, expected) =>
+      encoder.encodeWithJsonValidation(data, schema) shouldBe expected
+    }
+  }
+
+  test("should encode pattern properties with disabled additional properties fields") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "field": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "type": "integer"
+        |    }
+        |  },
+        |  "additionalProperties": false
+        |}""".stripMargin)
+
+    forAll(Table(
+      ("data", "expected"),
+      (Map("field" -> "bar"), Valid(Json.obj("field" -> Json.fromString("bar")))),
+      (Map("field" -> "bar", "other_field" -> "other"), invalid("""Not expected field with name: other_field for schema: {"type":"object","additionalProperties":false,"patternProperties":{"_int$":{"type":"integer"}},"properties":{"field":{"type":"string"}}}.""")),
+      (Map("field" -> "bar", "field_1_int" -> 42, "field_2_int" -> 84), Valid(Json.obj("field" -> Json.fromString("bar"), "field_1_int" -> Json.fromLong(42L), "field_2_int" -> Json.fromLong(84L)))),
+    )) { (data, expected) =>
+      encoder.encodeWithJsonValidation(data, schema) shouldBe expected
+    }
+  }
+
+  test("should encode 'additionalProperties with patternProperties' schema") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "additionalProperties": {
+        |    "type": ["string", "null"]
+        |  },
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "oneOf": [
+        |        { "type": "integer" },
+        |        { "type": "null" }
+        |      ]
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    forAll(Table(
+      ("data", "expected"),
+      (Map("field" -> "bar"), Valid(Json.obj("field" -> Json.fromString("bar")))),
+      (Map("field" -> null), Valid(Json.obj("field" -> Json.Null))),
+      (Map("field_int" -> 42L), Valid(Json.obj("field_int" -> Json.fromInt(42)))),
+      (Map("field_int" -> null), Valid(Json.obj("field_int" -> Json.Null))),
+      (Map("field" -> "bar", "field_int" -> 42L), Valid(Json.obj("field" -> Json.fromString("bar"), "field_int" -> Json.fromLong(42L)))),
+      (Map("field" -> "bar", "field_int" -> null), Valid(Json.obj("field" -> Json.fromString("bar"), "field_int" -> Json.Null))),
+      (Map("field" -> null, "field_int" -> 42L), Valid(Json.obj("field" -> Json.Null, "field_int" -> Json.fromLong(42L)))),
+    )) { (data, expected) =>
+      encoder.encodeWithJsonValidation(data, schema) shouldBe expected
+    }
   }
 
   test("should encode union") {
@@ -292,6 +379,27 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       val expected = invalid(s"Missing property: $FieldName for schema: $schema.")
       encoder.encodeWithJsonValidation(data, schema) shouldBe expected
     }
+  }
+
+  test("should encode anyOf") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """
+        |{
+        |  "type": "object",
+        |  "properties": {
+        |    "field": { "anyOf": [
+        |      { "type": "string" },
+        |      { "type": [] },
+        |      { "type": "integer" }
+        |    ]}
+        |  }
+        |}
+        |""".stripMargin)
+    encoder.encodeWithJsonValidation(Collections.singletonMap("field", "aa"), schema, None) shouldBe Symbol("valid")
+    encoder.encodeWithJsonValidation(Collections.singletonMap("field", 11), schema, None) shouldBe Symbol("valid")
+    encoder.encodeWithJsonValidation(Collections.singletonMap("field",
+      Collections.emptyMap()), schema, None) shouldBe invalid("Not expected type: {} for field: 'field' with schema: {\"anyOf\":[{\"anyOf\":[]},{\"type\":\"string\"},{\"type\":\"integer\"}]}.")
+
   }
 
   private def createSchemaObjWithFooField(required: Boolean, schemas: Schema*): ObjectSchema = {

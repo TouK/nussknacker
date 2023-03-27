@@ -8,7 +8,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim}
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.Uri
 
 import java.net.URI
@@ -16,6 +16,7 @@ import java.security.KeyPairGenerator
 import java.time.{Clock, Instant}
 import java.util.Base64
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 trait WithJwtOauth2Service {
   protected val keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair()
@@ -39,7 +40,7 @@ trait WithJwtOauth2Service {
        |  }
        |}""".stripMargin))
 
-  implicit private val testingBackend: RecordingSttpBackend = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture[Nothing]
+  implicit private val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture
     .whenRequestMatches(_.uri.equals(userinfoUri))
     .thenRespond(s""" { "sub": "admin" } """))
 

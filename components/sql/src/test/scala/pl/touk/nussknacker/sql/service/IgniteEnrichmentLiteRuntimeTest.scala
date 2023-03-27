@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.sql.utils._
 import pl.touk.nussknacker.sql.utils.ignite.WithIgniteDB
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class IgniteEnrichmentLiteRuntimeTest extends AnyFunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll
   with WithIgniteDB {
@@ -54,7 +54,7 @@ class IgniteEnrichmentLiteRuntimeTest extends AnyFunSuite with Matchers with Lit
       .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
     val validatedResult = runProcess(process, TestRequest(1))
-    validatedResult shouldBe 'valid
+    validatedResult shouldBe Symbol("valid")
 
     val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1

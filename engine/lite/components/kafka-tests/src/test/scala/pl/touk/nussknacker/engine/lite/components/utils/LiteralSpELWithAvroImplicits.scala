@@ -6,7 +6,7 @@ import pl.touk.nussknacker.test.LiteralSpEL
 
 object LiteralSpELWithAvroImplicits {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   implicit class LiteralSpELWithAvroImplicits(data: Any) extends LiteralSpEL {
 

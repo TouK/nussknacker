@@ -10,11 +10,11 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{FinishedStateStatus, RunningStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.db.HsqlProcessRepository
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service._
@@ -98,7 +98,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
     processScheduled.periodicProcess.processVersion.processName shouldBe processName
     processScheduled.state shouldBe PeriodicProcessDeploymentState(None, None, PeriodicProcessDeploymentStatus.Scheduled)
     processScheduled.runAt shouldBe localTime(expectedScheduleTime)
-    service.getLatestDeployment(otherProcessName).futureValue shouldBe 'empty
+    service.getLatestDeployment(otherProcessName).futureValue shouldBe Symbol("empty")
 
     currentTime = timeToTriggerCheck
     
@@ -312,7 +312,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
 
     service.deploy(toDeploy.head).futureValue
 
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
 
     //this one is cyclically called by RescheduleActor
     service.handleFinished.futureValue

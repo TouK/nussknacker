@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.definition
 
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
-import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.api.{ConversionsProvider, CustomStreamTransformer, QueryableStateNames, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.{ConversionsProvider, CustomStreamTransformer, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.component.{ComponentExtractor, ComponentsUiConfigExtractor}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import shapeless.syntax.typeable._
@@ -16,7 +15,6 @@ object ProcessDefinitionExtractor {
     TypesInformation.extract(definition.services.values ++
       definition.sourceFactories.values ++
       definition.customStreamTransformers.values.map(_._1) ++
-      definition.signalsWithTransformers.values.map(_._1) ++
       definition.expressionConfig.globalVariables.values
     )(definition.settings) ++
       TypesInformation.extractFromClassList(definition.expressionConfig.additionalClasses)(definition.settings)
@@ -35,8 +33,6 @@ object ProcessDefinitionExtractor {
     val sinkFactories = creator.sinkFactories(processObjectDependencies) ++ componentsFromProviders.sinkFactories
     val customStreamTransformers = creator.customStreamTransformers(processObjectDependencies) ++ componentsFromProviders.customTransformers
 
-    val signals = creator.signals(processObjectDependencies)
-
     val expressionConfig = creator.expressionConfig(processObjectDependencies)
     val componentsUiConfig = ComponentsUiConfigExtractor.extract(processObjectDependencies.config)
 
@@ -44,15 +40,7 @@ object ProcessDefinitionExtractor {
 
     val customStreamTransformersDefs = ObjectWithMethodDef.forMap(customStreamTransformers, ProcessObjectDefinitionExtractor.customStreamTransformer, componentsUiConfig)
 
-    val signalsDefs = ObjectWithMethodDef.forMap(signals, ProcessObjectDefinitionExtractor.signals, componentsUiConfig).map { case (signalName, signalSender) =>
-      val transformers = customStreamTransformersDefs.filter { case (_, transformerDef) =>
-        transformerDef.annotations.flatMap(_.cast[SignalTransformer]).exists(_.signalClass() == signalSender.obj.getClass)
-      }.keySet
-      (signalName, (signalSender, transformers))
-    }
-
     val sourceFactoriesDefs = ObjectWithMethodDef.forMap(sourceFactories, ProcessObjectDefinitionExtractor.source, componentsUiConfig)
-
 
     val sinkFactoriesDefs = ObjectWithMethodDef.forMap(sinkFactories, ProcessObjectDefinitionExtractor.sink, componentsUiConfig)
 
@@ -63,7 +51,6 @@ object ProcessDefinitionExtractor {
       sourceFactoriesDefs,
       sinkFactoriesDefs,
       customStreamTransformersDefs.mapValuesNow(k => (k, extractCustomTransformerData(k))),
-      signalsDefs,
       toExpressionDefinition(expressionConfig),
       settings)
   }
@@ -91,22 +78,16 @@ object ProcessDefinitionExtractor {
 
   private def extractCustomTransformerData(objectWithMethodDef: ObjectWithMethodDef) = {
     val transformer = objectWithMethodDef.obj.asInstanceOf[CustomStreamTransformer]
-    val queryNamesAnnotation = objectWithMethodDef.annotations.flatMap(_.cast[QueryableStateNames])
-    val queryNames = queryNamesAnnotation.flatMap(_.values().toList).toSet
-    CustomTransformerAdditionalData(queryNames, transformer.canHaveManyInputs, transformer.canBeEnding)
+    CustomTransformerAdditionalData(transformer.canHaveManyInputs, transformer.canBeEnding)
   }
 
-  type TransformerId = String
-  type QueryableStateName = String
-
-  case class CustomTransformerAdditionalData(queryableStateNames: Set[QueryableStateName], manyInputs: Boolean, canBeEnding: Boolean)
+  case class CustomTransformerAdditionalData(manyInputs: Boolean, canBeEnding: Boolean)
 
   case class ProcessDefinition[T <: ObjectMetadata](services: Map[String,T],
                                                     sourceFactories: Map[String, T],
                                                     sinkFactories: Map[String, T],
                                                     //TODO: find easier way to handle *AdditionalData?
                                                     customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
-                                                    signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     expressionConfig: ExpressionDefinition[T],
                                                     settings: ClassExtractionSettings) {
 
@@ -114,8 +95,7 @@ object ProcessDefinitionExtractor {
       val ids = services.keys ++
         sourceFactories.keys ++
         sinkFactories.keys ++
-        customStreamTransformers.keys ++
-        signalsWithTransformers.keys
+        customStreamTransformers.keys
       ids.toList
     }
 
@@ -124,7 +104,6 @@ object ProcessDefinitionExtractor {
       sourceFactories.filter(_._2.availableForCategory(category)),
       sinkFactories.filter(_._2.availableForCategory(category)),
       customStreamTransformers.filter(_._2._1.availableForCategory(category)),
-      signalsWithTransformers.filter(_._2._1.availableForCategory(category)),
       expressionConfig.copy(globalVariables = expressionConfig.globalVariables.filter(_._2.availableForCategory(category)))
     )
   }
@@ -137,7 +116,6 @@ object ProcessDefinitionExtractor {
       definition.sourceFactories.mapValuesNow(_.objectDefinition),
       definition.sinkFactories.mapValuesNow(_.objectDefinition),
       definition.customStreamTransformers.mapValuesNow { case (transformer, additionalData) => (transformer.objectDefinition, additionalData) },
-      definition.signalsWithTransformers.mapValuesNow(sign => (sign._1.objectDefinition, sign._2)),
       expressionDefinition,
       definition.settings
     )

@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.jdk.CollectionConverters._
 
 /*
   Extend this trait to test if exceptions are handled properly in operators/UDFs using LazyParameters

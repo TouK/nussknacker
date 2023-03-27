@@ -30,7 +30,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Properties
 import java.util.function.Consumer
 import java.{lang, time, util}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object DelayedFlinkKafkaConsumer {
 

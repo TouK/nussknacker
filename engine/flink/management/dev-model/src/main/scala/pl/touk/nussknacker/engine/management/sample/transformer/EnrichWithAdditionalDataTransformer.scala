@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, OneParamLazyParameterFunction}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /*
   This is basically left outer join - we join events stream (left side of join) with additional data stream (e.g. users - right side of join)
@@ -40,7 +41,7 @@ object EnrichWithAdditionalDataTransformer extends CustomStreamTransformer with 
         val error = if (byBranch.values.toList.sorted != roleValues.sorted) List(CustomNodeError(s"Has to be exactly one Event and Additional data, got: ${byBranch.values.mkString(", ")}",
           Some(roleParameter))) else Nil
         NextParameters(
-          List(Parameter[Any](additionalDataValueParameter).copy(additionalVariables = right(byBranch).map(contexts).getOrElse(ValidationContext()).localVariables.mapValues(AdditionalVariableProvidedInRuntime(_)), isLazyParameter = true)), error
+          List(Parameter[Any](additionalDataValueParameter).copy(additionalVariables = right(byBranch).map(contexts).getOrElse(ValidationContext()).localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_)), isLazyParameter = true)), error
         )
       case TransformationStep((`roleParameter`, FailedToDefineParameter) :: (`keyParameter`, _) ::Nil, _) =>
         FinalResults(ValidationContext())

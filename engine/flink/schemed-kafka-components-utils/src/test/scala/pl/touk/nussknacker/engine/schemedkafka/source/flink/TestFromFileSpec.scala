@@ -7,7 +7,7 @@ import io.circe.Json._
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
@@ -19,20 +19,20 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schema.Address
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.KafkaConfigProperties
-
+import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import java.util.Collections
 
 class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
+    override protected def schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
 
   private lazy val config = ConfigFactory.empty()
@@ -51,14 +51,16 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start", "kafka", TopicParamName -> s"'$topic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
-      .emptySink("end", "sinkForInputMeta", "value" -> "#inputMeta")
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
 
     val consumerRecord = new InputMetaToJson()
       .encoder(BestEffortJsonEncoder.defaultForTests.encode).apply(inputMeta)
       .mapObject(_.add("key", Null)
       .add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa"))))
+    val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
+    val scenarioTestData = ScenarioTestData(ScenarioTestRecord("start", testRecordJson) :: Nil)
 
-    val results = run(process, TestData.newLineSeparated(s"""{"keySchemaId":null,"valueSchemaId":$id,"consumerRecord":${consumerRecord.noSpaces} }"""))
+    val results = run(process, scenarioTestData)
 
     val testResultVars = results.nodeResults("end").head.context.variables
     testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
@@ -71,9 +73,9 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     schemaRegistryMockClient.register(subject, parsedSchema)
   }
 
-  private def run(process: CanonicalProcess, testData: TestData): TestResults[Any] = {
+  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(LocalModelData(config, creator), process, testData,
+      FlinkTestMain.run(LocalModelData(config, creator), process, scenarioTestData,
         FlinkTestConfiguration.configuration(), identity
       )
     }

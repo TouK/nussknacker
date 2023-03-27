@@ -16,7 +16,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.enablers.Retrying
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEnvironmentConfig
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHolder, userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig)
   extends StreamExecutionEnvironment(userFlinkClusterConfig) with LazyLogging with Matchers {

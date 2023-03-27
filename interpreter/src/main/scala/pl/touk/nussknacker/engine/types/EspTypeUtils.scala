@@ -66,7 +66,7 @@ object EspTypeUtils {
 
     val staticMethodInfos = methodNameAndInfoList.filter(_._2.isInstanceOf[StaticMethodInfo]).asInstanceOf[List[(String, StaticMethodInfo)]]
     val functionalMethodInfos = methodNameAndInfoList.filter(_._2.isInstanceOf[FunctionalMethodInfo])
-    val groupedFunctionalMethodInfos = functionalMethodInfos.groupBy(_._1).mapValues(_.map(_._2))
+    val groupedFunctionalMethodInfos = functionalMethodInfos.groupBy(_._1).mapValuesNow(_.map(_._2)).toMap
 
     deduplicateMethodsWithGenericReturnType(staticMethodInfos)
       .asInstanceOf[Map[String, List[MethodInfo]]]

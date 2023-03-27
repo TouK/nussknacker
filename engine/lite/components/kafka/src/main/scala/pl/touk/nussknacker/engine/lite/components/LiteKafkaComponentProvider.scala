@@ -5,20 +5,20 @@ import net.ceedubs.ficus.Ficus.{booleanValueReader, optionValueReader, toFicusCo
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.schemedkafka.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
-import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.generic.BaseGenericTypedJsonSourceFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{deserializeToMap, deserializeToTypedMap, jsonFormatterFactory}
 import pl.touk.nussknacker.engine.kafka.sink.{GenericJsonSerialization, KafkaSinkFactory}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{UniversalSchemaBasedSerdeProvider, UniversalSchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.schemedkafka.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
+import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 import java.util
-import scala.language.higherKinds
 
 object LiteKafkaComponentProvider {
   val KafkaUniversalName = "kafka"
@@ -30,11 +30,11 @@ object LiteKafkaComponentProvider {
   val KafkaSinkRawAvroName = "kafka-avro-raw"
 }
 
-class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends ComponentProvider {
+class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClientFactory) extends ComponentProvider {
 
   import LiteKafkaComponentProvider._
 
-  def this() = this(CachedConfluentSchemaRegistryClientFactory)
+  def this() = this(UniversalSchemaRegistryClientFactory)
 
   override def providerName: String = "kafka"
 
@@ -44,13 +44,13 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
     val docsConfig: DocsConfig = new DocsConfig(config)
     import docsConfig._
     val avro = "DataSourcesAndSinks#schema-registry--avro-serialization"
-    val universal = "DataSourcesAndSinks#kafka-source"
+    def universal(typ: String) = s"DataSourcesAndSinks#kafka-$typ"
     val schemaRegistryTypedJson = "DataSourcesAndSinks#schema-registry--json-serialization"
     val noTypeInfo = "DataSourcesAndSinks#no-type-information--json-serialization"
 
     val avroPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryClientFactory)
     val jsonPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory)
-    val universalSerdeProvider = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
+    val universalSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
 
     lazy val lowLevelKafkaComponents = List(
       ComponentDefinition(KafkaJsonName, new KafkaSinkFactory(GenericJsonSerialization(_), dependencies, LiteKafkaSinkImplFactory)).withRelativeDocs(noTypeInfo),
@@ -67,10 +67,9 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
       ComponentDefinition(KafkaSinkRegistryTypedRawJsonName, new KafkaAvroSinkFactory(schemaRegistryClientFactory, jsonPayloadSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
       ComponentDefinition(KafkaSinkRawAvroName, new KafkaAvroSinkFactory(schemaRegistryClientFactory, avroPayloadSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro))
 
-    // TODO: change link to the documentation when json schema handling will be available
     val universalKafkaComponents = List(
-      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(universal),
-      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, LiteKafkaUniversalSinkImplFactory)).withRelativeDocs(universal)
+      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(universal("source")),
+      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, LiteKafkaUniversalSinkImplFactory)).withRelativeDocs(universal("sink"))
     )
 
     //TODO: for now we add this feature flag inside kafka, when this provider can handle multiple kafka brokers move to provider config

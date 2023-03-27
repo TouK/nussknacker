@@ -9,7 +9,7 @@ object SinkValue {
 
   def applyUnsafe(sinkParameter: SinkValueParameter, parameterValues: Map[String, Any]): SinkValue =
     sinkParameter match {
-      case SinkSingleValueParameter(param) =>
+      case SinkSingleValueParameter(param, _) =>
         val value = parameterValues(param.name)
         SinkSingleValue(toLazyParameter(value, param.name))
 

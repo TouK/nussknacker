@@ -1,0 +1,159 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ProcessStateIcon tests should show data from loaded process.state 1`] = `
+.emotion-0 {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
+<div>
+  <div
+    class="emotion-0"
+    title="The scenario has been successfully cancelled."
+  >
+    <svg
+      data-testid="svg"
+    >
+      /be-static/states/stopping-success.svg
+    </svg>
+  </div>
+</div>
+`;
+
+exports[`ProcessStateIcon tests should show defaults for loaded process.state without data 1`] = `
+.emotion-0 {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
+<div>
+  <div
+    class="emotion-0"
+  >
+    <svg
+      data-testid="svg"
+    >
+      /be-static/assets/states/status-unknown.svg
+    </svg>
+  </div>
+</div>
+`;
+
+exports[`ProcessStateIcon tests should show defaults for missing process.state and stateProcess 1`] = `
+.emotion-0 {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
+<div>
+  <div
+    class="emotion-0"
+  >
+    <svg
+      data-testid="svg"
+    >
+      /be-static/assets/states/status-unknown.svg
+    </svg>
+  </div>
+</div>
+`;
+
+exports[`ProcessStateIcon tests should show defaults if loadedProcess is empty 1`] = `
+.emotion-0 {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
+<div>
+  <div
+    class="emotion-0"
+  >
+    <svg
+      data-testid="svg"
+    >
+      /be-static/assets/states/status-unknown.svg
+    </svg>
+  </div>
+</div>
+`;
+
+exports[`ProcessStateIcon tests should show defaults if loadedProcess is null 1`] = `
+.emotion-0 {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
+<div>
+  <div
+    class="emotion-0"
+  >
+    <svg
+      data-testid="svg"
+    >
+      /be-static/assets/states/status-unknown.svg
+    </svg>
+  </div>
+</div>
+`;
+
+exports[`ProcessStateIcon tests should show loadedProcess data 1`] = `
+.emotion-0 {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
+<div>
+  <div
+    class="emotion-0"
+    title="The scenario has been successfully cancelled."
+  >
+    <svg
+      data-testid="svg"
+    >
+      /be-static/states/stopping-success.svg
+    </svg>
+  </div>
+</div>
+`;

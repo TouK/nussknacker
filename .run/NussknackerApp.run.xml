@@ -4,7 +4,6 @@
     <envs>
       <env name="AUTHENTICATION_USERS_FILE" value="../../../nussknacker-dist/src/universal/conf/users.conf" />
       <env name="CONSOLE_THRESHOLD_LEVEL" value="DEBUG" />
-      <env name="FLINK_QUERYABLE_STATE_PROXY_URL" value="localhost:3063" />
       <env name="FLINK_REST_URL" value="http://localhost:3031" />
       <env name="FLINK_SHOULD_VERIFY_BEFORE_DEPLOY" value="false" />
       <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />
@@ -15,6 +14,8 @@
       <env name="SCHEMA_REGISTRY_URL" value="http://localhost:3082" />
       <env name="SQL_ENRICHER_URL" value="localhost:5432" />
       <env name="USAGE_REPORTS_FINGERPRINT" value="development" />
+      <env name="USAGE_REPORTS_SOURCE" value="sources" />
+      <env name="INPUT_CONFIG_RESOLVE_ENV_VARIABLES" value="false" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />

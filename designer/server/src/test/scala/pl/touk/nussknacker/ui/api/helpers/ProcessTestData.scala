@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
@@ -32,6 +33,7 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 object ProcessTestData {
 
   import spel.Implicits._
+  import KafkaFactory._
 
   val existingSourceFactory = "barSource"
   val otherExistingSourceFactory = "fooSource"
@@ -65,7 +67,10 @@ object ProcessTestData {
     .withSourceFactory(secretExistingSourceFactory, TestCategories.SecretCategory)
     .withSinkFactory(otherExistingSinkFactory)
     .withSinkFactory(existingSinkFactory)
-    .withSinkFactory(existingSinkFactoryKafkaString, Parameter[String]("topic"), Parameter[Any]("value").copy(isLazyParameter = true))
+    .withSinkFactory(existingSinkFactoryKafkaString,
+      Parameter[String](TopicParamName),
+      Parameter[Any](SinkValueParamName).copy(isLazyParameter = true)
+    )
     .withService(existingServiceId)
     .withService(otherExistingServiceId)
     .withService(processorId, classOf[Void])
@@ -76,13 +81,13 @@ object ProcessTestData {
       editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
       validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a")))))
     )
-    .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query1", "query2"),
+    .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
+    .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(Set("query4"),
+    .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(optionalEndingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query5"),
+    .withCustomStreamTransformer(optionalEndingStreamTransformer, classOf[String], CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = true))
 
   def processValidation: ProcessValidation = ProcessValidation(
@@ -94,7 +99,7 @@ object ProcessTestData {
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")
 
-  val validProcessWithEmptyExpr: CanonicalProcess = validProcessWithParam("fooProcess", "expression" -> Expression("spel", ""))
+  val validProcessWithEmptyExpr: CanonicalProcess = validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
 
   val validDisplayableProcess: ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
 
@@ -116,7 +121,7 @@ object ProcessTestData {
 
   def toValidatedDisplayable(espProcess: CanonicalProcess, category: String = TestCategories.TestCat): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
-    new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable, category))
+    new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable))
   }
 
   val multipleSourcesValidProcess: ValidatedDisplayableProcess = toValidatedDisplayable(ScenarioBuilder.streaming("fooProcess").sources(
@@ -194,18 +199,17 @@ object ProcessTestData {
         "maxEvents" -> "text",
         "unknown" -> "x",
         "numberOfThreads" -> "wrong fixed value"
-      ))),
-      subprocessVersions = Map.empty),
+      )))),
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
-    Some(TestCategories.TestCat)
+    TestCategories.TestCat
   )
 
   val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), Some(ProcessAdditionalFields(Some("process description"), Map.empty)), subprocessVersions = Map.empty),
+      properties = ProcessProperties(StreamMetaData(Some(2)), Some(ProcessAdditionalFields(Some("process description"), Map.empty))),
       nodes = List(
         node.Source(
           id = "sourceId",
@@ -220,12 +224,12 @@ object ProcessTestData {
       ),
       edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
       processingType = TestProcessingTypes.Streaming,
-      Some(TestCategories.TestCat)
+      TestCategories.TestCat
     )
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None, Map()), List(), List.empty)
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None), List(), List.empty)
   }
 
   val sampleSubprocessOneOut = {
@@ -261,13 +265,12 @@ object ProcessTestData {
       id = processName.value,
       properties = ProcessProperties(
         StreamMetaData(),
-        None,
-        subprocessVersions = Map.empty
+        None
       ),
       nodes = List.empty,
       edges = List.empty,
       processingType = TestProcessingTypes.Streaming,
-      Some(TestCategories.Category1)
+      TestCategories.Category1
     )
 
     UpdateProcessCommand(displayableProcess, comment.getOrElse(UpdateProcessComment("")))

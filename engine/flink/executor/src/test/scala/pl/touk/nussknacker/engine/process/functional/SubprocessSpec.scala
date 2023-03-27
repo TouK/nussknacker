@@ -33,7 +33,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldNot be('empty)
+    MockService.data shouldNot be(Symbol("empty"))
     MockService.data.head shouldBe "a"
   }
 
@@ -50,7 +50,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldNot be('empty)
+    MockService.data shouldNot be(Symbol("empty"))
     MockService.data.head shouldBe "a"
   }
 
@@ -66,7 +66,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldNot be('empty)
+    MockService.data shouldNot be(Symbol("empty"))
     MockService.data.head shouldBe "a"
   }
 
@@ -82,7 +82,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldNot be('empty)
+    MockService.data shouldNot be(Symbol("empty"))
     MockService.data.head shouldBe "a"
   }
 
@@ -130,7 +130,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess)).resolve(scenario)
 
-    resolved shouldBe 'valid
+    resolved shouldBe Symbol("valid")
     resolved.toOption.get
   }
 

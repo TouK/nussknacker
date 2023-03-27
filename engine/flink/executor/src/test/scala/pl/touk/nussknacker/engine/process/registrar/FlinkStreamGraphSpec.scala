@@ -14,8 +14,9 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
+import scala.collection.compat.immutable.LazyList
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait FlinkStreamGraphSpec extends AnyFunSuite with ProcessTestHelpers with Matchers with OptionValues with PatientScalaFutures {
 
@@ -36,8 +37,8 @@ trait FlinkStreamGraphSpec extends AnyFunSuite with ProcessTestHelpers with Matc
 
     def sinks: List[StreamNode] = graph.getSinkIDs.asScala.map(graph.getStreamNode).toList
 
-    def traverse(node: StreamNode): Stream[StreamNode] =
-      node #:: node.getOutEdgeIndices.asScala.toStream.map(graph.getStreamNode).flatMap(traverse)
+    def traverse(node: StreamNode): LazyList[StreamNode] =
+      node #:: node.getOutEdgeIndices.asScala.to(LazyList).map(graph.getStreamNode).flatMap(traverse)
 
   }
 }

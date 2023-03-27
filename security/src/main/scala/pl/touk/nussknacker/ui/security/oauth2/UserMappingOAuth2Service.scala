@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import io.circe.Decoder
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
@@ -12,7 +12,7 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
   delegate: OAuth2Service[UserInfoData, AuthorizationData],
   loggedUserFunction: UserInfoData => AuthenticatedUser
 )
-(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT])
+(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
   extends OAuth2Service[AuthenticatedUser, AuthorizationData] {
 
   def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, AuthenticatedUser)] =

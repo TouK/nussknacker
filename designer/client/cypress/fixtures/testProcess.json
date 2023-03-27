@@ -14,9 +14,6 @@
         "numberOfThreads" : "1",
         "environment" : "test"
       }
-    },
-    "subprocessVersions" : {
-
     }
   },
   "nodes" : [
@@ -97,7 +94,7 @@
         "typ" : "sendSms",
         "parameters" : [
           {
-            "name" : "value",
+            "name" : "Value",
             "expression" : {
               "language" : "spel",
               "expression" : "''"

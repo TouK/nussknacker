@@ -1,15 +1,18 @@
 import { useFilterContext } from "../../common";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ScenariosFiltersModel } from "./scenariosFiltersModel";
-import { FilterListItem } from "./filterListItem";
+import {ScenariosFiltersModel, ScenariosFiltersModelType} from "./scenariosFiltersModel";
+import {FilterListItem, FilterListItemSwitch} from "./filterListItem";
 import { OptionsStack } from "./optionsStack";
 import { Divider } from "@mui/material";
+import { some, xor } from "lodash";
+import {FilterListItemLabel} from "./filterListItemLabel";
 
 export function OtherOptionsStack(): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
-    const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
+    const otherFilters: Array<keyof ScenariosFiltersModel> = ["TYPE"];
+    const getTypeFilter = () => getFilter("TYPE", true);
 
     return (
         <OptionsStack
@@ -22,27 +25,34 @@ export function OtherOptionsStack(): JSX.Element {
             onChange={(v) => otherFilters.forEach((k) => setFilter(k, v))}
         >
             <FilterListItem
-                invert
                 color="default"
-                checked={getFilter("HIDE_SCENARIOS") === true}
-                onChange={(checked) => setFilter("HIDE_SCENARIOS", checked)}
-                label={t("table.filter.SHOW_SCENARIOS", "Show scenarios")}
+                checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.SCENARIOS)}
+                onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.SCENARIOS], getTypeFilter()))}
+                label={t("table.filter.SCENARIOS", "Scenarios")}
             />
             <FilterListItem
-                invert
                 color="default"
-                checked={getFilter("HIDE_FRAGMENTS") === true}
-                onChange={(checked) => setFilter("HIDE_FRAGMENTS", checked)}
-                label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
+                checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.FRAGMENTS)}
+                onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.FRAGMENTS], getTypeFilter()))}
+                label={t("table.filter.FRAGMENTS", "Fragments")}
             />
         </OptionsStack>
     );
 }
 
-export function StatusOptionsStack(): JSX.Element {
+export interface StatusFiltersParams<V extends string = string, T = string> {
+    options?: T[];
+    withArchived: boolean
+}
+
+export function StatusOptionsStack(props: StatusFiltersParams<string, { name: string; displayableName: string; icon?: string; tooltip?: string }>): JSX.Element {
+    const { options = [], withArchived } = props;
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
-    const filters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
+    const filters: Array<keyof ScenariosFiltersModel> = ["ARCHIVED", "STATUS"];
+
+    const value = getFilter("STATUS", true);
+    const onChange = setFilter("STATUS");
 
     return (
         <OptionsStack
@@ -54,33 +64,23 @@ export function StatusOptionsStack(): JSX.Element {
                 .map(toString)}
             onChange={(v) => filters.forEach((k: keyof ScenariosFiltersModel) => setFilter(k, v))}
         >
-            <FilterListItem
-                invert
-                color="default"
-                checked={getFilter("HIDE_DEPLOYED") === true}
-                onChange={(checked) => setFilter("HIDE_DEPLOYED", checked)}
-                label={t("table.filter.SHOW_DEPLOYED", "Show deployed")}
-            />
-            <FilterListItem
-                invert
-                color="default"
-                checked={getFilter("HIDE_NOT_DEPLOYED") === true}
-                onChange={(checked) => setFilter("HIDE_NOT_DEPLOYED", checked)}
-                label={t("table.filter.SHOW_NOT_DEPLOYED", "Show not deployed")}
-            />
-            <Divider />
-            <FilterListItem
-                invert
-                color="default"
-                checked={getFilter("HIDE_ACTIVE") === true}
-                onChange={(checked) => setFilter("HIDE_ACTIVE", checked)}
-                label={t("table.filter.SHOW_ACTIVE", "Show active")}
-            />
-            <FilterListItem
-                checked={getFilter("SHOW_ARCHIVED") === true}
-                onChange={(checked) => setFilter("SHOW_ARCHIVED", checked)}
-                label={t("table.filter.SHOW_ARCHIVED", "Show archived")}
-            />
+            {options.map((option) => {
+                const isSelected = value.includes(option.name);
+                const onClick = (checked: boolean) => onChange(checked ? [...value, option.name] : value.filter((v) => v !== option.name));
+                return (
+                    <FilterListItem key={option.name} checked={isSelected} onChange={onClick} label={<FilterListItemLabel {...option} />} />
+                );
+            })}
+            {withArchived ? (
+                <>
+                    <Divider />
+                    <FilterListItemSwitch
+                        checked={getFilter("ARCHIVED") === true}
+                        onChange={(checked) => setFilter("ARCHIVED", checked)}
+                        label={t("table.filter.ARCHIVED", "Archived")}
+                    />
+                </>
+            ) : null }
         </OptionsStack>
     );
 }

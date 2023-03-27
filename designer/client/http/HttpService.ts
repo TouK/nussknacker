@@ -6,15 +6,16 @@ import {Moment} from "moment"
 import {SettingsData, ValidationData} from "../actions/nk"
 import api from "../api"
 import {UserData} from "../common/models/User"
-import {ProcessActionType, ProcessStateType, ProcessType} from "../components/Process/types"
+import {ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType} from "../components/Process/types"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {AuthenticationSettings} from "../reducers/settings"
 import {Process, ProcessDefinitionData, ProcessId} from "../types"
-import {WithId, Instant} from "../types/common"
+import {Instant, WithId} from "../types/common"
 import {BackendNotification} from "../containers/Notifications"
 import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
 import {AdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
+import {withoutHackOfEmptyEdges} from "../components/graph/GraphPartialsInTS/EdgeUtils"
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -50,13 +51,6 @@ export interface AppBuildInfo {
   version: string,
   processingType: any,
 }
-
-type Services = Record<string, Record<string, {
-  "parameters": unknown[],
-  "returnType": unknown,
-  "categories": string[],
-  "nodeConfig": unknown,
-}>>
 
 export type ComponentActionType = {
   id: string,
@@ -125,16 +119,6 @@ class HttpService {
       })
   }
 
-  availableQueryableStates() {
-    return api.get("/queryableState/list")
-  }
-
-  queryState(processId, queryName, key) {
-    const data = {processId, queryName, key}
-    return api.get("/queryableState/fetch", {params: data})
-      .catch(error => this.#addError(i18next.t("notification.error.cannotFetchState", "Cannot fetch state"), error))
-  }
-
   fetchHealthCheckProcessDeployment(): Promise<HealthCheckResponse> {
     return api.get("/app/healthCheck/process/deployment")
       .then(() => ({state: HealthState.ok}))
@@ -174,6 +158,10 @@ class HttpService {
     return api.get<AppBuildInfo>("/app/buildInfo")
   }
 
+  fetchCategoriesWithProcessingType() {
+    return api.get<Map<string, string>>("/app/config/categoriesWithProcessingType")
+  }
+
   fetchProcessDefinitionData(processingType: string, isSubprocess: boolean) {
     const promise = api.get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`)
       .then(response => {
@@ -199,10 +187,6 @@ class HttpService {
     return api.get<string[]>("/processDefinitionData/componentIds")
   }
 
-  fetchServices() {
-    return api.get<Services>("/processDefinitionData/services")
-  }
-
   fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
     return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`)
   }
@@ -219,15 +203,20 @@ class HttpService {
     return api.get<ProcessType[]>("/processes", {params: data})
   }
 
-  fetchProcessDetails(processId: string, versionId?: string) {
+  fetchProcessDetails(processId: ProcessId, versionId?: ProcessVersionId) {
     const id = encodeURIComponent(processId)
     const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`
-    return api.get(url)
+    return api.get<ProcessType>(url)
   }
 
   fetchProcessesStates() {
     return api.get<StatusesType>("/processes/status")
       .catch(error => Promise.reject(this.#addError(i18next.t("notification.error.cannotFetchStatuses", "Cannot fetch statuses"), error)))
+  }
+
+  fetchStatusDefinitions() {
+    return api.get<StatusDefinitionType[]>(`/statusDefinitions`)
+        .catch(error => Promise.reject(this.#addError(i18next.t("notification.error.cannotFetchStatusDefinitions", "Cannot fetch status definitions"), error)))
   }
 
   fetchProcessToolbarsConfiguration(processId) {
@@ -239,13 +228,17 @@ class HttpService {
     return promise
   }
 
-  fetchProcessState(processId) {
-    return api.get(`/processes/${encodeURIComponent(processId)}/status`)
-      .catch(error => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error))
+  fetchProcessState(processId: ProcessId) {
+    const promise = api.get(`/processes/${encodeURIComponent(processId)}/status`)
+    promise.catch(error => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error))
+    return promise
   }
 
   fetchProcessesDeployments(processId: string) {
-    return api.get<{ performedAt: string, action: "UNARCHIVE" | "ARCHIVE" | "CANCEL" | "DEPLOY" }[]>(`/processes/${encodeURIComponent(processId)}/deployments`)
+    return api.get<{
+      performedAt: string,
+      action: "UNARCHIVE" | "ARCHIVE" | "CANCEL" | "DEPLOY",
+    }[]>(`/processes/${encodeURIComponent(processId)}/deployments`)
       .then(res => res.data
         .filter(({action}) => action === "DEPLOY")
         .map(({performedAt}) => performedAt))
@@ -279,10 +272,6 @@ class HttpService {
     })
   }
 
-  invokeService(processingType, serviceName, parameters) {
-    return api.post(`/service/${processingType}/${serviceName}`, parameters)
-  }
-
   cancel(processId, comment?) {
     return api.post(`/processManagement/cancel/${encodeURIComponent(processId)}`, comment)
       .catch(error => {
@@ -313,7 +302,7 @@ class HttpService {
       .catch(error => this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error))
   }
 
-  addAttachment(processId, versionId, file) {
+  addAttachment(processId: ProcessId, versionId: ProcessVersionId, file: File) {
     const data = new FormData()
     data.append("attachment", file)
 
@@ -322,7 +311,7 @@ class HttpService {
       .catch(error => this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true))
   }
 
-  downloadAttachment(processId, processVersionId, attachmentId, fileName) {
+  downloadAttachment(processId: ProcessId, processVersionId: ProcessVersionId, attachmentId, fileName: string) {
     return api.get(`/processes/${encodeURIComponent(processId)}/${processVersionId}/activity/attachments/${attachmentId}`, {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, fileName))
       .catch(error => this.#addError(i18next.t("notification.error.failedToDownloadAttachment", "Failed to download attachment"), error))
@@ -345,8 +334,8 @@ class HttpService {
       })
   }
 
-  exportProcess(process, versionId) {
-    return api.post("/processesExport", process, {responseType: "blob"})
+  exportProcess(process: Process, versionId) {
+    return api.post("/processesExport", this.#sanitizeProcess(process), {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, `${process.id}-${versionId}.json`))
       .catch(error => this.#addError(i18next.t("notification.error.failedToExport", "Failed to export"), error))
   }
@@ -358,8 +347,8 @@ class HttpService {
   }
 
   //to prevent closing edit node modal and corrupting graph display
-  validateProcess({id, nodes, edges, properties, processingType}: Omit<Process, "validationResult">) {
-    return api.post("/processValidation", {id, nodes, properties, processingType, edges: edges.filter(e => e.to)})
+  validateProcess(process: Process) {
+    return api.post("/processValidation", this.#sanitizeProcess(process))
       .catch(error => {
         this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true)
         return Promise.reject(error)
@@ -379,9 +368,9 @@ class HttpService {
   validateProperties(processId, processProperties): Promise<AxiosResponse<ValidationData>> {
     const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, {processProperties})
     promise.catch(error => this.#addError(
-        i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
-        error,
-        true
+      i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
+      error,
+      true
     ))
     return promise
   }
@@ -408,13 +397,18 @@ class HttpService {
 
   //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
 
-  getTestCapabilities(process) {
-    return api.post("/testInfo/capabilities", process)
-      .catch(error => this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true))
+  getTestCapabilities(process: Process) {
+    const promise = api.post("/testInfo/capabilities", this.#sanitizeProcess(process))
+    promise.catch(error => this.#addError(
+      i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"),
+      error,
+      true
+    ))
+    return promise
   }
 
-  generateTestData(processId, testSampleSize, data): Promise<AxiosResponse<any>> {
-    const promise = api.post(`/testInfo/generate/${testSampleSize}`, data, {responseType: "blob"})
+  generateTestData(processId: string, testSampleSize: string, process: Process): Promise<AxiosResponse<any>> {
+    const promise = api.post(`/testInfo/generate/${testSampleSize}`, this.#sanitizeProcess(process), {responseType: "blob"})
     promise
       .then(response => FileSaver.saveAs(response.data, `${processId}-testData`))
       .catch(error => this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error, true))
@@ -433,8 +427,8 @@ class HttpService {
   }
 
   //to prevent closing edit node modal and corrupting graph display
-  saveProcess(processId, processJson, comment) {
-    const data = {process: processJson, comment: comment}
+  saveProcess(processId, processJson: Process, comment) {
+    const data = {process: this.#sanitizeProcess(processJson), comment: comment}
     return api.put(`/processes/${encodeURIComponent(processId)}`, data)
       .catch(error => {
         this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true)
@@ -457,24 +451,29 @@ class HttpService {
   createProcess(processId: string, processCategory: string, isSubprocess = false) {
     const promise = api.post(`/processes/${encodeURIComponent(processId)}/${processCategory}?isSubprocess=${isSubprocess}`)
     promise.catch(error => {
-      if(error?.response?.status != 400)
+      if (error?.response?.status != 400)
         this.#addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true)
     })
     return promise
   }
 
-  importProcess(processId, file) {
+  importProcess(processId: ProcessId, file: File) {
     const data = new FormData()
     data.append("process", file)
 
-    return api.post(`/processes/import/${encodeURIComponent(processId)}`, data)
-      .catch(error => this.#addError(i18next.t("notification.error.failedToImport", "Failed to import"), error, true))
+    const promise = api.post(`/processes/import/${encodeURIComponent(processId)}`, data)
+    promise.catch(error => {
+      this.#addError(i18next.t("notification.error.failedToImport", "Failed to import"), error, true)
+    })
+    return promise
   }
 
   testProcess(processId: ProcessId, file: File, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
+    const sanitized = this.#sanitizeProcess(processJson)
+
     const data = new FormData()
     data.append("testData", file)
-    data.append("processJson", new Blob([JSON.stringify(processJson)], {type: "application/json"}))
+    data.append("processJson", new Blob([JSON.stringify(sanitized)], {type: "application/json"}))
 
     const promise = api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data)
     promise.catch(error => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
@@ -502,17 +501,6 @@ class HttpService {
     return api.post(`/remoteEnvironment/${encodeURIComponent(processId)}/${versionId}/migrate`)
       .then(() => this.#addInfo(i18next.t("notification.info.scenarioMigrated", "Scenario {{processId}} was migrated", {processId})))
       .catch(error => this.#addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true))
-  }
-
-  fetchSignals() {
-    return api.get("/signal")
-      .catch(error => this.#addError(i18next.t("notification.error.failedToFetchSignals", "Failed to fetch signals"), error))
-  }
-
-  sendSignal(signalType, processId, params) {
-    return api.post(`/signal/${signalType}/${encodeURIComponent(processId)}`, params)
-      .then(() => this.#addInfo(i18next.t("notification.info.signalSent", "Signal sent")))
-      .catch(error => this.#addError(i18next.t("notification.error.failedToSendSignal", "Failed to send signal"), error))
   }
 
   fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {
@@ -544,7 +532,15 @@ class HttpService {
     this.#addErrorMessage(message, errorMessage, showErrorText)
     return Promise.resolve(error)
   }
-  
+
+  #sanitizeProcess(process: Process) {
+    //don't send validationResult, it's not needed and can be v. large,
+    const {id, nodes, edges, properties, processingType, category}: Omit<Process, "validationResult"> =
+      //don't send empty edges
+      withoutHackOfEmptyEdges(process)
+    return {id, nodes, edges, properties, processingType, category}
+  }
+
 }
 
 export default new HttpService()

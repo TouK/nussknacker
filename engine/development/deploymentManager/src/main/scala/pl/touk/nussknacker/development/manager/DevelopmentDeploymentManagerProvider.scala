@@ -3,18 +3,18 @@ package pl.touk.nussknacker.development.manager
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{AfterRunningStatus, PreparingResourcesStatus, TestStatus}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -24,7 +24,8 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
-class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentManager with LazyLogging {
+class DevelopmentDeploymentManager(actorSystem: ActorSystem)
+  extends DeploymentManager with AlwaysFreshProcessState with LazyLogging {
 
   import SimpleStateStatus._
 
@@ -112,9 +113,9 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
     Future.unit
   }
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
+  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] =
     Future.successful(memory.get(name))
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
@@ -188,7 +189,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
+                                       sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
     new DevelopmentDeploymentManager(actorSystem)
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())

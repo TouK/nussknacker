@@ -174,7 +174,7 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
       "endResult" -> Json.obj("language" -> Json.fromString("spel"), "expression" -> Json.fromString("#someInput"))
     )
     val nodeData = nodeDataCodec.decodeJson(oldFormat).fold(k => throw new IllegalArgumentException(k), identity)
-    nodeData.asInstanceOf[Sink].legacyEndResultExpression shouldBe Some(Expression("spel", "#someInput"))
+    nodeData.asInstanceOf[Sink].legacyEndResultExpression shouldBe Some(Expression.spel("#someInput"))
 
     nodeDataCodec(nodeData).deepDropNullValues shouldBe oldFormat
   }
@@ -198,7 +198,7 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
       |        {
       |            "type" : "Source",
       |            "id" : "start",
-      |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "topic", "expression": { "language": "spel", "expression": "in.topic" }}]}
+      |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "Topic", "expression": { "language": "spel", "expression": "in.topic" }}]}
       |            ${nodeAdditionalFields.map(fields => s""", "additionalFields" : $fields""").getOrElse("")}
       |        }
       |    ]

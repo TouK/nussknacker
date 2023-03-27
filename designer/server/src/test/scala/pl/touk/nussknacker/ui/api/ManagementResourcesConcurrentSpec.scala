@@ -1,93 +1,66 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.{StatusCode, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess}
 
-import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
+import scala.jdk.CollectionConverters._
 
 @Slow
-class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteTest
+class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   test("not allow concurrent deployment of same process") {
+    val processName = s"sameConcurrentDeployments"
+    saveProcessAndAssertSuccess(processName, SampleProcess.process)
 
-    val processId = "sameConcurrentDeployments"
-
-    saveProcessAndAssertSuccess(processId, SampleProcess.process)
-
-    withWaitForDeployFinish(processId) {
+    deploymentManager.withWaitForDeployFinish(ProcessName(processName)) {
+      val firstDeployResult = deployProcess(processName)
+      val secondDeployResult = deployProcess(processName)
       eventually {
-        deployProcess(processId) ~> runRoute ~> check {
-          status shouldBe StatusCodes.Conflict
-        }
+        firstDeployResult.handled shouldBe true
+        secondDeployResult.handled shouldBe true
       }
-    }
-    deployProcess(processId) ~> runRoute ~> check {
-      status shouldBe StatusCodes.OK
+      var firstStatus: StatusCode = null
+      var secondStatus: StatusCode = null
+      firstDeployResult ~> check {
+        firstStatus = status
+      }
+      secondDeployResult ~> check {
+        secondStatus = status
+      }
+      val statuses = List(firstStatus, secondStatus)
+      statuses should contain only (StatusCodes.OK, StatusCodes.Conflict)
+      eventually {
+        deploymentManager.deploys.asScala.count(_ == ProcessName(processName)) shouldBe 1
+      }
     }
   }
 
-  test("not allow concurrent deployment and cancel of same process") {
-    val processId = "concurrentDeployAndCancel"
+  test("allow concurrent deployment and cancel of same process") {
+    val processName = "concurrentDeployAndCancel"
 
-    saveProcessAndAssertSuccess(processId, SampleProcess.process)
-
-    withWaitForDeployFinish(processId) {
+    saveProcessAndAssertSuccess(processName, SampleProcess.process)
+    deploymentManager.withWaitForDeployFinish(ProcessName(processName)) {
+      val firstDeployResult = deployProcess(processName)
+      // we have to check if deploy was invoke, otherwise cancel can be faster than deploy
       eventually {
-        cancelProcess(processId) ~> check {
-          status shouldBe StatusCodes.Conflict
-        }
+        deploymentManager.deploys.asScala.count(_ == ProcessName(processName)) shouldBe 1
+      }
+      cancelProcess(processName) ~> check {
+        status shouldBe StatusCodes.OK
+      }
+      firstDeployResult ~> check {
+        status shouldBe StatusCodes.OK
       }
     }
-    cancelProcess(processId) ~> check {
-      status shouldBe StatusCodes.OK
-    }
   }
-
-  test("not allow concurrent deployment of different processes") {
-    val processId = "differentScenarios1"
-    val processId2 = "differentScenarios2"
-
-    saveProcessAndAssertSuccess(processId, SampleProcess.process)
-    saveProcessAndAssertSuccess(processId2, SampleProcess.process)
-
-    withWaitForDeployFinish(processId) {
-      eventually {
-        deployProcess(processId2) ~> check {
-          status shouldBe StatusCodes.Conflict
-        }
-      }
-    }
-
-    deployProcess(processId2) ~> runRoute ~> check {
-      status shouldBe StatusCodes.OK
-    }
-
-  }
-
-  private def withWaitForDeployFinish(name: String)(action: => Unit): Unit = {
-    val firstRun = deploymentManager.withWaitForDeployFinish {
-      val firstRun = deployProcess(name) ~> runRoute
-      firstRun.handled shouldBe false
-      //We want to be sure deployment was invoked, to avoid flakiness
-      eventually {
-        deploymentManager.deploys.asScala.filter(_.processName == ProcessName(name)) should not be 'empty
-      }
-      action
-      firstRun
-    }
-    firstRun ~> check {
-      status shouldBe StatusCodes.OK
-    }
-  }
-
-
 
 }

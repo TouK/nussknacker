@@ -40,7 +40,7 @@ trait LiteRuntimeTest extends Matchers with ScalaFutures {
       ProcessVersion.empty, 
       contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, componentUseCase)
 
-    validatedInterpreter shouldBe 'valid
-    validatedInterpreter.toEither.right.get
+    validatedInterpreter shouldBe Symbol("valid")
+    validatedInterpreter.toEither.toOption.get
   }
 }

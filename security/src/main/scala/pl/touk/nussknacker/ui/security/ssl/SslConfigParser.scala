@@ -14,7 +14,7 @@ object SslConfigParser {
 
   def sslEnabled(config: Config): Option[KeyStoreConfig] = {
     for {
-      _ <- Some(Unit)
+      _ <- Some(())
       if config.hasPath(SslPath)
       sslConfig = config.getConfig(SslPath)
       if sslConfig.hasPath(EnabledKey) && sslConfig.getBoolean(EnabledKey)

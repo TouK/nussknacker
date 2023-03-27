@@ -1,11 +1,9 @@
-import {reportEvent} from "./reportEvent"
-import {events} from "../../analytics/TrackingEvents"
 import HttpService, {TestProcessResponse} from "../../http/HttpService"
 import {displayProcessCounts} from "./displayProcessCounts"
 import {TestResults} from "../../common/TestResultUtils"
 import {Process, ProcessId} from "../../types"
 import {ThunkAction} from "../reduxTypes"
-import {withoutHackOfEmptyEdges} from "../../components/graph/GraphPartialsInTS/EdgeUtils";
+import {withoutHackOfEmptyEdges} from "../../components/graph/GraphPartialsInTS/EdgeUtils"
 
 export function testProcessFromFile(id: ProcessId, testDataFile: File, process: Process): ThunkAction {
   return (dispatch) => {
@@ -13,13 +11,7 @@ export function testProcessFromFile(id: ProcessId, testDataFile: File, process: 
       type: "PROCESS_LOADING",
     })
 
-    dispatch(reportEvent({
-      category: events.categories.rightPanel,
-      action: events.actions.buttonClick,
-      name: "from file",
-    }))
-
-    let processWithCleanEdges = withoutHackOfEmptyEdges(process)
+    const processWithCleanEdges = withoutHackOfEmptyEdges(process)
     HttpService.testProcess(id, testDataFile, processWithCleanEdges)
       .then(response => dispatch(displayTestResults(response.data)))
       .catch(() => dispatch({type: "LOADING_FAILED"}))

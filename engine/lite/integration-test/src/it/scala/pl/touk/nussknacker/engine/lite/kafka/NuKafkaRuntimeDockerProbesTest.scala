@@ -7,8 +7,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ExtremelyPatientScalaFutures}
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
-import sttp.client.{NothingT, SttpBackend, UriContext, asString, basicRequest}
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client3.{SttpBackend, UriContext, asString, basicRequest}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -29,15 +29,15 @@ class NuKafkaRuntimeDockerProbesTest extends AnyFunSuite with BaseNuKafkaRuntime
     schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.outputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
   }
 
-  private implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend()
+  private implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
   private val baseManagementUrl = uri"http://localhost:$mappedRuntimeApiPort"
 
   test("readiness probe") {
     eventually {
       val readyResult = basicRequest
-        .get(baseManagementUrl.path("ready"))
+        .get(baseManagementUrl.withPath("ready"))
         .response(asString)
-        .send().futureValue.body.rightValue
+        .send(backend).futureValue.body.rightValue
       readyResult shouldBe "OK"
     }
   }
@@ -45,9 +45,9 @@ class NuKafkaRuntimeDockerProbesTest extends AnyFunSuite with BaseNuKafkaRuntime
   test("liveness probe") {
     eventually {
       val livenessResult = basicRequest
-        .get(baseManagementUrl.path("alive"))
+        .get(baseManagementUrl.withPath("alive"))
         .response(asString)
-        .send().futureValue.body.rightValue
+        .send(backend).futureValue.body.rightValue
       livenessResult shouldBe "OK"
     }
   }

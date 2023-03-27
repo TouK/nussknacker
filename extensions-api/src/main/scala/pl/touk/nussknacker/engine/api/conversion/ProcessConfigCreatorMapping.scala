@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.api.conversion
 
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
-import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 import pl.touk.nussknacker.engine.javaapi.process
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object ProcessConfigCreatorMapping {
 
@@ -47,18 +46,15 @@ object ProcessConfigCreatorMapping {
       override def buildInfo(): Map[String, String] = {
         jcreator.buildInfo().asScala.toMap
       }
-      override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = {
-        jcreator.signals(processObjectDependencies).asScala.toMap
-      }
       override def asyncExecutionContextPreparer(processObjectDependencies: ProcessObjectDependencies): Option[AsyncExecutionContextPreparer] = {
         Option(jcreator.asyncExecutionContextPreparer(processObjectDependencies).orElse(null))
       }
       override def classExtractionSettings(processObjectDependencies: ProcessObjectDependencies): ClassExtractionSettings = {
         val jSettings = jcreator.classExtractionSettings(processObjectDependencies)
         ClassExtractionSettings(
-          jSettings.getExcludeClassPredicates.asScala,
-          jSettings.getExcludeClassMemberPredicates.asScala,
-          jSettings.getIncludeClassMemberPredicates.asScala,
+          jSettings.getExcludeClassPredicates.asScala.toSeq,
+          jSettings.getExcludeClassMemberPredicates.asScala.toSeq,
+          jSettings.getIncludeClassMemberPredicates.asScala.toSeq,
           jSettings.getPropertyExtractionStrategy)
       }
     }

@@ -17,7 +17,7 @@ import java.time.Duration
 import java.{util => jul}
 import javax.annotation.Nullable
 import javax.validation.constraints.Min
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 // TODO: add testing capabilities
 object PeriodicSourceFactory extends PeriodicSourceFactory(
@@ -69,7 +69,7 @@ class PeriodicFunction(period: Duration) extends SourceFunction[Unit] {
 
   override def run(ctx: SourceFunction.SourceContext[Unit]): Unit = {
     while (isRunning) {
-      ctx.collect(Unit)
+      ctx.collect(())
       Thread.sleep(period.toMillis)
     }
   }

@@ -29,7 +29,7 @@ class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrati
       migrations <- migrations.forType(processDetails.processingType)
       displayable = processDetails.json
       migrationsToApply = findMigrationsToApply(migrations, processDetails.modelVersion) if migrationsToApply.nonEmpty || !skipEmptyMigrations
-    } yield migrateWithMigrations(ProcessConverter.fromDisplayable(displayable), migrationsToApply)
+    } yield migrateWithMigrations(ProcessConverter.fromDisplayable(displayable), displayable.category, migrationsToApply)
   }
 
   private def findMigrationsToApply(migrations: ProcessMigrations, modelVersion: Option[Int]): List[ProcessMigration] = {
@@ -38,10 +38,10 @@ class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrati
     }.map(_._2)
   }
 
-  private def migrateWithMigrations(process: CanonicalProcess, migrationsToApply: List[ProcessMigration]): MigrationResult = {
+  private def migrateWithMigrations(process: CanonicalProcess, category: String, migrationsToApply: List[ProcessMigration]): MigrationResult = {
     val (resultProcess, migrationsApplied) = migrationsToApply.foldLeft((process, Nil: List[ProcessMigration])) {
       case ((processToConvert, migrationsAppliedAcc), migration) =>
-        val migrated = migration.migrateProcess(processToConvert)
+        val migrated = migration.migrateProcess(processToConvert, category)
         val migrationsApplied = if (migrated != processToConvert) migration :: migrationsAppliedAcc else migrationsAppliedAcc
         (migrated, migrationsApplied)
     }

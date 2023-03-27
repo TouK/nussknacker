@@ -47,7 +47,7 @@ val testScenarioRunner = TestScenarioRunner
   .build()
 ```
 
-- `kafkaLiteBased` - based on Lite engine, no other setup needed, provides suitable methods of simulation communication with kafka, it bases on mocked schema registry, kafka server is not needed:
+- `kafkaLiteBased` - based on Lite engine, no other setup needed, provides suitable methods of simulation communication with kafka, it bases on mocked Schema Registry, Kafka server is not needed:
 ```scala
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner._
 val testScenarioRunner = TestScenarioRunner
@@ -89,7 +89,7 @@ Results are collected using `sink` component in `liteBased` case and `invocation
 All component names can be accessed using `TestScenarioRunner` object e.g. using `TestScenarioRunner.testDataSource` property.
 
 In case of `kafkaLiteBased` scenario test runner, you should use the same source/sink components as in production (e.g. `kafka`). There are available
-methods for passing avro records or jsons - you don't need to serialize them. Example for avro:
+methods for passing Avro records or JSON objects - you don't need to serialize them. Example for Avro:
 
 ```scala
 val runner = TestScenarioRunner.kafkaLiteBased().build()

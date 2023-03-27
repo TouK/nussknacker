@@ -8,7 +8,6 @@ import { queryClient } from "../store";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import { prefixer } from "stylis";
-import { BrowserRouter as Router } from "react-router-dom";
 
 // copy/paste from https://github.com/drenckpohl/stylis-plugin-extra-scope/blob/stylis-v4/src/index.js
 function createExtraScopePlugin(...extra) {
@@ -39,16 +38,14 @@ const emotionCache = createCache({
     ],
 });
 
-export function RootProviders({ children, basepath }: PropsWithChildren<{ basepath?: string }>): JSX.Element {
+export function RootProviders({ children }: PropsWithChildren<unknown>): JSX.Element {
     return (
         <CacheProvider value={emotionCache}>
             {/*@see https://github.com/i18next/react-i18next/issues/1379*/}
             <I18nextProvider i18n={i18n as any}>
                 <QueryClientProvider client={queryClient}>
                     <NkApiProvider>
-                        <Router basename={basepath}>
-                            <HistoryProvider>{children}</HistoryProvider>
-                        </Router>
+                        <HistoryProvider>{children}</HistoryProvider>
                     </NkApiProvider>
                 </QueryClientProvider>
             </I18nextProvider>

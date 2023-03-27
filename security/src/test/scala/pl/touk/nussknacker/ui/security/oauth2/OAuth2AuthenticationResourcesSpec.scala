@@ -8,8 +8,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
-import sttp.client.Response
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.Response
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
 
 import scala.concurrent.Future
@@ -28,11 +28,11 @@ class OAuth2AuthenticationResourcesSpec extends AnyFunSpec with Matchers with Sc
   private def routes(oauth2Resources: OAuth2AuthenticationResources) = oauth2Resources.routeWithPathPrefix
 
   private lazy val errorAuthenticationResources = {
-    implicit val testingBackend = new RecordingSttpBackend(
+    implicit val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend[Future, Any](
       SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(defaultConfig.accessTokenUri)))
-      .thenRespondWrapped(Future(Response(Option.empty, StatusCode.InternalServerError, "Bad Request")))
+      .thenRespond(Response(Option.empty, StatusCode.InternalServerError, "Bad Request"))
     )
 
     new OAuth2AuthenticationResources(defaultConfig.name, realm, DefaultOAuth2ServiceFactory.service(defaultConfig), defaultConfig)
@@ -42,7 +42,7 @@ class OAuth2AuthenticationResourcesSpec extends AnyFunSpec with Matchers with Sc
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(defaultConfig.accessTokenUri)))
-      .thenRespondWrapped(Future(Response(Option.empty, StatusCode.BadRequest, "Bad Request")))
+      .thenRespond(Response(Option.empty, StatusCode.BadRequest, "Bad Request"))
 
     new OAuth2AuthenticationResources(defaultConfig.name, realm, DefaultOAuth2ServiceFactory.service(defaultConfig), defaultConfig)
   }

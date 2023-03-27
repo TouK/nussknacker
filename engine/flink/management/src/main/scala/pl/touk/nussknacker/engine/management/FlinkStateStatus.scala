@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.engine.management
 
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
-object FlinkStateStatus  {
-  val FailedToGet: StateStatus = SimpleStateStatus.FailedToGet
-  val Unknown: StateStatus = SimpleStateStatus.Unknown
+object FlinkStateStatus {
+
+  // Flink statuses are based on SimpleStateStatus definitions
+  // TODO: remove those states here and use SimpleStateStatus
   val NotDeployed: StateStatus = SimpleStateStatus.NotDeployed
   val DuringDeploy: StateStatus = SimpleStateStatus.DuringDeploy
   val Running: StateStatus = SimpleStateStatus.Running
@@ -13,10 +15,10 @@ object FlinkStateStatus  {
   val Restarting: StateStatus = SimpleStateStatus.Restarting
   val DuringCancel: StateStatus = SimpleStateStatus.DuringCancel
   val Canceled: StateStatus = SimpleStateStatus.Canceled
-  val Failed: StateStatus = SimpleStateStatus.Failed
-  val Error: StateStatus = SimpleStateStatus.Error
-  val Warning: StateStatus = SimpleStateStatus.Warning
-  val Failing: StateStatus =  NotEstablishedStateStatus("Failing")
-  val MultipleJobsRunning: StateStatus = NotEstablishedStateStatus("More than one job running")
+
+  val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
+    case FlinkStateStatus.DuringDeploy => List(ProcessActionType.Cancel)
+    case FlinkStateStatus.Restarting => List(ProcessActionType.Cancel)
+  }
 
 }

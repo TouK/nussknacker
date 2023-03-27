@@ -37,11 +37,12 @@ import pl.touk.nussknacker.engine.variables.MetaVariables
 import java.util.Collections
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
 
-  private val emptyQueryNamesData = CustomTransformerAdditionalData(Set(), false, false)
+  private val emptyQueryNamesData = CustomTransformerAdditionalData(false, false)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
     Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord]), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
@@ -87,7 +88,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
         Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)
       )), emptyQueryNamesData)
     ),
-    Map.empty,
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass))), List.empty, List.empty,
       LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
@@ -867,8 +867,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
     val failingDefinition = base
       .copy(sourceFactories = base.sourceFactories
-        .mapValues { case v:StandardObjectWithMethodDef => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
-        => throw new RuntimeException("You passed incorrect parameter, cannot proceed"))) })
+        .mapValuesNow { case v:StandardObjectWithMethodDef => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
+        => throw new RuntimeException("You passed incorrect parameter, cannot proceed"))) }.toMap)
 
     val processWithInvalidExpresssion =
       ScenarioBuilder
@@ -938,9 +938,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
         .enricher("service-2", "output2", "withCustomValidation",
           "age" -> "30",
           "fields" -> "{invalid: 'yes'}")
-        .enricher("service-3", "output3", "withCustomValidation",
-          "age" -> "30",
-          "fields" -> "{name: 12}")
        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     val result = validateWithDef(process, withServiceRef)
@@ -948,7 +945,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
     result.result shouldBe Invalid(NonEmptyList.of(
       CustomNodeError("service-1", "Too young", Some("age")),
       CustomNodeError("service-2", "Service is invalid", None),
-      CustomNodeError("service-3", "All values should be strings", Some("fields"))
     ))
   }
 
@@ -1196,7 +1192,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val resolver = SubprocessResolver(Set(fragment))
 
     val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
-    withNonUsed shouldBe 'valid
+    withNonUsed shouldBe Symbol("valid")
 
     val withUsed = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
     val outputVar = OutputVar.fragmentOutput("output1", "")
@@ -1310,8 +1306,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
           fields.returnType match {
             case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
               Validated.invalidNel(CustomNodeError("Service is invalid", None))
-            case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
-              Validated.invalidNel(CustomNodeError("All values should be strings", Some("fields")))
             case _ => Valid(Typed.typedClass[String])
           }
         }
@@ -1334,7 +1328,7 @@ class StartingWithACustomValidator extends CustomParameterValidator {
   import cats.data.Validated.{invalid, valid}
 
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (value.stripPrefix("'").startsWith("A")) valid(Unit)
+    if (value.stripPrefix("'").startsWith("A")) valid(())
     else invalid(
       CustomParameterValidationError(s"Value $value does not starts with 'A'",
         "Value does not starts with 'A'", paramName, nodeId.id))

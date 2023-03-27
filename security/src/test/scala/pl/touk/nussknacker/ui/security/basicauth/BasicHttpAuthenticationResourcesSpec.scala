@@ -22,15 +22,26 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
   private val userWithEncryptedPassword = ConfigUser("foo", None, Some(encryptedPassword), Set.empty)
 
   it("should authenticate using plain password") {
-    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(ConfigUser("foo", Some("password"), None, Set.empty))))
-    authenticator.authenticate(new SampleProvidedCredentials("foo","password")) shouldBe 'defined
-    authenticator.authenticate(new SampleProvidedCredentials("foo","password2")) shouldBe 'empty
+    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(ConfigUser("foo", Some(matchingSecret), None, Set
+      .empty))))
+    authenticator.authenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe Symbol("defined")
+    authenticator.authenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe Symbol("empty")
   }
 
   it("should authenticate using bcrypt password") {
     val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPassword)))
-    authenticator.authenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe 'defined
-    authenticator.authenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe 'empty
+    authenticator.authenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe Symbol("defined")
+    authenticator.authenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe Symbol("empty")
+  }
+
+  it("should authenticate using bcrypt password with 2y identifier") {
+    // result of python -c 'from passlib.hash import bcrypt; print(bcrypt.using(rounds=12, ident="2y").hash("password"))'
+    val encryptedPasswordWithPrefix2y = "$2y$12$Lg.AtiNDoHJp1mUD6POPMeqJwh8R/naTrKstlZ76Yn3iGYmAyuWhy"
+    val userWithEncryptedPasswordWithPrefix2y = ConfigUser("foo", None, Some(encryptedPasswordWithPrefix2y), Set.empty)
+
+    val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPasswordWithPrefix2y)))
+    authenticator.authenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
+    authenticator.authenticate(new SampleProvidedCredentials("foo", notMatchingSecret)) shouldBe Symbol("empty")
   }
 
   it("should cache hashes") {
@@ -41,14 +52,15 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
         super.computeBCryptHash(receivedSecret, encryptedPassword)
       }
     }
-    authenticator.authenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe 'defined
+    authenticator.authenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
     hashComputationCount shouldEqual 1
 
-    authenticator.authenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe 'defined
+    authenticator.authenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
     hashComputationCount shouldEqual 1
   }
 
   class SampleProvidedCredentials(identifier: String, receivedSecret: String) extends Credentials.Provided(identifier) {
-    def verify(secret: String, hasher: String ⇒ String): Boolean = secret == hasher(receivedSecret)
+    def verify(secret: String, hasher: String => String): Boolean = secret == hasher(receivedSecret)
+    override def provideVerify(verifier: String => Boolean): Boolean = false
   }
 }

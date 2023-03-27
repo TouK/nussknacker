@@ -1,0 +1,20 @@
+package pl.touk.nussknacker.engine.util
+
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+
+class ListUtilSpec extends AnyFunSuite with Matchers {
+
+  test("merges one list ") {
+    ListUtil.mergeLists(List(List("a", "b", "c", "d")), 3) shouldBe List("a", "b", "c")
+  }
+
+  test("merges list of same size") {
+    ListUtil.mergeLists(List(List("aa", "ab", "ac"), List("ba", "bb", "bc"), List("ca", "cb", "cc")), 3) shouldBe List("aa", "ba", "ca")
+  }
+
+  test("merges list of different size") {
+    ListUtil.mergeLists(List(List("aa", "ab", "ac"), List("ba"), List()), 5) shouldBe List("aa", "ba", "ab", "ac")
+  }
+
+}

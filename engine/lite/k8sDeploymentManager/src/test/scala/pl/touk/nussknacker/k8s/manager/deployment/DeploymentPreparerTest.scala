@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, MetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, K8sDeploymentManagerConfig}
 import skuber.EnvVar.{FieldRef, SecretKeyRef}
@@ -13,8 +14,8 @@ import skuber.Resource.Quantity
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod, Probe, Volume}
 
-import scala.collection.JavaConverters._
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters._
 
 class DeploymentPreparerTest extends AnyFunSuite {
 
@@ -53,7 +54,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
         //here we use id to avoid sanitization problems
         selector = LabelSelector(LabelSelector.IsEqualRequirement(K8sDeploymentManager.scenarioIdLabel, "1")),
         progressDeadlineSeconds = None,
-        minReadySeconds = 10,
+        minReadySeconds = 0,
         template = Pod.Template.Spec(
           metadata = ObjectMeta(
             name = "scenario-1-x",
@@ -62,7 +63,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}_scala-${ScalaMajorVersionConfig.scalaMajorVersion}",
                 env = List(
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"),
@@ -78,8 +79,9 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive")))
+                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5))
               )),
               volumes = List(
                 Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),
@@ -151,7 +153,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}_scala-${ScalaMajorVersionConfig.scalaMajorVersion}",
                 env = List(
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"),
@@ -167,8 +169,9 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"))),
+                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
                 resources = Some(
                   skuber.Resource.Requirements(
                     limits = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi")),
@@ -224,7 +227,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
         //here we use id to avoid sanitization problems
         selector = LabelSelector(LabelSelector.IsEqualRequirement(K8sDeploymentManager.scenarioIdLabel, "1")),
         progressDeadlineSeconds = None,
-        minReadySeconds = 10,
+        minReadySeconds = 0,
         template = Pod.Template.Spec(
           metadata = ObjectMeta(
             name = "scenario-1-x",
@@ -233,7 +236,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}_scala-${ScalaMajorVersionConfig.scalaMajorVersion}",
                 env = List(
                   EnvVar("my-env-name", SecretKeyRef("my-key", "my-secret")),
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
@@ -250,8 +253,9 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive")))
+                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5))
               )),
               volumes = List(
                 Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),

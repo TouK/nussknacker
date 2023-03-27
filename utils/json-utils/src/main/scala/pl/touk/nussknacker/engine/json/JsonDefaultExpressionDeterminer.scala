@@ -32,11 +32,7 @@ object JsonDefaultExpressionDeterminer {
 
 class JsonDefaultExpressionDeterminer(handleNotSupported: Boolean) {
 
-  private implicit def asSpelExpression(expression: String): Expression =
-    Expression(
-      language = "spel",
-      expression = expression
-    )
+  private implicit def asSpelExpression(expression: String): Expression = Expression.spel(expression)
 
   private val validatedNullExpression: ValidatedNel[CustomNodeError, Option[Expression]] =
     Valid(Option(asSpelExpression("null")))
@@ -53,8 +49,6 @@ class JsonDefaultExpressionDeterminer(handleNotSupported: Boolean) {
       case s: NumberSchema if s.requiresInteger() => withValidation[Number](schema, l => s"${l}L")
       case _: NumberSchema => withValidation[Number](schema, _.toString)
       case _: BooleanSchema => withValidation[java.lang.Boolean](schema, _.toString)
-      case _: TrueSchema => withValidation[java.lang.Boolean](schema, _.toString)
-      case _: FalseSchema => withValidation[java.lang.Boolean](schema, _.toString)
       case _: NullSchema => validatedNullExpression
       case _: StringSchema => withValidation[String](schema, str => s"'$str'")
       case _: ObjectSchema => withNullValidation(schema)

@@ -34,7 +34,7 @@ class DBFetchingProcessRepositorySpec
     with TestPermissions {
   import cats.syntax.either._
 
-  private val repositoryManager = RepositoryManager.createDbRepositoryManager(db)
+  private val dbioRunner = DBIOActionRunner(db)
 
   private val writingRepo = new DBProcessRepository(db, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
     override protected def now: Instant = currentTime
@@ -42,7 +42,7 @@ class DBFetchingProcessRepositorySpec
 
   private var currentTime : Instant = Instant.now()
 
-  private val fetching = DBFetchingProcessRepository.create(db)
+  private val fetching = DBFetchingProcessRepository.createFutureRespository(db)
 
   private val activities = DbProcessActivityRepository(db)
 
@@ -75,14 +75,12 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(ScenarioBuilder
       .streaming(oldName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
     saveProcess(ScenarioBuilder
       .streaming(oldName2.value)
-      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -95,7 +93,7 @@ class DBFetchingProcessRepositorySpec
     val before = fetchMetaDataIdsForAllVersions(oldName)
     before.toSet shouldBe Set(oldName.value)
 
-    renameProcess(oldName, newName) shouldBe 'right
+    renameProcess(oldName, newName) shouldBe Symbol("right")
 
     processExists(oldName) shouldBe false
     processExists(oldName2) shouldBe true
@@ -115,14 +113,13 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(ScenarioBuilder
       .streaming(oldName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
     processExists(newName) shouldBe false
 
-    renameProcess(oldName, newName) shouldBe 'right
+    renameProcess(oldName, newName) shouldBe Symbol("right")
 
     val comments = fetching.fetchProcessId(newName)
       .flatMap(v => activities.findActivity(ProcessIdWithName(v.get, newName)).map(_.comments))
@@ -139,14 +136,12 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(ScenarioBuilder
       .streaming(oldName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
     saveProcess(ScenarioBuilder
       .streaming(existingName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -174,7 +169,7 @@ class DBFetchingProcessRepositorySpec
     details.processVersionId shouldBe VersionId.initialVersionId
 
     //change of id for version imitates situation where versionId is different from number of all process versions (ex. after manual JSON removal from DB)
-    repositoryManager.runInTransaction(
+    dbioRunner.runInTransaction(
       writingRepo.changeVersionId(details.processId, details.processVersionId, latestVersionId)
     )
 
@@ -182,9 +177,9 @@ class DBFetchingProcessRepositorySpec
     latestDetails.processVersionId shouldBe latestVersionId
 
     val ProcessUpdated(processId, oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestDetails.processId, ProcessTestData.validProcess, false)
-    oldVersionInfoOpt shouldBe 'defined
+    oldVersionInfoOpt shouldBe Symbol("defined")
     oldVersionInfoOpt.get shouldBe latestVersionId
-    newVersionInfoOpt shouldBe 'defined
+    newVersionInfoOpt shouldBe Symbol("defined")
     newVersionInfoOpt.get shouldBe latestVersionId.increase
 
   }
@@ -216,21 +211,21 @@ class DBFetchingProcessRepositorySpec
   private def updateProcess(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
     val action = UpdateProcessAction(processId, canonicalProcess, None, increaseVersionWhenJsonNotChanged)
 
-    val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
-    processUpdated shouldBe 'right
-    processUpdated.right.get
+    val processUpdated = dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
+    processUpdated shouldBe Symbol("right")
+    processUpdated.toOption.get
   }
 
   private def saveProcess(espProcess: CanonicalProcess, now: Instant, category: String = "") = {
     currentTime = now
     val action = CreateProcessAction(ProcessName(espProcess.id), category, espProcess, TestProcessingTypes.Streaming, false)
 
-    repositoryManager.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe 'right
+    dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe Symbol("right")
   }
 
   private def renameProcess(processName: ProcessName, newName: ProcessName) = {
     val processId = fetching.fetchProcessId(processName).futureValue.get
-    repositoryManager.runInTransaction(writingRepo.renameProcess(ProcessIdWithName(processId, processName), newName)).futureValue
+    dbioRunner.runInTransaction(writingRepo.renameProcess(ProcessIdWithName(processId, processName), newName)).futureValue
   }
 
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {
@@ -247,7 +242,7 @@ class DBFetchingProcessRepositorySpec
       fetching.fetchLatestProcessDetailsForProcessId[CanonicalProcess](_).futureValue
     )
 
-    fetchedProcess shouldBe 'defined
+    fetchedProcess shouldBe Symbol("defined")
     fetchedProcess.get
   }
 }

@@ -140,8 +140,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
       additionalFields = Some(ProcessAdditionalFields(
         description,
         properties
-      )),
-      subprocessVersions = Map.empty
+      ))
     )
   }
 }

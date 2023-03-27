@@ -29,6 +29,7 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
         (prepareLazyParameterExpression(definition, e), DefinedLazyParameter(e))
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
         (valueByKey.mapValuesNow(prepareLazyParameterExpression(definition, _)), DefinedLazyBranchParameter(valueByKey))
+      case _ => throw new IllegalStateException()
     }
   }
 
@@ -47,6 +48,7 @@ class ParameterEvaluator(expressionEvaluator: ExpressionEvaluator) {
       case TypedExpressionMap(valueByKey) if definition.branchParam =>
         val evaluated = valueByKey.mapValuesNow(exp => evaluateSync(Parameter(exp, definition), augumentedCtx))
         (evaluated, DefinedEagerBranchParameter(evaluated, valueByKey))
+      case _ => throw new IllegalStateException()
     }
   }
 

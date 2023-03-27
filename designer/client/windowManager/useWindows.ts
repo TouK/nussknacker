@@ -1,14 +1,11 @@
 import {useWindowManager, WindowId, WindowType} from "@touk/window-manager"
-import {defaults, isEmpty, mapValues, uniq, without} from "lodash"
+import {defaults, uniq, without} from "lodash"
 import * as queryString from "query-string"
 import {useCallback, useMemo} from "react"
-import {useDispatch} from "react-redux"
-import {EventInfo, reportEvent} from "../actions/nk"
 import {ensureArray} from "../common/arrayUtils"
 import {useUserSettings} from "../common/userSettings"
-import {defaultArrayFormat, setAndPreserveLocationParams} from "../common/VisualizationUrl"
+import {defaultArrayFormat} from "../common/VisualizationUrl"
 import {ConfirmDialogData} from "../components/modals/GenericConfirmDialog"
-import history from "../history"
 import {NodeType, Process} from "../types"
 import {WindowKind} from "./WindowKind"
 
@@ -23,15 +20,8 @@ export function parseWindowsQueryParams<P extends Record<string, string | string
   }))
 }
 
-export function replaceWindowsQueryParams<P extends Record<string, string | string[]>>(add: P, remove?: P): void {
-  const params = parseWindowsQueryParams(add, remove)
-  const search = setAndPreserveLocationParams(mapValues(params, v => ensureArray(v).map(encodeURIComponent)))
-  history.replace({search})
-}
-
 export function useWindows(parent?: WindowId) {
   const {open: _open, closeAll} = useWindowManager(parent)
-  const dispatch = useDispatch()
   const [settings] = useUserSettings()
   const forceDisableModals = useMemo(() => settings["wm.forceDisableModals"], [settings])
 
@@ -39,39 +29,26 @@ export function useWindows(parent?: WindowId) {
     const isModal = windowData.isModal === undefined ?
       !forceDisableModals :
       windowData.isModal && !forceDisableModals
-    const {id, title} = await _open({isResizable: false, ...windowData, isModal})
-    dispatch(reportEvent({
-      category: "window_manager",
-      action: "window_open",
-      name: `${title} (${id})`,
-    }))
-  }, [dispatch, forceDisableModals, _open])
+    await _open({isResizable: false, ...windowData, isModal})
+  }, [forceDisableModals, _open])
 
-  const openNodeWindow = useCallback((
-    node: NodeType,
-    process: Process,
-    readonly?: boolean,
-  ) => {
-    open({
+  const openNodeWindow = useCallback(
+    (node: NodeType, process: Process, readonly?: boolean) => open({
       title: node.id,
       isResizable: true,
       kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
       meta: {node, process},
-    })
+    }),
+    [open]
+  )
 
-  }, [open])
-
-  const confirm = useCallback((data: ConfirmDialogData, event?: EventInfo) => {
-    if (!isEmpty(event)) {
-      dispatch(reportEvent(event))
-    }
-
-    open({
+  const confirm = useCallback((data: ConfirmDialogData) => {
+    return open({
       title: data.text,
       kind: WindowKind.confirm,
       meta: defaults(data, {confirmText: "Yes", denyText: "No"}),
     })
-  }, [dispatch, open])
+  }, [open])
 
   return useMemo(() => ({
     open,

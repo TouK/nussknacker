@@ -30,6 +30,7 @@ import pl.touk.nussknacker.engine.{InterpretationResult, ModelData, compiledgrap
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object ScenarioInterpreterFactory {
 
@@ -230,7 +231,7 @@ object ScenarioInterpreterFactory {
     private def compilePartInvokers(parts: List[SubsequentPart]): CompilationResult[Map[String, PartInterpreterType]] =
       parts.map(part => compiledPartInvoker(part).map(compiled => part.id -> compiled))
         .sequence.map { res =>
-        Writer(res.flatMap(_._2.written).toMap, res.toMap.mapValues(_.value))
+        Writer(res.flatMap(_._2.written).toMap, res.toMap.mapValuesNow(_.value))
       }
 
     private def partInvoker(node: compiledgraph.node.Node, parts: List[SubsequentPart]): CompilationResult[PartInterpreterType] = {

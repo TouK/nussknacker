@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.metrics._
 import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 
 import java.util.concurrent.TimeUnit
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class DropwizardMetricsProviderFactory(metricRegistry: MetricRegistry) extends (String => MetricsProviderForScenario with AutoCloseable) {
   override def apply(scenarioId: String): MetricsProviderForScenario with AutoCloseable = new DropwizardMetricsProviderForScenario(scenarioId, metricRegistry)
@@ -41,7 +41,7 @@ class DropwizardMetricsProviderForScenario(scenarioId: String, metricRegistry: M
 
   override def registerGauge[T](metricIdentifier: MetricIdentifier, gauge: Gauge[T]): Unit = {
     //We cannot just accept conflicting gauges...
-    register[metrics5.Gauge[T]](metricIdentifier, gauge.getValue _, reuseIfExisting = false)
+    register[metrics5.Gauge[T]](metricIdentifier, () => gauge.getValue, reuseIfExisting = false)
   }
 
   override def remove(metricIdentifier: MetricIdentifier): Unit = {

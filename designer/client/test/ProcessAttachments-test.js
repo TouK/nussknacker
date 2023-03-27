@@ -1,36 +1,41 @@
-import React from 'react';
-import Enzyme, {mount} from 'enzyme';
-import {ProcessAttachments} from '../components/ProcessAttachments'; //import redux-independent component
-import Adapter from '@wojtekmaj/enzyme-adapter-react-17';
+import React from "react"
+import Enzyme, {mount} from "enzyme"
+import {ProcessAttachments} from "../components/ProcessAttachments" //import redux-independent component
+import Adapter from "@wojtekmaj/enzyme-adapter-react-17"
+import configureMockStore from "redux-mock-store"
+import thunk from "redux-thunk"
+import {Provider} from "react-redux"
+import * as selectors from "../reducers/selectors/other"
 
-jest.mock('../containers/theme');
+const mockStore = configureMockStore([thunk])
+
+jest.mock("../containers/theme")
+jest.spyOn(selectors, "getCapabilities").mockReturnValue({write: true})
+
+const processAttachment = (id) => ({
+  id: `${id}`,
+  processId: "proc1",
+  processVersionId: 1,
+  createDate: "2016-10-10T12:39:44.092",
+  user: "TouK",
+  fileName: `file ${id}`
+})
 
 describe("ProcessAttachments suite", () => {
   it("should render with no problems", () => {
-    Enzyme.configure({ adapter: new Adapter() });
+    const store = mockStore({
+      graphReducer: {fetchedProcessDetails: {name: "proc1", processVersionId: 1}},
+      processActivity: {attachments: [processAttachment(3), processAttachment(2), processAttachment(1)]},
+    })
 
-    //given
-    const attachments = [processAttachment(3), processAttachment(2), processAttachment(1)]
-    const processId = "proc1"
-    const processVersionId = 1
+    Enzyme.configure({adapter: new Adapter()})
 
-    //when
     const mountedProcessAttachments = mount(
-      <ProcessAttachments attachments={attachments} processId={processId} processVersionId={processVersionId} t={key => key} capabilities={{write: true}}/>
-    )
-    //then
-    expect(mountedProcessAttachments.find('.download-attachment').length).toBe(3)
+      <Provider store={store}>
+        <ProcessAttachments/>
+      </Provider>)
+
+    expect(mountedProcessAttachments.find(".download-attachment").length).toBe(3)
   })
 
-  const processAttachment = (id) => {
-    return {
-      id: `${id}`,
-      processId: "proc1",
-      processVersionId: 1,
-      createDate: "2016-10-10T12:39:44.092",
-      user: "TouK",
-      fileName: `file ${id}`
-    }
-  }
-
-});
+})

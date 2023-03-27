@@ -30,7 +30,7 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
 
   def topic(name: String): Option[TopicDescription] = Try(adminClient.describeTopics(util.Arrays.asList(name)).allTopicNames().get()).toOption.map(_.get(name))
 
-  def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null, headers: Headers = ConsumerRecordUtils.emptyHeaders): Future[RecordMetadata] = {
+  def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null, headers: Headers = KafkaRecordUtils.emptyHeaders): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
     val record = partition.map(new ProducerRecord[Array[Byte], Array[Byte]](topic, _, timestamp, key, content, headers))
       .getOrElse(new ProducerRecord[Array[Byte], Array[Byte]](topic, null, timestamp, key, content, headers))

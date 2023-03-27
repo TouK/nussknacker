@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.util.NotNothing
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -82,8 +83,7 @@ case class Parameter(name: String,
                      typ: TypingResult,
                      editor: Option[ParameterEditor],
                      validators: List[ParameterValidator],
-                     // TODO: use Expression class after clean up module dependencies
-                     defaultValue: Option[String],
+                     defaultValue: Option[Expression],
                      additionalVariables: Map[String, AdditionalVariable],
                      variablesToHide: Set[String],
                      branchParam: Boolean,

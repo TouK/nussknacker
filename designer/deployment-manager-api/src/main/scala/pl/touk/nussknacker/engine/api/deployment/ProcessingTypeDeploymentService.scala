@@ -4,11 +4,11 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait ProcessingTypeDeploymentService {
 
-  def getDeployedScenarios: Future[List[DeployedScenarioData]]
+  def getDeployedScenarios(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]]
 
 }
 
@@ -16,6 +16,6 @@ case class DeployedScenarioData(processVersion: ProcessVersion, deploymentData: 
 
 class ProcessingTypeDeploymentServiceStub(deployedScenarios: List[DeployedScenarioData]) extends ProcessingTypeDeploymentService {
 
-  override def getDeployedScenarios: Future[List[DeployedScenarioData]] = Future.successful(deployedScenarios)
+  override def getDeployedScenarios(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = Future.successful(deployedScenarios)
 
 }

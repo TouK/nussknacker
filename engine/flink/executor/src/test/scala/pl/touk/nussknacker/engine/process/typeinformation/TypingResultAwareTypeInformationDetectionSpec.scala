@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.{Custo
 import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.util.Collections
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.immutable.ListMap
 
 class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Matchers with FlinkTypeInformationSerializationMixin {

@@ -6,12 +6,16 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettings
+import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 
+import java.net.URL
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(config: FeatureTogglesConfig,
                         authenticationMethod: String,
-                        analyticsConfig: Option[AnalyticsConfig])(implicit ec: ExecutionContext)
+                        analyticsConfig: Option[AnalyticsConfig],
+                        usageStatisticsReportsSettings: UsageStatisticsReportsSettings)(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser {
 
   def publicRoute(): Route =
@@ -25,10 +29,12 @@ class SettingsResources(config: FeatureTogglesConfig,
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
             deploymentCommentSettings = config.deploymentCommentSettings,
+            surveySettings = config.surveySettings,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
             testDataSettings = config.testDataSettings,
-            redirectAfterArchive = config.redirectAfterArchive
+            redirectAfterArchive = config.redirectAfterArchive,
+            usageStatisticsReports = usageStatisticsReportsSettings
           )
 
           val authenticationSettings = AuthenticationSettings(
@@ -47,11 +53,13 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 
-@JsonCodec case class EnvironmentAlert(content: String, cssClass: String)
+@JsonCodec case class EnvironmentAlert(content: String, color: String)
 
 @JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
 @JsonCodec case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
+
+@JsonCodec case class SurveySettings(key: String, text: String, link: URL)
 
 object DeploymentCommentSettings {
   def create(validationPattern: String, exampleComment: Option[String]): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
@@ -69,7 +77,7 @@ case class EmptyDeploymentCommentSettingsError(message: String) extends Exceptio
 
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
-@JsonCodec case class TestDataSettings(maxSamplesCount: Int, testDataMaxBytes: Int, resultsMaxBytes: Int)
+@JsonCodec case class TestDataSettings(maxSamplesCount: Int, testDataMaxLength: Int, resultsMaxBytes: Int)
 
 object TopTabType extends Enumeration {
 
@@ -80,7 +88,7 @@ object TopTabType extends Enumeration {
 }
 
 @JsonCodec case class TopTab(id: String,
-                             title: String,
+                             title: Option[String],
                              `type`: TopTabType.Value,
                              url: String,
                              requiredPermission: Option[String],
@@ -92,10 +100,12 @@ object TopTabType extends Enumeration {
                                             environmentAlert: Option[EnvironmentAlert],
                                             commentSettings: Option[CommentSettings],
                                             deploymentCommentSettings: Option[DeploymentCommentSettings],
+                                            surveySettings: Option[SurveySettings],
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
                                             testDataSettings: TestDataSettings,
-                                            redirectAfterArchive: Boolean
+                                            redirectAfterArchive: Boolean,
+                                            usageStatisticsReports: UsageStatisticsReportsSettings,
                                            )
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)

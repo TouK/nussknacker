@@ -41,7 +41,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
         val definition = ObjectDefinition(extractInitialParameters(e, mergedComponentConfig), returnType, objWithCategories.categories, mergedComponentConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case _ =>
-        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig).right.map(fromMethodDefinition)
+        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig).map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   }
@@ -165,8 +165,9 @@ object DefinitionExtractor {
           //this usually indicates that parameters do not match or argument list is incorrect
           logger.debug(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
           def className(obj: Any) = Option(obj).map(o => ReflectUtils.simpleNameWithoutSuffix(o.getClass)).getOrElse("null")
+          val parameterValues = methodDef.orderedDependencies.definedParameters.map(_.name).map(params)
           throw new IllegalArgumentException(
-            s"""Failed to invoke "${methodDef.name}" on ${className(obj)} with parameter types: ${values.map(className)}: ${ex.getMessage}""", ex)
+            s"""Failed to invoke "${methodDef.name}" on ${className(obj)} with parameter types: ${parameterValues.map(className)}: ${ex.getMessage}""", ex)
         //this is somehow an edge case - normally service returns failed future for exceptions
         case ex: InvocationTargetException =>
           throw ex.getTargetException

@@ -5,15 +5,15 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Decoder, Error}
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException, OAuth2ServerError}
-import sttp.client.circe._
-import sttp.client.{Response, _}
+import sttp.client3.circe._
+import sttp.client3.{Response, ResponseException, SttpBackend, basicRequest}
 import sttp.model.{MediaType, Uri}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
 (configuration: OAuth2Configuration)
-(implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT]) extends LazyLogging {
+(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any]) extends LazyLogging {
   import io.circe.syntax._
 
   def accessTokenRequest(authorizationCode: String, redirectUri: String): Future[AccessTokenResponse] = {
@@ -39,7 +39,7 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
     }
 
     request
-      .send()
+      .send(backend)
       .flatMap(handlingResponse[AccessTokenResponse](_, s"Cannot authorize user by data: $payload."))
       .flatMap(SttpJson.failureToFuture)
   }
@@ -51,12 +51,12 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
       .response(asJson[ProfileResponse])
       .get(Uri(configuration.profileUri))
       .headers(headers)
-      .send()
+      .send(backend)
       .flatMap(handlingResponse[ProfileResponse](_, s"Cannot authenticate user by token: $accessToken."))
       .flatMap(SttpJson.failureToFuture)
   }
 
-  protected[security] def handlingResponse[T](response: Response[Either[ResponseError[Error], T]], clientErrorMessage: String): Future[Response[Either[ResponseError[Error], T]]] = {
+  protected[security] def handlingResponse[T](response: Response[Either[ResponseException[String, Error], T]], clientErrorMessage: String): Future[Response[Either[ResponseException[String, Error], T]]] = {
     if (response.code.isClientError) {
       logger.debug(s"Handling ClientError response: ${response}, error: ${clientErrorMessage}")
       Future.failed(throw OAuth2CompoundException(NonEmptyList.of(OAuth2AccessTokenRejection(clientErrorMessage))))
@@ -71,6 +71,6 @@ class OAuth2ClientApi[ProfileResponse: Decoder, AccessTokenResponse: Decoder]
 
 object OAuth2ClientApi {
   def apply[ProfileResponse: Decoder, AccessTokenResponse: Decoder](configuration: OAuth2Configuration)
-                                                                   (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]): OAuth2ClientApi[ProfileResponse, AccessTokenResponse]
+                                                                   (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OAuth2ClientApi[ProfileResponse, AccessTokenResponse]
     = new OAuth2ClientApi[ProfileResponse, AccessTokenResponse](configuration)
 }

@@ -16,7 +16,7 @@ case class PeriodicProcessDeployment(id: PeriodicProcessDeploymentId,
 
   def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]] = (periodicProcess.scheduleProperty, scheduleName) match {
     case (MultipleScheduleProperty(schedules), Some(name)) =>
-      schedules.get(name).toRight(s"Failed to find schedule: $scheduleName").right.flatMap(_.nextRunAt(clock))
+      schedules.get(name).toRight(s"Failed to find schedule: $scheduleName").flatMap(_.nextRunAt(clock))
     case (e:SingleScheduleProperty, None) => e.nextRunAt(clock)
     case (schedule, name) => Left(s"Schedule name: $name mismatch with schedule: $schedule")
   }

@@ -5,6 +5,7 @@ import org.slf4j.Logger
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.{Wait, WaitStrategy, WaitStrategyTarget}
 import org.testcontainers.containers.{BindMode, Network}
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 
 import java.io.File
@@ -12,7 +13,7 @@ import java.time.Duration
 
 object NuRuntimeDockerTestUtils {
 
-  private val dockerTag: String = sys.env.getOrElse("dockerTagName", BuildInfo.version)
+  private val dockerTag: String = sys.env.getOrElse("dockerTagName", s"${BuildInfo.version}_scala-${ScalaMajorVersionConfig.scalaMajorVersion}")
   private val liteKafkaRuntimeDockerName = s"touk/nussknacker-lite-runtime-app:$dockerTag"
 
   val runtimeApiPort = 8080

@@ -3,10 +3,10 @@ package pl.touk.nussknacker.processCounts.influxdb
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.sttp.SttpJson
-import sttp.client._
-import sttp.client.circe._
-import sttp.client.monad.MonadError
-import sttp.client.monad.syntax.MonadErrorOps
+import sttp.client3._
+import sttp.client3.circe._
+import sttp.monad.syntax.MonadErrorOps
+import sttp.monad.MonadError
 
 import scala.language.{higherKinds, implicitConversions}
 
@@ -19,7 +19,7 @@ case class InfluxHttpError(influxUrl: String, body: String, cause: Throwable) ex
 }
 
 //we use simplistic InfluxClient, as we only need queries
-class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBackend[F, Nothing, NothingT]) {
+class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBackend[F, Any]) {
   implicit val monadError: MonadError[F] = backend.responseMonad
 
   def query(query: String): F[List[InfluxSeries]] = {
@@ -28,13 +28,13 @@ class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBacke
       password <- config.password
     } yield req.auth.basic(user, password)).getOrElse(req)
 
-    addAuth(basicRequest.get(config.uri.params("db" -> config.database, "q" -> query)))
+    addAuth(basicRequest.get(config.uri.addParams("db" -> config.database, "q" -> query)))
       .response(asJson[InfluxResponse])
-      .send()
+      .send(backend)
       .flatMap(SttpJson.failureToError[F, InfluxResponse])
       .handleError {
-        case ex: DeserializationError[_] => monadError.error(InvalidInfluxResponse(ex.getMessage, ex))
-        case ex: HttpError => monadError.error(InfluxHttpError(config.influxUrl, ex.body, ex))
+        case ex: DeserializationException[_] => monadError.error(InvalidInfluxResponse(ex.getMessage, ex))
+        case ex: HttpError[_] => monadError.error(InfluxHttpError(config.influxUrl, s"${ex.body}", ex))
       }
       //we assume only one query
       .map(_.results.head.series)

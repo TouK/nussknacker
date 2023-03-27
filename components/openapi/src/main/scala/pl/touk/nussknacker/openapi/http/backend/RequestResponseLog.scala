@@ -2,7 +2,7 @@ package pl.touk.nussknacker.openapi.http.backend
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
-import sttp.client.{Request, Response, StringBody}
+import sttp.client3.{Request, Response, StringBody}
 import sttp.model.Header
 
 @JsonCodec(encodeOnly = true)

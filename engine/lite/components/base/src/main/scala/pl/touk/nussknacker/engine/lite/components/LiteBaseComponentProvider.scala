@@ -26,7 +26,7 @@ class LiteBaseComponentProvider extends ComponentProvider {
     List(
       ComponentDefinition("for-each", ForEachTransformer).withRelativeDocs("BasicNodes#foreach"),
       ComponentDefinition("union", Union).withRelativeDocs("BasicNodes#union"),
-      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink)).withRelativeDocs("BasicNodes#deadend")
+      ComponentDefinition("dead-end", SinkFactory.noParam(DeadEndSink)).withRelativeDocs("DataSourcesAndSinks#deadend")
     )
   }
 

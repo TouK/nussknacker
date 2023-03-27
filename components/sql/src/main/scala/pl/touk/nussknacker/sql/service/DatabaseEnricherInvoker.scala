@@ -30,15 +30,15 @@ class DatabaseEnricherInvoker(query: String,
   override def invokeService(params: Map[String, Any])
                             (implicit ec: ExecutionContext, collector: ServiceInvocationCollector, contextId: ContextId, componentUseCase: ComponentUseCase): Future[queryExecutor.QueryResult] =
     getTimeMeasurement().measuring {
-      Future.successful {
-        queryDatabase(queryArgumentsExtractor(argsCount, params))
-      }
+      queryDatabase(queryArgumentsExtractor(argsCount, params))
     }
 
-  protected def queryDatabase(queryArguments: QueryArguments): queryExecutor.QueryResult =
-    withConnection(query) { statement =>
-      setQueryArguments(statement, queryArguments)
-      queryExecutor.execute(statement)
+  protected def queryDatabase(queryArguments: QueryArguments)(implicit ec: ExecutionContext): Future[queryExecutor.QueryResult] =
+    Future {
+      withConnection(query) { statement =>
+        setQueryArguments(statement, queryArguments)
+        queryExecutor.execute(statement)
+      }
     }
 
   protected def setQueryArguments(statement: PreparedStatement, queryArguments: QueryArguments): Unit =

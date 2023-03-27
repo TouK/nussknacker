@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 
 /**
@@ -22,8 +21,6 @@ trait ProcessConfigCreator extends Serializable {
   def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig
 
   def buildInfo(): Map[String, String]
-
-  def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]]
 
   def asyncExecutionContextPreparer(processObjectDependencies: ProcessObjectDependencies): Option[AsyncExecutionContextPreparer] = None
 

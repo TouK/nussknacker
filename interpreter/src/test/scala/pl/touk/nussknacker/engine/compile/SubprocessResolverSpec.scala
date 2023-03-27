@@ -41,15 +41,15 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
-    resolvedValidated shouldBe 'valid
+    resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
 
-    resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe 'empty
-    resolved.nodes.find(_.id == "f1") shouldBe 'empty
-    resolved.nodes.find(_.id == "sub-f1") shouldBe 'defined
+    resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe Symbol("empty")
+    resolved.nodes.find(_.id == "f1") shouldBe Symbol("empty")
+    resolved.nodes.find(_.id == "sub-f1") shouldBe Symbol("defined")
     resolved.nodes.find(_.id == "sub").get.data should matchPattern { case SubprocessInput(_, _, _, _, Some(subprocessParameters)) => }
     resolved.nodes.find(_.id == "sub").get.data
-    resolved.nodes.find(_.id == "sub2-f1") shouldBe 'defined
+    resolved.nodes.find(_.id == "sub2-f1") shouldBe Symbol("defined")
   }
 
   test("resolve nested fragments") {
@@ -76,17 +76,17 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
     val resolvedValidated = SubprocessResolver(Set(subprocess, nested)).resolve(process)
 
 
-    resolvedValidated shouldBe 'valid
+    resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
 
-    resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe 'empty
-    resolved.nodes.find(_.id == "f1") shouldBe 'empty
-    resolved.nodes.find(_.id == "sub2") shouldBe 'empty
-    resolved.nodes.find(_.id == "sub2-f1") shouldBe 'empty
+    resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe Symbol("empty")
+    resolved.nodes.find(_.id == "f1") shouldBe Symbol("empty")
+    resolved.nodes.find(_.id == "sub2") shouldBe Symbol("empty")
+    resolved.nodes.find(_.id == "sub2-f1") shouldBe Symbol("empty")
 
-    resolved.nodes.find(_.id == "sub") shouldBe 'defined
-    resolved.nodes.find(_.id == "sub-sub2") shouldBe 'defined
-    resolved.nodes.find(_.id == "sub-sub2-f1") shouldBe 'defined
+    resolved.nodes.find(_.id == "sub") shouldBe Symbol("defined")
+    resolved.nodes.find(_.id == "sub-sub2") shouldBe Symbol("defined")
+    resolved.nodes.find(_.id == "sub-sub2-f1") shouldBe Symbol("defined")
   }
 
   test("not resolve fragment with missing parameters") {
@@ -250,10 +250,10 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
-    resolvedValidated shouldBe 'valid
+    resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
 
-    resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe 'empty
+    resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe Symbol("empty")
   }
 
   test("detect unknown fragment") {
@@ -309,7 +309,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
       ))
     
     val resolvedValidated = SubprocessResolver(Set(fragment)).resolve(scenario)
-    resolvedValidated shouldBe 'valid
+    resolvedValidated shouldBe Symbol("valid")
 
   }
 

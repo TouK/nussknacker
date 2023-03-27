@@ -16,8 +16,7 @@ class V1_032__StandaloneToRequestResponseSpec extends AnyFlatSpec with Matchers 
       |  "metaData": {
       |    "id": "$id",
       |    "typeSpecificData": $typeSpecificData,
-      |    "additionalFields" : null,
-      |    "subprocessVersions": {}
+      |    "additionalFields" : null
       |  },
       |  "nodes": [],
       |  "additionalBranches": []

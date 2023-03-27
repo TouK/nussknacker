@@ -8,16 +8,17 @@ import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.management.{FlinkArgsEncodeHack, FlinkConfig}
 import pl.touk.nussknacker.engine.sttp.SttpJson
 import pl.touk.nussknacker.engine.util.exception.DeeplyCheckingExceptionExtractor
-import sttp.client.circe._
-import sttp.client.{NothingT, SttpBackend, _}
+import sttp.client3.circe._
+import sttp.client3._
 
 import java.io.File
 import java.util.concurrent.TimeoutException
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 
-class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future, Nothing, NothingT], ec: ExecutionContext) extends FlinkClient with LazyLogging {
+class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext) extends FlinkClient with LazyLogging {
 
-  import HttpClientErrorHandler._
+  import pl.touk.nussknacker.engine.sttp.HttpClientErrorHandler._
 
   private val flinkUrl = uri"${config.restUrl}"
 
@@ -30,9 +31,9 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   private def checkThatJarWithNameExists(jarName: String): Future[Option[JarFile]] = {
     basicRequest
-      .get(flinkUrl.path("jars"))
+      .get(flinkUrl.addPath("jars"))
       .response(asJson[JarsResponse])
-      .send()
+      .send(backend)
       .flatMap(SttpJson.failureToFuture)
       .map(_.files.toList.flatten.find(_.name == jarName))
   }
@@ -41,10 +42,10 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
     logger.debug(s"Uploading new jar: ${jarFile.getAbsolutePath}")
 
     basicRequest
-      .post(flinkUrl.path("jars", "upload"))
+      .post(flinkUrl.addPath("jars", "upload"))
       .multipartBody( multipartFile("jarfile", jarFile).contentType("application/x-java-archive"))
       .response(asJson[UploadJarResponse])
-      .send()
+      .send(backend)
       .flatMap(SttpJson.failureToFuture)
       .map { file =>
         logger.info(s"Uploaded jar to $file")
@@ -72,8 +73,8 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
   private def deleteJar(jarId: String): Future[Unit] = {
     logger.info(s"Delete jar id: $jarId")
     basicRequest
-      .delete(flinkUrl.path("jars", jarId))
-      .send()
+      .delete(flinkUrl.addPath("jars", jarId))
+      .send(backend)
       .flatMap(handleUnitResponse("delete jar"))
       .recoverWith(recoverWithMessage("delete jar"))
 
@@ -82,9 +83,10 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def findJobsByName(jobName: String): Future[List[JobOverview]] = {
     basicRequest
-      .get(flinkUrl.path("jobs", "overview"))
+      .readTimeout(config.scenarioStateRequestTimeout)
+      .get(flinkUrl.addPath("jobs", "overview"))
       .response(asJson[JobsResponse])
-      .send()
+      .send(backend)
       .flatMap(SttpJson.failureToFuture)
       .map { jobs =>
         jobs.jobs
@@ -98,9 +100,9 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
     basicRequest
-      .get(flinkUrl.path("jobs", jobId, "config"))
+      .get(flinkUrl.addPath("jobs", jobId, "config"))
       .response(asJson[JobConfig])
-      .send()
+      .send(backend)
       .flatMap(SttpJson.failureToFuture)
       .map(_.`execution-config`)
   }
@@ -112,9 +114,9 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
     }
     basicRequest
-      .get(flinkUrl.path("jobs", jobId.value, "savepoints", savepointId))
+      .get(flinkUrl.addPath("jobs", jobId.value, "savepoints", savepointId))
       .response(asJson[GetSavepointStatusResponse])
-      .send()
+      .send(backend)
       .flatMap(SttpJson.failureToFuture)
       .flatMap { resp =>
       logger.debug(s"Waiting for savepoint $savepointId of $jobId, got response: $resp")
@@ -134,8 +136,8 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
     basicRequest
-      .patch(flinkUrl.path("jobs", deploymentId.value))
-      .send()
+      .patch(flinkUrl.addPath("jobs", deploymentId.value))
+      .send(backend)
       .flatMap(handleUnitResponse("cancel scenario"))
       .recoverWith(recoverWithMessage("cancel scenario"))
 
@@ -143,24 +145,24 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     val savepointRequest = basicRequest
-      .post(flinkUrl.path("jobs", deploymentId.value, "savepoints"))
+      .post(flinkUrl.addPath("jobs", deploymentId.value, "savepoints"))
       .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
     processSavepointRequest(deploymentId, savepointRequest, "make savepoint")
   }
 
   def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     val stopRequest = basicRequest
-      .post(flinkUrl.path("jobs", deploymentId.value, "stop"))
+      .post(flinkUrl.addPath("jobs", deploymentId.value, "stop"))
       .body(StopRequest(targetDirectory = savepointDir, drain = false))
     processSavepointRequest(deploymentId, stopRequest, "stop scenario")
   }
 
   private def processSavepointRequest(deploymentId: ExternalDeploymentId,
-                                      request: RequestT[Identity, Either[String, String], Nothing],
+                                      request: RequestT[Identity, Either[String, String], Any],
                                       action: String): Future[SavepointResult] = {
     request
       .response(asJson[SavepointTriggerResponse])
-      .send()
+      .send(backend)
       .flatMap(SttpJson.failureToFuture)
       .flatMap { response =>
         waitForSavepoint(deploymentId, response.`request-id`)
@@ -181,16 +183,16 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
         programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "))
     uploadJarFileIfNotExists(jarFile).flatMap { flinkJarFile =>
       basicRequest
-        .post(flinkUrl.path("jars", flinkJarFile.id, "run"))
+        .post(flinkUrl.addPath("jars", flinkJarFile.id, "run"))
         .body(program)
         .response(asJson[RunResponse])
-        .send()
+        .send(backend)
         .flatMap(SttpJson.failureToFuture)
         .map(ret => Some(ExternalDeploymentId(ret.jobid)))
         .recover({
           //sometimes deploying takes too long, which causes TimeoutException while waiting for deploy response
           //workaround for now, not the best solution though
-          //TODO: we should change logic of ManagementActor to mark process deployed for *some* exceptions (like Timeout here)
+          //TODO: we should change logic of DeploymentService to mark process deployed for *some* exceptions (like Timeout here)
           case timeoutExtractor(e) =>
             logger.warn("TimeoutException occurred while waiting for deploy result. Recovering with Future.successful...", e)
             None
@@ -202,17 +204,17 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def getClusterOverview: Future[ClusterOverview] = {
     basicRequest
-      .get(flinkUrl.path("overview"))
+      .get(flinkUrl.addPath("overview"))
       .response(asJson[ClusterOverview])
-      .send()
+      .send(backend)
       .flatMap(SttpJson.failureToFuture)
   }
 
   def getJobManagerConfig: Future[Configuration] = {
     basicRequest
-      .get(flinkUrl.path("jobmanager", "config"))
+      .get(flinkUrl.addPath("jobmanager", "config"))
       .response(asJson[List[KeyValueEntry]])
-      .send()
+      .send(backend)
       .flatMap(SttpJson.failureToFuture)
       .map(list => configurationFromMap(list.map(e => e.key -> e.value).toMap))
   }

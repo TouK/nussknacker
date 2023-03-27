@@ -23,7 +23,6 @@ import {
 } from "../../actions/nk"
 import {error, success} from "../../actions/notificationActions"
 import {redo, undo} from "../../actions/undoRedoActions"
-import {events} from "../../analytics/TrackingEvents"
 import * as ClipboardUtils from "../../common/ClipboardUtils"
 import {tryParseOrNull} from "../../common/JsonUtils"
 import {isInputEvent} from "../../containers/BindKeyboardShortcuts"
@@ -85,10 +84,15 @@ function useClipboardPermission(): boolean | string {
     }
   }, [])
 
-  // if possible monitor clipboard for new content on each render
-  if (state === "granted") {
-    checkClipboard()
-  }
+  // if possible monitor clipboard for new content
+  useEffect(() => {
+    if (state === "granted") {
+      const interval = setInterval(checkClipboard, 500)
+      return () => {
+        clearInterval(interval)
+      }
+    }
+  }, [checkClipboard, state])
 
   useEffect(() => {
     // parse clipboard content on change only
@@ -124,7 +128,9 @@ export const useSelectionActions = (): UserActions => {
   return selectionActions
 }
 
-export default function SelectionContextProvider(props: PropsWithChildren<{ pastePosition: () => { x: number, y: number } }>): JSX.Element {
+export default function SelectionContextProvider(props: PropsWithChildren<{
+  pastePosition: () => { x: number, y: number },
+}>): JSX.Element {
   const dispatch = useDispatch()
   const {t} = useTranslation()
 
@@ -143,15 +149,7 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
 
       if (canModifySelected) {
         await ClipboardUtils.writeText(JSON.stringify(selection))
-        const {nodes} = selection
-        if (!silent) {
-          dispatch(success(t("userActions.copy.success", {
-            defaultValue: "Copied node",
-            defaultValue_plural: "Copied {{count}} nodes",
-            count: nodes.length,
-          })))
-        }
-        return nodes
+        return selection.nodes
       } else {
         dispatch(error(t(
           "userActions.copy.failed",
@@ -189,7 +187,7 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
     const selectionLayoutNodePosition = {x: pasteNodePosition.x - minNodeX, y: pasteNodePosition.y - minNodeY}
     const randomizedNodePosition = {
       x: selectionLayoutNodePosition.x + random,
-      y: selectionLayoutNodePosition.y + random
+      y: selectionLayoutNodePosition.y + random,
     }
     return randomizedNodePosition
   }
@@ -200,17 +198,12 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
       const {x, y} = props.pastePosition()
       const minNodeX: number = _.min(selection.nodes.map((node) => node.additionalFields.layoutData.x))
       const minNodeY: number = _.min(selection.nodes.map((node) => node.additionalFields.layoutData.y))
-      const random = (Math.floor(Math.random() * 20) + 1)
+      const random = Math.floor(Math.random() * 20) + 1
       const nodesWithPositions = selection.nodes.map((node, ix) => ({
         node,
-        position: calculatePastedNodePosition(node, x, minNodeX, y, minNodeY, random)
+        position: calculatePastedNodePosition(node, x, minNodeX, y, minNodeY, random),
       }))
       dispatch(nodesWithEdgesAdded(nodesWithPositions, selection.edges))
-      dispatch(success(t("userActions.paste.success", {
-        defaultValue: "Pasted node",
-        defaultValue_plural: "Pasted {{count}} nodes",
-        count: selection.nodes.length,
-      })))
     } else {
       dispatch(error(t("userActions.paste.failed", "Cannot paste content from clipboard")))
     }
@@ -233,37 +226,15 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
 
   const canAccessClipboard = useClipboardPermission()
   const userActions: UserActions = useMemo(() => ({
-    copy: canModifySelected && !hasSelection && (() => dispatch(
-      copySelection(
-        copy,
-        {category: events.categories.keyboard, action: events.actions.keyboard.copy},
-      ),
-    )),
+    copy: canModifySelected && !hasSelection && (() => dispatch(copySelection(copy))),
     canPaste: !!canAccessClipboard,
-    paste: capabilities.editFrontend && ((e) => dispatch(
-      pasteSelection(
-        () => paste(e),
-        {category: events.categories.keyboard, action: events.actions.keyboard.paste},
-      ),
-    )),
-    cut: canModifySelected && capabilities.editFrontend && (() => dispatch(
-      cutSelection(
-        cut,
-        {category: events.categories.keyboard, action: events.actions.keyboard.cut},
-      ),
-    )),
+    paste: capabilities.editFrontend && ((e) => dispatch(pasteSelection(() => paste(e)))),
+    cut: canModifySelected && capabilities.editFrontend && (() => dispatch(cutSelection(cut))),
     delete: canModifySelected && capabilities.editFrontend && (() => dispatch(
-      deleteSelection(
-        selectionState,
-        {category: events.categories.keyboard, action: events.actions.keyboard.delete},
-      ),
+      deleteSelection(selectionState),
     )),
-    undo: () => dispatch(
-      undo({category: events.categories.keyboard, action: events.actions.keyboard.undo}),
-    ),
-    redo: () => dispatch(
-      redo({category: events.categories.keyboard, action: events.actions.keyboard.redo}),
-    ),
+    undo: () => dispatch(undo()),
+    redo: () => dispatch(redo()),
     selectAll: () => {
       dispatch(selectAll())
     },

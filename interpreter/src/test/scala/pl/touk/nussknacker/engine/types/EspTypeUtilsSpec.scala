@@ -24,7 +24,7 @@ import java.util.regex.Pattern
 import scala.annotation.meta.getter
 import scala.annotation.varargs
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe._
 
 class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
@@ -166,9 +166,9 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
     val extracted = TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[Top]))(ClassExtractionSettings.Default.copy(
       excludeClassPredicates = ClassExtractionSettings.DefaultExcludedClasses :+ ExactClassPredicate[Middle]
     ))
-    extracted.find(_.clazzName == Typed[Top]) shouldBe 'defined
-    extracted.find(_.clazzName == Typed[Middle]) shouldBe 'empty
-    extracted.find(_.clazzName == Typed[Bottom]) shouldBe 'empty
+    extracted.find(_.clazzName == Typed[Top]) shouldBe Symbol("defined")
+    extracted.find(_.clazzName == Typed[Middle]) shouldBe Symbol("empty")
+    extracted.find(_.clazzName == Typed[Bottom]) shouldBe Symbol("empty")
   }
 
   class BannedToStringClass extends HideToString

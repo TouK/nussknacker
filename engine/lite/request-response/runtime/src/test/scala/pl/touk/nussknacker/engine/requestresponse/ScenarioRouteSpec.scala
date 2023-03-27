@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.requestresponse.openapi.OApiServer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import io.circe.parser._
 
 import scala.concurrent.Future
 
@@ -61,7 +62,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
     super.afterAll()
   }
 
-  private val expectedOApiDef =
+  private val expectedOApiDef = parse(
     s"""{
        |  "openapi" : "${defaultOpenApiVersion}",
        |  "info" : {
@@ -125,12 +126,12 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
        |      }
        |    }
        |  }
-       |}""".stripMargin
+       |}""".stripMargin)
 
   test("get scenario openapi definition") {
     Get("/definition") ~> openRoutes ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldBe expectedOApiDef
+      parse(responseAs[String]) shouldBe expectedOApiDef
     }
   }
 

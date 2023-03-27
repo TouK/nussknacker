@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Pro
 import pl.touk.nussknacker.ui.util.MultipartUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 
 import java.time.Instant
@@ -37,6 +38,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   import TestCategories._
+  import KafkaFactory._
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -51,12 +53,12 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
    test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> check {
+    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-        deployProcess(SampleProcess.process.id) ~> check {
+        deployProcess(SampleProcess.process.id) ~> checkThatEventually {
           getProcess(processName) ~> check {
             decodeDetails.lastAction shouldBe deployedWithVersions(2)
           }
@@ -68,7 +70,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("process during deploy can be deployed again") {
     createDeployedProcess(processName, TestCat)
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringDeploy) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
       deployProcess(processName.value) ~> check {
         status shouldBe StatusCodes.OK
       }
@@ -78,7 +80,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("canceled process can't be canceled again") {
     createDeployedCanceledProcess(processName, TestCat)
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       cancelProcess(processName.value) ~> check {
         status shouldBe StatusCodes.Conflict
       }
@@ -89,7 +91,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     val id = createArchivedProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       deployProcess(processName.value) ~> check {
         status shouldBe StatusCodes.Conflict
         responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy, processIdWithName).message
@@ -119,12 +121,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> check {
-      eventually {
-        getProcess(processName) ~> check {
-          val processDetails = responseAs[ProcessDetails]
-          processDetails.isDeployed shouldBe true
-        }
+    deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> checkThatEventually {
+      getProcess(processName) ~> check {
+        val processDetails = responseAs[ProcessDetails]
+        processDetails.isDeployed shouldBe true
       }
       cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))), comment = Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
@@ -160,18 +160,19 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("deploy technical process and mark it as deployed") {
     createValidProcess(processName, TestCat, false)
 
-    deployProcess(processName.value) ~> check { status shouldBe StatusCodes.OK }
-
-    getProcess(processName) ~> check {
-      val processDetails = responseAs[ProcessDetails]
-      processDetails.lastAction shouldBe deployedWithVersions(1)
-      processDetails.isDeployed shouldBe true
+    deployProcess(processName.value) ~> checkThatEventually {
+      status shouldBe StatusCodes.OK
+      getProcess(processName) ~> check {
+        val processDetails = responseAs[ProcessDetails]
+        processDetails.lastAction shouldBe deployedWithVersions(1)
+        processDetails.isDeployed shouldBe true
+      }
     }
   }
 
   test("recognize process cancel in deployment list") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> check {
+    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
@@ -187,7 +188,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("recognize process deploy and cancel in global process list") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> check {
+    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
 
       forScenariosReturned(ProcessesQuery.empty) { processes =>
@@ -219,7 +220,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       .parallelism(1)
       .source("startProcess", "csv-source")
       .filter("input", "#input != null", Some(true))
-      .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#input")
+      .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#input")
 
     saveProcessAndAssertSuccess(SampleProcess.process.id, processWithDisabledFilter)
     deployProcess(processName.value) ~> check {
@@ -232,10 +233,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       .streaming("sampleProcess")
       .parallelism(1)
       .source("start", "not existing")
-      .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#output")
+      .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#output")
     saveProcessAndAssertSuccess(invalidScenario.id, invalidScenario)
 
-    deploymentManager.withFailingDeployment {
+    deploymentManager.withFailingDeployment(ProcessName(invalidScenario.id)) {
       deployProcess(invalidScenario.id) ~> check {
         responseAs[String] shouldBe "Cannot deploy invalid scenario"
         status shouldBe StatusCodes.Conflict
@@ -247,7 +248,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     val largeParallelismScenario = SampleProcess.process.copy(metaData = MetaData(SampleProcess.process.id, StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1))))
     saveProcessAndAssertSuccess(largeParallelismScenario.id, largeParallelismScenario)
 
-    deploymentManager.withFailingDeployment {
+    deploymentManager.withFailingDeployment(ProcessName(largeParallelismScenario.id)) {
       deployProcess(largeParallelismScenario.id) ~> check {
         status shouldBe StatusCodes.BadRequest
         responseAs[String] shouldBe "Parallelism too large"
@@ -258,7 +259,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("return from deploy before deployment manager proceeds") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
 
-    deploymentManager.withWaitForDeployFinish {
+    deploymentManager.withWaitForDeployFinish(ProcessName(SampleProcess.process.id)) {
       deployProcess(SampleProcess.process.id) ~> check {
         status shouldBe StatusCodes.OK
       }
@@ -282,10 +283,12 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   test("return test results") {
+    val testDataContent =
+      """{"sourceId":"startProcess","record":"ala"}
+        |{"sourceId":"startProcess","record":"bela"}""".stripMargin
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    val displayableProcess = ProcessConverter.toDisplayable(SampleProcess.process, TestProcessingTypes.Streaming, Category1)
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
-    Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
+
+    testScenario(SampleProcess.process, testDataContent) ~> check {
 
       status shouldEqual StatusCodes.OK
 
@@ -315,21 +318,18 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
     import pl.touk.nussknacker.engine.spel.Implicits._
 
-    val process = {
-        ScenarioBuilder
-          .streaming("sampleProcess")
-          .parallelism(1)
-          .source("startProcess", "csv-source")
-          .filter("input", "new java.math.BigDecimal(null) == 0")
-          .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "''")
-    }
-
+    val process = ScenarioBuilder
+      .streaming("sampleProcess")
+      .parallelism(1)
+      .source("startProcess", "csv-source")
+      .filter("input", "new java.math.BigDecimal(null) == 0")
+      .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "''")
+    val testDataContent =
+      """{"sourceId":"startProcess","record":"ala"}
+        |"bela"""".stripMargin
     saveProcessAndAssertSuccess(process.id, process)
 
-    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
-
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
-    Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
+    testScenario(process, testDataContent) ~> check {
       status shouldEqual StatusCodes.OK
     }
   }
@@ -343,18 +343,27 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           .streaming("sampleProcess")
           .parallelism(1)
           .source("startProcess", "csv-source")
-          .emptySink("end", "kafka-string", "topic" -> "'end.topic'")
+          .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'")
     }
-
     saveProcessAndAssertSuccess(process.id, process)
+    val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))
 
-    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
-
-    List((1 to 50).mkString("\n"), (1 to 50000).mkString("-")).foreach { tooLargeData =>
-      val multiPart = MultipartUtils.prepareMultiParts("testData" -> tooLargeData, "processJson" -> displayableProcess.asJson.noSpaces)()
-      Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
+    tooLargeTestDataContentList.foreach { tooLargeData =>
+      testScenario(process, tooLargeData) ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
+    }
+  }
+
+  test("rejects test record with non-existing source") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    val testDataContent =
+      """{"sourceId":"startProcess","record":"ala"}
+        |{"sourceId":"unknown","record":"bela"}""".stripMargin
+
+    testScenario(SampleProcess.process, testDataContent) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[String] shouldBe "Record 2 - scenario does not have source id: 'unknown'"
     }
   }
 
@@ -386,9 +395,12 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     customAction(SampleProcess.process.id, CustomActionRequest("invalid-status")) ~> check {
       status shouldBe StatusCodes.Forbidden
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Scenario status: WARNING is not allowed for action invalid-status")
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Scenario status: PROBLEM is not allowed for action invalid-status")
     }
   }
 
   def decodeDetails: ProcessDetails = responseAs[ProcessDetails]
+
+  def checkThatEventually[T](body: => T): RouteTestResult => T = check(eventually(body))
+
 }

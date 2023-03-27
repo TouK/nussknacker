@@ -36,8 +36,8 @@ class JsonRecordFormatterSpec extends AnyFunSuite with Matchers {
     val size = 3
 
     val record = new ConsumerRecord[Array[Byte], Array[Byte]](topic, 0, 0, null, recordBytes)
-    val formatted = JsonRecordFormatter.prepareGeneratedTestData((1 to size).map(_ => record).toList)
-    val parsed = JsonRecordFormatter.parseDataForTest(topic :: Nil, formatted)
+    val testData = JsonRecordFormatter.prepareGeneratedTestData((1 to size).map(_ => record).toList)
+    val parsed = testData.testRecords.map(testRecord => JsonRecordFormatter.parseRecord(topic, testRecord))
     parsed should have length size
     parsed.foreach { producer =>
       decodeJsonUnsafe[Json](producer.value()) shouldBe decodeJsonUnsafe[Json](recordBytes)

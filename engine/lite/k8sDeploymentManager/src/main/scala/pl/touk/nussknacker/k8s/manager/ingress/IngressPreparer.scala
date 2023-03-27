@@ -10,7 +10,7 @@ import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, RequestResponseSlu
 import play.api.libs.json.Json
 import skuber.networking.v1.Ingress
 
-case class IngressConfig(enabled: Boolean, host: Option[String], rootPath: String = "/", config: Config = ConfigFactory.empty())
+case class IngressConfig(enabled: Boolean = false, host: Option[String] = None, rootPath: String = "/", config: Config = ConfigFactory.empty())
 
 class IngressPreparer(config: IngressConfig, nuInstanceName: Option[String]) {
 

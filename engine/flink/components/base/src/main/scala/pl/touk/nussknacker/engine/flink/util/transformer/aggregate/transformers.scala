@@ -12,7 +12,8 @@ import pl.touk.nussknacker.engine.api.{NodeId, Context => NkContext, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.util.richflink._
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.{ClosingEndEventTrigger, FireOnEachEvent}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.OnEventTriggerWindowOperator.OnEventOperatorKeyedStream
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.ClosingEndEventTrigger
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.collection.immutable.SortedMap
@@ -74,29 +75,26 @@ object transformers {
                           tumblingWindowTrigger: TumblingWindowTrigger,
                           explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
                          )(implicit nodeId: NodeId): ContextTransformation =
-    // TODO: to be consistent with sliding window we should probably forward context of variables for tumblingWindowTrigger == TumblingWindowTrigger.OnEvent
-    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, emitContext = false, aggregateBy))
+    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName,
+      emitContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
           val typeInfos = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
-          val aggregatByTypeInfo = ctx.typeInformationDetection.forType[AnyRef](groupBy.returnType)
 
           val keyedStream = start
             .groupByWithValue(groupBy, aggregateBy)
+          val aggregatingFunction = new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity)
+          val windowDefinition = TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis))
+
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
               keyedStream
-                 .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
-                 .trigger(FireOnEachEvent[AnyRef, TimeWindow](EventTimeTrigger.create()))
-                 .aggregate(
-                   new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity),
-                   EnrichingWithKeyFunction(fctx), typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
+                .eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
             case TumblingWindowTrigger.OnEnd =>
               keyedStream
-                 .window(TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis)))
-                 .aggregate(
-                   new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity),
+                 .window(windowDefinition)
+                 .aggregate(aggregatingFunction,
                    EnrichingWithKeyFunction(fctx), typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
             case TumblingWindowTrigger.OnEndWithExtraWindow =>
               keyedStream
@@ -114,8 +112,7 @@ object transformers {
                                sessionWindowTrigger: SessionWindowTrigger,
                                variableName: String
                               )(implicit nodeId: NodeId): ContextTransformation =
-    // TODO: to be consistent with sliding window we should probably forward context of variables for tumblingWindowTrigger == SessionWindowTrigger.OnEnd
-    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, emitContext = false, aggregateBy))
+    ContextTransformation.definedBy(aggregator.toContextTransformation(variableName, emitContext = sessionWindowTrigger == SessionWindowTrigger.OnEvent, aggregateBy))
       .implementedBy(
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
@@ -123,19 +120,23 @@ object transformers {
 
           val baseTrigger =
             ClosingEndEventTrigger[ValueWithContext[KeyedValue[String, (AnyRef, java.lang.Boolean)]], TimeWindow](EventTimeTrigger.create(), _.value.value._2)
-          val trigger = sessionWindowTrigger match {
-            case SessionWindowTrigger.OnEvent => FireOnEachEvent(baseTrigger)
-            case SessionWindowTrigger.OnEnd => baseTrigger
-          }
           val groupByValue = aggregateBy.product(endSessionCondition)
-          start
+
+          val keyedStream = start
             .groupByWithValue(groupBy, groupByValue)
-            .window(EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis)))
-            .trigger(trigger)
-            .aggregate(
-              new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1),
-              EnrichingWithKeyFunction(fctx), typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
-            .setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+          val aggregatingFunction = new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1)
+          val windowDefinition = EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis))
+
+          (sessionWindowTrigger match {
+            case SessionWindowTrigger.OnEvent =>
+              keyedStream.eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, baseTrigger)
+            case SessionWindowTrigger.OnEnd =>
+              keyedStream.window(windowDefinition)
+                .trigger(baseTrigger)
+                .aggregate(
+                  new UnwrappingAggregateFunction[(AnyRef, java.lang.Boolean)](aggregator, aggregateBy.returnType, _._1),
+                  EnrichingWithKeyFunction(fctx), typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
+          }).setUidWithName(ctx, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
         }))
 
   case class AggregatorTypeInformations(ctx: FlinkCustomNodeContext, aggregator: Aggregator, aggregateBy: LazyParameter[AnyRef]) {

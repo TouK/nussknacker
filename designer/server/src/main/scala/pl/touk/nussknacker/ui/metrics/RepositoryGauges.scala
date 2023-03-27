@@ -5,15 +5,15 @@ import pl.touk.nussknacker.ui.process.repository.DBFetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
 
 class RepositoryGauges(metricRegistry: MetricRegistry,
+                       repositoryGaugesCacheDuration: Duration,
                        processRepository: DBFetchingProcessRepository[Future]) {
-
-  private val cacheLengthSeconds = 5
 
   private val awaitTime = 5 seconds
 
@@ -25,7 +25,7 @@ class RepositoryGauges(metricRegistry: MetricRegistry,
 
   }
 
-  private class GlobalGauge extends CachedGauge[Values](cacheLengthSeconds, TimeUnit.SECONDS) {
+  private class GlobalGauge extends CachedGauge[Values](repositoryGaugesCacheDuration.toSeconds, TimeUnit.SECONDS) {
     override def loadValue(): Values = {
       implicit val user: LoggedUser = NussknackerInternalUser
       val result = processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery(isArchived = Some(false))).map { scenarios =>

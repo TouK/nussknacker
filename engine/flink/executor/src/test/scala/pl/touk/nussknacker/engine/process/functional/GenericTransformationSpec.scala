@@ -48,7 +48,7 @@ class GenericTransformationSpec extends AnyFunSuite with Matchers with ProcessTe
     MockService.clear()
     val processWithVariableDeclaration = ScenarioBuilder.streaming("proc1")
       .source("id", "input")
-      .buildSimpleVariable("build-var", NodePassingStateToImplementation.VariableThatShouldBeDefinedBeforeNodeName, "")
+      .buildSimpleVariable("build-var", NodePassingStateToImplementation.VariableThatshouldBeDefinedBeforeNodeName, "")
       .customNode("generic-node", "result", "nodePassingStateToImplementation")
       .processorEnd("proc2", "logService", "all" -> "#result")
 

@@ -22,11 +22,11 @@ where:
 ```
 tasksCount: 2
 ```
-- `--network host` - to be able to connect with kafka and schema registry exposed on host machine
-- `-e KAFKA_ADDRESS=localhost:3032` - kafka address
+- `--network host` - to be able to connect with Kafka and Schema Registry exposed on host machine
+- `-e KAFKA_ADDRESS=localhost:3032` - Kafka address
 - `-e SCHEMA_REGISTRY_URL=http://localhost:3082` - schema registry url
 
-Both kafka and schema registry can be exposed e.g. using `docker-compose-env.yml` inside [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart)
+Both Kafka and schema registry can be exposed e.g. using `docker-compose-env.yml` inside [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart)
 
 # License
 

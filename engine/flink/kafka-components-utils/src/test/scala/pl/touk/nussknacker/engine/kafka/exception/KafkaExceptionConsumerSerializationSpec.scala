@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaD
 import pl.touk.nussknacker.engine.kafka.MockProducerCreator
 
 import java.time.Instant
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 
 class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers {
 

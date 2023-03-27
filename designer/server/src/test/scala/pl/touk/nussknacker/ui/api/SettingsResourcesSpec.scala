@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withoutPermissions
 import pl.touk.nussknacker.ui.config.AnalyticsConfig
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettings
 
 class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -18,7 +19,7 @@ class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fail
   private val authenticationConfig: BasicAuthenticationConfiguration = BasicAuthenticationConfiguration.create(testConfig)
   private val analyticsConfig: Option[AnalyticsConfig] = AnalyticsConfig(testConfig)
 
-  private val settingsRoute = new SettingsResources(featureTogglesConfig, authenticationConfig.name, analyticsConfig)
+  private val settingsRoute = new SettingsResources(featureTogglesConfig, authenticationConfig.name, analyticsConfig, UsageStatisticsReportsSettings(enabled = false, "http://just.test"))
 
   //Values are exists at test/resources/application.conf
   private val intervalTimeProcesses = 20000

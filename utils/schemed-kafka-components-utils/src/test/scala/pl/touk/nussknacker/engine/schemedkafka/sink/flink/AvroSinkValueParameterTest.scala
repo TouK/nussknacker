@@ -3,17 +3,18 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import org.apache.avro.SchemaBuilder
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SinkKeyParamName, SinkValueParamName}
 import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSinkValueParameter
-import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter}
 
 class AvroSinkValueParameterTest extends AnyFunSuite with Matchers {
@@ -36,11 +37,11 @@ class AvroSinkValueParameterTest extends AnyFunSuite with Matchers {
 
     val result = AvroSinkValueParameter(recordSchema).valueOr(e => fail(e.toString)).asInstanceOf[SinkRecordParameter]
     StandardParameterEnrichment.enrichParameterDefinitions(result.toParameters, SingleComponentConfig.zero) shouldBe List(
-      Parameter(name = "a", typ = typing.Typed[String]).copy(isLazyParameter = true, editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
-      Parameter(name = "b.c", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("0")),
-      Parameter(name = "c", typ = typing.Typed[String]).copy(isLazyParameter = true, defaultValue = Some("'c-field-default'"), editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
-      Parameter(name = "d", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("42L")),
-      Parameter(name = "e", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("null"), validators = Nil)
+      Parameter(name = "a", typ = typing.Typed[String]).copy(isLazyParameter = true, editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some(Expression.spel("''"))),
+      Parameter(name = "b.c", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some(Expression.spel("0"))),
+      Parameter(name = "c", typ = typing.Typed[String]).copy(isLazyParameter = true, defaultValue = Some(Expression.spel("'c-field-default'")), editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
+      Parameter(name = "d", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some(Expression.spel("42L"))),
+      Parameter(name = "e", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some(Expression.spel("null")), validators = Nil)
     )
   }
 
@@ -48,7 +49,7 @@ class AvroSinkValueParameterTest extends AnyFunSuite with Matchers {
     val longSchema = SchemaBuilder.builder().longType()
     val result = AvroSinkValueParameter(longSchema).valueOr(e => fail(e.toString)).asInstanceOf[SinkSingleValueParameter]
     StandardParameterEnrichment.enrichParameterDefinitions(result.toParameters, SingleComponentConfig.zero) shouldBe List(
-      Parameter(name = SinkValueParamName, typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("0"))
+      Parameter(name = SinkValueParamName, typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some(Expression.spel("0")))
     )
   }
 
@@ -62,4 +63,5 @@ class AvroSinkValueParameterTest extends AnyFunSuite with Matchers {
     val result = AvroSinkValueParameter(recordSchema)
     result shouldBe Invalid(NonEmptyList.one(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are Schema version, Key, Value validation mode, Topic""", None)))
   }
+
 }

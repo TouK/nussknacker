@@ -68,7 +68,7 @@ trait numeric extends MathUtils {
   def floor(@ParamName("a") a: Double): Double = Math.floor(a)
 
   @Documentation(description = "Returns the closest long to the argument. The result is rounded to an integer by adding 1/2, taking the floor of the result, and casting the result to type long.")
-  def round(@ParamName("a") a: Double): Double = Math.round(a)
+  def round(@ParamName("a") a: Double): Double = Math.round(a).toDouble
 
   @Documentation(description = "Returns the smallest (closest to negative infinity) double value that is greater than or equal to the argument and is equal to a mathematical integer.")
   def ceil(@ParamName("a") a: Double): Double = Math.ceil(a)

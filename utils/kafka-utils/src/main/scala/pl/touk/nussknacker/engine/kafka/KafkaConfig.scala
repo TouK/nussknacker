@@ -33,6 +33,10 @@ case class KafkaConfig(kafkaProperties: Option[Map[String, String]],
 
   def defaultMaxOutOfOrdernessMillis: Option[Long]
   = kafkaEspProperties.flatMap(_.get("defaultMaxOutOfOrdernessMillis")).map(_.toLong)
+
+  def kafkaBootstrapServers: Option[String] = kafkaProperties.getOrElse(Map.empty)
+    .get("bootstrap.servers").orElse(kafkaAddress)
+
 }
 
 object ConsumerGroupNamingStrategy extends Enumeration {
@@ -61,17 +65,6 @@ object KafkaConfig {
 }
 
 case class TopicsExistenceValidationConfig(enabled: Boolean, validatorConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig)
-
-object TopicsExistenceValidationConfig {
-
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
-  // scala 2.11 needs it
-  implicit val valueReader: ValueReader[Option[TopicsExistenceValidationConfig]] = new ValueReader[Option[TopicsExistenceValidationConfig]] {
-    override def read(config: Config, path: String): Option[TopicsExistenceValidationConfig] = OptionReader.optionValueReader[TopicsExistenceValidationConfig].read(config, path)
-  }
-}
 
 case class CachedTopicsExistenceValidatorConfig(autoCreateFlagFetchCacheTtl: FiniteDuration,
                                                 topicsFetchCacheTtl: FiniteDuration,

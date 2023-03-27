@@ -13,7 +13,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.util.Random
 
-
 class KafkaErrorTopicInitializerTest extends AnyFunSuite with KafkaSpec with Matchers with PatientScalaFutures {
 
   private def initializer(topic: String): KafkaErrorTopicInitializer = {
@@ -26,16 +25,16 @@ class KafkaErrorTopicInitializerTest extends AnyFunSuite with KafkaSpec with Mat
   test("should create topic if not exists") {
     val name = s"topic-${Random.nextInt()}"
 
-    kafkaClient.topic(name) shouldBe 'empty
+    kafkaClient.topic(name) shouldBe Symbol("empty")
     initializer(name).init()
-    kafkaClient.topic(name) shouldBe 'defined
+    kafkaClient.topic(name) shouldBe Symbol("defined")
   }
 
   test("should do nothing if topic already exists") {
     val name = s"topic-${Random.nextInt()}"
     kafkaClient.createTopic(name, partitions = 10)
 
-    kafkaClient.topic(name) shouldBe 'defined
+    kafkaClient.topic(name) shouldBe Symbol("defined")
     initializer(name).init()
     kafkaClient.topic(name).map(_.partitions().size()) shouldBe Some(10)
 

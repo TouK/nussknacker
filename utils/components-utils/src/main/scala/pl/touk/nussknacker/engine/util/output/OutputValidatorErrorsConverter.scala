@@ -23,7 +23,11 @@ class OutputValidatorErrorsConverter(schemaParamName: String) {
       s"${err.field.map(f => s"path '$f' ").getOrElse("")}actual: '${err.displayActual}' expected: '${err.displayExpected}'"
     )
 
-    val message = makeMessage(messageTypeFieldErrors, missingFieldsError, redundantFieldsError)
+    val fieldsRangeError  = errors.collect { case e: OutputValidatorRangeTypeError => e }.map(err =>
+      s"${err.field.map(f => s"path '$f' ").getOrElse("")}actual value: '${err.actual.valueOpt.orNull}' should be ${err.expected.expected}"
+    )
+
+    val message = makeMessage(messageTypeFieldErrors, missingFieldsError, redundantFieldsError, fieldsRangeError)
     CustomNodeError(message, Option(schemaParamName))
   }
 
@@ -39,6 +43,8 @@ trait OutputValidatorExpected {
 }
 
 sealed trait OutputValidatorError
+
+case class OutputValidatorRangeTypeError(field: Option[String], actual: TypingResult, expected: OutputValidatorExpected) extends OutputValidatorError
 
 case class OutputValidatorTypeError(field: Option[String], actual: TypingResult, expected: OutputValidatorExpected) extends OutputValidatorError
 

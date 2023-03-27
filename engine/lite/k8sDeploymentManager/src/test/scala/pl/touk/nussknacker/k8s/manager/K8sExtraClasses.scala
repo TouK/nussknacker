@@ -10,7 +10,7 @@ import skuber.json.format._
 import skuber.{ObjectMeta, ResourceDefinition, Secret}
 
 import java.net.URL
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext
 
 class K8sExtraClasses(k8s: KubernetesClient, classes: List[Class[_]], serviceLoaderConfigURL: URL) extends VeryPatientScalaFutures {

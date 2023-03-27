@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, Gene
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedObjectWithValue, TypingResult}
 
 import scala.annotation.varargs
-import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
+import scala.jdk.CollectionConverters._
 
 object ExampleFunctions {
   @Documentation(description = "returns first element of list")

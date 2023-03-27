@@ -75,13 +75,15 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("return single process") {
     val processId = createDeployedProcess(processName)
 
-    forScenarioReturned(processName) { process =>
-      process.processId shouldBe processId.value
-      process.name shouldBe processName.value
-      process.stateStatus shouldBe Some(SimpleStateStatus.Running.name)
-      process.stateTooltip shouldBe SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running)
-      process.stateDescription shouldBe SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running)
-      process.stateIcon shouldBe SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running)
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+      forScenarioReturned(processName) { process =>
+        process.processId shouldBe processId.value
+        process.name shouldBe processName.value
+        process.stateStatus shouldBe Some(SimpleStateStatus.Running.name)
+        process.stateTooltip shouldBe SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running)
+        process.stateDescription shouldBe SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running)
+        process.stateIcon shouldBe SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running)
+      }
     }
   }
 
@@ -116,7 +118,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("not allow to archive still running process") {
     createDeployedProcess(processName)
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       archiveProcess(processName) { status =>
         status shouldEqual StatusCodes.Conflict
       }
@@ -198,7 +200,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createEmptyProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       renameProcess(processName, newName) { status =>
         status shouldEqual StatusCodes.Conflict
       }
@@ -226,10 +228,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
 
     forScenariosReturned(ProcessesQuery.empty.subprocess().unarchived()) { processes =>
-      processes shouldBe 'empty
+      processes shouldBe Symbol("empty")
     }
     forScenariosDetailsReturned(ProcessesQuery.empty.subprocess().unarchived()) { processes =>
-      processes shouldBe 'empty
+      processes shouldBe Symbol("empty")
     }
     forScenariosReturned(ProcessesQuery.empty.subprocess().archived()) { processes =>
       processes should have size 1
@@ -255,10 +257,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createArchivedProcess(processName)
 
     forScenariosReturned(ProcessesQuery.empty.unarchived()) { processes =>
-      processes shouldBe 'empty
+      processes shouldBe Symbol("empty")
     }
     forScenariosDetailsReturned(ProcessesQuery.empty.unarchived()) { processes =>
-      processes shouldBe 'empty
+      processes shouldBe Symbol("empty")
     }
   }
 
@@ -483,35 +485,39 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createDeployedCanceledProcess(secondProcessor)
     createDeployedProcess(thirdProcessor)
 
-    forScenariosReturned(ProcessesQuery.empty) { processes =>
-      processes.size shouldBe 3
-      val status = processes.find(_.name == firstProcessor.value).flatMap(_.stateStatus)
-      status shouldBe Some(SimpleStateStatus.NotDeployed.name)
-    }
-    forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
-      processes.size shouldBe 3
-    }
+    deploymentManager.withProcessStateStatus(secondProcessor, SimpleStateStatus.Canceled) {
+      deploymentManager.withProcessStateStatus(thirdProcessor, SimpleStateStatus.Running) {
+        forScenariosReturned(ProcessesQuery.empty) { processes =>
+          processes.size shouldBe 3
+          val status = processes.find(_.name == firstProcessor.value).flatMap(_.stateStatus)
+          status shouldBe Some(SimpleStateStatus.NotDeployed.name)
+        }
+        forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
+          processes.size shouldBe 3
+        }
 
-    forScenariosReturned(ProcessesQuery.empty.deployed()) { processes =>
-      processes.size shouldBe 1
-      val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
-      status shouldBe Some(SimpleStateStatus.Running.name)
-    }
-    forScenariosDetailsReturned(ProcessesQuery.empty.deployed()) { processes =>
-      processes.size shouldBe 1
-    }
+        forScenariosReturned(ProcessesQuery.empty.deployed()) { processes =>
+          processes.size shouldBe 1
+          val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
+          status shouldBe Some(SimpleStateStatus.Running.name)
+        }
+        forScenariosDetailsReturned(ProcessesQuery.empty.deployed()) { processes =>
+          processes.size shouldBe 1
+        }
 
-    forScenariosReturned(ProcessesQuery.empty.notDeployed()) { processes =>
-      processes.size shouldBe 2
+        forScenariosReturned(ProcessesQuery.empty.notDeployed()) { processes =>
+          processes.size shouldBe 2
 
-      val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
-      status shouldBe None
+          val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
+          status shouldBe None
 
-      val canceledProcess = processes.find(_.name == secondProcessor.value).flatMap(_.stateStatus)
-      canceledProcess shouldBe Some(SimpleStateStatus.Canceled.name)
-    }
-    forScenariosDetailsReturned(ProcessesQuery.empty.notDeployed()) { processes =>
-      processes.size shouldBe 2
+          val canceledProcess = processes.find(_.name == secondProcessor.value).flatMap(_.stateStatus)
+          canceledProcess shouldBe Some(SimpleStateStatus.Canceled.name)
+        }
+        forScenariosDetailsReturned(ProcessesQuery.empty.notDeployed()) { processes =>
+          processes.size shouldBe 2
+        }
+      }
     }
   }
 
@@ -692,7 +698,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
 
     val modifiedParallelism = 123
-    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)), subprocessVersions = Map.empty)
+    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)))
     Put(s"/processes/$TestCat/${processName.value}", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
@@ -743,7 +749,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("allow to delete process") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
     val processName = ProcessName(processToSave.id)
 
     saveProcess(processToSave) {
@@ -790,7 +796,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("not allow to save process if already exists") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
       Post(s"/processes/${processToSave.id}/$TestCat?isSubprocess=false") ~> routeWithWrite ~> check {
@@ -825,19 +831,6 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  test("return subprocesses details") {
-    val subprocess = ProcessTestData.sampleSubprocess
-    saveSubProcess(subprocess) {
-      status shouldEqual StatusCodes.OK
-    }
-
-    Get("/subProcessesDetails") ~> routeWithRead ~> check {
-      status shouldEqual StatusCodes.OK
-      val processes = responseAs[List[ValidatedProcessDetails]]
-      processes.map(_.name) should contain only subprocess.id
-    }
-  }
-
   test("fetching status for non exists process should return 404 ") {
     Get(s"/processes/non-exists-process/status") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.NotFound
@@ -847,7 +840,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("fetching status for deployed process should properly return status") {
     createDeployedProcess(processName)
 
-    deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       Get(s"/processes/${processName.value}/status") ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
         val stateStatusResponse = parseStateResponse(responseAs[Json])
@@ -891,12 +884,12 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     val name = stateResponse.hcursor
       .downField("status")
       .downField("name")
-      .as[String].right.get
+      .as[String].toOption.get
 
     val statusType = stateResponse.hcursor
       .downField("status")
       .downField("type")
-      .as[String].right.get
+      .as[String].toOption.get
 
     StateStatusResponse(name, statusType)
   }
@@ -908,14 +901,14 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   private def fetchSampleProcess(): Future[CanonicalProcess] = {
-    fetchingProcessRepository
+    futureFetchingProcessRepository
       .fetchLatestProcessDetailsForProcessId[CanonicalProcess](getProcessId(processName))
       .map(_.getOrElse(sys.error("Sample process missing")))
       .map(_.json)
   }
 
   private def getProcessId(processName: ProcessName): ProcessId =
-    fetchingProcessRepository.fetchProcessId(processName).futureValue.get
+    futureFetchingProcessRepository.fetchProcessId(processName).futureValue.get
 
   private def renameProcess(processName: ProcessName, newName: ProcessName)(callback: StatusCode => Any): Any =
     Put(s"/processes/${processName.value}/rename/${newName.value}") ~> routeWithAllPermissions ~> check {
@@ -925,7 +918,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessToolbarSettings => Unit): Unit =
     getProcessToolbars(processName, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
-      val toolbar = decode[ProcessToolbarSettings](responseAs[String]).right.get
+      val toolbar = decode[ProcessToolbarSettings](responseAs[String]).toOption.get
       callback(toolbar)
     }
 
@@ -957,5 +950,5 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
 
   private def updateCategory(processId: ProcessId, category: String): XError[Unit] =
-    repositoryManager.runInTransaction(writeProcessRepository.updateCategory(processId, category)).futureValue
+    dbioRunner.runInTransaction(writeProcessRepository.updateCategory(processId, category)).futureValue
 }

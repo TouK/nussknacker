@@ -4,10 +4,9 @@ import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.Inspectors.forAll
+import org.scalatest.OptionValues
 import org.scalatest.tags.Network
-import org.scalatest.{Assertion, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -23,11 +22,11 @@ import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
 import skuber.json.format._
 import skuber.{ConfigMap, EnvVar, ListResource, ObjectMeta, Pod, Resource, Volume}
-import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
+import sttp.client3._
 
 import java.nio.file.Files
-import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters._
 import scala.language.reflectiveCalls
 import scala.util.Random
 
@@ -37,7 +36,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   with OptionValues with EitherValuesDetailedMessage with LazyLogging {
 
   private lazy val kafka = new KafkaK8sSupport(k8s)
-  private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+  private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
   test("deployment of kafka ping-pong") {
     val f = createKafkaFixture()
@@ -72,7 +71,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
     def waitForRunning(version: ProcessVersion) = {
       eventually {
-        val state = manager.findJobStatus(version.processName).futureValue
+        val state = manager.getFreshProcessState(version.processName).futureValue
         state.flatMap(_.version) shouldBe Some(version)
         state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
       }
@@ -99,75 +98,6 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
     cancelAndAssertCleanup(manager, version2)
   }
-
-  test("should redeploy during deploy") {
-    //we append random to make it easier to test with reused kafka deployment
-    val seed = new Random().nextInt()
-    val inputTopic = s"in-$seed"
-    val outputTopic = s"out1-$seed"
-    val otherOutputTopic = s"out2-$seed"
-    List(inputTopic, outputTopic, otherOutputTopic).foreach(kafka.createTopic)
-
-    val manager = prepareManager()
-
-    def scenarioWithOutputTo(topicName: String) = ScenarioBuilder
-      .streamingLite("foo scenario \u2620")
-      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-      .emptySink("sink", "kafka", "Topic" -> s"'$topicName'", "Schema version" -> "'latest'", "Key" -> "", "Raw editor" -> "true", "Value validation mode" -> "'strict'",
-        "Value" -> "#input")
-
-    def waitFor(version: ProcessVersion) = {
-      class InStateAssertionHelper {
-        def inState(stateStatus: StateStatus): Assertion = eventually {
-          val state = manager.findJobStatus(version.processName).futureValue
-          state.flatMap(_.version) shouldBe Some(version)
-          state.map(_.status) shouldBe Some(stateStatus)
-        }
-      }
-      new InStateAssertionHelper()
-    }
-
-    val scenario = scenarioWithOutputTo(outputTopic)
-    val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-
-    kafka.createSchema(s"$inputTopic-value", defaultSchema)
-    kafka.createSchema(s"$outputTopic-value", defaultSchema)
-    kafka.createSchema(s"$otherOutputTopic-value", defaultSchema)
-
-    val message = """{"message":"Nussknacker!"}"""
-    kafka.sendToTopic(inputTopic, message)
-
-    val otherVersion = version.copy(versionId = VersionId(12), modelVersion = Some(23))
-    val otherScenario = scenarioWithOutputTo(otherOutputTopic)
-    manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
-    waitFor(version).inState(SimpleStateStatus.DuringDeploy)
-
-    val oldPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
-
-    manager.deploy(otherVersion, DeploymentData.empty, otherScenario, None).futureValue
-
-    var statuses: List[StateStatus] = Nil
-    // wait until new pod arrives..
-    eventually {
-      val newPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
-      if (newPod.metadata.name == oldPod.metadata.name) {
-        statuses = statuses ::: manager.findJobStatus(otherVersion.processName).futureValue.get.status :: Nil
-      }
-      newPod.metadata.name should not be oldPod.metadata.name
-    }
-    //..and make sure scenario status was never Running to this point
-    statuses should contain only SimpleStateStatus.DuringDeploy
-
-    waitFor(otherVersion).inState(SimpleStateStatus.Running)
-    kafka.readFromTopic(otherOutputTopic, 1) shouldBe List(message)
-    manager.cancel(otherVersion.processName, DeploymentData.systemUser).futureValue
-    eventually {
-      manager.findJobStatus(version.processName).futureValue shouldBe None
-    }
-    //should not fail
-    cancelAndAssertCleanup(manager, version)
-  }
-
 
   test("should deploy scenario with env, resources and replicas count from k8sDeploymentConfig") {
     val f = createKafkaFixture(
@@ -301,7 +231,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   }
 
   test("should expose prometheus metrics") {
-    val port = 8080
+    val port = 8041
     val f = createKafkaFixture(deployConfig = kafkaDeployConfig
       .withValue("k8sDeploymentConfig.spec.template.spec.containers",
         fromIterable(List(
@@ -330,7 +260,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
       k8sTestUtils.withPortForwarded(pod, port) { localPort =>
         eventually {
-          basicRequest.get(uri"http://localhost:$localPort").send().body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
+          basicRequest.get(uri"http://localhost:$localPort").send(backend).body.toOption.get.contains("jvm_memory_bytes_committed") shouldBe true
         }
       }
     }
@@ -349,7 +279,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   private def cancelAndAssertCleanup(manager: K8sDeploymentManager, version: ProcessVersion) = {
     manager.cancel(version.processName, DeploymentData.systemUser).futureValue
     eventually {
-      manager.findJobStatus(version.processName).futureValue shouldBe None
+      manager.getFreshProcessState(version.processName).futureValue shouldBe None
     }
     assertNoGarbageLeft()
   }
@@ -365,7 +295,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
     .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)
 
   private def prepareManager(modelData: LocalModelData = modelData, deployConfig: Config = kafkaDeployConfig): K8sDeploymentManager = {
-    new K8sDeploymentManager(modelData, K8sDeploymentManagerConfig.parse(deployConfig))
+    new K8sDeploymentManager(modelData, K8sDeploymentManagerConfig.parse(deployConfig), deployConfig)
   }
 
   val defaultSchema = """{"type":"object","properties":{"message":{"type":"string"}}}"""

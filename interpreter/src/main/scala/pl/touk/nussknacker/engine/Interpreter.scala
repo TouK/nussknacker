@@ -108,7 +108,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case Filter(_, expression, nextTrue, nextFalse, disabled) =>
         val valueWithModifiedContext = if (disabled) ValueWithContext(true, ctx) else evaluateExpression[Boolean](expression, ctx, expressionName)
         if (disabled || valueWithModifiedContext.value)
-          interpretNext(nextTrue, valueWithModifiedContext.context)
+          interpretOptionalNext(node, nextTrue, valueWithModifiedContext.context)
         else
           interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)
       case Switch(_, expr, nexts, defaultNext) =>

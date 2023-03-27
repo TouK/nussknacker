@@ -33,9 +33,6 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
   def slug(p: Option[String]) =
     new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = RequestResponseMetaData(p)))
 
-  def subprocessVersions(subprocessVersions: Map[String, Long]) =
-    new ProcessMetaDataBuilder(metaData.copy(subprocessVersions = subprocessVersions))
-
   def additionalFields(description: Option[String] = None,
                        properties: Map[String, String] = Map.empty) =
     new ProcessMetaDataBuilder(metaData.copy(

@@ -1,21 +1,26 @@
 package pl.touk.nussknacker.engine.management
 
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock._
 import com.typesafe.config.ConfigFactory
 import io.circe.Json.fromString
 import org.apache.flink.api.common.JobStatus
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import org.scalatest.time.Span.convertSpanToDuration
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.testing.SttpBackendStub
-import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
+import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
+import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
 import java.net.NoRouteToHostException
@@ -23,6 +28,7 @@ import java.util.concurrent.TimeoutException
 import java.util.{Collections, UUID}
 import scala.collection.mutable
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 //TODO move some tests to FlinkHttpClientTest
 class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
@@ -30,7 +36,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
   import scala.concurrent.ExecutionContext.Implicits._
 
   //We don't test scenario's json here
-  private val config = FlinkConfig("http://test.pl", None, shouldVerifyBeforeDeploy = false)
+  private val config = FlinkConfig("http://test.pl", shouldVerifyBeforeDeploy = false)
 
   private var statuses: List[JobOverview] = List()
 
@@ -71,7 +77,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
                                        freeSlots: Int = 1
                                       ): (FlinkRestManager, mutable.Buffer[HistoryEntry])
   = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val history: mutable.Buffer[HistoryEntry] = Collections.synchronizedList(new java.util.ArrayList[HistoryEntry]()).asScala
     val manager = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
       val toReturn = (req.uri.path, req.method) match {
@@ -101,7 +107,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
           exceptionOnDeploy
             //see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions
             //TODO: can be make behaviour more robust?
-            .flatMap(SttpClientException.defaultExceptionToSttpClientException)
+            .flatMap { ex => SttpClientException.defaultExceptionToSttpClientException(req, ex) }
             .foreach(throw _)
           RunResponse(returnedJobId)
         case (List("jars", "upload"), Method.POST) if acceptDeploy =>
@@ -111,6 +117,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
           ClusterOverview(1, `slots-available` = freeSlots)
         case (List("jobmanager", "config"), Method.GET) =>
           List()
+        case _ => throw new IllegalStateException()
       }
       Response(Right(toReturn), statusCode)
     })
@@ -144,16 +151,18 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       ).futureValue shouldBe None
   }
 
-  test("not continue on random exception exception") {
+  test("not continue on random network exception") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
     val manager = createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
 
-    expectException(manager.deploy(
-        defaultVersion,
-        defaultDeploymentData,
-        canonicalProcess,
-        None
-      ), "java.net.NoRouteToHostException: heeelo?")
+    val result = manager.deploy(
+      defaultVersion,
+      defaultDeploymentData,
+      canonicalProcess,
+      None
+    )
+    expectException(result, "Exception when sending request: POST http://test.pl/jars/file/run")
+    result.failed.futureValue.getCause.getMessage shouldBe "heeelo?"
   }
 
   private val defaultVersion = ProcessVersion(VersionId.initialVersionId, ProcessName("p1"), ProcessId(1), "user", None)
@@ -257,8 +266,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)), JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
-      manager, ExternalDeploymentId("1111"), FlinkStateStatus.MultipleJobsRunning, startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
+    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
+      manager, ExternalDeploymentId("1111"), ProblemStateStatus.multipleJobsRunning, startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
     ))
   }
 
@@ -266,8 +275,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)), JobOverview("1111", "p1", 30L, 30L, JobStatus.RESTARTING.name(), tasksOverview()))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
-      manager, ExternalDeploymentId("1111"), FlinkStateStatus.MultipleJobsRunning, startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
+    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
+      manager, ExternalDeploymentId("1111"), ProblemStateStatus.multipleJobsRunning, startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
     ))
   }
 
@@ -275,7 +284,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 20L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)), JobOverview("1111", "p1", 30L, 5L, JobStatus.CANCELED.name(), tasksOverview(canceled = 1)))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("2343"), FlinkStateStatus.Running, startTime = Some(10L)
     ))
   }
@@ -284,7 +293,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)), JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, startTime = Some(10L)
     ))
 
@@ -294,7 +303,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)), JobOverview("1111", "p1", 35L, 30L, JobStatus.RESTARTING.name(), tasksOverview()))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(ProcessName("p1")).futureValue shouldBe Some(processState(
+    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("1111"), FlinkStateStatus.Restarting, startTime = Some(30L)
     ))
   }
@@ -314,13 +323,50 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
                                                 "user" -> fromString(user))))
 
     val manager = createManager(statuses)
-    manager.findJobStatus(processName).futureValue shouldBe Some(processState(
+    manager.getFreshProcessState(processName).futureValue shouldBe Some(processState(
       manager, ExternalDeploymentId("2343"), FlinkStateStatus.Finished, Some(ProcessVersion(VersionId(version), processName, processId, user, None)), Some(10L)
     ))
   }
 
-  private def createManagerWithBackend(backend: SttpBackend[Future, Nothing, NothingT]): FlinkRestManager = {
-    implicit val b: SttpBackend[Future, Nothing, NothingT] = backend
+  test("return process state respecting a short timeout for this operation") {
+    val wireMockServer = AvailablePortFinder.withAvailablePortsBlocked(1)(l => new WireMockServer(l.head))
+    wireMockServer.start()
+    val clientRequestTimeout = 1.seconds
+    try {
+      def stubWithFixedDelay(delay: FiniteDuration): Unit = {
+        wireMockServer.stubFor(
+          get(urlPathEqualTo("/jobs/overview")).willReturn(
+            aResponse()
+              .withBody(
+                """{
+                  |  "jobs": []
+                  |}""".stripMargin)
+              .withFixedDelay(delay.toMillis.toInt)))
+      }
+      implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
+      val manager = new FlinkRestManager(
+        config = config.copy(
+          restUrl = wireMockServer.baseUrl(),
+          scenarioStateRequestTimeout = clientRequestTimeout),
+        modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"
+      )
+
+      val durationLongerThanClientTimeout = clientRequestTimeout.plus(patienceConfig.timeout)
+      stubWithFixedDelay(durationLongerThanClientTimeout)
+      a[SttpClientException.TimeoutException] shouldBe thrownBy {
+        manager.getFreshProcessState(ProcessName("p1")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
+      }
+
+      stubWithFixedDelay(0.seconds)
+      val resultWithoutDelay = manager.getFreshProcessState(ProcessName("p1")).futureValue(Timeout(durationLongerThanClientTimeout.plus(1 second)))
+      resultWithoutDelay shouldEqual None
+    } finally {
+      wireMockServer.stop()
+    }
+  }
+
+  private def createManagerWithBackend(backend: SttpBackend[Future, Any]): FlinkRestManager = {
+    implicit val b: SttpBackend[Future, Any] = backend
     new FlinkRestManager(
       config = config,
       modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"

@@ -18,7 +18,7 @@ import scala.reflect.ClassTag
 
 class EditorExtractorTest extends AnyFunSuite with Matchers {
 
-  private def notAnnotated(param: String) {}
+  private def notAnnotated(param: String) = ()
 
   private def dualEditorAnnotated(@DualEditor(
     simpleEditor = new SimpleEditor(
@@ -26,24 +26,24 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       possibleValues = Array(new LabeledExpression(expression = "'test'", label = "test2"))
     ),
     defaultMode = DualEditorMode.SIMPLE
-  ) param: String) {}
+  ) param: String) = ()
 
   private def dualEditorAnnotatedLazy(@DualEditor(
     simpleEditor = new SimpleEditor(`type` = SimpleEditorType.DATE_EDITOR),
     defaultMode = DualEditorMode.SIMPLE
-  ) param: LazyParameter[String]) {}
+  ) param: LazyParameter[String]) = ()
 
-  private def simpleEditorAnnotated(@SimpleEditor(`type` = SimpleEditorType.BOOL_EDITOR) param: String) {}
+  private def simpleEditorAnnotated(@SimpleEditor(`type` = SimpleEditorType.BOOL_EDITOR) param: String) = ()
 
-  private def simpleEditorAnnotatedLazy(@SimpleEditor(`type` = SimpleEditorType.BOOL_EDITOR) param: LazyParameter[String]) {}
+  private def simpleEditorAnnotatedLazy(@SimpleEditor(`type` = SimpleEditorType.BOOL_EDITOR) param: LazyParameter[String]) = ()
 
-  private def rawEditorAnnotated(@RawEditor param: String) {}
+  private def rawEditorAnnotated(@RawEditor param: String) = ()
 
-  private def rawEditorAnnotatedLazy(@RawEditor param: LazyParameter[String]) {}
+  private def rawEditorAnnotatedLazy(@RawEditor param: LazyParameter[String]) = ()
 
   private def simpleParams(javaEnum: JavaSampleEnum, localDateTime: LocalDateTime,
                            localDate: LocalDate, localTime: LocalTime, duration: Duration, period: Period, cron: Cron,
-                           str: String, charseq: CharSequence) {}
+                           str: String, charseq: CharSequence) = ()
 
   private val paramNotAnnotated = getFirstParam("notAnnotated", classOf[String])
 

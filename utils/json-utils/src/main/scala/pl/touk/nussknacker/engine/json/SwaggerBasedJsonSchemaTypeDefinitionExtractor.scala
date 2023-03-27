@@ -1,38 +1,45 @@
 package pl.touk.nussknacker.engine.json
 
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.models.media
 import io.swagger.v3.parser.ObjectMapperFactory
 import org.everit.json.schema._
 import pl.touk.nussknacker.engine.json.swagger.{OpenAPISchemaParser, SwaggerTyped}
 
 import java.util
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
 
   private val mapper: ObjectMapper = ObjectMapperFactory.createJson()
 
-  def swaggerType(schema: Schema): SwaggerTyped = {
-    val deserializedSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(schema.toString)
-    swaggerType(deserializedSchema)
+  def swaggerType(schema: Schema, parentSchema: Option[Schema] = None): SwaggerTyped = {
+    val normalizedSchema = mapTrueSchemaToEmptySchema(schema)
+    val deserializedSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(normalizedSchema.toString)
+    val refsFromParent = parentSchema.map(collectSchemaDefs).getOrElse(Map.empty)
+    val refsFromSchema = collectSchemaDefs(normalizedSchema)
+    SwaggerTyped(deserializedSchema, refsFromParent ++ refsFromSchema)
   }
 
-  def swaggerType(schema: media.Schema[_]): SwaggerTyped = {
-    val refSchemas = collectSchemaDefs(schema)
-    SwaggerTyped(schema, refSchemas)
+  private def mapTrueSchemaToEmptySchema(schema: Schema): Schema = {
+    schema match {
+      case _: TrueSchema => EmptySchema.INSTANCE
+      case _ => schema
+    }
   }
 
   // We extract schema definitions that can be used in refs using lowlevel schema extension mechanism.
   // Extensions are all redundant elements in schema. This mechanism will work onl for limited usages,
   // some constructions described here: http://json-schema.org/understanding-json-schema/structuring.html
   // like anchors, recursive schemas, nested relative schemas won't work.
-  private def collectSchemaDefs(schema: media.Schema[_]) = {
+  private def collectSchemaDefs(everitSchema: Schema) = {
+    val schema = OpenAPISchemaParser.parseSchema(everitSchema.toString)
     Option(schema.getExtensions).map(_.asScala.collect {
       case (extKey, extNode: util.Map[String@unchecked, _]) =>
         extNode.asScala.flatMap {
           case (key: String, node: util.Map[String@unchecked, _]) =>
-            val nodeSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(mapper.valueToTree[JsonNode](node))
+            val nodeSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(mapper.valueToTree[ObjectNode](node))
             if (extKey == "$defs") {
               Map[String, media.Schema[_]](
                 s"#/$extKey/$key" -> nodeSchema,

@@ -6,6 +6,7 @@ import {ProcessDefinitionData} from "../types"
 import {WithId} from "../types/common"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {ToolbarsSide} from "./toolbars"
+import {WIP_TOOLBARS} from "../components/toolbarSettings/WIP_TOOLBARS"
 
 export enum AuthStrategy {
   BROWSER = "Browser",
@@ -19,7 +20,6 @@ export type SettingsState = {
   authenticationSettings: AuthenticationSettings,
   analyticsSettings: $TodoType,
   processDefinitionData: ProcessDefinitionData,
-  availableQueryableStates: $TodoType,
   processToolbarsConfiguration: WithId<ToolbarsConfig>,
 }
 
@@ -54,7 +54,6 @@ const initialState: SettingsState = {
   authenticationSettings: {},
   analyticsSettings: {},
   processDefinitionData: {},
-  availableQueryableStates: {},
   processToolbarsConfiguration: null,
 }
 
@@ -82,16 +81,13 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
         processDefinitionData: action.processDefinitionData,
       }
     }
-    case "AVAILABLE_QUERY_STATES": {
-      return {
-        ...state,
-        availableQueryableStates: action.availableQueryableStates,
-      }
-    }
     case "PROCESS_TOOLBARS_CONFIGURATION_LOADED": {
       return {
         ...state,
-        processToolbarsConfiguration: {...action.data, [ToolbarsSide.BottomRight]: [...action.data.bottomRight, ...DEV_TOOLBARS]},
+        processToolbarsConfiguration: {
+          ...action.data,
+          [ToolbarsSide.TopRight]: [...WIP_TOOLBARS, ...action.data.topRight],
+          [ToolbarsSide.BottomRight]: [...action.data.bottomRight, ...DEV_TOOLBARS]},
       }
     }
     default:
