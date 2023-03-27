@@ -27,7 +27,7 @@ import java.net.URI
                                    status: StateStatus,
                                    version: Option[ProcessVersion],
                                    allowedActions: List[ProcessActionType],
-                                   icon: Option[URI],
+                                   icon: URI,
                                    tooltip: Option[String],
                                    description: Option[String],
                                    startTime: Option[Long],
@@ -133,6 +133,10 @@ class CustomStateStatus(val name: StatusName) extends StateStatus
   * @see overriding state definitions in [[OverridingProcessStateDefinitionManager]]
   */
 case class StateDefinitionDetails(displayableName: String,
-                                  icon: Option[URI],
+                                  icon: URI,
                                   tooltip: Option[String],
                                   description: Option[String])
+
+object StateDefinitionDetails {
+  val UnknownIcon: URI = URI.create("/assets/states/status-unknown.svg")
+}

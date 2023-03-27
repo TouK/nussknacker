@@ -37,7 +37,7 @@ trait ProcessStateDefinitionManager {
   def statusDescription(stateStatus: StateStatus): Option[String] =
     stateDefinitions(stateStatus.name).description
 
-  def statusIcon(stateStatus: StateStatus): Option[URI] =
+  def statusIcon(stateStatus: StateStatus): URI =
     stateDefinitions(stateStatus.name).icon
 
   /**
