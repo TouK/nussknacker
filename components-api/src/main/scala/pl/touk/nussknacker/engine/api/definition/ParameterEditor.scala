@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.Json
-import org.apache.commons.lang3.StringUtils
 
 import scala.util.Try
 

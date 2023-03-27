@@ -67,7 +67,7 @@ object EmbeddedKafkaServer {
 
   private def prepareRaftStorage(logDir: File, kafkaConfig: server.KafkaConfig) = {
     val uuid = Uuid.randomUuid()
-    StorageTool.formatCommand(new PrintStream(new NullOutputStream), Seq(logDir.getAbsolutePath),
+    StorageTool.formatCommand(new PrintStream(NullOutputStream.NULL_OUTPUT_STREAM), Seq(logDir.getAbsolutePath),
       StorageTool.buildMetadataProperties(uuid.toString, kafkaConfig), MetadataVersion.IBP_3_3_IV3, ignoreFormatted = false)
   }
 
