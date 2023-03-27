@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, ProcessActionType, RunningStateStatus, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, StateDefinitionDetails, StateStatus}
 
 import java.net.URI
 import java.time.LocalDateTime
@@ -19,10 +20,10 @@ object PeriodicStateStatus {
   }
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
-    case _: RunningStateStatus => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
-    case _: ScheduledStatus => List(ProcessActionType.Cancel, ProcessActionType.Deploy)
-    case WaitingForScheduleStatus => List(ProcessActionType.Cancel) //or maybe should it be empty??
-    case _: ProblemStateStatus => List(ProcessActionType.Cancel) //redeploy is not allowed
+    case s if s.name.equals(SimpleStateStatus.Running.name) => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
+    case s if s.name.equals(ScheduledStatus.name) => List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+    case s if s.name.equals(WaitingForScheduleStatus.name) => List(ProcessActionType.Cancel) //or maybe should it be empty??
+    case s if s.name.equals(ProblemStateStatus.name) => List(ProcessActionType.Cancel) //redeploy is not allowed
   }
 
   val statusTooltipsPF: PartialFunction[StateStatus, String] = {
@@ -48,7 +49,7 @@ object PeriodicStateStatus {
     ),
   )
 
-  case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus(ScheduledStatus.name) {
+  case class ScheduledStatus(nextRunAt: LocalDateTime) extends StateStatus(ScheduledStatus.name) {
     override def isRunning: Boolean = true
   }
 
@@ -56,7 +57,7 @@ object PeriodicStateStatus {
     val name = "SCHEDULED"
   }
 
-  case object WaitingForScheduleStatus extends CustomStateStatus("WAITING_FOR_SCHEDULE") {
+  case object WaitingForScheduleStatus extends StateStatus("WAITING_FOR_SCHEDULE") {
     override def isRunning: Boolean = true
   }
 }

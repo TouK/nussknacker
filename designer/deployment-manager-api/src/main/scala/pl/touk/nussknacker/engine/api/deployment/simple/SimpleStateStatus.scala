@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
-import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, CustomStateStatus, DuringDeployStateStatus, FinishedStateStatus, NotEstablishedStateStatus, ProcessActionType, RunningStateStatus, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, StateDefinitionDetails, StateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
@@ -11,7 +11,7 @@ import java.net.URI
 object SimpleStateStatus {
 
   // Represents general problem.
-  case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions) extends CustomStateStatus(ProblemStateStatus.name) {
+  case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions) extends StateStatus(ProblemStateStatus.name) {
     override def isFailed: Boolean = true
   }
   case object ProblemStateStatus {
@@ -50,13 +50,13 @@ object SimpleStateStatus {
 
   }
 
-  val NotDeployed: StateStatus = AllowDeployStateStatus("NOT_DEPLOYED")
-  val DuringDeploy: StateStatus = DuringDeployStateStatus("DURING_DEPLOY")
-  val Running: StateStatus = RunningStateStatus("RUNNING")
-  val Finished: StateStatus = FinishedStateStatus("FINISHED")
-  val Restarting: StateStatus = NotEstablishedStateStatus("RESTARTING")
-  val DuringCancel: StateStatus = NotEstablishedStateStatus("DURING_CANCEL")
-  val Canceled: StateStatus = AllowDeployStateStatus("CANCELED")
+  val NotDeployed: StateStatus = new StateStatus("NOT_DEPLOYED")
+  val DuringDeploy: StateStatus = new StateStatus("DURING_DEPLOY") { override def isDuringDeploy: Boolean = true }
+  val Running: StateStatus = new StateStatus("RUNNING") { override def isRunning: Boolean = true }
+  val Finished: StateStatus = new StateStatus("FINISHED") { override def isFinished: Boolean = true }
+  val Restarting: StateStatus = new StateStatus("RESTARTING")
+  val DuringCancel: StateStatus = new StateStatus("DURING_CANCEL")
+  val Canceled: StateStatus = new StateStatus("CANCELED")
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Archive)

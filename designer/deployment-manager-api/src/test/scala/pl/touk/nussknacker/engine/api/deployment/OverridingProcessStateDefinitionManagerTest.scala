@@ -8,11 +8,11 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 
 class OverridingProcessStateDefinitionManagerTest extends AnyFunSuite with Matchers {
 
-  case object DefaultState extends CustomStateStatus("DEFAULT_STATE")
-  case object DefaultStateToOverride extends CustomStateStatus("OVERRIDE_THIS_STATE")
+  case object DefaultState extends StateStatus("DEFAULT_STATE")
+  case object DefaultStateToOverride extends StateStatus("OVERRIDE_THIS_STATE")
 
-  case object CustomState extends CustomStateStatus("CUSTOM_STATE")
-  case object CustomStateThatOverrides extends CustomStateStatus("OVERRIDE_THIS_STATE")
+  case object CustomState extends StateStatus("CUSTOM_STATE")
+  case object CustomStateThatOverrides extends StateStatus("OVERRIDE_THIS_STATE")
 
   private val icon = UnknownIcon
 

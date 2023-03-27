@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 object EmbeddedStateStatus  {
   def failed(ex: Throwable): StateStatus = DetailedFailedStateStatus(ex.getMessage)
 
-  case class DetailedFailedStateStatus(message: String) extends CustomStateStatus(ProblemStateStatus.name) {
+  case class DetailedFailedStateStatus(message: String) extends StateStatus(ProblemStateStatus.name) {
     override def isFailed: Boolean = true
   }
 }
