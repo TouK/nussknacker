@@ -16,7 +16,7 @@ const noDataProcessState = {
 }
 
 global.fetch = jest.fn(url => Promise.resolve({
-  text: () => Promise.resolve(`<span data-testid="svg">${url}</span>`)
+  text: () => Promise.resolve(`<svg data-testid="svg">${url}</svg>`)
 })) as any
 
 describe("ProcessStateIcon tests", () => {
