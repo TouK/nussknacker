@@ -79,4 +79,3 @@ It's also possible to configure restart strategies per scenario, using additiona
       }
     }
 ```
-                             

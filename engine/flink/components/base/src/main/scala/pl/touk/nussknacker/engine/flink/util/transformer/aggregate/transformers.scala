@@ -73,7 +73,8 @@ object transformers {
                           windowLength: Duration,
                           variableName: String,
                           tumblingWindowTrigger: TumblingWindowTrigger,
-                          explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean
+                          explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean,
+                          windowOffsetProvider: WindowOffsetProvider = WindowOffsetProvider.DailyWindowsOffsetDependingOnTimezone
                          )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName,
       emitContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent, aggregateBy))
@@ -85,7 +86,8 @@ object transformers {
           val keyedStream = start
             .groupByWithValue(groupBy, aggregateBy)
           val aggregatingFunction = new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity)
-          val windowDefinition = TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis))
+          val offsetMillis = windowOffsetProvider.offset(windowLength).toMillis
+          val windowDefinition = TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis), Time.milliseconds(offsetMillis))
 
           (tumblingWindowTrigger match {
             case TumblingWindowTrigger.OnEvent =>
@@ -93,13 +95,13 @@ object transformers {
                 .eventTriggerWindow(windowDefinition, typeInfos, aggregatingFunction, EventTimeTrigger.create())
             case TumblingWindowTrigger.OnEnd =>
               keyedStream
-                 .window(windowDefinition)
-                 .aggregate(aggregatingFunction,
-                   EnrichingWithKeyFunction(fctx), typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
+                .window(windowDefinition)
+                .aggregate(aggregatingFunction,
+                  EnrichingWithKeyFunction(fctx), typeInfos.storedTypeInfo, typeInfos.returnTypeInfo, typeInfos.returnedValueTypeInfo)
             case TumblingWindowTrigger.OnEndWithExtraWindow =>
               keyedStream
-                 //TODO: alignment??
-                 .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo, fctx.convertToEngineRuntimeContext))
+                //TODO: alignment??
+                .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo, fctx.convertToEngineRuntimeContext))
           }).setUidWithName(ctx, explicitUidInStatefulOperators)
         }))
 
