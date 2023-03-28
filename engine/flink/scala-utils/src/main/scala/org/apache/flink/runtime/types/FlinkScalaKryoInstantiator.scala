@@ -156,6 +156,17 @@ class ScalaCollectionsRegistrar extends IKryoRegistrar {
   }
 }
 
+// In Scala 2.13 all java collections class wrappers were rewritten from case class to regular class. Now kryo does not
+// serialize them properly, so this class was added to fix this issue. It might not be needed in the future, when flink
+// or twitter-chill updates kryo.
+class JavaWrapperScala2_13Registrar extends IKryoRegistrar {
+  def apply(newK: Kryo): Unit = {
+    newK.register(JavaWrapperScala2_13Serializers.mapSerializer.wrapperClass, JavaWrapperScala2_13Serializers.mapSerializer)
+    newK.register(JavaWrapperScala2_13Serializers.setSerializer.wrapperClass, JavaWrapperScala2_13Serializers.setSerializer)
+    newK.register(JavaWrapperScala2_13Serializers.listSerializer.wrapperClass, JavaWrapperScala2_13Serializers.listSerializer)
+  }
+}
+
 /** Registers all the scala (and java) serializers we have */
 class AllScalaRegistrar extends IKryoRegistrar {
   def apply(k: Kryo): Unit = {
@@ -164,6 +175,9 @@ class AllScalaRegistrar extends IKryoRegistrar {
 
     val jcol = new JavaWrapperCollectionRegistrar
     jcol(k)
+
+    val jmap = new JavaWrapperScala2_13Registrar
+    jmap(k)
 
     // Register all 22 tuple serializers and specialized serializers
     ScalaTupleSerialization.register(k)
