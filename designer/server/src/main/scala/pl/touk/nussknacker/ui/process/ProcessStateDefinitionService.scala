@@ -27,10 +27,12 @@ class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[Pro
               .getProcessingTypeCategories(processingType)
               .intersect(userAccessibleCategories)
           }
+        // TODO: Here we switch icon to non-animated version, in rather not sophisticated manner. We should be able to handle
+        //  both animated (in scenario list, scenario details) and non-animated (filter options) versions.
         UIStateDefinition(
           statusName,
           stateDefinition.displayableName,
-          stateDefinition.icon,
+          URI.create(stateDefinition.icon.toString.replace("-animated", "")),
           stateDefinition.tooltip,
           categoriesWhereStateAppears
         )
