@@ -572,6 +572,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
   interpreter % "provided",
   componentsApi % "provided",
   httpUtils % "provided",
+  flinkScalaUtils % "provided",
   kafkaTestUtils % "it,test")
 
 lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic")).
@@ -968,6 +969,7 @@ lazy val flinkScalaUtils = (project in flink("scala-utils")).
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
+        "org.scalatest" %% "scalatest" % scalaTestV % "test",
       )
     }
   )
