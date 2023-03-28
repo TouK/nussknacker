@@ -6,25 +6,22 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
+import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.ProcessStateInputData
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
-import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
 import pl.touk.nussknacker.engine.management.periodic.service.{AdditionalDeploymentDataProvider, PeriodicProcessListenerFactory, ProcessConfigEnricherFactory}
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import slick.jdbc
 import slick.jdbc.JdbcProfile
 import sttp.client3.SttpBackend
 
-import java.time.{Clock, LocalDateTime, ZoneOffset}
+import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 object PeriodicDeploymentManager {
@@ -142,55 +139,8 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
   override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
-    def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
-      processStateDefinitionManager.processState(
-        status = ScheduledStatus(processDeployment.runAt),
-        Some(ExternalDeploymentId("future")),
-        version = Option(processDeployment.periodicProcess.processVersion),
-        //TODO: this date should be passed/handled through attributes
-        startTime = Option(processDeployment.runAt.toEpochSecond(ZoneOffset.UTC)),
-        attributes = Option.empty,
-        errors = List.empty
-      )
-    }
-
-    def createFailedProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {
-      processStateDefinitionManager.processState(
-        status = ProblemStateStatus.failed,
-        Some(ExternalDeploymentId("future")),
-        version = Option(processDeployment.periodicProcess.processVersion),
-        startTime = Option.empty,
-        attributes = Option.empty,
-        errors = List.empty
-      )
-    }
-
-    def handleFailed(original: Option[ProcessState]): Future[Option[ProcessState]] = {
-      service.getLatestDeployment(name).map {
-        // this method returns only active schedules, so 'None' means this process has been already canceled
-        case None => original.map(_.copy(status = SimpleStateStatus.Canceled))
-        // Previous, failed job is still accessible via Flink API but process has been scheduled to run again in future.
-        case Some(processDeployment) if processDeployment.state.status == PeriodicProcessDeploymentStatus.Scheduled =>
-          Some(createScheduledProcessState(processDeployment))
-        case _ => original
-      }
-    }
-
-    def handleScheduled(original: Option[ProcessState]): Future[Option[ProcessState]] = {
-      service.getLatestDeployment(name).map { maybeProcessDeployment =>
-        maybeProcessDeployment.map { processDeployment =>
-          processDeployment.state.status match {
-            case PeriodicProcessDeploymentStatus.Scheduled => Some(createScheduledProcessState(processDeployment))
-            case PeriodicProcessDeploymentStatus.Failed => Some(createFailedProcessState(processDeployment))
-            case PeriodicProcessDeploymentStatus.Deployed | PeriodicProcessDeploymentStatus.Finished =>
-              original.map(o => o.copy(status = WaitingForScheduleStatus))
-          }
-        }.getOrElse(original)
-      }
-    }
-
-    // Just to trigger periodic definition manager, e.g. override actions.
-    def withPeriodicProcessState(state: ProcessState): ProcessState = processStateDefinitionManager.processState(
+    // Just to trigger periodic definition manager, e.g. compute actions.
+    def withPeriodicProcessState(state: ProcessStateInputData): ProcessState = processStateDefinitionManager.processState(
       status = state.status,
       deploymentId = state.deploymentId,
       version = state.version,
@@ -201,17 +151,8 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
     for {
       delegateState <- delegate.getProcessState(name)
-      postprocessedState <- delegateState.value match {
-        // Scheduled again or waiting to be scheduled again.
-        case state@Some(js) if js.status.isFinished => handleScheduled(state)
-        case state@Some(js) if js.status.isFailed => handleFailed(state)
-        // Job was previously canceled and it still exists on Flink but a new periodic job can be already scheduled.
-        case state@Some(js) if js.status == SimpleStateStatus.Canceled => handleScheduled(state)
-        // Scheduled or never started or latest run already disappeared in Flink.
-        case state@None => handleScheduled(state)
-        case Some(js) => Future.successful(Some(js))
-      }
-      formattedByPeriodicManager = postprocessedState.map(withPeriodicProcessState)
+      mergedState <- service.mergeStateWithDeployments(name, delegateState.value)
+      formattedByPeriodicManager = mergedState.map(withPeriodicProcessState)
     } yield WithDataFreshnessStatus(formattedByPeriodicManager, delegateState.cached)
   }
 
