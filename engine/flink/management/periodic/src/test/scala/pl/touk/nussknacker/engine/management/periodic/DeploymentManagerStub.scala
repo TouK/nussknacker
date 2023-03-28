@@ -22,8 +22,8 @@ class DeploymentManagerStub extends BaseDeploymentManager {
       version = None,
       allowedActions = Nil,
       icon = UnknownIcon,
-      tooltip = None,
-      description = None,
+      tooltip = "empty",
+      description = "empty",
       startTime = None,
       attributes = None,
       errors = Nil

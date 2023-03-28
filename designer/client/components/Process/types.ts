@@ -79,7 +79,7 @@ export type StatusType = {
 export type StatusDefinitionType = {
   name: string,
   displayableName: string,
-  icon?: string,
-  tooltip?: string,
+  icon: string,
+  tooltip: string,
   categories: Array<string>
 }

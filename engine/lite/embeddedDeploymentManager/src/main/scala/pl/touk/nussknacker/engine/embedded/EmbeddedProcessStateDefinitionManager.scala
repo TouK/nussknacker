@@ -15,6 +15,6 @@ object EmbeddedProcessStateDefinitionManager extends OverridingProcessStateDefin
     case EmbeddedStateStatus.DetailedFailedStateStatus(_) => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   },
   statusTooltipsPF = {
-    case EmbeddedStateStatus.DetailedFailedStateStatus(message) => Some(s"Problems detected: $message")
+    case EmbeddedStateStatus.DetailedFailedStateStatus(message) => s"Problems detected: $message"
   }
 )

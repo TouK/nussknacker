@@ -82,5 +82,5 @@ object ProcessStateDefinitionService {
 @JsonCodec case class UIStateDefinition(name: StatusName,
                                         displayableName: String,
                                         icon: URI,
-                                        tooltip: Option[String],
+                                        tooltip: String,
                                         categories: List[String])

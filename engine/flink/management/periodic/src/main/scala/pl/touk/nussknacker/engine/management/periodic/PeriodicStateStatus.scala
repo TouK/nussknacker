@@ -25,26 +25,26 @@ object PeriodicStateStatus {
     case _: ProblemStateStatus => List(ProcessActionType.Cancel) //redeploy is not allowed
   }
 
-  val statusTooltipsPF: PartialFunction[StateStatus, Option[String]] = {
-    case ScheduledStatus(nextRunAt) => Some(s"Scheduled at ${nextRunAt.pretty}")
+  val statusTooltipsPF: PartialFunction[StateStatus, String] = {
+    case ScheduledStatus(nextRunAt) => s"Scheduled at ${nextRunAt.pretty}"
   }
 
-  val statusDescriptionsPF: PartialFunction[StateStatus, Option[String]] = {
-    case ScheduledStatus(nextRunAt) => Some(s"Scheduled at ${nextRunAt.pretty}")
+  val statusDescriptionsPF: PartialFunction[StateStatus, String] = {
+    case ScheduledStatus(nextRunAt) => s"Scheduled at ${nextRunAt.pretty}"
   }
 
   val customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map(
     ScheduledStatus.name -> StateDefinitionDetails(
       displayableName = "Scheduled",
       icon = URI.create("/assets/states/scheduled.svg"),
-      tooltip = Some("Scheduled"),
-      description = None
+      tooltip = "Scheduled",
+      description = "Scheduled"
     ),
     WaitingForScheduleStatus.name -> StateDefinitionDetails(
       displayableName = "Waiting for reschedule",
       icon = URI.create("/assets/states/wait-reschedule.svg"),
-      tooltip = Some("Finished. Waiting for reschedule"),
-      description = None
+      tooltip = "Finished. Waiting for reschedule",
+      description = "Finished. Waiting for reschedule"
     ),
   )
 

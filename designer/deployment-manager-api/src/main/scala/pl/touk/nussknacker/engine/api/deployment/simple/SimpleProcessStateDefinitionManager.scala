@@ -17,13 +17,13 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   override def statusActions(stateStatus: StateStatus): List[ProcessActionType] =
     statusActionsPF.applyOrElse(stateStatus, (_: StateStatus) => defaultActions)
 
-  override def statusDescription(stateStatus: StateStatus): Option[String] = stateStatus match {
-    case _@ProblemStateStatus(message, _) => Some(message)
+  override def statusDescription(stateStatus: StateStatus): String = stateStatus match {
+    case _@ProblemStateStatus(message, _) => message
     case _ => SimpleStateStatus.definitions(stateStatus.name).description
   }
 
-  override def statusTooltip(stateStatus: StateStatus): Option[String] = stateStatus match {
-    case _@ProblemStateStatus(message, _) => Some(message)
+  override def statusTooltip(stateStatus: StateStatus): String = stateStatus match {
+    case _@ProblemStateStatus(message, _) => message
     case _ => SimpleStateStatus.definitions(stateStatus.name).tooltip
   }
 

@@ -31,10 +31,10 @@ trait ProcessStateDefinitionManager {
     * Override those methods to customize varying state properties or custom visualizations,
     * e.g. handle schedule date in [[PeriodicProcessStateDefinitionManager]]
     */
-  def statusTooltip(stateStatus: StateStatus): Option[String] =
+  def statusTooltip(stateStatus: StateStatus): String =
     stateDefinitions(stateStatus.name).tooltip
 
-  def statusDescription(stateStatus: StateStatus): Option[String] =
+  def statusDescription(stateStatus: StateStatus): String =
     stateDefinitions(stateStatus.name).description
 
   def statusIcon(stateStatus: StateStatus): URI =
