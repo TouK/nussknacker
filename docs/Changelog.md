@@ -40,6 +40,7 @@
 * [#4160](https://github.com/TouK/nussknacker/pull/4160) Testing using events from file accepts simplified test record format. 
   SourceId and timestamp fields can be omitted from the test record and record field can be inlined. The simplified format works only for scenarios with only one source.
 * [#4161](https://github.com/TouK/nussknacker/pull/4161) Update most dependencies to latest versions  
+* [#4155](https://github.com/TouK/nussknacker/pull/4155) Stop adding response header 'cache-control: max-age=0'. Akka adds correct 'etag' and 'last-modified' headers, hence caching is secure. 
 
 1.8.1 (28 Feb 2023)
 ------------------------
