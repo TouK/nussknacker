@@ -59,7 +59,9 @@ object processdetails {
                                      createdBy: String,
                                      lastAction: Option[ProcessAction],
                                      lastDeployedAction: Option[ProcessAction],
-                                     state: Option[ProcessState] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
+                                     // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
+                                     // After that it remains always defined.
+                                     state: Option[ProcessState] = Option.empty
                                     ) extends Process
 
   object BaseProcessDetails {
@@ -90,7 +92,9 @@ object processdetails {
                                               json: ProcessShape,
                                               history: List[ProcessVersion],
                                               modelVersion: Option[Int],
-                                              state: Option[ProcessState] = Option.empty //It temporary holds mapped action -> status. Now this field is fill at router. In future we will keep there cached sate
+                                              // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
+                                              // After that it remains always defined.
+                                              state: Option[ProcessState] = Option.empty
                                              ) extends Process {
     lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, ProcessName(name))
 
