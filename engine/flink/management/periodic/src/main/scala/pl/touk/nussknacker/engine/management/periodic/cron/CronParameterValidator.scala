@@ -15,7 +15,7 @@ object CronParameterValidator extends CronParameterValidator {
 
 }
 
-// Valid expression is e.g.: * * * * * ? *
+// Valid expression is e.g.: 0 * * * * ? * which means run every minute at 0 second
 class CronParameterValidator extends CustomParameterValidator {
   override def isValid(paramName: String, value: String, label: Option[String])
                       (implicit nodeId: api.NodeId): Validated[PartSubGraphCompilationError, Unit] = {
