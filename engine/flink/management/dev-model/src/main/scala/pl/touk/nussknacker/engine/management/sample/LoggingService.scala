@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.sample
 
-import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import pl.touk.nussknacker.engine.api._
@@ -11,7 +10,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocatio
 import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
 
-object LoggingService extends EagerService with LazyLogging{
+object LoggingService extends EagerService {
 
   private val rootLogger = "scenarios"
 
