@@ -4,7 +4,7 @@ import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
+import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
@@ -28,7 +28,7 @@ object ScenarioTestService {
     new ScenarioTestService(
       providers.mapValues(new ModelDataTestInfoProvider(_)),
       testDataSettings,
-      new ScenarioTestDataSerDe(testDataSettings),
+      new PreliminaryScenarioTestDataSerDe(testDataSettings),
       processResolving,
       processCounter,
       testExecutorService,
@@ -39,7 +39,7 @@ object ScenarioTestService {
 
 class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider],
                           testDataSettings: TestDataSettings,
-                          scenarioTestDataSerDe: ScenarioTestDataSerDe,
+                          preliminaryScenarioTestDataSerDe: PreliminaryScenarioTestDataSerDe,
                           processResolving: UIProcessResolving,
                           processCounter: ProcessCounter,
                           testExecutorService: ScenarioTestExecutorService,
@@ -58,7 +58,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
     for {
       _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}")
       generatedData <- testInfoProvider.generateTestData(canonical, testSampleSize).toRight("Test data could not be generated for scenario")
-      rawTestData <- scenarioTestDataSerDe.serializeTestData(generatedData)
+      rawTestData <- preliminaryScenarioTestDataSerDe.serialize(generatedData)
     } yield rawTestData
   }
 
@@ -67,10 +67,13 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
                      rawTestData: RawScenarioTestData,
                      testResultsVariableEncoder: Any => T)
                     (implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
+    val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
     for {
-      scenarioTestData <- scenarioTestDataSerDe.prepareTestData(rawTestData)
+      preliminaryScenarioTestData <- preliminaryScenarioTestDataSerDe.deserialize(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       canonical = toCanonicalProcess(displayableProcess)
+      scenarioTestData <- testInfoProvider.prepareTestData(preliminaryScenarioTestData, canonical)
+        .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       testResults <- testExecutorService.testProcess(idWithName, canonical, displayableProcess.category, scenarioTestData, testResultsVariableEncoder)
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))

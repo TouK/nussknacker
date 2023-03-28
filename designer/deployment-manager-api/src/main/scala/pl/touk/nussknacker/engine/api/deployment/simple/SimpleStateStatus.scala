@@ -28,10 +28,10 @@ object SimpleStateStatus {
       ProblemStateStatus(s"Failed to get a state of the scenario.")
 
     def shouldBeRunning(deployedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(s"Scenario deployed in version $deployedVersionId (by $user), should be running.")
+      ProblemStateStatus(s"Scenario deployed in version $deployedVersionId by $user is not running.")
 
     def mismatchDeployedVersion(deployedVersionId: VersionId, exceptedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(s"Scenario deployed in version $deployedVersionId (by $user), expected version $exceptedVersionId!")
+      ProblemStateStatus(s"Scenario deployed in version $deployedVersionId by $user, expected version $exceptedVersionId.")
 
     def shouldNotBeRunning(deployed: Boolean): ProblemStateStatus = {
       val shouldNotBeRunningMessage = if (deployed) "Scenario has been canceled but still is running."
@@ -40,7 +40,7 @@ object SimpleStateStatus {
     }
 
     def missingDeployedVersion(exceptedVersionId: VersionId, user: String): ProblemStateStatus =
-      ProblemStateStatus(s"Scenario deployed without version (by $user), expected version $exceptedVersionId.")
+      ProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
 
     def processWithoutAction: ProblemStateStatus =
       ProblemStateStatus("Scenario state error - no actions found.")
@@ -73,49 +73,49 @@ object SimpleStateStatus {
   val definitions: Map[StatusName, StateDefinitionDetails] = Map(
     SimpleStateStatus.ProblemStateStatus.name -> StateDefinitionDetails(
       displayableName = "Problem",
-      icon = Some(ProblemStateStatus.icon),
+      icon = ProblemStateStatus.icon,
       tooltip = Some(ProblemStateStatus.defaultDescription),
       description = Some(ProblemStateStatus.defaultDescription)
     ),
     SimpleStateStatus.NotDeployed.name -> StateDefinitionDetails(
       displayableName = "Not deployed",
-      icon = Some(URI.create("/assets/states/not-deployed.svg")),
+      icon = URI.create("/assets/states/not-deployed.svg"),
       tooltip = Some("The scenario is not deployed."),
       description = Some("The scenario is not deployed.")
     ),
     SimpleStateStatus.DuringDeploy.name -> StateDefinitionDetails(
       displayableName = "During deploy",
-      icon = Some(URI.create("/assets/states/deploy-running.svg")),
+      icon = URI.create("/assets/states/deploy-running.svg"),
       tooltip = Some("The scenario has been already started and currently is being deployed."),
       description = Some("The scenario is being deployed.")
     ),
     SimpleStateStatus.Running.name -> StateDefinitionDetails(
       displayableName = "Running",
-      icon = Some(URI.create("/assets/states/deploy-success.svg")),
+      icon = URI.create("/assets/states/deploy-success.svg"),
       tooltip = Some("The scenario has been successfully deployed and currently is running."),
       description = Some("The scenario is running.")
     ),
     SimpleStateStatus.Canceled.name -> StateDefinitionDetails(
       displayableName = "Canceled",
-      icon = Some(URI.create("/assets/states/stopping-success.svg")),
+      icon = URI.create("/assets/states/stopping-success.svg"),
       tooltip = Some("The scenario has been successfully cancelled."),
       description = Some("The scenario is canceled.")
     ),
     SimpleStateStatus.Restarting.name -> StateDefinitionDetails(
       displayableName = "Restarting",
-      icon = Some(URI.create("/assets/states/deploy-restart.svg")),
+      icon = URI.create("/assets/states/deploy-restart.svg"),
       tooltip = Some("Scenario was deployed but now is restarting..."),
       description = Some("Scenario is restarting...")
     ),
     SimpleStateStatus.DuringCancel.name -> StateDefinitionDetails(
       displayableName = "During cancel",
-      icon = Some(URI.create("/assets/states/stopping-running.svg")),
+      icon = URI.create("/assets/states/stopping-running.svg"),
       tooltip = Some("The scenario currently is being canceled."),
       description = Some("The scenario is being canceled.")
     ),
     SimpleStateStatus.Finished.name -> StateDefinitionDetails(
       displayableName = "Finished",
-      icon = Some(URI.create("/assets/states/success.svg")),
+      icon = URI.create("/assets/states/success.svg"),
       tooltip = Some("The scenario completed successfully."),
       description = Some("The scenario has finished.")
     ),

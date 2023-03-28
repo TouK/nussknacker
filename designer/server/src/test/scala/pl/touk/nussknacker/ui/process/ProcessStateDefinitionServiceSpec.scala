@@ -5,8 +5,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, FailedStateStatus, OverridingProcessStateDefinitionManager, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, OverridingProcessStateDefinitionManager, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificInitialData}
@@ -121,7 +122,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   private def createStateDefinitionManager(definitions: Map[String, String]) = new OverridingProcessStateDefinitionManager(
     customStateDefinitions = definitions.map { case (name, displayableName) =>
       name -> StateDefinitionDetails(
-        displayableName = displayableName, icon = None, tooltip = None, description = Some(s"Description for ${displayableName}")
+        displayableName = displayableName, icon = UnknownIcon, tooltip = None, description = Some(s"Description for ${displayableName}")
       )
     },
     delegate = emptyStateDefinitionManager

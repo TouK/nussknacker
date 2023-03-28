@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.definition
+package pl.touk.nussknacker.engine.definition.test
 
 import com.typesafe.config.ConfigFactory
 import io.circe.Json
@@ -16,8 +16,9 @@ import pl.touk.nussknacker.engine.compile.validationHelpers.{GenericParametersSo
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
-class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with OptionValues with TableDrivenPropertyChecks {
+class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with OptionValues with EitherValuesDetailedMessage with TableDrivenPropertyChecks {
 
   private val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator {
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
@@ -126,9 +127,9 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
     val scenarioTestData = testInfoProvider.generateTestData(createScenarioWithSingleSource(), 3).value
 
     scenarioTestData.testRecords shouldBe List(
-      ScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
-      ScenarioTestRecord("source1", Json.fromString("record 2"), timestamp = Some(2)),
-      ScenarioTestRecord("source1", Json.fromString("record 3"), timestamp = Some(3)),
+      PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 1"), timestamp = Some(1)),
+      PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 2"), timestamp = Some(2)),
+      PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 3"), timestamp = Some(3)),
     )
   }
 
@@ -136,9 +137,9 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
     val scenarioTestData = testInfoProvider.generateTestData(createScenarioWithSingleSource("sourceEmptyTimestamp"), 3).value
 
     scenarioTestData.testRecords shouldBe List(
-      ScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = None),
-      ScenarioTestRecord("source1", Json.fromString("record 2"), timestamp = None),
-      ScenarioTestRecord("source1", Json.fromString("record 3"), timestamp = None),
+      PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 1"), timestamp = None),
+      PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 2"), timestamp = None),
+      PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 3"), timestamp = None),
     )
   }
 
@@ -160,14 +161,14 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
     val scenarioTestData = testInfoProvider.generateTestData(createScenarioWithMultipleSources(), 8).value
 
     scenarioTestData.testRecords shouldBe List(
-      ScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
-      ScenarioTestRecord("source3", Json.fromString("record 1"), timestamp = Some(1)),
-      ScenarioTestRecord("source1", Json.fromString("record 2"), timestamp = Some(2)),
-      ScenarioTestRecord("source3", Json.fromString("record 2"), timestamp = Some(2)),
-      ScenarioTestRecord("source1", Json.fromString("record 3"), timestamp = Some(3)),
-      ScenarioTestRecord("source2", Json.fromString("record 1"), timestamp = None),
-      ScenarioTestRecord("source2", Json.fromString("record 2"), timestamp = None),
-      ScenarioTestRecord("source2", Json.fromString("record 3"), timestamp = None),
+      PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 1"), timestamp = Some(1)),
+      PreliminaryScenarioTestRecord.Standard("source3", Json.fromString("record 1"), timestamp = Some(1)),
+      PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 2"), timestamp = Some(2)),
+      PreliminaryScenarioTestRecord.Standard("source3", Json.fromString("record 2"), timestamp = Some(2)),
+      PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("record 3"), timestamp = Some(3)),
+      PreliminaryScenarioTestRecord.Standard("source2", Json.fromString("record 1"), timestamp = None),
+      PreliminaryScenarioTestRecord.Standard("source2", Json.fromString("record 2"), timestamp = None),
+      PreliminaryScenarioTestRecord.Standard("source2", Json.fromString("record 3"), timestamp = None),
     )
   }
 
@@ -190,10 +191,69 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
 
       testData.map(_.testRecords.size) shouldBe expectedSize
       if (expectedSizeBySourceId.nonEmpty) {
-        val testRecords = testData.value.testRecords
-        testRecords.groupBy(_.sourceId.id).mapValuesNow(_.size) shouldBe expectedSizeBySourceId
+        val testRecords = testData.value.testRecords.asInstanceOf[List[PreliminaryScenarioTestRecord.Standard]]
+        testRecords.groupBy(_.sourceId).mapValuesNow(_.size) shouldBe expectedSizeBySourceId
       }
     }
+  }
+
+  test("should prepare scenario test data from standard test records") {
+    val preliminaryTestData = PreliminaryScenarioTestData(List(
+      PreliminaryScenarioTestRecord.Standard(sourceId = "source1", record = Json.fromString("record 1"), timestamp = Some(1)),
+      PreliminaryScenarioTestRecord.Standard(sourceId = "source2", record = Json.fromString("record 2")),
+    ))
+
+    val scenarioTestData = testInfoProvider.prepareTestData(preliminaryTestData, createScenarioWithMultipleSources()).rightValue
+
+    scenarioTestData.testRecords shouldBe List(
+      ScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
+      ScenarioTestRecord("source2", Json.fromString("record 2")),
+    )
+  }
+
+  test("should prepare scenario test data from test records lacking source id") {
+    val preliminaryTestData = PreliminaryScenarioTestData(List(
+      PreliminaryScenarioTestRecord.Simplified(Json.fromString("record 1")),
+      PreliminaryScenarioTestRecord.Simplified(Json.fromString("record 2")),
+    ))
+
+    val scenarioTestData = testInfoProvider.prepareTestData(preliminaryTestData, createScenarioWithSingleSource()).rightValue
+
+    scenarioTestData.testRecords shouldBe List(
+      ScenarioTestRecord("source1", Json.fromString("record 1")),
+      ScenarioTestRecord("source1", Json.fromString("record 2")),
+    )
+  }
+
+  test("should reject record assigned to non-existing source") {
+    val preliminaryTestData = PreliminaryScenarioTestData(List(
+      PreliminaryScenarioTestRecord.Standard(sourceId = "source1", record = Json.fromString("record 1")),
+      PreliminaryScenarioTestRecord.Standard(sourceId = "non-existing source", record = Json.fromString("record 2")),
+      PreliminaryScenarioTestRecord.Standard(sourceId = "non-existing source 2", record = Json.fromString("record 3")),
+    ))
+    val testingData = Table(
+      "scenario",
+      createScenarioWithSingleSource(),
+      createScenarioWithMultipleSources(),
+    )
+
+    forEvery(testingData) { scenario =>
+      val error = testInfoProvider.prepareTestData(preliminaryTestData, scenario).leftValue
+
+      error shouldBe "Record 2 - scenario does not have source id: 'non-existing source'"
+    }
+  }
+
+  test("should reject record lacking source id if scenario has multiple sources") {
+    val preliminaryTestData = PreliminaryScenarioTestData(List(
+      PreliminaryScenarioTestRecord.Standard(sourceId = "source1", record = Json.fromString("record 1")),
+      PreliminaryScenarioTestRecord.Simplified(record = Json.fromString("record 2")),
+      PreliminaryScenarioTestRecord.Simplified(record = Json.fromString("record 3")),
+    ))
+
+    val error = testInfoProvider.prepareTestData(preliminaryTestData, createScenarioWithMultipleSources()).leftValue
+
+    error shouldBe "Record 2 - scenario has multiple sources but got record without source id"
   }
 
   private def createScenarioWithSingleSource(sourceComponentId: String = "genericSource"): CanonicalProcess = {

@@ -54,6 +54,7 @@ other Nussknacker non K8s configuration.
 | servicePort                   | int                                                 | 80                                | (Request-Response only) Port of service exposed                                          |
 | scenarioStateCaching.enabled  | boolean                                             | true                              | Enables scenario state caching in scenario list view                                     |
 | scenarioStateCaching.cacheTTL | duration                                            | 10 seconds                        | TimeToLeave for scenario state cache entries                                             |
+| scenarioStateIdleTimeout      | duration                                            | 3 seconds                         | Idle timeout for fetching scenario state from K8s                                        |
 
 ### Customizing K8s deployment resource definition
 
@@ -305,3 +306,4 @@ Deployment Manager of type `flinkStreaming` has the following configuration opti
 | waitForDuringDeployFinish.delay     | boolean  | 1 second      | It works when `waitForDuringDeployFinish.enabled` option is set to `true`. This parameter describe how long should be delay between checks.                                                                                                 |
 | scenarioStateCaching.enabled        | boolean  | true          | Enables scenario state caching in scenario list view                                                                                                                                                                                        |
 | scenarioStateCaching.cacheTTL       | duration | 10 seconds    | TimeToLeave for scenario state cache entries                                                                                                                                                                                                |
+| scenarioStateRequestTimeout         | duration | 3 seconds     | Request timeout for fetching scenario state from Flink                                                                                                                                                                                      |

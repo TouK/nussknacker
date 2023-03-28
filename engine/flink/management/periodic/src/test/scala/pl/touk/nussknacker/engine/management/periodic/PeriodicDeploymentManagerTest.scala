@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
-import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
@@ -96,7 +95,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
   test("getProcessState - should be scheduled when scenario scheduled and job finished on Flink") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Finished)
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
 
     val state = f.periodicDeploymentManager.getProcessState(processName).futureValue.value
 
@@ -108,19 +107,19 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
   test("getProcessState - should be running when scenario deployed and job running on Flink") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Running)
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running)
 
     val state = f.periodicDeploymentManager.getProcessState(processName).futureValue.value
 
     val status = state.value.status
-    status shouldBe FlinkStateStatus.Running
+    status shouldBe SimpleStateStatus.Running
     state.value.allowedActions shouldBe List(ProcessActionType.Cancel)
   }
 
   test("getProcessState - should be waiting for reschedule if job finished on Flink but scenario is still deployed") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Finished)
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
 
     val state = f.periodicDeploymentManager.getProcessState(processName).futureValue.value
 
@@ -228,7 +227,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
   test("should redeploy running scenario") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Running)
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running)
     f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None).futureValue
@@ -240,7 +239,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
   test("should redeploy finished scenario") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(FlinkStateStatus.Finished)
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
     f.getAllowedActions shouldBe List(ProcessActionType.Cancel) // redeploy is blocked in GUI but API allows it
 
     f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, PeriodicProcessGen.buildCanonicalProcess(), None).futureValue

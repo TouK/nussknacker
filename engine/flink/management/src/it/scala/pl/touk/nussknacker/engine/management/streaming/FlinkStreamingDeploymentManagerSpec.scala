@@ -5,10 +5,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.management.FlinkStateStatus
 
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -144,7 +143,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       val savepointPath = deploymentManager.stop(ProcessName(processId), savepointDir = None, user = userToAct).map(_.path)
       eventually {
         val status = deploymentManager.getProcessState(ProcessName(processId)).futureValue
-        status.value.map(_.status) shouldBe Some(FlinkStateStatus.Finished)
+        status.value.map(_.status) shouldBe Some(SimpleStateStatus.Finished)
       }
 
       deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))

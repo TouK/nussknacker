@@ -295,7 +295,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
     .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)
 
   private def prepareManager(modelData: LocalModelData = modelData, deployConfig: Config = kafkaDeployConfig): K8sDeploymentManager = {
-    new K8sDeploymentManager(modelData, K8sDeploymentManagerConfig.parse(deployConfig))
+    new K8sDeploymentManager(modelData, K8sDeploymentManagerConfig.parse(deployConfig), deployConfig)
   }
 
   val defaultSchema = """{"type":"object","properties":{"message":{"type":"string"}}}"""

@@ -1,5 +1,5 @@
 import { createFilterRules } from "../../common";
-import { ScenariosFiltersModel, ScenariosFiltersModelDeployed, ScenariosFiltersModelType } from "./scenariosFiltersModel";
+import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
 import { RowType } from "../list/listPart";
 
 export const filterRules = createFilterRules<RowType, ScenariosFiltersModel>({
@@ -23,13 +23,6 @@ export const filterRules = createFilterRules<RowType, ScenariosFiltersModel>({
                 (f) =>
                     (f === ScenariosFiltersModelType.SCENARIOS && !row.isSubprocess) ||
                     (f === ScenariosFiltersModelType.FRAGMENTS && row.isSubprocess),
-            ),
-    DEPLOYED: (row, value) =>
-        !value?.length ||
-        []
-            .concat(value)
-            .includes(
-                row.lastAction?.action === "DEPLOY" ? ScenariosFiltersModelDeployed.DEPLOYED : ScenariosFiltersModelDeployed.NOT_DEPLOYED,
             ),
     CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
     CREATED_BY: (row, value) =>

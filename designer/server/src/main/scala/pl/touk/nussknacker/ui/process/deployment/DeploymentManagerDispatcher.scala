@@ -12,12 +12,16 @@ import scala.concurrent.{ExecutionContext, Future}
 class DeploymentManagerDispatcher(managers: ProcessingTypeDataProvider[DeploymentManager],
                                   processRepository: FetchingProcessRepository[Future]) {
 
-  def deploymentManager(processId: ProcessId)
-                       (implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {
-    processRepository.fetchProcessingType(processId).map(deploymentManager)
+  def deploymentManagerUnsafe(processId: ProcessId)
+                             (implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {
+    processRepository.fetchProcessingType(processId).map(deploymentManagerUnsafe)
   }
 
-  def deploymentManager(typ: ProcessingType): DeploymentManager = {
+  def deploymentManager(typ: ProcessingType): Option[DeploymentManager] = {
+    managers.forType(typ)
+  }
+
+  def deploymentManagerUnsafe(typ: ProcessingType): DeploymentManager = {
     managers.forTypeUnsafe(typ)
   }
 

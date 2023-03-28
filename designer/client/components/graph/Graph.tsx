@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {dia, shapes} from "jointjs"
+import {dia, g, shapes} from "jointjs"
 import {cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without} from "lodash"
 import React from "react"
 import {findDOMNode} from "react-dom"
@@ -488,9 +488,8 @@ export class Graph extends React.Component<Props> {
     })
   }
 
-  moveSelectedNodesRelatively(element: shapes.devs.Model, position: Position): void {
+  moveSelectedNodesRelatively(movedNodeId: string, position: Position): dia.Cell[] {
     this.redrawing = true
-    const movedNodeId = element.id.toString()
     const nodeIdsToBeMoved = without(this.props.selectionState, movedNodeId)
     const cellsToBeMoved = nodeIdsToBeMoved.map(nodeId => this.graph.getCell(nodeId))
     const {position: originalPosition} = this.findNodeInLayout(movedNodeId)
@@ -500,6 +499,7 @@ export class Graph extends React.Component<Props> {
       cell.position(originalPosition.x + offset.x, originalPosition.y + offset.y)
     })
     this.redrawing = false
+    return cellsToBeMoved
   }
 
   findNodeInLayout(nodeId: NodeId): NodePosition {
@@ -530,9 +530,30 @@ export class Graph extends React.Component<Props> {
 
   private bindNodesMoving(): void {
     this.graph.on(Events.CHANGE_POSITION, (element: dia.Cell, position: Position) => {
-      if (!this.redrawing && this.props.selectionState?.includes(element.id.toString()) && isModelElement(element)) {
-        this.moveSelectedNodesRelatively(element, position)
+      if (this.redrawing || !isModelElement(element)) {
+        return
       }
+
+      const movingCells: dia.Cell[] = [element]
+      const nodeId = element.id.toString()
+
+      if (this.props.selectionState?.includes(nodeId)) {
+        const movedNodes = this.moveSelectedNodesRelatively(nodeId, position)
+        movingCells.push(...movedNodes)
+      }
+
+      this.panAndZoom.panToCells(movingCells, this.adjustViewport())
+    })
+  }
+
+  private viewportAdjustment: {left: number, right:number} = {left: 0, right: 0}
+  adjustViewport = (adjustment:{left?: number, right?:number} = {}) => {
+    this.viewportAdjustment = {...this.viewportAdjustment, ...adjustment}
+    const {x, y, height, width} = this.processGraphPaper.el.getBoundingClientRect()
+    return new g.Rect({
+      y, height,
+      x: x + this.viewportAdjustment.left,
+      width: width - this.viewportAdjustment.left - this.viewportAdjustment.right,
     })
   }
 }

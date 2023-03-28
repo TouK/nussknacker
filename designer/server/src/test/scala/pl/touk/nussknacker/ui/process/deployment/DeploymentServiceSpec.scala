@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAc
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
+import pl.touk.nussknacker.engine.management.FlinkProcessStateDefinitionManager
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
@@ -27,6 +27,7 @@ import slick.dbio.DBIOAction
 
 import java.util.UUID
 import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.duration._
 
 class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with DBIOActionValues
   with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting with EitherValuesDetailedMessage {
@@ -53,7 +54,11 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   private val listener = new TestProcessChangeListener
 
-  private val deploymentService = new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, TestFactory.scenarioResolver, listener)
+  private val deploymentService = createDeploymentService(None)
+
+  private def createDeploymentService(scenarioStateTimeout: Option[FiniteDuration]): DeploymentService = {
+    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, TestFactory.scenarioResolver, listener, scenarioStateTimeout = scenarioStateTimeout)
+  }
 
   test("should return state correctly when state is deployed") {
     val processName: ProcessName = generateProcessName
@@ -200,7 +205,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -215,7 +220,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(false)
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -230,7 +235,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.processWithoutAction
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -265,7 +270,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).dbioActionValues
 
-    val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+    val state = FlinkProcessStateDefinitionManager.processState(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessState(processName, Some(state)) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -281,12 +286,12 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id = prepareDeployedProcess(processName).dbioActionValues
 
-    val state = FlinkProcessStateDefinitionManager.processState(FlinkStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+    val state = FlinkProcessStateDefinitionManager.processState(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessState(processName, Some(state)) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe FlinkStateStatus.Restarting
+      state.status shouldBe SimpleStateStatus.Restarting
       state.allowedActions shouldBe List(ProcessActionType.Cancel)
       state.description shouldBe Some("Scenario is restarting...")
     }
@@ -301,7 +306,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -316,7 +321,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.shouldBeRunning(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -332,7 +337,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.mismatchDeployedVersion(VersionId(2L), VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -361,7 +366,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.missingDeployedVersion(VersionId(1L), "admin")
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -377,7 +382,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.failedToGet
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe Some(expectedStatus.description)
     }
@@ -451,7 +456,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
       state.status shouldBe expectedStatus
-      state.icon shouldBe Some(ProblemStateStatus.icon)
+      state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     }
   }
@@ -461,14 +466,33 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareProcess(processName).dbioActionValues
 
     deploymentManager.withEmptyProcessState(processName) {
-      val sinkInitialStatus = SimpleStateStatus.NotDeployed
-      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe sinkInitialStatus
+      val initialStatus = SimpleStateStatus.NotDeployed
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe initialStatus
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
         deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.DuringDeploy
 
         deploymentService.invalidateInProgressActions()
-        deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe sinkInitialStatus
+        deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe initialStatus
+      }
+    }
+  }
+
+  test("should return problem after occurring timeout during waiting on DM response") {
+    val processName: ProcessName = generateProcessName
+    val id = prepareProcess(processName).dbioActionValues
+
+    val timeout = 1.second
+    val serviceWithTimeout = createDeploymentService(Some(timeout))
+
+    deploymentManager.withEmptyProcessState(processName) {
+      val initialStatus = SimpleStateStatus.NotDeployed
+      val processIdName = ProcessIdWithName(id, processName)
+      serviceWithTimeout.getProcessState(processIdName).futureValue.status shouldBe initialStatus
+
+      val durationLongerThanTimeout = timeout.plus(patienceConfig.timeout)
+      deploymentManager.withDelayBeforeStateReturn(durationLongerThanTimeout) {
+        serviceWithTimeout.getProcessState(processIdName).futureValueEnsuringInnerException(durationLongerThanTimeout).status shouldBe ProblemStateStatus.failedToGet
       }
     }
   }

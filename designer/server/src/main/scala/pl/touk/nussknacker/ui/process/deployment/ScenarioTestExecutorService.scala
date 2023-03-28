@@ -21,7 +21,7 @@ class ScenarioTestExecutorServiceImpl(scenarioResolver: ScenarioResolver,
                              (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[TestResults[T]] = {
     for {
       resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess, category))
-      manager <- dispatcher.deploymentManager(id.id)
+      manager <- dispatcher.deploymentManagerUnsafe(id.id)
       testResult <- manager.test[T](id.name, resolvedProcess, scenarioTestData, variableEncoder)
     } yield testResult
   }

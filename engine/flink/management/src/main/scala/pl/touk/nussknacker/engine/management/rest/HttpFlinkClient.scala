@@ -14,6 +14,7 @@ import sttp.client3._
 import java.io.File
 import java.util.concurrent.TimeoutException
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 
 class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future, Any], ec: ExecutionContext) extends FlinkClient with LazyLogging {
 
@@ -82,6 +83,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def findJobsByName(jobName: String): Future[List[JobOverview]] = {
     basicRequest
+      .readTimeout(config.scenarioStateRequestTimeout)
       .get(flinkUrl.addPath("jobs", "overview"))
       .response(asJson[JobsResponse])
       .send(backend)

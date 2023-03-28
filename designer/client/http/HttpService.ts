@@ -6,7 +6,7 @@ import {Moment} from "moment"
 import {SettingsData, ValidationData} from "../actions/nk"
 import api from "../api"
 import {UserData} from "../common/models/User"
-import {ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId} from "../components/Process/types"
+import {ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType} from "../components/Process/types"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {AuthenticationSettings} from "../reducers/settings"
 import {Process, ProcessDefinitionData, ProcessId} from "../types"
@@ -212,6 +212,11 @@ class HttpService {
   fetchProcessesStates() {
     return api.get<StatusesType>("/processes/status")
       .catch(error => Promise.reject(this.#addError(i18next.t("notification.error.cannotFetchStatuses", "Cannot fetch statuses"), error)))
+  }
+
+  fetchStatusDefinitions() {
+    return api.get<StatusDefinitionType[]>(`/statusDefinitions`)
+        .catch(error => Promise.reject(this.#addError(i18next.t("notification.error.cannotFetchStatusDefinitions", "Cannot fetch status definitions"), error)))
   }
 
   fetchProcessToolbarsConfiguration(processId) {

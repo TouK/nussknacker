@@ -28,15 +28,18 @@
   * Add state definitions to `ProcessStateDefinitionManager`
   * Add `StatusResources` endpoint `/statusDefinitions` that returns state definitions with default state properties (such as displayable name, icon and description), 
     to allow filtering by state in UI.
-* [#4100](https://github.com/TouK/nussknacker/pull/4100)[#4104](https://github.com/TouK/nussknacker/pull/4104)
-  Before the change, the scenario list presented "local" states - based only on Nussknacker's actions log.
-  On the other hand, the scenario editor presented state based on engine (e.g. Flink) state.
-  After the change, in all places the state is based on engine (e.g. Flink) state - in some places like scenario list, it is cached.
+* [#4100](https://github.com/TouK/nussknacker/pull/4100)[#4104](https://github.com/TouK/nussknacker/pull/4104)[#4150](https://github.com/TouK/nussknacker/pull/4150)
+  Before the change, the scenario list for a moment presented "local" states - based only on Nussknacker's actions log.
+  After the change, we always present state is based on engine (e.g. Flink) state - in some places like scenario list, it is cached.
 * [#4131](https://github.com/TouK/nussknacker/pull/4131) Support for components using other languages than SpEL, added basic support for SpEL in template mode
-* [#4132](https://github.com/TouK/nussknacker/pull/4132) Combine statuses Failing, Failed, Error, Warning, FailedToGet and MulipleJobsRunning into one status that represents a "Problem".
-  Status "Unknown" is removed.
+* [#4132](https://github.com/TouK/nussknacker/pull/4132)[#4179](https://github.com/TouK/nussknacker/pull/4179) Combine statuses Failing, Failed, Error, Warning, FailedToGet and MulipleJobsRunning into one status that represents a "Problem".
+  Statuses `FailedStateStatus` and "Unknown" are removed.
+* [#4135](https://github.com/TouK/nussknacker/pull/4135) Added timeout configuration for fetching scenario state and bumps skuber 3.0.2 -> 3.0.5
 * [#4143](https://github.com/TouK/nussknacker/pull/4143) Use `ProcessStateStatus` to detect alerting scenarios in healthcheck `/healthCheck/process/deployment`.
   After this change healthcheck alerts all types of deployment problems based on `ProcessStateStatus`, including "deployed and not running".
+* [#4160](https://github.com/TouK/nussknacker/pull/4160) Testing using events from file accepts simplified test record format. 
+  SourceId and timestamp fields can be omitted from the test record and record field can be inlined. The simplified format works only for scenarios with only one source.
+* [#4161](https://github.com/TouK/nussknacker/pull/4161) Update most dependencies to latest versions  
 * [#4155](https://github.com/TouK/nussknacker/pull/4155) Stop adding response header 'cache-control: max-age=0'. Akka adds correct 'etag' and 'last-modified' headers, hence caching is secure. 
 
 1.8.1 (28 Feb 2023)

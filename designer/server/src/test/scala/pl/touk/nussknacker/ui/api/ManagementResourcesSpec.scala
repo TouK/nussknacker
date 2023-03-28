@@ -53,12 +53,12 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
    test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> check {
+    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-        deployProcess(SampleProcess.process.id) ~> check {
+        deployProcess(SampleProcess.process.id) ~> checkThatEventually {
           getProcess(processName) ~> check {
             decodeDetails.lastAction shouldBe deployedWithVersions(2)
           }
@@ -121,12 +121,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> check {
-      eventually {
-        getProcess(processName) ~> check {
-          val processDetails = responseAs[ProcessDetails]
-          processDetails.isDeployed shouldBe true
-        }
+    deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> checkThatEventually {
+      getProcess(processName) ~> check {
+        val processDetails = responseAs[ProcessDetails]
+        processDetails.isDeployed shouldBe true
       }
       cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))), comment = Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
@@ -162,18 +160,19 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("deploy technical process and mark it as deployed") {
     createValidProcess(processName, TestCat, false)
 
-    deployProcess(processName.value) ~> check { status shouldBe StatusCodes.OK }
-
-    getProcess(processName) ~> check {
-      val processDetails = responseAs[ProcessDetails]
-      processDetails.lastAction shouldBe deployedWithVersions(1)
-      processDetails.isDeployed shouldBe true
+    deployProcess(processName.value) ~> checkThatEventually {
+      status shouldBe StatusCodes.OK
+      getProcess(processName) ~> check {
+        val processDetails = responseAs[ProcessDetails]
+        processDetails.lastAction shouldBe deployedWithVersions(1)
+        processDetails.isDeployed shouldBe true
+      }
     }
   }
 
   test("recognize process cancel in deployment list") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> check {
+    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
@@ -189,7 +188,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("recognize process deploy and cancel in global process list") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id) ~> check {
+    deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
 
       forScenariosReturned(ProcessesQuery.empty) { processes =>
@@ -284,13 +283,12 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   test("return test results") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    val displayableProcess = ProcessConverter.toDisplayable(SampleProcess.process, TestProcessingTypes.Streaming, Category1)
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
         |{"sourceId":"startProcess","record":"bela"}""".stripMargin
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> displayableProcess.asJson.noSpaces)()
-    Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+
+    testScenario(SampleProcess.process, testDataContent) ~> check {
 
       status shouldEqual StatusCodes.OK
 
@@ -328,14 +326,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "''")
     val testDataContent =
       """{"sourceId":"startProcess","record":"ala"}
-        |{"sourceId":"startProcess","record":"bela"}""".stripMargin
-
+        |"bela"""".stripMargin
     saveProcessAndAssertSuccess(process.id, process)
 
-    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
-
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> displayableProcess.asJson.noSpaces)()
-    Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
+    testScenario(process, testDataContent) ~> check {
       status shouldEqual StatusCodes.OK
     }
   }
@@ -351,16 +345,25 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           .source("startProcess", "csv-source")
           .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'")
     }
-
     saveProcessAndAssertSuccess(process.id, process)
+    val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))
 
-    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
-
-    List((1 to 50).mkString("\n"), (1 to 50000).mkString("-")).foreach { tooLargeData =>
-      val multiPart = MultipartUtils.prepareMultiParts("testData" -> tooLargeData, "processJson" -> displayableProcess.asJson.noSpaces)()
-      Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
+    tooLargeTestDataContentList.foreach { tooLargeData =>
+      testScenario(process, tooLargeData) ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
+    }
+  }
+
+  test("rejects test record with non-existing source") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+    val testDataContent =
+      """{"sourceId":"startProcess","record":"ala"}
+        |{"sourceId":"unknown","record":"bela"}""".stripMargin
+
+    testScenario(SampleProcess.process, testDataContent) ~> check {
+      status shouldEqual StatusCodes.BadRequest
+      responseAs[String] shouldBe "Record 2 - scenario does not have source id: 'unknown'"
     }
   }
 
@@ -397,4 +400,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   def decodeDetails: ProcessDetails = responseAs[ProcessDetails]
+
+  def checkThatEventually[T](body: => T): RouteTestResult => T = check(eventually(body))
+
 }

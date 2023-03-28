@@ -8,16 +8,21 @@ exports[`ProcessStateIcon tests should show data from loaded process.state 1`] =
   display: flex;
 }
 
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
 <div>
   <div
     class="emotion-0"
     title="The scenario has been successfully cancelled."
   >
-    <span
+    <svg
       data-testid="svg"
     >
       /be-static/states/stopping-success.svg
-    </span>
+    </svg>
   </div>
 </div>
 `;
@@ -30,15 +35,20 @@ exports[`ProcessStateIcon tests should show defaults for loaded process.state wi
   display: flex;
 }
 
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
 <div>
   <div
     class="emotion-0"
   >
-    <span
+    <svg
       data-testid="svg"
     >
       /be-static/assets/states/status-unknown.svg
-    </span>
+    </svg>
   </div>
 </div>
 `;
@@ -51,15 +61,20 @@ exports[`ProcessStateIcon tests should show defaults for missing process.state a
   display: flex;
 }
 
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
 <div>
   <div
     class="emotion-0"
   >
-    <span
+    <svg
       data-testid="svg"
     >
       /be-static/assets/states/status-unknown.svg
-    </span>
+    </svg>
   </div>
 </div>
 `;
@@ -72,15 +87,20 @@ exports[`ProcessStateIcon tests should show defaults if loadedProcess is empty 1
   display: flex;
 }
 
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
 <div>
   <div
     class="emotion-0"
   >
-    <span
+    <svg
       data-testid="svg"
     >
       /be-static/assets/states/status-unknown.svg
-    </span>
+    </svg>
   </div>
 </div>
 `;
@@ -93,15 +113,20 @@ exports[`ProcessStateIcon tests should show defaults if loadedProcess is null 1`
   display: flex;
 }
 
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
 <div>
   <div
     class="emotion-0"
   >
-    <span
+    <svg
       data-testid="svg"
     >
       /be-static/assets/states/status-unknown.svg
-    </span>
+    </svg>
   </div>
 </div>
 `;
@@ -114,16 +139,21 @@ exports[`ProcessStateIcon tests should show loadedProcess data 1`] = `
   display: flex;
 }
 
+.emotion-0 svg {
+  width: auto;
+  height: auto;
+}
+
 <div>
   <div
     class="emotion-0"
     title="The scenario has been successfully cancelled."
   >
-    <span
+    <svg
       data-testid="svg"
     >
       /be-static/states/stopping-success.svg
-    </span>
+    </svg>
   </div>
 </div>
 `;

@@ -216,7 +216,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
       List(classOf[TestComponentProvider], classOf[EnvService]),
       K8sExtraClasses.serviceLoaderConfigURL(getClass, classOf[ComponentProvider]))
     val deployConfig = reqRespDeployConfig(givenServicePort, extraClasses, extraDeployConfig)
-    val manager = new K8sDeploymentManager(modelData, deployConfig)
+    val manager = new K8sDeploymentManager(modelData, deployConfig, ConfigFactory.empty())
     val scenario = preparePingPongScenario(givenScenarioName, givenVersion, givenSlug)
     logger.info(s"Running req-resp test on ${scenario.id}")
     val version = ProcessVersion(VersionId(givenVersion), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))

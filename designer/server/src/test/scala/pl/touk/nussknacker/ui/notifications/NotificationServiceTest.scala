@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.notifications
 
+import akka.actor.ActorSystem
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.OptionValues
@@ -39,6 +40,7 @@ import scala.util.{Failure, Success, Try}
 
 class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScalaFutures with MockitoSugar with WithHsqlDbTesting with EitherValuesDetailedMessage with OptionValues with DBIOActionValues {
 
+  private implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
   override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(db)
 
   private var currentInstant: Instant = Instant.ofEpochMilli(0)
@@ -86,10 +88,11 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     when(deploymentManager.getProcessState(any[ProcessName])(any[DataFreshnessPolicy]))
       .thenReturn(Future.successful(WithDataFreshnessStatus(Option.empty[ProcessState], cached = false)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
-    when(managerDispatcher.deploymentManager(any[String])).thenReturn(deploymentManager)
+    when(managerDispatcher.deploymentManager(any[String])).thenReturn(Some(deploymentManager))
+    when(managerDispatcher.deploymentManagerUnsafe(any[String])).thenReturn(deploymentManager)
     val config = NotificationConfig(20 minutes)
     val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, config, clock)
-    val deploymentService = new DeploymentServiceImpl(managerDispatcher, processRepository, actionRepository, dbioRunner, mock[ProcessValidation], mock[ScenarioResolver], mock[ProcessChangeListener], clock) {
+    val deploymentService = new DeploymentServiceImpl(managerDispatcher, processRepository, actionRepository, dbioRunner, mock[ProcessValidation], mock[ScenarioResolver], mock[ProcessChangeListener], None, clock) {
       override protected def validateBeforeDeploy(processDetails: processdetails.BaseProcessDetails[CanonicalProcess], actionId: ProcessActionId)(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
         Future.successful(DeployedScenarioData(processDetails.toEngineProcessVersion, prepareDeploymentData(user.toManagerUser, DeploymentId(actionId.toString)), processDetails.json))
       }
