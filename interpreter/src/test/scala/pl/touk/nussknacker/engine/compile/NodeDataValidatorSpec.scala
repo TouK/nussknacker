@@ -274,10 +274,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     ))
     val configWithValidators: Config = defaultConfig.withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
 
-    inside(
-      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, aModelData = getModelData(configWithValidators))
-    ) {
-      case ValidationPerformed(List(),None,None) =>
+    validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, aModelData = getModelData(configWithValidators)) should matchPattern {
+        case ValidationPerformed(List(),None,None) =>
     }
   }
 
@@ -289,14 +287,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
     ))
     val configWithValidators: Config = defaultConfig.withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
-    inside(
-      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, aModelData = getModelData(configWithValidators))
-    ) {
+
+    validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, aModelData = getModelData(configWithValidators)) should matchPattern {
       case ValidationPerformed(List(EmptyMandatoryParameter(_, _, "P1", subprocessId)), None, None) =>
     }
   }
 
-  test("should validate fragment parameters with validators - P1 and P2 as mandatory params with missing actual values") {
+  test("should validate fragment parameters with validators - P1 and P2 as mandatory params with missing actual values accumulated") {
     val subprocessId = "fragmentInputId"
     val nodeToBeValidated = SubprocessInput("nameOfTheNode", SubprocessRef(subprocessId, List(
       Parameter("P1", ""),
@@ -315,9 +312,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       .withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
       .withValue(s"componentsUiConfig.$subprocessId.params.P2.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
 
-    inside(
-      validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, aModelData = getModelData(configWithValidators))
-    ) {
+    validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, aModelData = getModelData(configWithValidators)) should matchPattern {
       case ValidationPerformed(List(EmptyMandatoryParameter(_, _, "P1", "nameOfTheNode"), EmptyMandatoryParameter(_, _, "P2", "nameOfTheNode")), None, None) =>
     }
   }

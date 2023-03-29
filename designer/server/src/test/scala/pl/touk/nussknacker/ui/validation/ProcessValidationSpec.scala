@@ -344,7 +344,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidation = processValidationWithConfig(invalidSubprocess)
+    val processValidation = mockedProcessValidation(invalidSubprocess)
     val validationResult = processValidation.validate(process)
 
     validationResult should matchPattern {
@@ -380,7 +380,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidation = processValidationWithConfig(invalidSubprocess)
+    val processValidation = mockedProcessValidation(invalidSubprocess)
 
     val validationResult = processValidation.validate(process)
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
@@ -423,7 +423,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidation = processValidationWithConfig(subprocess)
+    val processValidation = mockedProcessValidation(subprocess)
     val validationResult = processValidation.validate(process)
 
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
@@ -528,7 +528,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       )
     )
 
-    val processValidation = processValidationWithConfig(subprocess)
+    val processValidation = mockedProcessValidation(subprocess)
 
     val validationResult = processValidation.validate(process)
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
@@ -547,31 +547,11 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val configWithValidators: Config = defaultConfig
         .withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
 
-    val fragmentDefinition: CanonicalProcess = CanonicalProcess(MetaData(subprocessId, FragmentSpecificData()), List(
-        FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("P1", SubprocessClazzRef[Short])))),
-        FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
-      ),
-      additionalBranches = List.empty
-    )
+    val fragmentDefinition: CanonicalProcess = createFragmentDefinition(subprocessId, List(SubprocessParameter("P1", SubprocessClazzRef[Short])))
+    val processWithFragment = createProcessWithFragmentParams(subprocessId, List(evaluatedparam.Parameter("P1", "123")))
 
-    val process = createProcess(
-      nodes = List(
-        Source("source", SourceRef(sourceTypeName, Nil)),
-        SubprocessInput("subIn", SubprocessRef(
-          fragmentDefinition.id,
-          List(evaluatedparam.Parameter("P1", "123"))),
-          isDisabled = Some(false)
-        ),
-        Sink("sink", SinkRef(sinkTypeName, Nil))
-      ),
-      edges = List(
-        Edge("source", "subIn", None),
-        Edge("subIn", "sink", Some(EdgeType.SubprocessOutput("out1")))
-      )
-    )
-
-    val processValidation = processValidationWithConfig(fragmentDefinition, configWithValidators)
-    val result = processValidation.validate(process)
+    val processValidation = mockedProcessValidation(fragmentDefinition, configWithValidators)
+    val result = processValidation.validate(processWithFragment)
     result.hasErrors shouldBe false
     result.errors.invalidNodes shouldBe Symbol("empty")
     result.errors.globalErrors shouldBe Symbol("empty")
@@ -584,31 +564,11 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val configWithValidators: Config = defaultConfig
       .withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
 
-    val fragmentDefinition: CanonicalProcess = CanonicalProcess(MetaData(subprocessId, FragmentSpecificData()), List(
-      FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("P1", SubprocessClazzRef[Short])))),
-      FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
-    ),
-      additionalBranches = List.empty
-    )
+    val fragmentDefinition: CanonicalProcess = createFragmentDefinition(subprocessId, List(SubprocessParameter("P1", SubprocessClazzRef[Short])))
+    val processWithFragment = createProcessWithFragmentParams(subprocessId, List(evaluatedparam.Parameter("P1", "")))
 
-    val process = createProcess(
-      nodes = List(
-        Source("source", SourceRef(sourceTypeName, Nil)),
-        SubprocessInput("subIn", SubprocessRef(
-          fragmentDefinition.id,
-          List(evaluatedparam.Parameter("P1", ""))),
-          isDisabled = Some(false)
-        ),
-        Sink("sink", SinkRef(sinkTypeName, Nil))
-      ),
-      edges = List(
-        Edge("source", "subIn", None),
-        Edge("subIn", "sink", Some(EdgeType.SubprocessOutput("out1")))
-      )
-    )
-
-    val processValidation = processValidationWithConfig(fragmentDefinition, configWithValidators)
-    val result = processValidation.validate(process)
+    val processValidation = mockedProcessValidation(fragmentDefinition, configWithValidators)
+    val result = processValidation.validate(processWithFragment)
 
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
@@ -617,44 +577,27 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  test("validates scenario with fragment parameters - P1 and P2 as mandatory params with missing actual values") {
+  test("validates scenario with fragment parameters - P1 and P2 as mandatory params with missing actual values accumulated") {
     val subprocessId = "fragment1"
 
     val configWithValidators: Config = defaultConfig
         .withValue(s"componentsUiConfig.$subprocessId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
         .withValue(s"componentsUiConfig.$subprocessId.params.P2.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
 
-    val fragmentDefinition: CanonicalProcess = CanonicalProcess(MetaData(subprocessId, FragmentSpecificData()), List(
-      FlatNode(SubprocessInputDefinition("in", List(
-        SubprocessParameter("P1", SubprocessClazzRef[Short]),
-        SubprocessParameter("P2", SubprocessClazzRef[String])
-      ))),
-      FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
-    ),
-      additionalBranches = List.empty
-    )
+    val fragmentDefinition: CanonicalProcess = createFragmentDefinition(subprocessId, List(
+      SubprocessParameter("P1", SubprocessClazzRef[Short]),
+      SubprocessParameter("P2", SubprocessClazzRef[String])
+    ))
 
-    val process = createProcess(
-      nodes = List(
-        Source("source", SourceRef(sourceTypeName, Nil)),
-        SubprocessInput("subIn", SubprocessRef(
-          fragmentDefinition.id,
-          List(
-            evaluatedparam.Parameter("P1", ""),
-            evaluatedparam.Parameter("P2", "")
-          )),
-          isDisabled = Some(false)
-        ),
-        Sink("sink", SinkRef(sinkTypeName, Nil))
-      ),
-      edges = List(
-        Edge("source", "subIn", None),
-        Edge("subIn", "sink", Some(EdgeType.SubprocessOutput("out1")))
+    val processWithFragment = createProcessWithFragmentParams(subprocessId,
+      List(
+        evaluatedparam.Parameter("P1", ""),
+        evaluatedparam.Parameter("P2", "")
       )
     )
 
-    val processValidation = processValidationWithConfig(fragmentDefinition, configWithValidators)
-    val result = processValidation.validate(process)
+    val processValidation = mockedProcessValidation(fragmentDefinition, configWithValidators)
+    val result = processValidation.validate(processWithFragment)
 
     result.hasErrors shouldBe true
     result.errors.globalErrors shouldBe empty
@@ -673,7 +616,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       .emptySink("sink", existingSinkFactory)
 
     val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
-    val result = processValidationWithConfig(process).validate(displayable)
+    val result = mockedProcessValidation(process).validate(displayable)
 
     result.errors.processPropertiesErrors shouldBe List(PrettyValidationErrors.formatErrorMessage(SampleCustomProcessValidator.badNameError))
   }
@@ -738,6 +681,24 @@ private object ProcessValidationSpec {
     )
   }
 
+  private def createProcessWithFragmentParams(fragmentDefinitionId: String, nodeParams: List[evaluatedparam.Parameter]): DisplayableProcess ={
+    createProcess(
+      nodes = List(
+        Source("source", SourceRef(sourceTypeName, Nil)),
+        SubprocessInput("subIn", SubprocessRef(
+          fragmentDefinitionId,
+          nodeParams),
+          isDisabled = Some(false)
+        ),
+        Sink("sink", SinkRef(sinkTypeName, Nil))
+      ),
+      edges = List(
+        Edge("source", "subIn", None),
+        Edge("subIn", "sink", Some(EdgeType.SubprocessOutput("out1")))
+      )
+    )
+  }
+
   private def createProcess(nodes: List[NodeData],
                             edges: List[Edge],
                             `type`: ProcessingType = TestProcessingTypes.Streaming,
@@ -746,7 +707,16 @@ private object ProcessValidationSpec {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`, category)
   }
 
-  def processValidationWithConfig(subprocess: CanonicalProcess, execConfig: Config = ConfigFactory.empty()): ProcessValidation = {
+  private def createFragmentDefinition(fragmentDefinitionId: String, fragmentInputParams: List[SubprocessParameter]): CanonicalProcess ={
+    CanonicalProcess(MetaData(fragmentDefinitionId, FragmentSpecificData()), List(
+      FlatNode(SubprocessInputDefinition("in", fragmentInputParams  )),
+      FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField",  Expression("spel",  "'value'"))))),
+    ),
+      additionalBranches = List.empty
+    )
+  }
+
+  def mockedProcessValidation(subprocess: CanonicalProcess, execConfig: Config = ConfigFactory.empty()): ProcessValidation = {
     import ProcessDefinitionBuilder._
 
     val processDefinition = ProcessDefinitionBuilder.empty
