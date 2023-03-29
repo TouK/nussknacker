@@ -31,9 +31,14 @@ const List = styled(TruncatedList)({
   flex: 1,
   display: "flex",
   li: {
+    // expand leftmost elements to force right alignment
     "&:nth-of-type(1), &:nth-of-type(2)": {
       flex: 1,
       justifyContent: "flex-end",
+    },
+    // less than 2 elements not allowed
+    "&:nth-of-type(3)": {
+      marginLeft: "50%",
     },
     "&:not([hidden])": {
       display: "flex",
