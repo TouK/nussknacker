@@ -28,8 +28,8 @@ import java.net.URI
                                    version: Option[ProcessVersion],
                                    allowedActions: List[ProcessActionType],
                                    icon: URI,
-                                   tooltip: Option[String],
-                                   description: Option[String],
+                                   tooltip: String,
+                                   description: String,
                                    startTime: Option[Long],
                                    attributes: Option[Json],
                                    errors: List[String]) {
@@ -134,8 +134,8 @@ class CustomStateStatus(val name: StatusName) extends StateStatus
   */
 case class StateDefinitionDetails(displayableName: String,
                                   icon: URI,
-                                  tooltip: Option[String],
-                                  description: Option[String])
+                                  tooltip: String,
+                                  description: String)
 
 object StateDefinitionDetails {
   val UnknownIcon: URI = URI.create("/assets/states/status-unknown.svg")

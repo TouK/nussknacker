@@ -22,8 +22,8 @@ import java.net.URI
 class OverridingProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager,
                                               statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = PartialFunction.empty,
                                               statusIconsPF: PartialFunction[StateStatus, URI] = PartialFunction.empty,
-                                              statusTooltipsPF: PartialFunction[StateStatus, Option[String]] = PartialFunction.empty,
-                                              statusDescriptionsPF: PartialFunction[StateStatus, Option[String]] = PartialFunction.empty,
+                                              statusTooltipsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
+                                              statusDescriptionsPF: PartialFunction[StateStatus, String] = PartialFunction.empty,
                                               customStateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty)
   extends ProcessStateDefinitionManager {
 
@@ -31,24 +31,19 @@ class OverridingProcessStateDefinitionManager(delegate: ProcessStateDefinitionMa
     statusActionsPF.applyOrElse(stateStatus, delegate.statusActions)
 
   override def statusIcon(stateStatus: StateStatus): URI =
-    statusIconsPF.orElse(stateDefinitionIconPF)
-      .applyOrElse(stateStatus, delegate.statusIcon)
+    statusIconsPF.orElse(stateDefinitionsPF(_.icon)).applyOrElse(stateStatus, delegate.statusIcon)
 
-  override def statusTooltip(stateStatus: StateStatus): Option[String] =
+  override def statusTooltip(stateStatus: StateStatus): String =
     statusTooltipsPF.orElse(stateDefinitionsPF(_.tooltip)).applyOrElse(stateStatus, delegate.statusTooltip)
 
-  override def statusDescription(stateStatus: StateStatus): Option[String] =
+  override def statusDescription(stateStatus: StateStatus): String =
     statusDescriptionsPF.orElse(stateDefinitionsPF(_.description)).applyOrElse(stateStatus, delegate.statusDescription)
 
   override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
     delegate.stateDefinitions ++ customStateDefinitions
 
-  private def stateDefinitionIconPF: PartialFunction[StateStatus, URI] = {
-    case stateStatus: StateStatus if customStateDefinitions.contains(stateStatus.name) => customStateDefinitions(stateStatus.name).icon
-  }
-
-  private def stateDefinitionsPF[T](map: StateDefinitionDetails => Option[T]): PartialFunction[StateStatus, Option[T]] = {
-    case stateStatus if customStateDefinitions.contains(stateStatus.name) => customStateDefinitions.get(stateStatus.name).flatMap(map)
+  private def stateDefinitionsPF[T](map: StateDefinitionDetails => T): PartialFunction[StateStatus, T] = {
+    case stateStatus if customStateDefinitions.contains(stateStatus.name) => map(customStateDefinitions(stateStatus.name))
   }
 
 }

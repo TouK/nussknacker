@@ -207,7 +207,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(expectedStatus.description)
+      state.description shouldBe expectedStatus.description
     }
   }
 
@@ -222,7 +222,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(expectedStatus.description)
+      state.description shouldBe expectedStatus.description
     }
   }
 
@@ -237,7 +237,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(expectedStatus.description)
+      state.description shouldBe expectedStatus.description
     }
   }
 
@@ -262,7 +262,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       val expectedStatus = ProblemStateStatus.processWithoutAction
       state.status shouldBe expectedStatus
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(expectedStatus.description)
+      state.description shouldBe expectedStatus.description
     }
   }
 
@@ -278,7 +278,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       val expectedStatus = ProblemStateStatus.processWithoutAction
       state.status shouldBe expectedStatus
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(expectedStatus.description)
+      state.description shouldBe expectedStatus.description
     }
   }
 
@@ -293,7 +293,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
       state.status shouldBe SimpleStateStatus.Restarting
       state.allowedActions shouldBe List(ProcessActionType.Cancel)
-      state.description shouldBe Some("Scenario is restarting...")
+      state.description shouldBe "Scenario is restarting..."
     }
   }
 
@@ -308,7 +308,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(expectedStatus.description)
+      state.description shouldBe expectedStatus.description
     }
   }
 
@@ -323,7 +323,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(expectedStatus.description)
+      state.description shouldBe expectedStatus.description
     }
   }
 
@@ -339,7 +339,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(expectedStatus.description)
+      state.description shouldBe expectedStatus.description
     }
   }
 
@@ -368,7 +368,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(expectedStatus.description)
+      state.description shouldBe expectedStatus.description
     }
   }
 
@@ -384,7 +384,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe Some(expectedStatus.description)
+      state.description shouldBe expectedStatus.description
     }
   }
 

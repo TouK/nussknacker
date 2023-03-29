@@ -122,7 +122,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   private def createStateDefinitionManager(definitions: Map[String, String]) = new OverridingProcessStateDefinitionManager(
     customStateDefinitions = definitions.map { case (name, displayableName) =>
       name -> StateDefinitionDetails(
-        displayableName = displayableName, icon = UnknownIcon, tooltip = None, description = Some(s"Description for ${displayableName}")
+        displayableName = displayableName, icon = UnknownIcon, tooltip = "dummy", description = s"Description for ${displayableName}"
       )
     },
     delegate = emptyStateDefinitionManager

@@ -23,20 +23,20 @@ object DevelopmentStateStatus {
     AfterRunningStatus.name -> StateDefinitionDetails(
       displayableName = "After running",
       icon = UnknownIcon,
-      tooltip = Some("External running."),
-      description = Some("External running.")
+      tooltip = "External running.",
+      description = "External running."
     ),
     PreparingResourcesStatus.name -> StateDefinitionDetails(
       displayableName = "Preparing resources",
       icon = UnknownIcon,
-      tooltip = Some("Preparing external resources."),
-      description = Some("Preparing external resources.")
+      tooltip = "Preparing external resources.",
+      description = "Preparing external resources."
     ),
     TestStatus.name -> StateDefinitionDetails(
       displayableName = "Test",
       icon = UnknownIcon,
-      tooltip = Some("Preparing external resources."),
-      description = Some("Preparing external resources.")
+      tooltip = "Preparing external resources.",
+      description = "Preparing external resources."
     ),
   )
 

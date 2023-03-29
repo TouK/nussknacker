@@ -16,7 +16,7 @@ import io.circe.syntax._
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, BeforeAndAfterEach, Suite}
+import org.scalatest.{Assertion, BeforeAndAfterEach, OptionValues, Suite}
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -397,23 +397,23 @@ object ProcessVersionJson {
   )
 }
 
-object ProcessJson{
+object ProcessJson extends OptionValues {
   def apply(process: Json): ProcessJson = {
-    val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].toOption.get
+    val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].toOption.value
 
     new ProcessJson(
-      process.hcursor.downField("id").as[String].toOption.get,
-      process.hcursor.downField("name").as[String].toOption.get,
-      process.hcursor.downField("processId").as[Long].toOption.get,
-      lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.get),
-      lastAction.map(_.hcursor.downField("action").as[String].toOption.get),
-      process.hcursor.downField("state").downField("status").downField("name").as[String].toOption.get,
-      process.hcursor.downField("state").downField("icon").as[String].toOption.map(URI.create).get,
-      process.hcursor.downField("state").downField("tooltip").as[Option[String]].toOption.get,
-      process.hcursor.downField("state").downField("description").as[Option[String]].toOption.get,
-      process.hcursor.downField("processCategory").as[String].toOption.get,
-      process.hcursor.downField("isArchived").as[Boolean].toOption.get,
-      process.hcursor.downField("history").as[Option[List[Json]]].toOption.get.map(_.map(v => ProcessVersionJson(v)))
+      process.hcursor.downField("id").as[String].toOption.value,
+      process.hcursor.downField("name").as[String].toOption.value,
+      process.hcursor.downField("processId").as[Long].toOption.value,
+      lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
+      lastAction.map(_.hcursor.downField("action").as[String].toOption.value),
+      process.hcursor.downField("state").downField("status").downField("name").as[String].toOption.value,
+      process.hcursor.downField("state").downField("icon").as[String].toOption.map(URI.create).value,
+      process.hcursor.downField("state").downField("tooltip").as[String].toOption.value,
+      process.hcursor.downField("state").downField("description").as[String].toOption.value,
+      process.hcursor.downField("processCategory").as[String].toOption.value,
+      process.hcursor.downField("isArchived").as[Boolean].toOption.value,
+      process.hcursor.downField("history").as[Option[List[Json]]].toOption.value.map(_.map(v => ProcessVersionJson(v)))
     )
   }
 }
@@ -425,8 +425,8 @@ final case class ProcessJson(id: String,
                              lastActionType: Option[String],
                              stateStatus: String,
                              stateIcon: URI,
-                             stateTooltip: Option[String],
-                             stateDescription: Option[String],
+                             stateTooltip: String,
+                             stateDescription: String,
                              processCategory: String,
                              isArchived: Boolean,
                              //Process on list doesn't contain history
