@@ -1,6 +1,7 @@
 import vars from "../stylesheets/darkColors.styl"
-import {defaultAppTheme, NkTheme, tintPrimary} from "./theme"
+import {NkTheme, tintPrimary} from "./theme"
 import {defaultsDeep} from "lodash"
+import {defaultAppTheme} from "./defaultAppTheme"
 
 const {borderRadius, marginSize} = vars
 
