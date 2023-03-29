@@ -9,6 +9,7 @@ export enum WindowKind {
   deployProcess,
   calculateCounts,
   generateTestData,
+  generateDataAndTest,
   compareVersions,
   customAction,
   survey,

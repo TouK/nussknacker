@@ -480,6 +480,12 @@ class HttpService {
     return promise
   }
 
+  testScenarioWithGeneratedData(processId: ProcessId, testSampleSize: string, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
+    const promise = api.post(`/processManagement/generateAndTest/${testSampleSize}`, this.#sanitizeProcess(processJson))
+    promise.catch(error => this.#addError(i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test"), error, true))
+    return promise
+  }
+
   compareProcesses(processId, thisVersion, otherVersion, remoteEnv) {
     const path = remoteEnv ? "remoteEnvironment" : "processes"
 

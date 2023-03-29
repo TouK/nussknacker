@@ -22,6 +22,7 @@ import PropertiesButton from "../../toolbars/status/buttons/PropertiesButton"
 import CountsButton from "../../toolbars/test/buttons/CountsButton"
 import FromFileButton from "../../toolbars/test/buttons/FromFileButton"
 import GenerateButton from "../../toolbars/test/buttons/GenerateButton"
+import GenerateAndTestButton from "../../toolbars/test/buttons/GenerateAndTestButton";
 import HideButton from "../../toolbars/test/buttons/HideButton"
 import {ResetViewButton} from "../../toolbars/view/buttons/ResetViewButton"
 import {ZoomInButton} from "../../toolbars/view/buttons/ZoomInButton"
@@ -58,6 +59,7 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.processUnarchive]: UnArchiveButton,
   [BuiltinButtonTypes.testFromFile]: FromFileButton,
   [BuiltinButtonTypes.testGenerate]: GenerateButton,
+  [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,
   [BuiltinButtonTypes.testCounts]: CountsButton,
   [BuiltinButtonTypes.testHide]: HideButton,
   [CustomButtonTypes.customAction]: ActionButton,
