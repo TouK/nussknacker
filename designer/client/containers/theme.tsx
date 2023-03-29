@@ -4,6 +4,7 @@ import {Global, Theme, ThemeProvider, ThemeProviderProps, useTheme} from "@emoti
 import Color from "color"
 import React, {useMemo} from "react"
 import vars from "../stylesheets/_variables.styl"
+import {darkTheme} from "./darkTheme"
 
 type DeepPartial<T> = {
   [P in keyof T]?: DeepPartial<T[P]>;
@@ -93,7 +94,7 @@ declare module "@emotion/react" {
   }
 }
 
-export function NkThemeProvider({theme = defaultAppTheme, ...props}: Partial<ThemeProviderProps>): JSX.Element {
+export function NkThemeProvider({theme = darkTheme, ...props}: Partial<ThemeProviderProps>): JSX.Element {
   return <ThemeProvider theme={theme} {...props}/>
 }
 

@@ -3,26 +3,13 @@ import React from "react"
 import {useSelector} from "react-redux"
 import {MenuBar} from "../components/MenuBar"
 import {VersionInfo} from "../components/versionInfo"
-import {getFeatureSettings, getLoggedUser} from "../reducers/selectors/settings"
+import {getLoggedUser} from "../reducers/selectors/settings"
 import {isEmpty} from "lodash"
 import {Outlet} from "react-router-dom"
 import {GlobalCSSVariables, NkThemeProvider} from "./theme"
-import {darkTheme} from "./darkTheme"
-import {contentGetter} from "../windowManager"
-import {WindowManagerProvider} from "@touk/window-manager"
 import {Notifications} from "./Notifications"
-
-function UsageReportingImage() {
-  const featuresSettings = useSelector(getFeatureSettings)
-  return featuresSettings.usageStatisticsReports.enabled && (
-    <img
-      src={featuresSettings.usageStatisticsReports.url}
-      alt="anonymous usage reporting"
-      referrerPolicy="origin"
-      hidden
-    />
-  )
-}
+import {UsageReportingImage} from "./UsageReportingImage"
+import {WindowManager} from "../windowManager"
 
 export function NussknackerApp() {
   const loggedUser = useSelector(getLoggedUser)
@@ -32,12 +19,13 @@ export function NussknackerApp() {
   }
 
   return (
-    <NkThemeProvider theme={darkTheme}>
+    <NkThemeProvider>
       <GlobalCSSVariables/>
-      <WindowManagerProvider
-        theme={darkTheme}
-        contentGetter={contentGetter}
-        className={css({flex: 1, display: "flex"})}
+      <WindowManager
+        className={css({
+          flex: 1,
+          display: "flex",
+        })}
       >
         <div
           id="app-container"
@@ -53,7 +41,7 @@ export function NussknackerApp() {
             <Outlet/>
           </main>
         </div>
-      </WindowManagerProvider>
+      </WindowManager>
       <Notifications/>
       <VersionInfo/>
       <UsageReportingImage/>
