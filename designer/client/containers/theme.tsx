@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import {css} from "@emotion/css"
-import {ThemeProvider, ThemeProviderProps, useTheme} from "@emotion/react"
+import {Global, Theme, ThemeProvider, ThemeProviderProps, useTheme} from "@emotion/react"
 import Color from "color"
 import React, {useMemo} from "react"
 import vars from "../stylesheets/_variables.styl"
@@ -25,7 +25,12 @@ export function alpha(base: string, amount = 1): string {
   return Color(base).alpha(amount).hsl().string()
 }
 
-export function tintPrimary(base: string): { primary75: string, primary25: string, primary50: string, primary: string } {
+export function tintPrimary(base: string): {
+  primary75: string,
+  primary25: string,
+  primary50: string,
+  primary: string,
+} {
   return {
     primary: tint(base, 0),
     primary75: tint(base, 0.75),
@@ -34,7 +39,7 @@ export function tintPrimary(base: string): { primary75: string, primary25: strin
   }
 }
 
-const defaultAppTheme = {
+export const defaultAppTheme = {
   themeClass: "",
   borderRadius: parseFloat(borderRadius),
   colors: {
@@ -66,7 +71,12 @@ const defaultAppTheme = {
 
     selectedValue: primary,
     accent: primary,
-    warning, error, ok, sucess,
+    warning,
+    error,
+    ok,
+    sucess,
+    warn: warning,
+    info: primary,
   },
   spacing: {
     controlHeight: parseFloat(formControllHeight),
@@ -79,7 +89,8 @@ export type NkTheme = DeepPartial<typeof defaultAppTheme>
 
 declare module "@emotion/react" {
   // eslint-disable-next-line @typescript-eslint/no-empty-interface
-  interface Theme extends NkTheme {}
+  interface Theme extends NkTheme {
+  }
 }
 
 export function NkThemeProvider({theme = defaultAppTheme, ...props}: Partial<ThemeProviderProps>): JSX.Element {
@@ -117,3 +128,27 @@ export function getDarkenContrastColor(color: string, contrast = 5, ratio = .1) 
   }
   return resultColor.hex()
 }
+
+function parseVarName(name: string) {
+  return name.startsWith("--") ? name : `--${name}`
+}
+
+function parseColorName(name: string) {
+  return name.toLowerCase().endsWith("color") ? name : `${name}Color`
+}
+
+function colorsToVariables(colors: Record<string, string>): Record<`--${string}`, string> {
+  return Object.fromEntries(Object.entries(colors).map(
+    ([name, value]) => [parseVarName(parseColorName(name)), value]
+  ))
+}
+
+function themeToVariables(theme: Theme): { ":root": Record<`--${string}`, string> } {
+  return {
+    ":root": colorsToVariables(theme.colors),
+  }
+}
+
+export const GlobalCSSVariables = () => (
+  <Global styles={themeToVariables}/>
+)
