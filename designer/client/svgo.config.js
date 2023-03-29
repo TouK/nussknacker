@@ -13,6 +13,7 @@ module.exports = {
           removeUselessStrokeAndFill: {
             removeNone: true,
           },
+          removeViewBox: false,
         },
       },
     },

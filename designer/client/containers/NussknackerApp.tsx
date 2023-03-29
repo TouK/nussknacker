@@ -2,11 +2,8 @@ import {css} from "@emotion/css"
 import React from "react"
 import {useSelector} from "react-redux"
 import {MenuBar} from "../components/MenuBar"
-import ProcessBackButton from "../components/Process/ProcessBackButton"
 import {VersionInfo} from "../components/versionInfo"
 import {getFeatureSettings, getLoggedUser} from "../reducers/selectors/settings"
-import * as Paths from "./paths"
-import {EnvironmentTag} from "./EnvironmentTag"
 import {defaultsDeep, isEmpty} from "lodash"
 import {Outlet} from "react-router-dom"
 import {NkThemeProvider} from "./theme"
@@ -61,25 +58,24 @@ export function NussknackerApp() {
                 width: "100%",
                 height: "100%",
                 display: "grid",
-                alignItems: "stretch",
+                gridTemplateColumns: "1fr",
                 gridTemplateRows: "auto 1fr",
+                alignItems: "stretch",
+                header: {
+                  overflow: "hidden",
+                },
                 main: {
                   overflow: "auto",
-                  display: "flex",
                   flexDirection: "column-reverse",
                 },
               })}
             >
-              <MenuBar
-                appPath={Paths.RootPath}
-                leftElement={<ProcessBackButton/>}
-                rightElement={<EnvironmentTag/>}
-              />
+              <MenuBar/>
               <main>
                 <VersionInfo/>
                 <Outlet/>
+                <UsageReportingImage/>
               </main>
-              <UsageReportingImage/>
             </div>
           </NkThemeProvider>
         </WindowManagerProvider>
