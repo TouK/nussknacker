@@ -3,8 +3,9 @@ package pl.touk.nussknacker.restmodel
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
+import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails}
 
 import java.net.URI
 import java.time.Instant

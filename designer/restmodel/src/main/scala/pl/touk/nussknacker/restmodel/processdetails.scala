@@ -4,8 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId, ProcessId => ApiProcessId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -131,14 +130,5 @@ object processdetails {
                                        modelVersion: Option[Int],
                                        actions: List[ProcessAction])
 
-  @JsonCodec case class ProcessAction(processVersionId: VersionId,
-                                      performedAt: Instant,
-                                      user: String,
-                                      action: ProcessActionType,
-                                      commentId: Option[Long],
-                                      comment: Option[String],
-                                      buildInfo: Map[String, String]) {
-    def isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
-    def isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
-  }
+
 }
