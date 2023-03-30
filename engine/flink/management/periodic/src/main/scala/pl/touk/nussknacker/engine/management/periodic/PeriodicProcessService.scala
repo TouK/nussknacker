@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -10,7 +9,6 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{ProcessStateInputData, ProcessStateOps}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, FailedOnDeploy, PeriodicProcessDeploymentStatus, RetryingDeploy}
@@ -294,9 +292,9 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     deactivateAction(deployment.periodicProcess.processVersion.processName)
   }
 
-  def mergeStateWithDeployments(name: ProcessName, delegateState: Option[ProcessState]): Future[Option[ProcessStateInputData]] = {
-    def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): ProcessStateInputData =
-      ProcessStateInputData(
+  def mergeStatusWithDeployments(name: ProcessName, delegateState: Option[ProcessState]): Future[Option[StatusDetails]] = {
+    def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): StatusDetails =
+      StatusDetails(
         status = ScheduledStatus(processDeployment.runAt),
         Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
@@ -306,8 +304,8 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
         errors = List.empty
       )
 
-    def createFailedProcessState(processDeployment: PeriodicProcessDeployment): ProcessStateInputData =
-      ProcessStateInputData(
+    def createFailedProcessState(processDeployment: PeriodicProcessDeployment): StatusDetails =
+      StatusDetails(
         status = ProblemStateStatus.failed,
         Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
@@ -316,27 +314,27 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
         errors = List.empty
       )
 
-    def handleFailed(original: Option[ProcessState]): Future[Option[ProcessStateInputData]] = {
+    def handleFailed(original: Option[ProcessState]): Future[Option[StatusDetails]] = {
       getLatestDeployment(name).map {
         // this method returns only active schedules, so 'None' means this process has been already canceled
-        case None => original.map(_.toInputData.copy(status = SimpleStateStatus.Canceled))
+        case None => original.map(_.toStatusDetails.copy(status = SimpleStateStatus.Canceled))
         // Previous, failed job is still accessible via Flink API but process has been scheduled to run again in future.
         case Some(processDeployment) if processDeployment.state.status == PeriodicProcessDeploymentStatus.Scheduled =>
           Some(createScheduledProcessState(processDeployment))
-        case _ => original.map(_.toInputData)
+        case _ => original.map(_.toStatusDetails)
       }
     }
 
-    def handleScheduled(original: Option[ProcessState]): Future[Option[ProcessStateInputData]] = {
+    def handleScheduled(original: Option[ProcessState]): Future[Option[StatusDetails]] = {
       getLatestDeployment(name).map { maybeProcessDeployment =>
         maybeProcessDeployment.map { processDeployment =>
           processDeployment.state.status match {
             case PeriodicProcessDeploymentStatus.Scheduled => Some(createScheduledProcessState(processDeployment))
             case PeriodicProcessDeploymentStatus.Failed => Some(createFailedProcessState(processDeployment))
             case PeriodicProcessDeploymentStatus.Deployed | PeriodicProcessDeploymentStatus.Finished =>
-              original.map(o => o.toInputData.copy(status = WaitingForScheduleStatus))
+              original.map(o => o.toStatusDetails.copy(status = WaitingForScheduleStatus))
           }
-        }.getOrElse(original.map(_.toInputData))
+        }.getOrElse(original.map(_.toStatusDetails))
       }
     }
 
@@ -348,7 +346,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
       case state@Some(js) if js.status == SimpleStateStatus.Canceled => handleScheduled(state)
       // Scheduled or never started or latest run already disappeared in Flink.
       case state@None => handleScheduled(state)
-      case Some(js) => Future.successful(Some(js.toInputData))
+      case Some(js) => Future.successful(Some(js.toStatusDetails))
     }
   }
 
@@ -384,28 +382,5 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
           .orElse(last(PeriodicProcessDeploymentStatus.Finished))
       }
   }
-
-}
-
-object PeriodicProcessService {
-
-  case class ProcessStateInputData(status: StateStatus,
-                                   deploymentId: Option[ExternalDeploymentId],
-                                   version: Option[ProcessVersion],
-                                   startTime: Option[Long],
-                                   attributes: Option[Json],
-                                   errors: List[String])
-
-  implicit class ProcessStateOps(state: ProcessState) {
-    def toInputData: ProcessStateInputData = ProcessStateInputData(
-      status = state.status,
-      deploymentId = state.deploymentId,
-      version = state.version,
-      startTime = state.startTime,
-      attributes = state.attributes,
-      errors = state.errors
-    )
-  }
-
 
 }

@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.ProcessStateInputData
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
@@ -139,20 +138,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
   override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
-    // Just to trigger periodic definition manager, e.g. compute actions.
-    def withPeriodicProcessState(state: ProcessStateInputData): ProcessState = processStateDefinitionManager.processState(
-      status = state.status,
-      deploymentId = state.deploymentId,
-      version = state.version,
-      startTime = state.startTime,
-      attributes = state.attributes,
-      errors = state.errors
-    )
-
     for {
       delegateState <- delegate.getProcessState(name)
-      mergedState <- service.mergeStateWithDeployments(name, delegateState.value)
-      formattedByPeriodicManager = mergedState.map(withPeriodicProcessState)
+      mergedStatus <- service.mergeStatusWithDeployments(name, delegateState.value)
+      formattedByPeriodicManager = mergedStatus.map(processStateDefinitionManager.processState)
     } yield WithDataFreshnessStatus(formattedByPeriodicManager, delegateState.cached)
   }
 
