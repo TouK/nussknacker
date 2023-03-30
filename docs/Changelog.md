@@ -3,6 +3,7 @@
 
 1.9.0 (not released yet)
 ------------------------
+* [#4195](https://github.com/TouK/nussknacker/pull/4195) Add functionality to generate test cases and test scenario without need to download a file.
 * [#3986](https://github.com/TouK/nussknacker/pull/3986) Updated sttp 2.2.9 -> 3.8.11
 * [#3979](https://github.com/TouK/nussknacker/pull/3979) Updated Flink 1.16.0 -> 1.16.1
 * [#4019](https://github.com/TouK/nussknacker/pull/4019) Make displayable process category required
