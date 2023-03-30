@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
+import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
@@ -18,7 +19,10 @@ object SimpleStateStatus {
     val name: String = "PROBLEM"
     val icon: URI = URI.create("/assets/states/error.svg")
     val defaultDescription = "There are some problems with scenario."
-    val defaultActions = List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+
+    // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
+    // - that's why Cancel action is available
+    val defaultActions: List[deployment.ProcessActionType.Value] = List(ProcessActionType.Deploy, ProcessActionType.Cancel)
 
     // Problem factory methods
 
@@ -62,11 +66,10 @@ object SimpleStateStatus {
     case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Archive)
     case SimpleStateStatus.DuringDeploy => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     case SimpleStateStatus.Running => List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy)
-    case SimpleStateStatus.Canceled => List(ProcessActionType.Deploy, ProcessActionType.Archive)
-    case SimpleStateStatus.Restarting => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     case SimpleStateStatus.Finished => List(ProcessActionType.Deploy, ProcessActionType.Archive)
-    // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
-    // - that's why Cancel action is available
+    case SimpleStateStatus.Restarting => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+    case SimpleStateStatus.DuringCancel => defaultActions
+    case SimpleStateStatus.Canceled => List(ProcessActionType.Deploy, ProcessActionType.Archive)
     case SimpleStateStatus.ProblemStateStatus(_, allowedActions) => allowedActions
   }
 
