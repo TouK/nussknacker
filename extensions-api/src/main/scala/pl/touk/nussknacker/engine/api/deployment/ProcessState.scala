@@ -36,7 +36,17 @@ import java.net.URI
 
   def isDeployed: Boolean = status.isRunning || status.isDuringDeploy
 
-  // TODO: split status details and scenario deployment details (deploymentId, version, attributes)
+  // TODO: those methods shouldn't be needed after refactors in DeploymentManager: split getProcessState into
+  //       fetching only details, and enriching details with presentation properties like icon, tooltip etc.
+  def toStatusDetails: StatusDetails = StatusDetails(
+    status = status,
+    deploymentId = deploymentId,
+    version = version,
+    startTime = startTime,
+    attributes = attributes,
+    errors = errors
+  )
+
   def withStatusDetails(stateWithStatusDetails: ProcessState): ProcessState = {
     copy(
       status = stateWithStatusDetails.status,
@@ -140,3 +150,10 @@ case class StateDefinitionDetails(displayableName: String,
 object StateDefinitionDetails {
   val UnknownIcon: URI = URI.create("/assets/states/status-unknown.svg")
 }
+
+case class StatusDetails(status: StateStatus,
+                         deploymentId: Option[ExternalDeploymentId] = None,
+                         version: Option[ProcessVersion] = None,
+                         startTime: Option[Long] = None,
+                         attributes: Option[Json] = None,
+                         errors: List[String] = List.empty)

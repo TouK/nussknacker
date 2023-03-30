@@ -46,6 +46,8 @@ trait ProcessStateDefinitionManager {
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
 
   /**
+    * TODO: this method should be rarely used - instead we should avoid passing around ProcessState - instead pass StatusDetails
+    *       and at the end add "presentation" properties via processState(StatusDetails)
     * Enhances raw [[StateStatus]] with scenario properties, including deployment info.
     */
   def processState(status: StateStatus,
@@ -54,17 +56,24 @@ trait ProcessStateDefinitionManager {
                    startTime: Option[Long] = None,
                    attributes: Option[Json] = None,
                    errors: List[String] = List.empty): ProcessState = {
+    processState(StatusDetails(status, deploymentId, version, startTime, attributes, errors))
+  }
+
+  /**
+    * Enhances raw [[StateStatus]] with scenario properties, including deployment info.
+    */
+  def processState(statusDetails: StatusDetails): ProcessState = {
     ProcessState(
-      deploymentId,
-      status,
-      version,
-      statusActions(status),
-      statusIcon(status),
-      statusTooltip(status),
-      statusDescription(status),
-      startTime,
-      attributes,
-      errors)
+      statusDetails.deploymentId,
+      statusDetails.status,
+      statusDetails.version,
+      statusActions(statusDetails.status),
+      statusIcon(statusDetails.status),
+      statusTooltip(statusDetails.status),
+      statusDescription(statusDetails.status),
+      statusDetails.startTime,
+      statusDetails.attributes,
+      statusDetails.errors)
   }
 
 }
