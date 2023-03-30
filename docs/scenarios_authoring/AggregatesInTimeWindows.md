@@ -122,7 +122,7 @@ In the example below, a sum of field `#input.transfer` will be computed  in the 
 
 ### Daily windows
 If window length is equal to exactly **full number of days**, windows are aligned to start at 00:00:00 in Timezone of application (Flink). If your deployment lays in different timezone then business time you are using, 
-it is possible to override timezone by setting `FLINK_DAILY_WINDOW_TIMEZONE_ID` environment variable. For more details please see [docs](../installation/Installation.md#configuring-timezone-for-tumbling-aggregate-time-windows)
+it is possible to override to which timezone daily windows should be aligned using configuration.  For more details please see [docs](../installation_configuration_guide/model/Flink.md#configuring-timezone-for-tumbling-aggregate-time-windows)
 
 
 ## Sliding-window

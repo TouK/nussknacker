@@ -13,12 +13,6 @@ Nussknacker (both binary package and docker image) is published in two versions 
 As for now, Flink does not support scala 2.13 (see [FLINK-13414](https://issues.apache.org/jira/browse/FLINK-13414) issue),
 so to use Nussknacker built with scala 2.13 some [tweaks](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/src/it/scala/pl/touk/nussknacker/engine/management/DockerTest.scala#L60) in Flink installations are required.
 Nussknacker built with scala 2.12 works with Flink out of the box.
-#### Configuring timezone for Tumbling aggregate time windows
-* This setting applies only to windows in tumbling aggregate, and only if their length is equal to multiples of 24h.
-* This setting is global for whole Flink installation
-
-If your deployment lays in different timezone then business time you are using, and you want your **daily** tumbling windows to start at 00:00:00 in different timezone than Flink is using (by default it is system timezone),
-it is possible to override it by setting `FLINK_DAILY_WINDOW_TIMEZONE_ID` environment variable to required zoneId (format is described [here](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/ZoneId.html)). 
 
 ## Docker based installation
 

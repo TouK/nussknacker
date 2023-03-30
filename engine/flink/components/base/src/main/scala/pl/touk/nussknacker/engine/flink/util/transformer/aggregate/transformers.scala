@@ -74,7 +74,7 @@ object transformers {
                           variableName: String,
                           tumblingWindowTrigger: TumblingWindowTrigger,
                           explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean,
-                          windowOffsetProvider: WindowOffsetProvider = WindowOffsetProvider.DailyWindowsOffsetDependingOnTimezone
+                          windowOffset: Option[Duration] = None
                          )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName,
       emitContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent, aggregateBy))
@@ -86,7 +86,7 @@ object transformers {
           val keyedStream = start
             .groupByWithValue(groupBy, aggregateBy)
           val aggregatingFunction = new UnwrappingAggregateFunction[AnyRef](aggregator, aggregateBy.returnType, identity)
-          val offsetMillis = windowOffsetProvider.offset(windowLength).toMillis
+          val offsetMillis = windowOffset.getOrElse(Duration.Zero).toMillis
           val windowDefinition = TumblingEventTimeWindows.of(Time.milliseconds(windowLength.toMillis), Time.milliseconds(offsetMillis))
 
           (tumblingWindowTrigger match {

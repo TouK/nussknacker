@@ -38,9 +38,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   [jar](https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.0.0/flink-scala-2-13_2.13-1.0.0-assembly.jar) in your Flink installation to `lib` dir. It's our implementation of `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` 
   (sources are [here](https://github.com/TouK/flink-scala-2.13)) which is needed to properly (de)serialize Flink state when using scala 2.13. 
   Hopefully, it's temporary solution, until Flink becomes really scala-free and gets rid of this `FlinkScalaKryoInstantiator` class or allows to have it in the job code (not Flink libs).
-* [#4190](https://github.com/TouK/nussknacker/pull/4190) Tumbling aggregates with daily windows are now aware of timezone. Before they were aligned to UTC timezone - each window started at 00:00:00 in UTC timezone. 
-  If you want to keep this behaviour and your deployment is in non-UTC timezone, set `FLINK_DAILY_WINDOW_TIMEZONE_ID=UTC` to required zoneId (format is described [here](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/ZoneId.html)). If this variable is absent timezone is taken from JVM timezone (which is `user.timezone` jvm property
-  or platform timezone if not set) 
+* [#4190](https://github.com/TouK/nussknacker/pull/4190) Tumbling aggregates with daily windows are now aware of timezone. Before, they were aligned to UTC timezone - each window started at 00:00:00 in UTC timezone. 
+  If you want to keep this behaviour and your deployment is in non-UTC timezone, set FlinkComponentProvider config `aggregateWindowsConfig.dailyWindowsAlignZoneId: UTC`. 
+  If this variable is absent timezone is taken from JVM timezone (which is `user.timezone` jvm property or platform timezone if this property is not set) 
 
 
 ### Other changes
