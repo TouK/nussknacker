@@ -515,7 +515,7 @@ export class Graph extends React.Component<Props> {
           onResize={isSubprocess ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
           id={divId}
         />
-        <ComponentDragPreview scale={this.zoom}/>
+        {!isSubprocess && <ComponentDragPreview scale={this.zoom}/>}
       </>
     )
   }

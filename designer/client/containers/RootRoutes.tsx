@@ -9,6 +9,7 @@ import {NotFound} from "./errors/NotFound"
 import {CustomTab, StarRedirect} from "./CustomTab"
 import {useTabData} from "./CustomTabPage"
 import {NussknackerApp} from "./NussknackerApp"
+import {ErrorBoundaryFallbackComponent} from "../components/common/ErrorBoundary"
 
 const Visualization = loadable(() => import("./Visualization"), {fallback: <LoaderSpinner show={true}/>})
 const ProcessesTab = loadable(() => import("./ProcessesTab"), {fallback: <LoaderSpinner show={true}/>})
@@ -21,27 +22,27 @@ function DefaultRedirect() {
 }
 
 export default createRoutesFromElements(
-  <Route path="/" element={<NussknackerApp/>}>
+  <Route path="/" element={<NussknackerApp/>} errorElement={<ErrorBoundaryFallbackComponent/>}>
     <Route index element={<DefaultRedirect/>}/>
     <Route path="/404" element={<NotFound/>}/>
+    <Route errorElement={<ErrorBoundaryFallbackComponent/>}>
+      <Route path={`${VisualizationBasePath}/:id`} element={<Visualization/>}/>
 
-    <Route path={`${VisualizationBasePath}/:id`} element={<Visualization/>}/>
+      {/* overrides scenarios custom tab */}
+      <Route path={ScenariosBasePath} element={<ScenariosTab/>}/>
 
-    {/* overrides scenarios custom tab */}
-    <Route path={ScenariosBasePath} element={<ScenariosTab/>}/>
+      {/* overrides legacy scenarios custom tab */}
+      <Route path="/legacy_scenarios/*" element={<StarRedirect to={RootPath}/>}/>
+      <Route path="/processes/*" element={<ProcessesTab/>}/>
 
-    {/* overrides legacy scenarios custom tab */}
-    <Route path="/legacy_scenarios/*" element={<StarRedirect to={RootPath}/>}/>
-    <Route path="/processes/*" element={<ProcessesTab/>}/>
+      {/* overrides metrics custom tab */}
+      <Route path={MetricsBasePath}>
+        <Route index element={<Metrics/>}/>
+        <Route path=":processId" element={<Metrics/>}/>
+      </Route>
 
-    {/* overrides metrics custom tab */}
-    <Route path={MetricsBasePath}>
-      <Route index element={<Metrics/>}/>
-      <Route path=":processId" element={<Metrics/>}/>
+      <Route path="/:id/*" element={<CustomTab/>}/>
     </Route>
-
-    <Route path="/:id/*" element={<CustomTab/>}/>
-
     <Route path="*" element={<Navigate to="/404" replace/>}/>
   </Route>
 )

@@ -1,30 +1,47 @@
-/* eslint-disable i18next/no-literal-string */
-import React, {CSSProperties, PropsWithChildren} from "react"
+import React, {PropsWithChildren} from "react"
 import ErrorBoundary2, {ErrorBoundaryProps} from "react-error-boundary"
+import {css} from "@emotion/css"
 
-const style: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  textAlign: "center",
-  backgroundColor: "#CC0000",
-  color: "#FFFFFF",
-  boxSizing: "border-box",
-  height: "100%",
-  width: "100%",
-  justifyContent: "center",
-}
+const styles = css`
+  display: flex;
+  color: #FFFFFF;
+  background: #CC0000;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-sizing: border-box;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
 
-const svgStyle: CSSProperties = {
-  flex: 1,
-  fill: "currentColor",
-  maxHeight: "60vh",
-  margin: "0 15% 0 15%",
-}
+  svg {
+    --color1: #ff00ff;
+    --color2: #00ff00;
 
-export const ErrorBoundaryFallbackComponent = () => (
-  <div style={style}>
-    <svg style={svgStyle} viewBox="0 0 500 500" preserveAspectRatio="xMidYMid" xmlns="http://www.w3.org/2000/svg">
+    animation-duration: 0.01s;
+    animation-name: flicker;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+
+    flex: 1;
+    fill: currentColor;
+    max-height: 60vh;
+    margin: 0 15% 0 15%;
+  }
+
+  @keyframes flicker {
+    from {
+      filter: drop-shadow(1px 0 0 var(--color1)) drop-shadow(-2px 0 0 var(--color2));
+    }
+    to {
+      filter: drop-shadow(2px 0.5px 2px var(--color1)) drop-shadow(-1px -0.5px 2px var(--color2));
+    }
+  }
+`
+
+const CrackedNut = ({className}: { className?: string }) => (
+  <div className={className}>
+    <svg viewBox="0 0 500 500" preserveAspectRatio="xMidYMid" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M 112.842 484.323 C 100.404 484.343 88.07 482.11 76.428 477.739 C 65.255 473.572 55.174 466.927 46.929 458.314 C 38.073 448.87 31.337 437.645 27.175 425.39 C 22.145 410.398 19.742 394.646 20.065 378.836 L 20.065 299.226 L 83.409 259.719 L 86.438 259.719 L 86.438 365.798 C 85.49 381.373 90.165 396.767 99.608 409.192 C 108.385 419.55 121.554 424.731 139.115 424.731 L 144.383 424.731 C 161.945 424.731 175.114 419.55 183.892 409.192 C 193.333 396.767 198.002 381.373 197.061 365.798 L 197.061 259.719 L 199.958 259.719 L 263.507 299.226 L 263.507 379.429 C 263.829 395.239 261.428 410.988 256.395 425.982 C 252.207 438.223 245.479 449.444 236.642 458.906 C 228.37 467.532 218.263 474.17 207.069 478.331 C 195.449 482.697 183.135 484.93 170.722 484.916 Z"
         transform="matrix(0.5, 0.866025, -0.866025, 0.5, 393.329349, 63.368501)"
@@ -36,6 +53,8 @@ export const ErrorBoundaryFallbackComponent = () => (
     </svg>
   </div>
 )
+
+export const ErrorBoundaryFallbackComponent = () => <CrackedNut className={styles}/>
 
 export default function ErrorBoundary({
   children,

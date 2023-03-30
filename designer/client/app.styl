@@ -5,8 +5,8 @@ html,
 body
   margin: 0
   padding: 0
-  width: 100%
-  height: 100%
+  height: 100vh
+  background: graphBkgColor
   color: defaultTextColor
   // Material-UI uses rem units for the font size.
   // Revert (changed by bootstrap) the browser <html> element default font size.
@@ -14,21 +14,8 @@ body
   overflow: hidden
 
 #root
-  width: 100%
-  height: 100%
-
-ul.breadcrumbs-list
-  margin: 0
-  padding: 0
-  li
-    display: inline-block
-    margin-right: 20px
-    a:not(.breadcrumb-active)
-      font-weight: bold
-      margin-right: 20px
-    a.breadcrumb-active
-        text-decoration: none
-        cursor: default
+  height: 100vh
+  display: flex
 
 .container-fluid
   padding-left: containerPadding

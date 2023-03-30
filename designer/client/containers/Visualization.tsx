@@ -1,6 +1,6 @@
 import {useDispatch, useSelector} from "react-redux"
 import {getFetchedProcessDetails, getGraph} from "../reducers/selectors/graph"
-import {defaultsDeep, isEmpty} from "lodash"
+import {isEmpty} from "lodash"
 import {getProcessDefinitionData} from "../reducers/selectors/settings"
 import {getCapabilities} from "../reducers/selectors/other"
 import {GraphPage} from "./Page"
@@ -8,8 +8,6 @@ import {useRouteLeavingGuard} from "../components/RouteLeavingGuard"
 import {GraphProvider} from "../components/graph/GraphContext"
 import SelectionContextProvider from "../components/graph/SelectionContextProvider"
 import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
-import {NkThemeProvider} from "./theme"
-import {darkTheme} from "./darkTheme"
 import Toolbars from "../components/toolbars/Toolbars"
 import SpinnerWrapper from "../components/SpinnerWrapper"
 import {ProcessGraph as GraphEl} from "../components/graph/ProcessGraph"
@@ -27,6 +25,8 @@ import {Process} from "../types"
 import {fetchVisualizationData} from "../actions/nk/fetchVisualizationData"
 import {clearProcess, loadProcessState} from "../actions/nk/process"
 import {fetchAndDisplayProcessCounts} from "../actions/nk/displayProcessCounts"
+import {HTML5Backend} from "react-dnd-html5-backend"
+import {DndProvider} from "react-dnd"
 
 function useUnmountCleanup() {
   const {close} = useWindows()
@@ -157,20 +157,20 @@ function Visualization() {
 
   return (
     <ErrorHandler>
-      <GraphPage data-testid="graphPage">
-        <GraphProvider graph={getGraphInstance}>
-          <SelectionContextProvider pastePosition={getPastePosition}>
-            <BindKeyboardShortcuts/>
-            <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
+      <DndProvider backend={HTML5Backend}>
+        <GraphPage data-testid="graphPage">
+          <GraphProvider graph={getGraphInstance}>
+            <SelectionContextProvider pastePosition={getPastePosition}>
+              <BindKeyboardShortcuts/>
               <Toolbars isReady={dataResolved}/>
-            </NkThemeProvider>
-          </SelectionContextProvider>
-        </GraphProvider>
+            </SelectionContextProvider>
+          </GraphProvider>
 
-        <SpinnerWrapper isReady={!graphNotReady}>
-          {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities}/>}
-        </SpinnerWrapper>
-      </GraphPage>
+          <SpinnerWrapper isReady={!graphNotReady}>
+            {isEmpty(processDefinitionData) ? null : <GraphEl ref={graphRef} capabilities={capabilities}/>}
+          </SpinnerWrapper>
+        </GraphPage>
+      </DndProvider>
     </ErrorHandler>
   )
 }

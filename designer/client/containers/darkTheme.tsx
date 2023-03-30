@@ -1,5 +1,7 @@
 import vars from "../stylesheets/darkColors.styl"
 import {NkTheme, tintPrimary} from "./theme"
+import {defaultsDeep} from "lodash"
+import {defaultAppTheme} from "./defaultAppTheme"
 
 const {borderRadius, marginSize} = vars
 
@@ -37,15 +39,18 @@ const selectColors = {
   neutral90: colors.secondaryColor,
 }
 
-export const darkTheme: NkTheme = {
-  themeClass: vars.darkTheme,
-  borderRadius: parseFloat(borderRadius),
-  spacing: {
-    controlHeight: 36,
-    baseUnit: 4,
+export const darkTheme: NkTheme = defaultsDeep(
+  {
+    themeClass: vars.darkTheme,
+    borderRadius: parseFloat(borderRadius),
+    spacing: {
+      controlHeight: 36,
+      baseUnit: 4,
+    },
+    colors: {
+      ...selectColors,
+      ...colors,
+    },
   },
-  colors: {
-    ...selectColors,
-    ...colors,
-  },
-}
+  defaultAppTheme
+)
