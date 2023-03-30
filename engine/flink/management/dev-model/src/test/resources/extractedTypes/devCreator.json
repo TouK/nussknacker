@@ -11652,6 +11652,157 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "org.slf4j.event.Level"},
+    "methods": {
+      "compareTo": [
+        {
+          "name": "compareTo",
+          "signature": {
+            "noVarArgs": [
+              {
+                "name": "arg0",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.lang.Enum"
+                }
+              }
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        },
+        {
+          "name": "compareTo",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "name": [
+        {
+          "name": "name",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "ordinal": [
+        {
+          "name": "ordinal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toInt": [
+        {
+          "name": "toInt",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {
+      "DEBUG": [
+        {
+          "name": "DEBUG",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "org.slf4j.event.Level"}
+          }
+        }
+      ],
+      "ERROR": [
+        {
+          "name": "ERROR",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "org.slf4j.event.Level"}
+          }
+        }
+      ],
+      "INFO": [
+        {
+          "name": "INFO",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "org.slf4j.event.Level"}
+          }
+        }
+      ],
+      "TRACE": [
+        {
+          "name": "TRACE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "org.slf4j.event.Level"}
+          }
+        }
+      ],
+      "WARN": [
+        {
+          "name": "WARN",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "org.slf4j.event.Level"}
+          }
+        }
+      ],
+      "valueOf": [
+        {
+          "name": "valueOf",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "org.slf4j.event.Level"}
+          }
+        }
+      ],
+      "values": [
+        {
+          "name": "values",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "Level",
+                  "params": [],
+                  "refClazzName": "org.slf4j.event.Level",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "[Ljava.lang.Object;"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.api.typed.TypedMap"},
     "methods": {
       "containsKey": [
