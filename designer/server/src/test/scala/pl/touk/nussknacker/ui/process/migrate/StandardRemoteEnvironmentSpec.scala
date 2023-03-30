@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{emptySubprocess, toValidatedDisplayable}
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{emptySubprocess, toValidatedDisplayable, validProcess}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
@@ -22,6 +22,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import io.circe.parser
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -195,19 +196,27 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
   }
 
-  it should "not migrate existing scenario when archived in target environment" in {
-    var migrated: Option[Future[UpdateProcessCommand]] = None
-    val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
-      ProcessTestData.validProcess.id,
-      ProcessTestData.archivedValidProcessDetails.processCategory,
-      ProcessTestData.archivedValidProcessDetails.id :: Nil,
-      migrationFuture => migrated = Some(migrationFuture)
-    )
+  it should "not migrate existing scenario when archived on target environment" in {
 
-    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
+    val validArchivedProcess = ProcessTestData.archivedValidProcessDetails
+    val remoteEnvironment = new MockRemoteEnvironment {
+      private var remoteProcessList = validArchivedProcess.id :: Nil
+      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
+        if (path.toString().startsWith(s"$baseUri/processes/${validArchivedProcess.id}") && method == HttpMethods.GET) {
+          Marshal(validArchivedProcess).to[RequestEntity].map { entity =>
+            HttpResponse(StatusCodes.OK, entity = entity)
+          }
+        } else {
+          throw new AssertionError(s"Not expected $path")
+        }
+      }
+    }
+    whenReady(
+      remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
+      val sth = result
       result shouldBe Symbol("left")
-      result.swap.toOption.get shouldBe MigrationValidationError(ValidationErrors(Map.empty, List.empty, List.empty))
-      result.swap.toOption.get.getMessage shouldBe "Cannot migrate, following errors occurred: scenario is archived on target environment"
+      result.swap.toOption.get shouldBe MigrationToArchivedError(ProcessName(validProcess.id), remoteEnvironment.environmentId)
+      result.swap.toOption.get.getMessage shouldBe "Cannot migrate, scenario fooProcess is archived on testEnv."
     }
   }
 

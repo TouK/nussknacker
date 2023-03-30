@@ -49,6 +49,10 @@ case class MigrationValidationError(errors: ValidationErrors) extends EspError {
   }
 }
 
+case class MigrationToArchivedError(processName: ProcessName, environment: String) extends EspError {
+  def getMessage = s"Cannot migrate, scenario ${processName.value} is archived on $environment."
+}
+
 case class HttpRemoteEnvironmentConfig(user: String, password: String, targetEnvironmentId: String,
                                        remoteConfig: StandardRemoteEnvironmentConfig)
 
@@ -100,14 +104,25 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   override def migrate(localProcess: DisplayableProcess, category: String)
                       (implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]] = {
     (for {
+      _ <- isArchivedOnTargetEnv(localProcess)
       validation <- EitherT(validateProcess(localProcess))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
       _ <- createRemoteProcessIfNotExist(localProcess, category)
-      //isArchivedOnTargetEnv
       _ <- EitherT.right[EspError](saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")))
     } yield ()).value
   }
 
+  private def isArchivedOnTargetEnv(localProcess: DisplayableProcess)
+                                   (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
+    for {
+      remoteProcessDetails <- EitherT(fetchProcessDetails(localProcess.id))
+      result <- EitherT.fromEither[Future](
+        if (remoteProcessDetails.isArchived)
+          Left[EspError, Unit](MigrationToArchivedError(localProcess.processName, environmentId))
+        else
+          Right(()))
+    } yield result
+  }
   private def createRemoteProcessIfNotExist(localProcess: DisplayableProcess, category: String)
                                            (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
     EitherT {
