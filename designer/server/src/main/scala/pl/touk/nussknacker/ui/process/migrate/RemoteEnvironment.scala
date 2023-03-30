@@ -104,10 +104,10 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   override def migrate(localProcess: DisplayableProcess, category: String)
                       (implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]] = {
     (for {
-      _ <- isArchivedOnTargetEnv(localProcess)
       validation <- EitherT(validateProcess(localProcess))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
       _ <- createRemoteProcessIfNotExist(localProcess, category)
+      _ <- isArchivedOnTargetEnv(localProcess)
       _ <- EitherT.right[EspError](saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")))
     } yield ()).value
   }
@@ -123,6 +123,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
           Right(()))
     } yield result
   }
+
   private def createRemoteProcessIfNotExist(localProcess: DisplayableProcess, category: String)
                                            (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
     EitherT {
