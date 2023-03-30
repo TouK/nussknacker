@@ -202,6 +202,9 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
     } yield mapper.findStatusForDeploymentsAndPods(deployments, pods)
   }
 
+  // FIXME
+  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] = ???
+
   private def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, nussknackerInstanceName: Option[String])
                               (data: Map[String, String], additionalLabels: Map[String, String] = Map.empty, overrideName: Option[String] = None): ConfigMap = {
     val scenario = canonicalProcess.asJson.spaces2

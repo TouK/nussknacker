@@ -252,7 +252,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   private def checkStateInDeploymentManager(deploymentManager: DeploymentManager, processDetails: BaseProcessDetails[_])
                                            (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     for {
-      state <- DBIOAction.from(getStateFromEngine(deploymentManager, processDetails.idWithName))
+      state <- DBIOAction.from(getStateFromEngine(deploymentManager, processDetails.idWithName, processDetails.lastAction))
       cancelActionOpt <- handleFinishedProcess(processDetails, state.value)
     } yield {
       val lastAction = cancelActionOpt.orElse(processDetails.lastAction)
@@ -269,14 +269,14 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }
   }
 
-  private def getStateFromEngine(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName)
+  private def getStateFromEngine(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastAction: Option[ProcessAction])
                                 (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
     lazy val failedToGetResult =
       WithDataFreshnessStatus(
         Option(SimpleProcessStateDefinitionManager.errorFailedToGet),
         cached = false)
 
-    val stateFromEngineFuture = deploymentManager.getProcessState(processIdWithName.name).recover {
+    val stateFromEngineFuture = deploymentManager.getProcessState(processIdWithName.name, lastAction).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
         failedToGetResult

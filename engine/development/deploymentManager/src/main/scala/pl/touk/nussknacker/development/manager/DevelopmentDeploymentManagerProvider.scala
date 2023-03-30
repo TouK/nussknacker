@@ -118,6 +118,9 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] =
     Future.successful(memory.get(name))
 
+  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] =
+    Future.successful(memory.get(name))
+
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
     Future.successful(SavepointResult(""))
 

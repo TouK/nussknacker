@@ -132,6 +132,9 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
     }
   }
 
+  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] =
+    getFreshProcessState(name)
+
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager
 
   override def close(): Unit = {

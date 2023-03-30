@@ -20,14 +20,23 @@ trait DeploymentManager extends AutoCloseable {
   //TODO: savepointPath is very flink specific, we should handle this mode via custom action
   /**
     * We assume that validate was already called and was successful
-    *  */
+    */
   def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
   def cancel(name: ProcessName, user: User): Future[Unit]
 
   def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]]
 
+  /**
+    * Gets status from the engine
+    */
   def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]]
+
+  /**
+    * Gets status from engine and resolves inconsistency with lastAction.
+    * ObsoleteStateDetector.handleObsoleteStatus
+    */
+  def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
@@ -49,6 +58,13 @@ trait AlwaysFreshProcessState { self: DeploymentManager =>
                                     (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
     getFreshProcessState(name).map(WithDataFreshnessStatus(_, cached = false))
 
+  final override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])
+                                    (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+    getFreshProcessState(name, lastAction).map(WithDataFreshnessStatus(_, cached = false))
+  }
+
   protected def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]]
+
+  protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]]
 
 }

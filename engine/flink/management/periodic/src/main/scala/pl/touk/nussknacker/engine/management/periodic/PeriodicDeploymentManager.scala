@@ -145,6 +145,9 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     } yield WithDataFreshnessStatus(formattedByPeriodicManager, delegateState.cached)
   }
 
+  // FIXME
+  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = ???
+
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     new PeriodicProcessStateDefinitionManager(delegate.processStateDefinitionManager)
 
