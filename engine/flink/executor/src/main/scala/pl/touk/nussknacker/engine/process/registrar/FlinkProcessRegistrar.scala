@@ -42,7 +42,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
   NOTE: We should try to use *ONLY* core Flink API here, to avoid version compatibility problems.
   Various NK-dependent Flink hacks should be, if possible, placed in StreamExecutionEnvPreparer.
  */
-class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, DeploymentData, ResultCollector) => (UsedNodes, ClassLoader) => FlinkProcessCompilerData,
+class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, ResultCollector) => (UsedNodes, ClassLoader) => FlinkProcessCompilerData,
                             streamExecutionEnvPreparer: StreamExecutionEnvPreparer) extends LazyLogging {
 
   import FlinkProcessRegistrar._
@@ -54,7 +54,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       //TODO: move creation outside Registrar, together with refactoring SinkInvocationCollector...
       val collector = testRunId.map(new TestServiceInvocationCollector(_)).getOrElse(ProductionServiceInvocationCollector)
 
-      val processCompilation = compileProcess(process, processVersion, deploymentData, collector)
+      val processCompilation = compileProcess(process, processVersion, collector)
       val processWithDeps = processCompilation(UsedNodes.empty, userClassLoader)
 
       streamExecutionEnvPreparer.preRegistration(env, processWithDeps, deploymentData)

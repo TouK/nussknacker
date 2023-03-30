@@ -108,12 +108,12 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
       .map(_.validate(canonical))
       .sequence.fold(formatErrors, _ => ValidationResult.success)
 
-    val resolveResult = subprocessResolver.resolveSubprocesses(canonical, category) match {
+    val resolveResult = subprocessResolver.resolveSubprocesses(canonical, category, modelData.processConfig, modelData.modelClassLoader.classLoader) match {
       case Invalid(e) => formatErrors(e)
       case _ =>
         /* 1. We remove disabled nodes from canonical to not validate disabled nodes
            2. TODO: handle types when subprocess resolution fails... */
-        subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes, category) match {
+        subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes, category, modelData.processConfig, modelData.modelClassLoader.classLoader) match {
           case Valid(process) =>
             val validated = processValidator.validate(process)
             //FIXME: Validation errors for subprocess nodes are not properly handled by FE

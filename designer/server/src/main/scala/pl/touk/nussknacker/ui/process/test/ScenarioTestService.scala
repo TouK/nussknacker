@@ -74,7 +74,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
       canonical = toCanonicalProcess(displayableProcess)
       scenarioTestData <- testInfoProvider.prepareTestData(preliminaryScenarioTestData, canonical)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
-      testResults <- testExecutorService.testProcess(idWithName, canonical, displayableProcess.category, scenarioTestData, testResultsVariableEncoder)
+      testResults <- testExecutorService.testProcess(idWithName, canonical, displayableProcess.category, displayableProcess.processingType, scenarioTestData, testResultsVariableEncoder)
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
   }

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
+import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -21,7 +22,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor, SubprocessDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
@@ -1206,7 +1207,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
   }
 
   private def validateWithDef(process: CanonicalProcess, definitions: ProcessDefinition[ObjectWithMethodDef]): CompilationResult[Unit] = {
-    ProcessValidator.default(definitions, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator).validate(process)
+    val subprocessDefinitionExtractor = SubprocessDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    ProcessValidator.default(definitions, subprocessDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator).validate(process)
   }
 
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
@@ -10,9 +9,8 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, Proce
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
 import pl.touk.nussknacker.engine.process.async.DefaultAsyncExecutionConfigPreparer
@@ -44,14 +42,12 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
 
   def compileProcess(process: CanonicalProcess,
                      processVersion: ProcessVersion,
-                     deploymentData: DeploymentData,
                      resultCollector: ResultCollector,
                      userCodeClassLoader: ClassLoader): FlinkProcessCompilerData =
-    compileProcess(process, processVersion, deploymentData, resultCollector)(UsedNodes.empty, userCodeClassLoader)
+    compileProcess(process, processVersion, resultCollector)(UsedNodes.empty, userCodeClassLoader)
 
   def compileProcess(process: CanonicalProcess,
                      processVersion: ProcessVersion,
-                     deploymentData: DeploymentData,
                      resultCollector: ResultCollector)
                     (usedNodes: UsedNodes, userCodeClassLoader: ClassLoader): FlinkProcessCompilerData = {
     val processObjectDependencies = ProcessObjectDependencies(processConfig, objectNaming)
@@ -63,15 +59,14 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val asyncExecutionContextPreparer = creator.asyncExecutionContextPreparer(processObjectDependencies).getOrElse(
       processConfig.as[DefaultAsyncExecutionConfigPreparer]("asyncExecutionConfig")
     )
-    implicit val defaultAsync: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(asyncExecutionContextPreparer)
-
     val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(processObjectDependencies)
     val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
 
     val processDefinition = definitions(processObjectDependencies)
+    val subprocessDefinitionExtractor = SubprocessDefinitionExtractor(processConfig, userCodeClassLoader)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
-      ProcessCompilerData.prepare(process, processDefinition, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
+      ProcessCompilerData.prepare(process, processDefinition, subprocessDefinitionExtractor, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
 
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,

@@ -29,17 +29,6 @@ object Validations {
       ).mapN { (_, _, _) => () }
   }
 
-  def validateSubProcessParameters(definedParamNamesSet: Set[String],
-                                   usedParamNamesSet: Set[String])
-                                  (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
-    val validatedRedundant = validateRedundancy(definedParamNamesSet, usedParamNamesSet)
-    val validatedMissing = validateMissingness(definedParamNamesSet, usedParamNamesSet)
-
-    (validatedRedundant,
-      validatedMissing
-      ).mapN { (_, _) => () }
-  }
-
   private def validateRedundancy(definedParamNamesSet: Set[String],
                                  usedParamNamesSet: Set[String])
                                 (implicit nodeId: NodeId) = {
