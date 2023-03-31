@@ -125,8 +125,8 @@ const dateTimeFormatter: Formatter = {
 }
 
 const defaultFormatter: Formatter = {
-  encode: value => value,
-  decode: value => value,
+  decode: value => value.substring(1, value.length - 1).replace("\\'", "'"),
+  encode: value => "'" + value.replace("'", "\\'") + "'",
 }
 
 export const spelFormatters: Record<FormatterType, Formatter> = {
