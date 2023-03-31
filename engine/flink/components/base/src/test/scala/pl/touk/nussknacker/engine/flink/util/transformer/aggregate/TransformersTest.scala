@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess}
 
-import java.time.{Duration, OffsetDateTime}
+import java.time.{Duration, OffsetDateTime, ZoneId}
 import java.util
 import java.util.Arrays.asList
 import scala.jdk.CollectionConverters._
@@ -157,6 +157,24 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldBe List(3, 5)
   }
+
+  test("set tumbling aggregate") {
+    val id1 = ZoneId.of("Europe/Warsaw")
+    val id = "1"
+    val model = modelData(List(
+      TestRecordHours(id, 10, 1, "a"),
+      TestRecordHours(id, 11, 2, "b"),
+
+      TestRecordHours(id, 13, 5, "b"),
+      TestRecordHours(id, 14, 6, "b"),
+    ))
+    val testProcess = tumbling("#AGG.set",
+      "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
+
+    val aggregateVariables = runCollectOutputAggregate[Set[Number]](id, model, testProcess)
+    aggregateVariables shouldBe List(Set(1,2), Set(5), Set(6)).map(_.asJava)
+  }
+
 
   test("set tumbling aggregate - daily windows in GMT+03") {
     val id = "1"
