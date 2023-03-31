@@ -399,7 +399,6 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
     processDetails.lastAction shouldBe None
-    processDetails.isNotDeployed shouldBe true
   }
 
   test("Should return not deployed status for process with not found state - not deployed state") {
@@ -413,7 +412,6 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
     processDetails.lastAction shouldBe None
-    processDetails.isNotDeployed shouldBe true
   }
 
   test("Should return NotDeployed state for archived process with missing state") {
