@@ -38,8 +38,8 @@ After it started go to http://localhost:8080 and login using credentials: admin/
 REST endpoints of deployed scenarios will be exposed at `http://localhost:8181/scenario/<slug>`. Slug is defined in Properties, and by default it is scenario name.
 Be aware that some things (e.g. metrics) will not work, and this engine is not intended for production use.
 
-If you want to follow step-by-step via more complex tutorials, based on production ready engines, read one of quickstart guides for: [Streaming mode on Flink engine](https://nussknacker.io/documentation/quickstart/docker/)
-or [Streaming mode on Lite engine](https://nussknacker.io/documentation/quickstart/helm) or [Request-response mode on Lite engine](https://nussknacker.io/documentation/quickstart/helm-request-response)
+If you want to follow step-by-step via more complex tutorials, based on production ready engines, read one of quickstart guides for: [Streaming mode on Lite engine](https://nussknacker.io/documentation/quickstart/lite-streaming)
+or [Streaming mode on Flink engine](https://nussknacker.io/documentation/quickstart/flink) or [Request-response mode on Lite engine](https://nussknacker.io/documentation/quickstart/lite-request-response).
 
 ## Contact
 
