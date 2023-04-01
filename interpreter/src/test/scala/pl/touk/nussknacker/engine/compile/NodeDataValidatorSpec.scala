@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SubprocessOutput}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -374,8 +374,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
                        fragmentDefinition: CanonicalProcess = defaultFragmentDef,
                        aModelData: LocalModelData = modelData
                       ): ValidationResponse = {
-    val extractor = SubprocessDefinitionExtractor(aModelData.processConfig, getClass.getClassLoader)
-    val subprocessResolver = SubprocessResolver(Map(fragmentDefinition.id -> fragmentDefinition).get _, extractor)
+    val subprocessResolver = SubprocessResolver(List(fragmentDefinition))
     new NodeDataValidator(aModelData, subprocessResolver).validate(nodeData, ctx, branchCtxs, outgoingEdges)(MetaData("id", StreamMetaData()))
   }
 

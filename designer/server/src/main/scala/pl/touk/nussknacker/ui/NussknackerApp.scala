@@ -131,7 +131,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processChangeListener = ProcessChangeListenerLoader
       .loadListeners(getClass.getClassLoader, resolvedConfig, NussknackerServices(new PullProcessRepository(futureProcessRepository)))
 
-    val scenarioResolver = new ScenarioResolver(subprocessResolver, modelData.mapValues(_.processConfig), modelData.mapValues(_.modelClassLoader.classLoader))
+    val scenarioResolver = new ScenarioResolver(subprocessResolver)
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     val dmDispatcher = new DeploymentManagerDispatcher(managers, futureProcessRepository)
 

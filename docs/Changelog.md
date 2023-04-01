@@ -42,7 +42,7 @@
   SourceId and timestamp fields can be omitted from the test record and record field can be inlined. The simplified format works only for scenarios with only one source.
 * [#4161](https://github.com/TouK/nussknacker/pull/4161) Update most dependencies to latest versions  
 * [#4155](https://github.com/TouK/nussknacker/pull/4155) Stop adding response header 'cache-control: max-age=0'. Akka adds correct 'etag' and 'last-modified' headers, hence caching is secure. 
-* [#4117](https://github.com/TouK/nussknacker/pull/4117) Fragment parameters definition is now computed based on config. Thanks to that you can use `componentsUiConfig` setting to provide
+* [#4117](https://github.com/TouK/nussknacker/pull/4117)[#4202](https://github.com/TouK/nussknacker/pull/4202) Fragment parameters definition is now computed based on config. Thanks to that you can use `componentsUiConfig` setting to provide
   additional settings like parameter's validators or editors to fragments.
 
 1.8.1 (28 Feb 2023)

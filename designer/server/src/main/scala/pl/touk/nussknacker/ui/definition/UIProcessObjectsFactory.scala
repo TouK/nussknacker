@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -107,9 +107,9 @@ object UIProcessObjectsFactory {
   private def extractSubprocessInputs(subprocessesDetails: Set[SubprocessDetails],
                                       classLoader: ClassLoader,
                                       fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, FragmentObjectDefinition] = {
-    val definitionExtractor = new SubprocessDefinitionExtractor(fixedComponentsConfig.get, classLoader)
+    val definitionExtractor = new SubprocessComponentDefinitionExtractor(fixedComponentsConfig.get, classLoader)
     subprocessesDetails.map { details =>
-      val definition = definitionExtractor.extractSubprocessDefinition(details.canonical)
+      val definition = definitionExtractor.extractSubprocessComponentDefinition(details.canonical)
       val objectDefinition = new ObjectDefinition(definition.parameters, Typed[java.util.Map[String, Any]], Some(List(details.category)), definition.config)
       details.canonical.id -> FragmentObjectDefinition(objectDefinition, definition.outputNames)
     }.toMap

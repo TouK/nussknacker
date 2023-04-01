@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExc
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, SubprocessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.{DefaultExpressionId, branchParameterExpressionId}
@@ -60,7 +60,7 @@ object NodeCompiler {
 }
 
 class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
-                   subprocessDefinitionExtractor: SubprocessDefinitionExtractor,
+                   subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor,
                    objectParametersExpressionCompiler: ExpressionCompiler,
                    classLoader: ClassLoader,
                    resultCollector: ResultCollector,
