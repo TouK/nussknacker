@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.definition
 
 import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
@@ -21,7 +22,7 @@ import java.time.Duration
 import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
+class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with OptionValues {
 
   private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator,
@@ -53,53 +54,53 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
   }
 
   test("extract definition with generic params") {
-    val definition = processDefinition.customStreamTransformers("transformerWithGenericParam")._1
+    val definition = processDefinition.customStreamTransformers("transformerWithGenericParam")._1.asInstanceOf[StandardObjectWithMethodDef]
 
-    definition.objectDefinition.parameters should have size 1
-    definition.objectDefinition.parameters.head.typ shouldEqual Typed.fromDetailedType[List[String]]
+    definition.parameters should have size 1
+    definition.parameters.head.typ shouldEqual Typed.fromDetailedType[List[String]]
   }
 
   test("extract definition using ContextTransformation") {
-    processDefinition.customStreamTransformers("transformerReturningContextTransformationWithOutputVariable")._1.objectDefinition.hasNoReturn shouldBe false
-    processDefinition.customStreamTransformers("transformerReturningContextTransformationWithoutOutputVariable")._1.objectDefinition.hasNoReturn shouldBe true
+    processDefinition.customStreamTransformers("transformerReturningContextTransformationWithOutputVariable")._1.returnType shouldBe defined
+    processDefinition.customStreamTransformers("transformerReturningContextTransformationWithoutOutputVariable")._1.returnType shouldBe empty
   }
 
   test("extract validators based on editor") {
-    val definition = processDefinition.customStreamTransformers("transformerWithFixedValueParam")._1
+    val definition = processDefinition.customStreamTransformers("transformerWithFixedValueParam")._1.asInstanceOf[StandardObjectWithMethodDef]
 
-    definition.objectDefinition.parameters should have size 1
-    val parameter = definition.objectDefinition.parameters.head
+    definition.parameters should have size 1
+    val parameter = definition.parameters.head
     parameter.validators should contain (MandatoryParameterValidator)
     parameter.validators should contain (FixedValuesValidator(List(FixedExpressionValue("'foo'", "foo"), FixedExpressionValue("'bar'", "bar"))))
   }
 
   test("extract default value from annotation") {
-    val definition = processDefinition.customStreamTransformers("transformerWithDefaultValueForParameter")._1
+    val definition = processDefinition.customStreamTransformers("transformerWithDefaultValueForParameter")._1.asInstanceOf[StandardObjectWithMethodDef]
 
-    definition.objectDefinition.parameters should have size 1
-    val parameter = definition.objectDefinition.parameters.head
+    definition.parameters should have size 1
+    val parameter = definition.parameters.head
     parameter.defaultValue shouldEqual Some(Expression.spel("'foo'"))
   }
 
   test("default value from annotation should have higher priority than optionality") {
-    val definition = processDefinition.customStreamTransformers("transformerWithOptionalDefaultValueForParameter")._1
+    val definition = processDefinition.customStreamTransformers("transformerWithOptionalDefaultValueForParameter")._1.asInstanceOf[StandardObjectWithMethodDef]
 
-    definition.objectDefinition.parameters should have size 1
-    val parameter = definition.objectDefinition.parameters.head
+    definition.parameters should have size 1
+    val parameter = definition.parameters.head
     parameter.defaultValue shouldEqual Some(Expression.spel("'foo'"))
   }
 
   test("extract definition with branch params") {
-    val definition = processDefinition.customStreamTransformers("transformerWithBranchParam")._1
+    val definition = processDefinition.customStreamTransformers("transformerWithBranchParam")._1.asInstanceOf[StandardObjectWithMethodDef]
 
-    definition.objectDefinition.parameters should have size 2
+    definition.parameters should have size 2
 
-    val lazyParam = definition.objectDefinition.parameters.head
+    val lazyParam = definition.parameters.head
     lazyParam.branchParam shouldBe true
     lazyParam.isLazyParameter shouldBe true
     lazyParam.typ shouldEqual Typed[Integer]
 
-    val eagerParam = definition.objectDefinition.parameters.apply(1)
+    val eagerParam = definition.parameters.apply(1)
     eagerParam.branchParam shouldBe true
     eagerParam.isLazyParameter shouldBe false
     eagerParam.typ shouldEqual Typed[Integer]
@@ -110,7 +111,7 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
 
     val helperDef = definition("helper")
     helperDef.obj shouldBe SampleHelper
-    helperDef.returnType shouldBe Typed(SampleHelper.getClass)
+    helperDef.returnType.value shouldBe Typed(SampleHelper.getClass)
   }
 
   test("extract typed global variable") {
@@ -118,11 +119,12 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
 
     val typedGlobalDef = definition("typedGlobal")
     typedGlobalDef.obj shouldBe SampleTypedVariable
-    typedGlobalDef.returnType shouldBe Typed(classOf[Int])
+    typedGlobalDef.returnType.value shouldBe Typed(classOf[Int])
   }
 
   test("extracts validators from config") {
-    val parameter = processDefinition.customStreamTransformers("transformer1")._1.parameters.find(_.name == "param1")
+    val definition = processDefinition.customStreamTransformers("transformer1")._1.asInstanceOf[StandardObjectWithMethodDef]
+    val parameter = definition.parameters.find(_.name == "param1")
     parameter.map(_.validators) shouldBe Some(List(MandatoryParameterValidator, RegExpParameterValidator(".*", "has to match...", "really has to match...")))
   }
 

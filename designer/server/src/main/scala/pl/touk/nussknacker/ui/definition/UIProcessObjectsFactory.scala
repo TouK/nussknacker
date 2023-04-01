@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.{SubprocessComponentDefinitionExtractor, ToStaticObjectDefinitionTransformer}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -36,7 +36,8 @@ object UIProcessObjectsFactory {
                               processingType: String): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
-    val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] = modelDataForType.processDefinition
+    val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] =
+      modelDataForType.processWithObjectsDefinition.transform(ToStaticObjectDefinitionTransformer.toStaticObjectDefinition)
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
@@ -110,7 +111,7 @@ object UIProcessObjectsFactory {
     val definitionExtractor = new SubprocessComponentDefinitionExtractor(fixedComponentsConfig.get, classLoader)
     subprocessesDetails.map { details =>
       val definition = definitionExtractor.extractSubprocessComponentDefinition(details.canonical)
-      val objectDefinition = new ObjectDefinition(definition.parameters, Typed[java.util.Map[String, Any]], Some(List(details.category)), definition.config)
+      val objectDefinition = ObjectDefinition(definition.parameters, Some(Typed[java.util.Map[String, Any]]), Some(List(details.category)), definition.config)
       details.canonical.id -> FragmentObjectDefinition(objectDefinition, definition.outputNames)
     }.toMap
   }
@@ -120,7 +121,7 @@ object UIProcessObjectsFactory {
   def createUIObjectDefinition(objectDefinition: ObjectDefinition, processCategoryService: ProcessCategoryService): UIObjectDefinition = {
     UIObjectDefinition(
       parameters = objectDefinition.parameters.map(createUIParameter),
-      returnType = if (objectDefinition.hasNoReturn) None else Some(objectDefinition.returnType),
+      returnType = objectDefinition.returnType,
       categories = objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
       componentConfig = objectDefinition.componentConfig
     )
@@ -130,7 +131,7 @@ object UIProcessObjectsFactory {
     UIFragmentObjectDefinition(
       parameters = fragmentObjectDefinition.objectDefinition.parameters.map(createUIParameter),
       outputParameters = fragmentObjectDefinition.outputsDefinition,
-      returnType = if (fragmentObjectDefinition.objectDefinition.hasNoReturn) None else Some(fragmentObjectDefinition.objectDefinition.returnType),
+      returnType = fragmentObjectDefinition.objectDefinition.returnType,
       categories = fragmentObjectDefinition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
       componentConfig = fragmentObjectDefinition.objectDefinition.componentConfig
     )
@@ -143,16 +144,16 @@ object UIProcessObjectsFactory {
     def createUIObjectDef(objDef: ObjectDefinition) = createUIObjectDefinition(objDef, processCategoryService)
     def createUIFragmentObjectDef(objDef: FragmentObjectDefinition) = createUIFragmentObjectDefinition(objDef, processCategoryService)
 
-    val uiProcessDefinition = UIProcessDefinition(
-      services = processDefinition.services.mapValuesNow(createUIObjectDef),
-      sourceFactories = processDefinition.sourceFactories.mapValuesNow(createUIObjectDef),
-      sinkFactories = processDefinition.sinkFactories.mapValuesNow(createUIObjectDef),
+    val transformed = processDefinition.transform(createUIObjectDef)
+    UIProcessDefinition(
+      services = transformed.services,
+      sourceFactories = transformed.sourceFactories,
+      sinkFactories = transformed.sinkFactories,
       subprocessInputs = subprocessInputs.mapValuesNow(createUIFragmentObjectDef),
-      customStreamTransformers = processDefinition.customStreamTransformers.mapValuesNow(e => createUIObjectDef(e._1)),
-      globalVariables = processDefinition.expressionConfig.globalVariables.mapValuesNow(createUIObjectDef),
+      customStreamTransformers = transformed.customStreamTransformers.mapValuesNow(_._1),
+      globalVariables = transformed.expressionConfig.globalVariables,
       typesInformation = types
     )
-    uiProcessDefinition
   }
 
   def createUIParameter(parameter: Parameter): UIParameter = {

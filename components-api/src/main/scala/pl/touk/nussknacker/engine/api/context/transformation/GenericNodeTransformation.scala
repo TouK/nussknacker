@@ -21,7 +21,8 @@ import scala.util.control.NonFatal
      - for sinks OutputVariable is not handled, result ValidationContext will be ignored
      - for sources OutputVariable *has* to be used for Flink sources, it's value is always equal to 'input' ATM, due to source API limitations
  */
-trait GenericNodeTransformation[T] {
+// TODO: rename to DynamicComponent
+sealed trait GenericNodeTransformation[T] {
 
   //ValidationContext for single input, Map[String, ValidationContext] for joins
   type InputContext

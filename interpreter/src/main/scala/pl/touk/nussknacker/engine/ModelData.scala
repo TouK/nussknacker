@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
@@ -88,24 +87,22 @@ trait ModelData extends BaseModelData with AutoCloseable {
       ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, ProcessObjectDependencies(processConfig, objectNaming))
     }
 
-  lazy val processDefinition: ProcessDefinition[ObjectDefinition] = ProcessDefinitionExtractor.toObjectDefinition(processWithObjectsDefinition)
-
   lazy val subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor = SubprocessComponentDefinitionExtractor(this)
 
   lazy val typeDefinitions: Set[TypeInfos.ClazzDefinition] = ProcessDefinitionExtractor.extractTypes(processWithObjectsDefinition)
 
   // We can create dict services here because ModelData is fat object that is created once on start
   lazy val dictServices: UiDictServices =
-    DictServicesFactoryLoader.justOne(modelClassLoader.classLoader).createUiDictServices(processDefinition.expressionConfig.dictionaries, processConfig)
+    DictServicesFactoryLoader.justOne(modelClassLoader.classLoader).createUiDictServices(processWithObjectsDefinition.expressionConfig.dictionaries, processConfig)
 
   def customProcessValidator: CustomProcessValidator = {
     CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, processConfig)
   }
 
-  def prepareValidatorForCategory(category: Option[String]): ProcessValidator = {
+  def prepareValidatorForCategory(categoryOpt: Option[String]): ProcessValidator = {
     ProcessValidator.
       default(
-        category.map(processWithObjectsDefinition.forCategory).getOrElse(processWithObjectsDefinition),
+        categoryOpt.map(category => processWithObjectsDefinition.filter(_.availableForCategory(category))).getOrElse(processWithObjectsDefinition),
         subprocessDefinitionExtractor,
         dictServices.dictRegistry,
         customProcessValidator,

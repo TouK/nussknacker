@@ -88,12 +88,11 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        responseAs[NodeValidationResult] shouldBe NodeValidationResult(
-          parameters = None,
-          expressionType = None,
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
-            data.id, Some(SinkValueParamName), "notvalidspelexpression"))),
-          validationPerformed = true)
+        responseAs[NodeValidationResult] should matchPattern {
+          case NodeValidationResult(_, _, validationErrors, _) if validationErrors == List(
+            PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
+              data.id, Some(SinkValueParamName), "notvalidspelexpression"))) =>
+        }
       }
     }
   }

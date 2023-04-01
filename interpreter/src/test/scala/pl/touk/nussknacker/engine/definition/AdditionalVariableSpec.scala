@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.compile.SubprocessResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.StandardObjectWithMethodDef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -46,7 +47,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
   private def definition(sourceFactory: SourceFactory): List[Parameter] = {
     ProcessDefinitionExtractor
       .extractObjectWithMethods(new CreatorWithComponent(sourceFactory), ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming))
-      .sourceFactories.head._2.parameters
+      .sourceFactories.head._2.asInstanceOf[StandardObjectWithMethodDef].parameters
   }
 
   class CorrectService extends SourceFactory {

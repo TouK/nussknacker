@@ -73,21 +73,21 @@ object ProcessTestData {
     )
     .withService(existingServiceId)
     .withService(otherExistingServiceId)
-    .withService(processorId, classOf[Void])
+    .withService(processorId, None)
     .withService(otherExistingServiceId2, Parameter[Any]("expression"))
     .withService(otherExistingServiceId3, Parameter[String]("expression"))
-    .withService(notBlankExistingServiceId, NotBlankParameter("expression", Typed.typedClass(classOf[String])))
+    .withService(notBlankExistingServiceId, NotBlankParameter("expression", Typed[String]))
     .withService(otherExistingServiceId4, Parameter[JavaSampleEnum]("expression").copy(
       editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
       validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a")))))
     )
-    .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(
+    .withCustomStreamTransformer(existingStreamTransformer, Some(Typed[String]), CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(
+    .withCustomStreamTransformer(otherExistingStreamTransformer, Some(Typed[String]), CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(
+    .withCustomStreamTransformer(otherExistingStreamTransformer2, Some(Typed[String]), CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(optionalEndingStreamTransformer, classOf[String], CustomTransformerAdditionalData(
+    .withCustomStreamTransformer(optionalEndingStreamTransformer, Some(Typed[String]), CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = true))
 
   def processValidation: ProcessValidation = ProcessValidation(

@@ -4,10 +4,9 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.context.OutputVar
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.{ContextId, MetaData, Service, ServiceInvoker}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.UnionDefinitionExtractor
-import pl.touk.nussknacker.engine.api.NodeId
 
 import java.util.concurrent.{CompletionStage, Executor}
 import scala.compat.java8.FutureConverters
@@ -24,7 +23,7 @@ private[definition] class ServiceInvokerImpl(metaData: MetaData,
                                                        collector: ServiceInvocationCollector,
                                                        contextId: ContextId,
                                                        componentUseCase: ComponentUseCase): Future[AnyRef] = {
-    objectWithMethodDef.invokeMethod(params,
+    objectWithMethodDef.implementationInvoker.invokeMethod(params,
       outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
       additional = Seq(ec, collector, metaData, nodeId, contextId, componentUseCase)
     ).asInstanceOf[Future[AnyRef]]
@@ -43,7 +42,7 @@ private[definition] class JavaServiceInvokerImpl(metaData: MetaData,
                                                        collector: ServiceInvocationCollector,
                                                        contextId: ContextId,
                                                        componentUseCase: ComponentUseCase): Future[AnyRef] = {
-    val result = objectWithMethodDef.invokeMethod(params,
+    val result = objectWithMethodDef.implementationInvoker.invokeMethod(params,
       outputVariableNameOpt = outputVariableNameOpt.map(_.outputName),
       additional = Seq(ec, collector, metaData, nodeId, contextId, componentUseCase)
     )
@@ -64,7 +63,7 @@ object DefaultServiceInvoker {
   def apply(metaData: MetaData,
             nodeId: NodeId,
             outputVariableNameOpt: Option[OutputVar],
-            objectWithMethodDef: ObjectWithMethodDef): ServiceInvoker = {
+            objectWithMethodDef: StandardObjectWithMethodDef): ServiceInvoker = {
     val detectedRuntimeClass = objectWithMethodDef.runtimeClass
     if (classOf[Future[_]].isAssignableFrom(detectedRuntimeClass))
       new ServiceInvokerImpl(metaData, nodeId, outputVariableNameOpt, objectWithMethodDef)

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.process
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentId
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.graph.node._
@@ -41,7 +40,7 @@ object ProcessObjectsFinder {
         )
       }
 
-  def componentIds(processDefinitions: List[ProcessDefinition[ObjectDefinition]], subprocessIds: List[String]): List[String] = {
+  def componentIds(processDefinitions: List[ProcessDefinition[_]], subprocessIds: List[String]): List[String] = {
     val ids = processDefinitions.flatMap(_.componentIds)
     (ids ++ subprocessIds).distinct.sortCaseInsensitive
   }

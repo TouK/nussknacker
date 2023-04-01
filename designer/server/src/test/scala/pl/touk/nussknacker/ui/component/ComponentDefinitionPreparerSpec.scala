@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -120,7 +121,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   test("return default value defined in parameter") {
     val defaultValueExpression = Expression("fooLang", "'fooDefault'")
     val parameter = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValueExpression))
-    val definition = ProcessDefinitionBuilder.empty.withCustomStreamTransformer("fooTransformer", classOf[Object],
+    val definition = ProcessDefinitionBuilder.empty.withCustomStreamTransformer("fooTransformer", Some(Unknown),
       CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true), parameter)
 
     val groups = prepareGroups(Map.empty, Map.empty, definition)

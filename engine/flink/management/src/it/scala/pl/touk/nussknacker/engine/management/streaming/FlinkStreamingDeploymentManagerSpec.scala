@@ -200,7 +200,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
   test("extract scenario definition") {
     val modelData = ModelData(processingTypeConfig)
-    val definition = modelData.processDefinition
+    val definition = modelData.processWithObjectsDefinition
     definition.services should contain key "accountService"
   }
 

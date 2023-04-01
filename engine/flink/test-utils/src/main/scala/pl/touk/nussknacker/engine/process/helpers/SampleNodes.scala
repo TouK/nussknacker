@@ -408,10 +408,10 @@ object SampleNodes {
 
   class ThrowingService(exception: Exception) extends Service {
     @MethodToInvoke
-    def invoke(@ParamName("throw") throwing: Boolean): Future[Unit] = {
+    def invoke(@ParamName("throw") throwing: Boolean): Future[String] = {
       if (throwing) {
         Future.failed(exception)
-      } else  Future.successful(())
+      } else  Future.successful("")
     }
   }
 

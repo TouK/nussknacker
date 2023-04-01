@@ -33,7 +33,7 @@ object validationHelpers {
 
   object SimpleStringService extends Service {
     @MethodToInvoke
-    def invoke(@ParamName("stringParam") param: String): Future[Unit] = ???
+    def invoke(@ParamName("stringParam") param: String): Future[String] = ???
   }
 
   object Enricher extends Service {
