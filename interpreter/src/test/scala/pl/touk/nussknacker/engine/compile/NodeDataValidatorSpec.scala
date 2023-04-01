@@ -374,8 +374,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
                        fragmentDefinition: CanonicalProcess = defaultFragmentDef,
                        aModelData: LocalModelData = modelData
                       ): ValidationResponse = {
-    val extractor = SubprocessDefinitionExtractor(aModelData.processConfig, getClass.getClassLoader)
-    val subprocessResolver = SubprocessResolver(Map(fragmentDefinition.id -> fragmentDefinition).get _, extractor)
+    val subprocessResolver = SubprocessResolver(List(fragmentDefinition))
     new NodeDataValidator(aModelData, subprocessResolver).validate(nodeData, ctx, branchCtxs, outgoingEdges)(MetaData("id", StreamMetaData()))
   }
 

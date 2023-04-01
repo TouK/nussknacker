@@ -60,9 +60,7 @@ object TestFactory extends TestPermissions{
 
   def sampleResolver = new SubprocessResolver(prepareSampleSubprocessRepository)
 
-  def scenarioResolver = new ScenarioResolver(sampleResolver,
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ConfigFactory.empty()),
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> getClass.getClassLoader))
+  def scenarioResolver = new ScenarioResolver(sampleResolver)
 
   def deploymentService() = new StubDeploymentService(Map.empty)
 

@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.definition
 import cats.Id
 import cats.data.Validated.{invalid, valid}
 import cats.data.{NonEmptyList, ValidatedNel, WriterT}
-import cats.implicits.{toFoldableOps, toTraverseOps}
+import cats.implicits.toTraverseOps
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MultipleOutputsForName, SubprocessParamClassLoadError}
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypingResult, Unknown}
@@ -24,7 +24,25 @@ import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtra
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Join, SubprocessInput, SubprocessInputDefinition, SubprocessOutputDefinition}
 
-class SubprocessDefinitionExtractor(componentConfig: String => Option[SingleComponentConfig], classLoader: ClassLoader) {
+import scala.util.{Success, Try}
+
+class SubprocessDefinitionExtractor(getComponentConfig: String => Option[SingleComponentConfig], classLoader: ClassLoader) extends BaseSubprocessDefinitionExtractor {
+
+  override protected def componentConfig(componentId: String): Option[SingleComponentConfig] = getComponentConfig(componentId)
+
+  override protected def toType(clazzRef: SubprocessClazzRef): Try[TypingResult] = clazzRef.toRuntimeClass(classLoader).map(Typed(_))
+
+}
+
+// Zero-dependency implementation that returns "inaccurate" parameters of subprocess with dumb Parameter's
+object InaccurateSubprocessDefinitionExtractor extends BaseSubprocessDefinitionExtractor {
+  override protected def componentConfig(componentId: String): Option[SingleComponentConfig] = None
+
+  override protected def toType(clazzRef: SubprocessClazzRef): Try[TypingResult] = Success(Unknown)
+}
+
+
+abstract class BaseSubprocessDefinitionExtractor {
 
   def extractSubprocessDefinition(subprocess: CanonicalProcess): SubprocessDefinition = {
     subprocess.allStartNodes.collectFirst {
@@ -51,17 +69,19 @@ class SubprocessDefinitionExtractor(componentConfig: String => Option[SingleComp
       .mapWritten(_.map(data => SubprocessParamClassLoadError(data.fieldName, data.refClazzName, nodeId.id)))
   }
 
-  private def toParameter(componentConfig: SingleComponentConfig)(p: SubprocessParameter): WriterT[Id, List[SubprocessParamClassLoadErrorData], Parameter] = {
-    val runtimeClass = p.typ.toRuntimeClass(classLoader)
-    val paramName = p.name
+  protected def componentConfig(componentId: String): Option[SingleComponentConfig]
 
-    runtimeClass.map(Typed(_))
+  private def toParameter(componentConfig: SingleComponentConfig)(p: SubprocessParameter): WriterT[Id, List[SubprocessParamClassLoadErrorData], Parameter] = {
+    val paramName = p.name
+    toType(p.typ)
       .map(WriterT.value[Id, List[SubprocessParamClassLoadErrorData], TypingResult])
       .getOrElse(WriterT
         .value[Id, List[SubprocessParamClassLoadErrorData], TypingResult](Unknown)
         .tell(List(SubprocessParamClassLoadErrorData(paramName, p.typ.refClazzName)))
       ).map(toParameter(componentConfig, paramName, _))
   }
+
+  protected def toType(clazzRef: SubprocessClazzRef): Try[TypingResult]
 
   private def toParameter(componentConfig: SingleComponentConfig, paramName: String, typ: typing.TypingResult) = {
     val config = componentConfig.params.flatMap(_.get(paramName)).getOrElse(ParameterConfig.empty)

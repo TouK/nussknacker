@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.server.Route
 import cats.data.OptionT
 import cats.instances.future._
-import cats.syntax.traverse._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.generic.JsonCodec

@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{DisabledNode, DuplicatedNodeIds, EmptyNodeId, InvalidCharacters, LooseNode, NonUniqueEdge, NonUniqueEdgeType, ScenarioPropertiesError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
@@ -108,12 +108,12 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
       .map(_.validate(canonical))
       .sequence.fold(formatErrors, _ => ValidationResult.success)
 
-    val resolveResult = subprocessResolver.resolveSubprocesses(canonical, category, modelData.processConfig, modelData.modelClassLoader.classLoader) match {
+    val resolveResult = subprocessResolver.resolveSubprocesses(canonical, category) match {
       case Invalid(e) => formatErrors(e)
       case _ =>
         /* 1. We remove disabled nodes from canonical to not validate disabled nodes
            2. TODO: handle types when subprocess resolution fails... */
-        subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes, category, modelData.processConfig, modelData.modelClassLoader.classLoader) match {
+        subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes, category) match {
           case Valid(process) =>
             val validated = processValidator.validate(process)
             //FIXME: Validation errors for subprocess nodes are not properly handled by FE
