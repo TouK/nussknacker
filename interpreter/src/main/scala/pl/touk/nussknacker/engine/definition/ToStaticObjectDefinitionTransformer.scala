@@ -17,7 +17,11 @@ import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichme
 // - We want to avoid flickering of parameters after first entering into the node
 // - Sometimes user want to just use the component without filling parameters with own data - in this case we want to make sure
 //   that parameters will be available in the scenario, even with a default values
-object ToStaticObjectDefinitionTransformer {
+class ToStaticObjectDefinitionTransformer(objectParametersExpressionCompiler: ExpressionCompiler,
+                                          expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
+                                          createScenarioInitialData: ProcessName => ScenarioSpecificData) extends LazyLogging {
+
+  private val nodeValidator = new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
 
   def toStaticObjectDefinition(objectWithMethodDef: ObjectWithMethodDef): ObjectDefinition = {
     objectWithMethodDef match {
@@ -29,14 +33,29 @@ object ToStaticObjectDefinitionTransformer {
   }
 
   private def determineInitialParameters(generic: GenericNodeTransformationMethodDef): List[Parameter] = {
+    def inferParameters(transformer: GenericNodeTransformation[_])(inputContext: transformer.InputContext) = {
+      // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
+      //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
+      val scenarioName = ProcessName("fakeScenarioName")
+      implicit val metaData: MetaData = MetaData(scenarioName.value, createScenarioInitialData(scenarioName), additionalFields = None)
+      implicit val nodeId: NodeId = NodeId("fakeNodeId")
+      nodeValidator
+        .validateNode(transformer, Nil, Nil, generic.returnType.map(_ => "fakeOutputVariable"), generic.componentConfig)(inputContext)
+        .map(_.parameters).valueOr { err =>
+          logger.warn(s"Errors during inferring of initial parameters for component: $transformer: ${err.toList.mkString(", ")}. Will be used empty list of parameters as a fallback")
+          // It is better to return empty list than throw an exception. User will have an option to open the node, validate node again
+          // and replace those parameters by the correct once
+          List.empty
+        }
+    }
+
     generic.obj match {
       case withStatic: WithStaticParameters =>
         StandardParameterEnrichment.enrichParameterDefinitions(withStatic.staticParameters, generic.componentConfig)
-      case j: JoinGenericNodeTransformation[_] =>
-        // TODO: currently branch parameters must be determined on node template level - aren't enriched dynamically during node validation
-        StandardParameterEnrichment.enrichParameterDefinitions(j.initialBranchParameters, generic.componentConfig)
-      case _ =>
-        List.empty
+      case single: SingleInputGenericNodeTransformation[_] =>
+        inferParameters(single)(ValidationContext())
+      case join: JoinGenericNodeTransformation[_] =>
+        inferParameters(join)(Map.empty)
     }
   }
 

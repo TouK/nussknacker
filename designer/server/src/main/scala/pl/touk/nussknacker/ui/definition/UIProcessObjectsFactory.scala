@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.ui.definition
 
-import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.generics
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.definition.{SubprocessComponentDefinitionExtra
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.{ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
@@ -28,6 +29,7 @@ object UIProcessObjectsFactory {
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               deploymentManager: DeploymentManager,
+                              typeSpecificInitialData: TypeSpecificInitialData,
                               user: LoggedUser,
                               subprocessesDetails: Set[SubprocessDetails],
                               isSubprocess: Boolean,
@@ -36,15 +38,24 @@ object UIProcessObjectsFactory {
                               processingType: String): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
-    val chosenProcessDefinition: ProcessDefinition[ObjectDefinition] =
-      modelDataForType.processWithObjectsDefinition.transform(ToStaticObjectDefinitionTransformer.toStaticObjectDefinition)
+    val toStaticObjectDefinitionTransformer = new ToStaticObjectDefinitionTransformer(
+      ExpressionCompiler.withoutOptimization(modelDataForType),
+      modelDataForType.processWithObjectsDefinition.expressionConfig,
+      typeSpecificInitialData.forScenario(_, processingType))
+
+    val processDefinition: ProcessDefinition[ObjectDefinition] = {
+      // We have to wrap this block with model's class loader because it invokes node compilation under the hood
+      modelDataForType.withThisAsContextClassLoader {
+        modelDataForType.processWithObjectsDefinition.transform(toStaticObjectDefinitionTransformer.toStaticObjectDefinition)
+      }
+    }
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = extractSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
-    val uiProcessDefinition = createUIProcessDefinition(chosenProcessDefinition, subprocessInputs, modelDataForType.typeDefinitions.map(prepareClazzDefinition), processCategoryService)
+    val uiProcessDefinition = createUIProcessDefinition(processDefinition, subprocessInputs, modelDataForType.typeDefinitions.map(prepareClazzDefinition), processCategoryService)
 
-    val customTransformerAdditionalData = chosenProcessDefinition.customStreamTransformers.mapValuesNow(_._2)
+    val customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2)
 
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
 
@@ -77,7 +88,7 @@ object UIProcessObjectsFactory {
       componentsConfig = finalComponentsConfig,
       additionalPropertiesConfig = additionalPropertiesConfigForUi,
       edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
-        processDefinition = chosenProcessDefinition,
+        processDefinition = processDefinition,
         isSubprocess = isSubprocess,
         subprocessesDetails = subprocessesDetails
       ),

@@ -29,7 +29,7 @@ class GlobalVariablesPreparer(globalVariablesWithMethodDef: Map[String, ObjectWi
   private def toGlobalVariable(objectWithMethodDef: ObjectWithMethodDef, metaData: MetaData): ObjectWithType = {
     objectWithMethodDef.obj match {
       case typedGlobalVariable: TypedGlobalVariable => ObjectWithType(typedGlobalVariable.value(metaData), typedGlobalVariable.returnType(metaData))
-      case _ => ObjectWithType(objectWithMethodDef.obj, objectWithMethodDef.returnType.getOrElse(throw new IllegalStateException("Global variable with empty return type")))
+      case _ => ObjectWithType(objectWithMethodDef.obj, objectWithMethodDef.returnType.getOrElse(throw new IllegalStateException("Global variable with empty return type.")))
     }
   }
 }
