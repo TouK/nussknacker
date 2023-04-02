@@ -106,14 +106,34 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     (for {
       validation <- EitherT(validateProcess(localProcess))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
-      _ <- createRemoteProcessIfNotExist(localProcess, category)
-      _ <- isArchivedOnTargetEnv(localProcess)
+      processExistsOnRemote <- checkIfProcessExistsOnRemote(localProcess)
+      _ <- if (processExistsOnRemote) {
+        isArchivedOnRemote(localProcess)
+      } else {
+        createRemoteProcess(localProcess, category)
+      }
       _ <- EitherT.right[EspError](saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")))
     } yield ()).value
   }
 
-  private def isArchivedOnTargetEnv(localProcess: DisplayableProcess)
-                                   (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
+  private def checkIfProcessExistsOnRemote(localProcess: DisplayableProcess)
+                                  (implicit ec: ExecutionContext): EitherT[Future, EspError, Boolean] = {
+    EitherT {
+      invokeStatus(HttpMethods.GET, List("processes", localProcess.id)).flatMap { status =>
+        Future.successful((status == StatusCodes.OK).asRight)
+      }
+    }
+  }
+
+  private def createRemoteProcess(localProcess: DisplayableProcess, category: String)
+                                 (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
+    EitherT {
+      invokeForSuccess(HttpMethods.POST, List("processes", localProcess.id, category), Query(("isSubprocess", localProcess.metaData.isSubprocess.toString)))
+    }
+  }
+
+  private def isArchivedOnRemote(localProcess: DisplayableProcess)
+                                (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
     for {
       remoteProcessDetails <- EitherT(fetchProcessDetails(localProcess.id))
       result <- EitherT.fromEither[Future](
@@ -122,18 +142,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         else
           Right(()))
     } yield result
-  }
-
-  private def createRemoteProcessIfNotExist(localProcess: DisplayableProcess, category: String)
-                                           (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
-    EitherT {
-      invokeStatus(HttpMethods.GET, List("processes", localProcess.id)).flatMap { status =>
-        if (status == StatusCodes.NotFound)
-          invokeForSuccess(HttpMethods.POST, List("processes", localProcess.id, category), Query(("isSubprocess", localProcess.metaData.isSubprocess.toString)))
-        else
-          Future.successful(().asRight)
-      }
-    }
   }
 
   override def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
