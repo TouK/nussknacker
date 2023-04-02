@@ -1,10 +1,18 @@
 package pl.touk.nussknacker.engine
 
-case class CombinedProcessingTypeData(x: String = "abc",
-                                      /* TODO: to be added in components service refactoring componentIdProvider: ComponentIdProvider */)
+import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService
+import pl.touk.nussknacker.ui.process.ProcessStateDefinitionService.StatusNameToStateDefinitionsMapping
+
+case class CombinedProcessingTypeData(statusNameToStateDefinitionsMapping: StatusNameToStateDefinitionsMapping,
+                                     )
 
 object CombinedProcessingTypeData {
 
-  def create(): CombinedProcessingTypeData = CombinedProcessingTypeData()
+  def create(processingTypes: Map[ProcessingType, ProcessingTypeData]): CombinedProcessingTypeData = {
+    CombinedProcessingTypeData(
+      statusNameToStateDefinitionsMapping = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypes),
+    )
+  }
 
 }

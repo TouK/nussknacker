@@ -39,8 +39,9 @@ object LocalNussknackerWithSingleModel  {
           val deploymentService: DeploymentService = getDeploymentService()
           implicit val processTypeDeploymentService: ProcessingTypeDeploymentService = new DefaultProcessingTypeDeploymentService(typeName, deploymentService)
           val data = ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig)
-          val combinedData = CombinedProcessingTypeData.create()
-          new MapBasedProcessingTypeDataProvider(Map(typeName -> data), combinedData)
+          val processingTypes = Map(typeName -> data)
+          val combinedData = CombinedProcessingTypeData.create(processingTypes)
+          new MapBasedProcessingTypeDataProvider(processingTypes, combinedData)
         })
       }
     }

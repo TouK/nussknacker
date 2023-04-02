@@ -31,8 +31,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
     // to assert the loaded configuration is correct (fail-fast approach).
-    ProcessStateDefinitionService.checkUnsafe(valueMap)
-    val combinedData = CombinedProcessingTypeData()
+    val combinedData = CombinedProcessingTypeData.create(valueMap)
 
     new MapBasedProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData](valueMap, combinedData)
   }

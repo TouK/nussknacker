@@ -104,7 +104,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val (typeToConfig, reload) = prepareProcessingTypeData(designerConfig, getDeploymentService, processCategoryService)
 
-    val stateDefinitionService = new ProcessStateDefinitionService(typeToConfig, processCategoryService)
+    val stateDefinitionService = new ProcessStateDefinitionService(typeToConfig.mapCombined(_.statusNameToStateDefinitionsMapping), processCategoryService)
 
     val analyticsConfig = AnalyticsConfig(resolvedConfig)
 
