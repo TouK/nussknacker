@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DeploymentManagerDispatcher(managers: ProcessingTypeDataProvider[DeploymentManager],
+class DeploymentManagerDispatcher(managers: ProcessingTypeDataProvider[DeploymentManager, _],
                                   processRepository: FetchingProcessRepository[Future]) {
 
   def deploymentManagerUnsafe(processId: ProcessId)

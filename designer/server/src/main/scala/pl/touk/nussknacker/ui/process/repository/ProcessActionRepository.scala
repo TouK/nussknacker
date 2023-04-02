@@ -29,11 +29,11 @@ trait ProcessActionRepository[F[_]] {
 }
 
 object DbProcessActionRepository {
-  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData])(implicit ec: ExecutionContext): DbProcessActionRepository[DB] =
+  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData, _])(implicit ec: ExecutionContext): DbProcessActionRepository[DB] =
     new DbProcessActionRepository[DB](dbConfig, modelData.mapValues(_.configCreator.buildInfo())) with DbioRepistory
 }
 
-abstract class DbProcessActionRepository[F[_]](val dbConfig: DbConfig, buildInfos: ProcessingTypeDataProvider[Map[String, String]]) (implicit ec: ExecutionContext)
+abstract class DbProcessActionRepository[F[_]](val dbConfig: DbConfig, buildInfos: ProcessingTypeDataProvider[Map[String, String], _]) (implicit ec: ExecutionContext)
 extends Repository[F] with EspTables with CommentActions with ProcessActionRepository[F] with LazyLogging {
 
   import profile.api._

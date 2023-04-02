@@ -22,7 +22,7 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
 
 }
 
-class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrations]) {
+class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrations, _]) {
 
   def migrateProcess(processDetails: ProcessDetails, skipEmptyMigrations: Boolean) : Option[MigrationResult] = {
     for {

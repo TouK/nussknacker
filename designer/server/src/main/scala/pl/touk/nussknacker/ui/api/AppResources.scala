@@ -29,7 +29,7 @@ import scala.util.control.NonFatal
 
 class AppResources(config: Config,
                    processingTypeDataReload: ProcessingTypeDataReload,
-                   modelData: ProcessingTypeDataProvider[ModelData],
+                   modelData: ProcessingTypeDataProvider[ModelData, _],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
                    deploymentService: DeploymentService,

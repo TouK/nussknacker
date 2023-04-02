@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
-import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -120,9 +120,9 @@ object TestFactory extends TestPermissions{
 
   def adminUser(id: String = "1", username: String = "admin"): LoggedUser = LoggedUser(id, username, Map.empty, Nil, isAdmin = true)
 
-  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*) = new MapBasedProcessingTypeDataProvider[T](Map(data: _*))
+  def mapProcessingTypeDataProvider[T](data: (ProcessingType, T)*): ProcessingTypeDataProvider[T, Nothing] = MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map(data: _*))
 
-  def emptyProcessingTypeDataProvider = new MapBasedProcessingTypeDataProvider[Nothing](Map.empty)
+  def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] = MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
 
   def createValidator(processDefinition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
     val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)

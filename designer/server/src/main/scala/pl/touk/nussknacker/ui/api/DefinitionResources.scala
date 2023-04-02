@@ -13,8 +13,8 @@ import pl.touk.nussknacker.ui.util.EspPathMatchers
 
 import scala.concurrent.ExecutionContext
 
-class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelData],
-                          processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
+class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelData, _],
+                          processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _],
                           subprocessRepository: SubprocessRepository,
                           processCategoryService: ProcessCategoryService)
                          (implicit ec: ExecutionContext)

@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessStateDefinitionService}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
@@ -20,7 +20,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
   def loadProcessingTypeData(config: ConfigWithUnresolvedVersion)(implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                                                   sttpBackend: SttpBackend[Future, Any],
                                                                   deploymentService: DeploymentService,
-                                                                  categoriesService: ProcessCategoryService): ProcessingTypeDataProvider[ProcessingTypeData] = {
+                                                                  categoriesService: ProcessCategoryService): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val types: Map[ProcessingType, ProcessingTypeConfig] = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val valueMap = types
       .filterKeysNow(categoriesService.getProcessingTypeCategories(_).nonEmpty)
@@ -32,8 +32,9 @@ trait ProcessingTypeDataReader extends LazyLogging {
     // Here all processing types are loaded and we are ready to perform additional configuration validations
     // to assert the loaded configuration is correct (fail-fast approach).
     ProcessStateDefinitionService.checkUnsafe(valueMap)
+    val combinedData = CombinedProcessingTypeData()
 
-    new MapBasedProcessingTypeDataProvider[ProcessingTypeData](valueMap)
+    new MapBasedProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData](valueMap, combinedData)
   }
 
   protected def createProcessingTypeData(name: ProcessingType, typeConfig: ProcessingTypeConfig)

@@ -46,7 +46,7 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 class NodesResources(val processRepository: FetchingProcessRepository[Future],
                      subprocessRepository: SubprocessRepository,
-                     typeToConfig: ProcessingTypeDataProvider[ModelData],
+                     typeToConfig: ProcessingTypeDataProvider[ModelData, _],
                      processValidation: ProcessValidation,
                     )(implicit val ec: ExecutionContext)
   extends ProcessDirectives with FailFastCirceSupport with RouteWithUser {
@@ -159,12 +159,12 @@ class NodeValidator {
   }
 }
 
-class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData]) {
+class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData, _]) {
 
   //TODO: do not load provider for each request...
-  private val nodeProviders: ProcessingTypeDataProvider[Option[NodeData => Future[Option[AdditionalInfo]]]] = typeToConfig.mapValues(pt => ScalaServiceLoader
+  private val nodeProviders: ProcessingTypeDataProvider[Option[NodeData => Future[Option[AdditionalInfo]]], _] = typeToConfig.mapValues(pt => ScalaServiceLoader
     .load[AdditionalInfoProvider](pt.modelClassLoader.classLoader).headOption.map(_.nodeAdditionalInfo(pt.processConfig)))
-  private val propertiesProviders: ProcessingTypeDataProvider[Option[MetaData => Future[Option[AdditionalInfo]]]] = typeToConfig.mapValues(pt => ScalaServiceLoader
+  private val propertiesProviders: ProcessingTypeDataProvider[Option[MetaData => Future[Option[AdditionalInfo]]], _] = typeToConfig.mapValues(pt => ScalaServiceLoader
     .load[AdditionalInfoProvider](pt.modelClassLoader.classLoader).headOption.map(_.propertiesAdditionalInfo(pt.processConfig)))
 
   def prepareAdditionalInfoForNode(nodeData: NodeData, processingType: ProcessingType)(implicit ec: ExecutionContext): Future[Option[AdditionalInfo]] = {

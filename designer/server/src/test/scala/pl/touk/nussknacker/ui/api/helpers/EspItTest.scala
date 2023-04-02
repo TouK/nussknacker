@@ -102,11 +102,11 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
                                          deploymentService: ProcessingTypeDeploymentService): DeploymentManager = deploymentManager
   }
 
-  protected val testModelDataProvider: MapBasedProcessingTypeDataProvider[ModelData] = mapProcessingTypeDataProvider(
+  protected val testModelDataProvider: ProcessingTypeDataProvider[ModelData, _] = mapProcessingTypeDataProvider(
     Streaming -> ModelData(processingTypeConfig)
   )
 
-  protected val testProcessingTypeDataProvider: MapBasedProcessingTypeDataProvider[ProcessingTypeData] = mapProcessingTypeDataProvider(
+  protected val testProcessingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _] = mapProcessingTypeDataProvider(
     Streaming -> ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, processingTypeConfig)
   )
 
@@ -114,7 +114,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
-  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData] =
+  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _] =
     ProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(testConfig))
 
   protected val customActionInvokerService = new CustomActionInvokerServiceImpl(futureFetchingProcessRepository, dmDispatcher, deploymentService)
@@ -151,7 +151,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       actionRepository, writeProcessRepository, processValidation
     )
 
-  protected def createScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider]): ScenarioTestService =
+  protected def createScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider, _]): ScenarioTestService =
     new ScenarioTestService(testInfoProviders, featureTogglesConfig.testDataSettings, new PreliminaryScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
       processResolving, new ProcessCounter(TestFactory.prepareSampleSubprocessRepository), testExecutorService)
 

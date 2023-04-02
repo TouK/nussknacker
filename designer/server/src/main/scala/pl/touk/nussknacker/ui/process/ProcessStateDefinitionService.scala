@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.net.URI
 
-class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
+class ProcessStateDefinitionService(typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _],
                                     categoryService: ProcessCategoryService) {
 
   def fetchStateDefinitions(implicit user: LoggedUser): List[UIStateDefinition] = {

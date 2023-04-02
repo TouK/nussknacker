@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.processingtypedata
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ProcessingTypeData
+import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 trait ProcessingTypeDataReload {
@@ -28,9 +28,9 @@ trait Initialization {
  * Another thing that needs careful consideration is handling exception during ProcessingTypeData creation/closing - probably during
  * close we want to catch exception and try to proceed, but during creation it can be a bit tricky...
  */
-class BasicProcessingTypeDataReload(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData]) extends ProcessingTypeDataReload with LazyLogging {
+class BasicProcessingTypeDataReload(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]) extends ProcessingTypeDataReload with LazyLogging {
 
-  @volatile private var current: ProcessingTypeDataProvider[ProcessingTypeData] = loadMethod()
+  @volatile private var current: ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = loadMethod()
 
   override def reloadAll(): Unit = synchronized {
     logger.info("Closing old models")
@@ -43,13 +43,15 @@ class BasicProcessingTypeDataReload(loadMethod: () => ProcessingTypeDataProvider
 
 object BasicProcessingTypeDataReload {
 
-  def wrapWithReloader(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
+  def wrapWithReloader(loadMethod: () => ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData]): (ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
     // must be lazy to avoid problems with dependency injection cycle - see NusskanckerDefaultAppRouter.create
     lazy val reloader = new BasicProcessingTypeDataReload(loadMethod)
-    val provider = new ProcessingTypeDataProvider[ProcessingTypeData] {
+    val provider = new ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] {
       override def forType(typ: ProcessingType): Option[ProcessingTypeData] = reloader.current.forType(typ)
 
       override def all: Map[ProcessingType, ProcessingTypeData] = reloader.current.all
+
+      override def combined: CombinedProcessingTypeData = reloader.current.combined
     }
     val lazyInitializedReloader = new ProcessingTypeDataReload with Initialization {
       override def init(): Unit = reloader

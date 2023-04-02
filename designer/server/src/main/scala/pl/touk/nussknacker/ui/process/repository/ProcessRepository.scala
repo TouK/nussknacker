@@ -28,7 +28,7 @@ import scala.language.higherKinds
 
 object ProcessRepository {
 
-  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData]): DBProcessRepository =
+  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
     new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
 
   case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: Option[Comment], increaseVersionWhenJsonNotChanged: Boolean)
@@ -55,7 +55,7 @@ trait ProcessRepository[F[_]] {
   def renameProcess(processId: ProcessIdWithName, newName: ProcessName)(implicit loggedUser: LoggedUser): F[XError[Unit]]
 }
 
-class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTypeDataProvider[Int])
+class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTypeDataProvider[Int, _])
   extends ProcessRepository[DB] with EspTables with LazyLogging with CommentActions with ProcessDBQueryRepository[DB] {
 
   import profile.api._

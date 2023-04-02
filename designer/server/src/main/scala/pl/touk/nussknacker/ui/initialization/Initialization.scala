@@ -24,7 +24,7 @@ import scala.concurrent.{Await, ExecutionContext}
 object Initialization {
 
   implicit val nussknackerUser: LoggedUser = NussknackerInternalUser
-  def init(migrations: ProcessingTypeDataProvider[ProcessMigrations], db: DbConfig, environment: String)(implicit ec: ExecutionContext) : Unit = {
+  def init(migrations: ProcessingTypeDataProvider[ProcessMigrations, _], db: DbConfig, environment: String)(implicit ec: ExecutionContext) : Unit = {
     val processRepository = new DBProcessRepository(db, migrations.mapValues(_.version))
 
     val transactionalFetchingRepository = new DBFetchingProcessRepository[DB](db) {
@@ -77,7 +77,7 @@ class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends Ini
   }
 }
 
-class AutomaticMigration(migrations: ProcessingTypeDataProvider[ProcessMigrations],
+class AutomaticMigration(migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
                          processRepository: DBProcessRepository,
                          fetchingProcessRepository: DBFetchingProcessRepository[DB]) extends InitialOperation {
 
