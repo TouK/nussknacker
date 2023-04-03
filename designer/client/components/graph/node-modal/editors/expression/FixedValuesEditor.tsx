@@ -36,7 +36,7 @@ export default class FixedValuesEditor extends React.Component<Props> {
 
   public static switchableTo = (expressionObj: ExpressionObj, editorConfig) => editorConfig.possibleValues.map(v => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression)
   public static switchableToHint = () => "Switch to basic mode"
-  public static notSwitchableToHint = () => "Expression must be one of the expression possible values to switch basic mode"
+  public static notSwitchableToHint = () => "Expression must be one of the predefined values to switch to basic mode"
 
   currentOption(expressionObj: ExpressionObj, options: Option[]): Option {
     return expressionObj && options.find((option) => option.value === expressionObj.expression) ||  // current value with label taken from options

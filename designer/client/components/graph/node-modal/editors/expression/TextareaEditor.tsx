@@ -40,6 +40,6 @@ const parseable = (expressionObj) => {
 
 TextareaEditor.switchableTo = (expressionObj) => parseable(expressionObj)
 TextareaEditor.switchableToHint = () => i18next.t("editors.textarea.switchableToHint", "Switch to basic mode")
-TextareaEditor.notSwitchableToHint = () => i18next.t("editors.textarea.notSwitchableToHint", "Expression must be a simple string literal i.e. text surrounded by single or double quotation marks to switch to basic mode")
+TextareaEditor.notSwitchableToHint = () => i18next.t("editors.textarea.notSwitchableToHint", "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode")
 
 export default TextareaEditor
