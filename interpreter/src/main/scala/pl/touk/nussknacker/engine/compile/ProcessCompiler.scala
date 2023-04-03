@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompi
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.graph.node.{Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
@@ -250,7 +250,7 @@ protected trait ProcessCompilerBase {
 
 object ProcessValidator {
 
-  def default(definitions: ProcessDefinition[ObjectWithMethodDef], subprocessDefinitionExtractor: SubprocessDefinitionExtractor, dictRegistry: DictRegistry, customProcessValidator: CustomProcessValidator, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
+  def default(definitions: ProcessDefinition[ObjectWithMethodDef], subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor, dictRegistry: DictRegistry, customProcessValidator: CustomProcessValidator, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
     val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
     val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
     val nodeCompiler = new NodeCompiler(definitions, subprocessDefinitionExtractor, expressionCompiler, classLoader, PreventInvocationCollector, ComponentUseCase.Validation)

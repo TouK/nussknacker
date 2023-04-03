@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.server.Route
 import cats.data.OptionT
 import cats.instances.future._
-import cats.syntax.traverse._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.generic.JsonCodec
@@ -20,7 +19,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.SubprocessResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
-import pl.touk.nussknacker.engine.definition.SubprocessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -137,7 +136,7 @@ class NodeValidator {
     val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValuesNow(prepareValidationContext(modelData))
 
     val edges = nodeData.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to, e.edgeType))
-    val subprocessResolver = SubprocessResolver(k => subprocessRepository.get(k).map(_.canonical), SubprocessDefinitionExtractor(modelData))
+    val subprocessResolver = SubprocessResolver(k => subprocessRepository.get(k).map(_.canonical))
     new NodeDataValidator(modelData, subprocessResolver).validate(nodeData.nodeData, validationContext, branchCtxs, edges) match {
       case ValidationNotPerformed => NodeValidationResult(parameters = None, expressionType = None, validationErrors = Nil, validationPerformed = false)
       case ValidationPerformed(errors, parameters, expressionType) =>

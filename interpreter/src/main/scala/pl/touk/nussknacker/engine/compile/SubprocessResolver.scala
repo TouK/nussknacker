@@ -4,30 +4,24 @@ import cats.data.Validated.{Invalid, Valid, invalidNel, valid}
 import cats.data._
 import cats.implicits._
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.definition.{SubprocessDefinition, SubprocessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{SubprocessGraphDefinitionExtractor, SubprocessGraphDefinition}
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 
 object SubprocessResolver {
 
   // For easier testing purpose
-  def apply(subprocesses: Iterable[CanonicalProcess],
-            componentsConfig: Map[String, SingleComponentConfig] = Map.empty,
-            classLoader: ClassLoader = SubprocessResolver.getClass.getClassLoader): SubprocessResolver = {
+  def apply(subprocesses: Iterable[CanonicalProcess]): SubprocessResolver = {
     val subprocessMap = subprocesses.map(a => a.metaData.id -> a).toMap
-    val definitionExtractor = new SubprocessDefinitionExtractor(componentsConfig.get, classLoader)
-    SubprocessResolver(subprocessMap.get _, definitionExtractor)
+    SubprocessResolver(subprocessMap.get _)
   }
 
 }
 
-case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess], definitionExtractor: SubprocessDefinitionExtractor) {
+case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) {
 
   type CompilationValid[A] = ValidatedNel[ProcessCompilationError, A]
 
@@ -103,11 +97,11 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess], 
     }, NodeDataFun.nodeIdPrefix(idPrefix))
   }
 
-  def resolveInput(subprocessInput: SubprocessInput): CompilationValid[SubprocessDefinition] = {
+  def resolveInput(subprocessInput: SubprocessInput): CompilationValid[SubprocessGraphDefinition] = {
     implicit val nodeId: NodeId = NodeId(subprocessInput.id)
     subprocesses.apply(subprocessInput.ref.id)
       .map(valid).getOrElse(invalidNel(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = nodeId.id)))
-      .map(definitionExtractor.extractSubprocessDefinition)
+      .map(SubprocessGraphDefinitionExtractor.extractSubprocessGraphDefinition)
   }
 
   //we replace outputs in subprocess with part of parent process

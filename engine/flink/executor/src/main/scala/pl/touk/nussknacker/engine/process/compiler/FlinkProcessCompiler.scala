@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
 import pl.touk.nussknacker.engine.process.async.DefaultAsyncExecutionConfigPreparer
@@ -63,7 +63,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
 
     val processDefinition = definitions(processObjectDependencies)
-    val subprocessDefinitionExtractor = SubprocessDefinitionExtractor(processConfig, userCodeClassLoader)
+    val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(processConfig, userCodeClassLoader)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
       ProcessCompilerData.prepare(process, processDefinition, subprocessDefinitionExtractor, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
