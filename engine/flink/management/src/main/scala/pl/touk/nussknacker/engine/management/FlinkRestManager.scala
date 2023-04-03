@@ -21,7 +21,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)
-                      (implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
+                      (implicit ec: ExecutionContext, backend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService)
     extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName) with LazyLogging {
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)

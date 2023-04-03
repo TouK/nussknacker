@@ -252,12 +252,10 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   private def checkStateInDeploymentManager(deploymentManager: DeploymentManager, processDetails: BaseProcessDetails[_])
                                            (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     for {
-      state <- DBIOAction.from(getStateFromEngine(deploymentManager, processDetails.idWithName, processDetails.lastAction))
-      cancelActionOpt <- handleFinishedProcess(processDetails, state.value)
+      state <- DBIOAction.from(getStateWithResolvedInconsistency(deploymentManager, processDetails.idWithName, processDetails.lastAction))
     } yield {
-      val lastAction = cancelActionOpt.orElse(processDetails.lastAction)
-      val finalState = ObsoleteStateDetector.handleObsoleteStatus(state.value, lastAction)
-      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${lastAction.map(_.action)})")
+      val finalState = state.value.getOrElse(SimpleProcessStateDefinitionManager.errorFailedToGet)
+      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${processDetails.lastAction.map(_.action)})")
       finalState
     }
   }
@@ -269,8 +267,8 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }
   }
 
-  private def getStateFromEngine(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastAction: Option[ProcessAction])
-                                (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+  private def getStateWithResolvedInconsistency(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastAction: Option[ProcessAction])
+                                               (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
     lazy val failedToGetResult =
       WithDataFreshnessStatus(
         Option(SimpleProcessStateDefinitionManager.errorFailedToGet),
@@ -295,19 +293,23 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.
-  private def handleFinishedProcess(processDetails: BaseProcessDetails[_], processState: Option[ProcessState])
-                                   (implicit ec: ExecutionContext): DB[Option[ProcessAction]] = {
+  def markProcessFinishedIfLastActionDeploy(processId: ProcessId)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
-    processState.filter(_.status.isFinished).flatMap { _ =>
-      processDetails.lastDeployedAction.map { lastDeployedAction =>
-        val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)
-        processChangeListener.handle(OnFinished(processDetails.processId, lastDeployedAction.processVersionId))
-        actionRepository
-          .addInstantAction(processDetails.processId, lastDeployedAction.processVersionId, ProcessActionType.Cancel, Some(finishedComment), None)
-          .map(a => Some(ProcessDBQueryRepository.toProcessAction((a, None))))
+    dbioRunner.run(for {
+      processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
+      processDetails <- processDataExistOrFail(processDetailsOpt, processId)
+      cancelActionOpt <- {
+        processDetails.lastDeployedAction.map { lastDeployedAction =>
+          val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)
+          processChangeListener.handle(OnFinished(processDetails.processId, lastDeployedAction.processVersionId))
+          actionRepository
+            .addInstantAction(processDetails.processId, lastDeployedAction.processVersionId, ProcessActionType.Cancel, Some(finishedComment), None)
+            .map(a => Some(ProcessDBQueryRepository.toProcessAction((a, None))))
+
+        }.getOrElse(DBIOAction.successful(None))
       }
-    }.getOrElse(DBIOAction.successful(None))
+    } yield cancelActionOpt)
   }
 
   // It is very naive implementation for situation when designer was restarted after spawning some long running action
