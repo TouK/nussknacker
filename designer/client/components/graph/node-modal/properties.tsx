@@ -5,7 +5,7 @@ import React, {useMemo} from "react"
 import {sortBy} from "lodash"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 import {IdField} from "./IdField"
-import {NodeField} from "./NodeField"
+import {FieldInputType, NodeField} from "./NodeField"
 import {FieldType} from "./editors/field/Field"
 import {errorValidator, literalIntegerValueValidator} from "./editors/Validators"
 import AdditionalProperty from "./AdditionalProperty"
@@ -45,7 +45,6 @@ export function Properties({
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
         additionalValidators={[errorValidator(fieldErrors || [], "id")]}
-        
       />
       {node.isSubprocess ?
         (
@@ -67,11 +66,13 @@ export function Properties({
             <>
               <NodeField
                 isEditMode={isEditMode}
+                placeholder={'Server default'}
                 showValidation={showValidation}
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
+                inputType={FieldInputType.INTEGER}
                 fieldLabel={"Parallelism"}
                 fieldProperty={"typeSpecificProperties.parallelism"}
                 validators={[literalIntegerValueValidator, errorValidator(fieldErrors || [], "parallelism")]}
@@ -79,11 +80,13 @@ export function Properties({
               />
               <NodeField
                 isEditMode={isEditMode}
+                placeholder={'Server default'}
                 showValidation={showValidation}
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
+                inputType={FieldInputType.INTEGER}
                 fieldLabel={"Checkpoint interval in seconds"}
                 fieldProperty={"typeSpecificProperties.checkpointIntervalInSeconds"}
                 validators={[literalIntegerValueValidator, errorValidator(fieldErrors || [], "checkpointIntervalInSeconds")]}
@@ -117,11 +120,13 @@ export function Properties({
             (
               <NodeField
                 isEditMode={isEditMode}
+                placeholder={'Server default'}
                 showValidation={showValidation}
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
+                inputType={FieldInputType.INTEGER}
                 fieldLabel={"Parallelism"}
                 fieldProperty={"typeSpecificProperties.parallelism"}
                 validators={[literalIntegerValueValidator, errorValidator(fieldErrors || [], "parallelism")]}

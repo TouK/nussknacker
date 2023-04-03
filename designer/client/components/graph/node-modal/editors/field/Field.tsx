@@ -1,4 +1,4 @@
-import React, {PropsWithChildren} from "react"
+import React, {PropsWithChildren, useCallback} from "react"
 import Checkbox from "./Checkbox"
 import Input from "./Input"
 import LabeledInput from "./LabeledInput"
@@ -16,6 +16,7 @@ export enum FieldType {
 interface FieldProps {
   isMarked: boolean,
   readOnly: boolean,
+  placeholder?: string,
   showValidation: boolean,
   autoFocus: boolean,
   className: string,
@@ -32,6 +33,7 @@ export default function Field({type, children, ...props}: PropsWithChildren<Fiel
         <LabeledInput
           {...props}
           value={props.value?.toString() || ""}
+          placeholder={props.placeholder}
           onChange={({target}) => props.onChange(target.value)}
         >
           {children}
