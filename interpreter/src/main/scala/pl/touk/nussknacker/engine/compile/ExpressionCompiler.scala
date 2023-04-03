@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, 
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectMetadata
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.api.NodeId
@@ -25,23 +24,23 @@ import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph}
 
 object ExpressionCompiler {
 
-  def withOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata],
+  def withOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[_],
                        settings: ClassExtractionSettings, typeDefinitionSet: TypeDefinitionSet): ExpressionCompiler
   = default(loader, dictRegistry, expressionConfig, expressionConfig.optimizeCompilation, settings, typeDefinitionSet)
 
-  def withoutOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata],
+  def withoutOptimization(loader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[_],
                           settings: ClassExtractionSettings, typeDefinitionSet: TypeDefinitionSet): ExpressionCompiler
   = default(loader, dictRegistry, expressionConfig, optimizeCompilation = false, settings, typeDefinitionSet)
 
   def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
     withoutOptimization(modelData.modelClassLoader.classLoader,
       modelData.dictServices.dictRegistry,
-      modelData.processDefinition.expressionConfig,
-      modelData.processDefinition.settings,
+      modelData.processWithObjectsDefinition.expressionConfig,
+      modelData.processWithObjectsDefinition.settings,
       TypeDefinitionSet(modelData.typeDefinitions))
   }
 
-  private def default(classLoader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[ObjectMetadata],
+  private def default(classLoader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[_],
                       optimizeCompilation: Boolean, settings: ClassExtractionSettings, typeDefinitionSet: TypeDefinitionSet): ExpressionCompiler = {
     val conversionService = determineConversionService(expressionConfig)
     def spelParser(flavour: Flavour) =
@@ -57,7 +56,7 @@ object ExpressionCompiler {
     new ExpressionCompiler(parsers)
   }
 
-  private def determineConversionService(expressionConfig: ExpressionDefinition[ObjectMetadata]) = {
+  private def determineConversionService(expressionConfig: ExpressionDefinition[_]) = {
     val spelConversionServices = expressionConfig.customConversionsProviders.collect {
       case spelProvider: SpelConversionsProvider => spelProvider.getConversionService
     }

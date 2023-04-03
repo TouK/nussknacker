@@ -42,7 +42,7 @@ trait JavaSourceFactoryGenericTransformation[ST] extends JavaGenericSingleTransf
 
 }
 
-trait GenericContextTransformationWrapper[T, VC, PAR, ST] extends GenericNodeTransformation[T] {
+trait GenericContextTransformationWrapper[T, VC, PAR, ST] { self: GenericNodeTransformation[T] =>
 
   override type State = ST
 

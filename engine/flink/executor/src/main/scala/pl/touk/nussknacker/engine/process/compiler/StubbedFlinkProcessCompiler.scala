@@ -1,9 +1,6 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import org.apache.flink.api.common.serialization.DeserializationSchema
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.{ConnectedStreams, DataStream}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
@@ -11,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
@@ -53,26 +50,24 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
 
   protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef
 
-
-  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, overrideFromOriginalAndType: (Any, TypingResult, NodeId) => Any): ObjectWithMethodDef =
-    new OverriddenObjectWithMethodDef(original) {
-      override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
-        //this is needed to be able to handle dynamic types in tests
-        def transform(impl: Any): Any = {
-          val typingResult = impl.cast[ReturningType].map(_.returnType).getOrElse(original.returnType)
-          val nodeId = additional.collectFirst {
-            case nodeId: NodeId => nodeId
-          }.getOrElse(throw new IllegalArgumentException("Node id is missing in additional parameters"))
-          overrideFromOriginalAndType(impl, typingResult, nodeId)
-        }
-
-        val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
-        originalValue match {
-          case e: ContextTransformation =>
-            e.copy(implementation = transform(e.implementation))
-          case e => transform(e)
-        }
+  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, overrideFromOriginalAndType: (Any, Option[TypingResult], NodeId) => Any): ObjectWithMethodDef = {
+    original.withImplementationInvoker((params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]) => {
+      //this is needed to be able to handle dynamic types in tests
+      def transform(impl: Any): Any = {
+        val typingResult = impl.cast[ReturningType].map(rt => Some(rt.returnType)).getOrElse(original.returnType)
+        val nodeId = additional.collectFirst {
+          case nodeId: NodeId => nodeId
+        }.getOrElse(throw new IllegalArgumentException("Node id is missing in additional parameters"))
+        overrideFromOriginalAndType(impl, typingResult, nodeId)
       }
-    }
+
+      val originalValue = original.implementationInvoker.invokeMethod(params, outputVariableNameOpt, additional)
+      originalValue match {
+        case e: ContextTransformation =>
+          e.copy(implementation = transform(e.implementation))
+        case e => transform(e)
+      }
+    })
+  }
 
 }

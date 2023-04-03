@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{ConversionsProvider, CustomStreamTransformer, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.component.{ComponentExtractor, ComponentsUiConfigExtractor}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import shapeless.syntax.typeable._
 
 object ProcessDefinitionExtractor {
 
@@ -83,13 +82,15 @@ object ProcessDefinitionExtractor {
 
   case class CustomTransformerAdditionalData(manyInputs: Boolean, canBeEnding: Boolean)
 
-  case class ProcessDefinition[T <: ObjectMetadata](services: Map[String,T],
-                                                    sourceFactories: Map[String, T],
-                                                    sinkFactories: Map[String, T],
-                                                    //TODO: find easier way to handle *AdditionalData?
-                                                    customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
-                                                    expressionConfig: ExpressionDefinition[T],
-                                                    settings: ClassExtractionSettings) {
+  case class ProcessDefinition[T](services: Map[String,T],
+                                  sourceFactories: Map[String, T],
+                                  sinkFactories: Map[String, T],
+                                  //TODO: find easier way to handle *AdditionalData?
+                                  customStreamTransformers: Map[String, (T, CustomTransformerAdditionalData)],
+                                  expressionConfig: ExpressionDefinition[T],
+                                  settings: ClassExtractionSettings) {
+
+    import pl.touk.nussknacker.engine.util.Implicits._
 
     def componentIds: List[String] = {
       val ids = services.keys ++
@@ -99,50 +100,27 @@ object ProcessDefinitionExtractor {
       ids.toList
     }
 
-    def forCategory(category: String): ProcessDefinition[T] = copy(
-      services.filter(_._2.availableForCategory(category)),
-      sourceFactories.filter(_._2.availableForCategory(category)),
-      sinkFactories.filter(_._2.availableForCategory(category)),
-      customStreamTransformers.filter(_._2._1.availableForCategory(category)),
-      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.filter(_._2.availableForCategory(category)))
-    )
+    def filter(predicate: T => Boolean): ProcessDefinition[T] = copy(
+      services.filter(kv => predicate(kv._2)),
+      sourceFactories.filter(kv => predicate(kv._2)),
+      sinkFactories.filter(kv => predicate(kv._2)),
+      customStreamTransformers.filter(ct => predicate(ct._2._1)),
+      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.filter(kv => predicate(kv._2))))
+
+    def transform[R](f: T => R): ProcessDefinition[R] = copy(
+      services.mapValuesNow(f),
+      sourceFactories.mapValuesNow(f),
+      sinkFactories.mapValuesNow(f),
+      customStreamTransformers.mapValuesNow { case (o, additionalData) => (f(o), additionalData) },
+      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.mapValuesNow(f)))
+
   }
 
-  def toObjectDefinition(definition: ProcessDefinition[ObjectWithMethodDef]): ProcessDefinition[ObjectDefinition] = {
-    val expressionConfig = definition.expressionConfig
-    val expressionDefinition = toObjectExpressionDefinition(expressionConfig)
-    ProcessDefinition(
-      definition.services.mapValuesNow(_.objectDefinition),
-      definition.sourceFactories.mapValuesNow(_.objectDefinition),
-      definition.sinkFactories.mapValuesNow(_.objectDefinition),
-      definition.customStreamTransformers.mapValuesNow { case (transformer, additionalData) => (transformer.objectDefinition, additionalData) },
-      expressionDefinition,
-      definition.settings
-    )
-  }
-
-  private def toObjectExpressionDefinition(expressionConfig: ExpressionDefinition[ObjectWithMethodDef]): ExpressionDefinition[ObjectDefinition] =
-    ExpressionDefinition(
-      expressionConfig.globalVariables.mapValuesNow(_.objectDefinition),
-      expressionConfig.globalImports,
-      expressionConfig.additionalClasses,
-      expressionConfig.languages,
-      expressionConfig.optimizeCompilation,
-      expressionConfig.strictTypeChecking,
-      expressionConfig.dictionaries,
-      expressionConfig.hideMetaVariable,
-      expressionConfig.strictMethodsChecking,
-      expressionConfig.staticMethodInvocationsChecking,
-      expressionConfig.methodExecutionForUnknownAllowed,
-      expressionConfig.dynamicPropertyAccessAllowed,
-      expressionConfig.spelExpressionExcludeList,
-      expressionConfig.customConversionsProviders)
-
-  case class ExpressionDefinition[+T <: ObjectMetadata](globalVariables: Map[String, T], globalImports: List[String], additionalClasses: List[Class[_]],
-                                                        languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
-                                                        dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean,
-                                                        staticMethodInvocationsChecking: Boolean, methodExecutionForUnknownAllowed: Boolean,
-                                                        dynamicPropertyAccessAllowed: Boolean, spelExpressionExcludeList: SpelExpressionExcludeList,
-                                                        customConversionsProviders: List[ConversionsProvider])
+  case class ExpressionDefinition[T](globalVariables: Map[String, T], globalImports: List[String], additionalClasses: List[Class[_]],
+                                     languages: LanguageConfiguration, optimizeCompilation: Boolean, strictTypeChecking: Boolean,
+                                     dictionaries: Map[String, DictDefinition], hideMetaVariable: Boolean, strictMethodsChecking: Boolean,
+                                     staticMethodInvocationsChecking: Boolean, methodExecutionForUnknownAllowed: Boolean,
+                                     dynamicPropertyAccessAllowed: Boolean, spelExpressionExcludeList: SpelExpressionExcludeList,
+                                     customConversionsProviders: List[ConversionsProvider])
 
 }

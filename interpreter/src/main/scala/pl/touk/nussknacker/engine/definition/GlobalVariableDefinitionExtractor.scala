@@ -35,7 +35,7 @@ object GlobalVariableDefinitionExtractor {
     )
     val objectDef = ObjectDefinition(
       parameters = Nil,
-      returnType = returnType,
+      returnType = Some(returnType),
       categories = varWithCategories.categories,
       componentConfig = varWithCategories.componentConfig
     )

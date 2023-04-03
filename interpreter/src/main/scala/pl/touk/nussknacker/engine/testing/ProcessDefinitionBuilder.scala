@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
@@ -57,25 +57,29 @@ object ProcessDefinitionBuilder {
       Unknown, realType, List()), objectDefinition)
 
   implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
-    def withService(id: String, returnType: Class[_], params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(services = definition.services + (id -> ObjectDefinition(params.toList, Typed(returnType))))
+    def withService(id: String, returnType: Option[TypingResult], params: Parameter*): ProcessDefinition[ObjectDefinition] =
+      definition.copy(services = definition.services + (id -> objectDefinition(params.toList, returnType)))
 
     def withService(id: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(services = definition.services + (id -> ObjectDefinition.withParams(params.toList)))
+      definition.copy(services = definition.services + (id -> objectDefinition(params.toList, Some(Unknown))))
 
     def withSourceFactory(typ: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(sourceFactories = definition.sourceFactories + (typ -> ObjectDefinition.withParams(params.toList)))
+      definition.copy(sourceFactories = definition.sourceFactories + (typ -> objectDefinition(params.toList, Some(Unknown))))
 
     def withSourceFactory(typ: String, category: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(sourceFactories = definition.sourceFactories + (typ -> new ObjectDefinition(params.toList, Unknown, Some(List(category)), SingleComponentConfig.zero)))
+      definition.copy(sourceFactories = definition.sourceFactories + (typ -> ObjectDefinition(params.toList, Some(Unknown), Some(List(category)), SingleComponentConfig.zero)))
 
     def withSinkFactory(typ: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
-      definition.copy(sinkFactories = definition.sinkFactories + (typ -> ObjectDefinition.withParams(params.toList)))
+      definition.copy(sinkFactories = definition.sinkFactories + (typ -> objectDefinition(params.toList, None)))
 
-    def withCustomStreamTransformer(id: String, returnType: Class[_], additionalData: CustomTransformerAdditionalData, params: Parameter*): ProcessDefinition[ObjectDefinition] =
+    def withCustomStreamTransformer(id: String, returnType: Option[TypingResult], additionalData: CustomTransformerAdditionalData, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(customStreamTransformers =
-        definition.customStreamTransformers + (id -> (ObjectDefinition(params.toList, Typed(returnType)), additionalData)))
+        definition.customStreamTransformers + (id -> (objectDefinition(params.toList, returnType), additionalData)))
 
   }
-
+  
+  def objectDefinition(parameters: List[Parameter], returnType: Option[TypingResult]): ObjectDefinition = {
+    ObjectDefinition(parameters, returnType, None, SingleComponentConfig.zero)
+  }
+  
 }

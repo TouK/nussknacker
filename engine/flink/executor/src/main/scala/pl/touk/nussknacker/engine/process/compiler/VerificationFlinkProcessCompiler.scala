@@ -5,6 +5,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
@@ -23,6 +24,6 @@ class VerificationFlinkProcessCompiler(process: CanonicalProcess,
   override protected def prepareSourceFactory(sourceFactory: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef =
     overrideObjectWithMethod(
       sourceFactory,
-      (_, returnType, _) =>  new EmptySource[Object](returnType)(TypeInformation.of(classOf[Object]))
+      (_, returnType, _) =>  new EmptySource[Object](returnType.getOrElse(Unknown))(TypeInformation.of(classOf[Object]))
     )
 }

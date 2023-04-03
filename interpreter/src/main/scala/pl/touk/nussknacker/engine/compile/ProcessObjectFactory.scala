@@ -37,6 +37,6 @@ class ProcessObjectFactory(expressionEvaluator: ExpressionEvaluator) extends Laz
     val paramsMap = params.map {
       case (tp, p) => p.name -> parameterEvaluator.prepareParameter(tp, p)._1
     }.toMap
-    objectWithMethodDef.invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional).asInstanceOf[T]
+    objectWithMethodDef.implementationInvoker.invokeMethod(paramsMap, outputVariableNameOpt, Seq(processMetaData, nodeId, componentUseCase) ++ additional).asInstanceOf[T]
   }
 }

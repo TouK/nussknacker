@@ -28,6 +28,4 @@ class StubModelDataWithProcessDefinition(definition: ProcessDefinition[Definitio
 
   override lazy val processWithObjectsDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] = ProcessDefinitionBuilder.withEmptyObjects(definition)
 
-  override lazy val processDefinition: ProcessDefinition[DefinitionExtractor.ObjectDefinition] = definition
-
 }

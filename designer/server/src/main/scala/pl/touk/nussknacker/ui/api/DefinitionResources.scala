@@ -3,13 +3,11 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
-import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 
@@ -29,7 +27,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
       get {
         complete {
           val subprocessIds = subprocessRepository.loadSubprocessIds()
-          ProcessObjectsFinder.componentIds(modelDataProvider.all.values.map(_.processDefinition).toList, subprocessIds)
+          ProcessObjectsFinder.componentIds(modelDataProvider.all.values.map(_.processWithObjectsDefinition).toList, subprocessIds)
         }
       }
     } ~ pathPrefix("processDefinitionData" / Segment) { processingType =>
@@ -43,6 +41,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
                 UIProcessObjectsFactory.prepareUIProcessObjects(
                   processingTypeData.modelData,
                   processingTypeData.deploymentManager,
+                  processingTypeData.typeSpecificInitialData,
                   user,
                   subprocesses,
                   isSubprocess,

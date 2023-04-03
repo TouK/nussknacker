@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.objectDefinition
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
@@ -34,8 +35,8 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   lazy val validation: ProcessValidation = {
 
     val processDefinition = ProcessDefinition[ObjectDefinition](
-      services = Map("ref" -> ObjectDefinition.noParam),
-      sourceFactories = Map("sourceRef" -> ObjectDefinition.noParam),
+      services = Map("ref" -> objectDefinition(List.empty, Some(Unknown))),
+      sourceFactories = Map("sourceRef" -> objectDefinition(List.empty, Some(Unknown))),
       sinkFactories = Map(),
       customStreamTransformers = Map(),
       expressionConfig = ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true,
@@ -117,7 +118,10 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     val process = ValidatedDisplayableProcess(
       meta.id,
       ProcessProperties(meta.typeSpecificData),
-      List(Source("s", SourceRef("sourceRef", List())), Variable("v", "test", Expression.spel("''")), Filter("e", Expression.spel("''"))),
+      List(
+        Source("s", SourceRef("sourceRef", List())),
+        Variable("v", "test", Expression.spel("''")),
+        Filter("e", Expression.spel("''"))),
       List(Edge("s", "v", None), Edge("v", "e", None)),
       TestProcessingTypes.Streaming,
       TestCategories.Category1,
@@ -125,7 +129,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Scenario must end with a sink, processor or fragment", "Scenario must end with a sink, processor or fragment", None, errorType = NodeValidationErrorType.SaveAllowed))),
         List.empty,
         List.empty).copy(nodeResults = Map(
-          "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
+          "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), Some(List.empty), Map.empty),
           "v" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
           "e" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed.fromInstance("")), None, Map.empty))
       )

@@ -5,20 +5,22 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
-import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, SampleProcess, TestCategories, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with EitherValuesDetailedMessage with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+  with Matchers with PatientScalaFutures with EitherValuesDetailedMessage with BeforeAndAfterEach with BeforeAndAfterAll
+  with EspItTest with OptionValues {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -59,7 +61,7 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
         .downField("clazzName")
         .downField("display")
 
-      typesInformation.focus.get shouldBe Json.fromString("ReturningTestCaseClass")
+      typesInformation.focus.value shouldBe Json.fromString("ReturningTestCaseClass")
     }
   }
 
@@ -82,7 +84,7 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
         .downField("parameters")
         .downAt(_.hcursor.get[String]("name").rightValue == "param1")
         .downField("editor")
-        .focus.get
+        .focus.value
 
       editor shouldBe Json.obj("type" -> Json.fromString("StringParameterEditor"))
     }
@@ -96,7 +98,7 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
         .downField("additionalPropertiesConfig")
         .downField("numberOfThreads")
         .downField("validators")
-        .focus.get
+        .focus.value
 
       validators shouldBe
         Json.arr(
@@ -132,7 +134,7 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
         .downAt(_.hcursor.get[String]("name").rightValue == "id")
         .downField("expression")
         .downField("expression")
-        .focus.get
+        .focus.value
 
       defaultExpression shouldBe Json.fromString("T(pl.touk.sample.JavaSampleEnum).FIRST_VALUE")
     }
@@ -153,9 +155,31 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
         .downAt(_.hcursor.get[String]("name").rightValue == "role")
         .downField("expression")
         .downField("expression")
-        .focus.get
+        .focus.value
 
       defaultExpression shouldBe Json.fromString("'Events'")
+    }
+  }
+
+  it("return initial parameters for dynamic components") {
+    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      val parameters = responseJson.hcursor
+        .downField("componentGroups")
+        .downAt(_.hcursor.get[String]("name").rightValue == "sources")
+        .downField("components")
+        .downAt(_.hcursor.get[String]("label").rightValue == "kafka")
+        .downField("node")
+        .downField("ref")
+        .downField("parameters")
+        .focus.value.asArray.value
+
+      val initialParamNames = parameters.map(_.hcursor.downField("name").focus.value.asString.value)
+      initialParamNames shouldEqual List(KafkaUniversalComponentTransformer.TopicParamName, KafkaUniversalComponentTransformer.SchemaVersionParamName)
+      val initialExpressions = parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
+      initialExpressions shouldEqual List("", s"'${SchemaVersionOption.LatestOptionName}'")
     }
   }
 
@@ -170,7 +194,7 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
       .downField("parameters")
       .downAt(_.hcursor.get[String]("name").rightValue == paramName)
       .downField("editor")
-      .focus.get
+      .focus.value
   }
 
   private def getParamValidator(serviceName: String, paramName: String) = {
@@ -180,7 +204,7 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
       .downField("parameters")
       .downAt(_.hcursor.get[String]("name").rightValue == paramName)
       .downField("validators")
-      .focus.get
+      .focus.value
   }
 
   private def getProcessDefinitionData(processingType: String): RouteTestResult = {

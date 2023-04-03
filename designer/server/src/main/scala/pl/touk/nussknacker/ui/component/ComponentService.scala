@@ -77,6 +77,7 @@ object DefaultComponentService {
       val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
         processingTypeData.modelData,
         processingTypeData.deploymentManager,
+        processingTypeData.typeSpecificInitialData,
         user = NussknackerInternalUser, // We need admin user to received all components info
         subprocessesDetails = Set.empty, // We don't check subprocesses, because these are dynamic components
         isSubprocess = false, // It excludes fragment's components: input / output
@@ -200,6 +201,7 @@ class DefaultComponentService private(config: Config,
         val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
           processingTypeData.modelData,
           processingTypeData.deploymentManager,
+          processingTypeData.typeSpecificInitialData,
           user,
           subprocesses,
           isSubprocess = false, //It excludes fragment's components: input / output

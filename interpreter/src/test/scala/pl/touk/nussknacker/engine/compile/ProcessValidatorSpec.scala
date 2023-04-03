@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.{ObjectProcessDefinition, objectDefinition}
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParameters, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.engine.variables.MetaVariables
@@ -46,51 +46,51 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
   private val emptyQueryNamesData = CustomTransformerAdditionalData(false, false)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
-    Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord]), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
-      Typed[SimpleRecord])),
-    Map("source" -> ObjectDefinition(List.empty, Typed[SimpleRecord]),
-        "sourceWithUnknown" -> ObjectDefinition(List.empty, Unknown),
-        "sourceWithParam" -> ObjectDefinition(List(Parameter[Any]("param")), Typed[SimpleRecord]),
-        "typedMapSource" -> ObjectDefinition(List(Parameter[TypedObjectDefinition]("type")), Typed[TypedMap])
+    Map("sampleEnricher" -> objectDefinition(List.empty, Some(Typed[SimpleRecord])), "withParamsService" -> objectDefinition(List(Parameter[String]("par1")),
+      Some(Typed[SimpleRecord]))),
+    Map("source" -> objectDefinition(List.empty, Some(Typed[SimpleRecord])),
+        "sourceWithUnknown" -> objectDefinition(List.empty, Some(Unknown)),
+        "sourceWithParam" -> objectDefinition(List(Parameter[Any]("param")), Some(Typed[SimpleRecord])),
+        "typedMapSource" -> objectDefinition(List(Parameter[TypedObjectDefinition]("type")), Some(Typed[TypedMap]))
     ),
-    Map("sink" -> ObjectDefinition.noParam,
-      "sinkWithLazyParam" -> ObjectDefinition.withParams(List(Parameter[String]("lazyString").copy(isLazyParameter = true)))),
+    Map("sink" -> objectDefinition(List.empty, None),
+      "sinkWithLazyParam" -> objectDefinition(List(Parameter[String]("lazyString").copy(isLazyParameter = true)), None)),
 
-    Map("customTransformer" -> (ObjectDefinition(List.empty, Typed[SimpleRecord]), emptyQueryNamesData),
-      "withParamsTransformer" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[SimpleRecord]), emptyQueryNamesData),
-      "manyParams" -> (ObjectDefinition(List(
+    Map("customTransformer" -> (objectDefinition(List.empty, Some(Typed[SimpleRecord])), emptyQueryNamesData),
+      "withParamsTransformer" -> (objectDefinition(List(Parameter[String]("par1")), Some(Typed[SimpleRecord])), emptyQueryNamesData),
+      "manyParams" -> (objectDefinition(List(
                 Parameter[String]("par1").copy(isLazyParameter = true),
                 Parameter[String]("par2"),
                 Parameter[String]("par3").copy(isLazyParameter = true),
-                Parameter[String]("par4")), Typed[SimpleRecord]), emptyQueryNamesData),
-      "withManyParameters" -> (ObjectDefinition(List(
+                Parameter[String]("par4")), Some(Typed[SimpleRecord])), emptyQueryNamesData),
+      "withManyParameters" -> (objectDefinition(List(
         Parameter[String]("lazyString").copy(isLazyParameter = true), Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
         Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0))))
-      , Typed[SimpleRecord]), emptyQueryNamesData),
-      "withoutReturnType" -> (ObjectDefinition(List(Parameter[String]("par1")), Typed[Void]), emptyQueryNamesData),
-      "withMandatoryParams" -> (ObjectDefinition.withParams(List(Parameter[String]("mandatoryParam"))), emptyQueryNamesData),
-      "withNotBlankParams" -> (ObjectDefinition.withParams(List(NotBlankParameter("notBlankParam", Typed.typedClass(classOf[String])))), emptyQueryNamesData),
-      "withNullableLiteralIntegerParam" -> (ObjectDefinition.withParams(List(
+      , Some(Typed[SimpleRecord])), emptyQueryNamesData),
+      "withoutReturnType" -> (objectDefinition(List(Parameter[String]("par1")), None), emptyQueryNamesData),
+      "withMandatoryParams" -> (objectDefinition(List(Parameter[String]("mandatoryParam")), Some(Unknown)), emptyQueryNamesData),
+      "withNotBlankParams" -> (objectDefinition(List(NotBlankParameter("notBlankParam", Typed[String])), Some(Unknown)), emptyQueryNamesData),
+      "withNullableLiteralIntegerParam" -> (objectDefinition(List(
         Parameter[Integer]("nullableLiteralIntegerParam").copy(validators = List(LiteralParameterValidator.integerValidator))
-      )), emptyQueryNamesData),
-      "withRegExpParam" -> (ObjectDefinition.withParams(List(
+      ), Some(Unknown)), emptyQueryNamesData),
+      "withRegExpParam" -> (objectDefinition(List(
         Parameter[Integer]("regExpParam").copy(validators = List(LiteralParameterValidator.numberValidator))
-      )), emptyQueryNamesData),
-      "withJsonParam" -> (ObjectDefinition.withParams(List(
+      ), Some(Unknown)), emptyQueryNamesData),
+      "withJsonParam" -> (objectDefinition(List(
         Parameter[String]("jsonParam").copy(validators = List(JsonValidator))
-      )), emptyQueryNamesData),
-      "withCustomValidatorParam" -> (ObjectDefinition.withParams(List(
+      ), Some(Unknown)), emptyQueryNamesData),
+      "withCustomValidatorParam" -> (objectDefinition(List(
         Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
-      )), emptyQueryNamesData),
-      "withAdditionalVariable" -> (ObjectDefinition.withParams(List(
+      ), Some(Unknown)), emptyQueryNamesData),
+      "withAdditionalVariable" -> (objectDefinition(List(
         Parameter[String]("param").copy(additionalVariables = Map("additional" -> AdditionalVariableProvidedInRuntime[Int]), isLazyParameter = true)
-      )), emptyQueryNamesData),
-      "withVariablesToHide" -> (ObjectDefinition.withParams(List(
+      ), Some(Unknown)), emptyQueryNamesData),
+      "withVariablesToHide" -> (objectDefinition(List(
         Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)
-      )), emptyQueryNamesData)
+      ), Some(Unknown)), emptyQueryNamesData)
     ),
     ExpressionDefinition(
-      Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass))), List.empty, List.empty,
+      Map("processHelper" -> objectDefinition(List(), Some(Typed(ProcessHelper.getClass)))), List.empty, List.empty,
       LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
       strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false,
       spelExpressionExcludeList = SpelExpressionExcludeList.default, customConversionsProviders = List.empty),
@@ -868,8 +868,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
     val failingDefinition = base
       .copy(sourceFactories = base.sourceFactories
-        .mapValuesNow { case v:StandardObjectWithMethodDef => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
-        => throw new RuntimeException("You passed incorrect parameter, cannot proceed"))) }.toMap)
+        .mapValuesNow(_.withImplementationInvoker((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
+          throw new RuntimeException("You passed incorrect parameter, cannot proceed")
+        })))
 
     val processWithInvalidExpresssion =
       ScenarioBuilder
@@ -1212,11 +1213,11 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
   }
 
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
-    = Map("source" -> ObjectDefinition.noParam.copy(returnType = Typed[SimpleRecord])))
+    = Map("source" -> objectDefinition(List.empty, Some(Typed[SimpleRecord]))))
 
   private val definitionWithTypedSourceAndTransformNode =
     definitionWithTypedSource.withCustomStreamTransformer("custom",
-      classOf[AnotherSimpleRecord], emptyQueryNamesData, Parameter[String]("par1"))
+      Some(Typed[AnotherSimpleRecord]), emptyQueryNamesData, Parameter[String]("par1"))
 
 
   case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any, list: java.util.List[SimpleRecord]) {

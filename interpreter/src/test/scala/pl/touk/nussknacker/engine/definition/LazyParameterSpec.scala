@@ -70,7 +70,7 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
   }
 
   private def prepareInterpreter = {
-    val exprDef = ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false,
+    val exprDef = ExpressionDefinition[ObjectWithMethodDef](Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false,
       strictTypeChecking = true, Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false,
       methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, spelExpressionExcludeList = SpelExpressionExcludeList.default,
       customConversionsProviders = List.empty)
