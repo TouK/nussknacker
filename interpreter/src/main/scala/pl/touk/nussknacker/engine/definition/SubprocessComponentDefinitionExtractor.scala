@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.Subproces
 import pl.touk.nussknacker.engine.graph.node.{Join, SubprocessInput, SubprocessInputDefinition, SubprocessOutputDefinition}
 
 // We have two implementations of SubprocessDefinitionExtractor. The only difference is that SubprocessGraphDefinitionExtractor
-// extract parts of definition that is used doing graph resolution wheres SubprocessComponentDefinitionExtractor is used
+// extract parts of definition that is used for graph resolution wheres SubprocessComponentDefinitionExtractor is used
 // for component definition extraction (parameters, validators, etc.) for purpose of further parameters validation
 // We split it to avoid passing around ProcessingTypeData
 abstract class SubprocessDefinitionExtractor {
