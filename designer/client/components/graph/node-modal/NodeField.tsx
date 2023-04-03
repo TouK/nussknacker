@@ -1,7 +1,7 @@
 import Field, {FieldType} from "./editors/field/Field"
 import {allValid, Validator} from "./editors/Validators"
 import {get} from "lodash"
-import React, {useCallback, useMemo} from "react"
+import React, {useMemo} from "react"
 import {useDiffMark} from "./PathsToMark"
 import {NodeType} from "../../../types"
 
