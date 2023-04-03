@@ -59,9 +59,9 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.processUnarchive]: UnArchiveButton,
   [BuiltinButtonTypes.testFromFile]: FromFileButton,
   [BuiltinButtonTypes.testGenerate]: GenerateButton,
-  [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,
   [BuiltinButtonTypes.testCounts]: CountsButton,
   [BuiltinButtonTypes.testHide]: HideButton,
   [CustomButtonTypes.customAction]: ActionButton,
   [CustomButtonTypes.customLink]: LinkButton,
+  [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,
 }
