@@ -16,8 +16,6 @@ import pl.touk.nussknacker.engine.graph.node.Filter
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.restmodel.processdetails.ProcessVersion
-import pl.touk.nussknacker.restmodel.validation.ValidationResults
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
@@ -82,41 +80,6 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
     }
   }
 
-  it should "return 500 on failed test migration" in {
-    val error = ValidationResults.NodeValidationError("foo", "bar", "baz", None, NodeValidationErrorType.SaveAllowed)
-    val validationResult = ValidationResult.success.copy(errors = ValidationResult.success.errors.copy(invalidNodes = Map("a" -> List(error))))
-
-    val process = withDecodedTypes(ProcessTestData.validDisplayableProcess)
-    val results = List(
-      TestMigrationResult(process.copy(id = "failingProcess"), validationResult, true),
-      TestMigrationResult(process.copy(id = "notFailing"), ValidationResult.success, false)
-    )
-    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), futureFetchingProcessRepository, processAuthorizer), testPermissionRead)
-
-    Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
-      status shouldEqual StatusCodes.InternalServerError
-
-      responseAs[TestMigrationSummary] shouldBe TestMigrationSummary("Migration failed, following scenarios have new errors: failingProcess", results)
-    }
-  }
-
-  it should "return result on test migration" in {
-
-    val process = withDecodedTypes(ProcessTestData.validDisplayableProcess)
-    val results = List(
-      TestMigrationResult(process, ValidationResult.success, true),
-      TestMigrationResult(process.copy(id = "notFailing"), ValidationResult.success, false)
-    )
-
-    val route = withPermissions(new RemoteEnvironmentResources(new MockRemoteEnvironment(results), futureFetchingProcessRepository, processAuthorizer), testPermissionRead)
-
-    Get(s"/remoteEnvironment/testAutomaticMigration") ~> route ~> check {
-      status shouldEqual StatusCodes.OK
-
-      responseAs[TestMigrationSummary] shouldBe TestMigrationSummary("Migrations successful", results)
-    }
-  }
-
   it should "compare environments" in {
 
     import pl.touk.nussknacker.engine.spel.Implicits._
@@ -138,7 +101,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
         Get(s"/remoteEnvironment/compare") ~> route ~> check {
           status shouldEqual StatusCodes.OK
           responseAs[EnvironmentComparisonResult] shouldBe EnvironmentComparisonResult(
-            List(ProcessDifference(processId1.value, true, Map("n1" -> difference))))
+            List(ProcessDifference(processId1.value, presentOnOther = true, Map("n1" -> difference))))
         }
       }
     }
@@ -163,7 +126,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
         Get(s"/remoteEnvironment/compare") ~> route ~> check {
           status shouldEqual StatusCodes.OK
           responseAs[EnvironmentComparisonResult] shouldBe EnvironmentComparisonResult(
-            List(ProcessDifference(processId1.value, true, Map("n1" -> difference)), ProcessDifference(processId2.value, false, Map())))
+            List(ProcessDifference(processId1.value, presentOnOther = true, Map("n1" -> difference)), ProcessDifference(processId2.value, presentOnOther = false, Map())))
         }
       }
     }
@@ -182,7 +145,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
     var migrateInvocations = List[DisplayableProcess]()
     var compareInvocations = List[DisplayableProcess]()
 
-    override def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, user: LoggedUser) = {
+    override def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, user: LoggedUser): Future[Right[Nothing, Unit]] = {
       migrateInvocations = localProcess :: migrateInvocations
       Future.successful(Right(()))
     }
