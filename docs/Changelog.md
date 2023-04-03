@@ -46,6 +46,7 @@
 * [#4117](https://github.com/TouK/nussknacker/pull/4117)[#4202](https://github.com/TouK/nussknacker/pull/4202) Fragment parameters definition is now computed based on config. Thanks to that you can use `componentsUiConfig` setting to provide
   additional settings like parameter's validators or editors to fragments.
 * [#4201](https://github.com/TouK/nussknacker/pull/4201) Fix for: Dynamic nodes (GenericNodeTransformation) has now initial parameters inferred based on definition instead empty List
+* [#4210](https://github.com/TouK/nussknacker/pull/4210) Fix scenario properties form types (limit inputs to integers to match backend api)
 
 1.8.1 (28 Feb 2023)
 ------------------------
