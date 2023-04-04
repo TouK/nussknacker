@@ -58,13 +58,13 @@ trait ProcessingTypeDataProvider[+T, +C] {
 
 }
 
-class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, T], _combined: => C) extends ProcessingTypeDataProvider[T, C] {
+class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, T], getCombined: => C) extends ProcessingTypeDataProvider[T, C] {
 
   override def forType(typ: ProcessingType): Option[T] = map.get(typ)
 
   override def all: Map[ProcessingType, T] = map
 
-  override lazy val combined: C = _combined
+  override lazy val combined: C = getCombined
 
 }
 
