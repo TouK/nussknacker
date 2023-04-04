@@ -105,7 +105,7 @@ object ProcessTestData {
 
   val validProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
 
-  val archivedValidProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToArchivedProcess(validDisplayableProcess)
+  val archivedValidProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess).copy(isArchived = true)
 
   def validProcessWithId(id: String): CanonicalProcess = ScenarioBuilder
     .streaming(id)

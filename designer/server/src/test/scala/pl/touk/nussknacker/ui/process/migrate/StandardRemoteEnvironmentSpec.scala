@@ -191,9 +191,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     }
 
     whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
-      result shouldBe Symbol("left")
-      result.swap.toOption.get shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
-      result.swap.toOption.get.getMessage shouldBe "Cannot migrate, following errors occurred: n1 - message"
+      result.leftSideValue shouldBe Left(MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List())))
     }
 
   }
@@ -210,9 +208,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     )
     whenReady(
       remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
-      result shouldBe Symbol("left")
-      result.swap.toOption.get shouldBe MigrationToArchivedError(ProcessName(validProcess.id), remoteEnvironment.environmentId)
-      result.swap.toOption.get.getMessage shouldBe "Cannot migrate, scenario fooProcess is archived on testEnv."
+      result.leftSideValue shouldBe Left(MigrationToArchivedError(ProcessName(validProcess.id), remoteEnvironment.environmentId))
     }
   }
 

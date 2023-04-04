@@ -81,18 +81,6 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     }
   }
 
-  private def testMigrationResponse(testMigrationResults: List[TestMigrationResult]) : Future[HttpResponse] = {
-    val failedMigrations = testMigrationResults.filter(_.shouldFail).map(_.converted.id)
-    val (status, message) = failedMigrations match {
-      case Nil => (StatusCodes.OK, "Migrations successful")
-      case _ => (StatusCodes.InternalServerError,
-        s"Migration failed, following scenarios have new errors: ${failedMigrations.mkString(", ")}")
-    }
-    val summary = TestMigrationSummary(message, testMigrationResults)
-
-    Marshal(summary).to[MessageEntity].map(e => HttpResponse(status = status, entity = e))
-  }
-
   private def withProcess[T:Encoder](processId: ProcessId, version: VersionId,
                                      fun: (DisplayableProcess, String) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
     processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map {

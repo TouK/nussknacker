@@ -50,7 +50,7 @@ case class MigrationValidationError(errors: ValidationErrors) extends EspError {
 }
 
 case class MigrationToArchivedError(processName: ProcessName, environment: String) extends EspError {
-  def getMessage = s"Cannot migrate, scenario ${processName.value} is archived on $environment."
+  def getMessage = s"Cannot migrate, scenario ${processName.value} is archived on $environment. You have to unarchive scenario on $environment in order to migrate."
 }
 
 case class HttpRemoteEnvironmentConfig(user: String, password: String, targetEnvironmentId: String,
@@ -108,9 +108,9 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
       processExistsOnRemote <- checkIfProcessExistsOnRemote(localProcess)
       _ <- if (processExistsOnRemote) {
-        isArchivedOnRemote(localProcess)
+        checkIfIsNotArchived(localProcess)
       } else {
-        createRemoteProcess(localProcess, category)
+        createProcessOnRemote(localProcess, category)
       }
       _ <- EitherT.right[EspError](saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")))
     } yield ()).value
@@ -125,14 +125,14 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     }
   }
 
-  private def createRemoteProcess(localProcess: DisplayableProcess, category: String)
+  private def createProcessOnRemote(localProcess: DisplayableProcess, category: String)
                                  (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
     EitherT {
       invokeForSuccess(HttpMethods.POST, List("processes", localProcess.id, category), Query(("isSubprocess", localProcess.metaData.isSubprocess.toString)))
     }
   }
 
-  private def isArchivedOnRemote(localProcess: DisplayableProcess)
+  private def checkIfIsNotArchived(localProcess: DisplayableProcess)
                                 (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
     for {
       remoteProcessDetails <- EitherT(fetchProcessDetails(localProcess.id))
