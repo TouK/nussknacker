@@ -17,17 +17,8 @@
  */
 package org.apache.flink.runtime.types
 
-import org.apache.flink.api.java.typeutils.runtime.kryo.FlinkChillPackageRegistrar
-
 import _root_.java.io.Serializable
 import com.twitter.chill._
-
-import scala.collection.immutable.{BitSet, HashMap, HashSet, ListMap, ListSet, NumericRange, Queue, Range, SortedMap, SortedSet}
-import scala.collection.mutable.{ArraySeq, Buffer, ListBuffer, BitSet => MBitSet, HashMap => MHashMap, HashSet => MHashSet, Map => MMap, Queue => MQueue, Set => MSet}
-import scala.reflect.ClassTag
-import scala.util.matching.Regex
-import scala.jdk.CollectionConverters._
-
 /*
 This code is copied as is from Twitter Chill 0.7.4 because we need to user a newer chill version
 but want to ensure that the serializers that are registered by default stay the same.
@@ -79,82 +70,12 @@ class FlinkScalaKryoInstantiator extends EmptyFlinkScalaKryoInstantiator {
     val k = super.newKryo
     val reg = new AllScalaRegistrar
     reg(k)
+    val javaWrapperScala2_13Registrar = new JavaWrapperScala2_13Registrar
+    javaWrapperScala2_13Registrar(k)
     k
   }
 }
 
-class ScalaCollectionsRegistrar extends IKryoRegistrar {
-  def apply(newK: Kryo): Unit = {
-    // for binary compat this is here, but could be moved to RichKryo
-    def useField[T](cls: Class[T]): Unit = {
-      val fs = new com.esotericsoftware.kryo.serializers.FieldSerializer(newK, cls)
-      fs.setIgnoreSyntheticFields(false) // scala generates a lot of these attributes
-      newK.register(cls, fs)
-    }
-    // The wrappers are private classes:
-    useField(List(1, 2, 3).asJava.getClass)
-    useField(List(1, 2, 3).iterator.asJava.getClass)
-    useField(Map(1 -> 2, 4 -> 3).asJava.getClass)
-    useField(new _root_.java.util.ArrayList().asScala.getClass)
-    useField(new _root_.java.util.HashMap().asScala.getClass)
-
-    /*
-     * Note that subclass-based use: addDefaultSerializers, else: register
-     * You should go from MOST specific, to least to specific when using
-     * default serializers. The FIRST one found is the one used
-     */
-    newK
-      .forTraversableSubclass(ArraySeq.empty[Any], isImmutable = false)
-      .forSubclass[BitSet](new BitSetSerializer)
-      .forSubclass[SortedSet[Any]](new SortedSetSerializer)
-      .forClass[Some[Any]](new SomeSerializer[Any])
-      .forClass[Left[Any, Any]](new LeftSerializer[Any, Any])
-      .forClass[Right[Any, Any]](new RightSerializer[Any, Any])
-      .forTraversableSubclass(Queue.empty[Any])
-      // List is a sealed class, so there are only two subclasses:
-      .forTraversableSubclass(List.empty[Any])
-      // Add ListBuffer subclass before Buffer to prevent the more general case taking precedence
-      .forTraversableSubclass(ListBuffer.empty[Any], isImmutable = false)
-      // add mutable Buffer before Vector, otherwise Vector is used
-      .forTraversableSubclass(Buffer.empty[Any], isImmutable = false)
-      // Vector is a final class
-      .forTraversableClass(Vector.empty[Any])
-      .forTraversableSubclass(ListSet.empty[Any])
-      // specifically register small sets since Scala represents them differently
-      .forConcreteTraversableClass(Set[Any](Symbol("a")))
-      .forConcreteTraversableClass(Set[Any](Symbol("a"), Symbol("b")))
-      .forConcreteTraversableClass(Set[Any](Symbol("a"), Symbol("b"), Symbol("c")))
-      .forConcreteTraversableClass(Set[Any](Symbol("a"), Symbol("b"), Symbol("c"), Symbol("d")))
-      // default set implementation
-      .forConcreteTraversableClass(HashSet[Any](Symbol("a"), Symbol("b"), Symbol("c"), Symbol("d"), Symbol("e")))
-      // specifically register small maps since Scala represents them differently
-      .forConcreteTraversableClass(Map[Any, Any](Symbol("a") -> Symbol("a")))
-      .forConcreteTraversableClass(Map[Any, Any](Symbol("a") -> Symbol("a"), Symbol("b") -> Symbol("b")))
-      .forConcreteTraversableClass(Map[Any, Any](Symbol("a") -> Symbol("a"), Symbol("b") -> Symbol("b"), Symbol("c") -> Symbol("c")))
-      .forConcreteTraversableClass(Map[Any, Any](Symbol("a") -> Symbol("a"), Symbol("b") -> Symbol("b"), Symbol("c") -> Symbol("c"), Symbol("d") -> Symbol("d")))
-      // default map implementation
-      .forConcreteTraversableClass(
-        HashMap[Any, Any](Symbol("a") -> Symbol("a"), Symbol("b") -> Symbol("b"), Symbol("c") -> Symbol("c"), Symbol("d") -> Symbol("d"), Symbol("e") -> Symbol("e")))
-      // The normal fields serializer works for ranges
-      .registerClasses(Seq(
-        classOf[Range.Inclusive],
-        classOf[NumericRange.Inclusive[_]],
-        classOf[NumericRange.Exclusive[_]]))
-      // Add some maps
-      .forSubclass[SortedMap[Any, Any]](new SortedMapSerializer)
-      .forTraversableSubclass(ListMap.empty[Any, Any])
-      .forTraversableSubclass(HashMap.empty[Any, Any])
-      // The above ListMap/HashMap must appear before this:
-      .forTraversableSubclass(Map.empty[Any, Any])
-      // here are the mutable ones:
-      .forTraversableClass(MBitSet.empty, isImmutable = false)
-      .forTraversableClass(MHashMap.empty[Any, Any], isImmutable = false)
-      .forTraversableClass(MHashSet.empty[Any], isImmutable = false)
-      .forTraversableSubclass(MQueue.empty[Any], isImmutable = false)
-      .forTraversableSubclass(MMap.empty[Any, Any], isImmutable = false)
-      .forTraversableSubclass(MSet.empty[Any], isImmutable = false)
-  }
-}
 
 // In Scala 2.13 all java collections class wrappers were rewritten from case class to regular class. Now kryo does not
 // serialize them properly, so this class was added to fix this issue. It might not be needed in the future, when flink
@@ -164,35 +85,5 @@ class JavaWrapperScala2_13Registrar extends IKryoRegistrar {
     newK.register(JavaWrapperScala2_13Serializers.mapSerializer.wrapperClass, JavaWrapperScala2_13Serializers.mapSerializer)
     newK.register(JavaWrapperScala2_13Serializers.setSerializer.wrapperClass, JavaWrapperScala2_13Serializers.setSerializer)
     newK.register(JavaWrapperScala2_13Serializers.listSerializer.wrapperClass, JavaWrapperScala2_13Serializers.listSerializer)
-  }
-}
-
-/** Registers all the scala (and java) serializers we have */
-class AllScalaRegistrar extends IKryoRegistrar {
-  def apply(k: Kryo): Unit = {
-    val col = new ScalaCollectionsRegistrar
-    col(k)
-
-    val jcol = new JavaWrapperCollectionRegistrar
-    jcol(k)
-
-    val jmap = new JavaWrapperScala2_13Registrar
-    jmap(k)
-
-    // Register all 22 tuple serializers and specialized serializers
-    ScalaTupleSerialization.register(k)
-    k.forClass[Symbol](new KSerializer[Symbol] {
-      override def isImmutable = true
-      def write(k: Kryo, out: Output, obj: Symbol): Unit = { out.writeString(obj.name) }
-      def read(k: Kryo, in: Input, cls: Class[Symbol]) = Symbol(in.readString)
-    }).forSubclass[Regex](new RegexSerializer)
-      .forClass[ClassTag[Any]](new ClassTagSerializer[Any])
-      .forSubclass[Manifest[Any]](new ManifestSerializer[Any])
-      .forSubclass[scala.Enumeration#Value](new EnumerationSerializer)
-
-    // use the singleton serializer for boxed Unit
-    val boxedUnit = scala.runtime.BoxedUnit.UNIT
-    k.register(boxedUnit.getClass, new SingletonSerializer(boxedUnit))
-    new FlinkChillPackageRegistrar().registerSerializers(k)
   }
 }
