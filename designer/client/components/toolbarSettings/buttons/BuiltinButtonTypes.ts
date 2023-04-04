@@ -19,6 +19,7 @@ export enum BuiltinButtonTypes {
   processUnarchive = "process-unarchive",
   testFromFile = "test-from-file",
   testGenerate = "test-generate",
+  generateAndTest = "generate-and-test",
   testCounts = "test-counts",
   testHide = "test-hide",
   viewZoomIn = "view-zoom-in",

@@ -18,6 +18,19 @@ export function testProcessFromFile(id: ProcessId, testDataFile: File, process: 
   }
 }
 
+export function testScenarioWithGeneratedData(id: ProcessId, testSampleSize: string, process: Process): ThunkAction {
+  return (dispatch) => {
+    dispatch({
+      type: "PROCESS_LOADING",
+    })
+
+    const processWithCleanEdges = withoutHackOfEmptyEdges(process)
+    HttpService.testScenarioWithGeneratedData(id, testSampleSize, processWithCleanEdges)
+      .then(response => dispatch(displayTestResults(response.data)))
+      .catch(() => dispatch({type: "LOADING_FAILED"}))
+  }
+}
+
 export interface DisplayTestResultsDetailsAction {
   testResults: TestResults,
   type: "DISPLAY_TEST_RESULTS_DETAILS",

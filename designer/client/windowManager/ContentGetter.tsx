@@ -31,6 +31,9 @@ const SaveProcessDialog = loadable(() => import("../components/modals/SaveProces
 const GenerateTestDataDialog = loadable(() => import("../components/modals/GenerateTestDataDialog"), {
   fallback: <LoaderSpinner show/>,
 })
+const GenerateDataAndTestDialog = loadable(() => import("../components/modals/GenerateDataAndTestDialog"), {
+  fallback: <LoaderSpinner show/>,
+})
 
 export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
   switch (props.data.kind) {
@@ -46,6 +49,8 @@ export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) =
       return <CountsDialog {...props}/>
     case WindowKind.generateTestData:
       return <GenerateTestDataDialog {...props}/>
+    case WindowKind.generateDataAndTest:
+      return <GenerateDataAndTestDialog {...props}/>
     case WindowKind.compareVersions:
       return <CompareVersionsDialog {...props}/>
 

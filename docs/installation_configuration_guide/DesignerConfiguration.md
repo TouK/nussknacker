@@ -600,6 +600,7 @@ processToolbarConfig {
           { type: "test-generate", disabled: { archived: true } }
           { type: "test-counts" }
           { type: "test-hide" }
+          { type: "generate-and-test", disabled: { archived: true } }
         ]
       }
       {

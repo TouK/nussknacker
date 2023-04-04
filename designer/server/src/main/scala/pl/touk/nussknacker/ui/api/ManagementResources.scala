@@ -13,9 +13,11 @@ import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponseTryPF
@@ -187,6 +189,28 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
               }
             }
           }
+        }
+      } ~
+      path("processManagement" / "generateAndTest" / IntNumber ) {
+        testSampleSize => {
+          (post & entity(as[DisplayableProcess])) { displayableProcess => {
+            processId(displayableProcess.id) { idWithName =>
+              canDeploy(idWithName) {
+                complete {
+                  measureTime("generateAndTest", metricRegistry) {
+                    scenarioTestService.generateData(displayableProcess, testSampleSize) match {
+                      case Left(error) => Future.failed(UnmarshallError(error))
+                      case Right(rawScenarioTestData) => {
+                        scenarioTestService.performTest(idWithName, displayableProcess, rawScenarioTestData, testResultsVariableEncoder)
+                          .flatMap { results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)) }
+                          .recover(EspErrorToHttp.errorToHttp)
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }}
         }
       } ~
       path("processManagement" / "customAction" / Segment) { processName =>
