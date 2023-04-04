@@ -76,6 +76,8 @@ case class StandardRemoteEnvironmentConfig(uri: String, batchSize: Int = 10)
 //TODO: extract interface to remote environment?
 trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironment {
 
+  private type FutureE[T] = EitherT[Future, EspError, T]
+
   def environmentId: String
 
   def config: StandardRemoteEnvironmentConfig
@@ -106,42 +108,22 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     (for {
       validation <- EitherT(validateProcess(localProcess))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
-      processExistsOnRemote <- checkIfProcessExistsOnRemote(localProcess)
-      _ <- if (processExistsOnRemote) {
-        checkIfIsNotArchived(localProcess)
-      } else {
-        createProcessOnRemote(localProcess, category)
+      processEither <- fetchProcessDetails(localProcess.id)
+      _ <- processEither match {
+        case Right(processDetails) if processDetails.isArchived => EitherT.leftT[Future, EspError](MigrationToArchivedError(processDetails.idWithName.name, environmentId))
+        case Right(_) => EitherT.rightT[Future, EspError](())
+        case Left(_: RemoteEnvironmentCommunicationError) => createProcessOnRemote(localProcess, category)
+        case Left(other) => EitherT.leftT[Future, EspError](other)
       }
       _ <- EitherT.right[EspError](saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")))
     } yield ()).value
   }
 
-  private def checkIfProcessExistsOnRemote(localProcess: DisplayableProcess)
-                                  (implicit ec: ExecutionContext): EitherT[Future, EspError, Boolean] = {
-    EitherT {
-      invokeStatus(HttpMethods.GET, List("processes", localProcess.id)).flatMap { status =>
-        Future.successful((status == StatusCodes.OK).asRight)
-      }
-    }
-  }
-
   private def createProcessOnRemote(localProcess: DisplayableProcess, category: String)
-                                 (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
+                                 (implicit ec: ExecutionContext): FutureE[Unit] = {
     EitherT {
       invokeForSuccess(HttpMethods.POST, List("processes", localProcess.id, category), Query(("isSubprocess", localProcess.metaData.isSubprocess.toString)))
     }
-  }
-
-  private def checkIfIsNotArchived(localProcess: DisplayableProcess)
-                                (implicit ec: ExecutionContext): EitherT[Future, EspError, Unit] = {
-    for {
-      remoteProcessDetails <- EitherT(fetchProcessDetails(localProcess.id))
-      result <- EitherT.fromEither[Future](
-        if (remoteProcessDetails.isArchived)
-          Left[EspError, Unit](MigrationToArchivedError(localProcess.processName, environmentId))
-        else
-          Right(()))
-    } yield result
   }
 
   override def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
@@ -155,7 +137,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchGroupByGroup[T](basicProcesses: List[BasicProcess])
-                                  (implicit ec: ExecutionContext): EitherT[Future, EspError, List[ValidatedProcessDetails]] = {
+                                  (implicit ec: ExecutionContext): FutureE[List[ValidatedProcessDetails]] = {
     basicProcesses.map(_.name).grouped(config.batchSize)
       .foldLeft(EitherT.rightT[Future, EspError](List.empty[ValidatedProcessDetails])) { case (acc, processesGroup) =>
         for {
@@ -175,8 +157,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchProcessDetails(id: String)
-                                 (implicit ec: ExecutionContext): Future[Either[EspError, ProcessDetails]] = {
-    invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id))
+                                 (implicit ec: ExecutionContext): FutureE[Either[EspError, ProcessDetails]] = {
+    EitherT(invokeJson[ProcessDetails](HttpMethods.GET, List("processes", id)).map(_.asRight))
   }
 
   private def fetchProcessesDetails(names: List[ProcessName])(implicit ec: ExecutionContext) = EitherT {
