@@ -2,6 +2,10 @@
 
 # Changelog
 
+1.10.0 (not released yet)
+-------------------------
+* [#4204](https://github.com/TouK/nussknacker/pull/4204) ProcessingTypeDataProvider has combined data being a result of all processing types
+
 1.9.0 (not released yet)
 ------------------------
 * [#4195](https://github.com/TouK/nussknacker/pull/4195) Add functionality to generate test cases and test scenario without need to download a file.
