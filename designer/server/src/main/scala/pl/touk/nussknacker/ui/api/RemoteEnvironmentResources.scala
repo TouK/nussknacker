@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCodes}
-import akka.http.scaladsl.server.{Directive0, Directives, Route}
+import akka.http.scaladsl.server.{Directives, Route}
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
@@ -66,15 +66,6 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
                 remoteEnvironment.processVersions(processId.name)
               }
             }
-          } ~
-          path("testAutomaticMigration") {
-            get {
-              complete {
-                remoteEnvironment.testMigration()
-                  .flatMap(_.fold((Future.successful[HttpResponse] _)
-                    .compose(EspErrorToHttp.espErrorToHttp), testMigrationResponse))
-              }
-            }
           }
       }
   }
@@ -90,18 +81,6 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     }
   }
 
-  private def testMigrationResponse(testMigrationResults: List[TestMigrationResult]) : Future[HttpResponse] = {
-    val failedMigrations = testMigrationResults.filter(_.shouldFail).map(_.converted.id)
-    val (status, message) = failedMigrations match {
-      case Nil => (StatusCodes.OK, "Migrations successful")
-      case _ => (StatusCodes.InternalServerError,
-        s"Migration failed, following scenarios have new errors: ${failedMigrations.mkString(", ")}")
-    }
-    val summary = TestMigrationSummary(message, testMigrationResults)
-
-    Marshal(summary).to[MessageEntity].map(e => HttpResponse(status = status, entity = e))
-  }
-
   private def withProcess[T:Encoder](processId: ProcessId, version: VersionId,
                                      fun: (DisplayableProcess, String) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
     processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map {
@@ -115,8 +94,8 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
   private def compareOneProcess(process: DisplayableProcess)(implicit ec: ExecutionContext, user: LoggedUser)
     : Future[Either[EspError, ProcessDifference]]= {
     remoteEnvironment.compare(process, None).map {
-      case Right(differences) => Right(ProcessDifference(process.id, true, differences))
-      case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) => Right(ProcessDifference(process.id, false, Map()))
+      case Right(differences) => Right(ProcessDifference(process.id, presentOnOther = true, differences))
+      case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) => Right(ProcessDifference(process.id, presentOnOther = false, Map()))
       case Left(error) => Left(error)
     }
   }

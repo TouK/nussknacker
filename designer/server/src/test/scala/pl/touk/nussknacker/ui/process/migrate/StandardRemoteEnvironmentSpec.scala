@@ -6,13 +6,12 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.EitherValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
-import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toValidatedDisplayable
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{emptySubprocess, toValidatedDisplayable, validProcess}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
@@ -22,11 +21,12 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import io.circe.parser
+import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with PatientScalaFutures with FailFastCirceSupport with EitherValues {
+class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with PatientScalaFutures with FailFastCirceSupport with EitherValuesDetailedMessage {
 
   implicit val system = ActorSystem("nussknacker-designer")
 
@@ -51,7 +51,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     var addedSubprocess: Option[Boolean] = None
   }
 
-  private def statefulEnvironment(expectedProcessId: String,
+  private def statefulEnvironment(expectedProcessDetails: ValidatedProcessDetails,
                                   expectedProcessCategory: String,
                                   initialRemoteProcessList: List[String],
                                   onMigrate: Future[UpdateProcessCommand] => Unit) = new MockRemoteEnvironment with TriedToAddProcess {
@@ -71,16 +71,16 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       }
 
       object UpdateProcess {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/$expectedProcessId", PUT)
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.id}", PUT)
       }
 
       object CheckProcess {
-        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/$expectedProcessId", GET)
+        def unapply(arg: (String, HttpMethod)): Boolean = is(s"/processes/${expectedProcessDetails.id}", GET)
       }
 
       object AddProcess {
         def unapply(arg: (String, HttpMethod)): Option[Boolean] = {
-          if (is(s"/processes/$expectedProcessId/$expectedProcessCategory", POST)) {
+          if (is(s"/processes/${expectedProcessDetails.id}/$expectedProcessCategory", POST)) {
             uri.query().get("isSubprocess").map(_.toBoolean).orElse(Some(false))
           } else {
             None
@@ -97,14 +97,16 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
             HttpResponse(OK, entity = entity)
           }
 
-        case CheckProcess() if remoteProcessList contains expectedProcessId =>
-          Future.successful(HttpResponse(OK))
+        case CheckProcess() if remoteProcessList contains expectedProcessDetails.id =>
+          Marshal(expectedProcessDetails).to[RequestEntity].map { entity =>
+            HttpResponse(OK, entity = entity)
+          }
 
         case CheckProcess() =>
           Future.successful(HttpResponse(NotFound))
 
         case AddProcess(isSubprocess) =>
-          remoteProcessList = expectedProcessId :: remoteProcessList
+          remoteProcessList = expectedProcessDetails.id :: remoteProcessList
           triedToAddProcess = true
           addedSubprocess = Some(isSubprocess)
 
@@ -112,7 +114,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
             HttpResponse(OK, entity = entity)
           }
 
-        case UpdateProcess() if remoteProcessList contains expectedProcessId =>
+        case UpdateProcess() if remoteProcessList contains expectedProcessDetails.id =>
           onMigrate(Unmarshal(request).to[UpdateProcessCommand])
 
           Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
@@ -188,11 +190,25 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     }
 
     whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
-      result shouldBe Symbol("left")
-      result.swap.toOption.get shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
-      result.swap.toOption.get.getMessage shouldBe "Cannot migrate, following errors occurred: n1 - message"
+      result.leftValue shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
     }
 
+  }
+
+  it should "not migrate existing scenario when archived on target environment" in {
+
+    var migrated : Option[Future[UpdateProcessCommand]] = None
+    val validArchivedProcess = ProcessTestData.archivedValidProcessDetails
+    val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
+      validArchivedProcess,
+      validArchivedProcess.processCategory,
+      validArchivedProcess.id :: Nil,
+      migrationFuture => migrated = Some(migrationFuture)
+    )
+    whenReady(
+      remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
+      result.leftValue shouldBe MigrationToArchivedError(ProcessName(validProcess.id), remoteEnvironment.environmentId)
+    }
   }
 
   it should "handle spaces in scenario id" in {
@@ -242,7 +258,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
   it should "migrate valid existing scenario" in {
     var migrated : Option[Future[UpdateProcessCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
-      ProcessTestData.validProcess.id,
+      ProcessTestData.validProcessDetails,
       ProcessTestData.validProcessDetails.processCategory,
       ProcessTestData.validDisplayableProcess.id :: Nil,
       migrationFuture => migrated = Some(migrationFuture)
@@ -265,7 +281,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
   it should "migrate valid non-existing scenario" in {
     var migrated : Option[Future[UpdateProcessCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
-      ProcessTestData.validProcess.id,
+      ProcessTestData.validProcessDetails,
       ProcessTestData.validProcessDetails.processCategory,
       Nil,
       migrationFuture => migrated = Some(migrationFuture)
@@ -288,22 +304,23 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
   it should "migrate fragment" in {
     val category = TestCategories.Category1
     var migrated : Option[Future[UpdateProcessCommand]] = None
-    val subprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming, category)
+    val subprocess = ProcessTestData.toValidatedDisplayable(ProcessTestData.sampleSubprocess, category)
+    val validatedSubprocessDetails = TestProcessUtil.validatedToProcess(subprocess)
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
-      expectedProcessId = subprocess.id,
+      validatedSubprocessDetails,
       expectedProcessCategory = category,
       initialRemoteProcessList = Nil,
       onMigrate = migrationFuture => migrated = Some(migrationFuture)
     )
 
-    remoteEnvironment.migrate(subprocess, category).futureValue shouldBe Symbol("right")
+    remoteEnvironment.migrate(subprocess.toDisplayable, category).futureValue shouldBe Symbol("right")
     migrated shouldBe Symbol("defined")
     remoteEnvironment.triedToAddProcess shouldBe true
     remoteEnvironment.addedSubprocess shouldBe Some(true)
 
     whenReady(migrated.get) { processToSave =>
       processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
-      processToSave.process shouldBe subprocess
+      processToSave.process shouldBe subprocess.toDisplayable
     }
   }
 
@@ -313,7 +330,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       subProcesses = TestProcessUtil.validatedToProcess(toValidatedDisplayable(ProcessTestData.sampleSubprocess)) :: Nil
     )
 
-    val migrationResult = remoteEnvironment.testMigration().futureValue.value
+    val migrationResult = remoteEnvironment.testMigration().futureValue.rightValue
 
     migrationResult should have size 2
     migrationResult.map(_.converted.id) should contain only (ProcessTestData.validProcessDetails.name, ProcessTestData.sampleSubprocess.id)
