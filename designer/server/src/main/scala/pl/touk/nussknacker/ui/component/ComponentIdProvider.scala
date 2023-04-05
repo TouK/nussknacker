@@ -1,16 +1,36 @@
 package pl.touk.nussknacker.ui.component
 
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.component.ComponentUtil
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.process.ProcessCategoryService
 
 //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
 trait ComponentIdProvider {
   def createComponentId(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId
   def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId]
+}
+
+object DefaultComponentIdProvider extends LazyLogging {
+
+  def createUnsafe(processingTypeDataMap: Map[ProcessingType, ProcessingTypeData],
+                   categoryService: ProcessCategoryService): ComponentIdProvider = {
+    logger.debug("Creating component id provider")
+
+    val componentObjectsService = new ComponentObjectsService(categoryService)
+    val componentObjectsMap = processingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
+    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.view.mapValues(_.config).toMap)
+
+    ComponentsValidator.checkUnsafe(componentObjectsMap, componentIdProvider)
+
+    componentIdProvider
+  }
+
 }
 
 class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig]) extends ComponentIdProvider {

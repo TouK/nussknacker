@@ -31,7 +31,7 @@ object LocalNussknackerWithSingleModel  {
     val router = new NusskanckerDefaultAppRouter {
       override protected def prepareProcessingTypeData(config: ConfigWithUnresolvedVersion,
                                                        getDeploymentService: () => DeploymentService,
-                                                       categoriesService: ProcessCategoryService)
+                                                       categoryService: ProcessCategoryService)
                                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                                        sttpBackend: SttpBackend[Future, Any]): (ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
         //TODO: figure out how to perform e.g. hotswap
@@ -40,7 +40,7 @@ object LocalNussknackerWithSingleModel  {
           implicit val processTypeDeploymentService: ProcessingTypeDeploymentService = new DefaultProcessingTypeDeploymentService(typeName, deploymentService)
           val data = ProcessingTypeData.createProcessingTypeData(deploymentManagerProvider, modelData, managerConfig)
           val processingTypes = Map(typeName -> data)
-          val combinedData = CombinedProcessingTypeData.create(processingTypes)
+          val combinedData = CombinedProcessingTypeData.create(processingTypes, categoryService)
           new MapBasedProcessingTypeDataProvider(processingTypes, combinedData)
         })
       }

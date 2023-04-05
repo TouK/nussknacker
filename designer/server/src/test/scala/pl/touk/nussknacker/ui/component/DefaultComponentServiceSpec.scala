@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
 import akka.actor.ActorSystem
-import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -24,8 +23,8 @@ import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.component.DefaultsComponentGroupName._
 import pl.touk.nussknacker.ui.component.DefaultsComponentIcon._
 import pl.touk.nussknacker.ui.component.DynamicComponentProvider._
-import pl.touk.nussknacker.ui.config.ComponentLinkConfig
 import pl.touk.nussknacker.ui.config.ComponentLinkConfig._
+import pl.touk.nussknacker.ui.config.{ComponentLinkConfig, ComponentLinksConfigExtractor}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
@@ -33,7 +32,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 import sttp.client3.SttpBackend
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
@@ -66,7 +64,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   //We disable kafka ComponentProvider from kafkaLite, which is unnecessarily added to classpath when running in Idea...
   private val disableKafkaLite = "kafka.disabled: true"
 
-  private val globalConfig = ConfigFactory.parseString(
+  private val componentLinksConfig = ComponentLinksConfigExtractor.extract(ConfigFactory.parseString(
     s"""
       componentLinks: [
         ${linkConfigs.map { link =>
@@ -80,7 +78,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
           }.mkString(",\n")}
       ]
     """
-  )
+  ))
 
   private val overrideKafkaSinkComponentId = ComponentId(s"$Sink-$KafkaAvroProvidedComponentName")
   private val overrideKafkaSourceComponentId = ComponentId(s"$Source-$KafkaAvroProvidedComponentName")
@@ -361,22 +359,23 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   private val fraudFullUser = TestFactory.userWithCategoriesReadPermission(username = "fraudFullUser", categories = FraudWithoutSupperCategories)
   private val fraudTestsUser = TestFactory.userWithCategoriesReadPermission(username = "fraudTestsUser", categories = List(CategoryFraudTests))
 
-  private val processingTypeDataProvider = MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map(
+  private val processingTypeDataMap: Map[Category, ProcessingTypeData] = Map(
     Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
     Fraud -> LocalModelData(fraudConfig, ComponentFraudTestConfigCreator),
-  ).map { case (processingType, modelData) =>
-    processingType -> ProcessingTypeData(new MockDeploymentManager,
+  ).view.mapValues { modelData =>
+    ProcessingTypeData(new MockDeploymentManager,
       modelData,
       MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()),
       Map.empty,
       Nil,
       ProcessingTypeUsageStatistics(None, None))
-  })
+  }.toMap
+  private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(processingTypeDataMap, DefaultComponentIdProvider.createUnsafe(processingTypeDataMap, categoryService))
 
   it should "return components for each user" in {
     val processes = List(MarketingProcess, FraudProcess, FraudTestProcess, WrongCategoryProcess, ArchivedFraudProcess)
     val processService = createDbProcessService(categoryService, processes ++ subprocessFromCategories.toList)
-    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, processService, categoryService)
+    val defaultComponentService = DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
       prepareComponents(user)
@@ -436,7 +435,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   it should "throws exception when components are wrong configured" in {
     import WrongConfigurationAttribute._
-    val badProcessingTypeDataProvider = MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map(
+    val badProcessingTypeDataMap = Map(
       Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
       Fraud -> LocalModelData(wrongConfig, WronglyConfiguredConfigCreator),
     ).map { case (processingType, config) =>
@@ -446,9 +445,10 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
         Map.empty,
         Nil,
         ProcessingTypeUsageStatistics(None, None))
-    })
-
-    val processService = createDbProcessService(categoryService, List(MarketingProcess))
+    }
+    val componentObjectsService = new ComponentObjectsService(categoryService)
+    val componentObjectsMap = badProcessingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
+    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.view.mapValues(_.config).toMap)
 
     val expectedWrongConfigurations = List(
       ComponentWrongConfiguration(sharedSourceComponentId, NameAttribute, List(SharedSourceName, SharedSourceV2Name)),
@@ -464,10 +464,10 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     )
 
     val wrongConfigurations = intercept[ComponentConfigurationException] {
-      DefaultComponentService(globalConfig, badProcessingTypeDataProvider, processService, categoryService)
+      ComponentsValidator.checkUnsafe(componentObjectsMap, componentIdProvider)
     }.wrongConfigurations
 
-    wrongConfigurations should contain allElementsOf expectedWrongConfigurations
+    wrongConfigurations.toList should contain allElementsOf expectedWrongConfigurations
   }
 
   it should "return components usage" in {
@@ -483,7 +483,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     val filterComponentId = bid(Filter)
 
     val processService = createDbProcessService(categoryService, processes)
-    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, processService, categoryService)
+    val defaultComponentService = DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
 
     val testingData = Table(
       ("user", "componentId", "expected"),
@@ -511,7 +511,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   it should "return return error when component doesn't exist" in {
     val processService = createDbProcessService(categoryService)
-    val defaultComponentService = DefaultComponentService(globalConfig, processingTypeDataProvider, processService, categoryService)
+    val defaultComponentService = DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
     val notExistComponentId = ComponentId("not-exist")
     val result = defaultComponentService.getComponentUsages(notExistComponentId)(admin).futureValue
     result shouldBe Left(ComponentNotFoundError(notExistComponentId))

@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
-import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ProcessingTypeData
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
@@ -11,7 +10,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
-import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
+import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
@@ -27,14 +26,11 @@ trait ComponentService {
 
 object DefaultComponentService {
 
-  def checkUnsafe(processingTypeDataMap: Map[ProcessingType, ProcessingTypeData], categoryService: ProcessCategoryService): Unit =
-    ComponentsValidator.checkUnsafe(processingTypeDataMap, categoryService)
-
-  def apply(config: Config,
-            processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _],
+  def apply(componentLinksConfig: ComponentLinksConfig,
+            processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, ComponentIdProvider],
             processService: ProcessService,
             categoryService: ProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
-    new DefaultComponentService(config, processingTypeDataProvider, processService, categoryService)
+    new DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
   }
 
   private[component] def getComponentIcon(componentsUiConfig: ComponentsUiConfig, com: ComponentTemplate): String =
@@ -48,15 +44,16 @@ object DefaultComponentService {
 
 }
 
-class DefaultComponentService private(config: Config,
-                                      processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _],
+class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig,
+                                      processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, ComponentIdProvider],
                                       processService: ProcessService,
                                       categoryService: ProcessCategoryService)(implicit ec: ExecutionContext) extends ComponentService {
 
   import cats.syntax.traverse._
 
   private val componentObjectsService = new ComponentObjectsService(categoryService)
-  lazy private val componentLinksConfig = ComponentLinksConfigExtractor.extract(config)
+
+  private def componentIdProvider: ComponentIdProvider = processingTypeDataProvider.combined
 
   override def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]] = {
     processingTypeDataProvider.all.toList.flatTraverse {
@@ -65,7 +62,7 @@ class DefaultComponentService private(config: Config,
     }.map { components =>
       val filteredComponents = components.filter(component => component.categories.nonEmpty)
 
-      val deduplicatedComponents = deduplication(filteredComponents)
+      val deduplicatedComponents = deduplicateById(filteredComponents)
 
       deduplicatedComponents
         .sortBy(ComponentListElement.sortMethod)
@@ -114,22 +111,22 @@ class DefaultComponentService private(config: Config,
     processService
       .getSubProcesses(processingTypes = Some(List(processingType)))(user)
       .map { subprocesses =>
-        val componentObjects = componentObjectsService.prepare(processingTypeData, processingType, user, subprocesses)
+        val componentObjects = componentObjectsService.prepare(processingType, processingTypeData, user, subprocesses)
         val componentIdProvider = new DefaultComponentIdProvider(Map(processingType -> componentObjects.config))
-        createComponents(componentObjects.templates, componentObjects.config, componentUsages, processingType, componentIdProvider)
+        createComponents(componentObjects, componentUsages, processingType, componentIdProvider)
       }
   }
 
-  private def createComponents(componentTemplates: List[(ComponentGroupName, ComponentTemplate)],
-                               componentsConfig: ComponentsUiConfig,
+  private def createComponents(componentObjects: ComponentObjects,
                                componentUsages: Map[ComponentId, Long],
                                processingType: ProcessingType,
                                componentIdProvider: ComponentIdProvider): List[ComponentListElement] = {
-    componentTemplates
+    componentObjects
+      .templates
       .map { case (groupName, com) =>
         val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
-        val icon = getComponentIcon(componentsConfig, com)
-        val links = createComponentLinks(componentId, com, componentsConfig)
+        val icon = getComponentIcon(componentObjects.config, com)
+        val links = createComponentLinks(componentId, com, componentObjects.config)
         val usageCount = componentUsages.getOrElse(componentId, 0L)
 
         ComponentListElement(
@@ -159,7 +156,7 @@ class DefaultComponentService private(config: Config,
       .getOrElse(componentLinks)
   }
 
-  private def deduplication(components: Iterable[ComponentListElement]): List[ComponentListElement] = {
+  private def deduplicateById(components: Iterable[ComponentListElement]): List[ComponentListElement] = {
     val groupedComponents = components.groupBy(_.id)
     groupedComponents
       .map { case (_, components) => components match {
