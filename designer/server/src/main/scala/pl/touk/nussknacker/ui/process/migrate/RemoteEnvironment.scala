@@ -112,7 +112,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       _ <- processEither match {
         case Right(processDetails) if processDetails.isArchived => EitherT.leftT[Future, EspError](MigrationToArchivedError(processDetails.idWithName.name, environmentId))
         case Right(_) => EitherT.rightT[Future, EspError](())
-        case Left(_: RemoteEnvironmentCommunicationError) => createProcessOnRemote(localProcess, category)
+        case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) => createProcessOnRemote(localProcess, category)
         case Left(other) => EitherT.leftT[Future, EspError](other)
       }
       _ <- EitherT.right[EspError](saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}")))
