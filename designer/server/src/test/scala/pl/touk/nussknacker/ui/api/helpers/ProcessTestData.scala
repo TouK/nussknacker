@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -105,6 +105,8 @@ object ProcessTestData {
 
   val validProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
 
+  val archivedValidProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess).copy(isArchived = true)
+
   def validProcessWithId(id: String): CanonicalProcess = ScenarioBuilder
     .streaming(id)
     .source("source", existingSourceFactory)
@@ -132,13 +134,13 @@ object ProcessTestData {
       .source("source2", existingSourceFactory)
       .branchEnd("branch2", "join1"),
     GraphBuilder
-      .join("join1", "union", Some("outPutVar"),
+      .join("join1", "union", Some("outputVar"),
         List(
           "branch1" -> List("key" -> "'key1'", "value" -> "#input.data1"),
           "branch2" -> List("key" -> "'key2'", "value" -> "#input.data2")
         )
       )
-      .filter("always-true-filter", """#outPutVar.key != "not key1 or key2"""")
+      .filter("always-true-filter", """#outputVar.key != "not key1 or key2"""")
       .emptySink("sink1", existingSinkFactory))
   )
 

@@ -46,6 +46,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Parameter `delegate` in `OverridingProcessStateDefinitionManager` has no default value, it should be provided explicitly.
   * There is additional validation when all processing types are reloaded from configuration: check if all processing types state definitions configuration is correct.
     (see comment in `ProcessStateDefinitionService`)
+* [#3997](https://github.com/TouK/nussknacker/pull/3997) Due to removal of deprecated field `subprocessVersions` migration of scenarios from and to remote environment, for 
+  Nussknacker version 1.9.0+ and older will not be possible. Use export and import as a workaround while working between older and newer version.  
 
 
 ### Other changes
