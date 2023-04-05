@@ -6,7 +6,7 @@ import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import {Process} from "../../types"
 import {ProcessCounts} from "../graph"
 import {RootState} from "../index"
-import {getProcessState, isProcessStateLoaded} from "./scenarioState";
+import {getProcessState, isProcessStateLoaded} from "./scenarioState"
 
 export const getGraph = (state: RootState): RootState["graphReducer"] => state.graphReducer
 
@@ -56,7 +56,10 @@ export const isMigrationPossible = createSelector(
   [isSaveDisabled, hasError, getFetchedProcessState],
   (saveDisabled, error, state) => saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 )
-export const isCancelPossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canCancel(state))
+export const isCancelPossible = createSelector(
+  [isSaveDisabled, getFetchedProcessState],
+  (saveDisabled, state) => saveDisabled && ProcessStateUtils.canCancel(state)
+)
 export const isArchivePossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canArchive(state))
 export const getTestCapabilities = createSelector(getGraph, g => g.testCapabilities || {})
 export const getTestResults = createSelector(getGraph, g => g.testResults)
