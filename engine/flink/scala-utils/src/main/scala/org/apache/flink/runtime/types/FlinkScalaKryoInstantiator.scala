@@ -22,8 +22,9 @@ import org.apache.flink.api.java.typeutils.runtime.kryo.FlinkChillPackageRegistr
 import _root_.java.io.Serializable
 import com.twitter.chill._
 
-import scala.collection.immutable.{BitSet, HashMap, HashSet, ListMap, ListSet, NumericRange, Queue, Range, SortedMap, SortedSet}
-import scala.collection.mutable.{ArraySeq, Buffer, ListBuffer, BitSet => MBitSet, HashMap => MHashMap, HashSet => MHashSet, Map => MMap, Queue => MQueue, Set => MSet}
+import scala.collection.immutable.{ArraySeq, BitSet, HashMap, HashSet, ListMap, ListSet, NumericRange, Queue, Range, SortedMap, SortedSet}
+import scala.collection.mutable
+import scala.collection.mutable.{Buffer, ListBuffer, BitSet => MBitSet, HashMap => MHashMap, HashSet => MHashSet, Map => MMap, Queue => MQueue, Set => MSet}
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
 import scala.jdk.CollectionConverters._
@@ -104,7 +105,7 @@ class ScalaCollectionsRegistrar extends IKryoRegistrar {
      * default serializers. The FIRST one found is the one used
      */
     newK
-      .forTraversableSubclass(ArraySeq.empty[Any], isImmutable = false)
+      .forTraversableSubclass(mutable.ArraySeq.empty[Any], isImmutable = false)
       .forSubclass[BitSet](new BitSetSerializer)
       .forSubclass[SortedSet[Any]](new SortedSetSerializer)
       .forClass[Some[Any]](new SomeSerializer[Any])
@@ -167,6 +168,42 @@ class JavaWrapperScala2_13Registrar extends IKryoRegistrar {
   }
 }
 
+/**
+  * Scala collections registrar for compatibility between 2.12- and 2.13+.
+  *
+  * For 2.12- there's no extra classes that need to be registered.
+  * @see [[ScalaCollectionsRegistrar]] and [[AllScalaRegistrar]] for all the
+  * provided registrations.
+  */
+class ScalaCollectionsRegistrarCompat extends IKryoRegistrar {
+  override def apply(newK: Kryo): Unit = {
+    newK.register(classOf[Range.Exclusive])
+    newK.forConcreteTraversableClass(Vector[Any]())
+      .forConcreteTraversableClass(Vector(Symbol("a")))
+    val t: TraversableSerializer[Any, Vector[_]] = new TraversableSerializer(true)
+    newK.register(Class.forName("scala.collection.immutable.Vector0$"), t)
+    newK.register(Class.forName("scala.collection.immutable.Vector1"), t)
+    newK.register(Class.forName("scala.collection.immutable.Vector2"), t)
+    newK.register(Class.forName("scala.collection.immutable.Vector3"), t)
+    newK.register(Class.forName("scala.collection.immutable.Vector4"), t)
+    newK.register(Class.forName("scala.collection.immutable.Vector5"), t)
+    newK.register(Class.forName("scala.collection.immutable.Vector6"), t)
+    newK.registerClasses(
+      Seq(
+        ArraySeq.unsafeWrapArray(Array[Byte]()).getClass,
+        ArraySeq.unsafeWrapArray(Array[Short]()).getClass,
+        ArraySeq.unsafeWrapArray(Array[Int]()).getClass,
+        ArraySeq.unsafeWrapArray(Array[Long]()).getClass,
+        ArraySeq.unsafeWrapArray(Array[Float]()).getClass,
+        ArraySeq.unsafeWrapArray(Array[Double]()).getClass,
+        ArraySeq.unsafeWrapArray(Array[Boolean]()).getClass,
+        ArraySeq.unsafeWrapArray(Array[Char]()).getClass,
+        ArraySeq.unsafeWrapArray(Array[String]()).getClass
+      )
+    )
+  }
+}
+
 /** Registers all the scala (and java) serializers we have */
 class AllScalaRegistrar extends IKryoRegistrar {
   def apply(k: Kryo): Unit = {
@@ -178,6 +215,9 @@ class AllScalaRegistrar extends IKryoRegistrar {
 
     val jmap = new JavaWrapperScala2_13Registrar
     jmap(k)
+
+    val smap = new ScalaCollectionsRegistrarCompat
+    smap(k)
 
     // Register all 22 tuple serializers and specialized serializers
     ScalaTupleSerialization.register(k)
