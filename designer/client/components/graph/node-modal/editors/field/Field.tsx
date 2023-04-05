@@ -5,12 +5,14 @@ import LabeledInput from "./LabeledInput"
 import LabeledTextarea from "./LabeledTextarea"
 import UnknownField from "./UnknownField"
 import {Validator} from "../Validators"
+import Select, {Option} from "./Select"
 
 export enum FieldType {
   input = "input",
   unlabeledInput = "unlabeled-input",
   checkbox = "checkbox",
   plainTextarea = "plain-textarea",
+  select = "select"
 }
 
 interface FieldProps {
@@ -22,8 +24,17 @@ interface FieldProps {
   className: string,
   validators: Validator[],
   type: FieldType,
+  options?: Option[],
   value: string | boolean,
-  onChange: (value: string | boolean) => void,
+  onChange: (value: string | boolean | Option) => void,
+}
+
+function getCurrentBooleanOption(options: Option[], value: boolean | string): Option {
+  return options.find(x => {
+    const optionIsTrueFalse = x.value === value
+    const optionIsNull = x.value === null && value === undefined
+    return optionIsTrueFalse || optionIsNull
+  })
 }
 
 export default function Field({type, children, ...props}: PropsWithChildren<FieldProps>): JSX.Element {
@@ -66,6 +77,17 @@ export default function Field({type, children, ...props}: PropsWithChildren<Fiel
         >
           {children}
         </LabeledTextarea>
+      )
+    case FieldType.select:
+      return (
+        <Select
+          {...props}
+          options={props.options}
+          value={getCurrentBooleanOption(props.options, props.value) || null}
+          onChange={(option) => {props.onChange(option.value)}}
+        >
+          {children}
+        </Select>
       )
     default:
       return (<UnknownField/>)

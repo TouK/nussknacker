@@ -4,6 +4,7 @@ import {get} from "lodash"
 import React, {useMemo} from "react"
 import {useDiffMark} from "./PathsToMark"
 import {NodeType} from "../../../types"
+import {Option} from "./editors/field/Select"
 
 export enum FieldInputType {
   STRING,
@@ -17,12 +18,13 @@ type NodeFieldProps<N extends string, V> = {
   fieldProperty: N,
   fieldType: FieldType,
   isEditMode?: boolean,
-  placeholder?: string
+  placeholder?: string,
   node: NodeType,
   readonly?: boolean,
   renderFieldLabel: (paramName: string) => JSX.Element,
   setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
   inputType?: FieldInputType,
+  options?: Option[],
   showValidation?: boolean,
   validators?: Validator[],
 }
@@ -40,6 +42,7 @@ export function NodeField<N extends string, V>({
   renderFieldLabel,
   setProperty,
   inputType,
+  options,
   showValidation,
   validators = [],
 }: NodeFieldProps<N, V>): JSX.Element {
@@ -47,8 +50,7 @@ export function NodeField<N extends string, V>({
   const value = get(node, fieldProperty, null) ?? defaultValue
   const className = !showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"
 
-  const defaultOnChange = (newValue) =>
-    setProperty(fieldProperty, newValue, defaultValue)
+  const defaultOnChange = (newValue) => setProperty(fieldProperty, newValue, defaultValue)
 
   const integerOnChange = (newValue) => {
     if (!newValue) {
@@ -83,6 +85,7 @@ export function NodeField<N extends string, V>({
       className={className}
       validators={validators}
       value={value}
+      options={options}
       onChange={onChange}
     >
       {renderFieldLabel(fieldLabel)}

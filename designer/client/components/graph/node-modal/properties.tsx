@@ -66,7 +66,7 @@ export function Properties({
             <>
               <NodeField
                 isEditMode={isEditMode}
-                placeholder={'Server default'}
+                placeholder={"Server default"}
                 showValidation={showValidation}
                 node={node}
                 renderFieldLabel={renderFieldLabel}
@@ -80,7 +80,7 @@ export function Properties({
               />
               <NodeField
                 isEditMode={isEditMode}
-                placeholder={'Server default'}
+                placeholder={"Server default"}
                 showValidation={showValidation}
                 node={node}
                 renderFieldLabel={renderFieldLabel}
@@ -97,10 +97,15 @@ export function Properties({
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
-                fieldType={FieldType.checkbox}
-                fieldLabel={"Spill state to disk"}
-                fieldProperty={"typeSpecificProperties.spillStateToDisk"}
-                validators={[errorValidator(fieldErrors || [], "spillStateToDisk")]}
+                fieldType={FieldType.select}
+                fieldLabel={"I/O mode"}
+                options={[
+                  {label: "Server default", value: null},
+                  {label: "Synchronous", value: true},
+                  {label: "Asynchronous", value: false},
+                ]}
+                fieldProperty={"typeSpecificProperties.useAsyncInterpretation"}
+                validators={[errorValidator(fieldErrors || [], "useAsyncInterpretation")]}
               />
               <NodeField
                 isEditMode={isEditMode}
@@ -109,10 +114,9 @@ export function Properties({
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.checkbox}
-                fieldLabel={"Should use async interpretation"}
-                fieldProperty={"typeSpecificProperties.useAsyncInterpretation"}
-                validators={[errorValidator(fieldErrors || [], "useAsyncInterpretation")]}
-                defaultValue={processDefinitionData?.defaultAsyncInterpretation}
+                fieldLabel={"Spill state to disk"}
+                fieldProperty={"typeSpecificProperties.spillStateToDisk"}
+                validators={[errorValidator(fieldErrors || [], "spillStateToDisk")]}
               />
             </>
           ) :
@@ -120,7 +124,7 @@ export function Properties({
             (
               <NodeField
                 isEditMode={isEditMode}
-                placeholder={'Server default'}
+                placeholder={"Server default"}
                 showValidation={showValidation}
                 node={node}
                 renderFieldLabel={renderFieldLabel}
