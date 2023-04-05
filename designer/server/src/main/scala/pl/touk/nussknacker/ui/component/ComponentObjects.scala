@@ -29,36 +29,39 @@ private[component] object ComponentObjects {
  */
 private[component] class ComponentObjectsService(categoryService: ProcessCategoryService) {
 
-  def prepareWithoutFragments(processingTypeData: ProcessingTypeData,
-                              processingType: ProcessingType): ComponentObjects = {
-    val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
-      processingTypeData.modelData,
-      processingTypeData.deploymentManager,
-      user = NussknackerInternalUser, // We need admin user to received all components info
-      subprocessesDetails = Set.empty, // We don't check subprocesses, because these are dynamic components
-      isSubprocess = false, // It excludes fragment's components: input / output
-      categoryService,
-      processingTypeData.additionalPropertiesConfig,
-      processingType
+  def prepareWithoutFragments(processingType: ProcessingType, processingTypeData: ProcessingTypeData): ComponentObjects = {
+    val uiProcessObjects = createUIProcessObjects(
+      processingType,
+      processingTypeData,
+      user = NussknackerInternalUser, // We need admin user to receive all components info
+      subprocesses = Set.empty, // We don't check fragments, because these are dynamic components
     )
     ComponentObjects(uiProcessObjects)
   }
 
-  def prepare(processingTypeData: ProcessingTypeData,
-              processingType: ProcessingType,
+  def prepare(processingType: ProcessingType,
+              processingTypeData: ProcessingTypeData,
               user: LoggedUser,
               subprocesses: Set[SubprocessDetails]): ComponentObjects = {
-    val uiProcessObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
-      processingTypeData.modelData,
-      processingTypeData.deploymentManager,
-      user,
-      subprocesses,
-      isSubprocess = false, //It excludes fragment's components: input / output
-      categoryService,
-      processingTypeData.additionalPropertiesConfig,
-      processingType
-    )
+    val uiProcessObjects = createUIProcessObjects(processingType, processingTypeData, user, subprocesses)
     ComponentObjects(uiProcessObjects)
+  }
+
+  private def createUIProcessObjects(processingType: ProcessingType,
+                                     processingTypeData: ProcessingTypeData,
+                                     user: LoggedUser,
+                                     subprocesses: Set[SubprocessDetails]): UIProcessObjects = {
+    UIProcessObjectsFactory.prepareUIProcessObjects(
+      modelDataForType = processingTypeData.modelData,
+      deploymentManager = processingTypeData.deploymentManager,
+      typeSpecificInitialData = processingTypeData.typeSpecificInitialData,
+      user = user,
+      subprocessesDetails = subprocesses,
+      isSubprocess = false, //It excludes fragment's components: input / output
+      processCategoryService = categoryService,
+      additionalPropertiesConfig = processingTypeData.additionalPropertiesConfig,
+      processingType = processingType
+    )
   }
 
 }

@@ -1,23 +1,17 @@
 package pl.touk.nussknacker.ui.component
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.DefaultComponentService.getComponentIcon
 import pl.touk.nussknacker.ui.component.WrongConfigurationAttribute.{ComponentGroupNameAttribute, ComponentTypeAttribute, IconAttribute, NameAttribute, WrongConfigurationAttribute}
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
 
 private[component] object ComponentsValidator {
 
-  def checkUnsafe(processingTypeDataMap: Map[ProcessingType, ProcessingTypeData], categoryService: ProcessCategoryService): Unit = {
-    val componentObjectsService = new ComponentObjectsService(categoryService)
-
-    val components = processingTypeDataMap.toList.flatMap {
-      case (processingType, processingTypeData) =>
-        val componentObjects = componentObjectsService.prepareWithoutFragments(processingTypeData, processingType)
-        val componentIdProvider = new DefaultComponentIdProvider(Map(processingType -> componentObjects.config))
+  def checkUnsafe(componentObjectsMap: Map[ProcessingType, ComponentObjects], componentIdProvider: ComponentIdProvider): Unit = {
+    val components = componentObjectsMap.toList.flatMap {
+      case (processingType, componentObjects) =>
         extractComponents(processingType, componentObjects, componentIdProvider)
     }
     validateComponents(components)
@@ -52,8 +46,10 @@ private[component] object ComponentsValidator {
         case (componentId, components) => computeWrongConfigurations(componentId, components)
       }
       .toList
-    NonEmptyList.fromList(wrongComponents)
-      .fold(Validated.valid(()))(Validated.invalid(_))
+    NonEmptyList.fromList(wrongComponents) match {
+      case None => Validated.valid(())
+      case Some(nonEmptyWrongComponents) => Validated.invalid(nonEmptyWrongComponents)
+    }
   }
 
   private def computeWrongConfigurations(componentId: ComponentId, components: Iterable[ComponentValidationData]): List[ComponentWrongConfiguration[_]] = {
