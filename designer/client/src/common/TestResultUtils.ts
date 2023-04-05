@@ -27,6 +27,12 @@ interface ExternalInvocationResult {
   contextId: Context["id"],
 }
 
+export interface TestCapabilities {
+  canBeTested: boolean,
+  canGenerateTestData: boolean,
+  canCreateTestView: boolean,
+}
+
 export interface TestResults {
   externalInvocationResults: Record<NodeId, ExternalInvocationResult[]>,
   invocationResults: Record<NodeId, InvocationResult[]>,

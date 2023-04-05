@@ -27,7 +27,7 @@ const emptyGraphState: GraphState = {
   processToDisplay: null,
   fetchedProcessDetails: null,
   layout: [],
-  testCapabilities: {},
+  testCapabilities: null,
   selectionState: [],
   processCounts: {},
   testResults: null,
