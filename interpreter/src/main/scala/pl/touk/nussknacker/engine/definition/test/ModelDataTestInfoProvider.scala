@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.test
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator, TestViewGenerator}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -27,7 +27,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       .map(getTestingCapabilities(_, scenario.metaData))
       .foldLeft(TestingCapabilities.Disabled)((tc1, tc2) => TestingCapabilities(
         canBeTested = tc1.canBeTested || tc2.canBeTested,
-        canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData
+        canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
+        canCreateTestView = tc1.canCreateTestView || tc2.canCreateTestView,
       ))
   }
 
@@ -36,7 +37,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       sourceObj <- prepareSourceObj(source)(metaData)
       canTest = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
-    } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
+      canCreateTestView = sourceObj.isInstanceOf[TestViewGenerator]
+    } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData, canCreateTestView = canCreateTestView)
     testingCapabilities.getOrElse(TestingCapabilities.Disabled)
   }
 

@@ -38,6 +38,14 @@ trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
 }
 
 /**
+ * Optional functionality which should provide field definitions based on input schema
+ * Based on those fields UI creates a window allowing user to test scenario based on schema.
+ */
+trait TestViewGenerator { self: Source with SourceTestSupport[_] =>
+  def createTestView: Any //TODO, figure out what should be here.
+}
+
+/**
   * [[pl.touk.nussknacker.engine.api.process.SourceFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]
   * that returns [[pl.touk.nussknacker.engine.api.process.Source]]
   * IMPORTANT lifecycle notice:
