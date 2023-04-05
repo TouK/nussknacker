@@ -45,14 +45,6 @@ object TestProcessUtil {
       category = displayable.category
     ).copy(json = displayable)
 
-  def validatedToArchivedProcess(displayable: ValidatedDisplayableProcess): ValidatedProcessDetails =
-    toDetails(
-      displayable.id,
-      processingType = displayable.processingType,
-      category = displayable.category,
-      isArchived = true
-    ).copy(json = displayable)
-
   def toDetails(name: String, category: Category = TestCategories.Category1, isSubprocess: Boolean = false, isArchived: Boolean = false,
                 processingType: ProcessingType = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None,
                 description: Option[String] = None, history: Option[List[ProcessVersion]] = None) : ProcessDetails = {
