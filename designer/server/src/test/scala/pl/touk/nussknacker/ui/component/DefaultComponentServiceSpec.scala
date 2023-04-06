@@ -362,14 +362,14 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   private val processingTypeDataMap: Map[Category, ProcessingTypeData] = Map(
     Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
     Fraud -> LocalModelData(fraudConfig, ComponentFraudTestConfigCreator),
-  ).view.mapValues { modelData =>
+  ).transform { case (_, modelData) =>
     ProcessingTypeData(new MockDeploymentManager,
       modelData,
       MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()),
       Map.empty,
       Nil,
       ProcessingTypeUsageStatistics(None, None))
-  }.toMap
+  }
   private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(processingTypeDataMap, DefaultComponentIdProvider.createUnsafe(processingTypeDataMap, categoryService))
 
   it should "return components for each user" in {
