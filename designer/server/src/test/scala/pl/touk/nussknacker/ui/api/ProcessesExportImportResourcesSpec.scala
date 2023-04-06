@@ -7,7 +7,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
@@ -72,7 +72,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val imported = responseAs[DisplayableProcess]
-        imported.properties.typeSpecificProperties.asInstanceOf[StreamMetaData].parallelism shouldBe Some(987)
+        imported.properties.toMetaData(processToSave.id).typeSpecificData.asInstanceOf[StreamMetaData].parallelism shouldBe Some(987)
         imported.id shouldBe processToSave.id
         imported.nodes shouldBe processToSave.nodes
       }
@@ -82,7 +82,10 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   test("export process in new version") {
     val description = "alamakota"
     val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
-    val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Map.empty))))
+    val processWithDescription = processToSave.copy(properties =
+      ProcessProperties
+      (typeSpecificProperties = processToSave.properties.toMetaData(processToSave.id).typeSpecificData,
+        additionalFields = Some(ProcessAdditionalFields(Some(description), Map.empty))))
 
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK

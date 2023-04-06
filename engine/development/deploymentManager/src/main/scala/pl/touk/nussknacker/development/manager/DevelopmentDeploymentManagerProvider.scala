@@ -194,7 +194,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
 
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
+  override def propertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
     Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None))
 
   override def name: String = "development-tests"

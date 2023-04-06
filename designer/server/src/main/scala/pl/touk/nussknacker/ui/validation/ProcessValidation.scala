@@ -26,16 +26,14 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 object ProcessValidation {
   def apply(modelData: ProcessingTypeDataProvider[ModelData, _],
             additionalProperties: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _],
-            typeSpecificProperties: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _],
             additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator], _],
             subprocessResolver: SubprocessResolver): ProcessValidation = {
-    new ProcessValidation(modelData, additionalProperties, typeSpecificProperties, additionalValidators, subprocessResolver, None)
+    new ProcessValidation(modelData, additionalProperties, additionalValidators, subprocessResolver, None)
   }
 }
 
 class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData, _],
                         additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _],
-                        typeSpecificPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _],
                         additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator], _],
                         subprocessResolver: SubprocessResolver,
                         expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]]) {
@@ -48,19 +46,18 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData, _],
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private val additionalPropertiesValidator = new AdditionalPropertiesValidator(additionalPropertiesConfig, typeSpecificPropertiesConfig)
+  private val additionalPropertiesValidator = new AdditionalPropertiesValidator(additionalPropertiesConfig)
 
   def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(
-    modelData, additionalPropertiesConfig, typeSpecificPropertiesConfig, additionalValidators, subprocessResolver, None
+    modelData, additionalPropertiesConfig, additionalValidators, subprocessResolver, None
   )
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]) = new ProcessValidation(
-    modelData, additionalPropertiesConfig, typeSpecificPropertiesConfig, additionalValidators, subprocessResolver, Some(modify)
+    modelData, additionalPropertiesConfig, additionalValidators, subprocessResolver, Some(modify)
   )
 
   def withAdditionalPropertiesConfig(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]) =
-    new ProcessValidation(modelData, additionalPropertiesConfig, typeSpecificPropertiesConfig, additionalValidators,
-      subprocessResolver, None)
+    new ProcessValidation(modelData, additionalPropertiesConfig, additionalValidators, subprocessResolver, None)
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)

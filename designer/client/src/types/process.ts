@@ -66,7 +66,6 @@ export interface ProcessDefinitionData {
   processDefinition?: ProcessDefinition,
   componentGroups?: ComponentGroup[],
   additionalPropertiesConfig?: AdditionalPropertiesConfig,
-  typeSpecificPropertiesConfig?: AdditionalPropertiesConfig,
   edgesForNodes?: EdgesForNode[],
   customActions?: Array<CustomAction>,
   defaultAsyncInterpretation?: boolean,

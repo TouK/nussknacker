@@ -12,7 +12,6 @@ import scala.concurrent.{ExecutionContext, Future}
 case class ProcessingTypeData(deploymentManager: DeploymentManager,
                               modelData: ModelData,
                               typeSpecificInitialData: TypeSpecificInitialData,
-                              typeSpecificPropertiesConfig: Map[String, AdditionalPropertyConfig],
                               additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
                               additionalValidators: List[CustomProcessValidator],
                               usageStatistics: ProcessingTypeUsageStatistics) extends AutoCloseable {
@@ -34,13 +33,12 @@ object ProcessingTypeData {
     import net.ceedubs.ficus.Ficus._
     import pl.touk.nussknacker.engine.util.config.FicusReaders._
     val additionalProperties =
-      deploymentManagerProvider.additionalPropertiesConfig(managerConfig) ++ modelData.processConfig.getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
+      deploymentManagerProvider.propertiesConfig(managerConfig) ++ modelData.processConfig.getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
 
     ProcessingTypeData(
       manager,
       modelData,
       deploymentManagerProvider.typeSpecificInitialData(managerConfig),
-      deploymentManagerProvider.typeSpecificPropertiesConfig(managerConfig),
       additionalProperties,
       deploymentManagerProvider.additionalValidators(managerConfig),
       ProcessingTypeUsageStatistics(managerConfig))
