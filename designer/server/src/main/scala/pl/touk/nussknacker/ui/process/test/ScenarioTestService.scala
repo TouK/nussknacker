@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ScenarioTestService {
 
-  def apply(providers: ProcessingTypeDataProvider[ModelData],
+  def apply(providers: ProcessingTypeDataProvider[ModelData, _],
             testDataSettings: TestDataSettings,
             processResolving: UIProcessResolving,
             processCounter: ProcessCounter,
@@ -37,7 +37,7 @@ object ScenarioTestService {
 
 }
 
-class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider],
+class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider, _],
                           testDataSettings: TestDataSettings,
                           preliminaryScenarioTestDataSerDe: PreliminaryScenarioTestDataSerDe,
                           processResolving: UIProcessResolving,

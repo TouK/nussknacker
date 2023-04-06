@@ -23,7 +23,7 @@ object UsageStatisticsReportsSettings {
   // We aggregate custom deployment managers and processing modes as a "custom" to avoid leaking of internal, confidential data
   private val aggregateForCustomValues = "custom"
 
-  def prepare(config: UsageStatisticsReportsConfig, processingTypeStatistics: ProcessingTypeDataProvider[ProcessingTypeUsageStatistics]): UsageStatisticsReportsSettings = {
+  def prepare(config: UsageStatisticsReportsConfig, processingTypeStatistics: ProcessingTypeDataProvider[ProcessingTypeUsageStatistics, _]): UsageStatisticsReportsSettings = {
     val queryParams = prepareQueryParams(config, processingTypeStatistics.all)
     val url = prepareUrl(queryParams)
     UsageStatisticsReportsSettings(config.enabled, url)

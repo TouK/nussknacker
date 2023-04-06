@@ -7,15 +7,16 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, OverridingProcessStateDefinitionManager, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificInitialData}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2, TestCat, TestCat2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
-import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider}
+import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
@@ -116,10 +117,10 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         streamingProcessStateDefinitionManager,
         fraudProcessStateDefinitionManager
       )
-    }.getMessage should include("State definitions are not unique")
+    }.getMessage shouldBe "State definitions are not unique for states: COMMON"
   }
 
-  private def createStateDefinitionManager(definitions: Map[String, String]) = new OverridingProcessStateDefinitionManager(
+  private def createStateDefinitionManager(definitions: Map[StatusName, String]) = new OverridingProcessStateDefinitionManager(
     customStateDefinitions = definitions.map { case (name, displayableName) =>
       name -> StateDefinitionDetails(
         displayableName = displayableName, icon = UnknownIcon, tooltip = "dummy", description = s"Description for ${displayableName}"
@@ -129,9 +130,10 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   )
 
   private def testStateDefinitions(user: LoggedUser, streamingProcessStateDefinitionManager: OverridingProcessStateDefinitionManager, fraudProcessStateDefinitionManager: OverridingProcessStateDefinitionManager): List[UIStateDefinition] = {
-    val typeToConfig = processingTypeDataProvider(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
-    val service = new ProcessStateDefinitionService(typeToConfig, categoryService)
-    ProcessStateDefinitionService.checkUnsafe(typeToConfig.all)
+    val processingTypeDataMap = createProcessingTypeDataMap(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
+    val stateDefinitions = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
+    val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(processingTypeDataMap, stateDefinitions)
+    val service = new ProcessStateDefinitionService(processingTypeDataProvider, categoryService)
     service.fetchStateDefinitions(user)
   }
 
@@ -140,9 +142,9 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
   }
 
-  private def processingTypeDataProvider(streaming: ProcessStateDefinitionManager,
-                                         fraud: ProcessStateDefinitionManager): ProcessingTypeDataProvider[ProcessingTypeData] = {
-    processingTypeDataProviderMap(Map(
+  private def createProcessingTypeDataMap(streaming: ProcessStateDefinitionManager,
+                                         fraud: ProcessStateDefinitionManager): Map[ProcessingType, ProcessingTypeData] = {
+    createProcessingTypeDataMap(Map(
       Streaming -> new MockDeploymentManager() {
         override def processStateDefinitionManager: ProcessStateDefinitionManager = streaming
       },
@@ -152,16 +154,15 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     ))
   }
 
-  private def processingTypeDataProviderMap(processingTypeToDeploymentManager: Map[String, DeploymentManager]) =
-    new MapBasedProcessingTypeDataProvider(
-      processingTypeToDeploymentManager.map { case (processingType, deploymentManager) =>
-        processingType -> ProcessingTypeData(deploymentManager,
-          LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
-          TypeSpecificInitialData(StreamMetaData(Some(1))),
-          Map.empty,
-          Nil,
-          ProcessingTypeUsageStatistics("stubManager", None))
-      }
-    )
+  private def createProcessingTypeDataMap(processingTypeToDeploymentManager: Map[ProcessingType, DeploymentManager]): Map[ProcessingType, ProcessingTypeData] = {
+    processingTypeToDeploymentManager.transform { case (_, deploymentManager) =>
+      ProcessingTypeData(deploymentManager,
+        LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
+        TypeSpecificInitialData(StreamMetaData(Some(1))),
+        Map.empty,
+        Nil,
+        ProcessingTypeUsageStatistics("stubManager", None))
+    }
+  }
 
 }

@@ -18,7 +18,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
  *  Currently, the only implementation is map-based, but in the future it will allow to reload ProcessingTypeData related stuff
  *  without restarting the app
  */
-trait ProcessingTypeDataProvider[+T] {
+trait ProcessingTypeDataProvider[+T, +C] {
 
   def forType(typ: ProcessingType): Option[T]
 
@@ -28,24 +28,51 @@ trait ProcessingTypeDataProvider[+T] {
 
   def all: Map[ProcessingType, T]
 
-  def mapValues[Y](fun: T => Y): ProcessingTypeDataProvider[Y] = {
+  def combined: C
 
-    new ProcessingTypeDataProvider[Y] {
+  def mapValues[Y](fun: T => Y): ProcessingTypeDataProvider[Y, C] = {
+
+    new ProcessingTypeDataProvider[Y, C] {
 
       override def forType(typ: ProcessingType): Option[Y] = ProcessingTypeDataProvider.this.forType(typ).map(fun)
 
       override def all: Map[ProcessingType, Y] = ProcessingTypeDataProvider.this.all.mapValuesNow(fun)
+
+      override def combined: C = ProcessingTypeDataProvider.this.combined
+    }
+
+  }
+
+  def mapCombined[CC](fun: C => CC): ProcessingTypeDataProvider[T, CC] = {
+
+    new ProcessingTypeDataProvider[T, CC] {
+
+      override def forType(typ: ProcessingType): Option[T] = ProcessingTypeDataProvider.this.forType(typ)
+
+      override def all: Map[ProcessingType, T] = ProcessingTypeDataProvider.this.all
+
+      override def combined: CC = fun(ProcessingTypeDataProvider.this.combined)
     }
 
   }
 
 }
 
-class MapBasedProcessingTypeDataProvider[T](map: Map[ProcessingType, T]) extends ProcessingTypeDataProvider[T] {
+class MapBasedProcessingTypeDataProvider[T, C](map: Map[ProcessingType, T], getCombined: => C) extends ProcessingTypeDataProvider[T, C] {
 
   override def forType(typ: ProcessingType): Option[T] = map.get(typ)
 
   override def all: Map[ProcessingType, T] = map
+
+  override lazy val combined: C = getCombined
+
+}
+
+object MapBasedProcessingTypeDataProvider {
+
+  def withEmptyCombinedData[T](map: Map[ProcessingType, T]): ProcessingTypeDataProvider[T, Nothing] = {
+    new MapBasedProcessingTypeDataProvider[T, Nothing](map, throw new IllegalStateException("Processing type data provider does not have combined data!"))
+  }
 
 }
 

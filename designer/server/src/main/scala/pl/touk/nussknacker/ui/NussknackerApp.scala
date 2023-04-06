@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
-import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ProcessingTypeData}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
@@ -66,7 +66,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   //override this method to e.g. run UI with local model
   protected def prepareProcessingTypeData(designerConfig: ConfigWithUnresolvedVersion, getDeploymentService: () => DeploymentService, categoriesService: ProcessCategoryService)
                                          (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                          sttpBackend: SttpBackend[Future, Any]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
+                                          sttpBackend: SttpBackend[Future, Any]): (ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
     BasicProcessingTypeDataReload.wrapWithReloader(
       () => {
         implicit val deploymentService: DeploymentService = getDeploymentService()
@@ -104,7 +104,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val (typeToConfig, reload) = prepareProcessingTypeData(designerConfig, getDeploymentService, processCategoryService)
 
-    val stateDefinitionService = new ProcessStateDefinitionService(typeToConfig, processCategoryService)
+    val stateDefinitionService = new ProcessStateDefinitionService(typeToConfig.mapCombined(_.statusNameToStateDefinitionsMapping), processCategoryService)
 
     val analyticsConfig = AnalyticsConfig(resolvedConfig)
 

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import pl.touk.nussknacker.ui.definition.additionalproperty.AdditionalPropertyValidatorDeterminerChain
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
-class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {
+class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]) {
 
   import cats.implicits._
 

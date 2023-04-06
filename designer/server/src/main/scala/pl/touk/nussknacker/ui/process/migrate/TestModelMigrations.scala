@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
-class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigrations], processValidation: ProcessValidation) {
+class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigrations, _], processValidation: ProcessValidation) {
 
   def testMigrations(processes: List[ValidatedProcessDetails], subprocesses: List[ValidatedProcessDetails]) : List[TestMigrationResult] = {
     val migratedSubprocesses = subprocesses.flatMap(migrateProcess)

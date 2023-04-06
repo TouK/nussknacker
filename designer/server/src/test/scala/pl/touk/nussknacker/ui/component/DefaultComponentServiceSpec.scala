@@ -361,7 +361,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   private val fraudFullUser = TestFactory.userWithCategoriesReadPermission(username = "fraudFullUser", categories = FraudWithoutSupperCategories)
   private val fraudTestsUser = TestFactory.userWithCategoriesReadPermission(username = "fraudTestsUser", categories = List(CategoryFraudTests))
 
-  private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(Map(
+  private val processingTypeDataProvider = MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map(
     Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
     Fraud -> LocalModelData(fraudConfig, ComponentFraudTestConfigCreator),
   ).map { case (processingType, modelData) =>
@@ -436,7 +436,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   it should "throws exception when components are wrong configured" in {
     import WrongConfigurationAttribute._
-    val badProcessingTypeDataProvider = new MapBasedProcessingTypeDataProvider(Map(
+    val badProcessingTypeDataProvider = MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map(
       Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
       Fraud -> LocalModelData(wrongConfig, WronglyConfiguredConfigCreator),
     ).map { case (processingType, config) =>

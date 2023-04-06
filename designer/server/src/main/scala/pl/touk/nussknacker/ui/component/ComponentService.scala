@@ -38,7 +38,7 @@ object DefaultComponentService {
   type ComponentIdProviderWithError = Validated[List[ComponentWrongConfiguration[_]], ComponentIdProvider]
 
   def apply(config: Config,
-            processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
+            processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _],
             processService: ProcessService,
             categoryService: ProcessCategoryService)(implicit ec: ExecutionContext): DefaultComponentService = {
     val componentIdProvider = prepareComponentProvider(processingTypeDataProvider, categoryService)
@@ -48,7 +48,7 @@ object DefaultComponentService {
       .valueOr(wrongConfigurations => throw ComponentConfigurationException(s"Wrong configured components were found.", wrongConfigurations))
   }
 
-  private def prepareComponentProvider(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData], categoryService: ProcessCategoryService)(implicit ec: ExecutionContext): ComponentIdProviderWithError = {
+  private def prepareComponentProvider(processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _], categoryService: ProcessCategoryService)(implicit ec: ExecutionContext): ComponentIdProviderWithError = {
     val data = processingTypeDataProvider.all.toList.map {
       case (processingType, processingTypeData) =>
         extractFromProcessingType(processingTypeData, processingType, categoryService)
@@ -135,7 +135,7 @@ object DefaultComponentService {
 }
 
 class DefaultComponentService private(config: Config,
-                                      processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData],
+                                      processingTypeDataProvider: ProcessingTypeDataProvider[ProcessingTypeData, _],
                                       processService: ProcessService,
                                       categoryService: ProcessCategoryService,
                                       componentIdProvider: ComponentIdProvider)(implicit ec: ExecutionContext) extends ComponentService {

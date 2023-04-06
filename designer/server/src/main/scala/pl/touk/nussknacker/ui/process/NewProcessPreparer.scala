@@ -10,14 +10,14 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 
 object NewProcessPreparer {
 
-  def apply(processTypes: ProcessingTypeDataProvider[ProcessingTypeData], additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]): NewProcessPreparer =
+  def apply(processTypes: ProcessingTypeDataProvider[ProcessingTypeData, _], additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]): NewProcessPreparer =
     new NewProcessPreparer(processTypes.mapValues(_.typeSpecificInitialData), additionalFields)
 
 }
 
 
-class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpecificInitialData],
-                         additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {
+class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpecificInitialData, _],
+                         additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]) {
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean): CanonicalProcess = {
     val creator = emptyProcessCreate.forTypeUnsafe(processingType)
     val specificMetaData = if(isSubprocess) creator.forFragment _ else creator.forScenario _
