@@ -448,7 +448,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     }
     val componentObjectsService = new ComponentObjectsService(categoryService)
     val componentObjectsMap = badProcessingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
-    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.view.mapValues(_.config).toMap)
+    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.transform { case (_, componentsObjects) => componentsObjects.config })
 
     val expectedWrongConfigurations = List(
       ComponentWrongConfiguration(sharedSourceComponentId, NameAttribute, List(SharedSourceName, SharedSourceV2Name)),

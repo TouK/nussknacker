@@ -24,7 +24,7 @@ object DefaultComponentIdProvider extends LazyLogging {
 
     val componentObjectsService = new ComponentObjectsService(categoryService)
     val componentObjectsMap = processingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
-    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.view.mapValues(_.config).toMap)
+    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.transform { case (_, componentsObjects) => componentsObjects.config })
 
     ComponentsValidator.checkUnsafe(componentObjectsMap, componentIdProvider)
 
