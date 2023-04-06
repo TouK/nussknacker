@@ -32,14 +32,14 @@ object UsageStatisticsReportsSettings {
   private[statistics] def prepareQueryParams(config: UsageStatisticsReportsConfig,
                                              processingTypeStatisticsMap: Map[ProcessingType, ProcessingTypeUsageStatistics]): ListMap[String, String] = {
     val deploymentManagerTypes = processingTypeStatisticsMap.values.map(_.deploymentManagerType).map {
-      case dm if knownDeploymentManagerTypes.contains(dm) => dm
+      case Some(dm) if knownDeploymentManagerTypes.contains(dm) => dm
       case _ => aggregateForCustomValues
     }
     val dmParams = prepareValuesParams(deploymentManagerTypes, "dm")
 
     val processingModes = processingTypeStatisticsMap.values.map {
       case ProcessingTypeUsageStatistics(_, Some(mode)) if knownProcessingModes.contains(mode) => mode
-      case ProcessingTypeUsageStatistics(deploymentManagerType, None) if deploymentManagerType.toLowerCase.contains(streamingProcessingMode) => streamingProcessingMode
+      case ProcessingTypeUsageStatistics(Some(deploymentManagerType), None) if deploymentManagerType.toLowerCase.contains(streamingProcessingMode) => streamingProcessingMode
       case _ => aggregateForCustomValues
     }
     val mParams = prepareValuesParams(processingModes, "m")

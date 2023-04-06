@@ -161,7 +161,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
         TypeSpecificInitialData(StreamMetaData(Some(1))),
         Map.empty,
         Nil,
-        ProcessingTypeUsageStatistics("stubManager", None))
+        ProcessingTypeUsageStatistics(None, None))
     }
   }
 

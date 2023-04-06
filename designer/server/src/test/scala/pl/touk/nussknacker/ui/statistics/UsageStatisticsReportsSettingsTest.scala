@@ -35,7 +35,7 @@ class UsageStatisticsReportsSettingsTest extends AnyFunSuite with Matchers {
     val givenDm1 = "flinkStreaming"
     val paramsForSingleDm = UsageStatisticsReportsSettings.prepareQueryParams(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map("streaming" -> ProcessingTypeUsageStatistics(givenDm1, None)))
+      Map("streaming" -> ProcessingTypeUsageStatistics(Some(givenDm1), None)))
     paramsForSingleDm should contain ("single_dm" -> givenDm1)
     paramsForSingleDm should contain ("dm_" + givenDm1 -> "1")
 
@@ -43,9 +43,9 @@ class UsageStatisticsReportsSettingsTest extends AnyFunSuite with Matchers {
     val paramsForMultipleDms = UsageStatisticsReportsSettings.prepareQueryParams(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       Map(
-        "streaming" -> ProcessingTypeUsageStatistics(givenDm1, None),
-        "streaming2" -> ProcessingTypeUsageStatistics(givenDm2, None),
-        "streaming3" -> ProcessingTypeUsageStatistics(givenDm1, None)))
+        "streaming" -> ProcessingTypeUsageStatistics(Some(givenDm1), None),
+        "streaming2" -> ProcessingTypeUsageStatistics(Some(givenDm2), None),
+        "streaming3" -> ProcessingTypeUsageStatistics(Some(givenDm1), None)))
     paramsForMultipleDms should contain ("single_dm" -> "multiple")
     paramsForMultipleDms should contain ("dm_" + givenDm1 -> "2")
     paramsForMultipleDms should contain ("dm_" + givenDm2 -> "1")
@@ -55,7 +55,7 @@ class UsageStatisticsReportsSettingsTest extends AnyFunSuite with Matchers {
     val streamingMode = "streaming"
     val paramsForSingleMode = UsageStatisticsReportsSettings.prepareQueryParams(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map("streaming" -> ProcessingTypeUsageStatistics("fooDm", Some(streamingMode))))
+      Map("streaming" -> ProcessingTypeUsageStatistics(Some("fooDm"), Some(streamingMode))))
     paramsForSingleMode should contain ("single_m" -> streamingMode)
     paramsForSingleMode should contain ("m_" + streamingMode -> "1")
 
@@ -63,9 +63,9 @@ class UsageStatisticsReportsSettingsTest extends AnyFunSuite with Matchers {
     val paramsForMultipleModes = UsageStatisticsReportsSettings.prepareQueryParams(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       Map(
-        "streaming" -> ProcessingTypeUsageStatistics("fooDm", Some(streamingMode)),
-        "streaming2" -> ProcessingTypeUsageStatistics("barDm", Some(requestResponseMode)),
-        "streaming3" -> ProcessingTypeUsageStatistics("bazDm", Some(streamingMode))))
+        "streaming" -> ProcessingTypeUsageStatistics(Some("fooDm"), Some(streamingMode)),
+        "streaming2" -> ProcessingTypeUsageStatistics(Some("barDm"), Some(requestResponseMode)),
+        "streaming3" -> ProcessingTypeUsageStatistics(Some("bazDm"), Some(streamingMode))))
     paramsForMultipleModes should contain ("single_m" -> "multiple")
     paramsForMultipleModes should contain ("m_" + streamingMode -> "2")
     paramsForMultipleModes should contain ("m_" + requestResponseMode -> "1")
@@ -75,16 +75,24 @@ class UsageStatisticsReportsSettingsTest extends AnyFunSuite with Matchers {
     val givenCustomDm = "customDm"
     val paramsForSingleDm = UsageStatisticsReportsSettings.prepareQueryParams(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map("streaming" -> ProcessingTypeUsageStatistics(givenCustomDm, None)))
+      Map("streaming" -> ProcessingTypeUsageStatistics(Some(givenCustomDm), None)))
     paramsForSingleDm should contain("single_dm" -> "custom")
     paramsForSingleDm should contain("dm_custom" -> "1")
 
     val customMode = "customMode"
     val paramsForSingleMode = UsageStatisticsReportsSettings.prepareQueryParams(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map("streaming" -> ProcessingTypeUsageStatistics("fooDm", Some(customMode))))
+      Map("streaming" -> ProcessingTypeUsageStatistics(Some("fooDm"), Some(customMode))))
     paramsForSingleMode should contain ("single_m" -> "custom")
     paramsForSingleMode should contain ("m_custom" -> "1")
+  }
+
+  test("should handle missing manager type") {
+    val paramsForSingleDmWithoutType = UsageStatisticsReportsSettings.prepareQueryParams(
+      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      Map("streaming" -> ProcessingTypeUsageStatistics(None, None)))
+    paramsForSingleDmWithoutType should contain("single_dm" -> "custom")
+    paramsForSingleDmWithoutType should contain("dm_custom" -> "1")
   }
 
 }

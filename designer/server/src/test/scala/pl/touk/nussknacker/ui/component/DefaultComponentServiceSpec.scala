@@ -370,7 +370,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()),
       Map.empty,
       Nil,
-      ProcessingTypeUsageStatistics("stubManager", None))
+      ProcessingTypeUsageStatistics(None, None))
   })
 
   it should "return components for each user" in {
@@ -445,7 +445,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
         MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()),
         Map.empty,
         Nil,
-        ProcessingTypeUsageStatistics("stubManager", None))
+        ProcessingTypeUsageStatistics(None, None))
     })
 
     val processService = createDbProcessService(categoryService, List(MarketingProcess))
