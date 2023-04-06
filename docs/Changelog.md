@@ -5,7 +5,7 @@
 1.10.0 (not released yet)
 -------------------------
 * [#4204](https://github.com/TouK/nussknacker/pull/4204) ProcessingTypeDataProvider has combined data being a result of all processing types
-* [#4215](https://github.com/TouK/nussknacker/pull/4215) Components are aware of processing data reload
+* [#4219](https://github.com/TouK/nussknacker/pull/4219) Components are aware of processing data reload
 
 1.9.0 (not released yet)
 ------------------------
