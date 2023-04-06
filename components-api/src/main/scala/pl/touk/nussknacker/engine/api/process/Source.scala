@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, VariableConstants}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import shapeless.=:!=
 
 import scala.reflect.ClassTag
@@ -42,7 +43,7 @@ trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
  * Based on those fields UI creates a window allowing user to test scenario based on schema.
  */
 trait TestViewGenerator { self: Source with SourceTestSupport[_] =>
-  def createTestView: Any //TODO, figure out what should be here.
+  def createTestView: List[Parameter]
 }
 
 /**
