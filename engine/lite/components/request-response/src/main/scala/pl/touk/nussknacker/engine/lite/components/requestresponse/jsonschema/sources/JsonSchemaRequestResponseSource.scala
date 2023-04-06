@@ -3,23 +3,27 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.so
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.everit.json.schema.Schema
-import pl.touk.nussknacker.engine.api.process.SourceTestSupport
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestViewGenerator}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
-import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSinkValueParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
 
 import java.nio.charset.StandardCharsets
 
 class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData, inputSchema: Schema, outputSchema: Schema, val nodeId: NodeId)
-  extends RequestResponsePostSource[Any] with LazyLogging with ReturningType with SourceTestSupport[Any] {
+  extends RequestResponsePostSource[Any] with LazyLogging with ReturningType with SourceTestSupport[Any] with TestViewGenerator {
 
   protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
 
+  private val jsonSchemaExtractor = new JsonSchemaExtractor()
   private val deserializer = new CirceJsonDeserializer(inputSchema)
 
   override def parse(parameters: Array[Byte]): Any = {
@@ -49,5 +53,9 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
 
   private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
 
+  override def createTestView: List[Parameter] = jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, metaData, nodeId)
+    .andThen { schema =>
+      JsonSinkValueParameter(schema, "not-sure-yet", ValidationMode.lax)(nodeId).map(_.toParameters)
+    }.valueOr(e => Nil) //TODO error handling ???
 }
 
