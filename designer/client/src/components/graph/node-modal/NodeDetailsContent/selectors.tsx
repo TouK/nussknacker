@@ -13,7 +13,6 @@ const createDeepEqualSelector = createSelectorCreator(
 
 const getProcessDefinition = createSelector(getProcessDefinitionData, s => s.processDefinition)
 export const getAdditionalPropertiesConfig = createSelector(getProcessDefinitionData, s => (s.additionalPropertiesConfig || {}) as AdditionalPropertiesConfig)
-export const getTypeSpecificPropertiesConfig = createSelector(getProcessDefinitionData, s => (s.typeSpecificPropertiesConfig || {}) as AdditionalPropertiesConfig)
 const getNodeResults = createSelector(getProcessToDisplay, process => ProcessUtils.getNodeResults(process))
 export const getFindAvailableBranchVariables = createSelector(
   getNodeResults,

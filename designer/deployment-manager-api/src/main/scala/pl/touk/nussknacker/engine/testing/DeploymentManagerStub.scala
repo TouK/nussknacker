@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.testing
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntegerValidator, MandatoryParameterValidator, MinimalNumberValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -57,4 +59,5 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
 
+  override def propertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map()
 }

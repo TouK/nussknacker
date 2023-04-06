@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.management
 import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingT
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider {
+class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider with LazyLogging {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -32,9 +33,25 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(Some(1)))
 
-  override def typeSpecificPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = {
-    Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
+  override def propertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = FlinkStreamingPropertiesConfig.properties
+
+}
+
+object FlinkStreamingDeploymentManagerProvider {
+
+  def defaultDeploymentManager(config: ConfigWithUnresolvedVersion)
+                              (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                               sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
+    val typeConfig = ProcessingTypeConfig.read(config)
+    new FlinkStreamingDeploymentManagerProvider().createDeploymentManager(ModelData(typeConfig), typeConfig.deploymentConfig)
   }
+
+}
+
+object FlinkStreamingPropertiesConfig {
+
+  lazy val properties: Map[String, AdditionalPropertyConfig] =
+    Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
 
   private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
     AdditionalPropertyConfig(
@@ -66,18 +83,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
-      validators = Some(List(MandatoryParameterValidator, LiteralIntegerValidator, MinimalNumberValidator(1))),
+      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Checkpoint interval in seconds"))
-
-}
-
-object FlinkStreamingDeploymentManagerProvider {
-
-  def defaultDeploymentManager(config: ConfigWithUnresolvedVersion)
-                              (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                               sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
-    val typeConfig = ProcessingTypeConfig.read(config)
-    new FlinkStreamingDeploymentManagerProvider().createDeploymentManager(ModelData(typeConfig), typeConfig.deploymentConfig)
-  }
 
 }

@@ -23,11 +23,16 @@ import scala.concurrent.duration.Duration
     case _: ScenarioSpecificData => false
     case _: FragmentSpecificData => true
   }
+  val toGenericMap: Map[String, String];
 }
 
 sealed trait ScenarioSpecificData extends TypeSpecificData
 
-case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData
+case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData {
+  override val toGenericMap: Map[String, String] = Map(
+    "docsUrl" -> docsUrl.getOrElse(""),
+  )
+}
 
 // TODO: rename to FlinkStreamMetaData
 case class StreamMetaData(parallelism: Option[Int] = None,
@@ -36,14 +41,28 @@ case class StreamMetaData(parallelism: Option[Int] = None,
                           useAsyncInterpretation: Option[Boolean] = None,
                           checkpointIntervalInSeconds: Option[Long] = None) extends ScenarioSpecificData {
 
-  def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
+  def checkpointIntervalDuration : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
 
+  override val toGenericMap: Map[String, String] = Map(
+    "parallelism" -> parallelism.map(_.toString).getOrElse(""),
+    "spillStateToDisk" -> spillStateToDisk.map(_.toString).getOrElse(""),
+    "useAsyncInterpretation" -> useAsyncInterpretation.map(_.toString).getOrElse(""),
+    "checkpointIntervalInSeconds" -> checkpointIntervalInSeconds.map(_.toString).getOrElse(""),
+  )
 }
 
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
-case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData
+case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData {
+  override val toGenericMap: Map[String, String] = Map(
+    "parallelism" -> parallelism.map(_.toString).getOrElse(""),
+  )
+}
 
-case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData
+case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData {
+  override val toGenericMap: Map[String, String] = Map(
+    "slug" -> slug.getOrElse(""),
+  )
+}
 
 case class ProcessAdditionalFields(description: Option[String],
                                    properties: Map[String, String])

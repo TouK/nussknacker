@@ -50,5 +50,5 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = delegate.typeSpecificInitialData(config)
 
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = delegate.additionalPropertiesConfig(config)
+  override def propertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = delegate.propertiesConfig(config)
 }
