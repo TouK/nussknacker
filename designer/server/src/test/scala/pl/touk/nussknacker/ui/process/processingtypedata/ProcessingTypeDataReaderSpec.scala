@@ -57,7 +57,7 @@ class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
                                                    (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                                     sttpBackend: SttpBackend[Future, Any],
                                                     deploymentService: DeploymentService): ProcessingTypeData = {
-      ProcessingTypeData(new MockDeploymentManager, null, null, Map.empty, Nil, ProcessingTypeUsageStatistics("stubManager", None))
+      ProcessingTypeData(new MockDeploymentManager, null, null, Map.empty, Nil, ProcessingTypeUsageStatistics(None, None))
     }
   }
 
