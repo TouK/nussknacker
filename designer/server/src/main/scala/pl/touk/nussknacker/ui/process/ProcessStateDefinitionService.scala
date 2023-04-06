@@ -52,18 +52,14 @@ object ProcessStateDefinitionService {
     import cats.instances.list._
     import cats.syntax.alternative._
 
-    val validatedProcessingTypeStateDefinitions = processingTypeStateDefinitions(processingTypes)
+    val (namesWithNonUniqueDefinitions, validDefinitions) = processingTypeStateDefinitions(processingTypes)
       .groupBy { case (_, statusName, _) => statusName }
-      .map { case (statusName, stateDefinitionsForOneName) =>
-        val uniqueDefinitionsForName = stateDefinitionsForOneName
-          // TODO: Ask whether we should really aggregate by both displayable name and icon. Shouldn't it be only displayable name?
-          //  Or maybe we should validate separately by displayable name and icon?
-          .groupBy { case (_, _, sd) => (sd.displayableName, sd.icon) }
-        lazy val stateDefinitionsWithProcessingTypes = (stateDefinitionsForOneName.head._3, stateDefinitionsForOneName.map(_._1))
-        Validated.cond(uniqueDefinitionsForName.size == 1, statusName -> stateDefinitionsWithProcessingTypes, statusName)
+      .map { case (statusName, stateDefinitionsForOneStatusName) =>
+        validateStateDefinitions(stateDefinitionsForOneStatusName)
+          .map(_ => statusName -> (stateDefinitionsForOneStatusName.head._3, stateDefinitionsForOneStatusName.map(_._1)))
       }
       .toList
-    val (namesWithNonUniqueDefinitions, validDefinitions) = validatedProcessingTypeStateDefinitions.separate
+      .separate
     if (namesWithNonUniqueDefinitions.nonEmpty) {
       throw new IllegalStateException(s"State definitions are not unique for states: ${namesWithNonUniqueDefinitions.mkString(", ")}")
     }
@@ -79,6 +75,13 @@ object ProcessStateDefinitionService {
         .map { case (name, sd) => (processingType, name, sd) }
     }
   }
+
+  private def validateStateDefinitions(stateDefinitionsForOneStatusName: List[(ProcessingType, StatusName, StateDefinitionDetails)]): Validated[StatusName, Unit] = {
+    val uniqueDefinitionsForName = stateDefinitionsForOneStatusName
+      .groupBy { case (_, _, sd) => (sd.displayableName, sd.icon) }
+    Validated.cond(uniqueDefinitionsForName.size == 1, (), stateDefinitionsForOneStatusName.head._2)
+  }
+
 }
 
 @JsonCodec case class UIStateDefinition(name: StatusName,
