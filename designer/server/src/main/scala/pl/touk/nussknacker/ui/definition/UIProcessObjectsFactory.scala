@@ -120,11 +120,13 @@ object UIProcessObjectsFactory {
                                       classLoader: ClassLoader,
                                       fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, FragmentObjectDefinition] = {
     val definitionExtractor = new SubprocessComponentDefinitionExtractor(fixedComponentsConfig.get, classLoader)
-    subprocessesDetails.map { details =>
-      val definition = definitionExtractor.extractSubprocessComponentDefinition(details.canonical)
+    (for {
+      details <- subprocessesDetails
+      definition <- definitionExtractor.extractSubprocessComponentDefinition(details.canonical).toOption
+    } yield {
       val objectDefinition = ObjectDefinition(definition.parameters, Some(Typed[java.util.Map[String, Any]]), Some(List(details.category)), definition.config)
       details.canonical.id -> FragmentObjectDefinition(objectDefinition, definition.outputNames)
-    }.toMap
+    }).toMap
   }
 
   case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[String])

@@ -101,7 +101,10 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
     implicit val nodeId: NodeId = NodeId(subprocessInput.id)
     subprocesses.apply(subprocessInput.ref.id)
       .map(valid).getOrElse(invalidNel(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = nodeId.id)))
-      .map(SubprocessGraphDefinitionExtractor.extractSubprocessGraphDefinition)
+      .andThen { subprocess =>
+        SubprocessGraphDefinitionExtractor.extractSubprocessGraphDefinition(subprocess)
+          .leftMap(_ => InvalidSubprocess(id = subprocessInput.ref.id, nodeId = nodeId.id)).toValidatedNel
+      }
   }
 
   //we replace outputs in subprocess with part of parent process

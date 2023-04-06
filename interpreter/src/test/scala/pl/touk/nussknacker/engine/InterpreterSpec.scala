@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InvalidSubprocess
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor, SpelTemplateParameterEditor}
@@ -389,6 +390,20 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretValidatedProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
 
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
+  }
+
+  test("return error when used fragment without input definition") {
+    val process = ScenarioBuilder.streaming("test")
+      .source("source", "transaction-source")
+      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "param" -> "#input.accountId")
+      .emptySink("end-sink", "dummySink")
+    val emptySubprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()), List.empty, List.empty)
+
+    val resolved = SubprocessResolver(Set(emptySubprocess)).resolve(process)
+
+    resolved should matchPattern {
+      case Invalid(NonEmptyList(InvalidSubprocess("subProcess1", "sub"), Nil)) =>
+    }
   }
 
   test("handle fragment with two occurrences") {
