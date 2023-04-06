@@ -10,19 +10,12 @@ import pl.touk.nussknacker.engine.{DeploymentManagerProvider, TypeSpecificInitia
 
 trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  private val streamingInitialMetData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
+  private val streamingInitialMetaData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = {
     forMode(config)(
-      streamingInitialMetData,
+      streamingInitialMetaData,
       (scenarioName: ProcessName, _: String) => RequestResponseMetaData(Some(defaultRequestResponseSlug(scenarioName, config)))
-    )
-  }
-
-  override def typeSpecificPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = {
-    forMode(config) (
-      Map(parallelismConfig),
-      Map(slugConfig)
     )
   }
 
@@ -41,14 +34,15 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
       label = Some("Slug")
     )
 
+  private val liteStreamProperties = Map(parallelismConfig)
+  private val requestResponseProperties = RequestResponseOpenApiSettings.additionalPropertiesConfig ++ Map(slugConfig)
 
   protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String
 
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(
-    Map.empty,
-    RequestResponseOpenApiSettings.additionalPropertiesConfig
+  override def propertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(
+    liteStreamProperties,
+    requestResponseProperties
   )
-
 
   // TODO: Lite DM will be able to handle both streaming and rr, without mode, when we add scenarioType to
   //       TypeSpecificInitialData.forScenario and add scenarioType -> mode mapping with reasonable defaults to configuration

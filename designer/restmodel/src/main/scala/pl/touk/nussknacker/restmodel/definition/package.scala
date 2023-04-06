@@ -22,7 +22,6 @@ package object definition {
                                                             processDefinition: UIProcessDefinition,
                                                             componentsConfig: Map[String, SingleComponentConfig],
                                                             additionalPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
-                                                            typeSpecificPropertiesConfig: Map[String, UiAdditionalPropertyConfig],
                                                             edgesForNodes: List[NodeEdges],
                                                             customActions: List[UICustomAction],
                                                             defaultAsyncInterpretation: Boolean)

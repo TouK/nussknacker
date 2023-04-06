@@ -9,6 +9,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties.extractTypedData
 
 import scala.util.Try
 
@@ -52,42 +53,68 @@ import scala.util.Try
 }
 
 @JsonCodec(decodeOnly = true)
-case class ProcessProperties(typeSpecificProperties: ProcessAdditionalFields,
-                             additionalFields: Option[ProcessAdditionalFields] = None) {
+case class ProcessProperties(additionalFields: ProcessAdditionalFields, propertiesType: String) {
 
-  def toMetaData(id: String): MetaData = MetaData(
-    id = id,
-    typeSpecificData = toTypeSpecificData(typeSpecificProperties),
-    additionalFields = additionalFields
-  )
+  def toMetaData(id: String): MetaData = {
 
-  private def toTypeSpecificData(additionalProperties: ProcessAdditionalFields): TypeSpecificData = {
-    additionalProperties.properties match {
-      case a if a.contains("spillStateToDisk") => StreamMetaData(
-          parallelism = Try(a.get("parallelism").map(_.toInt)).getOrElse(None),
-          spillStateToDisk = Try(a.get("spillStateToDisk").map(_.toBoolean)).getOrElse(None),
-          useAsyncInterpretation = Try(a.get("useAsyncInterpretation").map(_.toBoolean)).getOrElse(None),
-          checkpointIntervalInSeconds = Try(a.get("checkpointIntervalInSeconds").map(_.toLong)).getOrElse(None)
-      )
-      case a if a.contains("slug") => RequestResponseMetaData(
-        slug = Try(a.get("slug").map(_.toString)).getOrElse(None)
-      )
-      case a if a.contains("parallelism") && !a.contains("spillStateToDisk") => LiteStreamMetaData(
-        parallelism = Try(a.get("parallelism").map(_.toInt)).getOrElse(None)
-      )
-      case a if a.contains("docsUrl") => FragmentSpecificData(
-        Try(a.get("docsUrl")).getOrElse(None)
-      )
-    }
+    val (typeSpecificData, additionalFields) = extractTypedData(this)
+
+    MetaData(
+      id = id,
+      typeSpecificData = typeSpecificData,
+      additionalFields = additionalFields
+    )
   }
 
-  val isSubprocess: Boolean = toTypeSpecificData(typeSpecificProperties).isSubprocess
+  val isSubprocess: Boolean = extractTypedData(this)._1.isSubprocess
 
 }
 
 object ProcessProperties {
-  implicit val encodeProcessProperties: Encoder[ProcessProperties] =
-    Encoder.forProduct3("typeSpecificProperties", "isSubprocess", "additionalFields") { p =>
-    (p.typeSpecificProperties, p.isSubprocess, p.additionalFields)
+
+  def apply(typeSpecificProperties: TypeSpecificData,
+            additionalFields: Option[ProcessAdditionalFields] = None): ProcessProperties = {
+    val genericTypeSpecificData = typeSpecificProperties.toGenericMap
+    val additionalProps = additionalFields.map(a => a.properties).getOrElse(None)
+    val description = additionalFields.flatMap(a => a.description)
+
+    val props = ProcessAdditionalFields(description, genericTypeSpecificData ++ additionalProps)
+
+    // We set the classname to make converting back from generic to typed easier
+    val typeSpecificClassName = typeSpecificProperties.getClass.getSimpleName
+    ProcessProperties(props, typeSpecificClassName)
   }
+
+  private def extractTypedData(processProperties: ProcessProperties): (TypeSpecificData, Option[ProcessAdditionalFields]) = {
+    val genericProperties = processProperties.additionalFields.properties
+
+    val typeSpecificData = processProperties.propertiesType match {
+      case "StreamMetaData" => StreamMetaData(
+        parallelism = Try(genericProperties.get("parallelism").map(_.toInt)).getOrElse(None),
+        spillStateToDisk = Try(genericProperties.get("spillStateToDisk").map(_.toBoolean)).getOrElse(None),
+        useAsyncInterpretation = Try(genericProperties.get("useAsyncInterpretation").map(_.toBoolean)).getOrElse(None),
+        checkpointIntervalInSeconds = Try(genericProperties.get("checkpointIntervalInSeconds").map(_.toLong)).getOrElse(None)
+      )
+      case "LiteStreamMetaData" => LiteStreamMetaData(
+        parallelism = Try(genericProperties.get("parallelism").map(_.toInt)).getOrElse(None)
+      )
+      case "RequestResponseMetaData" => RequestResponseMetaData(
+        slug = Try(genericProperties.get("slug")).getOrElse(None)
+      )
+      case "FragmentSpecificData" => FragmentSpecificData(
+        docsUrl = Try(genericProperties.get("docsUrl")).getOrElse(None)
+      )
+      case _ => throw new IllegalStateException("Unrecognized metadata type")
+    }
+
+    val typeSpecificPropsList = typeSpecificData.toGenericMap.keySet
+    val additionalFields = Some(ProcessAdditionalFields(processProperties.additionalFields.description, genericProperties.filterNot(k => typeSpecificPropsList.contains(k._1))))
+
+    (typeSpecificData, additionalFields)
+  }
+
+  implicit val encodeProcessProperties: Encoder[ProcessProperties] =
+    Encoder.forProduct3("additionalFields", "isSubprocess", "propertiesType") { p =>
+      (p.additionalFields, p.isSubprocess, p.propertiesType)
+    }
 }

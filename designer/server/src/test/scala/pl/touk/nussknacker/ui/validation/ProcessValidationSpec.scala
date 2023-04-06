@@ -266,7 +266,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
 
     val process = validProcessWithFields(Map())
-    val subprocess = process.copy(properties = process.properties.copy(typeSpecificProperties = FragmentSpecificData()))
+    val subprocess = process.copy(properties = ProcessProperties(typeSpecificProperties = FragmentSpecificData(), Some(process.properties.additionalFields)))
 
     processValidation.validate(subprocess) shouldBe withoutErrorsAndWarnings
 
