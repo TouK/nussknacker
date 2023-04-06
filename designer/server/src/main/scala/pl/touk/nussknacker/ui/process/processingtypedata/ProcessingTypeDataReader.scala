@@ -17,6 +17,7 @@ object ProcessingTypeDataReader extends ProcessingTypeDataReader
 
 trait ProcessingTypeDataReader extends LazyLogging {
 
+
   def loadProcessingTypeData(config: ConfigWithUnresolvedVersion)(implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                                                   sttpBackend: SttpBackend[Future, Any],
                                                                   deploymentService: DeploymentService,
@@ -31,7 +32,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
     // to assert the loaded configuration is correct (fail-fast approach).
-    val combinedData = CombinedProcessingTypeData.create(valueMap, categoryService)
+    val combinedData = createCombinedData(valueMap, categoryService)
 
     new MapBasedProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData](valueMap, combinedData)
   }
@@ -45,4 +46,9 @@ trait ProcessingTypeDataReader extends LazyLogging {
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService = new DefaultProcessingTypeDeploymentService(name, deploymentService)
     ProcessingTypeData.createProcessingTypeData(managerProvider, typeConfig)
   }
+
+  protected def createCombinedData(valueMap: Map[ProcessingType, ProcessingTypeData], categoryService: ProcessCategoryService): CombinedProcessingTypeData = {
+    CombinedProcessingTypeData.create(valueMap, categoryService)
+  }
+
 }
