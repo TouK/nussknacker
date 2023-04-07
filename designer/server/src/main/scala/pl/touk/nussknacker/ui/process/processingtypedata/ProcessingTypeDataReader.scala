@@ -5,11 +5,11 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
-import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import _root_.sttp.client3.SttpBackend
+import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 

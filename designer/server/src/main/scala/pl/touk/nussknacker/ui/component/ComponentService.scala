@@ -112,7 +112,6 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
       .getSubProcesses(processingTypes = Some(List(processingType)))(user)
       .map { subprocesses =>
         val componentObjects = componentObjectsService.prepare(processingType, processingTypeData, user, subprocesses)
-        val componentIdProvider = new DefaultComponentIdProvider(Map(processingType -> componentObjects.config))
         createComponents(componentObjects, componentUsages, processingType, componentIdProvider)
       }
   }
