@@ -36,6 +36,10 @@ class TestInfoResources(val processAuthorizer: AuthorizeProcess,
                 complete {
                   scenarioTestService.getTestingCapabilities(displayableProcess)
                 }
+              } ~ path("viewParameters") {
+                complete {
+                  scenarioTestService.getTestViewParameters(displayableProcess)
+                }
               } ~ path("generate" / IntNumber) { testSampleSize =>
                 complete {
                   scenarioTestService.generateData(displayableProcess, testSampleSize) match {

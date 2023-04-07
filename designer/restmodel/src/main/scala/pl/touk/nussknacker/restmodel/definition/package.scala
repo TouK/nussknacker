@@ -67,6 +67,8 @@ package object definition {
     def toUIObjectDefinition: UIObjectDefinition = UIObjectDefinition(parameters, returnType, categories, componentConfig)
   }
 
+  @JsonCodec(encodeOnly = true) case class SourceWithViewParameters(sourceId: String, parameters: List[UIParameter])
+
   @JsonCodec case class NodeTypeId(`type`: String, id: Option[String] = None)
 
   @JsonCodec case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)

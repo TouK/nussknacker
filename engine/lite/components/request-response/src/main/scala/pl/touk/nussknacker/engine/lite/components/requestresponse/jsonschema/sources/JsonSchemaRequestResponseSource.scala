@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSinkValueParame
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
-import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.InputSchemaProperty
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
 
 import java.nio.charset.StandardCharsets
@@ -35,7 +35,6 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
     deserializer.deserialize(parameters)
   }
 
-
   override def openApiDefinition: Option[OpenApiSourceDefinition] = {
     val json = decodeJsonWithError(definition)
     Option(OpenApiSourceDefinition(json, openApiDescription, List("Nussknacker")))
@@ -53,7 +52,7 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
 
   private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
 
-  override def createTestView: List[Parameter] = jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, metaData, nodeId)
+  override def createTestView: List[Parameter] = jsonSchemaExtractor.getSchemaFromProperty(InputSchemaProperty, metaData, nodeId)
     .andThen { schema =>
       JsonSinkValueParameter(schema, "not-sure-yet", ValidationMode.lax)(nodeId).map(_.toParameters)
     }.valueOr(e => Nil) //TODO error handling ???

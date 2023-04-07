@@ -13,6 +13,7 @@ export function fetchProcessToDisplay(processId: ProcessId, versionId?: ProcessV
 
     return HttpService.fetchProcessDetails(processId, versionId).then((response) => {
       dispatch(displayTestCapabilities(response.data.json))
+      dispatch(fetchTestViewParameters(response.data.json))
       return dispatch({
         type: "DISPLAY_PROCESS",
         fetchedProcessDetails: response.data,
@@ -26,6 +27,17 @@ export function loadProcessState(processId: ProcessId): ThunkAction {
     type: "PROCESS_STATE_LOADED",
     processState: data,
   }))
+}
+
+export function fetchTestViewParameters(processDetails: Process) {
+  return (dispatch) => HttpService.getTestViewParameters(processDetails).then(
+      ({data}) => {
+        dispatch({
+          type: "UPDATE_TEST_VIEW_PARAMETERS",
+          testViewParameters: data,
+        })
+      }
+  )
 }
 
 export function displayTestCapabilities(processDetails: Process) {

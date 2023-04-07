@@ -1,7 +1,7 @@
 import {Layout} from "../../actions/nk"
 import {ProcessStateType, ProcessType} from "../../components/Process/types"
 import {Process} from "../../types"
-import {TestCapabilities, TestResults} from "../../common/TestResultUtils"
+import {TestCapabilities, TestResults, TestViewParameters} from "../../common/TestResultUtils"
 
 export interface NodeCounts {
   errors?: number,
@@ -18,6 +18,7 @@ export type GraphState = {
   selectionState?: string[],
   layout: Layout,
   testCapabilities?: TestCapabilities,
+  testViewParameters?: TestViewParameters[],
   testResults: TestResults,
   processCounts: ProcessCounts,
   unsavedNewName: string | null,
