@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.definition.test
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator, TestViewGenerator}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
@@ -40,6 +41,18 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       canCreateTestView = sourceObj.isInstanceOf[TestViewGenerator]
     } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData, canCreateTestView = canCreateTestView)
     testingCapabilities.getOrElse(TestingCapabilities.Disabled)
+  }
+
+  override def getTestViewParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = modelData.withThisAsContextClassLoader {
+    collectAllSources(scenario)
+      .map(source => source.id -> getTestViewParameters(source, scenario.metaData)).toMap
+  }
+
+  private def getTestViewParameters(source: Source, metaData: MetaData): List[Parameter] = modelData.withThisAsContextClassLoader {
+    prepareSourceObj(source)(metaData) match {
+      case Some(s: TestViewGenerator) => s.createTestView
+      case _ => Nil
+    }
   }
 
   override def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData] = {

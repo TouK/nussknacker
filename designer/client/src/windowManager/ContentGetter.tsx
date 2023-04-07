@@ -19,6 +19,9 @@ const CompareVersionsDialog = loadable(() => import("../components/modals/Compar
 const CustomActionDialog = loadable(() => import("../components/modals/CustomActionDialog"), {
   fallback: <LoaderSpinner show/>,
 })
+const GenericActionDialog = loadable(() => import("../components/modals/GenericActionDialog"), {
+  fallback: <LoaderSpinner show/>,
+})
 const DeployProcessDialog = loadable(() => import("../components/modals/DeployProcessDialog"), {
   fallback: <LoaderSpinner show/>,
 })
@@ -53,9 +56,10 @@ export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) =
       return <GenerateDataAndTestDialog {...props}/>
     case WindowKind.compareVersions:
       return <CompareVersionsDialog {...props}/>
-
     case WindowKind.customAction:
       return <CustomActionDialog {...props}/>
+    case WindowKind.genericAction:
+      return <GenericActionDialog {...props}/>
     case WindowKind.confirm:
       return <GenericConfirmDialog {...props}/>
     case WindowKind.editNode:

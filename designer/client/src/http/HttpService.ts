@@ -407,6 +407,16 @@ class HttpService {
     return promise
   }
 
+  getTestViewParameters(process: Process) {
+    const promise = api.post("/testInfo/viewParameters", this.#sanitizeProcess(process))
+    promise.catch(error => this.#addError(
+      i18next.t("notification.error.failedToGetViewParameters", "Failed to get source view parameters"),
+      error,
+      true
+    ))
+    return promise
+  }
+
   generateTestData(processId: string, testSampleSize: string, process: Process): Promise<AxiosResponse<any>> {
     const promise = api.post(`/testInfo/generate/${testSampleSize}`, this.#sanitizeProcess(process), {responseType: "blob"})
     promise

@@ -52,6 +52,7 @@ export const isMigrationPossible = createSelector(
 export const isCancelPossible = createSelector(getProcessState, state => ProcessStateUtils.canCancel(state))
 export const isArchivePossible = createSelector(getProcessState, state => ProcessStateUtils.canArchive(state))
 export const getTestCapabilities = createSelector(getGraph, g => g.testCapabilities)
+export const getTestViewParameters = createSelector(getGraph, g => g.testViewParameters)
 export const getTestResults = createSelector(getGraph, g => g.testResults)
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || {} as ProcessCounts)
 export const getShowRunProcessDetails = createSelector(
