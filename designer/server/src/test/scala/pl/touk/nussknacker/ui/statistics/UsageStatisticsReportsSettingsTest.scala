@@ -1,13 +1,17 @@
 package pl.touk.nussknacker.ui.statistics
 
+import org.apache.commons.io.FileUtils
+import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 
+import java.io.File
+import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ListMap
 
-class UsageStatisticsReportsSettingsTest extends AnyFunSuite with Matchers {
+class UsageStatisticsReportsSettingsTest extends AnyFunSuite with Matchers with OptionValues with BeforeAndAfterEach {
 
   val sampleFingerprint = "fooFingerprint"
 
@@ -29,6 +33,30 @@ class UsageStatisticsReportsSettingsTest extends AnyFunSuite with Matchers {
       UsageStatisticsReportsConfig(enabled = true, Some(""), None),
       Map.empty)
     params("fingerprint") should startWith ("gen-")
+  }
+
+  test("should read persisted fingerprint") {
+    val fingerprintFile = File.createTempFile("nussknacker", ".fingerprint")
+    fingerprintFile.deleteOnExit()
+    val savedFingerprint = "foobarbaz123"
+    FileUtils.writeStringToFile(fingerprintFile, savedFingerprint, StandardCharsets.UTF_8)
+    val params = UsageStatisticsReportsSettings.prepareQueryParams(
+      UsageStatisticsReportsConfig(enabled = true, None, None),
+      Map.empty,
+      fingerprintFile)
+    params.get("fingerprint").value shouldEqual savedFingerprint
+  }
+
+  test("should save persisted fingerprint") {
+    val fingerprintFile = File.createTempFile("nussknacker", ".fingerprint")
+    fingerprintFile.deleteOnExit()
+    val params = UsageStatisticsReportsSettings.prepareQueryParams(
+      UsageStatisticsReportsConfig(enabled = true, None, None),
+      Map.empty,
+      fingerprintFile)
+    val generatedFingerprint = params.get("fingerprint").value
+    val fingerprintInFile = FileUtils.readFileToString(fingerprintFile, StandardCharsets.UTF_8)
+    fingerprintInFile shouldEqual generatedFingerprint
   }
 
   test("should generated query params for each deployment manager and with single deployment manager field") {
@@ -85,6 +113,11 @@ class UsageStatisticsReportsSettingsTest extends AnyFunSuite with Matchers {
       Map("streaming" -> ProcessingTypeUsageStatistics("fooDm", Some(customMode))))
     paramsForSingleMode should contain ("single_m" -> "custom")
     paramsForSingleMode should contain ("m_custom" -> "1")
+  }
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    UsageStatisticsReportsSettings.invalidateCache()
   }
 
 }

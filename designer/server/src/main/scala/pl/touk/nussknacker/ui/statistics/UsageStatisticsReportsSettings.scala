@@ -1,18 +1,24 @@
 package pl.touk.nussknacker.ui.statistics
 
 import io.circe.generic.JsonCodec
+import org.apache.commons.io.FileUtils
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
+import java.io.File
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ListMap
-import scala.util.Random
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import scala.util.{Random, Try}
 
 object UsageStatisticsReportsSettings {
+
+  private val nuFingerprintFileName = "nussknacker.fingerprint"
+
+  private[statistics] val fingerprintFile = new File(Try(Option(System.getProperty("java.io.tmpdir"))).toOption.flatten.getOrElse("/tmp"), nuFingerprintFileName)
 
   private val knownDeploymentManagerTypes = Set("flinkStreaming", "lite-k8s", "lite-embedded")
 
@@ -30,7 +36,8 @@ object UsageStatisticsReportsSettings {
   }
 
   private[statistics] def prepareQueryParams(config: UsageStatisticsReportsConfig,
-                                             processingTypeStatisticsMap: Map[ProcessingType, ProcessingTypeUsageStatistics]): ListMap[String, String] = {
+                                             processingTypeStatisticsMap: Map[ProcessingType, ProcessingTypeUsageStatistics],
+                                             fingerprintFile: File = fingerprintFile): ListMap[String, String] = {
     val deploymentManagerTypes = processingTypeStatisticsMap.values.map(_.deploymentManagerType).map {
       case dm if knownDeploymentManagerTypes.contains(dm) => dm
       case _ => aggregateForCustomValues
@@ -47,7 +54,7 @@ object UsageStatisticsReportsSettings {
     ListMap(
       // We filter out blank fingerprint and source because when smb uses docker-compose, and forwards env variables eg. USAGE_REPORTS_FINGERPRINT
       // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
-      "fingerprint" -> config.fingerprint.filterNot(_.isBlank).getOrElse(randomFingerprint),
+      "fingerprint" -> config.fingerprint.filterNot(_.isBlank).getOrElse(fingerprint(fingerprintFile)),
       // If it is not set, we assume that it is some custom build from source code
       "source" -> config.source.filterNot(_.isBlank).getOrElse("sources"),
       "version" -> BuildInfo.version
@@ -71,6 +78,33 @@ object UsageStatisticsReportsSettings {
     queryParams.toList.map {
       case (k, v) => s"${URLEncoder.encode(k, StandardCharsets.UTF_8)}=${URLEncoder.encode(v, StandardCharsets.UTF_8)}"
     }.mkString("https://stats.nussknacker.io/?", "&", "")
+  }
+
+  private def fingerprint(fingerprintFile: File): String = {
+    this.synchronized {
+      Option(cachedFingerprint).getOrElse {
+        cachedFingerprint = persistedFingerprint(fingerprintFile) {
+          randomFingerprint
+        }
+        cachedFingerprint
+      }
+    }
+  }
+
+  private[statistics] def invalidateCache(): Unit = {
+    this.synchronized {
+      cachedFingerprint = null
+    }
+  }
+
+  private var cachedFingerprint: String = _
+
+  private def persistedFingerprint(fingerprintFile: File)(compute: => String) = {
+    Try(FileUtils.readFileToString(fingerprintFile, StandardCharsets.UTF_8)).getOrElse {
+      val f = compute
+      Try(FileUtils.writeStringToFile(fingerprintFile, f, StandardCharsets.UTF_8))
+      f
+    }
   }
 
   private lazy val randomFingerprint = s"gen-${Random.alphanumeric.take(10).mkString}"
