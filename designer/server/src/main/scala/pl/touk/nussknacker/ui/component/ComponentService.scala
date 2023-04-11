@@ -62,9 +62,9 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
     }.map { components =>
       val filteredComponents = components.filter(component => component.categories.nonEmpty)
 
-      val deduplicatedComponents = deduplicateById(filteredComponents)
+      val mergedComponents = mergeSameComponentsAcrossProcessingTypes(filteredComponents)
 
-      deduplicatedComponents
+      mergedComponents
         .sortBy(ComponentListElement.sortMethod)
     }
   }
@@ -155,16 +155,16 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
       .getOrElse(componentLinks)
   }
 
-  private def deduplicateById(components: Iterable[ComponentListElement]): List[ComponentListElement] = {
-    val groupedComponents = components.groupBy(_.id)
-    groupedComponents
-      .map { case (_, components) => components match {
+  private def mergeSameComponentsAcrossProcessingTypes(components: Iterable[ComponentListElement]): List[ComponentListElement] = {
+    val sameComponentsByComponentId = components.groupBy(_.id)
+    sameComponentsByComponentId
+      .values
+      .map {
         case head :: Nil => head
-        case head :: _ =>
+        case components@(head :: _) =>
           val categories = components.flatMap(_.categories).toList.distinct.sorted
           val usageCount = components.map(_.usageCount).sum
           head.copy(categories = categories, usageCount = usageCount)
-      }
       }
       .toList
   }
