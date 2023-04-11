@@ -559,7 +559,8 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         "org.apache.flink" % "flink-streaming-java" % flinkV % flinkScope
           excludeAll(
           ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
+          ExclusionRule("org.slf4j", "slf4j-log4j12"),
+          ExclusionRule("com.esotericsoftware", "kryo-shaded")
         ),
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % flinkScope,
         "com.softwaremill.retry" %% "retry" % "0.3.6",
@@ -718,7 +719,7 @@ lazy val benchmarks = (project in file("benchmarks")).
     name := "nussknacker-benchmarks",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV,
+        "org.apache.flink" % "flink-streaming-java" % flinkV exclude("com.esotericsoftware", "kryo-shaded"),
         "org.apache.flink" % "flink-runtime" % flinkV
       )
     },
@@ -875,7 +876,7 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
     name := "nussknacker-flink-components-testkit",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV,
+        "org.apache.flink" % "flink-streaming-java" % flinkV exclude("com.esotericsoftware", "kryo-shaded"),
       )
     }
   ).dependsOn(componentsTestkit, flinkExecutor, flinkTestUtils)
@@ -977,7 +978,7 @@ lazy val flinkScalaUtils = (project in flink("scala-utils")).
     name := "nussknacker-flink-scala-utils",
     libraryDependencies ++= {
       Seq(
-        "com.twitter" %% "chill" % "0.9.5",
+        "com.twitter" %% "chill" % "0.9.5" exclude("com.esotericsoftware", "kryo-shaded"),
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
