@@ -111,6 +111,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
     processService
       .getSubProcesses(processingTypes = Some(List(processingType)))(user)
       .map { subprocesses =>
+        // We assume that fragments have unique component ids ($processing-type-fragment-$name) thus we do not need to validate them.
         val componentObjects = componentObjectsService.prepare(processingType, processingTypeData, user, subprocesses)
         createComponents(componentObjects, componentUsages, processingType, componentIdProvider)
       }

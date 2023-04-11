@@ -34,7 +34,7 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingType,
       processingTypeData,
       user = NussknackerInternalUser, // We need admin user to receive all components info
-      subprocesses = Set.empty, // We don't check fragments, because these are dynamic components
+      subprocesses = Set.empty,
     )
     ComponentObjects(uiProcessObjects)
   }
