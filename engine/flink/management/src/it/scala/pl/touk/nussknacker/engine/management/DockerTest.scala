@@ -60,7 +60,6 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
             |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-library/$scalaV/scala-library-$scalaV.jar -O $$FLINK_HOME/lib/scala-library-$scalaV.jar
             |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-reflect/$scalaV/scala-reflect-$scalaV.jar -O $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
             |RUN chown flink $$FLINK_HOME/lib/scala-library-$scalaV.jar
-            |RUN chown flink $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
             |""".stripMargin
         case v => throw new IllegalStateException(s"unsupported scala version: $v")
       }

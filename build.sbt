@@ -573,7 +573,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
   interpreter % "provided",
   componentsApi % "provided",
   httpUtils % "provided",
-  flinkScalaUtils % "provided",
+  flinkScalaUtils,
   kafkaTestUtils % "it,test")
 
 lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic")).
@@ -977,7 +977,7 @@ lazy val flinkScalaUtils = (project in flink("scala-utils")).
     name := "nussknacker-flink-scala-utils",
     libraryDependencies ++= {
       Seq(
-        "com.twitter" %% "chill" % "0.10.0",
+        "com.twitter" %% "chill" % "0.9.5",
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
