@@ -60,9 +60,10 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
     ))
 
     badComponentsType.foreach(componentType => {
+      val name = componentType.toString
       intercept[IllegalArgumentException]{
-        provider.createComponentId(processingType, componentType.toString, componentType)
-      }.getMessage shouldBe s"ComponentId can't be overridden for component type: '$componentType'."
+        provider.createComponentId(processingType, name, componentType)
+      }.getMessage shouldBe s"Component id can't be overridden for: '$name' with component type: '$componentType'."
     })
   }
 

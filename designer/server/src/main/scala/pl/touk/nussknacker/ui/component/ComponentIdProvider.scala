@@ -40,7 +40,7 @@ class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig
 
     //We assume that base and currently fragment component's id can't be overridden
     if (defaultComponentId != overriddenComponentId && (ComponentType.isBaseComponent(componentType) || componentType == ComponentType.Fragments)) {
-      throw new IllegalArgumentException(s"Component: '$name' can't be overridden for component type: '$componentType'.")
+      throw new IllegalArgumentException(s"Component id can't be overridden for: '$name' with component type: '$componentType'.")
     }
 
     overriddenComponentId
