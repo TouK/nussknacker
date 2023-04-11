@@ -13,6 +13,7 @@ import {StateWithHistory} from "redux-undo"
 import {backendNotifications, BackendNotificationState} from "./notifications"
 import {reducer as scenarioState} from "./scenarioState"
 import {ProcessStateType} from "../components/Process/types"
+import {reducer as genericAction, GenericActionState} from "./genericActionState";
 
 export const reducer = combineReducers<RootState>({
   httpErrorHandler,
@@ -26,6 +27,7 @@ export const reducer = combineReducers<RootState>({
   featureFlags,
   userSettings,
   nodeDetails,
+  genericAction,
   scenarioState
 })
 
@@ -41,6 +43,7 @@ export type RootState = {
   featureFlags: FeatureFlags,
   userSettings: UserSettings,
   nodeDetails: NodeDetailsState,
+  genericAction: GenericActionState,
   scenarioState: ProcessStateType
 }
 

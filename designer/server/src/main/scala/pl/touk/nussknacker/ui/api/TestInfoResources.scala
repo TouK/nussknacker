@@ -31,7 +31,6 @@ class TestInfoResources(val processAuthorizer: AuthorizeProcess,
         entity(as[DisplayableProcess]) { displayableProcess =>
           processId(displayableProcess.id) { idWithName =>
             canDeploy(idWithName.id) {
-
               path("capabilities") {
                 complete {
                   scenarioTestService.getTestingCapabilities(displayableProcess)

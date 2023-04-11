@@ -365,6 +365,16 @@ class HttpService {
     return promise
   }
 
+  validateGenericActionParameters(processId, validationRequest): Promise<AxiosResponse<ValidationData>> {
+    const promise = api.post(`/parameters/${encodeURIComponent(processId)}/validate`, validationRequest)
+    promise.catch(error => this.#addError(
+      i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"),
+      error,
+      true
+    ))
+    return promise
+  }
+
   validateProperties(processId, processProperties): Promise<AxiosResponse<ValidationData>> {
     const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, {processProperties})
     promise.catch(error => this.#addError(

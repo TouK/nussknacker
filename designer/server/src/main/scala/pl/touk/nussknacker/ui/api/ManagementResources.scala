@@ -107,131 +107,136 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
   }
 
   def securedRoute(implicit user: LoggedUser): Route = {
-    path("adminProcessManagement" / "snapshot" / Segment) { processName =>
-      (post & processId(processName) & parameters(Symbol("savepointDir").?)) { (processId, savepointDir) =>
-        canDeploy(processId) {
-          complete {
-            convertSavepointResultToResponse(
-              dispatcher.deploymentManagerUnsafe(processId.id)(ec, user).flatMap(_.savepoint(processId.name, savepointDir)))
-          }
-        }
-      }
-    } ~
-      path("adminProcessManagement" / "stop" / Segment) { processName =>
+    pathPrefix("adminProcessManagement") {
+      path("snapshot" / Segment) { processName =>
         (post & processId(processName) & parameters(Symbol("savepointDir").?)) { (processId, savepointDir) =>
           canDeploy(processId) {
             complete {
               convertSavepointResultToResponse(
-                dispatcher.deploymentManagerUnsafe(processId.id)(ec, user).flatMap(_.stop(processId.name, savepointDir, user.toManagerUser)))
+                dispatcher.deploymentManagerUnsafe(processId.id)(ec, user).flatMap(_.savepoint(processId.name, savepointDir)))
             }
           }
         }
       } ~
-      path("adminProcessManagement" / "deploy" / Segment ) { processName =>
-        (post & processId(processName) & parameters(Symbol("savepointPath"))) { (processId, savepointPath) =>
-          canDeploy(processId) {
-            withDeploymentComment { deploymentComment =>
+        path("stop" / Segment) { processName =>
+          (post & processId(processName) & parameters(Symbol("savepointDir").?)) { (processId, savepointDir) =>
+            canDeploy(processId) {
               complete {
-                deploymentService
-                  .deployProcessAsync(processId, Some(savepointPath), deploymentComment).map(_ => ())
-                  .andThen(toResponseTryPF(StatusCodes.OK))
+                convertSavepointResultToResponse(
+                  dispatcher.deploymentManagerUnsafe(processId.id)(ec, user).flatMap(_.stop(processId.name, savepointDir, user.toManagerUser)))
               }
             }
           }
-        }
-      } ~
-      path("processManagement" / "deploy" / Segment) { processName =>
-        (post & processId(processName)) { processId =>
-          canDeploy(processId) {
-            withDeploymentComment { deploymentComment =>
-              complete {
-                measureTime("deployment", metricRegistry) {
+        } ~
+        path("deploy" / Segment) { processName =>
+          (post & processId(processName) & parameters(Symbol("savepointPath"))) { (processId, savepointPath) =>
+            canDeploy(processId) {
+              withDeploymentComment { deploymentComment =>
+                complete {
                   deploymentService
-                    .deployProcessAsync(processId, None, deploymentComment).map(_ => ())
+                    .deployProcessAsync(processId, Some(savepointPath), deploymentComment).map(_ => ())
                     .andThen(toResponseTryPF(StatusCodes.OK))
                 }
               }
             }
           }
         }
-      } ~
-      path("processManagement" / "cancel" / Segment) { processName =>
-        (post & processId(processName)) { processId =>
-          canDeploy(processId) {
-            withDeploymentComment { deploymentComment =>
-              complete {
-                measureTime("cancel", metricRegistry) {
-                  deploymentService
-                    .cancelProcess(processId, deploymentComment)
-                    .andThen(toResponseTryPF(StatusCodes.OK))
-                }
-              }
-            }
-          }
-        }
-      } ~
-      //TODO: maybe Write permission is enough here?
-      path("processManagement" / "test" / Segment) { processName =>
-        (post & processId(processName)) { idWithName =>
-          canDeploy(idWithName.id) {
-            formFields(Symbol("testData"), Symbol("processJson")) { (testDataContent, displayableProcessJson) =>
-              complete {
-                measureTime("test", metricRegistry) {
-                  parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
-                    case Right(displayableProcess) =>
-                      scenarioTestService.performTest(idWithName, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
-                        Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-                      }.recover(EspErrorToHttp.errorToHttp)
-                    case Left(error) =>
-                      Future.failed(UnmarshallError(error.toString))
+    } ~
+      pathPrefix("processManagement") {
+        path("deploy" / Segment) { processName =>
+          (post & processId(processName)) { processId =>
+            canDeploy(processId) {
+              withDeploymentComment { deploymentComment =>
+                complete {
+                  measureTime("deployment", metricRegistry) {
+                    deploymentService
+                      .deployProcessAsync(processId, None, deploymentComment).map(_ => ())
+                      .andThen(toResponseTryPF(StatusCodes.OK))
                   }
                 }
               }
             }
           }
-        }
-      } ~
-      path("processManagement" / "generateAndTest" / IntNumber ) {
-        testSampleSize => {
-          (post & entity(as[DisplayableProcess])) { displayableProcess => {
-            processId(displayableProcess.id) { idWithName =>
-              canDeploy(idWithName) {
-                complete {
-                  measureTime("generateAndTest", metricRegistry) {
-                    scenarioTestService.generateData(displayableProcess, testSampleSize) match {
-                      case Left(error) => Future.failed(UnmarshallError(error))
-                      case Right(rawScenarioTestData) => {
-                        scenarioTestService.performTest(idWithName, displayableProcess, rawScenarioTestData, testResultsVariableEncoder)
-                          .flatMap { results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)) }
-                          .recover(EspErrorToHttp.errorToHttp)
+        } ~
+          path("cancel" / Segment) { processName =>
+            (post & processId(processName)) { processId =>
+              canDeploy(processId) {
+                withDeploymentComment { deploymentComment =>
+                  complete {
+                    measureTime("cancel", metricRegistry) {
+                      deploymentService
+                        .cancelProcess(processId, deploymentComment)
+                        .andThen(toResponseTryPF(StatusCodes.OK))
+                    }
+                  }
+                }
+              }
+            }
+          } ~
+          //TODO: maybe Write permission is enough here?
+          path("test" / Segment) { processName =>
+            (post & processId(processName)) { idWithName =>
+              canDeploy(idWithName.id) {
+                formFields(Symbol("testData"), Symbol("processJson")) { (testDataContent, displayableProcessJson) =>
+                  complete {
+                    measureTime("test", metricRegistry) {
+                      parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
+                        case Right(displayableProcess) =>
+                          scenarioTestService.performTest(idWithName, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
+                            Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                          }.recover(EspErrorToHttp.errorToHttp)
+                        case Left(error) =>
+                          Future.failed(UnmarshallError(error.toString))
                       }
                     }
                   }
                 }
               }
             }
-          }}
-        }
-      } ~
-      path("processManagement" / "customAction" / Segment) { processName =>
-        (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
-          val params = req.params.getOrElse(Map.empty)
-          complete {
-            customActionInvokerService.invokeCustomAction(req.actionName, process, params)
-              .flatMap {
-                case res@Right(_) =>
-                  toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
-                case res@Left(err) =>
-                  val response = toHttpResponse(CustomActionResponse(res)) _
-                  err match {
-                    case _: CustomActionFailure => response(StatusCodes.InternalServerError)
-                    case _: CustomActionInvalidStatus => response(StatusCodes.Forbidden)
-                    case _: CustomActionNotImplemented => response(StatusCodes.NotImplemented)
-                    case _: CustomActionNonExisting => response(StatusCodes.NotFound)
+          } ~
+          path("generateAndTest" / IntNumber) {
+            testSampleSize => {
+              (post & entity(as[DisplayableProcess])) { displayableProcess => {
+                processId(displayableProcess.id) { idWithName =>
+                  canDeploy(idWithName) {
+                    complete {
+                      measureTime("generateAndTest", metricRegistry) {
+                        scenarioTestService.generateData(displayableProcess, testSampleSize) match {
+                          case Left(error) => Future.failed(UnmarshallError(error))
+                          case Right(rawScenarioTestData) => {
+                            scenarioTestService.performTest(idWithName, displayableProcess, rawScenarioTestData, testResultsVariableEncoder)
+                              .flatMap { results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)) }
+                              .recover(EspErrorToHttp.errorToHttp)
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              }
+            }
+          } ~
+          path("customAction" / Segment) { processName =>
+            (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
+              val params = req.params.getOrElse(Map.empty)
+              complete {
+                customActionInvokerService.invokeCustomAction(req.actionName, process, params)
+                  .flatMap {
+                    case res@Right(_) =>
+                      toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
+                    case res@Left(err) =>
+                      val response = toHttpResponse(CustomActionResponse(res)) _
+                      err match {
+                        case _: CustomActionFailure => response(StatusCodes.InternalServerError)
+                        case _: CustomActionInvalidStatus => response(StatusCodes.Forbidden)
+                        case _: CustomActionNotImplemented => response(StatusCodes.NotImplemented)
+                        case _: CustomActionNonExisting => response(StatusCodes.NotFound)
+                      }
                   }
               }
+            }
           }
-        }
       }
   }
 

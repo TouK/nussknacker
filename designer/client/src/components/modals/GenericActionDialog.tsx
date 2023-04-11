@@ -3,23 +3,21 @@ import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {loadProcessState} from "../../actions/nk"
-import HttpService from "../../http/HttpService"
 import {getProcessId} from "../../reducers/selectors/graph"
 import {UIParameter} from "../../types"
 import {UnknownRecord} from "../../types/common"
 import {WindowContent} from "../../windowManager"
-import {WindowKind} from "../../windowManager/WindowKind"
+import {WindowKind} from "../../windowManager"
 import {ChangeableValue} from "../ChangeableValue"
-import {editors} from "../graph/node-modal/editors/expression/Editor"
-import {ExpressionLang} from "../graph/node-modal/editors/expression/types"
+import {editors, simpleEditorValidators} from "../graph/node-modal/editors/expression/Editor"
 import {NodeTable, NodeTableBody} from "../graph/node-modal/NodeDetailsContent/NodeTable"
 import {ContentSize} from "../graph/node-modal/node/ContentSize";
 import {FieldLabel} from "../graph/node-modal/FieldLabel";
+import {getGenericActionValidation} from "../../reducers/selectors/genericActionState";
+import {validateGenericActionParameters} from "../../actions/nk/genericAction";
+import {getProcessProperties} from "../graph/node-modal/NodeDetailsContent/selectors";
 
 //TODO
-// - Validation for fields
-// - Error handling
 // - Custom action execution - Properties as in Custom Actions or we are doing it different way it is should be defined "in code"?
 // - Granulate it
 
@@ -44,6 +42,10 @@ interface GenericActionDialogProps extends ChangeableValue<UnknownRecord> {
 
 function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
   const {onChange, action} = props
+  const dispatch = useDispatch()
+  const validationResult = useSelector(getGenericActionValidation)
+  const processId = useSelector(getProcessId)
+  const processProperties = useSelector(getProcessProperties)
 
   const [state, setState] = useState(() => (action?.parameters || []).reduce((obj, param) => ({
     ...obj,
@@ -53,15 +55,32 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
   const setParam = useCallback(
     (name: string) => (value: any) => {
       action.onParamUpdate(name)(value)
-      setState(current => ({...current, [name]: value}))
+      setState(current => ({...current,
+        errors: {[name]: validationResult},
+        [name]: {expression: value, language: current[name].language}}))
     },
     []
   )
+
+  useEffect(() => {
+    dispatch(validateGenericActionParameters(processId, {
+      parameters: action.parameters.map(uiParam => {
+        return {
+          name: uiParam.name,
+          typ: uiParam.typ,
+          expression: state[uiParam.name]
+        }
+      }),
+      processProperties: processProperties,
+      variableTypes: {}
+    }))
+  }, [state])
 
   useEffect(
     () => onChange(state),
     [onChange, state],
   )
+
   return (
     <div className={css({height: "100%", display: "grid", gridTemplateRows: "auto 1fr"})}>
       <ContentSize>
@@ -69,9 +88,9 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
           <NodeTableBody>
           {
             (action?.parameters || []).map(param => {
-              const editorType = param.editor.type
-              const Editor = editors[editorType]
+              const Editor = editors[param.editor.type]
               const fieldName = param.name
+              const validators = simpleEditorValidators(param, validationResult.validationErrors, fieldName, fieldName)
               return (
                 <div className={"node-row"} key={param.name}>
                   <FieldLabel
@@ -82,16 +101,16 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                   <Editor
                     editorConfig={param?.editor}
                     className={"node-value"}
-                    validators={param.validators}
+                    validators={validators}
                     formatter={null}
                     expressionInfo={null}
                     onValueChange={setParam(fieldName)}
-                    expressionObj={{language: ExpressionLang.String, expression: state[fieldName]}}
+                    expressionObj={state[fieldName]}
                     values={[]}
                     readOnly={false}
                     key={fieldName}
                     showSwitch={false}
-                    showValidation={false}
+                    showValidation={true}
                     variableTypes={{}}
                   />
                 </div>
@@ -109,13 +128,10 @@ export function GenericActionDialog(props: WindowContentProps<WindowKind, Generi
   const processId = useSelector(getProcessId)
   const dispatch = useDispatch()
   const action = props.data.meta
-
   const [value, setValue] = useState<UnknownRecord>()
 
   const confirm = useCallback(async () => {
-    await HttpService
-      .customAction(processId, action.layout.name, value)
-      .finally(() => dispatch(loadProcessState(processId)))
+    //TODO
     props.close()
   }, [processId, action.layout.name, value, props, dispatch])
 
