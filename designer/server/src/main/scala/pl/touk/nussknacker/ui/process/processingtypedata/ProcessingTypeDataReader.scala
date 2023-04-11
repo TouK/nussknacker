@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessStateDefinitionService}
+import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import sttp.client3.SttpBackend
 
@@ -17,13 +17,14 @@ object ProcessingTypeDataReader extends ProcessingTypeDataReader
 
 trait ProcessingTypeDataReader extends LazyLogging {
 
+
   def loadProcessingTypeData(config: ConfigWithUnresolvedVersion)(implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                                                   sttpBackend: SttpBackend[Future, Any],
                                                                   deploymentService: DeploymentService,
-                                                                  categoriesService: ProcessCategoryService): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
+                                                                  categoryService: ProcessCategoryService): ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData] = {
     val types: Map[ProcessingType, ProcessingTypeConfig] = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val valueMap = types
-      .filterKeysNow(categoriesService.getProcessingTypeCategories(_).nonEmpty)
+      .filterKeysNow(categoryService.getProcessingTypeCategories(_).nonEmpty)
       .map {
         case (name, typeConfig) =>
           name -> createProcessingTypeData(name, typeConfig)
@@ -31,7 +32,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
     // Here all processing types are loaded and we are ready to perform additional configuration validations
     // to assert the loaded configuration is correct (fail-fast approach).
-    val combinedData = CombinedProcessingTypeData.create(valueMap)
+    val combinedData = createCombinedData(valueMap, categoryService)
 
     new MapBasedProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData](valueMap, combinedData)
   }
@@ -45,4 +46,9 @@ trait ProcessingTypeDataReader extends LazyLogging {
     implicit val processTypeDeploymentService: ProcessingTypeDeploymentService = new DefaultProcessingTypeDeploymentService(name, deploymentService)
     ProcessingTypeData.createProcessingTypeData(managerProvider, typeConfig)
   }
+
+  protected def createCombinedData(valueMap: Map[ProcessingType, ProcessingTypeData], categoryService: ProcessCategoryService): CombinedProcessingTypeData = {
+    CombinedProcessingTypeData.create(valueMap, categoryService)
+  }
+
 }

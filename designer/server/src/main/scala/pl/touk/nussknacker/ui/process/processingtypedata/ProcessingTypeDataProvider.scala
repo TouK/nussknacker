@@ -43,7 +43,7 @@ trait ProcessingTypeDataProvider[+T, +C] {
 
   }
 
-  def mapCombined[CC](fun: C => CC): ProcessingTypeDataProvider[T, CC] = {
+  def mapCombined[CC](fun: (=> C) => CC): ProcessingTypeDataProvider[T, CC] = {
 
     new ProcessingTypeDataProvider[T, CC] {
 

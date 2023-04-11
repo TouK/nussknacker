@@ -13,14 +13,19 @@ import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentU
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider, DefaultComponentService}
+import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
 
 class ComponentResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   //These should be defined as lazy val's because of racing, there are some missing tables in db..
-  private lazy val componentService = DefaultComponentService(testConfig, testProcessingTypeDataProvider, processService, processCategoryService)
-  private lazy val componentRoute = new ComponentResource(componentService)
   private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map.empty)
+  private lazy val componentService = DefaultComponentService(
+    ComponentLinksConfigExtractor.extract(config),
+    testProcessingTypeDataProvider.mapCombined(_ => defaultComponentIdProvider),
+    processService,
+    processCategoryService)
+  private lazy val componentRoute = new ComponentResource(componentService)
 
   //Here we test only response, logic is tested in DefaultComponentServiceSpec
   it("should return users(test, admin) components list") {

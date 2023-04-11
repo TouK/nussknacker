@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process
+package pl.touk.nussknacker.ui.component
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -18,12 +18,11 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessUtil, TestProcessingTypes}
-import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import java.time.Instant
 
-class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
+class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -50,19 +49,6 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
       .streaming("fooProcess2")
       .source("source", existingSourceFactory)
       .customNode("custom", "out1", otherExistingStreamTransformer)
-      .emptySink("sink", existingSinkFactory)))
-
-  private val process3 = displayableToProcess(TestProcessUtil.toDisplayable(
-    ScenarioBuilder
-      .streaming("fooProcess3")
-      .source("source", existingSourceFactory)
-      .emptySink("sink", existingSinkFactory)))
-
-  private val process4 = displayableToProcess(TestProcessUtil.toDisplayable(
-    ScenarioBuilder
-      .streaming("fooProcess4")
-      .source("source", existingSourceFactory)
-      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "ala" -> "'makota'")
       .emptySink("sink", existingSinkFactory)))
 
   private val processWithSomeBasesStreaming = displayableToProcess(TestProcessUtil.toDisplayable(
@@ -140,7 +126,7 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
     )
 
     forAll(table) { (processes, expectedData) =>
-      val result = ProcessObjectsFinder.computeComponentsUsageCount(defaultComponentIdProvider, processes)
+      val result = ComponentsUsageHelper.computeComponentsUsageCount(defaultComponentIdProvider, processes)
       result shouldBe expectedData
     }
   }
@@ -182,7 +168,7 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
     )
 
     forAll(table) { (process, expected) =>
-      val result = ProcessObjectsFinder.computeComponentsUsage(defaultComponentIdProvider, process)
+      val result = ComponentsUsageHelper.computeComponentsUsage(defaultComponentIdProvider, process)
       result shouldBe expected
     }
   }

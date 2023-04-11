@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.restmodel.definition._
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
@@ -35,7 +36,7 @@ object UIProcessObjectsFactory {
                               isSubprocess: Boolean,
                               processCategoryService: ProcessCategoryService,
                               additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
-                              processingType: String): UIProcessObjects = {
+                              processingType: ProcessingType): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
     val toStaticObjectDefinitionTransformer = new ToStaticObjectDefinitionTransformer(

@@ -13,6 +13,8 @@ package object component {
 
   import pl.touk.nussknacker.restmodel.codecs.URICodecs._
 
+  type NodeId = String
+
   object ComponentLink {
     val DocumentationId = "documentation"
     val DocumentationTile: String = "Documentation"
@@ -30,10 +32,17 @@ package object component {
   }
 
   @JsonCodec
-  final case class ComponentListElement(id: ComponentId, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], links: List[ComponentLink], usageCount: Long)
+  final case class ComponentListElement(id: ComponentId,
+                                        name: String,
+                                        icon: String,
+                                        componentType: ComponentType,
+                                        componentGroupName: ComponentGroupName,
+                                        categories: List[String],
+                                        links: List[ComponentLink],
+                                        usageCount: Long)
 
   object ComponentUsagesInScenario {
-    def apply(process: BaseProcessDetails[_], nodesId: List[String]): ComponentUsagesInScenario = ComponentUsagesInScenario(
+    def apply(process: BaseProcessDetails[_], nodesId: List[NodeId]): ComponentUsagesInScenario = ComponentUsagesInScenario(
       id = process.id, //Right now we assume that scenario id is name..
       name = process.idWithName.name,
       processId = process.processId,
@@ -50,6 +59,17 @@ package object component {
   }
 
   @JsonCodec
-  final case class ComponentUsagesInScenario(id: String, name: ProcessName, processId: ProcessId, nodesId: List[String], isSubprocess: Boolean, processCategory: String, modificationDate: Instant, modifiedAt: Instant, modifiedBy: String, createdAt: Instant, createdBy: String, lastAction: Option[ProcessAction])
+  final case class ComponentUsagesInScenario(id: String,
+                                             name: ProcessName,
+                                             processId: ProcessId,
+                                             nodesId: List[NodeId],
+                                             isSubprocess: Boolean,
+                                             processCategory: String,
+                                             modificationDate: Instant,
+                                             modifiedAt: Instant,
+                                             modifiedBy: String,
+                                             createdAt: Instant,
+                                             createdBy: String,
+                                             lastAction: Option[ProcessAction])
 
 }

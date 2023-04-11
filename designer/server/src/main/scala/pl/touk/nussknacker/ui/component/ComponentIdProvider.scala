@@ -1,16 +1,36 @@
 package pl.touk.nussknacker.ui.component
 
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.engine.component.ComponentUtil
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.process.ProcessCategoryService
 
 //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
 trait ComponentIdProvider {
   def createComponentId(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId
   def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId]
+}
+
+object DefaultComponentIdProvider extends LazyLogging {
+
+  def createUnsafe(processingTypeDataMap: Map[ProcessingType, ProcessingTypeData],
+                   categoryService: ProcessCategoryService): ComponentIdProvider = {
+    logger.debug("Creating component id provider")
+
+    val componentObjectsService = new ComponentObjectsService(categoryService)
+    val componentObjectsMap = processingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
+    val componentIdProvider = new DefaultComponentIdProvider(componentObjectsMap.transform { case (_, componentsObjects) => componentsObjects.config })
+
+    ComponentsValidator.checkUnsafe(componentObjectsMap, componentIdProvider)
+
+    componentIdProvider
+  }
+
 }
 
 class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig]) extends ComponentIdProvider {
@@ -20,7 +40,7 @@ class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig
 
     //We assume that base and currently fragment component's id can't be overridden
     if (defaultComponentId != overriddenComponentId && (ComponentType.isBaseComponent(componentType) || componentType == ComponentType.Fragments)) {
-      throw new IllegalArgumentException(s"ComponentId can't be overridden for component type: '$componentType'.")
+      throw new IllegalArgumentException(s"Component id can't be overridden for: '$name' with component type: '$componentType'.")
     }
 
     overriddenComponentId
@@ -35,7 +55,7 @@ class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig
       })
 
   private def getOverriddenComponentId(processingType: ProcessingType, componentName: String, defaultComponentId: ComponentId): ComponentId = {
-    def getComponentId(namespace: String) = configs.get(processingType).flatMap(_.get(namespace)).flatMap(_.componentId)
+    def getComponentId(name: String): Option[ComponentId] = configs.get(processingType).flatMap(_.get(name)).flatMap(_.componentId)
 
     val componentId = getComponentId(componentName)
 

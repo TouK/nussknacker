@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import ComponentType.ComponentType
 
-object DefaultsComponentIcon {
+private[component] object DefaultsComponentIcon {
   val FilterIcon = "/assets/components/Filter.svg"
   val SplitIcon = "/assets/components/Split.svg"
   val SwitchIcon = "/assets/components/Switch.svg"

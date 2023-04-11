@@ -22,7 +22,7 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.component.DefaultComponentService
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, DesignerConfigLoader, FeatureTogglesConfig, UsageStatisticsReportsConfig}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, ComponentLinksConfigExtractor, DesignerConfigLoader, FeatureTogglesConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -175,7 +175,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val countsReporter = featureTogglesConfig.counts.flatMap(prepareCountsReporter(environment, _))
 
-    val componentService = DefaultComponentService(resolvedConfig, typeToConfig, processService, processCategoryService)
+    val componentService = DefaultComponentService(ComponentLinksConfigExtractor.extract(resolvedConfig), typeToConfig.mapCombined(_.componentIdProvider), processService, processCategoryService)
 
     val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
 
