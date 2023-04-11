@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.Route
-import cats.data.OptionT
+import cats.data.{NonEmptyList, OptionT}
+import cats.data.Validated.Invalid
 import cats.instances.future._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
@@ -11,21 +12,23 @@ import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
-import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.SubprocessResolver
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, SubprocessResolver}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
 import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.restmodel.definition.UIParameter
+import pl.touk.nussknacker.restmodel.definition.{UIParameter, UIValueParameter}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -99,11 +102,37 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
           }
         }
       }
+    } ~ pathPrefix("parameters" / Segment) { processName =>
+      (post & processDetailsForName[Unit](processName)) { process =>
+        path("validate") {
+          val modelData = typeToConfig.forTypeUnsafe(process.processingType)
+          implicit val requestDecoder: Decoder[ParametersValidationRequest] = NodesResources.prepareParametersValidationDecoder(modelData)
+          (post & entity(as[ParametersValidationRequest])) { parametersToValidate =>
+            complete {
+              val validationResults = NodesResources.validate(modelData, parametersToValidate, processName)
+              ParametersValidationResult(validationErrors = validationResults, validationPerformed = true)
+            }
+          }
+        }
+      }
     }
   }
 }
 
 object NodesResources {
+
+  //TODO Check it, it was written as a test
+  def validate(modelData: ModelData, request: ParametersValidationRequest, processName: String): List[NodeValidationError] = {
+    implicit val metaData: MetaData = request.processProperties.toMetaData(processName)
+    val context = prepareValidationContext(modelData)(request.variableTypes)
+    val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+      case spel: SpelExpressionParser => spel.typingDictLabels
+    }
+    request.parameters
+      .map(param => expressionCompiler.compile(param.expression, Some(param.name), context, param.typ)(NodeId("")))
+      .collect { case Invalid(a) => a.map(PrettyValidationErrors.formatErrorMessage).toList }
+      .flatten
+  }
 
   def prepareTypingResultDecoder(modelData: ModelData): Decoder[TypingResult] = {
     new TypingResultDecoder(name => ClassUtils.forName(name, modelData.modelClassLoader.classLoader)).decodeTypingResults
@@ -112,6 +141,12 @@ object NodesResources {
   def prepareNodeRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
     implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
     deriveConfiguredDecoder[NodeValidationRequest]
+  }
+
+  def prepareParametersValidationDecoder(modelData: ModelData): Decoder[ParametersValidationRequest] = {
+    implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+    implicit val uiValueParameterDecoder: Decoder[UIValueParameter] = deriveConfiguredDecoder[UIValueParameter]
+    deriveConfiguredDecoder[ParametersValidationRequest]
   }
 
   def preparePropertiesRequestDecoder(modelData: ModelData): Decoder[PropertiesValidationRequest] = {
@@ -181,6 +216,14 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     } yield data).value
   }
 }
+
+
+@JsonCodec(encodeOnly = true) case class ParametersValidationResult(validationErrors: List[NodeValidationError],
+                                                                    validationPerformed: Boolean)
+
+@JsonCodec(encodeOnly = true) case class ParametersValidationRequest(parameters: List[UIValueParameter],
+                                                                     processProperties: ProcessProperties,
+                                                                     variableTypes: Map[String, TypingResult])
 
 @JsonCodec(encodeOnly = true) case class NodeValidationResult(parameters: Option[List[UIParameter]],
                                                               expressionType: Option[TypingResult],

@@ -36,7 +36,7 @@ function TestWithSchemaButton(props: Props) {
       parameters: params,
       parametersValues: (params || []).reduce((obj, param) => ({
         ...obj,
-        [param.name]: param.defaultValue.expression,
+        [param.name]: param.defaultValue,
       }), {}),
       onParamUpdate
     });
@@ -45,7 +45,7 @@ function TestWithSchemaButton(props: Props) {
   const onParamUpdate = (name: string) => (value: any) => setAction(current => (
     {
       ...current,
-      parametersValues: {...current.parametersValues, [name]: value},
+      parametersValues: {...current.parametersValues, [name]: {expression: value, language: current.parametersValues[name].language}},
     })
   )
 
