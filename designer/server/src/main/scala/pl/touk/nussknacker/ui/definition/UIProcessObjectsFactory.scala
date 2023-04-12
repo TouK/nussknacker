@@ -35,6 +35,7 @@ object UIProcessObjectsFactory {
                               subprocessesDetails: Set[SubprocessDetails],
                               isSubprocess: Boolean,
                               processCategoryService: ProcessCategoryService,
+                              typeSpecificPropertiesConfig: Map[String, AdditionalPropertyConfig] = Map(),
                               additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
                               processingType: ProcessingType): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
@@ -67,6 +68,9 @@ object UIProcessObjectsFactory {
 
     val componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(processConfig)
 
+    // TODO: Rename createUIAdditionalPropertyConfig
+    val typeSpecificPropertiesConfigForUi = typeSpecificPropertiesConfig.mapValuesNow(createUIAdditionalPropertyConfig)
+
     val additionalPropertiesConfigForUi = additionalPropertiesConfig
       .filter(_ => !isSubprocess)// fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
       .mapValuesNow(createUIAdditionalPropertyConfig)
@@ -88,6 +92,7 @@ object UIProcessObjectsFactory {
       processDefinition = uiProcessDefinition,
       componentsConfig = finalComponentsConfig,
       additionalPropertiesConfig = additionalPropertiesConfigForUi,
+      typeSpecificPropertiesConfig = typeSpecificPropertiesConfigForUi,
       edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
         processDefinition = processDefinition,
         isSubprocess = isSubprocess,

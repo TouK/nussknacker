@@ -5,6 +5,8 @@ import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 
@@ -29,6 +31,41 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
   override def name: String = "flinkStreaming"
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(Some(1)))
+
+  override def typeSpecificPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = {
+    Map(parallelismConfig, spillStateConfig, asyncInterpretation, checkpointInterval)
+  }
+
+  private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(StringParameterEditor),
+      validators = Some(List(MandatoryParameterValidator)),
+      label = Some("Parallelism"))
+
+  private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(BoolParameterEditor),
+      validators = None,
+      label = Some("Spill state to disk"))
+
+  private val asyncInterpretation: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(FixedValuesParameterEditor(List(
+        FixedExpressionValue("false", "Synchronous"),
+        FixedExpressionValue("true", "Asynchronous"),
+        FixedExpressionValue("null", "Server default")))),
+      validators = None,
+      label = Some("IO mode"))
+
+  private val checkpointInterval: (String, AdditionalPropertyConfig) = "checkpointIntervalInSeconds" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(StringParameterEditor),
+      validators = Some(List(MandatoryParameterValidator)),
+      label = Some("Checkpoint interval in seconds"))
 
 }
 
