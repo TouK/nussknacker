@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 class SettingsResources(config: FeatureTogglesConfig,
                         authenticationMethod: String,
                         analyticsConfig: Option[AnalyticsConfig],
-                        usageStatisticsReportsSettings: UsageStatisticsReportsSettings)(implicit ec: ExecutionContext)
+                        usageStatisticsReportsSettings: => UsageStatisticsReportsSettings)(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser {
 
   def publicRoute(): Route =
