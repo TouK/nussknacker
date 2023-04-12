@@ -977,11 +977,13 @@ lazy val flinkScalaUtils = (project in flink("scala-utils")).
     name := "nussknacker-flink-scala-utils",
     libraryDependencies ++= {
       Seq(
-        "com.twitter" %% "chill" % "0.9.5",
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
+      ) ++ forScalaVersion(scalaVersion.value, Seq(),
+        (2, 12) -> Seq("org.apache.flink" %% "flink-scala" % flinkV  % "provided"),
+        (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "1.0.0-SNAPSHOT"  % "provided")
       )
     }
   )
