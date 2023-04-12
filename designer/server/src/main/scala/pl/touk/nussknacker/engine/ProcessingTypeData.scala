@@ -12,6 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class ProcessingTypeData(deploymentManager: DeploymentManager,
                               modelData: ModelData,
                               typeSpecificInitialData: TypeSpecificInitialData,
+                              typeSpecificPropertiesConfig: Map[String, AdditionalPropertyConfig],
                               additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
                               additionalValidators: List[CustomProcessValidator],
                               usageStatistics: ProcessingTypeUsageStatistics) extends AutoCloseable {
@@ -39,8 +40,9 @@ object ProcessingTypeData {
       manager,
       modelData,
       deploymentManagerProvider.typeSpecificInitialData(managerConfig),
+      deploymentManagerProvider.typeSpecificPropertiesConfig(managerConfig),
       additionalProperties,
-      deploymentManagerProvider.additionalValidators(managerConfig) ,
+      deploymentManagerProvider.additionalValidators(managerConfig),
       ProcessingTypeUsageStatistics(managerConfig))
   }
 

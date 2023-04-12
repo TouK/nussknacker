@@ -16,6 +16,7 @@ interface Props {
   showSwitch: boolean,
   showValidation: boolean,
   propertyName: string,
+  propertyPathPrefix: string,
   propertyConfig: AdditionalPropertyConfig,
   propertyErrors: NodeValidationError[],
   editedNode: any,
@@ -27,12 +28,12 @@ interface Props {
 export default function AdditionalProperty(props: Props) {
 
   const {
-    showSwitch, showValidation, propertyName, propertyConfig, propertyErrors, editedNode, onChange, renderFieldLabel,
+    showSwitch, showValidation, propertyName, propertyPathPrefix, propertyConfig, propertyErrors, editedNode, onChange, renderFieldLabel,
     readOnly,
   } = props
 
   const values = propertyConfig.values?.map(value => ({expression: value, label: value}))
-  let propertyPath = `additionalFields.properties.${propertyName}`;
+  let propertyPath = `${propertyPathPrefix}.${propertyName}`;
   const current = get(editedNode, propertyPath) || ""
   const expressionObj = {expression: current, value: current, language: ExpressionLang.String}
   const validators = useMemo(() => [errorValidator(propertyErrors, propertyName)], [propertyErrors, propertyName])
