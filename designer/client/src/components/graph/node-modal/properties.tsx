@@ -1,13 +1,13 @@
 import {NodeType, NodeValidationError, ProcessDefinitionData} from "../../../types"
 import {useSelector} from "react-redux"
-import {getAdditionalPropertiesConfig} from "./NodeDetailsContent/selectors"
+import {getAdditionalPropertiesConfig, getTypeSpecificPropertiesConfig} from "./NodeDetailsContent/selectors"
 import React, {useMemo} from "react"
 import {sortBy} from "lodash"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 import {IdField} from "./IdField"
 import {NodeField} from "./NodeField"
 import {FieldType} from "./editors/field/Field"
-import {errorValidator, literalIntegerValueValidator} from "./editors/Validators"
+import {errorValidator} from "./editors/Validators"
 import AdditionalProperty from "./AdditionalProperty"
 import {DescriptionField} from "./DescriptionField"
 
@@ -31,11 +31,12 @@ export function Properties({
   showValidation?: boolean,
 }): JSX.Element {
   const additionalPropertiesConfig = useSelector(getAdditionalPropertiesConfig)
+  const typeSpecificPropertiesConfig = Object.entries(useSelector(getTypeSpecificPropertiesConfig))
   const type = node.typeSpecificProperties.type
   //fixme move this configuration to some better place?
   //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
-  const sorted = useMemo(() => sortBy(Object.entries(additionalPropertiesConfig), ([name]) => name), [additionalPropertiesConfig])
-
+  const additionalPropertiesSorted = useMemo(() => sortBy(Object.entries(additionalPropertiesConfig), ([name]) => name), [additionalPropertiesConfig])
+  console.log(typeSpecificPropertiesConfig)
   return (
     <NodeTableBody>
       <IdField
@@ -47,107 +48,28 @@ export function Properties({
         additionalValidators={[errorValidator(fieldErrors || [], "id")]}
 
       />
-      {node.isSubprocess ?
-        (
-          <NodeField
-            isEditMode={isEditMode}
-            showValidation={showValidation}
-            node={node}
-            renderFieldLabel={renderFieldLabel}
-            setProperty={setProperty}
-            fieldType={FieldType.input}
-            fieldLabel={"Documentation url"}
-            fieldProperty={"typeSpecificProperties.docsUrl"}
-            validators={[errorValidator(fieldErrors || [], "docsUrl")]}
-            autoFocus
+      {typeSpecificPropertiesConfig.map(([propName, propConfig]) => (
+          <AdditionalProperty
+              key={propName}
+              showSwitch={showSwitch}
+              showValidation={showValidation}
+              propertyName={propName}
+              propertyPathPrefix={"typeSpecificProperties"}
+              propertyConfig={propConfig}
+              propertyErrors={fieldErrors || []}
+              onChange={setProperty}
+              renderFieldLabel={renderFieldLabel}
+              editedNode={node}
+              readOnly={!isEditMode}
           />
-        ) :
-        type === "StreamMetaData" ?
-          (
-            <>
-              <NodeField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                fieldType={FieldType.input}
-                fieldLabel={"Parallelism"}
-                fieldProperty={"typeSpecificProperties.parallelism"}
-                validators={[literalIntegerValueValidator, errorValidator(fieldErrors || [], "parallelism")]}
-                autoFocus
-              />
-              <NodeField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                fieldType={FieldType.input}
-                fieldLabel={"Checkpoint interval in seconds"}
-                fieldProperty={"typeSpecificProperties.checkpointIntervalInSeconds"}
-                validators={[literalIntegerValueValidator, errorValidator(fieldErrors || [], "checkpointIntervalInSeconds")]}
-              />
-              <NodeField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                fieldType={FieldType.checkbox}
-                fieldLabel={"Spill state to disk"}
-                fieldProperty={"typeSpecificProperties.spillStateToDisk"}
-                validators={[errorValidator(fieldErrors || [], "spillStateToDisk")]}
-              />
-              <NodeField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                fieldType={FieldType.checkbox}
-                fieldLabel={"Should use async interpretation"}
-                fieldProperty={"typeSpecificProperties.useAsyncInterpretation"}
-                validators={[errorValidator(fieldErrors || [], "useAsyncInterpretation")]}
-                defaultValue={processDefinitionData?.defaultAsyncInterpretation}
-              />
-            </>
-          ) :
-          type === "LiteStreamMetaData" ?
-            (
-              <NodeField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                fieldType={FieldType.input}
-                fieldLabel={"Parallelism"}
-                fieldProperty={"typeSpecificProperties.parallelism"}
-                validators={[literalIntegerValueValidator, errorValidator(fieldErrors || [], "parallelism")]}
-                autoFocus
-              />
-            ) :
-            (
-              <NodeField
-                isEditMode={isEditMode}
-                showValidation={showValidation}
-                node={node}
-                renderFieldLabel={renderFieldLabel}
-                setProperty={setProperty}
-                fieldType={FieldType.input}
-                fieldLabel={"Slug"}
-                fieldProperty={"typeSpecificProperties.slug"}
-                validators={[errorValidator(fieldErrors || [], "slug")]}
-              />
-            )
-      }
-      {sorted.map(([propName, propConfig]) => (
+      ))}
+      {additionalPropertiesSorted.map(([propName, propConfig]) => (
         <AdditionalProperty
           key={propName}
           showSwitch={showSwitch}
           showValidation={showValidation}
           propertyName={propName}
+          propertyPathPrefix={"additionalFields.properties"}
           propertyConfig={propConfig}
           propertyErrors={fieldErrors || []}
           onChange={setProperty}
