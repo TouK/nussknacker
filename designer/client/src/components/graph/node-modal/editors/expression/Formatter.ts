@@ -12,6 +12,7 @@ export type Formatter = {
 }
 
 export enum FormatterType {
+  CharSequence = "java.lang.CharSequence",
   String = "java.lang.String",
   Duration = "java.time.Duration",
   Period = "java.time.Period",
@@ -130,6 +131,7 @@ const defaultFormatter: Formatter = {
 }
 
 export const spelFormatters: Record<FormatterType, Formatter> = {
+  [FormatterType.CharSequence]: stringSpelFormatter,
   [FormatterType.String]: stringSpelFormatter,
   [FormatterType.Duration]: spelDurationFormatter,
   [FormatterType.Period]: spelPeriodFormatter,
@@ -145,6 +147,7 @@ export const typeFormatters: Record<FormatterType, Formatter> = {
   [FormatterType.Time]: localTimeFormatter,
   [FormatterType.Date]: dateFormatter,
   [FormatterType.DateTime]: dateTimeFormatter,
+  [FormatterType.CharSequence]: defaultFormatter,
   [FormatterType.String]: defaultFormatter,
   [FormatterType.Cron]: defaultFormatter,
 }
