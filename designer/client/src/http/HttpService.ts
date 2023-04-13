@@ -16,6 +16,7 @@ import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
 import {AdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
 import {withoutHackOfEmptyEdges} from "../components/graph/GraphPartialsInTS/EdgeUtils"
+import {UIValueParameter} from "../actions/nk/genericAction";
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -493,6 +494,17 @@ class HttpService {
 
     const data = new FormData()
     data.append("testData", file)
+    data.append("processJson", new Blob([JSON.stringify(sanitized)], {type: "application/json"}))
+
+    const promise = api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data)
+    promise.catch(error => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
+    return promise
+  }
+
+  testProcessFromJson(processId: ProcessId, testData: string , processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
+    const sanitized = this.#sanitizeProcess(processJson)
+    const data = new FormData()
+    data.append("testData", testData)
     data.append("processJson", new Blob([JSON.stringify(sanitized)], {type: "application/json"}))
 
     const promise = api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data)
