@@ -61,7 +61,7 @@ class ProcessesResources(
         path("archive") {
           get {
             complete {
-              processService.getArchivedProcesses[Unit](user).toBasicProcess
+              processService.getArchivedProcesses[Unit].toBasicProcess
             }
           }
         } ~ path("unarchive" / Segment) { processName =>
@@ -110,7 +110,7 @@ class ProcessesResources(
           get {
             complete {
               for {
-                processes <- processService.getProcesses[Unit](user)
+                processes <- processService.getProcesses[Unit]
                 statuses <- fetchProcessStatesForProcesses(processes)
               } yield statuses
             }

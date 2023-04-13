@@ -71,7 +71,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
   override def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
-      .getProcesses[DisplayableProcess](user)
+      .getProcesses[DisplayableProcess]
       .map(processes => {
         val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processes)
 
@@ -99,7 +99,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
   private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] = {
     processService
-      .getProcesses[DisplayableProcess](loggedUser)
+      .getProcesses[DisplayableProcess]
       .map(_.filter(p => categories.contains(p.processCategory))) //TODO: move it to service?
       .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }

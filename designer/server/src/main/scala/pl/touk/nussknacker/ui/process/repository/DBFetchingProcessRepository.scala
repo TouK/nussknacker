@@ -111,7 +111,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   }
 
   private def fetchProcessDetailsForVersion[PS: ProcessShapeFetchStrategy](processVersion: ProcessVersionEntityData, isLatestVersion: Boolean)
-                                                                          (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
+                                                                          (implicit loggedUser: LoggedUser, ec: ExecutionContext): OptionT[DB, BaseProcessDetails[PS]] = {
     val id = processVersion.processId
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
@@ -137,7 +137,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
                                                                lastDeployedActionData: Option[(ProcessActionEntityData, Option[CommentEntityData])],
                                                                isLatestVersion: Boolean,
                                                                tags: Seq[TagsEntityData] = List.empty,
-                                                               history: Seq[ProcessVersion] = List.empty)(implicit loggedUser: LoggedUser): BaseProcessDetails[PS] = {
+                                                               history: Seq[ProcessVersion] = List.empty): BaseProcessDetails[PS] = {
     BaseProcessDetails[PS](
       id = process.name.value, //TODO: replace by Long / ProcessId
       processId = process.id, //TODO: Remove it weh we will support Long / ProcessId
