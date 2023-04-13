@@ -59,9 +59,9 @@ trait ProcessService {
 
   def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(implicit user: LoggedUser): Future[XError[UpdateProcessResponse]]
 
-  def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
+  def getProcesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
 
-  def getArchivedProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
+  def getArchivedProcesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
 
   def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]]
 
@@ -121,7 +121,6 @@ class DBProcessService(deploymentService: DeploymentService,
 
   override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't rename archived scenario.") { process =>
-      implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
       withNotRunningState(process, "Can't change name still running scenario.") { _ =>
         dbioRunner.runInTransaction(
           processRepository
@@ -205,10 +204,10 @@ class DBProcessService(deploymentService: DeploymentService,
         Future(Left(ProcessNotFoundError(processIdWithName.id.value.toString)))
     }
 
-  override def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
+  override def getProcesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
     getProcesses(user, isArchived = false)
 
-  override def getArchivedProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
+  override def getArchivedProcesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
     getProcesses(user, isArchived = true)
 
   //TODO: It's temporary solution to return Set[SubprocessDetails], in future we should replace it by Set[BaseProcessDetails[PS]]

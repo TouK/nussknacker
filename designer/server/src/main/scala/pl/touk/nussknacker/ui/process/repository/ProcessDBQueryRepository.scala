@@ -56,7 +56,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
 
   protected def fetchLatestProcessesQuery(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
                                           lastDeployedActionPerProcess: Seq[(ProcessId, (ProcessActionEntityData, Option[CommentEntityData]))],
-                                          isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser, ec: ExecutionContext): Query[(((Rep[ProcessId], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((ProcessId, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
+                                          isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser): Query[(((Rep[ProcessId], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((ProcessId, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
     processVersionsTableNoJson
       .groupBy(_.processId)
       .map { case (n, group) => (n, group.map(_.createDate).max) }
@@ -70,9 +70,6 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
           case Some(dep) => process.id.inSet(lastDeployedActionPerProcess.map(_._1)) === dep
         }
       }
-
-  protected def fetchTagsPerProcess(implicit fetchShape: ProcessShapeFetchStrategy[_], ec: ExecutionContext): DBIOAction[Map[ProcessId, List[TagsEntityData]], NoStream, Effect.Read] =
-    tagsTable.result.map(_.toList.groupBy(_.processId).withDefaultValue(Nil))
 
   protected def processVersionsTableQuery(implicit fetchShape: ProcessShapeFetchStrategy[_]): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] =
     fetchShape match {
