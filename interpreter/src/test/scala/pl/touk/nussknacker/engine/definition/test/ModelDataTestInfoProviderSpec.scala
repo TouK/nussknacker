@@ -68,25 +68,25 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
 
     val capabilities = testInfoProvider.getTestingCapabilities(emptyScenario)
 
-    capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
+    capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false, canCreateTestView = false)
   }
 
   test("should detect capabilities: can parse and generate test data") {
     val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource())
 
-    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = true)
+    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = true, canCreateTestView = false)
   }
 
   test("should detect capabilities: can only parse test data") {
     val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource("genericSourceNoGenerate"))
 
-    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false)
+    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false, canCreateTestView = false)
   }
 
   test("should detect capabilities: does not support testing") {
     val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource("genericSourceNoSupport"))
 
-    capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
+    capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false, canCreateTestView = false)
   }
 
   test("should detect capabilities for scenario with multiple sources: at least one supports generating and testing") {
@@ -103,7 +103,7 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
 
     val capabilities = testInfoProvider.getTestingCapabilities(scenario)
 
-    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = true)
+    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = true, canCreateTestView = false)
   }
 
   test("should detect capabilities for scenario with multiple sources: one can only parse test data") {
@@ -120,7 +120,7 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
 
     val capabilities = testInfoProvider.getTestingCapabilities(scenario)
 
-    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false)
+    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false, canCreateTestView = false)
   }
 
   test("should generate data for a scenario with single source") {

@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord, TestInfoProvider, TestingCapabilities}
@@ -26,7 +27,7 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 
     override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities
-    = TestingCapabilities(canBeTested = true, canGenerateTestData = true)
+    = TestingCapabilities(canBeTested = true, canGenerateTestData = true, canCreateTestView = false)
 
     override def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData]
     = Some(PreliminaryScenarioTestData(PreliminaryScenarioTestRecord.Standard("sourceId", Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")) :: Nil))
@@ -34,6 +35,8 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
     override def prepareTestData(preliminaryTestData: PreliminaryScenarioTestData, scenario: CanonicalProcess): Either[String, ScenarioTestData] = {
       ???
     }
+
+    override def getTestViewParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = ???
   }
 
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =

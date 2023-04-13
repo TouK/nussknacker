@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.Route
-import cats.data.{NonEmptyList, OptionT}
+import cats.data.OptionT
 import cats.data.Validated.Invalid
 import cats.instances.future._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
@@ -14,15 +14,13 @@ import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfo
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, SubprocessResolver}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
-import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap

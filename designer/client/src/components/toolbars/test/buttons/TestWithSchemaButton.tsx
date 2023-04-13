@@ -1,58 +1,97 @@
-import React, {useEffect, useState} from "react"
+import React, {useCallback, useEffect, useState} from "react"
 import {useTranslation} from "react-i18next"
-import {useSelector} from "react-redux"
+import {useDispatch, useSelector} from "react-redux"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/test-with-schema.svg"
 import {
+  getProcessId, getProcessToDisplay,
   getTestCapabilities, getTestViewParameters,
   isLatestProcessVersion
 } from "../../../../reducers/selectors/graph"
 import {useWindows, WindowKind} from "../../../../windowManager"
 import {ToolbarButtonProps} from "../../types"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
-import _ from "lodash"
+import _, {set} from "lodash"
+import {TestViewParameters} from "../../../../common/TestResultUtils";
+import {testProcessFromJson} from "../../../../actions/nk/displayTestResults";
+import {expressionStringToJsonType} from "../TestWithSchemaUtils";
+import {GenericActionParameters} from "../../../modals/GenericActionDialog";
 
 type Props = ToolbarButtonProps
 
 function TestWithSchemaButton(props: Props) {
   const {disabled} = props
   const {t} = useTranslation()
+  const {open} = useWindows()
   const processIsLatestVersion = useSelector(isLatestProcessVersion)
   const testCapabilities = useSelector(getTestCapabilities)
-  const testViewParameters = useSelector(getTestViewParameters)
-  const available = !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canCreateTestView
-  const {open} = useWindows()
+  const testViewParameters: TestViewParameters[] = useSelector(getTestViewParameters)
+  const processId = useSelector(getProcessId)
+  const processToDisplay = useSelector(getProcessToDisplay)
+  const dispatch = useDispatch()
 
+  const available = !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canCreateTestView
 
   const [action, setAction] = useState(null)
+  const [selectedSource, setSelectedSource] = useState(_.head(testViewParameters)?.sourceId)
+  const [sourceParameters, setSourceParameters] = useState(updateParametersFromTestView())
+
+  function updateParametersFromTestView(): {[key: string]: GenericActionParameters} {
+    return (testViewParameters || []).reduce((testViewObj, testViewParam) => ({
+      ...testViewObj,
+      [testViewParam.sourceId]: {
+        parameters: testViewParam.parameters,
+        parametersValues: (testViewParam.parameters || []).reduce((paramObj, param) => ({
+          ...paramObj,
+          [param.name]: param.defaultValue,
+        }), {}),
+        onParamUpdate: (name: string) => (value: any) => onParamUpdate(testViewParam.sourceId, name, value)
+      }
+    }), {})
+  }
+
+  function onParamUpdate(sourceId: string, name: string, value: any) {
+    setSourceParameters(current => ({
+      ...current,
+      [sourceId]: {
+        ...current[sourceId],
+        parametersValues: {
+          ...current[sourceId].parametersValues,
+          [name]: {expression: value, language: current[sourceId].parametersValues[name].language}
+        }
+      }
+    }))
+  }
+
+  //TODO for now we generate tests for one source, in next iteration add support for multiple sources
+  const onConfirmAction = useCallback((paramValues) => {
+    const recordJson = {}
+    sourceParameters[selectedSource].parameters.forEach(uiParam => {
+      set(recordJson, uiParam.name, expressionStringToJsonType(paramValues[uiParam.name].expression, uiParam.typ))
+    })
+    dispatch(testProcessFromJson(processId, JSON.stringify({"sourceId":selectedSource, "record": recordJson}), processToDisplay))
+  }, [sourceParameters, selectedSource])
 
   useEffect(() => {
-    const params = _.head(testViewParameters?.map((viewParameters) => viewParameters.parameters))
+    //For now, we select first source and don't provide way to change it
+    //Add support for multiple sources in next iteration (?)
+    setSelectedSource(_.head(testViewParameters)?.sourceId);
+    setSourceParameters(updateParametersFromTestView());
+  }, [testViewParameters]);
+
+  useEffect(() => {
     setAction({
       layout: {
         name: "Test",
         confirmText: "Test"
       },
-      allowedStateStatusNames: [],
-      parameters: params,
-      parametersValues: (params || []).reduce((obj, param) => ({
-        ...obj,
-        [param.name]: param.defaultValue,
-      }), {}),
-      onParamUpdate
+      ...sourceParameters[selectedSource],
+      onConfirmAction
     });
-  }, [testViewParameters]);
-
-  const onParamUpdate = (name: string) => (value: any) => setAction(current => (
-    {
-      ...current,
-      parametersValues: {...current.parametersValues, [name]: {expression: value, language: current.parametersValues[name].language}},
-    })
-  )
+  }, [testViewParameters, sourceParameters, selectedSource]);
 
   return (
     <ToolbarButton
       name={t("panels.actions.test-with-schema.button", "test window")}
-      hasError={false} //TODO
       icon={<Icon/>}
       disabled={!available || disabled}
       onClick={() => {
@@ -65,6 +104,7 @@ function TestWithSchemaButton(props: Props) {
       }}
     />
   )
+
 }
 
 export default TestWithSchemaButton
