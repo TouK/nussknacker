@@ -983,8 +983,8 @@ lazy val flinkScalaUtils = (project in flink("scala-utils")).
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
       ) ++ forScalaVersion(scalaVersion.value, Seq(),
-        (2, 12) -> Seq("org.apache.flink" %% "flink-scala" % flinkV  % "provided"),
-        (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "1.0.0-SNAPSHOT"  % "provided")
+        (2, 12) -> Seq("org.apache.flink" %% "flink-scala" % flinkV % Provided),
+        (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "1.0.0-SNAPSHOT" % Provided)
       )
     }
   )
@@ -1005,6 +1005,9 @@ lazy val flinkTestUtils = (project in flink("test-utils")).
           ),
         "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
+      ) ++ forScalaVersion(scalaVersion.value, Seq(), // depending on scala version one of this jar lays in Flink lib dir
+        (2, 12) -> Seq("org.apache.flink" %% "flink-scala" % flinkV),
+        (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "1.0.0-SNAPSHOT")
       )
     }
   ).dependsOn(testUtils, flinkComponentsUtils, componentsUtils, interpreter)
