@@ -345,7 +345,7 @@ val wireMockV = "2.35.0"
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion, Seq(),
   (2, 12) -> Seq("org.apache.flink" %% "flink-scala" % flinkV), // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
   (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "1.0.0-SNAPSHOT") // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
-).map(m => configurations.map(m % _).getOrElse(m))
+).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {
   Seq(
@@ -566,7 +566,8 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         "org.apache.flink" % "flink-streaming-java" % flinkV % flinkScope
           excludeAll(
           ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
+          ExclusionRule("org.slf4j", "slf4j-log4j12"),
+          ExclusionRule("com.esotericsoftware", "kryo-shaded"),
         ),
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % flinkScope,
         "com.softwaremill.retry" %% "retry" % "0.3.6",
@@ -725,7 +726,7 @@ lazy val benchmarks = (project in file("benchmarks")).
     name := "nussknacker-benchmarks",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV,
+        "org.apache.flink" % "flink-streaming-java" % flinkV exclude("com.esotericsoftware", "kryo-shaded"),
         "org.apache.flink" % "flink-runtime" % flinkV
       )
     },
@@ -882,7 +883,7 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
     name := "nussknacker-flink-components-testkit",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV,
+        "org.apache.flink" % "flink-streaming-java" % flinkV exclude("com.esotericsoftware", "kryo-shaded"),
       )
     }
   ).dependsOn(componentsTestkit, flinkExecutor, flinkTestUtils)
