@@ -35,7 +35,7 @@ both `streaming` and `request-response` processing modes.
 
 The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can customize
 the Helm chart to use different values for
-those [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). If you install
+these [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). If you install
 Designer outside the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any
 other Nussknacker non K8s configuration.
 

@@ -9,7 +9,7 @@ The main way of adding customizations to Nussknacker is [ServiceLoader](https://
 - Customizations of model (in particular `ComponentProviders`) can be loaded by adding libs/classes to dedicated `components/common/extra`, 
   `components/lite/extra` or `components/flink/extra` directory. For advanced usages, you can configure `modelConfig.classPath` 
   in [Model config](../installation_configuration_guide/model/ModelConfiguration.md).
-- Code of Designer customizations should go to the main designer classpath (e.g. put the jars in the `lib` folder)
+- Code of Designer customizations should go to the main Designer classpath (e.g. put the jars in the `lib` folder)
  
 ## Types
 
@@ -32,7 +32,7 @@ To read more see [ComponentProvider API](./Components.md)
 ## Deployment of scenarios
 
 The Designer uses [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/designer/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
-interface to perform actions on scenarios (deploy / cancel / etc.). All providers that are available in distribution deployment are located in `managers` directory and are added to the designer classpath.
+interface to perform actions on scenarios (deploy / cancel / etc.). All providers that are available in distribution deployment are located in `managers` directory and are added to the Designer classpath.
 If you want to implement own `DeploymentManager`, you should implement this interface, package it, add to classpath and configure scenario type to use it. More info you can find on 
 [DeploymentManagerConfiguration page](../installation_configuration_guide/DeploymentManagerConfiguration.md) 
 
@@ -70,7 +70,7 @@ The diagram below shows dependencies between modules. You can see two main group
 - API modules
 - Utils
 
-*API modules* contains interfaces that are needed by our core modules (on both designer and runtime side).
+*API modules* contains interfaces that are needed by our core modules (on both Designer and runtime side).
 
 On the other hand *Utils* modules contain classes built on top of API which can be used in extensions but are not mandatory. **API of *Utils* modules can be changed more often than API inside API modules**
 
