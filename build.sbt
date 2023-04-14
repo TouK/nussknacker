@@ -22,7 +22,7 @@ val defaultScalaV = sys.env.getOrElse("NUSSKNACKER_SCALA_VERSION", "2.13") match
   case "2.12" => scala212
   case "2.13" => scala213
 }
-lazy val supportedScalaVersions = List(scala213)
+lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
@@ -341,6 +341,12 @@ val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.18.0"
 val wireMockV = "2.35.0"
 
+// depending on scala version one of this jar lays in Flink lib dir
+def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion, Seq(),
+  (2, 12) -> Seq("org.apache.flink" %% "flink-scala" % flinkV), // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
+  (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "1.0.0-SNAPSHOT") // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
+).map(m => configurations.map(m % _).getOrElse(m))
+
 lazy val commonDockerSettings = {
   Seq(
     dockerBaseImage := forScalaVersion(scalaVersion.value,
@@ -568,7 +574,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test",
         "com.github.tomakehurst" % "wiremock-jre8" % wireMockV % Test
-      )
+      ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     }
   ).dependsOn(deploymentManagerApi % "provided",
   interpreter % "provided",
@@ -982,10 +988,7 @@ lazy val flinkScalaUtils = (project in flink("scala-utils")).
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-      ) ++ forScalaVersion(scalaVersion.value, Seq(),
-        (2, 12) -> Seq("org.apache.flink" %% "flink-scala" % flinkV % Provided),
-        (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "1.0.0-SNAPSHOT" % Provided)
-      )
+      ) ++ flinkLibScalaDeps(scalaVersion.value, Some("provided"))
     }
   )
 
@@ -1005,10 +1008,7 @@ lazy val flinkTestUtils = (project in flink("test-utils")).
           ),
         "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
-      ) ++ forScalaVersion(scalaVersion.value, Seq(), // depending on scala version one of this jar lays in Flink lib dir
-        (2, 12) -> Seq("org.apache.flink" %% "flink-scala" % flinkV),
-        (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "1.0.0-SNAPSHOT")
-      )
+      ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   ).dependsOn(testUtils, flinkComponentsUtils, componentsUtils, interpreter)
 
