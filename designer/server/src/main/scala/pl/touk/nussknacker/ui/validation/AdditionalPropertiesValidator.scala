@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.Validated
+import cats.data.{NonEmptyMap, Validated}
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, UnknownProperty}
@@ -13,7 +13,8 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResu
 import pl.touk.nussknacker.ui.definition.additionalproperty.AdditionalPropertyValidatorDeterminerChain
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
-class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]) {
+class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _],
+                                    typeSpecificPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]) {
 
   import cats.implicits._
 
@@ -21,20 +22,33 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
 
   type PropertyConfig = Map[String, AdditionalPropertyConfig]
 
-  def validate(process: DisplayableProcess): ValidationResult = additionalPropertiesConfig.forType(process.processingType) match {
+  private def getPropertiesConfig(process: DisplayableProcess): Option[Map[String, AdditionalPropertyConfig]] = {
+    val additonal = additionalPropertiesConfig.forType(process.processingType)
+    val typeSpecific = typeSpecificPropertiesConfig.forType(process.processingType)
+
+    if (additonal.isEmpty && typeSpecific.isEmpty) None
+    else Some(additonal.getOrElse(Map()) ++ typeSpecific.getOrElse(Map()))
+  }
+
+  def validate(process: DisplayableProcess): ValidationResult = getPropertiesConfig(process) match {
     case None =>
       ValidationResult.globalErrors(List(PrettyValidationErrors.noValidatorKnown(process.processingType)))
 
     case Some(config) => {
+
       val additionalProperties = process.properties.additionalFields
         .map(field => field.properties)
         .getOrElse(Map.empty)
         .toList
 
+      val typeSpecProps = process.properties.typeSpecificProperties.properties.toList
+
+      val props = List(typeSpecProps, additionalProperties).flatten
+
       val validated = (
-        getConfiguredValidationsResults(config, additionalProperties),
-        getMissingRequiredPropertyValidationResults(config, additionalProperties),
-        getUnknownPropertyValidationResults(config, additionalProperties)
+        getConfiguredValidationsResults(config, props),
+        getMissingRequiredPropertyValidationResults(config, props),
+        getUnknownPropertyValidationResults(config, props)
         )
         .mapN { (_, _, _) => () }
 

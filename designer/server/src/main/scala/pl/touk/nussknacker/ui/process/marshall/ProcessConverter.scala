@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.marshall
 
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, LiteStreamMetaData, ProcessAdditionalFields, RequestResponseMetaData, StreamMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.EdgeType
@@ -25,7 +26,7 @@ object ProcessConverter {
         }
     }
     val props = ProcessProperties(
-      typeSpecificProperties = process.metaData.typeSpecificData,
+      typeSpecificProperties = toGenericProperties(process.metaData.typeSpecificData),
       additionalFields = process.metaData.additionalFields
     )
     DisplayableProcess(process.metaData.id, props, nodes, edges, processingType, category)
@@ -142,5 +143,27 @@ object ProcessConverter {
   private val handleDirectNodes: PartialFunction[(NodeData, Option[Edge]), canonicalnode.CanonicalNode] = {
     case (data, _) => FlatNode(data)
   }
+
+  private def toGenericProperties(typeSpecificData: TypeSpecificData): ProcessAdditionalFields = {
+    val props = typeSpecificData match {
+      case a: StreamMetaData => Map(
+        "parallelism" -> a.parallelism.map(_.toString).getOrElse(""),
+        "spillStateToDisk" -> a.spillStateToDisk.map(_.toString).getOrElse(""),
+        "useAsyncInterpretation" -> a.useAsyncInterpretation.map(_.toString).getOrElse(""),
+        "checkpointIntervalInSeconds" -> a.checkpointIntervalInSeconds.map(_.toString).getOrElse(""),
+      )
+      case a: LiteStreamMetaData => Map(
+        "parallelism" -> a.parallelism.map(_.toString).getOrElse(""),
+      )
+      case a: RequestResponseMetaData => Map(
+        "slug" -> a.slug.map(_.toString).getOrElse(""),
+      )
+      case a: FragmentSpecificData => Map(
+        "docsUrl" -> a.docsUrl.map(_.toString).getOrElse(""),
+      )
+    }
+    ProcessAdditionalFields(None, props)
+  }
+
 
 }

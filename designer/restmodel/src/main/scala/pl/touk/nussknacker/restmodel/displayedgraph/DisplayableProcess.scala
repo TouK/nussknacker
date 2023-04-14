@@ -3,12 +3,14 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, LiteStreamMetaData, MetaData, ProcessAdditionalFields, RequestResponseMetaData, StreamMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+
+import scala.util.Try
 
 //it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
 //or we'd have to do composition which would break many things in client
@@ -50,15 +52,36 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 }
 
 @JsonCodec(decodeOnly = true)
-case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
+case class ProcessProperties(typeSpecificProperties: ProcessAdditionalFields,
                              additionalFields: Option[ProcessAdditionalFields] = None) {
 
   def toMetaData(id: String): MetaData = MetaData(
     id = id,
-    typeSpecificData = typeSpecificProperties,
+    typeSpecificData = toTypeSpecificData(typeSpecificProperties),
     additionalFields = additionalFields
   )
-  val isSubprocess: Boolean = typeSpecificProperties.isSubprocess
+
+  private def toTypeSpecificData(additionalProperties: ProcessAdditionalFields): TypeSpecificData = {
+    additionalProperties.properties match {
+      case a if a.contains("spillStateToDisk") => StreamMetaData(
+          parallelism = Try(a.get("parallelism").map(_.toInt)).getOrElse(None),
+          spillStateToDisk = Try(a.get("spillStateToDisk").map(_.toBoolean)).getOrElse(None),
+          useAsyncInterpretation = Try(a.get("useAsyncInterpretation").map(_.toBoolean)).getOrElse(None),
+          checkpointIntervalInSeconds = Try(a.get("checkpointIntervalInSeconds").map(_.toLong)).getOrElse(None)
+      )
+      case a if a.contains("slug") => RequestResponseMetaData(
+        slug = Try(a.get("slug").map(_.toString)).getOrElse(None)
+      )
+      case a if a.contains("parallelism") && !a.contains("spillStateToDisk") => LiteStreamMetaData(
+        parallelism = Try(a.get("parallelism").map(_.toInt)).getOrElse(None)
+      )
+      case a if a.contains("docsUrl") => FragmentSpecificData(
+        Try(a.get("docsUrl")).getOrElse(None)
+      )
+    }
+  }
+
+  val isSubprocess: Boolean = toTypeSpecificData(typeSpecificProperties).isSubprocess
 
 }
 

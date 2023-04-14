@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntegerValidator, MandatoryParameterValidator, MinimalNumberValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 
@@ -33,14 +33,15 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(Some(1)))
 
   override def typeSpecificPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = {
-    Map(parallelismConfig, spillStateConfig, asyncInterpretation, checkpointInterval)
+    Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
   }
 
   private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
     AdditionalPropertyConfig(
+
       defaultValue = None,
       editor = Some(StringParameterEditor),
-      validators = Some(List(MandatoryParameterValidator)),
+      validators = Some(List(MandatoryParameterValidator, LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"))
 
   private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
@@ -50,21 +51,23 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
       validators = None,
       label = Some("Spill state to disk"))
 
-  private val asyncInterpretation: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
+  private val asyncPossibleValues = List(
+    FixedExpressionValue("false", "Synchronous"),
+    FixedExpressionValue("true", "Asynchronous"),
+    FixedExpressionValue("null", "Server default"))
+
+  private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
     AdditionalPropertyConfig(
       defaultValue = None,
-      editor = Some(FixedValuesParameterEditor(List(
-        FixedExpressionValue("false", "Synchronous"),
-        FixedExpressionValue("true", "Asynchronous"),
-        FixedExpressionValue("null", "Server default")))),
-      validators = None,
+      editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
+      validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
       label = Some("IO mode"))
 
-  private val checkpointInterval: (String, AdditionalPropertyConfig) = "checkpointIntervalInSeconds" ->
+  private val checkpointIntervalConfig: (String, AdditionalPropertyConfig) = "checkpointIntervalInSeconds" ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
-      validators = Some(List(MandatoryParameterValidator)),
+      validators = Some(List(MandatoryParameterValidator, LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Checkpoint interval in seconds"))
 
 }
