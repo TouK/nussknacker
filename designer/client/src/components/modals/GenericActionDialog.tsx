@@ -14,10 +14,9 @@ import {FieldLabel} from "../graph/node-modal/FieldLabel";
 import {validateGenericActionParameters} from "../../actions/nk/genericAction";
 import {getProcessProperties} from "../graph/node-modal/NodeDetailsContent/selectors";
 import {getGenericActionValidation} from "../../reducers/selectors/genericActionState";
+import {ExpressionLang} from "../graph/node-modal/editors/expression/types";
+import {spelFormatters} from "../graph/node-modal/editors/expression/Formatter";
 
-//TODO
-// - Custom action execution - Properties as in Custom Actions or we are doing it different way it is should be defined "in code"?
-// - Granulate it
 export type GenericActionLayout = {
   name: string,
   icon?: string,
@@ -95,6 +94,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
             (action?.parameters || []).map(param => {
               const Editor = editors[param.editor.type]
               const fieldName = param.name
+              const formatter = param.defaultValue.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null
               return (
                 <div className={"node-row"} key={param.name}>
                   <FieldLabel
@@ -106,14 +106,14 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                     editorConfig={param?.editor}
                     className={"node-value"}
                     validators={validators[fieldName]}
-                    formatter={null}
+                    formatter={formatter}
                     expressionInfo={null}
                     onValueChange={setParam(fieldName)}
                     expressionObj={value[fieldName]}
                     values={[]}
                     readOnly={false}
                     key={fieldName}
-                    showSwitch={false}
+                    showSwitch={true}
                     showValidation={true}
                     variableTypes={{}}
                   />
