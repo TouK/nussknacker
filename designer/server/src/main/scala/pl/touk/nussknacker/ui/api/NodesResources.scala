@@ -119,10 +119,9 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
 
 object NodesResources {
 
-  //TODO Check it, it was written as a test
   def validate(modelData: ModelData, request: ParametersValidationRequest, processName: String): List[NodeValidationError] = {
     implicit val metaData: MetaData = request.processProperties.toMetaData(processName)
-    val context = prepareValidationContext(modelData)(request.variableTypes)
+    val context = if(request.withContext) prepareValidationContext(modelData)(request.variableTypes) else ValidationContext.empty
     val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
       case spel: SpelExpressionParser => spel.typingDictLabels
     }
@@ -221,7 +220,8 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
 
 @JsonCodec(encodeOnly = true) case class ParametersValidationRequest(parameters: List[UIValueParameter],
                                                                      processProperties: ProcessProperties,
-                                                                     variableTypes: Map[String, TypingResult])
+                                                                     variableTypes: Map[String, TypingResult],
+                                                                     withContext: Boolean = false)
 
 @JsonCodec(encodeOnly = true) case class NodeValidationResult(parameters: Option[List[UIParameter]],
                                                               expressionType: Option[TypingResult],

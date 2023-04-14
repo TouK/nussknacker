@@ -62,18 +62,18 @@ function TestWithSchemaButton(props: Props) {
     }))
   }
 
-  //TODO for now we generate tests for one source, in next iteration add support for multiple sources
   const onConfirmAction = useCallback((paramValues) => {
     const recordJson = {}
     sourceParameters[selectedSource].parameters.forEach(uiParam => {
-      set(recordJson, uiParam.name, expressionStringToJsonType(paramValues[uiParam.name].expression, uiParam.typ))
+      const expression = paramValues[uiParam.name].expression
+      if(!_.isEmpty(expression)) set(recordJson, uiParam.name, expressionStringToJsonType(expression, uiParam.typ))
     })
     dispatch(testProcessFromJson(processId, JSON.stringify({"sourceId":selectedSource, "record": recordJson}), processToDisplay))
   }, [sourceParameters, selectedSource])
 
+  //For now, we select first source and don't provide way to change it
+  //Add support for multiple sources in next iteration (?)
   useEffect(() => {
-    //For now, we select first source and don't provide way to change it
-    //Add support for multiple sources in next iteration (?)
     setSelectedSource(_.head(testViewParameters)?.sourceId);
     setSourceParameters(updateParametersFromTestView());
   }, [testViewParameters]);

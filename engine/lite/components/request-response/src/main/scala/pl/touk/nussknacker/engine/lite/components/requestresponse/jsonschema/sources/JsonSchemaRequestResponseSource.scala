@@ -55,6 +55,6 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
   override def createTestView: List[Parameter] = jsonSchemaExtractor.getSchemaFromProperty(InputSchemaProperty, metaData, nodeId)
     .andThen { schema =>
       JsonSinkValueParameter(schema, "not-sure-yet", ValidationMode.lax)(nodeId).map(_.toParameters)
-    }.valueOr(e => Nil) //TODO error handling ???
+    }.valueOr(_ => throw new IllegalArgumentException("Cannot create test view for this scenario."))
 }
 
