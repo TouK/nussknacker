@@ -38,7 +38,6 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
     AdditionalPropertyConfig(
-
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(MandatoryParameterValidator, LiteralIntegerValidator, MinimalNumberValidator(1))),
@@ -54,7 +53,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
   private val asyncPossibleValues = List(
     FixedExpressionValue("false", "Synchronous"),
     FixedExpressionValue("true", "Asynchronous"),
-    FixedExpressionValue("null", "Server default"))
+    FixedExpressionValue("", "Server default"))
 
   private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
     AdditionalPropertyConfig(
