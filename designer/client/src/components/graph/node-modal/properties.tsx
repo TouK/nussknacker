@@ -36,7 +36,6 @@ export function Properties({
   //fixme move this configuration to some better place?
   //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
   const additionalPropertiesSorted = useMemo(() => sortBy(Object.entries(additionalPropertiesConfig), ([name]) => name), [additionalPropertiesConfig])
-  console.log(typeSpecificPropertiesConfig)
   return (
     <NodeTableBody>
       <IdField
@@ -46,22 +45,21 @@ export function Properties({
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
         additionalValidators={[errorValidator(fieldErrors || [], "id")]}
-
       />
       {typeSpecificPropertiesConfig.map(([propName, propConfig]) => (
-          <AdditionalProperty
-              key={propName}
-              showSwitch={showSwitch}
-              showValidation={showValidation}
-              propertyName={propName}
-              propertyPathPrefix={"typeSpecificProperties.properties"}
-              propertyConfig={propConfig}
-              propertyErrors={fieldErrors || []}
-              onChange={setProperty}
-              renderFieldLabel={renderFieldLabel}
-              editedNode={node}
-              readOnly={!isEditMode}
-          />
+        <AdditionalProperty
+            key={propName}
+            showSwitch={showSwitch}
+            showValidation={showValidation}
+            propertyName={propName}
+            propertyPathPrefix={"typeSpecificProperties.properties"}
+            propertyConfig={propConfig}
+            propertyErrors={fieldErrors || []}
+            onChange={setProperty}
+            renderFieldLabel={renderFieldLabel}
+            editedNode={node}
+            readOnly={!isEditMode}
+        />
       ))}
       {additionalPropertiesSorted.map(([propName, propConfig]) => (
         <AdditionalProperty
