@@ -1,14 +1,14 @@
-import React from 'react'
+import React from "react"
 import {
   errorValidator,
   HandledErrorType,
   mandatoryValueValidator
-} from "../components/graph/node-modal/editors/Validators"
-import ValidationLabels from "../components/modals/ValidationLabels"
-import {render} from '@testing-library/react'
+} from "../src/components/graph/node-modal/editors/Validators"
+import ValidationLabels from "../src/components/modals/ValidationLabels"
+import {render} from "@testing-library/react"
 import {getAllByText, queryAllByText} from "@testing-library/dom"
 import {I18nextProvider} from "react-i18next"
-import i18n from "../i18n"
+import i18n from "../src/i18n"
 
 describe("test validation labels", () => {
   const fieldName = "fieldName"

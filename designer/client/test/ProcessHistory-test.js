@@ -3,10 +3,10 @@ import Enzyme, {mount} from "enzyme"
 import React from "react"
 import {Provider} from "react-redux"
 import configureMockStore from "redux-mock-store"
-import {ProcessHistoryComponent} from "../components/ProcessHistory" //import redux-independent component
+import {ProcessHistoryComponent} from "../src/components/ProcessHistory" //import redux-independent component
 
 const mockStore = configureMockStore()
-jest.mock("../windowManager", () => ({
+jest.mock("../src/windowManager", () => ({
   useWindows: jest.fn(() => ({
     confirm: jest.fn(),
   })),

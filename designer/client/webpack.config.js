@@ -18,7 +18,7 @@ const isProd = NODE_ENV === "production"
 
 const {ModuleFederationPlugin} = webpack.container
 const entry = {
-  main: path.resolve(__dirname, "./init.js"),
+  main: path.resolve(__dirname, "./src/init.js"),
 }
 
 const cssPreLoaders = [
@@ -210,7 +210,7 @@ module.exports = {
       //see ./config.ts
       base: isProd ? "__publicPath__/static/" : "/",
       filename: "main.html",
-      favicon: "assets/img/favicon.svg",
+      favicon: "src/assets/img/favicon.svg",
     }),
     new HtmlWebpackHarddiskPlugin(),
     new WebpackShellPluginNext({

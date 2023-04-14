@@ -36,7 +36,7 @@ export default function AdditionalProperty(props: Props) {
   const current = get(editedNode, propertyPath) || ""
   const expressionObj = {expression: current, value: current, language: ExpressionLang.String}
   const validators = useMemo(() => [errorValidator(propertyErrors, propertyName)], [propertyErrors, propertyName])
-  
+
   const onValueChange = useCallback((newValue) => onChange(propertyPath, newValue), [onChange, propertyName])
 
   return (

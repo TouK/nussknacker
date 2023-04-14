@@ -1,4 +1,4 @@
-import ExpressionSuggester from "../components/graph/node-modal/editors/expression/ExpressionSuggester"
+import ExpressionSuggester from "../src/components/graph/node-modal/editors/expression/ExpressionSuggester"
 import {map} from "lodash"
 
 const typesInformation = [

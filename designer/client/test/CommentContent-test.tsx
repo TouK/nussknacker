@@ -1,8 +1,8 @@
-import CommentContent from "../components/CommentContent"
+import CommentContent from "../src/components/CommentContent"
 import Adapter from "@wojtekmaj/enzyme-adapter-react-17"
 import Enzyme, {mount} from "enzyme"
 import React from "react"
-import {describe, expect} from '@jest/globals';
+import {describe, expect} from "@jest/globals"
 
 describe("CommentContent#newContent", () => {
   Enzyme.configure({adapter: new Adapter()})

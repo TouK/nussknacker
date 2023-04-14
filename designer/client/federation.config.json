@@ -1,9 +1,9 @@
 {
   "name": "nussknackerUi",
   "exposes": {
-    "./config": "./config",
-    "./HttpService": "./http/HttpService",
-    "./Auth": "./containers/Auth/AuthInitializer",
-    "./Icon": "./components/UrlIcon"
+    "./config": "./src/config",
+    "./HttpService": "./src/http/HttpService",
+    "./Auth": "./src/containers/Auth/AuthInitializer",
+    "./Icon": "./src/components/UrlIcon"
   }
 }

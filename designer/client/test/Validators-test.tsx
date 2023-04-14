@@ -1,5 +1,5 @@
-import {notBlankValueValidator} from "../components/graph/node-modal/editors/Validators"
-import {it, describe, expect} from '@jest/globals';
+import {notBlankValueValidator} from "../src/components/graph/node-modal/editors/Validators"
+import {describe, expect, it} from "@jest/globals"
 
 describe("Validator", () => {
     describe("notBlankValueValidator", () => {

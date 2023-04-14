@@ -1,5 +1,5 @@
-import reducer from "../reducers/index"
-import NodeUtils from "../components/graph/NodeUtils"
+import reducer from "../src/reducers/index"
+import NodeUtils from "../src/components/graph/NodeUtils"
 
 const baseProcessState = {
   "id": "DEFGH",

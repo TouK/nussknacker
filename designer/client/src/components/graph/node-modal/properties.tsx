@@ -45,7 +45,7 @@ export function Properties({
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
         additionalValidators={[errorValidator(fieldErrors || [], "id")]}
-        
+
       />
       {node.isSubprocess ?
         (

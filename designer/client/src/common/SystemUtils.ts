@@ -47,7 +47,7 @@ class SystemUtils {
     if (_.isEmpty(localStorage.getItem(SystemUtils.USER_ID_NAMESPACE))) {
       localStorage.setItem(SystemUtils.USER_ID_NAMESPACE, uuid4())
     }
-    
+
     return localStorage.getItem(SystemUtils.USER_ID_NAMESPACE)
   }
 }

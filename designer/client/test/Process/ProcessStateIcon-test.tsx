@@ -1,5 +1,5 @@
 import React from "react"
-import ProcessStateIcon from "../../components/Process/ProcessStateIcon"
+import ProcessStateIcon from "../../src/components/Process/ProcessStateIcon"
 import {describe, expect, it, jest} from "@jest/globals"
 import {render, waitFor} from "@testing-library/react"
 
