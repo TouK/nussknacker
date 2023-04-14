@@ -54,7 +54,7 @@ export function Properties({
               showSwitch={showSwitch}
               showValidation={showValidation}
               propertyName={propName}
-              propertyPathPrefix={"typeSpecificProperties"}
+              propertyPathPrefix={"typeSpecificProperties.properties"}
               propertyConfig={propConfig}
               propertyErrors={fieldErrors || []}
               onChange={setProperty}
