@@ -2,6 +2,7 @@ package pl.touk.nussknacker.lite.manager
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{LiteralIntegerValidator, MandatoryParameterValidator, MinimalNumberValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
@@ -17,6 +18,29 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
       (scenarioName: ProcessName, _: String) => RequestResponseMetaData(Some(defaultRequestResponseSlug(scenarioName, config)))
     )
   }
+
+  override def typeSpecificPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = {
+    forMode(config) (
+      Map(parallelismConfig),
+      Map(slugConfig)
+    )
+  }
+
+  private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(StringParameterEditor),
+      validators = Some(List(MandatoryParameterValidator, LiteralIntegerValidator, MinimalNumberValidator(1))),
+      label = Some("Parallelism"))
+
+  private val slugConfig: (String, AdditionalPropertyConfig) = "slug" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(StringParameterEditor),
+      validators = Some(List(MandatoryParameterValidator)),
+      label = Some("Slug")
+    )
+
 
   protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String
 
