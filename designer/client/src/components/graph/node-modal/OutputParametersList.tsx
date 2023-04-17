@@ -85,13 +85,13 @@ export default function OutputParametersList({
   outputParameters.filter(paramName => params[paramName] === undefined).forEach(paramName => {
     setParams(prevState => ({...prevState, [paramName]: paramName}))
   })
-  
+
   return outputParameters && outputParameters.length === 0 ?
     null :
     (
       <div className="node-row" key="outputVariableNames">
         <div
-          className="node-label" 
+          className="node-label"
           title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}
         >
           {t("parameterOutputs.outputsText", "Outputs names:")}

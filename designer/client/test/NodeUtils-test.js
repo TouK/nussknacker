@@ -1,5 +1,4 @@
-import NodeUtils from "../components/graph/NodeUtils"
-
+import NodeUtils from "../src/components/graph/NodeUtils"
 
 describe("edgeType retrieved", () => {
 

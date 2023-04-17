@@ -1,5 +1,5 @@
-import { extractCountParams } from "../common/VisualizationUrl";
-import moment from "moment";
+import {extractCountParams} from "../src/common/VisualizationUrl"
+import moment from "moment"
 
 describe("validating url counts extractors", () => {
   const sampleTimestamp = 1541761164902;

@@ -1,5 +1,5 @@
 node_modules/
-brace/
+src/brace/
 flow-typed/
 test/
 dist/

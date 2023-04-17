@@ -126,7 +126,7 @@ export function NodeTypeDetailsContent({
     dispatch(nodeValidationDataClear(node.id))
   }, [dispatch, node.id])
 
-  
+
   if (showValidation) {
     useEffect(() => {
       dispatch(validateNodeData(processId, {
@@ -139,7 +139,7 @@ export function NodeTypeDetailsContent({
       }))
     }, [dispatch, edges, getBranchVariableTypes, node, processId, processProperties, variableTypes])
   }
-  
+
   useEffect(() => {
     setEditedNode((node) => {
       const adjustedNode = adjustNode(node)

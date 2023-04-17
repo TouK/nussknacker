@@ -1,5 +1,5 @@
-import * as ProcessDefinitionUtils from "../common/ProcessDefinitionUtils";
-import {flatMap, without} from "lodash";
+import * as ProcessDefinitionUtils from "../src/common/ProcessDefinitionUtils"
+import {flatMap, without} from "lodash"
 
 describe("getComponentGroupsInCategory", () => {
 

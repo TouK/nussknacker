@@ -1,15 +1,15 @@
 import React from "react"
 import Enzyme, {mount} from "enzyme"
-import {ProcessAttachments} from "../components/ProcessAttachments" //import redux-independent component
+import {ProcessAttachments} from "../src/components/ProcessAttachments" //import redux-independent component
 import Adapter from "@wojtekmaj/enzyme-adapter-react-17"
 import configureMockStore from "redux-mock-store"
 import thunk from "redux-thunk"
 import {Provider} from "react-redux"
-import * as selectors from "../reducers/selectors/other"
+import * as selectors from "../src/reducers/selectors/other"
 
 const mockStore = configureMockStore([thunk])
 
-jest.mock("../containers/theme")
+jest.mock("../src/containers/theme")
 jest.spyOn(selectors, "getCapabilities").mockReturnValue({write: true})
 
 const processAttachment = (id) => ({

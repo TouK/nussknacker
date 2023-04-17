@@ -1,6 +1,6 @@
-import * as SpelQuotesUtils from "../components/graph/node-modal/editors/expression/SpelQuotesUtils"
-import {QuotationMark} from "../components/graph/node-modal/editors/expression/SpelQuotesUtils"
-import {describe, expect, jest} from '@jest/globals';
+import * as SpelQuotesUtils from "../src/components/graph/node-modal/editors/expression/SpelQuotesUtils"
+import {QuotationMark} from "../src/components/graph/node-modal/editors/expression/SpelQuotesUtils"
+import {describe, expect, jest} from "@jest/globals"
 
 const text = `a'b'c"d"e'f'g`
 
