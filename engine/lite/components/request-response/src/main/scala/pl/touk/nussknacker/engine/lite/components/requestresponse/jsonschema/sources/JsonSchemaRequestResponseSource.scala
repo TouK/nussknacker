@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestViewGenerator}
+import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestDataDefinition}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEnc
 import java.nio.charset.StandardCharsets
 
 class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData, inputSchema: Schema, outputSchema: Schema, val nodeId: NodeId)
-  extends RequestResponsePostSource[Any] with LazyLogging with ReturningType with SourceTestSupport[Any] with TestViewGenerator {
+  extends RequestResponsePostSource[Any] with LazyLogging with ReturningType with SourceTestSupport[Any] with TestDataDefinition {
 
   protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
 

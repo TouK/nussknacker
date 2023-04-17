@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.test
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator, TestViewGenerator}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator, TestDataDefinition}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -38,7 +38,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       sourceObj <- prepareSourceObj(source)(metaData)
       canTest = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
-      canCreateTestView = sourceObj.isInstanceOf[TestViewGenerator]
+      canCreateTestView = sourceObj.isInstanceOf[TestDataDefinition]
     } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData, canCreateTestView = canCreateTestView)
     testingCapabilities.getOrElse(TestingCapabilities.Disabled)
   }
@@ -50,7 +50,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private def getTestViewParameters(source: Source, metaData: MetaData): List[Parameter] = modelData.withThisAsContextClassLoader {
     prepareSourceObj(source)(metaData) match {
-      case Some(s: TestViewGenerator) => s.createTestView
+      case Some(s: TestDataDefinition) => s.createTestView
       case _ => Nil
     }
   }
