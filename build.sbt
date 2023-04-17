@@ -169,7 +169,6 @@ lazy val commonSettings =
       scalaVersion := defaultScalaV,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven",
-        "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
       ),
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
@@ -344,7 +343,7 @@ val wireMockV = "2.35.0"
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion, Seq(),
   (2, 12) -> Seq("org.apache.flink" %% "flink-scala" % flinkV), // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
-  (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "0.0.1-SNAPSHOT") // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
+  (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "1.0.0") // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
 ).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {

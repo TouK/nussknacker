@@ -59,8 +59,8 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
             |RUN rm $$FLINK_HOME/lib/flink-scala*.jar
             |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-library/$scalaV/scala-library-$scalaV.jar -O $$FLINK_HOME/lib/scala-library-$scalaV.jar
             |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-reflect/$scalaV/scala-reflect-$scalaV.jar -O $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
-            |RUN wget https://oss.sonatype.org/content/repositories/snapshots/pl/touk/flink-scala-2-13_2.13/0.0.1-SNAPSHOT/flink-scala-2-13_2.13-0.0.1-SNAPSHOT-assembly.jar -O $$FLINK_HOME/lib/flink-scala-2-13_2.13-0.0.1-SNAPSHOT-assembly.jar
-            |RUN chown flink $$FLINK_HOME/lib/flink-scala-2-13_2.13-0.0.1-SNAPSHOT-assembly.jar
+            |RUN wget https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.0.0/flink-scala-2-13_2.13-1.0.0-assembly.jar -O $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.0.0-assembly.jar
+            |RUN chown flink $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.0.0-assembly.jar
             |RUN chown flink $$FLINK_HOME/lib/scala-library-$scalaV.jar
             |RUN chown flink $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
             |""".stripMargin
