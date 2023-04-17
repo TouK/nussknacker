@@ -10,11 +10,11 @@ import {
 import {useWindows, WindowKind} from "../../../../windowManager"
 import {ToolbarButtonProps} from "../../types"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
-import _, {set} from "lodash"
+import _ from "lodash"
 import {TestViewParameters} from "../../../../common/TestResultUtils";
 import {testProcessFromJson} from "../../../../actions/nk/displayTestResults";
-import {expressionStringToJsonType} from "../TestWithSchemaUtils";
 import {GenericActionParameters} from "../../../modals/GenericActionDialog";
+import {UIValueParameter} from "../../../../actions/nk/genericAction";
 
 type Props = ToolbarButtonProps
 
@@ -63,12 +63,17 @@ function TestWithSchemaButton(props: Props) {
   }
 
   const onConfirmAction = useCallback((paramValues) => {
-    const recordJson = {}
-    sourceParameters[selectedSource].parameters.forEach(uiParam => {
-      const expression = paramValues[uiParam.name].expression
-      if(!_.isEmpty(expression)) set(recordJson, uiParam.name, expressionStringToJsonType(expression, uiParam.typ))
-    })
-    dispatch(testProcessFromJson(processId, JSON.stringify({"sourceId":selectedSource, "record": recordJson}), processToDisplay))
+    const record: {[p: string]: UIValueParameter[]} = Object.entries(sourceParameters).reduce((obj, [sourceId, sourceParams]) => ({
+      ...obj,
+      [sourceId]: sourceParams.parameters.map((uiParam) => {
+        return {
+          name: uiParam.name,
+          typ: uiParam.typ,
+          expression: paramValues[uiParam.name]
+        }
+      })
+    }), {})
+    dispatch(testProcessFromJson(processId, record, processToDisplay))
   }, [sourceParameters, selectedSource])
 
   //For now, we select first source and don't provide way to change it

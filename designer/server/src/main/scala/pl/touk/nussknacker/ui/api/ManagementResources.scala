@@ -11,18 +11,22 @@ import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponseTryPF
+import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerService, DeploymentManagerDispatcher, DeploymentService}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -78,7 +82,8 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                           dispatcher: DeploymentManagerDispatcher,
                           customActionInvokerService: CustomActionInvokerService,
                           metricRegistry: MetricRegistry,
-                          scenarioTestService: ScenarioTestService)
+                          scenarioTestService: ScenarioTestService,
+                          typeToConfig: ProcessingTypeDataProvider[ModelData, _])
                          (implicit val ec: ExecutionContext)
   extends Directives
     with LazyLogging
@@ -207,6 +212,24 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                               .recover(EspErrorToHttp.errorToHttp)
                           }
                         }
+                      }
+                    }
+                  }
+                }
+              }
+              }
+            }
+          } ~
+          path("testWithParameters" / Segment) {
+            processName => {
+              (post & processDetailsForName[Unit](processName)) { process =>
+              val modelData = typeToConfig.forTypeUnsafe(process.processingType)
+              implicit val requestDecoder: Decoder[TestFromParametersRequest] = prepareTestFromParametersDecoder(modelData)
+              (post & entity(as[TestFromParametersRequest])) { testParametersRequest => {
+                processId(testParametersRequest.displayableProcess.id) { idWithName =>
+                    canDeploy(idWithName) {
+                    complete {
+                        //TODO Work in Progress
                       }
                     }
                   }

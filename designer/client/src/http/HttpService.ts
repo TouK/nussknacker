@@ -501,13 +501,16 @@ class HttpService {
     return promise
   }
 
-  testProcessFromJson(processId: ProcessId, testData: string , processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
+  testProcessFromJson(processId: ProcessId, testData: {[p: string]: UIValueParameter[]}, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
     const sanitized = this.#sanitizeProcess(processJson)
-    const data = new FormData()
-    data.append("testData", testData)
-    data.append("processJson", new Blob([JSON.stringify(sanitized)], {type: "application/json"}))
 
-    const promise = api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data)
+    const request = {
+      sourceParameters: testData,
+      displayableProcess: sanitized,
+      variableTypes: {}
+    }
+
+    const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processId)}`, request)
     promise.catch(error => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
     return promise
   }
