@@ -146,6 +146,12 @@ object NodesResources {
     deriveConfiguredDecoder[ParametersValidationRequest]
   }
 
+  def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
+    implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+    implicit val uiValueParameterDecoder: Decoder[UIValueParameter] = deriveConfiguredDecoder[UIValueParameter]
+    deriveConfiguredDecoder[TestFromParametersRequest]
+  }
+
   def preparePropertiesRequestDecoder(modelData: ModelData): Decoder[PropertiesValidationRequest] = {
     implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
     deriveConfiguredDecoder[PropertiesValidationRequest]
@@ -214,6 +220,11 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
   }
 }
 
+
+
+@JsonCodec(encodeOnly = true) case class TestFromParametersRequest(sourceParameters: Map[String, List[UIValueParameter]],
+                                                                   displayableProcess: DisplayableProcess,
+                                                                   variableTypes: Map[String, TypingResult])
 
 @JsonCodec(encodeOnly = true) case class ParametersValidationResult(validationErrors: List[NodeValidationError],
                                                                     validationPerformed: Boolean)

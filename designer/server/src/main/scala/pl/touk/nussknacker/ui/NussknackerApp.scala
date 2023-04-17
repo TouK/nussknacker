@@ -196,7 +196,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new ProcessesExportResources(futureProcessRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, futureProcessRepository, processAuthorizer),
         new ManagementResources(processAuthorizer, futureProcessRepository, featureTogglesConfig.deploymentCommentSettings,
-          deploymentService, dmDispatcher, customActionInvokerService, metricsRegistry, scenarioTestService),
+          deploymentService, dmDispatcher, customActionInvokerService, metricsRegistry, scenarioTestService, typeToConfig.mapValues(_.modelData)),
         new ValidationResources(futureProcessRepository ,processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new UserResources(processCategoryService),

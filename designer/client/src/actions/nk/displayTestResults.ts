@@ -19,7 +19,7 @@ export function testProcessFromFile(id: ProcessId, testDataFile: File, process: 
   }
 }
 
-export function testProcessFromJson(id: ProcessId, testData: string, process: Process): ThunkAction {
+export function testProcessFromJson(id: ProcessId, testData: {[p: string]: UIValueParameter[]}, process: Process): ThunkAction {
   return (dispatch) => {
     dispatch({
       type: "PROCESS_LOADING",
