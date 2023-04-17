@@ -5,6 +5,7 @@ import React, {useMemo, useState} from "react"
 import {ExpressionObj} from "./types"
 import RawEditor from "./RawEditor"
 import {VariableTypes} from "../../../../../types"
+import {css} from "@emotion/css"
 
 type Props = {
   editorConfig: $TodoType,
@@ -68,7 +69,12 @@ export default function DualParameterEditor(props: Props): JSX.Element {
   )
 
   return (
-    <>
+    <div className={css({
+      display: "flex",
+      flex: 1,
+      gap: 5,
+    })}
+    >
       {displayRawEditor ?
         (<RawEditor {...editorProps}/>) :
         (<SimpleEditor {...editorProps} editorConfig={editorConfig.simpleEditor}/>)
@@ -78,12 +84,12 @@ export default function DualParameterEditor(props: Props): JSX.Element {
           <SwitchIcon
             switchable={switchable}
             hint={hint}
-            onClick={(_) => setDisplayRawEditor(!displayRawEditor)}
+            onClick={() => setDisplayRawEditor(!displayRawEditor)}
             displayRawEditor={displayRawEditor}
             readOnly={readOnly}
           />
         ) :
         null}
-    </>
+    </div>
   )
 }

@@ -518,16 +518,17 @@ body .modalButton
     outline 2px solid #0058a9 !important
     outline-offset -1px !important
 
-.switch-icon
-  height 35px
-  width 35px
-  margin-left 5px
-  cursor pointer
-  background-color modalInputBkgColor
-  border none
-  padding 0
-
 :local
+  .switch-icon
+    height 35px
+    width 35px
+    cursor pointer
+    background-color modalInputBkgColor
+    border none
+    padding 0
+    path
+      fill currentColor
+
   .switch-icon-active
     path
       fill #8fad60

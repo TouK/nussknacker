@@ -1,33 +1,31 @@
-import PropTypes from "prop-types"
 import React from "react"
 import classes from "../../../../../stylesheets/graph.styl"
-import cn from "classnames"
 import {ButtonWithFocus} from "../../../../withFocus"
 import {ReactComponent as Icon} from "../../../../../assets/img/buttons/switch.svg"
+import {cx} from "@emotion/css"
 
-export default function SwitchIcon(props) {
+interface SwitchIconProps {
+  switchable?: boolean,
+  hint?: string,
+  displayRawEditor?: boolean,
+  readOnly?: boolean,
+  onClick?: () => void,
+}
 
-  const {switchable, readOnly, hint, onClick, displayRawEditor} = props
-
-  const title = () => readOnly ? "Switching to basic mode is disabled. You are in read-only mode" : hint
-
+export default function SwitchIcon({switchable, readOnly, hint, onClick, displayRawEditor}: SwitchIconProps) {
+  const disabled = !switchable || readOnly
   return (
     <ButtonWithFocus
-      id={"switch-button"}
-      className={cn("inlined", "switch-icon", displayRawEditor && classes.switchIconActive, readOnly && classes.switchIconReadOnly)}
+      className={cx(
+        classes.switchIcon,
+        displayRawEditor && classes.switchIconActive,
+        disabled && classes.switchIconReadOnly
+      )}
       onClick={onClick}
-      disabled={!switchable || readOnly}
-      title={title()}
+      disabled={disabled}
+      title={readOnly ? "Switching to basic mode is disabled. You are in read-only mode" : hint}
     >
       <Icon/>
     </ButtonWithFocus>
   )
-}
-
-SwitchIcon.propTypes = {
-  switchable: PropTypes.bool,
-  hint: PropTypes.string,
-  onClick: PropTypes.func,
-  displayRawEditor: PropTypes.bool,
-  readOnly: PropTypes.bool,
 }
