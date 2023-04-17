@@ -42,7 +42,8 @@ trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
  * Optional functionality which should provide field definitions based on input schema
  * Based on those fields UI creates a window allowing user to test scenario based on schema.
  */
-trait TestViewGenerator { self: Source with SourceTestSupport[_] =>
+trait TestDataDefinition { self: Source with SourceTestSupport[_] =>
+  //TODO add support for dynamic parameters
   def createTestView: List[Parameter]
 }
 

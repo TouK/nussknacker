@@ -164,6 +164,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     customActionInvokerService = customActionInvokerService,
     metricRegistry = new MetricRegistry,
     scenarioTestService = scenarioTestService,
+    typeToConfig = typeToConfig.mapValues(_.modelData)
   )
 
   protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager

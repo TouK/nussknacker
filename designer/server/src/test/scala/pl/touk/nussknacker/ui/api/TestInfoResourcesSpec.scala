@@ -29,6 +29,8 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
     override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities
     = TestingCapabilities(canBeTested = true, canGenerateTestData = true, canCreateTestView = false)
 
+    override def getTestViewParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = ???
+
     override def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData]
     = Some(PreliminaryScenarioTestData(PreliminaryScenarioTestRecord.Standard("sourceId", Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")) :: Nil))
 
@@ -36,7 +38,6 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
       ???
     }
 
-    override def getTestViewParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = ???
   }
 
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
