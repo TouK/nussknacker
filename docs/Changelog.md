@@ -47,6 +47,7 @@
 * [#4117](https://github.com/TouK/nussknacker/pull/4117)[#4202](https://github.com/TouK/nussknacker/pull/4202) Fragment parameters definition is now computed based on config. Thanks to that you can use `componentsUiConfig` setting to provide
   additional settings like parameter's validators or editors to fragments.
 * [#4201](https://github.com/TouK/nussknacker/pull/4201) Fix for: Dynamic nodes (GenericNodeTransformation) has now initial parameters inferred based on definition instead empty List
+* [#4224](https://github.com/TouK/nussknacker/pull/4224) Fix for (de)serialization of Flink state when using NU with scala 2.13. See MigrationGuide for details.
 
 1.8.1 (28 Feb 2023)
 ------------------------
