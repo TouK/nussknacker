@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeResult, ResultContext}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures}
@@ -36,7 +36,7 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
     .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), ConfigValueFactory.fromAnyRef("kafka:1234"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava)))
 
-  private val scenarioTestData = ScenarioTestData(List(ScenarioTestRecord("startProcess", Json.fromString("terefere"))))
+  private val scenarioTestData = ScenarioTestData(List(ScenarioTestJsonRecord("startProcess", Json.fromString("terefere"))))
 
   it should "run scenario in test mode" in {
     val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)

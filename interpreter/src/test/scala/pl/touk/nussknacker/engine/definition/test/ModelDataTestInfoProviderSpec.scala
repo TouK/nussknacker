@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestRecord, TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, StreamMetaData, process}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -206,8 +206,8 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
     val scenarioTestData = testInfoProvider.prepareTestData(preliminaryTestData, createScenarioWithMultipleSources()).rightValue
 
     scenarioTestData.testRecords shouldBe List(
-      ScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
-      ScenarioTestRecord("source2", Json.fromString("record 2")),
+      ScenarioTestJsonRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
+      ScenarioTestJsonRecord("source2", Json.fromString("record 2")),
     )
   }
 
@@ -220,8 +220,8 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
     val scenarioTestData = testInfoProvider.prepareTestData(preliminaryTestData, createScenarioWithSingleSource()).rightValue
 
     scenarioTestData.testRecords shouldBe List(
-      ScenarioTestRecord("source1", Json.fromString("record 1")),
-      ScenarioTestRecord("source1", Json.fromString("record 2")),
+      ScenarioTestJsonRecord("source1", Json.fromString("record 1")),
+      ScenarioTestJsonRecord("source1", Json.fromString("record 2")),
     )
   }
 

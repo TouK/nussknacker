@@ -1,7 +1,7 @@
-import HttpService, {TestProcessResponse} from "../../http/HttpService"
+import HttpService, {SourceWithParametersTest, TestProcessResponse} from "../../http/HttpService"
 import {displayProcessCounts} from "./displayProcessCounts"
 import {TestResults} from "../../common/TestResultUtils"
-import {Process, ProcessId} from "../../types"
+import {Expression, Process, ProcessId} from "../../types"
 import {ThunkAction} from "../reduxTypes"
 import {withoutHackOfEmptyEdges} from "../../components/graph/GraphPartialsInTS/EdgeUtils"
 import {UIValueParameter} from "./genericAction";
@@ -19,7 +19,7 @@ export function testProcessFromFile(id: ProcessId, testDataFile: File, process: 
   }
 }
 
-export function testProcessFromJson(id: ProcessId, testData: {[p: string]: UIValueParameter[]}, process: Process): ThunkAction {
+export function testProcessFromJson(id: ProcessId, testData: SourceWithParametersTest, process: Process): ThunkAction {
   return (dispatch) => {
     dispatch({
       type: "PROCESS_LOADING",

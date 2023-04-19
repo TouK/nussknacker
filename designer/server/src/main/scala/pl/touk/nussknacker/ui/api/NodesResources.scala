@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, SubprocessResolve
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -148,7 +149,6 @@ object NodesResources {
 
   def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
     implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
-    implicit val uiValueParameterDecoder: Decoder[UIValueParameter] = deriveConfiguredDecoder[UIValueParameter]
     deriveConfiguredDecoder[TestFromParametersRequest]
   }
 
@@ -222,9 +222,8 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
 
 
 
-@JsonCodec(encodeOnly = true) case class TestFromParametersRequest(sourceParameters: Map[String, List[UIValueParameter]],
-                                                                   displayableProcess: DisplayableProcess,
-                                                                   variableTypes: Map[String, TypingResult])
+@JsonCodec(encodeOnly = true) case class TestFromParametersRequest(sourceParameters: Map[String, Map[String, Expression]],
+                                                                   displayableProcess: DisplayableProcess)
 
 @JsonCodec(encodeOnly = true) case class ParametersValidationResult(validationErrors: List[NodeValidationError],
                                                                     validationPerformed: Boolean)

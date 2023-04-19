@@ -9,7 +9,7 @@ import {UserData} from "../common/models/User"
 import {ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType} from "../components/Process/types"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {AuthenticationSettings} from "../reducers/settings"
-import {Process, ProcessDefinitionData, ProcessId} from "../types"
+import {Expression, Process, ProcessDefinitionData, ProcessId} from "../types"
 import {Instant, WithId} from "../types/common"
 import {BackendNotification} from "../containers/Notifications"
 import {ProcessCounts} from "../reducers/graph"
@@ -75,6 +75,12 @@ export type ComponentType = {
     icon: string,
     url: string,
   }>,
+}
+
+export type SourceWithParametersTest = {
+  [p: string]: {
+    [paramName: string]: Expression
+  }
 }
 
 export type ComponentUsageType = {
@@ -501,13 +507,11 @@ class HttpService {
     return promise
   }
 
-  testProcessFromJson(processId: ProcessId, testData: {[p: string]: UIValueParameter[]}, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
+  testProcessFromJson(processId: ProcessId, testData: SourceWithParametersTest, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
     const sanitized = this.#sanitizeProcess(processJson)
-
     const request = {
       sourceParameters: testData,
-      displayableProcess: sanitized,
-      variableTypes: {}
+      displayableProcess: sanitized
     }
 
     const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processId)}`, request)

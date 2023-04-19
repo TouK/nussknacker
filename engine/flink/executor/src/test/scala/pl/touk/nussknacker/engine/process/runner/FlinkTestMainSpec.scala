@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
@@ -50,8 +50,8 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
 
     val results = runFlinkTest(process, ScenarioTestData(List(
-      ScenarioTestRecord("id", Json.fromString("0|1|2|3|4|5|6")),
-      ScenarioTestRecord("id", Json.fromString("0|11|2|3|4|5|6"))
+      ScenarioTestJsonRecord("id", Json.fromString("0|1|2|3|4|5|6")),
+      ScenarioTestJsonRecord("id", Json.fromString("0|11|2|3|4|5|6"))
     )))
 
     val nodeResults = results.nodeResults
@@ -242,9 +242,9 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         .source("id", "jsonInput")
         .emptySink("out", "valueMonitor", "Value" -> "#input")
     val testData = ScenarioTestData(List(
-      ScenarioTestRecord("id", Json.obj("id" -> Json.fromString("1"), "field" -> Json.fromString("11"))),
-      ScenarioTestRecord("id", Json.obj("id" -> Json.fromString("2"), "field" -> Json.fromString("22"))),
-      ScenarioTestRecord("id", Json.obj("id" -> Json.fromString("3"), "field" -> Json.fromString("33"))),
+      ScenarioTestJsonRecord("id", Json.obj("id" -> Json.fromString("1"), "field" -> Json.fromString("11"))),
+      ScenarioTestJsonRecord("id", Json.obj("id" -> Json.fromString("2"), "field" -> Json.fromString("22"))),
+      ScenarioTestJsonRecord("id", Json.obj("id" -> Json.fromString("3"), "field" -> Json.fromString("33"))),
     ))
 
     val results = runFlinkTest(process, testData)
@@ -263,7 +263,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       .streaming("proc1")
       .source("id", "genericSourceWithCustomVariables", "elements" -> "{'abc'}")
       .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo")
-    val testData = ScenarioTestData(List(ScenarioTestRecord("id", Json.fromString("abc"))))
+    val testData = ScenarioTestData(List(ScenarioTestJsonRecord("id", Json.fromString("abc"))))
 
     val results = runFlinkTest(process, testData)
 
@@ -298,7 +298,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         .customNode("cid", "count", "transformWithTime", "seconds" -> "10")
         .emptySink("out", "monitor")
 
-    def recordWithSeconds(duration: FiniteDuration) = ScenarioTestRecord("id", Json.fromString(s"0|0|0|${duration.toMillis}|0|0|0"))
+    def recordWithSeconds(duration: FiniteDuration) = ScenarioTestJsonRecord("id", Json.fromString(s"0|0|0|${duration.toMillis}|0|0|0"))
 
     val results = runFlinkTest(process, ScenarioTestData(List(
       recordWithSeconds(1 second),
@@ -321,7 +321,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         .source("id", "typedJsonInput", "type" -> """{"field1": "String", "field2": "java.lang.String"}""")
         .emptySink("out", "valueMonitor", "Value" -> "#input.field1 + #input.field2")
 
-    val results = runFlinkTest(process, ScenarioTestData(ScenarioTestRecord("id", Json.obj("field1" -> Json.fromString("abc"), "field2" -> Json.fromString("def"))) :: Nil))
+    val results = runFlinkTest(process, ScenarioTestData(ScenarioTestJsonRecord("id", Json.obj("field1" -> Json.fromString("abc"), "field2" -> Json.fromString("def"))) :: Nil))
 
     results.invocationResults("out").map(_.value) shouldBe List("abcdef")
   }
@@ -454,8 +454,8 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     results.invocationResults("out").map(_.value) shouldBe List(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime).asJava)
   }
 
-  private def createTestRecord(sourceId: String = "id", id: String = "0", value1: Long = 1): ScenarioTestRecord =
-    ScenarioTestRecord(sourceId, Json.fromString(s"$id|$value1|2|3|4|5|6"))
+  private def createTestRecord(sourceId: String = "id", id: String = "0", value1: Long = 1): ScenarioTestJsonRecord =
+    ScenarioTestJsonRecord(sourceId, Json.fromString(s"$id|$value1|2|3|4|5|6"))
 
   private def runFlinkTest(process: CanonicalProcess, scenarioTestData: ScenarioTestData, config: Config = ConfigFactory.load()): TestResults[Any] = {
     //We need to set context loader to avoid forking in sbt

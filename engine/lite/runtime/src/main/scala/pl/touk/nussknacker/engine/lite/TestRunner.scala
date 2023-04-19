@@ -1,20 +1,30 @@
 package pl.touk.nussknacker.engine.lite
 
+import cats.data.{NonEmptyList, Validated}
 import cats.{Id, ~>}
+import cats.implicits._
 import cats.data.Validated.{Invalid, Valid}
+import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownProperty
+import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source, SourceTestSupport}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord, TestRecord}
-import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source, SourceTestSupport, TestWithParameters}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord, ScenarioTestParametersRecord, TestParameters, TestRecord}
+import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
+import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
@@ -52,11 +62,18 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
     }
 
-    val inputs = ScenarioInputBatch(scenarioTestData.testRecords.map { case ScenarioTestRecord(NodeId(sourceIdValue), testRecord) =>
-      val sourceId = SourceId(sourceIdValue)
-      val source = scenarioInterpreter.sources.getOrElse(sourceId,
-        throw new IllegalArgumentException(s"Found source '$sourceIdValue' in a test record but is not present in the scenario"))
-      sourceId -> prepareRecordForTest[Input](source, testRecord)
+    def getSourceById(sourceId: SourceId): Source = scenarioInterpreter.sources.getOrElse(sourceId,
+      throw new IllegalArgumentException(s"Found source '${sourceId.value}' in a test record but is not present in the scenario"))
+
+    val inputs = ScenarioInputBatch(scenarioTestData.testRecords.map {
+      case ScenarioTestJsonRecord(NodeId(sourceIdValue), testRecord) =>
+        val sourceId = SourceId(sourceIdValue)
+        val source = getSourceById(sourceId)
+        sourceId -> prepareRecordForTest[Input](source, testRecord)
+      case ScenarioTestParametersRecord(NodeId(sourceIdValue), testParameters) =>
+        val sourceId = SourceId(sourceIdValue)
+        val source = getSourceById(sourceId)
+        sourceId -> prepareRecordForTest[Input](source, testParameters, modelData, testContext)(process.metaData)
     })
 
     try {
@@ -71,22 +88,55 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
       scenarioInterpreter.close()
       testContext.close()
     }
-
   }
 
   private def testJobData(process: CanonicalProcess) = {
     // testing process may be unreleased, so it has no version
     val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version"))
-    val deploymentData = DeploymentData.empty
     JobData(process.metaData, processVersion)
   }
 
+  private def prepareExpressionEvaluator(modelData: ModelData, textContext: LiteEngineRuntimeContext)(implicit metaData: MetaData, nodeId: NodeId) = {
+    lazy val contextIdGenerator = textContext.contextIdGenerator(nodeId.id)
+    val context = Context(contextIdGenerator.nextContextId())
+    val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
+    val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+      case spel: SpelExpressionParser => spel.typingDictLabels
+    }
+    (expression: Expression, parameter: Parameter) => {
+      expressionCompiler
+        .compile(expression, Some(parameter.name), ValidationContext.empty, parameter.typ)
+        .map(typedExpression => {
+          val param = evaluatedparam.Parameter(typedExpression, parameter)
+          parameter.name -> evaluator.evaluateParameter(param, context).value
+        })
+    }
+  }
+
+  private def prepareRecordForTest[T](source: Source, testRecord: TestParameters, modelData: ModelData, textContext: LiteEngineRuntimeContext)(implicit metaData: MetaData): T = {
+    implicit val testNodeId: NodeId = NodeId("testParameters")
+    source match {
+      case s: TestWithParameters[T@unchecked] =>
+        val expressionEvaluator = prepareExpressionEvaluator(modelData, textContext)
+        val parameterTypingResults = s.parameterDefinitions.map(param => {
+          testRecord.parameters.get(param.name) match {
+            case Some(expression) => expressionEvaluator(expression, param)
+            case None => UnknownProperty(param.name).invalidNel
+          }
+        })
+        parameterTypingResults.sequence match {
+          case Valid(evaluatedParams) => s.parametersToTestData(evaluatedParams.toMap)
+          case Invalid(errors) => throw new IllegalArgumentException(errors.toList.mkString(", "))
+        }
+      case other => throw new IllegalArgumentException(s"Source ${other.getClass} cannot be stubbed - it doesn't provide test with parameters")
+    }
+  }
+
   private def prepareRecordForTest[T](source: Source, testRecord: TestRecord): T = {
-    val sourceTestSupport = source match {
-      case e: SourceTestSupport[T@unchecked] => e
+    source match {
+      case s: SourceTestSupport[T@unchecked] => s.testRecordParser.parse(testRecord)
       case other => throw new IllegalArgumentException(s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser")
     }
-    sourceTestSupport.testRecordParser.parse(testRecord)
   }
 
   private def collectSinkResults(runId: TestRunId, results: ResultType[EndResult[Res]]): Unit = {

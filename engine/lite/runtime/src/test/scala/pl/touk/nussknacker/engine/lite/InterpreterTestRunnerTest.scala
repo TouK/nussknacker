@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionInvocationResult, ExternalInvocationResult, NodeResult, ResultContext}
@@ -18,9 +18,9 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       .customNode("sum", "sum", "sum", "name" -> "'test'", "value" -> "#input")
       .emptySink("end", "end", "value" -> "#input + ':' + #sum")
     val scenarioTestData = ScenarioTestData(List(
-      ScenarioTestRecord("start", Json.fromString("A|2")),
-      ScenarioTestRecord("start", Json.fromString("B|1")),
-      ScenarioTestRecord("start", Json.fromString("C|3")),
+      ScenarioTestJsonRecord("start", Json.fromString("A|2")),
+      ScenarioTestJsonRecord("start", Json.fromString("B|1")),
+      ScenarioTestJsonRecord("start", Json.fromString("C|3")),
     ))
 
     val results = sample.test(scenario, scenarioTestData)
@@ -45,9 +45,9 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
         GraphBuilder.source("source2", "start").emptySink("end2", "end", "value" -> "#input")
       )
     val scenarioTestData = ScenarioTestData(List(
-      ScenarioTestRecord("source1", Json.fromString("A|1")),
-      ScenarioTestRecord("source1", Json.fromString("B|2")),
-      ScenarioTestRecord("source2", Json.fromString("C|3")),
+      ScenarioTestJsonRecord("source1", Json.fromString("A|1")),
+      ScenarioTestJsonRecord("source1", Json.fromString("B|2")),
+      ScenarioTestJsonRecord("source2", Json.fromString("C|3")),
     ))
 
     val results = sample.test(scenario, scenarioTestData)

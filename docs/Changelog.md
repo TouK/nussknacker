@@ -5,6 +5,8 @@
 1.10.0 (not released yet)
 -------------------------
 * [#4230](https://github.com/TouK/nussknacker/pull/4230) Extend TestInfoProvider with getTestViewParameters to test scenarios based on window with generated fields. 
+  * Endpoint to test scenario based on parameters 
+  * New generic dialog to display scenario input parameters
 * [#4204](https://github.com/TouK/nussknacker/pull/4204) ProcessingTypeDataProvider has combined data being a result of all processing types
 * [#4219](https://github.com/TouK/nussknacker/pull/4219) Components are aware of processing data reload
 
