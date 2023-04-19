@@ -32,5 +32,5 @@ export default merge(commonConfig, {
         },
     },
     devtool: "eval-source-map",
-    plugins: [new ReactRefreshWebpackPlugin()],
+    plugins: [new ReactRefreshWebpackPlugin({ overlay: false })],
 });

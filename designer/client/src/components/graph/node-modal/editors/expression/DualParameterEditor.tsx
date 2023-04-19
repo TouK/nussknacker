@@ -1,13 +1,18 @@
 import {UnknownFunction} from "../../../../../types/common"
-import {DualEditorMode, editors, SimpleEditor} from "./Editor"
-import SwitchIcon from "./SwitchIcon"
-import React, {useMemo, useState} from "react"
+import {DualEditorMode, editors, EditorType, SimpleEditor} from "./Editor"
+import React, {useCallback, useMemo, useState} from "react"
 import {ExpressionObj} from "./types"
 import RawEditor from "./RawEditor"
 import {VariableTypes} from "../../../../../types"
+import {css} from "@emotion/css"
+import {RawEditorIcon, SimpleEditorIcon, SwitchButton} from "./SwitchButton"
+import {useTranslation} from "react-i18next"
 
 type Props = {
-  editorConfig: $TodoType,
+  editorConfig: {
+    simpleEditor: { type: EditorType },
+    defaultMode: DualEditorMode,
+  },
   expressionObj: ExpressionObj,
   readOnly: boolean,
   valueClassName: string,
@@ -23,6 +28,7 @@ type Props = {
 
 export default function DualParameterEditor(props: Props): JSX.Element {
   const {editorConfig, readOnly, valueClassName, expressionObj} = props
+  const {t} = useTranslation()
 
   const SimpleEditor = useMemo(
     () => editors[editorConfig.simpleEditor.type] as SimpleEditor<{
@@ -48,15 +54,20 @@ export default function DualParameterEditor(props: Props): JSX.Element {
   )
 
   const [displayRawEditor, setDisplayRawEditor] = useState(!initialDisplaySimple)
+  const toggleRawEditor = useCallback(() => setDisplayRawEditor(v => !v), [])
 
-  const switchable = useMemo(
-    () => !displayRawEditor || simpleEditorAllowsSwitch,
-    [displayRawEditor, simpleEditorAllowsSwitch]
+  const disabled = useMemo(
+    () => readOnly || displayRawEditor && !simpleEditorAllowsSwitch,
+    [displayRawEditor, readOnly, simpleEditorAllowsSwitch]
   )
 
   const hint = useMemo(
-    () => simpleEditorAllowsSwitch ? SimpleEditor?.switchableToHint() : SimpleEditor?.notSwitchableToHint(),
-    [SimpleEditor, simpleEditorAllowsSwitch]
+    () => readOnly ?
+      t("editors.default.hint", "Switching to basic mode is disabled. You are in read-only mode") :
+      simpleEditorAllowsSwitch ?
+        SimpleEditor?.switchableToHint() :
+        SimpleEditor?.notSwitchableToHint(),
+    [t, readOnly, SimpleEditor, simpleEditorAllowsSwitch]
   )
 
   const editorProps = useMemo(
@@ -68,22 +79,27 @@ export default function DualParameterEditor(props: Props): JSX.Element {
   )
 
   return (
-    <>
+    <div className={css({
+      display: "flex",
+      flex: 1,
+      gap: 5,
+    })}
+    >
       {displayRawEditor ?
         (<RawEditor {...editorProps}/>) :
         (<SimpleEditor {...editorProps} editorConfig={editorConfig.simpleEditor}/>)
       }
       {showSwitch ?
         (
-          <SwitchIcon
-            switchable={switchable}
-            hint={hint}
-            onClick={(_) => setDisplayRawEditor(!displayRawEditor)}
-            displayRawEditor={displayRawEditor}
-            readOnly={readOnly}
-          />
+          <SwitchButton onClick={toggleRawEditor} disabled={disabled} title={hint}>
+            {displayRawEditor ?
+              <SimpleEditorIcon type={editorConfig.simpleEditor.type}/> :
+              <RawEditorIcon/>
+            }
+          </SwitchButton>
         ) :
         null}
-    </>
+    </div>
   )
 }
+

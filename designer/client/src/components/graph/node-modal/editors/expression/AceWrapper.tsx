@@ -27,7 +27,7 @@ const DEFAULT_OPTIONS: IAceOptions = {
   indentedSoftWrap: false, //removes weird spaces for multiline strings when wrapEnabled=true
   enableLiveAutocompletion: true,
   enableSnippets: false,
-  fontSize: 16,
+  fontSize: 14,
   highlightGutterLine: false,
   highlightActiveLine: false,
 }
