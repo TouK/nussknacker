@@ -37,7 +37,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4224](https://github.com/TouK/nussknacker/pull/4224) If you're using Flink with Nussknacker built with scala 2.13, add this 
   [jar](https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.0.0/flink-scala-2-13_2.13-1.0.0-assembly.jar) in your Flink installation to `lib` dir. It's our implementation of `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` 
   (sources are [here](https://github.com/TouK/flink-scala-2.13)) which is needed to properly (de)serialize Flink state when using scala 2.13. 
-  Hopefully, it's temporary solution, until Flink supports scala 2.13 
+  Hopefully, it's temporary solution, until Flink becomes really scala-free and gets rid of this `FlinkScalaKryoInstantiator` class or allows to have it in the job code (not Flink libs).
 
 ### Other changes
 
