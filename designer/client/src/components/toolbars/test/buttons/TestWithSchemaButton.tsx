@@ -15,6 +15,8 @@ import {TestViewParameters} from "../../../../common/TestResultUtils";
 import {testProcessFromJson} from "../../../../actions/nk/displayTestResults";
 import {GenericActionParameters} from "../../../modals/GenericActionDialog";
 import {UIValueParameter} from "../../../../actions/nk/genericAction";
+import {Expression} from "../../../../types";
+import {SourceWithParametersTest} from "../../../../http/HttpService";
 
 type Props = ToolbarButtonProps
 
@@ -63,15 +65,12 @@ function TestWithSchemaButton(props: Props) {
   }
 
   const onConfirmAction = useCallback((paramValues) => {
-    const record: {[p: string]: UIValueParameter[]} = Object.entries(sourceParameters).reduce((obj, [sourceId, sourceParams]) => ({
+    const record: SourceWithParametersTest = Object.entries(sourceParameters).reduce((obj, [sourceId, sourceParams]) => ({
       ...obj,
-      [sourceId]: sourceParams.parameters.map((uiParam) => {
-        return {
-          name: uiParam.name,
-          typ: uiParam.typ,
-          expression: paramValues[uiParam.name]
-        }
-      })
+      [sourceId]: sourceParams.parameters.reduce((obj, uiParam) => ({
+        ...obj,
+        [uiParam.name]: paramValues[uiParam.name]
+      }), {})
     }), {})
     dispatch(testProcessFromJson(processId, record, processToDisplay))
   }, [sourceParameters, selectedSource])

@@ -6,7 +6,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, Request1, RequestResponseConfigCreator, Response}
@@ -122,7 +122,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
   }
 
   private def createTestRecord(field1: String, field2: String) = {
-    ScenarioTestRecord(sourceId, Json.obj("field1" -> Json.fromString(field1), "field2" -> Json.fromString(field2)))
+    ScenarioTestJsonRecord(sourceId, Json.obj("field1" -> Json.fromString(field1), "field2" -> Json.fromString(field2)))
   }
 
   private def firstIdForFirstSource(scenario: CanonicalProcess): IncContextIdGenerator =

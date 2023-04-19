@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.definition.test
 
 import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.test.ScenarioTestRecord
+import pl.touk.nussknacker.engine.api.test.ScenarioTestJsonRecord
 
 case class PreliminaryScenarioTestData(testRecords: List[PreliminaryScenarioTestRecord])
 
@@ -28,8 +28,8 @@ object PreliminaryScenarioTestRecord {
     standardDecoder.or(simplifiedDecoder)
   }
 
-  def apply(scenarioTestRecord: ScenarioTestRecord): PreliminaryScenarioTestRecord = {
-    Standard(scenarioTestRecord.sourceId.id, scenarioTestRecord.record.json, scenarioTestRecord.record.timestamp)
+  def apply(ScenarioTestJsonRecord: ScenarioTestJsonRecord): PreliminaryScenarioTestRecord = {
+    Standard(ScenarioTestJsonRecord.sourceId.id, ScenarioTestJsonRecord.record.json, ScenarioTestJsonRecord.record.timestamp)
   }
 
 }

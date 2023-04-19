@@ -14,7 +14,6 @@ import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -206,11 +205,10 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                       measureTime("generateAndTest", metricRegistry) {
                         scenarioTestService.generateData(displayableProcess, testSampleSize) match {
                           case Left(error) => Future.failed(UnmarshallError(error))
-                          case Right(rawScenarioTestData) => {
+                          case Right(rawScenarioTestData) =>
                             scenarioTestService.performTest(idWithName, displayableProcess, rawScenarioTestData, testResultsVariableEncoder)
                               .flatMap { results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)) }
                               .recover(EspErrorToHttp.errorToHttp)
-                          }
                         }
                       }
                     }
@@ -229,7 +227,10 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                 processId(testParametersRequest.displayableProcess.id) { idWithName =>
                     canDeploy(idWithName) {
                     complete {
-                        //TODO Work in Progress
+                      scenarioTestService.performTest(idWithName, testParametersRequest.displayableProcess,
+                        testParametersRequest.sourceParameters, testResultsVariableEncoder)
+                        .flatMap { results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)) }
+                        .recover(EspErrorToHttp.errorToHttp)
                       }
                     }
                   }

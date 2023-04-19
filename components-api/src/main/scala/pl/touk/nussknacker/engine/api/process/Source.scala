@@ -42,9 +42,26 @@ trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
  * Optional functionality which should provide field definitions based on input schema
  * Based on those fields UI creates a window allowing user to test scenario based on schema.
  */
-trait TestDataDefinition { self: Source with SourceTestSupport[_] =>
+trait TestWithParameters[+T] { self: Source with SourceTestSupport[_] =>
   //TODO add support for dynamic parameters
-  def createTestView: List[Parameter]
+  def parameterDefinitions: List[Parameter]
+  def parametersToTestData(params: Map[String, AnyRef]): T
+}
+
+object TestWithParameters {
+  def unflattenMap(flatMap: Map[String, AnyRef], delimiter: Char = '.'): Map[String, AnyRef] = {
+    flatMap.foldLeft(Map.empty[String, AnyRef]) {
+      case (result, (key, value)) =>
+        if (key.contains(delimiter)) {
+          val (parentKey, childKey) = key.span(_ != delimiter)
+          val parentValue = result.getOrElse(parentKey, Map.empty[String, AnyRef]).asInstanceOf[Map[String, AnyRef]]
+          val childMap = unflattenMap(Map(childKey.drop(1) -> value), delimiter)
+          result + (parentKey -> (parentValue ++ childMap))
+        } else {
+          result + (key -> value)
+        }
+    }
+  }
 }
 
 /**

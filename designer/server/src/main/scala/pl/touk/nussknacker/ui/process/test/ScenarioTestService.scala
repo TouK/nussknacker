@@ -5,8 +5,10 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.restmodel.definition.{SourceWithViewParameters, UIParameter}
+import pl.touk.nussknacker.restmodel.definition.SourceWithViewParameters
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.TestDataSettings
@@ -84,6 +86,24 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
       scenarioTestData <- testInfoProvider.prepareTestData(preliminaryScenarioTestData, canonical)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       testResults <- testExecutorService.testProcess(idWithName, canonical, displayableProcess.category, displayableProcess.processingType, scenarioTestData, testResultsVariableEncoder)
+      _ <- assertTestResultsAreNotTooBig(testResults)
+    } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
+  }
+
+  def performTest[T](idWithName: ProcessIdWithName,
+                     displayableProcess: DisplayableProcess,
+                     parameterTestData: Map[String, Map[String, Expression]],
+                     testResultsVariableEncoder: Any => T)
+                    (implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
+    val canonical = toCanonicalProcess(displayableProcess)
+    for {
+      testResults <- testExecutorService.testProcess(idWithName,
+        canonical,
+        displayableProcess.category,
+        displayableProcess.processingType,
+        ScenarioTestData(parameterTestData),
+        testResultsVariableEncoder
+      )
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
   }

@@ -4,26 +4,27 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestDataDefinition}
+import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestWithParameters}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
-import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSinkValueParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
+import pl.touk.nussknacker.engine.json.{JsonSinkValueParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
+import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
-import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.InputSchemaProperty
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import java.nio.charset.StandardCharsets
 
 class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData, inputSchema: Schema, outputSchema: Schema, val nodeId: NodeId)
-  extends RequestResponsePostSource[Any] with LazyLogging with ReturningType with SourceTestSupport[Any] with TestDataDefinition {
+  extends RequestResponsePostSource[Any] with LazyLogging with ReturningType with SourceTestSupport[Any] with TestWithParameters[Any] {
 
   protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
 
-  private val jsonSchemaExtractor = new JsonSchemaExtractor()
   private val deserializer = new CirceJsonDeserializer(inputSchema)
 
   override def parse(parameters: Array[Byte]): Any = {
@@ -50,11 +51,17 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
 
   override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new SchemaResponseEncoder(outputSchema))
 
-  private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
+  override def parameterDefinitions: List[Parameter] = {
+    JsonSinkValueParameter(inputSchema, "testView", ValidationMode.lax)(nodeId).map(_.toParameters)
+      .valueOr(_ => throw new IllegalArgumentException("Cannot create test view for this scenario."))
+  }
 
-  override def createTestView: List[Parameter] = jsonSchemaExtractor.getSchemaFromProperty(InputSchemaProperty, metaData, nodeId)
-    .andThen { schema =>
-      JsonSinkValueParameter(schema, "not-sure-yet", ValidationMode.lax)(nodeId).map(_.toParameters)
-    }.valueOr(_ => throw new IllegalArgumentException("Cannot create test view for this scenario."))
+  override def parametersToTestData(params: Map[String, AnyRef]): Any = {
+    val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
+    val json = BestEffortJsonEncoder.defaultForTests.encode(TestWithParameters.unflattenMap(params))
+    JsonToNuStruct(json, swaggerTyped)
+  }
+
+  private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
 }
 
