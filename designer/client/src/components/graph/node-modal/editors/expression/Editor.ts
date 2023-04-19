@@ -17,14 +17,13 @@ import JsonEditor from "./JsonEditor"
 import DualParameterEditor from "./DualParameterEditor"
 import SpelTemplateEditor from "./SpelTemplateEditor";
 
-type ValuesType = Array<string>
 export type EditorProps = {
   onValueChange: (value: string) => void,
   type?: EditorType
 }
 
 export type SimpleEditor<P extends EditorProps = EditorProps> = Editor<P> & {
-  switchableTo: (expressionObj: ExpressionObj, values?: ValuesType) => boolean,
+  switchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean,
   switchableToHint: () => string,
   notSwitchableToHint: () => string,
 }
