@@ -6,6 +6,7 @@ import Backend from "i18next-xhr-backend"
 import moment from "moment"
 import {initReactI18next} from "react-i18next"
 import {BACKEND_STATIC_URL} from "./config"
+import urlJoin from "url-join"
 
 const i18n = i18next
   .use(intervalPlural)
@@ -18,7 +19,7 @@ i18n.init({
   defaultNS: "main",
   fallbackLng: "en",
   backend: {
-    loadPath: `${BACKEND_STATIC_URL}/assets/locales/{{lng}}/{{ns}}.json`,
+    loadPath: urlJoin(BACKEND_STATIC_URL, "assets/locales/{{lng}}/{{ns}}.json"),
   },
   supportedLngs: ["en", "pl"],
   interpolation: {
