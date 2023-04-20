@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 
-import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 
