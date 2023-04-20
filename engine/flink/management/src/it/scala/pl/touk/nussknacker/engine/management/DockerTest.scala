@@ -59,6 +59,8 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
             |RUN rm $$FLINK_HOME/lib/flink-scala*.jar
             |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-library/$scalaV/scala-library-$scalaV.jar -O $$FLINK_HOME/lib/scala-library-$scalaV.jar
             |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-reflect/$scalaV/scala-reflect-$scalaV.jar -O $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
+            |RUN wget https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.0.0/flink-scala-2-13_2.13-1.0.0-assembly.jar -O $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.0.0-assembly.jar
+            |RUN chown flink $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.0.0-assembly.jar
             |RUN chown flink $$FLINK_HOME/lib/scala-library-$scalaV.jar
             |RUN chown flink $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
             |""".stripMargin
@@ -118,6 +120,7 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
   def config: Config = ConfigFactory.load()
     .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
+    .withValue("enableObjectReuse", fromAnyRef(false))
     .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(dockerKafkaAddress))
     .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
     .withFallback(additionalConfig)

@@ -168,7 +168,7 @@ lazy val commonSettings =
       crossScalaVersions := supportedScalaVersions,
       scalaVersion := defaultScalaV,
       resolvers ++= Seq(
-        "confluent" at "https://packages.confluent.io/maven"
+        "confluent" at "https://packages.confluent.io/maven",
       ),
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
@@ -339,6 +339,12 @@ val sttpV = "3.8.13"
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.18.0"
 val wireMockV = "2.35.0"
+
+// depending on scala version one of this jar lays in Flink lib dir
+def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion, Seq(),
+  (2, 12) -> Seq("org.apache.flink" %% "flink-scala" % flinkV), // we basically need only `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` from it...
+  (2, 13) -> Seq("pl.touk" %% "flink-scala-2-13" % "1.0.0") // our tiny custom module with scala 2.13 `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` impl
+).map(m => configurations.map(m % _).getOrElse(m)).map(_ exclude("com.esotericsoftware", "kryo-shaded"))
 
 lazy val commonDockerSettings = {
   Seq(
@@ -559,7 +565,8 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         "org.apache.flink" % "flink-streaming-java" % flinkV % flinkScope
           excludeAll(
           ExclusionRule("log4j", "log4j"),
-          ExclusionRule("org.slf4j", "slf4j-log4j12")
+          ExclusionRule("org.slf4j", "slf4j-log4j12"),
+          ExclusionRule("com.esotericsoftware", "kryo-shaded"),
         ),
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % flinkScope,
         "com.softwaremill.retry" %% "retry" % "0.3.6",
@@ -567,7 +574,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test",
         "com.github.tomakehurst" % "wiremock-jre8" % wireMockV % Test
-      )
+      ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     }
   ).dependsOn(deploymentManagerApi % "provided",
   interpreter % "provided",
@@ -718,7 +725,7 @@ lazy val benchmarks = (project in file("benchmarks")).
     name := "nussknacker-benchmarks",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV,
+        "org.apache.flink" % "flink-streaming-java" % flinkV exclude("com.esotericsoftware", "kryo-shaded"),
         "org.apache.flink" % "flink-runtime" % flinkV
       )
     },
@@ -875,7 +882,7 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
     name := "nussknacker-flink-components-testkit",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" % "flink-streaming-java" % flinkV,
+        "org.apache.flink" % "flink-streaming-java" % flinkV exclude("com.esotericsoftware", "kryo-shaded"),
       )
     }
   ).dependsOn(componentsTestkit, flinkExecutor, flinkTestUtils)
@@ -977,12 +984,11 @@ lazy val flinkScalaUtils = (project in flink("scala-utils")).
     name := "nussknacker-flink-scala-utils",
     libraryDependencies ++= {
       Seq(
-        "com.twitter" %% "chill" % "0.9.5",
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test",
-      )
+      ) ++ flinkLibScalaDeps(scalaVersion.value, Some("provided"))
     }
   )
 
@@ -1002,7 +1008,7 @@ lazy val flinkTestUtils = (project in flink("test-utils")).
           ),
         "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV
-      )
+      ) ++ flinkLibScalaDeps(scalaVersion.value)
     }
   ).dependsOn(testUtils, flinkComponentsUtils, componentsUtils, interpreter)
 
