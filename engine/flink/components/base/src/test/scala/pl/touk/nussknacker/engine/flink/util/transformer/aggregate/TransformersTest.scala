@@ -8,7 +8,6 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
@@ -32,40 +31,49 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder, TestProcess}
 
-import java.time.Duration
+import java.time.{Duration, OffsetDateTime, ZoneId}
 import java.util
 import java.util.Arrays.asList
 import scala.jdk.CollectionConverters._
 import scala.collection.immutable.ListMap
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import java.util.TimeZone
+
 class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
-  def modelData(list: List[TestRecord] = List()): LocalModelData = LocalModelData(ConfigFactory
-    .empty().withValue("useTypingResultTypeInformation", fromAnyRef(true)), new Creator(list))
+  def modelData(list: List[TestRecord] = List(), tumblingAggregateOffset: Option[String] = None): LocalModelData = {
+    val config = ConfigFactory
+      .empty()
+      .withValue("useTypingResultTypeInformation", fromAnyRef(true))
+    LocalModelData(
+      tumblingAggregateOffset.map(o =>
+        config.withValue("components.base.aggregateWindowsConfig.tumblingWindowsOffset", fromAnyRef(o)))
+        .getOrElse(config), new Creator(list))
+  }
 
   private val processValidator: ProcessValidator = modelData().prepareValidatorForCategory(None)
 
   test("aggregates are properly validated") {
-    validateOk("#AGG.approxCardinality","#input.str",  Typed[Long])
-    validateOk("#AGG.set","#input.str",  Typed.fromDetailedType[java.util.Set[String]])
+    validateOk("#AGG.approxCardinality", "#input.str", Typed[Long])
+    validateOk("#AGG.set", "#input.str", Typed.fromDetailedType[java.util.Set[String]])
     validateOk("#AGG.map({f1: #AGG.sum, f2: #AGG.set})",
       "{f1: #input.eId, f2: #input.str}",
       TypedObjectTypingResult(ListMap("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]])))
 
-    validateError("#AGG.sum","#input.str", "Invalid aggregate type: String, should be: Number")
-    validateError("#AGG.map({f1: #AGG.set, f2: #AGG.set})","{f1: #input.str}", "Fields do not match, aggregateBy: f1, aggregator: f1, f2")
-    validateError("#AGG.map({f1: #AGG.max})","{f1: #input.str}", "Invalid fields: f1 - Invalid aggregate type: String, should be: Number")
-    validateError("#AGG.map({f1: #AGG.max})","#input.str", "aggregateBy should be declared as fixed map")
+    validateError("#AGG.sum", "#input.str", "Invalid aggregate type: String, should be: Number")
+    validateError("#AGG.map({f1: #AGG.set, f2: #AGG.set})", "{f1: #input.str}", "Fields do not match, aggregateBy: f1, aggregator: f1, f2")
+    validateError("#AGG.map({f1: #AGG.max})", "{f1: #input.str}", "Invalid fields: f1 - Invalid aggregate type: String, should be: Number")
+    validateError("#AGG.map({f1: #AGG.max})", "#input.str", "aggregateBy should be declared as fixed map")
   }
 
   test("sum aggregate") {
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 5, "b")))
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 5, "b")))
     val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = false)
 
@@ -77,9 +85,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 0, "a"),
-      TestRecord(id, 1, 1, "b"),
-      TestRecord(id, 2, 0, "b")))
+      TestRecordHours(id, 0, 0, "a"),
+      TestRecordHours(id, 1, 1, "b"),
+      TestRecordHours(id, 2, 0, "b")))
     val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = false)
 
@@ -91,9 +99,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 5, "b")))
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 5, "b")))
     val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = false, afterAggregateExpression = "#input.eId")
 
@@ -105,10 +113,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 5, "b"),
-      TestRecord(id, 1, 1, "b")))
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 5, "b"),
+      TestRecordHours(id, 1, 1, "b")))
     val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = false)
 
@@ -120,9 +128,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, ""),
-      TestRecord(id, 1, 2, ""),
-      TestRecord(id, 2, 5, "")
+      TestRecordHours(id, 0, 1, ""),
+      TestRecordHours(id, 1, 2, ""),
+      TestRecordHours(id, 2, 5, "")
     ))
     val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = true)
@@ -146,14 +154,61 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 5, "b")))
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 5, "b")))
     val testProcess = tumbling("#AGG.sum",
       "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldBe List(3, 5)
+  }
+
+  test("set tumbling aggregate") {
+    val id1 = ZoneId.of("Europe/Warsaw")
+    val id = "1"
+    val model = modelData(List(
+      TestRecordHours(id, 10, 1, "a"),
+      TestRecordHours(id, 11, 2, "b"),
+
+      TestRecordHours(id, 13, 5, "b"),
+      TestRecordHours(id, 14, 6, "b"),
+    ))
+    val testProcess = tumbling("#AGG.set",
+      "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
+
+    val aggregateVariables = runCollectOutputAggregate[Set[Number]](id, model, testProcess)
+    aggregateVariables shouldBe List(Set(1, 2), Set(5), Set(6)).map(_.asJava)
+  }
+
+
+  test("set tumbling aggregate - daily windows in GMT+03 - with aggregate offset set to -3H") {
+    List(TumblingWindowTrigger.OnEnd, TumblingWindowTrigger.OnEndWithExtraWindow).foreach { trigger =>
+      val id = "1"
+
+      val t0 = OffsetDateTime.parse("2011-12-02T23:59:30+03:00").toEpochSecond * 1000L
+      val t1a = OffsetDateTime.parse("2011-12-03T00:00:30+03:00").toEpochSecond * 1000L
+      val t1b = OffsetDateTime.parse("2011-12-03T23:59:30+03:00").toEpochSecond * 1000L
+      val t2 = OffsetDateTime.parse("2011-12-04T02:59:30+03:00").toEpochSecond * 1000L
+
+      val model = modelData(List(
+        TestRecordWithTimestamp(id, t0, 1, "a"),
+        TestRecordWithTimestamp(id, t1a, 2, "b"),
+        TestRecordWithTimestamp(id, t1b, 5, "b"),
+        TestRecordWithTimestamp(id, t2, 7, "b"),
+      ), Some("PT-3H"))
+
+      val testProcess = tumbling("#AGG.set",
+        "#input.eId", emitWhen = trigger, Map("windowLength" -> "T(java.time.Duration).parse('P1D')"))
+
+      val aggregateVariables = runCollectOutputAggregate[Set[Number]](id, model, testProcess)
+      var expected = List(Set(1), Set(2, 5), Set(7))
+      if(trigger == TumblingWindowTrigger.OnEndWithExtraWindow) {
+        expected = expected :+ Set()
+      }
+      aggregateVariables shouldBe expected.map(_.asJava)
+
+    }
   }
 
   test("sum tumbling aggregate when in fragment") {
@@ -172,9 +227,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 5, "b")))
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 5, "b")))
 
     val aggregateVariables = runCollectOutputAggregate[java.util.Map[String, Any]](id, model, resolvedScenario)
     aggregateVariables.map(_.asScala("aggresult")) shouldBe List(3, 5)
@@ -194,13 +249,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     val id = "1"
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 5, "b")))
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 5, "b")))
 
     lazy val run = runProcess(model, resolvedScenario, ResultsCollectingListenerHolder.registerRun(identity))
 
-    the [IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
+    the[IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
   }
 
 
@@ -208,9 +263,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 5, "b")))
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 5, "b")))
     val testProcess = tumbling("#AGG.list",
       "#input.eId", emitWhen = TumblingWindowTrigger.OnEvent, afterAggregateExpression = "#input.eId")
 
@@ -228,10 +283,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 5, "b"),
-      TestRecord(id, 1, 1, "b")))
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 5, "b"),
+      TestRecordHours(id, 1, 1, "b")))
     val testProcess = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -242,10 +297,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 3, 5, "b"), // watermark advances more than max out of orderness (1h in test)
-      TestRecord(id, 1, 1, "b"))) // lost because watermark advanced to 2
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 3, 5, "b"), // watermark advances more than max out of orderness (1h in test)
+      TestRecordHours(id, 1, 1, "b"))) // lost because watermark advanced to 2
     val testProcess = tumbling("#AGG.sum", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
@@ -256,9 +311,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 5, "b")))
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 5, "b")))
     val testProcess = tumbling("#AGG.sum",
       "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
 
@@ -270,10 +325,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 5, "b"),
-      TestRecord(id, 1, 1, "b")
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 5, "b"),
+      TestRecordHours(id, 1, 1, "b")
     ))
     val testProcess = tumbling("#AGG.sum",
       "#input.eId", emitWhen = TumblingWindowTrigger.OnEndWithExtraWindow)
@@ -286,26 +341,26 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 0, 1, "a"),
-      TestRecord(id, 1, 2, "b"),
-      TestRecord(id, 2, 3, "d"),
-      TestRecord(id, 3, 4, "d"),
+      TestRecordHours(id, 0, 1, "a"),
+      TestRecordHours(id, 1, 2, "b"),
+      TestRecordHours(id, 2, 3, "d"),
+      TestRecordHours(id, 3, 4, "d"),
 
       //gap
-      TestRecord(id, 6, 5, "b"),
-      TestRecord(id, 6, 6, "b"),
-      TestRecord(id, 6, 7, "stop"),
+      TestRecordHours(id, 6, 5, "b"),
+      TestRecordHours(id, 6, 6, "b"),
+      TestRecordHours(id, 6, 7, "stop"),
       //stop condition
-      TestRecord(id, 6, 8, "a")
+      TestRecordHours(id, 6, 8, "a")
     ))
     val testProcess = session("#AGG.list",
-      "#input.eId",  SessionWindowTrigger.OnEnd, "#input.str == 'stop'")
+      "#input.eId", SessionWindowTrigger.OnEnd, "#input.str == 'stop'")
 
     val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
     aggregateVariables shouldBe List(asList(4, 3, 2, 1), asList(7, 6, 5), asList(8))
 
     val nodeResults = runCollectOutputVariables(id, model, testProcess)
-    nodeResults.flatMap(_.variableTyped[TestRecord]("input")) shouldBe Nil
+    nodeResults.flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe Nil
   }
 
   test("sum session aggregate on event with context") {
@@ -313,13 +368,13 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
     val testRecords =
       List(
-        TestRecord(id, 0, 1, "a"),
-        TestRecord(id, 2, 2, "d"),
+        TestRecordHours(id, 0, 1, "a"),
+        TestRecordHours(id, 2, 2, "d"),
         //gap
-        TestRecord(id, 6, 3, "b"),
-        TestRecord(id, 6, 4, "stop"),
+        TestRecordHours(id, 6, 3, "b"),
+        TestRecordHours(id, 6, 4, "stop"),
         //stop condition
-        TestRecord(id, 6, 5, "a")
+        TestRecordHours(id, 6, 5, "a")
       )
     val model = modelData(testRecords)
     val testProcess = session("#AGG.list",
@@ -329,21 +384,21 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     aggregateVariables shouldBe List(asList(1), asList(2, 1), asList(3), asList(4, 3), asList(5))
 
     val nodeResults = runCollectOutputVariables(id, model, testProcess)
-    nodeResults.flatMap(_.variableTyped[TestRecord]("input")) shouldBe testRecords
+    nodeResults.flatMap(_.variableTyped[TestRecordHours]("input")) shouldBe testRecords
   }
 
   test("map aggregate") {
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 1, 1, "a"),
-      TestRecord(id, 2, 2, "b"),
-      TestRecord(id, 3, 3, "c"),
-      TestRecord(id, 3, 4, "d"),
-      TestRecord("2", 3, 5, "no"),
-      TestRecord(id, 4, 6, "e"),
-      TestRecord(id, 5, 7, "a"),
-      TestRecord(id, 5, 8, "b")
+      TestRecordHours(id, 1, 1, "a"),
+      TestRecordHours(id, 2, 2, "b"),
+      TestRecordHours(id, 3, 3, "c"),
+      TestRecordHours(id, 3, 4, "d"),
+      TestRecordHours("2", 3, 5, "no"),
+      TestRecordHours(id, 4, 6, "e"),
+      TestRecordHours(id, 5, 7, "a"),
+      TestRecordHours(id, 5, 8, "b")
 
     ))
     val testProcess = sliding("#AGG.map({sum: #AGG.sum, first: #AGG.first, last: #AGG.last, set: #AGG.set, hll: #AGG.approxCardinality})",
@@ -367,8 +422,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val id = "1"
 
     val model = modelData(List(
-      TestRecord(id, 1, 2, "a"),
-      TestRecord(id, 2, 1, "b")
+      TestRecordHours(id, 1, 2, "a"),
+      TestRecordHours(id, 2, 1, "b")
     ))
 
     val aggregates = List(
@@ -438,8 +493,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     processValidator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false))
   }
 
-  private def tumbling(aggregator: String, aggregateBy: String, emitWhen: TumblingWindowTrigger, afterAggregateExpression: String = "") = {
-    process("aggregate-tumbling", aggregator, aggregateBy, "windowLength", Map("emitWhen" -> enumToExpr(emitWhen)), afterAggregateExpression)
+  private def tumbling(aggregator: String, aggregateBy: String, emitWhen: TumblingWindowTrigger, additionalParams: Map[String, String] = Map.empty, afterAggregateExpression: String = "") = {
+    process("aggregate-tumbling", aggregator, aggregateBy, "windowLength", Map("emitWhen" -> enumToExpr(emitWhen)) ++ additionalParams, afterAggregateExpression)
   }
 
   private def sliding(aggregator: String, aggregateBy: String, emitWhenEventLeft: Boolean, afterAggregateExpression: String = "") = {
@@ -450,7 +505,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     process("aggregate-session", aggregator, aggregateBy, "sessionTimeout", Map("endSessionCondition" -> endSessionCondition, "emitWhen" -> enumToExpr(emitWhen)), afterAggregateExpression)
   }
 
-  private def enumToExpr[T<:Enum[T]](enumValue: T): String = {
+  private def enumToExpr[T <: Enum[T]](enumValue: T): String = {
     ParameterTypeEditorDeterminer.extractEnumValue(enumValue.getClass.asInstanceOf[Class[T]])(enumValue).expression
   }
 
@@ -466,13 +521,14 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   private def process(aggregateData: AggregateData*): CanonicalProcess = {
 
     def params(data: AggregateData) = {
-    val baseParams: List[(String, Expression)] = List(
-      "groupBy" -> "#id",
-      "aggregateBy" -> data.aggregateBy,
-      "aggregator" -> data.aggregator,
-      data.timeoutParamName -> "T(java.time.Duration).parse('PT2H')")
+      val baseParams: List[(String, Expression)] = List(
+        "groupBy" -> "#id",
+        "aggregateBy" -> data.aggregateBy,
+        "aggregator" -> data.aggregator,
+        data.timeoutParamName -> "T(java.time.Duration).parse('PT2H')")
       baseParams ++ data.additionalParams.mapValuesNow(asSpelExpression).toList
     }
+
     val beforeAggregate = ScenarioBuilder
       .streaming("aggregateTest")
       .parallelism(1)
@@ -498,8 +554,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
           evaluatedparam.Parameter("aggregateBy", asSpelExpression("#aggBy")),
           evaluatedparam.Parameter("windowLength", asSpelExpression("T(java.time.Duration).parse('PT2H')")),
           evaluatedparam.Parameter("emitWhen", asSpelExpression("T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEnd"))
-        ) )),
-        canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "aggregate", List(Field("key", asSpelExpression("#key")),Field("aggresult", asSpelExpression("#aggresult")))))), List.empty)
+        ))),
+        canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "aggregate", List(Field("key", asSpelExpression("#key")), Field("aggresult", asSpelExpression("#aggresult")))))), List.empty)
 
     SubprocessResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
   }
@@ -523,6 +579,16 @@ case class AggregateData(aggregatingNode: String,
                          idSuffix: String = "",
                          afterAggregateExpression: String = "")
 
-case class TestRecord(id: String, timeHours: Int, eId: Int, str: String) {
-  def timestamp: Long = timeHours * 3600L * 1000
+trait TestRecord {
+  val id: String
+  val eId: Int
+  val str: String
+
+  def timestamp: Long
 }
+
+case class TestRecordHours(id: String, timeHours: Int, eId: Int, str: String) extends TestRecord {
+  override def timestamp: Long = timeHours * 3600L * 1000
+}
+
+case class TestRecordWithTimestamp(id: String, timestamp: Long, eId: Int, str: String) extends TestRecord
