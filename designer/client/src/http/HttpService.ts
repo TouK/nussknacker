@@ -9,7 +9,7 @@ import {UserData} from "../common/models/User"
 import {ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType} from "../components/Process/types"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {AuthenticationSettings} from "../reducers/settings"
-import {Expression, Process, ProcessDefinitionData, ProcessId} from "../types"
+import {Expression, Process, ProcessDefinitionData, ProcessId, VariableTypes} from "../types"
 import {Instant, WithId} from "../types/common"
 import {BackendNotification} from "../containers/Notifications"
 import {ProcessCounts} from "../reducers/graph"
@@ -17,6 +17,7 @@ import {TestResults} from "../common/TestResultUtils"
 import {AdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
 import {withoutHackOfEmptyEdges} from "../components/graph/GraphPartialsInTS/EdgeUtils"
 import {UIValueParameter} from "../actions/nk/genericAction";
+import {testProcessWithParameters} from "../actions/nk/displayTestResults";
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -78,9 +79,8 @@ export type ComponentType = {
 }
 
 export type SourceWithParametersTest = {
-  [p: string]: {
-    [paramName: string]: Expression
-  }
+  sourceId: string,
+  parameters: {[paramName: string]: Expression}
 }
 
 export type ComponentUsageType = {
@@ -507,7 +507,7 @@ class HttpService {
     return promise
   }
 
-  testProcessFromJson(processId: ProcessId, testData: SourceWithParametersTest, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
+  testProcessWithParameters(processId: ProcessId, testData: SourceWithParametersTest, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
     const sanitized = this.#sanitizeProcess(processJson)
     const request = {
       sourceParameters: testData,

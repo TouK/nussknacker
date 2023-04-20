@@ -4,7 +4,7 @@ import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {getProcessId} from "../../reducers/selectors/graph"
-import {Expression, UIParameter} from "../../types"
+import {Expression, UIParameter, VariableTypes} from "../../types"
 import {WindowContent} from "../../windowManager"
 import {WindowKind} from "../../windowManager"
 import {editors, simpleEditorValidators} from "../graph/node-modal/editors/expression/Editor"
@@ -32,14 +32,15 @@ export interface GenericActionParameters {
 
 interface GenericAction extends GenericActionParameters {
   layout: GenericActionLayout,
+  variableTypes: VariableTypes,
   onConfirmAction: (parmValues) => void
 }
 
 interface GenericActionDialogProps {
   action: GenericAction,
-  setIsValid: (boolean) => void
-  value: {[p: string]: Expression}
-  setValue: (value: (((prevState: {[p: string]: Expression}) => {[p: string]: Expression}) | {[p: string]: Expression})) => void
+  setIsValid: (boolean) => void,
+  value: {[p: string]: Expression},
+  setValue: (value: (((prevState: {[p: string]: Expression}) => {[p: string]: Expression}) | {[p: string]: Expression})) => void,
 }
 
 function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
@@ -49,7 +50,6 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
   const processId = useSelector(getProcessId)
   const processProperties = useSelector(getProcessProperties)
   const [validators, setValidators] = useState({})
-
   const setParam = useCallback(
     (name: string) => (value: any) => {
       action.onParamUpdate(name)(value)
@@ -77,7 +77,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
         }
       }),
       processProperties: processProperties,
-      variableTypes: {}
+      variableTypes: action.variableTypes
     }))
   }, [value])
 
@@ -115,7 +115,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                     key={fieldName}
                     showSwitch={true}
                     showValidation={true}
-                    variableTypes={{}}
+                    variableTypes={action.variableTypes}
                   />
                 </div>
               )

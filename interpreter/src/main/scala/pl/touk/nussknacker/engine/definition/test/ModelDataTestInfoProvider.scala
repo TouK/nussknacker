@@ -44,8 +44,11 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   }
 
   override def getTestViewParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = modelData.withThisAsContextClassLoader {
-    collectAllSources(scenario)
-      .map(source => source.id -> getTestViewParameters(source, scenario.metaData)).toMap
+    val allSourcesWithParameters = collectAllSources(scenario)
+      .map(source => source.id -> getTestViewParameters(source, scenario.metaData))
+    //TODO support for multiple sources
+    if(allSourcesWithParameters.size > 1) throw new RuntimeException(s"Testing with parameters does not support multiple sources (found ${allSourcesWithParameters.size})")
+    else allSourcesWithParameters.toMap
   }
 
   private def getTestViewParameters(source: Source, metaData: MetaData): List[Parameter] = modelData.withThisAsContextClassLoader {
