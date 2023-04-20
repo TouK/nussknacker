@@ -1,26 +1,12 @@
 import {Action, Reducer} from "../actions/reduxTypes"
-import {ProcessStateType} from "../components/Process/types";
+import {ProcessStateType} from "../components/Process/types"
 
-export interface ScenarioStateState {
-  processState: ProcessStateType,
-  processStateLoaded: boolean,
-}
-
-
-const initialState: ScenarioStateState = {
-  processState: null,
-  processStateLoaded: false,
-}
-
-export const reducer: Reducer<ScenarioStateState> = (state = initialState, action: Action): ScenarioStateState => {
+export const reducer: Reducer<ProcessStateType> = (state = null, action: Action): ProcessStateType => {
   switch (action.type) {
-    case "PROCESS_STATE_LOADED": {
-      return {
-        ...state,
-        processState: action.processState,
-        processStateLoaded: true,
-      }
-    }
+    case "DISPLAY_PROCESS":
+      return action.fetchedProcessDetails.state
+    case "PROCESS_STATE_LOADED":
+      return action.processState
     default:
       return state
   }
