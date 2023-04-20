@@ -15,13 +15,13 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.test.TestParameters.TestParameterDefinitions
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, SubprocessResolver}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -122,7 +122,7 @@ object NodesResources {
 
   def validate(modelData: ModelData, request: ParametersValidationRequest, processName: String): List[NodeValidationError] = {
     implicit val metaData: MetaData = request.processProperties.toMetaData(processName)
-    val context = if(request.withContext) prepareValidationContext(modelData)(request.variableTypes) else ValidationContext.empty
+    val context = prepareValidationContext(modelData)(request.variableTypes)
     val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
       case spel: SpelExpressionParser => spel.typingDictLabels
     }
@@ -149,6 +149,7 @@ object NodesResources {
 
   def prepareTestFromParametersDecoder(modelData: ModelData): Decoder[TestFromParametersRequest] = {
     implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+    implicit val testSourceParametersDecoder: Decoder[TestSourceParameters] = deriveConfiguredDecoder[TestSourceParameters]
     deriveConfiguredDecoder[TestFromParametersRequest]
   }
 
@@ -220,9 +221,9 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
   }
 }
 
+@JsonCodec(encodeOnly = true) case class TestSourceParameters(sourceId: String, parameters: TestParameterDefinitions)
 
-
-@JsonCodec(encodeOnly = true) case class TestFromParametersRequest(sourceParameters: Map[String, Map[String, Expression]],
+@JsonCodec(encodeOnly = true) case class TestFromParametersRequest(sourceParameters: TestSourceParameters,
                                                                    displayableProcess: DisplayableProcess)
 
 @JsonCodec(encodeOnly = true) case class ParametersValidationResult(validationErrors: List[NodeValidationError],
@@ -230,8 +231,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
 
 @JsonCodec(encodeOnly = true) case class ParametersValidationRequest(parameters: List[UIValueParameter],
                                                                      processProperties: ProcessProperties,
-                                                                     variableTypes: Map[String, TypingResult],
-                                                                     withContext: Boolean = false)
+                                                                     variableTypes: Map[String, TypingResult])
 
 @JsonCodec(encodeOnly = true) case class NodeValidationResult(parameters: Option[List[UIParameter]],
                                                               expressionType: Option[TypingResult],

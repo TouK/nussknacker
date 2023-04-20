@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from "react"
+import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/test-with-schema.svg"
@@ -12,11 +12,12 @@ import {ToolbarButtonProps} from "../../types"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
 import _ from "lodash"
 import {TestViewParameters} from "../../../../common/TestResultUtils";
-import {testProcessFromJson} from "../../../../actions/nk/displayTestResults";
+import {testProcessWithParameters} from "../../../../actions/nk/displayTestResults";
 import {GenericActionParameters} from "../../../modals/GenericActionDialog";
 import {UIValueParameter} from "../../../../actions/nk/genericAction";
 import {Expression} from "../../../../types";
 import {SourceWithParametersTest} from "../../../../http/HttpService";
+import {getFindAvailableVariables} from "../../../graph/node-modal/NodeDetailsContent/selectors";
 
 type Props = ToolbarButtonProps
 
@@ -29,6 +30,7 @@ function TestWithSchemaButton(props: Props) {
   const testViewParameters: TestViewParameters[] = useSelector(getTestViewParameters)
   const processId = useSelector(getProcessId)
   const processToDisplay = useSelector(getProcessToDisplay)
+  const findAvailableVariables = useSelector(getFindAvailableVariables)
   const dispatch = useDispatch()
 
   const available = !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canCreateTestView
@@ -36,6 +38,7 @@ function TestWithSchemaButton(props: Props) {
   const [action, setAction] = useState(null)
   const [selectedSource, setSelectedSource] = useState(_.head(testViewParameters)?.sourceId)
   const [sourceParameters, setSourceParameters] = useState(updateParametersFromTestView())
+  const variableTypes = useMemo(() => findAvailableVariables?.(selectedSource), [findAvailableVariables, selectedSource])
 
   function updateParametersFromTestView(): {[key: string]: GenericActionParameters} {
     return (testViewParameters || []).reduce((testViewObj, testViewParam) => ({
@@ -65,14 +68,12 @@ function TestWithSchemaButton(props: Props) {
   }
 
   const onConfirmAction = useCallback((paramValues) => {
-    const record: SourceWithParametersTest = Object.entries(sourceParameters).reduce((obj, [sourceId, sourceParams]) => ({
+    const parameters: {[paramName: string]: Expression} = sourceParameters[selectedSource].parameters.reduce((obj, uiParam) => ({
       ...obj,
-      [sourceId]: sourceParams.parameters.reduce((obj, uiParam) => ({
-        ...obj,
-        [uiParam.name]: paramValues[uiParam.name]
-      }), {})
+      [uiParam.name]: paramValues[uiParam.name]
     }), {})
-    dispatch(testProcessFromJson(processId, record, processToDisplay))
+    const request: SourceWithParametersTest = {sourceId: selectedSource as string, parameters: parameters}
+    dispatch(testProcessWithParameters(processId, request, processToDisplay))
   }, [sourceParameters, selectedSource])
 
   //For now, we select first source and don't provide way to change it
@@ -84,6 +85,7 @@ function TestWithSchemaButton(props: Props) {
 
   useEffect(() => {
     setAction({
+      variableTypes: variableTypes,
       layout: {
         name: "Test",
         confirmText: "Test"

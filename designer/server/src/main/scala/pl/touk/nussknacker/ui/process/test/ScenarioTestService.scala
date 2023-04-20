@@ -5,13 +5,13 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.SourceWithViewParameters
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.ui.api.TestDataSettings
+import pl.touk.nussknacker.ui.api.{TestDataSettings, TestSourceParameters}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.deployment.ScenarioTestExecutorService
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -92,7 +92,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
 
   def performTest[T](idWithName: ProcessIdWithName,
                      displayableProcess: DisplayableProcess,
-                     parameterTestData: Map[String, Map[String, Expression]],
+                     parameterTestData: TestSourceParameters,
                      testResultsVariableEncoder: Any => T)
                     (implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
     val canonical = toCanonicalProcess(displayableProcess)
@@ -101,7 +101,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
         canonical,
         displayableProcess.category,
         displayableProcess.processingType,
-        ScenarioTestData(parameterTestData),
+        ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameters),
         testResultsVariableEncoder
       )
       _ <- assertTestResultsAreNotTooBig(testResults)

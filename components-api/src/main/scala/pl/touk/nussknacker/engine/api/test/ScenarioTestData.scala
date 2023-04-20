@@ -9,7 +9,6 @@ sealed trait ScenarioTestRecord
 case class ScenarioTestJsonRecord(sourceId: NodeId, record: TestRecord) extends ScenarioTestRecord
 case class ScenarioTestParametersRecord(sourceId: NodeId, testParameters: TestParameters) extends ScenarioTestRecord
 
-
 object ScenarioTestJsonRecord {
   def apply(sourceId: String, json: Json, timestamp: Option[Long] = None): ScenarioTestJsonRecord = {
     ScenarioTestJsonRecord(NodeId(sourceId), TestRecord(json, timestamp))
@@ -23,11 +22,8 @@ case class ScenarioTestData(testRecords: List[ScenarioTestRecord])
 
 object ScenarioTestData {
 
-  def apply(sourceWithTestParameters: Map[String, TestParameterDefinitions], timestamp: Option[Long] = None): ScenarioTestData = {
-    val records = sourceWithTestParameters.map {
-      case (sourceId, testParameters) => ScenarioTestParametersRecord(NodeId(sourceId), TestParameters(testParameters, timestamp))
-    }.toList
-    ScenarioTestData(records)
+  def apply(sourceId: String, testParameters: TestParameterDefinitions, timestamp: Option[Long] = None): ScenarioTestData = {
+    ScenarioTestData(ScenarioTestParametersRecord(NodeId(sourceId), TestParameters(testParameters, timestamp)) :: Nil)
   }
 
 }

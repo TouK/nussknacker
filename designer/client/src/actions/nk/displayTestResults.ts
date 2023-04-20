@@ -19,14 +19,14 @@ export function testProcessFromFile(id: ProcessId, testDataFile: File, process: 
   }
 }
 
-export function testProcessFromJson(id: ProcessId, testData: SourceWithParametersTest, process: Process): ThunkAction {
+export function testProcessWithParameters(id: ProcessId, testData: SourceWithParametersTest, process: Process): ThunkAction {
   return (dispatch) => {
     dispatch({
       type: "PROCESS_LOADING",
     })
 
     const processWithCleanEdges = withoutHackOfEmptyEdges(process)
-    HttpService.testProcessFromJson(id, testData, processWithCleanEdges)
+    HttpService.testProcessWithParameters(id, testData, processWithCleanEdges)
       .then(response => dispatch(displayTestResults(response.data)))
       .catch(() => dispatch({type: "LOADING_FAILED"}))
   }

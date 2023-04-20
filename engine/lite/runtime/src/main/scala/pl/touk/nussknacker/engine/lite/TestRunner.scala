@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.lite
 
-import cats.data.{NonEmptyList, Validated}
 import cats.{Id, ~>}
 import cats.implicits._
 import cats.data.Validated.{Invalid, Valid}
@@ -8,7 +7,6 @@ import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownProperty
-import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source, SourceTestSupport, TestWithParameters}
@@ -27,6 +25,7 @@ import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -98,6 +97,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
 
   private def prepareExpressionEvaluator(modelData: ModelData, textContext: LiteEngineRuntimeContext)(implicit metaData: MetaData, nodeId: NodeId) = {
     lazy val contextIdGenerator = textContext.contextIdGenerator(nodeId.id)
+    val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(metaData)
     val context = Context(contextIdGenerator.nextContextId())
     val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
     val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
@@ -105,7 +105,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
     }
     (expression: Expression, parameter: Parameter) => {
       expressionCompiler
-        .compile(expression, Some(parameter.name), ValidationContext.empty, parameter.typ)
+        .compile(expression, Some(parameter.name), validationContext, parameter.typ)
         .map(typedExpression => {
           val param = evaluatedparam.Parameter(typedExpression, parameter)
           parameter.name -> evaluator.evaluateParameter(param, context).value
