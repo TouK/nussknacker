@@ -8,7 +8,6 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
@@ -43,8 +42,15 @@ import java.util.TimeZone
 
 class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
-  def modelData(list: List[TestRecord] = List()): LocalModelData = LocalModelData(ConfigFactory
-    .empty().withValue("useTypingResultTypeInformation", fromAnyRef(true)), new Creator(list))
+  def modelData(list: List[TestRecord] = List(), tumblingAggregateOffset: Option[String] = None): LocalModelData = {
+    val config = ConfigFactory
+      .empty()
+      .withValue("useTypingResultTypeInformation", fromAnyRef(true))
+    LocalModelData(
+      tumblingAggregateOffset.map(o =>
+        config.withValue("components.base.aggregateWindowsConfig.tumblingWindowsOffset", fromAnyRef(o)))
+        .getOrElse(config), new Creator(list))
+  }
 
   private val processValidator: ProcessValidator = modelData().prepareValidatorForCategory(None)
 
@@ -172,65 +178,36 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd)
 
     val aggregateVariables = runCollectOutputAggregate[Set[Number]](id, model, testProcess)
-    aggregateVariables shouldBe List(Set(1,2), Set(5), Set(6)).map(_.asJava)
+    aggregateVariables shouldBe List(Set(1, 2), Set(5), Set(6)).map(_.asJava)
   }
 
 
-  test("set tumbling aggregate - daily windows in GMT+03") {
-    val id = "1"
+  test("set tumbling aggregate - daily windows in GMT+03 - with aggregate offset set to -3H") {
+    List(TumblingWindowTrigger.OnEnd, TumblingWindowTrigger.OnEndWithExtraWindow).foreach { trigger =>
+      val id = "1"
 
-    val t0 = OffsetDateTime.parse("2011-12-02T23:59:30+03:00").toEpochSecond * 1000L
-    val t1a = OffsetDateTime.parse("2011-12-03T00:00:30+03:00").toEpochSecond * 1000L
-    val t1b = OffsetDateTime.parse("2011-12-03T23:59:30+03:00").toEpochSecond * 1000L
-    val t2 = OffsetDateTime.parse("2011-12-04T02:59:30+03:00").toEpochSecond * 1000L
+      val t0 = OffsetDateTime.parse("2011-12-02T23:59:30+03:00").toEpochSecond * 1000L
+      val t1a = OffsetDateTime.parse("2011-12-03T00:00:30+03:00").toEpochSecond * 1000L
+      val t1b = OffsetDateTime.parse("2011-12-03T23:59:30+03:00").toEpochSecond * 1000L
+      val t2 = OffsetDateTime.parse("2011-12-04T02:59:30+03:00").toEpochSecond * 1000L
 
-    val model = modelData(List(
-      TestRecordWithTimestamp(id, t0, 1, "a"),
-      TestRecordWithTimestamp(id, t1a, 2, "b"),
-      TestRecordWithTimestamp(id, t1b, 5, "b"),
-      TestRecordWithTimestamp(id, t2, 7, "b"),
-    ))
+      val model = modelData(List(
+        TestRecordWithTimestamp(id, t0, 1, "a"),
+        TestRecordWithTimestamp(id, t1a, 2, "b"),
+        TestRecordWithTimestamp(id, t1b, 5, "b"),
+        TestRecordWithTimestamp(id, t2, 7, "b"),
+      ), Some("PT-3H"))
 
-    withDefaultTimezone(TimeZone.getTimeZone("GMT+03")) {
       val testProcess = tumbling("#AGG.set",
-        "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd, Map("windowLength" -> "T(java.time.Duration).parse('P1D')"))
+        "#input.eId", emitWhen = trigger, Map("windowLength" -> "T(java.time.Duration).parse('P1D')"))
 
       val aggregateVariables = runCollectOutputAggregate[Set[Number]](id, model, testProcess)
-      aggregateVariables shouldBe List(Set(1), Set(2, 5), Set(7)).map(_.asJava)
-    }
-  }
-
-  test("set tumbling aggregate - 24H1S windows in different timezones") {
-    val id = "1"
-
-    val t0a = OffsetDateTime.parse("2011-12-02T23:59:30+03:00").toEpochSecond * 1000L
-    val t0b = OffsetDateTime.parse("2011-12-03T00:00:30+03:00").toEpochSecond * 1000L
-    val t1a = OffsetDateTime.parse("2011-12-03T23:59:30+03:00").toEpochSecond * 1000L
-    val t1b = OffsetDateTime.parse("2011-12-04T02:59:30+03:00").toEpochSecond * 1000L
-
-    val model = modelData(List(
-      TestRecordWithTimestamp(id, t0a, 1, "a"),
-      TestRecordWithTimestamp(id, t0b, 2, "b"),
-      TestRecordWithTimestamp(id, t1a, 5, "b"),
-      TestRecordWithTimestamp(id, t1b, 7, "b"),
-    ))
-    val testProcess = tumbling("#AGG.set", "#input.eId", emitWhen = TumblingWindowTrigger.OnEnd, Map("windowLength" -> "T(java.time.Duration).parse('PT24H1S')"))
-
-    List(0, 2, 6, 11, -10).foreach { zone =>
-      withDefaultTimezone(TimeZone.getTimeZone(s"GMT+$zone")) {
-        val aggregateVariables = runCollectOutputAggregate[Set[Number]](id, model, testProcess)
-        aggregateVariables shouldBe List(Set(1, 2), Set(5, 7)).map(_.asJava)
+      var expected = List(Set(1), Set(2, 5), Set(7))
+      if(trigger == TumblingWindowTrigger.OnEndWithExtraWindow) {
+        expected = expected :+ Set()
       }
-    }
-  }
+      aggregateVariables shouldBe expected.map(_.asJava)
 
-  private def withDefaultTimezone[T](timeZone: TimeZone)(body: => T) = {
-    val default = TimeZone.getDefault
-    try {
-      TimeZone.setDefault(timeZone)
-      body
-    } finally {
-      TimeZone.setDefault(default)
     }
   }
 
@@ -606,6 +583,7 @@ trait TestRecord {
   val id: String
   val eId: Int
   val str: String
+
   def timestamp: Long
 }
 

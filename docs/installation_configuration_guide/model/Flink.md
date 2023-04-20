@@ -82,7 +82,8 @@ It's also possible to configure restart strategies per scenario, using additiona
 
 ### Flink Component provider configuration
 
-#### Configuring timezone for Tumbling aggregate time windows
-This setting applies only to windows in tumbling aggregate, and only if their length is equal to multiples of 24h.
-If your deployment lays in different timezone then business time you are using, and you want your **daily** tumbling windows to start at 00:00:00 in different timezone than Flink is using (by default it is system timezone),
-it is possible to override it by configuring `aggregateWindowsConfig.dailyWindowsAlignZoneId` environment variable to required zoneId (format is described [here](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/ZoneId.html)). 
+#### Configuring offset for Tumbling aggregate time windows
+`components.base.aggregateWindowsConfig.tumblingWindowsOffset` - use [ISO_8601 Duration](https://en.wikipedia.org/wiki/ISO_8601#Durations) format to configure it. 
+This configuration is optional, by default offset is equal 0.
+This setting applies only to windows in tumbling aggregate. Might be useful when you need daily windows to be aligned to different than UTC timezone.
+See example in Flink [docs](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/operators/windows/#tumbling-windows)

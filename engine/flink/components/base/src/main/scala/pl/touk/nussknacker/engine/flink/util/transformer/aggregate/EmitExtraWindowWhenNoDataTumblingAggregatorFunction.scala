@@ -24,11 +24,15 @@ import scala.language.higherKinds
  * it handles out of order elements. The other difference from AggregatorFunction is that we emit event only in timer and handle
  * state eviction on ours own.
  */
-class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected val aggregator: Aggregator, protected val timeWindowLengthMillis: Long,
-                                                                     override val nodeId: NodeId, protected val aggregateElementType: TypingResult,
-                                                                     protected override val aggregateTypeInformation: TypeInformation[AnyRef],
-                                                                     val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext)
-                                                                    (implicit override val rangeMap: FlinkRangeMap[MapT])
+class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](
+                                                                      protected val aggregator: Aggregator,
+                                                                      protected val timeWindowLengthMillis: Long,
+                                                                      protected val timeWindowOffsetMillis: Long,
+                                                                      override val nodeId: NodeId,
+                                                                      protected val aggregateElementType: TypingResult,
+                                                                      protected override val aggregateTypeInformation: TypeInformation[AnyRef],
+                                                                      val convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext
+                                                                    )(implicit override val rangeMap: FlinkRangeMap[MapT])
   extends KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[AnyRef]], ValueWithContext[AnyRef]]
     with StateHolder[MapT[Long, AnyRef]]
     with AggregatorFunctionMixin[MapT] {
@@ -50,7 +54,7 @@ class EmitExtraWindowWhenNoDataTumblingAggregatorFunction[MapT[K,V]](protected v
   override protected val minimalResolutionMs: Long = timeWindowLengthMillis
 
   override def processElement(value: ValueWithContext[StringKeyedValue[AnyRef]], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    addElementToState(value, ctx.timestamp(), ctx.timerService(), out)
+    addElementToState(value, ctx.timestamp() - timeWindowOffsetMillis, ctx.timerService(), out)
   }
 
   override protected def handleElementAddedToState(newElementInStateTimestamp: Long, newElement: aggregator.Element, nkCtx: NkContext,

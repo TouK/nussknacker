@@ -120,10 +120,8 @@ In the example below, a sum of field `#input.transfer` will be computed  in the 
 
 ![alt_text](img/tumblingWindow.png "tumbling-window")
 
-### Daily windows
-If window length is equal to exactly **full number of days**, windows are aligned to start at 00:00:00 in Timezone of application (Flink). If your deployment lays in different timezone then business time you are using, 
-it is possible to override to which timezone daily windows should be aligned using configuration.  For more details please see [docs](../installation_configuration_guide/model/Flink.md#configuring-timezone-for-tumbling-aggregate-time-windows)
-
+### Offset
+Tumbling windows are aligned according to UTC time by default. It is possible to configure offset to change that, but please be aware that it is global configuration. For more details please see [docs](../installation_configuration_guide/model/Flink.md#configuring-offset-for-tumbling-aggregate-time-windows)
 
 ## Sliding-window
 

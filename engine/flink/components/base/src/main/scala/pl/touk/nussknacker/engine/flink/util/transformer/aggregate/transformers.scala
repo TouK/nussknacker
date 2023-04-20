@@ -62,9 +62,11 @@ object transformers {
                           aggregateBy: LazyParameter[AnyRef],
                           aggregator: Aggregator,
                           windowLength: Duration,
-                          variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
+                          variableName: String,
+                          windowOffset: Option[Duration] = None
+                         )(implicit nodeId: NodeId): ContextTransformation = {
     tumblingTransformer(groupBy, aggregateBy, aggregator, windowLength, variableName, TumblingWindowTrigger.OnEnd,
-      ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
+      ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators, windowOffset)
   }
 
   def tumblingTransformer(groupBy: LazyParameter[CharSequence],
@@ -74,7 +76,7 @@ object transformers {
                           variableName: String,
                           tumblingWindowTrigger: TumblingWindowTrigger,
                           explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean,
-                          windowOffset: Option[Duration] = None
+                          windowOffset: Option[Duration]
                          )(implicit nodeId: NodeId): ContextTransformation =
     ContextTransformation.definedBy(aggregator.toContextTransformation(variableName,
       emitContext = tumblingWindowTrigger == TumblingWindowTrigger.OnEvent, aggregateBy))
@@ -101,7 +103,7 @@ object transformers {
             case TumblingWindowTrigger.OnEndWithExtraWindow =>
               keyedStream
                 //TODO: alignment??
-                .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo, fctx.convertToEngineRuntimeContext))
+                .process(new EmitExtraWindowWhenNoDataTumblingAggregatorFunction[SortedMap](aggregator, windowLength.toMillis, offsetMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo, fctx.convertToEngineRuntimeContext))
           }).setUidWithName(ctx, explicitUidInStatefulOperators)
         }))
 

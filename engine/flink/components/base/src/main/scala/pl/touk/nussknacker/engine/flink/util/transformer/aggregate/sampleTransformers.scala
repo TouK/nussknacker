@@ -81,8 +81,7 @@ object sampleTransformers {
                 @ParamName("emitWhen") trigger: TumblingWindowTrigger,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
-      val maybeOffset = DailyWindowsOffsetDependingOnTimezone.offset(windowDuration, config.dailyWindowsAlignZoneId.getOrElse(ZoneId.systemDefault()))
-
+      val maybeOffset = config.tumblingWindowsOffset.map(j => Duration(j.toMillis, TimeUnit.MILLISECONDS)).map(o => AggregateWindowsOffsetProvider.offset(windowDuration,o))
       transformers.tumblingTransformer(groupBy, aggregateBy, aggregator, windowDuration, variableName, trigger, explicitUidInStatefulOperators, maybeOffset)
     }
 
