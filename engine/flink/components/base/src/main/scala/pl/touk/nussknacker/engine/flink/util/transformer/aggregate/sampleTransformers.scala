@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
-import java.util.concurrent.TimeUnit
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
-import pl.touk.nussknacker.engine.api.NodeId
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 
 object sampleTransformers {
@@ -58,7 +57,7 @@ object sampleTransformers {
    *
    * You should define `#AGG` global variable, because it is used in editors picked for `aggregateBy` parameter.
    */
-  object TumblingAggregateTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
+  class TumblingAggregateTransformer(config: AggregateWindowsConfig) extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
     @MethodToInvoke(returnType = classOf[AnyRef])
     def execute(@ParamName("groupBy") groupBy: LazyParameter[CharSequence],
@@ -81,7 +80,8 @@ object sampleTransformers {
                 @ParamName("emitWhen") trigger: TumblingWindowTrigger,
                 @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
       val windowDuration = Duration(length.toMillis, TimeUnit.MILLISECONDS)
-      transformers.tumblingTransformer(groupBy, aggregateBy, aggregator, windowDuration, variableName, trigger, explicitUidInStatefulOperators)
+      val maybeOffset = config.tumblingWindowsOffset.map(j => Duration(j.toMillis, TimeUnit.MILLISECONDS)).map(o => AggregateWindowsOffsetProvider.offset(windowDuration,o))
+      transformers.tumblingTransformer(groupBy, aggregateBy, aggregator, windowDuration, variableName, trigger, explicitUidInStatefulOperators, maybeOffset)
     }
 
   }

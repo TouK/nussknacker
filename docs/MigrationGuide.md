@@ -38,6 +38,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   [jar](https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.0.0/flink-scala-2-13_2.13-1.0.0-assembly.jar) in your Flink installation to `lib` dir. It's our implementation of `org.apache.flink.runtime.types.FlinkScalaKryoInstantiator` 
   (sources are [here](https://github.com/TouK/flink-scala-2.13)) which is needed to properly (de)serialize Flink state when using scala 2.13. 
   Hopefully, it's temporary solution, until Flink becomes really scala-free and gets rid of this `FlinkScalaKryoInstantiator` class or allows to have it in the job code (not Flink libs).
+* [#4190](https://github.com/TouK/nussknacker/pull/4190) - introduced possibility to configure offset in `FlinkComponentsProvider` (`components.base.aggregateWindowsConfig.tumblingWindowsOffset`, by default 0) for aggregates with tumbling windows. You might want to set it up, 
+  especially when you want your daily windows to be aligned according to your timezone if it's not UTC. See example in Flink [docs](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/operators/windows/#tumbling-windows)
 
 ### Other changes
 
