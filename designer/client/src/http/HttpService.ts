@@ -80,7 +80,7 @@ export type ComponentType = {
 
 export type SourceWithParametersTest = {
   sourceId: string,
-  parameters: {[paramName: string]: Expression}
+  parameterExpressions: {[paramName: string]: Expression}
 }
 
 export type ComponentUsageType = {

@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, Te
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.api.{TestDataSettings, TestSourceParameters}
@@ -101,7 +100,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
         canonical,
         displayableProcess.category,
         displayableProcess.processingType,
-        ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameters),
+        ScenarioTestData(parameterTestData.sourceId, parameterTestData.parameterExpressions),
         testResultsVariableEncoder
       )
       _ <- assertTestResultsAreNotTooBig(testResults)

@@ -28,6 +28,9 @@ const DeployProcessDialog = loadable(() => import("../components/modals/DeployPr
 const GenericConfirmDialog = loadable(() => import("../components/modals/GenericConfirmDialog"), {
   fallback: <LoaderSpinner show/>,
 })
+const GenericInfoDialog = loadable(() => import("../components/modals/GenericInfoDialog"), {
+  fallback: <LoaderSpinner show/>,
+})
 const SaveProcessDialog = loadable(() => import("../components/modals/SaveProcessDialog"), {
   fallback: <LoaderSpinner show/>,
 })
@@ -62,6 +65,8 @@ export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) =
       return <GenericActionDialog {...props}/>
     case WindowKind.confirm:
       return <GenericConfirmDialog {...props}/>
+    case WindowKind.inform:
+      return <GenericInfoDialog {...props}/>
     case WindowKind.editNode:
       return <NodeDetails {...props}/>
     case WindowKind.viewNode:

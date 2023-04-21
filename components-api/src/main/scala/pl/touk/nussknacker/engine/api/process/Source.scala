@@ -42,9 +42,9 @@ trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
  * Optional functionality which should provide field definitions based on input schema
  * Based on those fields UI creates a window allowing user to test scenario based on schema.
  */
-trait TestWithParameters[+T] { self: Source with SourceTestSupport[_] =>
+trait TestWithParametersSupport[+T] { self: Source =>
   //TODO add support for dynamic parameters
-  def parameterDefinitions: List[Parameter]
+  def testParametersDefinition: List[Parameter]
   def parametersToTestData(params: Map[String, AnyRef]): T
 }
 

@@ -17,13 +17,14 @@ import {GenericActionParameters} from "../../../modals/GenericActionDialog";
 import {Expression} from "../../../../types";
 import {SourceWithParametersTest} from "../../../../http/HttpService";
 import {getFindAvailableVariables} from "../../../graph/node-modal/NodeDetailsContent/selectors";
+import {fetchTestFormParameters} from "../../../../actions/nk";
 
 type Props = ToolbarButtonProps
 
 function TestWithFormButton(props: Props) {
   const {disabled} = props
   const {t} = useTranslation()
-  const {open} = useWindows()
+  const {open, inform} = useWindows()
   const processIsLatestVersion = useSelector(isLatestProcessVersion)
   const testCapabilities = useSelector(getTestCapabilities)
   const testFormParameters: TestFormParameters[] = useSelector(getTestParameters)
@@ -71,9 +72,13 @@ function TestWithFormButton(props: Props) {
       ...obj,
       [uiParam.name]: paramValues[uiParam.name]
     }), {})
-    const request: SourceWithParametersTest = {sourceId: selectedSource as string, parameters: parameters}
+    const request: SourceWithParametersTest = {sourceId: selectedSource as string, parameterExpressions: parameters}
     dispatch(testProcessWithParameters(processId, request, processToDisplay))
   }, [sourceParameters, selectedSource])
+
+  useEffect(() => {
+    dispatch(fetchTestFormParameters(processToDisplay))
+  }, [processToDisplay])
 
   //For now, we select first source and don't provide way to change it
   //Add support for multiple sources in next iteration (?)
@@ -94,19 +99,23 @@ function TestWithFormButton(props: Props) {
     });
   }, [testFormParameters, sourceParameters, selectedSource]);
 
+  const onButtonClick = () => {
+    const sourcesFound = Object.keys(sourceParameters).length
+    if(sourcesFound > 1)  inform({text: `Testing with form support only one source - found ${sourcesFound}.`})
+      else open({
+      title: t("dialog.title.testWithForm", "Test scenario"),
+      isResizable: true,
+      kind: WindowKind.genericAction,
+      meta: action,
+    })
+  }
+
   return (
     <ToolbarButton
       name={t("panels.actions.test-with-form.button", "test window")}
       icon={<Icon/>}
       disabled={!available || disabled}
-      onClick={() => {
-        open({
-          title: t("dialog.title.testWithForm", "Test scenario"),
-          isResizable: true,
-          kind: WindowKind.genericAction,
-          meta: action,
-        })
-      }}
+      onClick={onButtonClick}
     />
   )
 

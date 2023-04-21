@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite
 
+import cats.data.{NonEmptyList, Validated}
 import cats.{Id, ~>}
 import cats.implicits._
 import cats.data.Validated.{Invalid, Valid}
@@ -7,11 +8,12 @@ import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownProperty
+import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source, SourceTestSupport, TestWithParameters}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord, ScenarioTestParametersRecord, TestParameters, TestRecord}
-import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source, SourceTestSupport, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord, ScenarioTestParametersRecord, TestRecord}
+import pl.touk.nussknacker.engine.api.{Context, JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
@@ -20,7 +22,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
+import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.testmode._
@@ -48,10 +50,26 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
 
     //TODO: probably we don't need statics here, we don't serialize stuff like in Flink
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
-
     //in tests we don't send metrics anywhere
     val testContext = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
+
+    val expressionEvaluator: (Expression, Parameter, Context, NodeId) => Validated[NonEmptyList[PartSubGraphCompilationError], (String, AnyRef)] = {
+      val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(process.metaData)
+      val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
+      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+        case spel: SpelExpressionParser => spel.typingDictLabels
+      }
+      (expression: Expression, parameter: Parameter, context: Context, nodeId: NodeId) => {
+        expressionCompiler
+          .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
+          .map(typedExpression => {
+            val param = evaluatedparam.Parameter(typedExpression, parameter)
+            parameter.name -> evaluator.evaluateParameter(param, context)(nodeId, process.metaData).value
+          })
+      }
+    }
+
 
     //FIXME: validation??
     val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](process, modelData,
@@ -69,10 +87,11 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
         val sourceId = SourceId(sourceIdValue)
         val source = getSourceById(sourceId)
         sourceId -> prepareRecordForTest[Input](source, testRecord)
-      case ScenarioTestParametersRecord(NodeId(sourceIdValue), testParameters) =>
+      case ScenarioTestParametersRecord(nodeId@NodeId(sourceIdValue), parameterExpressions) =>
         val sourceId = SourceId(sourceIdValue)
         val source = getSourceById(sourceId)
-        sourceId -> prepareRecordForTest[Input](source, testParameters, modelData, testContext)(process.metaData)
+        val context =  Context(testContext.contextIdGenerator(nodeId.id).nextContextId())
+        sourceId -> prepareRecordForTest[Input](source, parameterExpressions, context, expressionEvaluator)(nodeId)
     })
 
     try {
@@ -95,32 +114,14 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
     JobData(process.metaData, processVersion)
   }
 
-  private def prepareExpressionEvaluator(modelData: ModelData, textContext: LiteEngineRuntimeContext)(implicit metaData: MetaData, nodeId: NodeId) = {
-    lazy val contextIdGenerator = textContext.contextIdGenerator(nodeId.id)
-    val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(metaData)
-    val context = Context(contextIdGenerator.nextContextId())
-    val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-      case spel: SpelExpressionParser => spel.typingDictLabels
-    }
-    (expression: Expression, parameter: Parameter) => {
-      expressionCompiler
-        .compile(expression, Some(parameter.name), validationContext, parameter.typ)
-        .map(typedExpression => {
-          val param = evaluatedparam.Parameter(typedExpression, parameter)
-          parameter.name -> evaluator.evaluateParameter(param, context).value
-        })
-    }
-  }
-
-  private def prepareRecordForTest[T](source: Source, testRecord: TestParameters, modelData: ModelData, textContext: LiteEngineRuntimeContext)(implicit metaData: MetaData): T = {
-    implicit val testNodeId: NodeId = NodeId("testParameters")
+  private def prepareRecordForTest[T](source: Source, parameterExpressions: Map[String, Expression], context: Context,
+                                      expressionEvaluator: (Expression, Parameter, Context, NodeId) => Validated[NonEmptyList[PartSubGraphCompilationError], (String, AnyRef)]
+                                     )(implicit nodeId: NodeId): T = {
     source match {
-      case s: TestWithParameters[T@unchecked] =>
-        val expressionEvaluator = prepareExpressionEvaluator(modelData, textContext)
-        val parameterTypingResults = s.parameterDefinitions.map(param => {
-          testRecord.parameters.get(param.name) match {
-            case Some(expression) => expressionEvaluator(expression, param)
+      case s: TestWithParametersSupport[T@unchecked] =>
+        val parameterTypingResults = s.testParametersDefinition.map(param => {
+          parameterExpressions.get(param.name) match {
+            case Some(expression) => expressionEvaluator(expression, param, context, nodeId)
             case None => UnknownProperty(param.name).invalidNel
           }
         })

@@ -1,6 +1,7 @@
 export enum WindowKind {
   default,
   confirm,
+  inform,
   viewNode,
   editNode,
   addProcess,
