@@ -102,6 +102,7 @@ const baseProcessState = {
       },
     },
   },
+  "state": {}
 }
 
 const baseState = reducer({}, {
