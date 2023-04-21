@@ -2,6 +2,10 @@
 
 # Changelog
 
+1.9.1 (not released yet)
+------------------------
+* [#4243](https://github.com/TouK/nussknacker/pull/4243) Fix for: Scenario status remain "in-progress" after attempt of deploy of not validating scenario 
+
 1.9.0 (21 Apr 2023)
 ------------------------
 * [#4195](https://github.com/TouK/nussknacker/pull/4195) Add functionality to generate test cases and test scenario without need to download a file.
