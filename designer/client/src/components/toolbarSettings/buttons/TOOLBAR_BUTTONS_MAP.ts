@@ -23,7 +23,7 @@ import CountsButton from "../../toolbars/test/buttons/CountsButton"
 import FromFileButton from "../../toolbars/test/buttons/FromFileButton"
 import GenerateButton from "../../toolbars/test/buttons/GenerateButton"
 import GenerateAndTestButton from "../../toolbars/test/buttons/GenerateAndTestButton"
-import TestWithSchemaButton from "../../toolbars/test/buttons/TestWithSchemaButton"
+import TestWithFormButton from "../../toolbars/test/buttons/TestWithFormButton"
 import HideButton from "../../toolbars/test/buttons/HideButton"
 import {ResetViewButton} from "../../toolbars/view/buttons/ResetViewButton"
 import {ZoomInButton} from "../../toolbars/view/buttons/ZoomInButton"
@@ -64,6 +64,6 @@ export const TOOLBAR_BUTTONS_MAP: ToolbarButtonsMap = {
   [BuiltinButtonTypes.testHide]: HideButton,
   [CustomButtonTypes.customAction]: ActionButton,
   [CustomButtonTypes.customLink]: LinkButton,
-  [BuiltinButtonTypes.testWithSchema]: TestWithSchemaButton,
+  [BuiltinButtonTypes.testWithForm]: TestWithFormButton,
   [BuiltinButtonTypes.generateAndTest]: GenerateAndTestButton,
 }

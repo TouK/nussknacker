@@ -30,10 +30,10 @@ interface ExternalInvocationResult {
 export interface TestCapabilities {
   canBeTested: boolean,
   canGenerateTestData: boolean,
-  canCreateTestView: boolean,
+  canTestWithForm: boolean,
 }
 
-export interface TestViewParameters {
+export interface TestFormParameters {
   sourceId: string,
   parameters: UIParameter[]
 }

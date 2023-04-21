@@ -27,9 +27,9 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 
     override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities
-    = TestingCapabilities(canBeTested = true, canGenerateTestData = true, canCreateTestView = false)
+    = TestingCapabilities(canBeTested = true, canGenerateTestData = true, canTestWithForm = false)
 
-    override def getTestViewParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = ???
+    override def getTestParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = ???
 
     override def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData]
     = Some(PreliminaryScenarioTestData(PreliminaryScenarioTestRecord.Standard("sourceId", Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")) :: Nil))

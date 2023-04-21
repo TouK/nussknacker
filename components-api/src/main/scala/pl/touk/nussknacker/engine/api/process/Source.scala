@@ -48,22 +48,6 @@ trait TestWithParameters[+T] { self: Source with SourceTestSupport[_] =>
   def parametersToTestData(params: Map[String, AnyRef]): T
 }
 
-object TestWithParameters {
-  def unflattenMap(flatMap: Map[String, AnyRef], delimiter: Char = '.'): Map[String, AnyRef] = {
-    flatMap.foldLeft(Map.empty[String, AnyRef]) {
-      case (result, (key, value)) =>
-        if (key.contains(delimiter)) {
-          val (parentKey, childKey) = key.span(_ != delimiter)
-          val parentValue = result.getOrElse(parentKey, Map.empty[String, AnyRef]).asInstanceOf[Map[String, AnyRef]]
-          val childMap = unflattenMap(Map(childKey.drop(1) -> value), delimiter)
-          result + (parentKey -> (parentValue ++ childMap))
-        } else {
-          result + (key -> value)
-        }
-    }
-  }
-}
-
 /**
   * [[pl.touk.nussknacker.engine.api.process.SourceFactory]] has to have method annotated with [[pl.touk.nussknacker.engine.api.MethodToInvoke]]
   * that returns [[pl.touk.nussknacker.engine.api.process.Source]]

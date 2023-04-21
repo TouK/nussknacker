@@ -28,7 +28,7 @@ const emptyGraphState: GraphState = {
   fetchedProcessDetails: null,
   layout: [],
   testCapabilities: null,
-  testViewParameters: null,
+  testFormParameters: null,
   selectionState: [],
   processCounts: {},
   testResults: null,
@@ -73,10 +73,10 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         testCapabilities: action.capabilities,
       }
     }
-    case "UPDATE_TEST_VIEW_PARAMETERS": {
+    case "UPDATE_TEST_FORM_PARAMETERS": {
       return {
         ...state,
-        testViewParameters: action.testViewParameters,
+        testFormParameters: action.testFormParameters,
       }
     }
     case "DISPLAY_PROCESS": {

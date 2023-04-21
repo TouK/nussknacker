@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.restmodel.definition.SourceWithViewParameters
+import pl.touk.nussknacker.restmodel.definition.UISourceParameters
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -55,11 +55,11 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
     testInfoProvider.getTestingCapabilities(canonical)
   }
 
-  def getTestViewParameters(displayableProcess: DisplayableProcess): List[SourceWithViewParameters] = {
+  def testParametersDefinition(displayableProcess: DisplayableProcess): List[UISourceParameters] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
     val canonical = toCanonicalProcess(displayableProcess)
-    testInfoProvider.getTestViewParameters(canonical)
-      .map{case (id, params) => SourceWithViewParameters(id, params.map(UIProcessObjectsFactory.createUIParameter))}.toList
+    testInfoProvider.getTestParameters(canonical)
+      .map{case (id, params) => UISourceParameters(id, params.map(UIProcessObjectsFactory.createUIParameter))}.toList
   }
 
   def generateData(displayableProcess: DisplayableProcess, testSampleSize: Int): Either[String, RawScenarioTestData] = {

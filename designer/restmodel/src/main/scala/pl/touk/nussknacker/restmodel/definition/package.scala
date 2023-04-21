@@ -69,7 +69,7 @@ package object definition {
     def toUIObjectDefinition: UIObjectDefinition = UIObjectDefinition(parameters, returnType, categories, componentConfig)
   }
 
-  @JsonCodec(encodeOnly = true) case class SourceWithViewParameters(sourceId: String, parameters: List[UIParameter])
+  @JsonCodec(encodeOnly = true) case class UISourceParameters(sourceId: String, parameters: List[UIParameter])
 
   @JsonCodec case class NodeTypeId(`type`: String, id: Option[String] = None)
 
