@@ -3,7 +3,7 @@ import {AxiosError, AxiosResponse} from "axios"
 import FileSaver from "file-saver"
 import i18next from "i18next"
 import {Moment} from "moment"
-import {SettingsData, ValidationData} from "../actions/nk"
+import {fetchTestFormParameters, SettingsData, ValidationData} from "../actions/nk"
 import api from "../api"
 import {UserData} from "../common/models/User"
 import {ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType} from "../components/Process/types"
@@ -424,10 +424,10 @@ class HttpService {
     return promise
   }
 
-  getTestViewParameters(process: Process) {
-    const promise = api.post("/testInfo/viewParameters", this.#sanitizeProcess(process))
+  getTestFormParameters(process: Process) {
+    const promise = api.post("/testInfo/testParameters", this.#sanitizeProcess(process))
     promise.catch(error => this.#addError(
-      i18next.t("notification.error.failedToGetViewParameters", "Failed to get source view parameters"),
+      i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
       error,
       true
     ))

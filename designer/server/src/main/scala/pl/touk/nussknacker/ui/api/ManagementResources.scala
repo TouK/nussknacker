@@ -225,17 +225,16 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
               implicit val requestDecoder: Decoder[TestFromParametersRequest] = prepareTestFromParametersDecoder(modelData)
               (post & entity(as[TestFromParametersRequest])) { testParametersRequest => {
                 processId(testParametersRequest.displayableProcess.id) { idWithName =>
-                    canDeploy(idWithName) {
+                  canDeploy(idWithName) {
                     complete {
                       scenarioTestService.performTest(idWithName, testParametersRequest.displayableProcess,
                         testParametersRequest.sourceParameters, testResultsVariableEncoder)
                         .flatMap { results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)) }
                         .recover(EspErrorToHttp.errorToHttp)
-                      }
                     }
                   }
                 }
-              }
+              }}
               }
             }
           } ~

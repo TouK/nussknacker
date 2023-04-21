@@ -23,7 +23,7 @@ case class ScenarioTestData(testRecords: List[ScenarioTestRecord])
 object ScenarioTestData {
 
   def apply(sourceId: String, testParameters: TestParameterDefinitions, timestamp: Option[Long] = None): ScenarioTestData = {
-    ScenarioTestData(ScenarioTestParametersRecord(NodeId(sourceId), TestParameters(testParameters, timestamp)) :: Nil)
+    ScenarioTestData(List(ScenarioTestParametersRecord(NodeId(sourceId), TestParameters(testParameters, timestamp))))
   }
 
 }

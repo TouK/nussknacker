@@ -24,9 +24,26 @@ object JsonSinkValueParameter {
 
   type FieldName = String
 
+  private val delimiter: Char = '.'
+
   //Extract editor form from JSON schema
   def apply(schema: Schema, defaultParamName: FieldName, validationMode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
     ParameterRetriever(schema, defaultParamName, validationMode).toSinkValueParameter(schema, paramName = None, defaultValue = None, isRequired = None)
+
+  //Used to un-flat map with concat name eg. { a.b -> _ } => { a -> { b -> _ } } . Reverse objectSchemaToSinkValueParameter
+  def unflattenParameters(flatMap: Map[String, AnyRef]): Map[String, AnyRef] = {
+    flatMap.foldLeft(Map.empty[String, AnyRef]) {
+      case (result, (key, value)) =>
+        if (key.contains(delimiter)) {
+          val (parentKey, childKey) = key.span(_ != delimiter)
+          val parentValue = result.getOrElse(parentKey, Map.empty[String, AnyRef]).asInstanceOf[Map[String, AnyRef]]
+          val childMap = unflattenParameters(Map(childKey.drop(1) -> value))
+          result + (parentKey -> (parentValue ++ childMap))
+        } else {
+          result + (key -> value)
+        }
+    }
+  }
 
   private case class ParameterRetriever(rootSchema: Schema, defaultParamName: FieldName, validationMode: ValidationMode)(implicit nodeId: NodeId) {
 
@@ -59,7 +76,7 @@ object JsonSinkValueParameter {
       val listOfValidatedParams: List[Validated[NonEmptyList[ProcessCompilationError], (String, SinkValueParameter)]] = schema.getPropertySchemas.asScala.map {
         case (fieldName, fieldSchema) =>
           // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
-          val concatName = paramName.fold(fieldName)(pn => s"$pn.$fieldName")
+          val concatName = paramName.fold(fieldName)(pn => s"$pn$delimiter$fieldName")
           val isRequired = Option(schema.getRequiredProperties.contains(fieldName))
           val sinkValueValidated = getDefaultValue(fieldSchema, paramName).andThen { defaultValue =>
             toSinkValueParameter(schema = fieldSchema, paramName = Option(concatName), defaultValue = defaultValue, isRequired = isRequired)

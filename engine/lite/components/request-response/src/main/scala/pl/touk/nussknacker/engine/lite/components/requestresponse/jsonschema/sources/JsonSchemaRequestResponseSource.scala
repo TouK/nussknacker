@@ -58,7 +58,7 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
 
   override def parametersToTestData(params: Map[String, AnyRef]): Any = {
     val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
-    val json = BestEffortJsonEncoder.defaultForTests.encode(TestWithParameters.unflattenMap(params))
+    val json = BestEffortJsonEncoder.defaultForTests.encode(JsonSinkValueParameter.unflattenParameters(params))
     JsonToNuStruct(json, swaggerTyped)
   }
 

@@ -29,7 +29,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       .foldLeft(TestingCapabilities.Disabled)((tc1, tc2) => TestingCapabilities(
         canBeTested = tc1.canBeTested || tc2.canBeTested,
         canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
-        canCreateTestView = tc1.canCreateTestView || tc2.canCreateTestView,
+        canTestWithForm = tc1.canTestWithForm || tc2.canTestWithForm,
       ))
   }
 
@@ -38,20 +38,17 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       sourceObj <- prepareSourceObj(source)(metaData)
       canTest = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
-      canCreateTestView = sourceObj.isInstanceOf[TestWithParameters[_]]
-    } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData, canCreateTestView = canCreateTestView)
+      canTestWithForm = sourceObj.isInstanceOf[TestWithParameters[_]]
+    } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData, canTestWithForm = canTestWithForm)
     testingCapabilities.getOrElse(TestingCapabilities.Disabled)
   }
 
-  override def getTestViewParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = modelData.withThisAsContextClassLoader {
-    val allSourcesWithParameters = collectAllSources(scenario)
-      .map(source => source.id -> getTestViewParameters(source, scenario.metaData))
-    //TODO support for multiple sources
-    if(allSourcesWithParameters.size > 1) throw new RuntimeException(s"Testing with parameters does not support multiple sources (found ${allSourcesWithParameters.size})")
-    else allSourcesWithParameters.toMap
+  override def getTestParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = modelData.withThisAsContextClassLoader {
+    collectAllSources(scenario)
+      .map(source => source.id -> getTestParameters(source, scenario.metaData)).toMap
   }
 
-  private def getTestViewParameters(source: Source, metaData: MetaData): List[Parameter] = modelData.withThisAsContextClassLoader {
+  private def getTestParameters(source: Source, metaData: MetaData): List[Parameter] = modelData.withThisAsContextClassLoader {
     prepareSourceObj(source)(metaData) match {
       case Some(s: TestWithParameters[_]) => s.parameterDefinitions
       case _ => Nil

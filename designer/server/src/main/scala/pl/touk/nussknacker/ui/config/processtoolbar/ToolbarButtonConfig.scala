@@ -64,7 +64,7 @@ object ToolbarButtonConfigType extends Enumeration {
   val TestFromFile: Value = Value("test-from-file")
   val TestGenerate: Value = Value("test-generate")
   val GenerateAndTest: Value = Value("generate-and-test")
-  val TestWithSchema: Value = Value("test-with-schema")
+  val TestWithForm: Value = Value("test-with-form")
   val TestCounts: Value = Value("test-counts")
   val TestHide: Value = Value("test-hide")
 
