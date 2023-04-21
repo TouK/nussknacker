@@ -29,7 +29,7 @@ import java.time.Clock
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 // Responsibility of this class is to wrap communication with DeploymentManager with persistent, transactional context.
 // It ensures that all actions are done consistently: do validations and ensures that only allowed actions
@@ -110,9 +110,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   protected def validateBeforeDeploy(processDetails: BaseProcessDetails[CanonicalProcess], actionId: ProcessActionId)
                                     (implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
-    validateProcess(processDetails)
-    val deploymentManager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
     for {
+      _ <- Future.fromTry(Try(validateProcess(processDetails)))
+      deploymentManager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
       // TODO: scenario was already resolved during validation - use it here
       resolvedCanonicalProcess <- Future.fromTry(scenarioResolver.resolveScenario(processDetails.json, processDetails.processCategory))
       deploymentData = prepareDeploymentData(user.toManagerUser, DeploymentId(actionId.value.toString))

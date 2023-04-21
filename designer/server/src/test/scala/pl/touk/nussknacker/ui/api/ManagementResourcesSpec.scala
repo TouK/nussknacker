@@ -236,10 +236,13 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#output")
     saveProcessAndAssertSuccess(invalidScenario.id, invalidScenario)
 
-    deploymentManager.withFailingDeployment(ProcessName(invalidScenario.id)) {
+    deploymentManager.withEmptyProcessState(ProcessName(invalidScenario.id)) {
       deployProcess(invalidScenario.id) ~> check {
         responseAs[String] shouldBe "Cannot deploy invalid scenario"
         status shouldBe StatusCodes.Conflict
+      }
+      getProcess(ProcessName(invalidScenario.id)) ~> check {
+        decodeDetails.state.value.status shouldEqual SimpleStateStatus.NotDeployed
       }
     }
   }
