@@ -11,7 +11,6 @@ import {ProcessId} from "../../types"
 
 interface Props {
   processState?: ProcessStateType,
-  isStateLoaded?: boolean,
   process: ProcessType,
 }
 
@@ -58,14 +57,14 @@ function StateIconPopover({processName, processState, tooltip, children}: PropsW
   )
 }
 
-function ProcessStateIcon({process, processState, isStateLoaded}: Props) {
-  const icon = ProcessStateUtils.getStatusIcon(process, processState, isStateLoaded)
-  const tooltip = ProcessStateUtils.getStatusTooltip(process, processState, isStateLoaded)
+function ProcessStateIcon({process, processState}: Props) {
+  const icon = ProcessStateUtils.getStatusIcon(process, processState)
+  const tooltip = ProcessStateUtils.getStatusTooltip(process, processState)
 
   return (
     <StateIconPopover
       processName={process.name}
-      processState={isStateLoaded ? processState : process.state}
+      processState={processState}
       tooltip={tooltip}
     >
       <UrlIcon src={icon} title={tooltip}/>

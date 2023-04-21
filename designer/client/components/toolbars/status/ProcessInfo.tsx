@@ -4,7 +4,7 @@ import {connect} from "react-redux"
 import {SwitchTransition} from "react-transition-group"
 import {RootState} from "../../../reducers"
 import {getFetchedProcessDetails, getProcessUnsavedNewName, isProcessRenamed} from "../../../reducers/selectors/graph"
-import {getProcessState, isProcessStateLoaded} from "../../../reducers/selectors/scenarioState"
+import {getProcessState} from "../../../reducers/selectors/scenarioState"
 import {getCustomActions} from "../../../reducers/selectors/settings"
 import {UnknownRecord} from "../../../types/common"
 import {CssFade} from "../../CssFade"
@@ -24,8 +24,8 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
   }
 
   render() {
-    const {process, processState, isStateLoaded, customActions, isRenamePending, unsavedNewName} = this.props
-    const description = ProcessStateUtils.getStateDescription(process, processState, isStateLoaded)
+    const {process, processState,  customActions, isRenamePending, unsavedNewName} = this.props
+    const description = ProcessStateUtils.getStateDescription(process, processState)
     const transitionKey = ProcessStateUtils.getTransitionKey(process, processState)
     // TODO: better styling of process info toolbar in case of many custom actions
     return (
@@ -38,7 +38,6 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
                   <ProcessStateIcon
                     process={process}
                     processState={processState}
-                    isStateLoaded={isStateLoaded}
                   />
                 </div>
                 <div className={"process-info-text"}>
@@ -68,7 +67,6 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
 }
 
 const mapState = (state: RootState) => ({
-  isStateLoaded: isProcessStateLoaded(state),
   process: getFetchedProcessDetails(state),
   isRenamePending: isProcessRenamed(state),
   unsavedNewName: getProcessUnsavedNewName(state),

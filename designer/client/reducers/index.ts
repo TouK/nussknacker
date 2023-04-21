@@ -10,8 +10,9 @@ import {reducer as ui, UiState} from "./ui"
 import {FeatureFlags, featureFlags} from "./featureFlags"
 import {UserSettings, userSettings} from "./userSettings"
 import {StateWithHistory} from "redux-undo"
-import {backendNotifications, BackendNotificationState} from "./notifications";
-import {reducer as scenarioState, ScenarioStateState} from "./scenarioState"
+import {backendNotifications, BackendNotificationState} from "./notifications"
+import {reducer as scenarioState} from "./scenarioState"
+import {ProcessStateType} from "../components/Process/types"
 
 export const reducer = combineReducers<RootState>({
   httpErrorHandler,
@@ -40,7 +41,7 @@ export type RootState = {
   featureFlags: FeatureFlags,
   userSettings: UserSettings,
   nodeDetails: NodeDetailsState,
-  scenarioState: ScenarioStateState
+  scenarioState: ProcessStateType
 }
 
 export default reducer

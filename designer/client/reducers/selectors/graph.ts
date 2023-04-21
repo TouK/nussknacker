@@ -6,7 +6,7 @@ import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import {Process} from "../../types"
 import {ProcessCounts} from "../graph"
 import {RootState} from "../index"
-import {getProcessState, isProcessStateLoaded} from "./scenarioState";
+import {getProcessState} from "./scenarioState"
 
 export const getGraph = (state: RootState): RootState["graphReducer"] => state.graphReducer
 
@@ -37,27 +37,20 @@ export const isProcessRenamed = createSelector(
   (currentName, unsavedNewName) => unsavedNewName && unsavedNewName !== currentName,
 )
 
-export const getFetchedProcessState = createSelector(
-  getFetchedProcessDetails,
-  isProcessStateLoaded,
-  getProcessState,
-  (fetchedProcessDetails, isStateLoaded, processState) => isStateLoaded ? processState : fetchedProcessDetails?.state,
-)
-
 export const isSaveDisabled = createSelector(
   [isPristine, isLatestProcessVersion],
   (pristine, latest) => pristine && latest,
 )
 export const isDeployPossible = createSelector(
-  [isSaveDisabled, hasError, getFetchedProcessState, isSubprocess],
+  [isSaveDisabled, hasError, getProcessState, isSubprocess],
   (saveDisabled, error, state, subprocess) => !subprocess && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 )
 export const isMigrationPossible = createSelector(
-  [isSaveDisabled, hasError, getFetchedProcessState],
+  [isSaveDisabled, hasError, getProcessState],
   (saveDisabled, error, state) => saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 )
-export const isCancelPossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canCancel(state))
-export const isArchivePossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canArchive(state))
+export const isCancelPossible = createSelector(getProcessState, state => ProcessStateUtils.canCancel(state))
+export const isArchivePossible = createSelector(getProcessState, state => ProcessStateUtils.canArchive(state))
 export const getTestCapabilities = createSelector(getGraph, g => g.testCapabilities || {})
 export const getTestResults = createSelector(getGraph, g => g.testResults)
 export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || {} as ProcessCounts)
