@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition.test
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator, TestWithParameters}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -38,7 +38,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       sourceObj <- prepareSourceObj(source)(metaData)
       canTest = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
-      canTestWithForm = sourceObj.isInstanceOf[TestWithParameters[_]]
+      canTestWithForm = sourceObj.isInstanceOf[TestWithParametersSupport[_]]
     } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData, canTestWithForm = canTestWithForm)
     testingCapabilities.getOrElse(TestingCapabilities.Disabled)
   }
@@ -50,8 +50,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private def getTestParameters(source: Source, metaData: MetaData): List[Parameter] = modelData.withThisAsContextClassLoader {
     prepareSourceObj(source)(metaData) match {
-      case Some(s: TestWithParameters[_]) => s.parameterDefinitions
-      case _ => Nil
+      case Some(s: TestWithParametersSupport[_]) => s.testParametersDefinition
+      case _ => throw new UnsupportedOperationException(s"Requested test parameters from source (${source.id}) that does not implement TestWithParametersSupport.")
     }
   }
 

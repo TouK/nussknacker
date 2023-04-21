@@ -274,10 +274,10 @@ object validationHelpers {
 
   class SourceWithTestParameters extends GenericParametersSource {
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source = {
-      new Source with SourceTestSupport[String] with TestWithParameters[String]  {
+      new Source with SourceTestSupport[String] with TestWithParametersSupport[String]  {
         override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
-        override def parameterDefinitions: List[Parameter] = Nil
+        override def testParametersDefinition: List[Parameter] = Nil
 
         override def parametersToTestData(params: Map[String, AnyRef]): String = ""
       }

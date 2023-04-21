@@ -37,7 +37,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       SimplifiedParam("name", Typed.apply[String], Option(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))),
       SimplifiedParam("age", Typed.apply[Long], None)
     )
-    source.parameterDefinitions.map(p => SimplifiedParam(p.name, p.typ, p.editor)) should contain theSameElementsAs expectedParameters
+    source.testParametersDefinition.map(p => SimplifiedParam(p.name, p.typ, p.editor)) should contain theSameElementsAs expectedParameters
   }
 
   val rawSchemaNested =
@@ -64,7 +64,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       SimplifiedParam("address.number", Typed.apply[Long], None),
       SimplifiedParam("additionalParams", Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown)), None)
     )
-    source.parameterDefinitions.map(p => SimplifiedParam(p.name, p.typ, p.editor)) should contain theSameElementsAs expectedParameters
+    source.testParametersDefinition.map(p => SimplifiedParam(p.name, p.typ, p.editor)) should contain theSameElementsAs expectedParameters
   }
 
 }

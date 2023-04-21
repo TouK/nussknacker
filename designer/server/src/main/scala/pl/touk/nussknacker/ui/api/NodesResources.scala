@@ -15,13 +15,13 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.test.TestParameters.TestParameterDefinitions
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, SubprocessResolver}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -221,7 +221,7 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
   }
 }
 
-@JsonCodec(encodeOnly = true) case class TestSourceParameters(sourceId: String, parameters: TestParameterDefinitions)
+@JsonCodec(encodeOnly = true) case class TestSourceParameters(sourceId: String, parameterExpressions: Map[String, Expression])
 
 @JsonCodec(encodeOnly = true) case class TestFromParametersRequest(sourceParameters: TestSourceParameters,
                                                                    displayableProcess: DisplayableProcess)

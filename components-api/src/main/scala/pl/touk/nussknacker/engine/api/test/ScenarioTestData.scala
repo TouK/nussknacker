@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.api.test
 
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.test.TestParameters.TestParameterDefinitions
+import pl.touk.nussknacker.engine.graph.expression.Expression
 
 sealed trait ScenarioTestRecord
 
 case class ScenarioTestJsonRecord(sourceId: NodeId, record: TestRecord) extends ScenarioTestRecord
-case class ScenarioTestParametersRecord(sourceId: NodeId, testParameters: TestParameters) extends ScenarioTestRecord
+case class ScenarioTestParametersRecord(sourceId: NodeId, parameterExpressions: Map[String, Expression]) extends ScenarioTestRecord
 
 object ScenarioTestJsonRecord {
   def apply(sourceId: String, json: Json, timestamp: Option[Long] = None): ScenarioTestJsonRecord = {
@@ -22,8 +22,8 @@ case class ScenarioTestData(testRecords: List[ScenarioTestRecord])
 
 object ScenarioTestData {
 
-  def apply(sourceId: String, testParameters: TestParameterDefinitions, timestamp: Option[Long] = None): ScenarioTestData = {
-    ScenarioTestData(List(ScenarioTestParametersRecord(NodeId(sourceId), TestParameters(testParameters, timestamp))))
+  def apply(sourceId: String, parameterExpressions: Map[String, Expression]): ScenarioTestData = {
+    ScenarioTestData(List(ScenarioTestParametersRecord(NodeId(sourceId), parameterExpressions)))
   }
 
 }

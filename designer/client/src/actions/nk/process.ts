@@ -13,7 +13,6 @@ export function fetchProcessToDisplay(processId: ProcessId, versionId?: ProcessV
 
     return HttpService.fetchProcessDetails(processId, versionId).then((response) => {
       dispatch(displayTestCapabilities(response.data.json))
-      dispatch(fetchTestFormParameters(response.data.json))
       return dispatch({
         type: "DISPLAY_PROCESS",
         fetchedProcessDetails: response.data,

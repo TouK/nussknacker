@@ -8,6 +8,7 @@ import {defaultArrayFormat} from "../common/VisualizationUrl"
 import {ConfirmDialogData} from "../components/modals/GenericConfirmDialog"
 import {NodeType, Process} from "../types"
 import {WindowKind} from "./WindowKind"
+import {InfoDialogData} from "../components/modals/GenericInfoDialog";
 
 export function parseWindowsQueryParams<P extends Record<string, string | string[]>>(append: P, remove?: P): Record<string, string[]> {
   const query = queryString.parse(window.location.search, {arrayFormat: defaultArrayFormat})
@@ -42,6 +43,13 @@ export function useWindows(parent?: WindowId) {
     [open]
   )
 
+  const inform = useCallback((data: InfoDialogData) => {
+    return open({
+      kind: WindowKind.inform,
+      meta: data
+    })
+  }, [open])
+
   const confirm = useCallback((data: ConfirmDialogData) => {
     return open({
       title: data.text,
@@ -53,7 +61,8 @@ export function useWindows(parent?: WindowId) {
   return useMemo(() => ({
     open,
     confirm,
+    inform,
     openNodeWindow,
     close: closeAll,
-  }), [confirm, open, openNodeWindow, closeAll])
+  }), [confirm, open, inform, openNodeWindow, closeAll])
 }
