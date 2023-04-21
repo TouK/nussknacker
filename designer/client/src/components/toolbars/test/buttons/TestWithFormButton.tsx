@@ -77,7 +77,7 @@ function TestWithFormButton(props: Props) {
   }, [sourceParameters, selectedSource])
 
   useEffect(() => {
-    dispatch(fetchTestFormParameters(processToDisplay))
+    if(available) dispatch(fetchTestFormParameters(processToDisplay))
   }, [processToDisplay])
 
   //For now, we select first source and don't provide way to change it

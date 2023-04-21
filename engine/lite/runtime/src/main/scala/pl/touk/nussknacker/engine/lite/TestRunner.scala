@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite
 
-import cats.data.{NonEmptyList, Validated}
+import cats.data.ValidatedNel
 import cats.{Id, ~>}
 import cats.implicits._
 import cats.data.Validated.{Invalid, Valid}
@@ -54,19 +54,20 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
     val testContext = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
     val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
 
-    val expressionEvaluator: (Expression, Parameter, Context, NodeId) => Validated[NonEmptyList[PartSubGraphCompilationError], (String, AnyRef)] = {
+    val expressionEvaluator: (Expression, Parameter, NodeId) => ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
       val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(process.metaData)
       val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
+      val dumbContext = Context("dumb", Map.empty, None)
       val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
-      (expression: Expression, parameter: Parameter, context: Context, nodeId: NodeId) => {
+      (expression: Expression, parameter: Parameter, nodeId: NodeId) => {
         expressionCompiler
           .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
-          .map(typedExpression => {
+          .map { typedExpression =>
             val param = evaluatedparam.Parameter(typedExpression, parameter)
-            parameter.name -> evaluator.evaluateParameter(param, context)(nodeId, process.metaData).value
-          })
+            evaluator.evaluateParameter(param, dumbContext)(nodeId, process.metaData).value
+          }
       }
     }
 
@@ -90,8 +91,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
       case ScenarioTestParametersRecord(nodeId@NodeId(sourceIdValue), parameterExpressions) =>
         val sourceId = SourceId(sourceIdValue)
         val source = getSourceById(sourceId)
-        val context =  Context(testContext.contextIdGenerator(nodeId.id).nextContextId())
-        sourceId -> prepareRecordForTest[Input](source, parameterExpressions, context, expressionEvaluator)(nodeId)
+        sourceId -> prepareRecordForTest[Input](source, parameterExpressions, expressionEvaluator)(nodeId)
     })
 
     try {
@@ -114,17 +114,17 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
     JobData(process.metaData, processVersion)
   }
 
-  private def prepareRecordForTest[T](source: Source, parameterExpressions: Map[String, Expression], context: Context,
-                                      expressionEvaluator: (Expression, Parameter, Context, NodeId) => Validated[NonEmptyList[PartSubGraphCompilationError], (String, AnyRef)]
+  private def prepareRecordForTest[T](source: Source, parameterExpressions: Map[String, Expression],
+                                      expressionEvaluator: (Expression, Parameter, NodeId) => ValidatedNel[PartSubGraphCompilationError, AnyRef]
                                      )(implicit nodeId: NodeId): T = {
     source match {
       case s: TestWithParametersSupport[T@unchecked] =>
-        val parameterTypingResults = s.testParametersDefinition.map(param => {
+        val parameterTypingResults = s.testParametersDefinition.map { param =>
           parameterExpressions.get(param.name) match {
-            case Some(expression) => expressionEvaluator(expression, param, context, nodeId)
+            case Some(expression) => expressionEvaluator(expression, param, nodeId).map(e => param.name -> e)
             case None => UnknownProperty(param.name).invalidNel
           }
-        })
+        }
         parameterTypingResults.sequence match {
           case Valid(evaluatedParams) => s.parametersToTestData(evaluatedParams.toMap)
           case Invalid(errors) => throw new IllegalArgumentException(errors.toList.mkString(", "))
