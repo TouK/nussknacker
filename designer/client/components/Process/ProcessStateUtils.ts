@@ -20,9 +20,8 @@ class ProcessStateUtils {
   public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Archive)
 
   getStateDescription(
-    {isArchived, isSubprocess, state}: ProcessType,
+    {isArchived, isSubprocess}: ProcessType,
     processState: ProcessStateType,
-    isStateLoaded: boolean,
   ): string {
     if (isArchived) {
       return isSubprocess ?
@@ -34,15 +33,12 @@ class ProcessStateUtils {
       return descriptionSubprocess()
     }
 
-    return isStateLoaded ?
-      processState?.description || unknownDescription() :
-      state?.description || unknownDescription()
+    return processState?.description || unknownDescription()
   }
 
   getStatusIcon(
     {isArchived, isSubprocess, state}: ProcessType,
     processState: ProcessStateType,
-    isStateLoaded: boolean
   ): string {
     if (isArchived) {
       return archivedIcon
@@ -52,17 +48,12 @@ class ProcessStateUtils {
       return subprocessIcon
     }
 
-    if (isStateLoaded) {
-      return processState?.icon || unknownIcon
-    }
-
-    return state?.icon || unknownIcon
+    return processState?.icon || state?.icon || unknownIcon
   }
 
   getStatusTooltip(
     {isArchived, isSubprocess, state}: ProcessType,
     processState: ProcessStateType,
-    isStateLoaded: boolean
   ): string {
     if (isArchived) {
       return isSubprocess ?
@@ -74,11 +65,7 @@ class ProcessStateUtils {
       return descriptionSubprocess()
     }
 
-    if (isStateLoaded) {
-      return processState?.tooltip || unknownTooltip()
-    }
-
-    return state?.tooltip || unknownTooltip()
+    return processState?.tooltip || state?.tooltip || unknownTooltip()
   }
 
   getTransitionKey(

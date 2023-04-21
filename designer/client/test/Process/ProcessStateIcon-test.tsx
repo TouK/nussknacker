@@ -50,21 +50,9 @@ describe("ProcessStateIcon tests", () => {
     expect(container).toMatchSnapshot()
   })
 
-  it("should show defaults if loadedProcess is null", async () => {
-    const process = {processingType: "streaming", state: processState}
-    const {getByTestId, container} = render(
-      <ProcessStateIcon process={process as any} isStateLoaded/>
-    )
-    await waitFor(() => getByTestId("svg"))
-    expect(fetch).not.toHaveBeenCalled() //cached
-    expect(container).toMatchSnapshot()
-  })
-
   it("should show defaults if loadedProcess is empty", async () => {
-    const process = {processingType: "streaming", state: processState}
     const {getByTestId, container} = render(
-      <ProcessStateIcon process={process as any} processState={noDataProcessState as any}
-                        isStateLoaded={true}/>
+      <ProcessStateIcon process={{} as any}/>
     )
     await waitFor(() => getByTestId("svg"))
     expect(fetch).not.toHaveBeenCalled() //cached
@@ -73,8 +61,7 @@ describe("ProcessStateIcon tests", () => {
 
   it("should show loadedProcess data", async () => {
     const {getByTestId, container} = render(
-      <ProcessStateIcon process={noDataProcessState as any} processState={processState as any}
-                        isStateLoaded={true}/>
+      <ProcessStateIcon process={noDataProcessState as any} processState={processState as any}/>
     )
     await waitFor(() => getByTestId("svg"))
     expect(fetch).not.toHaveBeenCalled() //cached
