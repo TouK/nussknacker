@@ -4,8 +4,8 @@ import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.component.ComponentUtil
 import pl.touk.nussknacker.restmodel.component.NodeId
+import pl.touk.nussknacker.restmodel.process.{ComponentIdParts, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
-import pl.touk.nussknacker.ui.process.repository.{ComponentIdParts, ScenarioComponentsUsages}
 
 object ComponentsUsageHelper {
 

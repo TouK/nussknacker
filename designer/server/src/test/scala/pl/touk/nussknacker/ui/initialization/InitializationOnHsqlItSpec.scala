@@ -5,13 +5,13 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.process.ScenarioComponentsUsages
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsages
 
 class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with WithHsqlDbTesting {
 

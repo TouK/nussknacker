@@ -14,13 +14,13 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkProcessStateDefinitionManager
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ScenarioComponentsUsages}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment, ScenarioComponentsUsages}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction

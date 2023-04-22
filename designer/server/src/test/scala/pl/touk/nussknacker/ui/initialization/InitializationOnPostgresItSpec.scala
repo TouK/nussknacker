@@ -6,13 +6,13 @@ import org.scalatest.tags.Slow
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.process.ScenarioComponentsUsages
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsages
 
 import scala.concurrent.ExecutionContextExecutor
 
