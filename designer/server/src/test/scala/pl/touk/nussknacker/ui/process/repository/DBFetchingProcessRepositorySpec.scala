@@ -24,6 +24,7 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
+// TODO ljd: jakieś testy
 class DBFetchingProcessRepositorySpec
   extends AnyFunSuite
     with Matchers
@@ -209,7 +210,7 @@ class DBFetchingProcessRepositorySpec
     fetching.fetchProcessId(processName).futureValue.nonEmpty
 
   private def updateProcess(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
-    val action = UpdateProcessAction(processId, canonicalProcess, None, increaseVersionWhenJsonNotChanged)
+    val action = UpdateProcessAction(processId, canonicalProcess, ScenarioComponentsUsages.Empty, None, increaseVersionWhenJsonNotChanged)
 
     val processUpdated = dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe Symbol("right")
@@ -218,7 +219,7 @@ class DBFetchingProcessRepositorySpec
 
   private def saveProcess(espProcess: CanonicalProcess, now: Instant, category: String = "") = {
     currentTime = now
-    val action = CreateProcessAction(ProcessName(espProcess.id), category, espProcess, TestProcessingTypes.Streaming, false)
+    val action = CreateProcessAction(ProcessName(espProcess.id), category, espProcess, TestProcessingTypes.Streaming, false, ScenarioComponentsUsages.Empty)
 
     dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe Symbol("right")
   }

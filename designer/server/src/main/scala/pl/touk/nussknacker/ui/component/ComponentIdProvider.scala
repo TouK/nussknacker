@@ -48,7 +48,7 @@ class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig
 
   override def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId] =
     ComponentUtil
-      .fromNodeData(node)
+      .extractComponentType(node)
       .map(componentType => node match {
         case n: WithComponent => createComponentId(processingType, n.componentId, componentType)
         case _ => ComponentId.forBaseComponent(componentType)

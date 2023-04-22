@@ -1,12 +1,28 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.ComponentId
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.component.ComponentUtil
 import pl.touk.nussknacker.restmodel.component.NodeId
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.ui.process.repository.{ComponentIdParts, ScenarioComponentsUsages}
 
-private[component] object ComponentsUsageHelper {
+object ComponentsUsageHelper {
 
   import pl.touk.nussknacker.engine.util.Implicits._
+
+  def computeScenarioUsages(scenario: CanonicalProcess): ScenarioComponentsUsages = {
+    val usagesList = for {
+      node <- scenario.collectAllNodes
+      componentType <- ComponentUtil.extractComponentType(node)
+      componentName = ComponentUtil.extractComponentName(node)
+    } yield {
+      (componentName, componentType, node.id)
+    }
+    val usagesMap = usagesList
+      .groupMap({ case (componentName, componentType, _) => ComponentIdParts(componentName, componentType) })({ case (_, _, nodeIds) => nodeIds })
+    ScenarioComponentsUsages(usagesMap)
+  }
 
   def computeComponentsUsageCount(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, Long] =
     processes

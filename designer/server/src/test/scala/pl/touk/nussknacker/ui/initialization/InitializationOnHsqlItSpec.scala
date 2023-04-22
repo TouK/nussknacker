@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPro
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsages
 
 class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with WithHsqlDbTesting {
 
@@ -53,7 +54,7 @@ class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest wit
   }
 
   private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
-    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess)
+    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess, ScenarioComponentsUsages.Empty)
 
     dbioRunner
       .runInTransaction(writeRepository.saveNewProcess(action))
