@@ -15,6 +15,7 @@ import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, Process
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
+import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
@@ -151,7 +152,8 @@ class DBProcessService(deploymentService: DeploymentService,
   override def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[XError[ProcessResponse]] =
     withProcessingType(command.category) { processingType =>
       val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isSubprocess)
-      val action = CreateProcessAction(command.processName, command.category, emptyCanonicalProcess, processingType, command.isSubprocess)
+      val emptyComponentsUsages = ScenarioComponentsUsages.Empty
+      val action = CreateProcessAction(command.processName, command.category, emptyCanonicalProcess, processingType, command.isSubprocess, emptyComponentsUsages)
 
       val propertiesErrors = validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.category)
 
@@ -181,9 +183,10 @@ class DBProcessService(deploymentService: DeploymentService,
         substituted = {
           processResolving.resolveExpressions(action.process, validation.typingInfo)
         }
+        componentsUsages = ComponentsUsageHelper.computeScenarioUsages(substituted)
         processUpdated <- EitherT(dbioRunner
           .runInTransaction(processRepository
-            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, Option(action.comment), increaseVersionWhenJsonNotChanged = false))
+            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, componentsUsages, Option(action.comment), increaseVersionWhenJsonNotChanged = false))
           ))
       } yield UpdateProcessResponse(
         processUpdated

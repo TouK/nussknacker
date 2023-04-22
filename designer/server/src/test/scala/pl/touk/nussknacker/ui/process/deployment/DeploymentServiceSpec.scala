@@ -20,7 +20,7 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, 
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DBIOActionValues
 import slick.dbio.DBIOAction
@@ -532,7 +532,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val canonicalProcess = parallelism.map(baseBuilder.parallelism).getOrElse(baseBuilder)
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
-    val action = CreateProcessAction(processName, TestCat, canonicalProcess, Streaming, isSubprocess = false)
+    val action = CreateProcessAction(processName, TestCat, canonicalProcess, Streaming, isSubprocess = false, ScenarioComponentsUsages.Empty)
     writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
   }
 

@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
+import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsages
 
 import scala.concurrent.ExecutionContextExecutor
 
@@ -59,7 +60,7 @@ class InitializationOnPostgresItSpec
   }
 
   private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
-    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess)
+    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess, ScenarioComponentsUsages.Empty)
 
     dbioRunner
       .runInTransaction(writeRepository.saveNewProcess(action))

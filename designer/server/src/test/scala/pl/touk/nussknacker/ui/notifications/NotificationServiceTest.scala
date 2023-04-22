@@ -27,7 +27,7 @@ import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository}
+import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DBIOActionValues
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -105,7 +105,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
       .streaming(processName.value)
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
-    val action = CreateProcessAction(processName, TestCat, sampleScenario, Streaming, isSubprocess = false)
+    val action = CreateProcessAction(processName, TestCat, sampleScenario, Streaming, isSubprocess = false, ScenarioComponentsUsages.Empty)
     writeProcessRepository.saveNewProcess(action)(TestFactory.adminUser()).map(_.rightValue.value.processId).dbioActionValues
   }
 
