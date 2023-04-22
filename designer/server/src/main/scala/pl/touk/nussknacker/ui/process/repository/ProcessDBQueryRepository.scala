@@ -57,7 +57,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
   protected def fetchLatestProcessesQuery(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
                                           lastDeployedActionPerProcess: Seq[(ProcessId, (ProcessActionEntityData, Option[CommentEntityData]))],
                                           isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser): Query[(((Rep[ProcessId], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((ProcessId, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
-    processVersionsTableNoJson
+    processVersionsTableWithUnit
       .groupBy(_.processId)
       .map { case (n, group) => (n, group.map(_.createDate).max) }
       .join(processVersionsTableQuery)
@@ -73,16 +73,20 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
 
   protected def processVersionsTableQuery(implicit fetchShape: ProcessShapeFetchStrategy[_]): TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity] =
     fetchShape match {
-      case ProcessShapeFetchStrategy.FetchDisplayable | ProcessShapeFetchStrategy.FetchCanonical =>
-        processVersionsTable.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
+      case ProcessShapeFetchStrategy.FetchDisplayable =>
+        processVersionsTableWithScenarioJson.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
+      case ProcessShapeFetchStrategy.FetchCanonical =>
+        processVersionsTableWithScenarioJson.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
       case ProcessShapeFetchStrategy.NotFetch =>
-        processVersionsTableNoJson.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
+        processVersionsTableWithUnit.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
+      case ProcessShapeFetchStrategy.FetchComponentsUsages =>
+        processVersionsTableWithComponentsUsages.asInstanceOf[TableQuery[ProcessVersionEntityFactory#BaseProcessVersionEntity]]
     }
 
   protected def latestProcessVersionsNoJsonQuery(processName: ProcessName): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
     processesTable
       .filter(_.name === processName)
-      .join(processVersionsTableNoJson)
+      .join(processVersionsTableWithUnit)
       .on { case (process, version) => process.id === version.processId }
       .map(_._2)
       .sortBy(_.createDate.desc)

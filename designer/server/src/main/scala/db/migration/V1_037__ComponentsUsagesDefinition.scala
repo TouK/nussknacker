@@ -12,7 +12,7 @@ trait V1_037__ComponentsUsagesDefinition extends SlickMigration with EspTables {
 
   override def migrateActions: profile.api.DBIOAction[Any, profile.api.NoStream, _ <: profile.api.Effect] = {
     for {
-      latestVersionIds <- processVersionsTable
+      latestVersionIds <- processVersionsTableWithScenarioJson
         .groupBy(_.processId)
         .map { case (processId, versions) => (processId, versions.map(_.id).max) }
         .result
