@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.process.repository
+package pl.touk.nussknacker.restmodel.process
 
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.restmodel.component.NodeId

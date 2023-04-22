@@ -7,7 +7,7 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
@@ -18,7 +18,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.listener.Comment
-
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
