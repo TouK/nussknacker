@@ -126,7 +126,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     )
 
     forAll(table) { (processes, expectedData) =>
-      val result = ComponentsUsageHelper.computeComponentsUsageCount(defaultComponentIdProvider, processes)
+      val result = ComponentsUsageHelper.computeComponentsUsageCountOld(defaultComponentIdProvider, processes)
       result shouldBe expectedData
     }
   }
@@ -168,7 +168,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     )
 
     forAll(table) { (process, expected) =>
-      val result = ComponentsUsageHelper.computeComponentsUsage(defaultComponentIdProvider, process)
+      val result = ComponentsUsageHelper.computeComponentsUsageOld(defaultComponentIdProvider, process)
       result shouldBe expected
     }
   }

@@ -72,7 +72,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
     processService
       .getProcesses[ScenarioComponentsUsages]
       .map(processDetailsList => {
-        val componentsUsage = ComponentsUsageHelper.computeComponentsUsage2(componentIdProvider, processDetailsList)
+        val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processDetailsList)
 
         componentsUsage
           .get(componentId)
@@ -100,7 +100,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
     processService
       .getProcesses[ScenarioComponentsUsages]
       .map(_.filter(p => categories.contains(p.processCategory))) //TODO: move it to service?
-      .map(processes => ComponentsUsageHelper.computeComponentsUsageCount2(componentIdProvider, processes))
+      .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }
 
   private def extractUserComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
