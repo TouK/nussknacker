@@ -26,6 +26,21 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
     def json: Rep[Option[String]] = column[Option[String]]("json", O.Length(100 * 1000))
 
+    def componentsUsages: Rep[Option[String]] = column[Option[String]]("components_usages", NotNull)
+
+    def * : ProvenShape[ProcessVersionEntityData] = (id, processId, json, createDate, user, modelVersion, componentsUsages) <> ( {
+      case (versionId: VersionId, processId: ProcessId, jsonStringOpt: Option[String], createDate: Timestamp, user: String, modelVersion: Option[Int], componentsUsagesOpt: Option[String]) =>
+        ProcessVersionEntityData(versionId, processId, jsonStringOpt.map(ProcessMarshaller.fromJsonUnsafe), createDate, user, modelVersion, componentsUsagesOpt.map(CirceUtil.decodeJsonUnsafe[ScenarioComponentsUsages](_)))
+    },
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3.map(_.asJson.noSpaces), t._4, t._5, t._6, t._7.map(_.asJson.noSpaces)) }
+    )
+
+  }
+
+  class ProcessVersionEntityWithScenarioJson(tag: Tag) extends BaseProcessVersionEntity(tag) {
+
+    def json: Rep[Option[String]] = column[Option[String]]("json", O.Length(100 * 1000))
+
     def * : ProvenShape[ProcessVersionEntityData] = (id, processId, json, createDate, user, modelVersion) <> ( {
       case (versionId: VersionId, processId: ProcessId, jsonStringOpt: Option[String], createDate: Timestamp, user: String, modelVersion: Option[Int]) =>
         ProcessVersionEntityData(versionId, processId, jsonStringOpt.map(ProcessMarshaller.fromJsonUnsafe), createDate, user, modelVersion, None)
@@ -35,7 +50,7 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
   }
 
-  class ProcessVersionEntityComponentsUsages(tag: Tag) extends BaseProcessVersionEntity(tag) {
+  class ProcessVersionEntityWithComponentsUsages(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
     def componentsUsages: Rep[Option[String]] = column[Option[String]]("components_usages", NotNull)
 
@@ -48,7 +63,7 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
   }
 
-  class ProcessVersionEntityNoJson(tag: Tag) extends BaseProcessVersionEntity(tag) {
+  class ProcessVersionEntityWithUnit(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
     override def * : ProvenShape[ProcessVersionEntityData] = (id, processId, createDate, user, modelVersion) <> (
       (ProcessVersionEntityData.apply(_: VersionId, _: ProcessId, None, _: Timestamp, _: String, _: Option[Int], None)).tupled,
@@ -81,11 +96,15 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
   val processVersionsTable: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntity] =
     LTableQuery(new ProcessVersionEntity(_))
 
-  val processVersionsTableComponentsUsages: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityComponentsUsages] =
-    LTableQuery(new ProcessVersionEntityComponentsUsages(_))
+  val processVersionsTableWithScenarioJson: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityWithScenarioJson] =
+    LTableQuery(new ProcessVersionEntityWithScenarioJson(_))
 
-  val processVersionsTableNoJson: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityNoJson] =
-    LTableQuery(new ProcessVersionEntityNoJson(_))
+  val processVersionsTableWithComponentsUsages: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityWithComponentsUsages] =
+    LTableQuery(new ProcessVersionEntityWithComponentsUsages(_))
+
+  val processVersionsTableWithUnit: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityWithUnit] =
+    LTableQuery(new ProcessVersionEntityWithUnit(_))
+
 }
 
 case class ProcessVersionEntityData(id: VersionId,

@@ -182,14 +182,14 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case Some(json) =>
           val updatedProcess = json.copy(metaData = json.metaData.copy(id = newName.value))
           val updatedProcessVersion = processVersion.copy(json = Some(updatedProcess))
-          processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
+          processVersionsTableWithScenarioJson.filter(version => version.id === processVersion.id && version.processId === process.id)
             .update(updatedProcessVersion)
         case None => DBIO.successful(())
       }
     }
 
     val updateNameInProcessJson =
-      processVersionsTable.filter(_.processId === process.id)
+      processVersionsTableWithScenarioJson.filter(_.processId === process.id)
         .join(processesTable)
         .on { case (version, process) => version.processId === process.id }
         .result.flatMap { processVersions =>
@@ -202,7 +202,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     // Comment relates to specific version (in this case last version). Last version could be extracted in one of the
     // above queries, but for sake of readability we perform separate query for this matter
     // todo: remove this comment in favour of process-audit-log
-    val addCommentAction = processVersionsTable
+    val addCommentAction = processVersionsTableWithUnit
       .filter(_.processId === process.id)
       .sortBy(_.id.desc)
       .result.headOption.flatMap {
@@ -228,7 +228,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
   //We use it only on tests..
   def changeVersionId(processId: ProcessId, versionId: VersionId, versionIdToUpdate: VersionId) =
-    processVersionsTableNoJson
+    processVersionsTableWithUnit
       .filter(v => v.id === versionId && v.processId === processId)
       .map(_.id)
       .update(versionIdToUpdate)
