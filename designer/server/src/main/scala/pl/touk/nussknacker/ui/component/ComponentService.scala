@@ -5,8 +5,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentCon
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.process.{ProcessingType, ScenarioComponentsUsages}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
@@ -71,9 +70,9 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
   override def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
-      .getProcesses[DisplayableProcess]
-      .map(processes => {
-        val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processes)
+      .getProcesses[ScenarioComponentsUsages]
+      .map(processDetailsList => {
+        val componentsUsage = ComponentsUsageHelper.computeComponentsUsage2(componentIdProvider, processDetailsList)
 
         componentsUsage
           .get(componentId)
@@ -99,9 +98,9 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
   private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] = {
     processService
-      .getProcesses[DisplayableProcess]
+      .getProcesses[ScenarioComponentsUsages]
       .map(_.filter(p => categories.contains(p.processCategory))) //TODO: move it to service?
-      .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
+      .map(processes => ComponentsUsageHelper.computeComponentsUsageCount2(componentIdProvider, processes))
   }
 
   private def extractUserComponentsFromProcessingType(processingTypeData: ProcessingTypeData,

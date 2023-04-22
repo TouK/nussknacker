@@ -13,6 +13,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService
 //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
 trait ComponentIdProvider {
   def createComponentId(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId
+  def createComponentId(processingType: ProcessingType, name: Option[String], componentType: ComponentType): ComponentId
   def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId]
 }
 
@@ -44,6 +45,13 @@ class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig
     }
 
     overriddenComponentId
+  }
+
+  override def createComponentId(processingType: ProcessingType, name: Option[ProcessingType], componentType: ComponentType): ComponentId = {
+    name match {
+      case Some(value) => createComponentId(processingType, value, componentType)
+      case None => ComponentId.forBaseComponent(componentType)
+    }
   }
 
   override def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId] =
