@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.component.ComponentUtil
 import pl.touk.nussknacker.restmodel.component.NodeId
 import pl.touk.nussknacker.restmodel.process.{ComponentIdParts, ScenarioComponentsUsages}
-import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 
 object ComponentsUsageHelper {
 
@@ -24,11 +24,30 @@ object ComponentsUsageHelper {
     ScenarioComponentsUsages(usagesMap)
   }
 
+  def computeComponentsUsageCount2(componentIdProvider: ComponentIdProvider,
+                                   processes: List[BaseProcessDetails[ScenarioComponentsUsages]]): Map[ComponentId, Long] = {
+    computeComponentsUsage2(componentIdProvider, processes)
+      .mapValuesNow(usages => usages.map { case (_, nodeIds) => nodeIds.size }.sum)
+  }
+
   def computeComponentsUsageCount(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, Long] =
     processes
       .flatMap(processDetails => extractComponentIds(componentIdProvider, processDetails))
       .groupBy(identity)
       .mapValuesNow(_.size)
+
+  def computeComponentsUsage2(componentIdProvider: ComponentIdProvider,
+                              processes: List[BaseProcessDetails[ScenarioComponentsUsages]]): Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeId])]] = {
+    processes
+      .flatMap { processDetails =>
+        val componentsUsages: Map[ComponentIdParts, List[NodeId]] = processDetails.json.value
+        componentsUsages.toList.map { case (ComponentIdParts(componentName, componentType), nodeIds) =>
+          val componentId = componentIdProvider.createComponentId(processDetails.processingType, componentName, componentType)
+          componentId -> (processDetails.mapProcess(_ => ()), nodeIds)
+        }
+      }
+      .groupMap({ case (componentId, _) => componentId })({ case (_, usages) => usages })
+  }
 
   def computeComponentsUsage(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, List[(ProcessDetails, List[NodeId])]] =
     processes
