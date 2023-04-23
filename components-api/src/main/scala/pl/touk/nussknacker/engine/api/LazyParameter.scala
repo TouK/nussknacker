@@ -14,6 +14,7 @@ import scala.reflect.runtime.universe.TypeTag
   * @tparam T type of evaluated parameter. It has upper bound AnyRef because currently we don't support correctly extraction of
   *          primitive types from generic parameters
   */
+// TODO: rename to TypedFunction
 trait LazyParameter[+T <: AnyRef] {
 
   //type of parameter, derived from expression. Can be used for dependent types, see PreviousValueTransformer

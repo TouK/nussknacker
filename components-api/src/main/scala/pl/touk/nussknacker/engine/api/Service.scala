@@ -32,6 +32,7 @@ abstract class Service extends Lifecycle with Component
     - Each ServiceInvoker has different SQL query, ServiceInvoker stores PreparedStatement
   Please see EagerLifecycleService to see how such scenario can be achieved.
  */
+// TODO: EagerService shouldn't extend Lifecycle, instead ServiceInvoker should extend it - see notice in ProcessCompilerData.lifecycle
 abstract class EagerService extends Service
 
 trait ServiceInvoker {

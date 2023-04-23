@@ -84,7 +84,12 @@ class ProcessCompilerData(compiler: ProcessCompiler,
     val componentIds = nodesToUse.collect {
       case e:WithComponent => e.componentId
     }
-    listeners ++ services.filterKeysNow(componentIds.contains).values
+    // TODO: For eager services we should open service implementation (ServiceInvoker) which is hold inside
+    //       SyncInterpretationFunction.compiledNode inside ServiceRef instead of definition (GenericNodeTransformation)
+    //       Definition shouldn't be used after component is compiled. Thanks to that it will be possible to
+    //       e.g. to pass ExecutionContext inside EngineRuntimeContext and to separate implementation from definition
+    val servicesToUse = services.filterKeysNow(componentIds.contains).values
+    listeners ++ servicesToUse
   }
 
   def metaData: MetaData = process.metaData

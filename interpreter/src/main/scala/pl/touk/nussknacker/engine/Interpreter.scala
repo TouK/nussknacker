@@ -171,7 +171,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
   }
 
   private def createOrUpdateVariable(ctx: Context, varName: String, fields: Seq[Field])
-                                    (implicit ec: ExecutionContext, metaData: MetaData, node: Node): Context = {
+                                    (implicit metaData: MetaData, node: Node): Context = {
     val contextWithInitialVariable = ctx.modifyOptionalVariable[java.util.Map[String, Any]](varName, _.getOrElse(new java.util.HashMap[String, Any]()))
 
     fields.foldLeft(contextWithInitialVariable) {
@@ -200,7 +200,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
-                                   (implicit ec: ExecutionContext, metaData: MetaData, node: Node): ValueWithContext[R] = {
+                                   (implicit metaData: MetaData, node: Node): ValueWithContext[R] = {
     expressionEvaluator.evaluate(expr, name, node.id, ctx)
   }
 }
