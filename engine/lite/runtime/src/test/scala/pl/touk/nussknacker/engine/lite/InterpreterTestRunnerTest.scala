@@ -85,7 +85,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       .streamingLite("scenario1")
       .source("source1", "parametersSupport")
       .enricher("sumNumbers", "sum", "sumNumbers", "value" -> "#input.numbers")
-      .emptySink("end", "end", "value" -> "#sum + #input.additionalParams.extraValue")
+      .emptySink("end", "end", "value" -> "#sum + #input.additionalParams.extraValue + #UTIL.largestListElement(#input.numbers)")
 
     val parameterExpressions: Map[String, Expression] = Map(
       "contextId" -> Expression("spel", "'some-ctx-id'"),
@@ -99,7 +99,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
       NodeResult(ResultContext("some-ctx-id", Map("input" -> SampleInputWithListAndMap("some-ctx-id", List(1L, 2L, 3L, 4L, 5L).asJava, Map[String, Any]("extraValue" -> 100).asJava))))
     )
     results.invocationResults("sumNumbers") shouldBe List(ExpressionInvocationResult("some-ctx-id", "value", List[java.lang.Long](1, 2, 3, 4, 5).asJava))
-    results.externalInvocationResults("end") shouldBe List(ExternalInvocationResult("some-ctx-id", "end", 115))
+    results.externalInvocationResults("end") shouldBe List(ExternalInvocationResult("some-ctx-id", "end", 120))
   }
 
 }

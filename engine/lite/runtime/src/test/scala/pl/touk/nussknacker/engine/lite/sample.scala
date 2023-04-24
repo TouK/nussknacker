@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+import pl.touk.nussknacker.engine.api.process.WithCategories.anyCategory
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
@@ -91,6 +92,10 @@ object sample {
     }
   }
 
+  class UtilHelpers {
+    def largestListElement(list: java.util.List[Long]): Long = list.asScala.max
+  }
+
   object StateConfigCreator extends EmptyProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map("sum" -> WithCategories(SumTransformerFactory))
@@ -102,7 +107,6 @@ object sample {
         "failOnNumber1Source" -> WithCategories(FailOnNumber1SourceFactory)
       )
 
-
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
       Map(
         "failOnNumber1" -> WithCategories(FailOnNumber1),
@@ -113,6 +117,11 @@ object sample {
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
       Map("end" -> WithCategories(SimpleSinkFactory))
 
+    override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig =
+      ExpressionConfig(
+        Map("UTIL" -> anyCategory(new UtilHelpers)),
+        List()
+      )
   }
 
   object FailOnNumber1 extends Service {
