@@ -24,7 +24,7 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
-// TODO ljd: jakieś testy
+// TODO components-usages: test for new type.
 class DBFetchingProcessRepositorySpec
   extends AnyFunSuite
     with Matchers
