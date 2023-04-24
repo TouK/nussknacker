@@ -7,9 +7,12 @@ import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
@@ -27,6 +30,7 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.higherKinds
+import scala.jdk.CollectionConverters._
 
 /*
   This is sample engine, with simple state - a map of counters, and simple aggregation based on this state. Mainly for testing purposes
@@ -36,6 +40,8 @@ object sample {
   case object SourceFailure extends Exception("Source failure")
 
   case class SampleInput(contextId: String, value: Int)
+
+  case class SampleInputWithListAndMap(contextId: String, numbers: java.util.List[Long], additionalParams: java.util.Map[String, Any])
 
   implicit val shape: InterpreterShape[StateType] = new InterpreterShape[StateType] {
 
@@ -92,6 +98,7 @@ object sample {
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
       Map(
         "start" -> WithCategories(SimpleSourceFactory),
+        "parametersSupport" -> WithCategories(SimpleSourceWithParameterTestingFactory),
         "failOnNumber1Source" -> WithCategories(FailOnNumber1SourceFactory)
       )
 
@@ -100,6 +107,7 @@ object sample {
       Map(
         "failOnNumber1" -> WithCategories(FailOnNumber1),
         "noOpProcessor" -> WithCategories(NoOpProcessor),
+        "sumNumbers" -> WithCategories(SumNumbers),
       )
 
     override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] =
@@ -111,6 +119,12 @@ object sample {
     @MethodToInvoke
     def invoke(@ParamName("value") value: Integer): Future[Integer] =
       if (value == 1) Future.failed(new IllegalArgumentException("Should not happen :)")) else Future.successful(value)
+  }
+
+  object SumNumbers extends Service {
+    @MethodToInvoke
+    def invoke(@ParamName("value") value: java.util.List[Long]): Future[java.lang.Long] =
+      Future.successful(value.asScala.sum)
   }
 
   object NoOpProcessor extends Service {
@@ -151,6 +165,27 @@ object sample {
             Valid(Context(input.contextId, Map("input" -> input.value), None))
           }
         }
+    }
+  }
+
+  object SimpleSourceWithParameterTestingFactory extends SourceFactory {
+
+    @MethodToInvoke
+    def create(): Source = new LiteSource[SampleInputWithListAndMap] with TestWithParametersSupport[SampleInputWithListAndMap] with ReturningType {
+      override def returnType: typing.TypingResult = Typed[SampleInputWithListAndMap]
+      override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): SampleInputWithListAndMap => ValidatedNel[ErrorType, Context] =
+        input => Valid(Context(input.contextId, Map("input" -> input.asInstanceOf[Any]), None))
+
+      override def testParametersDefinition: List[Parameter] = List(
+        Parameter("contextId", Typed.apply[String]),
+        Parameter("numbers", Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[java.lang.Long]))),
+        Parameter("additionalParams", Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], Unknown)))
+      )
+      override def parametersToTestData(params: Map[String, AnyRef]): SampleInputWithListAndMap = SampleInputWithListAndMap(
+        params("contextId").asInstanceOf[String],
+        params("numbers").asInstanceOf[java.util.List[Long]],
+        params("additionalParams").asInstanceOf[java.util.Map[String, Any]]
+      )
     }
   }
 

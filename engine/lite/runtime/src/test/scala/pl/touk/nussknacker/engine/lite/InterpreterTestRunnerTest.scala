@@ -5,8 +5,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionInvocationResult, ExternalInvocationResult, NodeResult, ResultContext}
+import pl.touk.nussknacker.engine.lite.sample.SampleInputWithListAndMap
+import scala.jdk.CollectionConverters._
 
 class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
@@ -57,6 +60,46 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
     results.externalInvocationResults("end1") shouldBe List(ExternalInvocationResult("A", "end1", 1), ExternalInvocationResult("B", "end1", 2))
     results.externalInvocationResults("end2") shouldBe List(ExternalInvocationResult("C", "end2", 3))
+  }
+
+  test("should accept and run scenario test with parameters") {
+    val scenario = ScenarioBuilder
+      .streamingLite("scenario1")
+      .source("source1", "parametersSupport")
+      .emptySink("end", "end", "value" -> "#input")
+    val parameterExpressions: Map[String, Expression] = Map(
+      "contextId" -> Expression("spel", "'some-ctx-id'"),
+      "numbers" -> Expression("spel", "{1L, 2L, 3L}"),
+      "additionalParams" -> Expression("spel", "{unoDosTres: 123}")
+    )
+    val scenarioTestData = ScenarioTestData("source1", parameterExpressions)
+    val results = sample.test(scenario, scenarioTestData)
+
+    results.nodeResults("source1") shouldBe List(
+      NodeResult(ResultContext("some-ctx-id", Map("input" -> SampleInputWithListAndMap("some-ctx-id", List(1L, 2L, 3L).asJava, Map[String, Any]("unoDosTres" -> 123).asJava))))
+    )
+  }
+
+  test("should handle scenario test parameters in test") {
+    val scenario = ScenarioBuilder
+      .streamingLite("scenario1")
+      .source("source1", "parametersSupport")
+      .enricher("sumNumbers", "sum", "sumNumbers", "value" -> "#input.numbers")
+      .emptySink("end", "end", "value" -> "#sum + #input.additionalParams.extraValue")
+
+    val parameterExpressions: Map[String, Expression] = Map(
+      "contextId" -> Expression("spel", "'some-ctx-id'"),
+      "numbers" -> Expression("spel", "{1L, 2L, 3L, 4L, 5L}"),
+      "additionalParams" -> Expression("spel", "{extraValue: 100}")
+    )
+    val scenarioTestData = ScenarioTestData("source1", parameterExpressions)
+    val results = sample.test(scenario, scenarioTestData)
+
+    results.nodeResults("source1") shouldBe List(
+      NodeResult(ResultContext("some-ctx-id", Map("input" -> SampleInputWithListAndMap("some-ctx-id", List(1L, 2L, 3L, 4L, 5L).asJava, Map[String, Any]("extraValue" -> 100).asJava))))
+    )
+    results.invocationResults("sumNumbers") shouldBe List(ExpressionInvocationResult("some-ctx-id", "value", List[java.lang.Long](1, 2, 3, 4, 5).asJava))
+    results.externalInvocationResults("end") shouldBe List(ExternalInvocationResult("some-ctx-id", "end", 115))
   }
 
 }
