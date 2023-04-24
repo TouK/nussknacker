@@ -121,7 +121,7 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
           ClassMemberPatternPredicate(SuperClassPredicate(ClassPatternPredicate(Pattern.compile(classPattern))), Pattern.compile("is.*")),
           ReturnMemberPredicate(ExactClassPredicate[Context], BasePackagePredicate("pl.touk.nussknacker.engine.types"))
         )))
-        val sampleClassInfo = infos.find(_.clazzName.klass.getName.contains(clazzName)).get
+        val sampleClassInfo = infos.find(_.getClazz.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
           "toString" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toString", None)),
@@ -448,7 +448,7 @@ class EspTypeUtilsSpec extends AnyFunSuite with Matchers with OptionValues {
   private def singleClassDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default): Option[ClazzDefinition] = {
     val ref = Typed.fromDetailedType[T]
     // ClazzDefinition has clazzName with generic parameters but they are always empty so we need to compare name without them
-    clazzAndItsChildrenDefinition(List(Typed(ref)))(settings).find(_.clazzName.klass == ref.asInstanceOf[TypedClass].klass)
+    clazzAndItsChildrenDefinition(List(Typed(ref)))(settings).find(_.getClazz == ref.asInstanceOf[TypedClass].klass)
   }
 
   private def singleClassAndItsChildrenDefinition[T: TypeTag](settings: ClassExtractionSettings = ClassExtractionSettings.Default) = {

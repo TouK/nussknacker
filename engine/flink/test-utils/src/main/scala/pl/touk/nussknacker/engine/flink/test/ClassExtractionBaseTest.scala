@@ -14,7 +14,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.Inside
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -79,13 +79,14 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
           .toList
     }.collect {
       case e: TypedClass => e.klass.getName
+      case Unknown => classOf[Any].getName
     }.toList.sorted.mkString("\n")
   }
 
   //We don't do 'types shouldBe decoded' to avoid unreadable messages
   private def checkGeneratedClasses(types: Set[ClazzDefinition], decoded: Set[ClazzDefinition]): Unit = {
-    val names = types.map(_.clazzName.klass.getName)
-    val decodedNames = types.map(_.clazzName.klass.getName)
+    val names = types.map(_.getClazz.getName)
+    val decodedNames = decoded.map(_.getClazz.getName)
 
     withClue(s"New classes: ${names -- decodedNames} ") {
       (names -- decodedNames) shouldBe Set.empty
@@ -94,9 +95,9 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
       (decodedNames -- names) shouldBe Set.empty
     }
 
-    val decodedMap = decoded.map(k => k.clazzName.klass -> k).toMap[Class[_], ClazzDefinition]
+    val decodedMap = decoded.map(k => k.getClazz -> k).toMap[Class[_], ClazzDefinition]
     types.foreach { clazzDefinition =>
-      val clazz = clazzDefinition.clazzName.klass
+      val clazz = clazzDefinition.getClazz
       withClue(s"$clazz does not match: ") {
         val decoded = decodedMap.getOrElse(clazz, throw new AssertionError(s"No class $clazz"))
 
@@ -145,7 +146,7 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
 
 
   private def encode(types: Set[ClazzDefinition]) = {
-    val encoded = types.toList.sortBy(_.clazzName.klass.getName).asJson
+    val encoded = types.toList.sortBy(_.getClazz.getName).asJson
     val printed = Printer.spaces2SortKeys.copy(colonLeft = "", dropNullValues = true).print(encoded)
     printed
       .replaceAll(raw"""\{\s*("refClazzName": ".*?")\s*}""", "{$1}")

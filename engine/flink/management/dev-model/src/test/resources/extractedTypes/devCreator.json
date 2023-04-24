@@ -25,6 +25,23 @@
     "staticMethods": {}
   },
   {
+    "clazzName": {
+      "type" : "Unknown"
+    },
+    "methods": {
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "com.cronutils.model.Cron"},
     "methods": {
       "asString": [

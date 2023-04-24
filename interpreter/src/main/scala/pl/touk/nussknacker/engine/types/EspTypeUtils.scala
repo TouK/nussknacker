@@ -23,7 +23,7 @@ object EspTypeUtils {
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
     ClazzDefinition(
-      Typed.typedClass(clazz),
+      Typed(clazz),
       extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false),
       extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true)
     )

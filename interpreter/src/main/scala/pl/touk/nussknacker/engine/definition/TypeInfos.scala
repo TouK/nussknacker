@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, MethodTypeInfo, Parameter}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter
 
 object TypeInfos {
@@ -75,11 +75,22 @@ object TypeInfos {
     }
   }
 
-
-  case class ClazzDefinition(clazzName: TypedClass,
+  case class ClazzDefinition(clazzName: TypingResult,
                              methods: Map[String, List[MethodInfo]],
                              staticMethods: Map[String, List[MethodInfo]]) {
+
+    def getClazz: Class[_] = this.clazzName match {
+      case TypedClass(klass, _) => klass
+      case Unknown => AnyClass
+      case _ => ???
+    }
+
+    def clazzMatch(typeReferenceClazz: AnyRef): Boolean =
+      getClazz.equals(typeReferenceClazz)
+
     private def asProperty(info: MethodInfo): Option[TypingResult] = info.computeResultType(List()).toOption
+
+    private val AnyClass: Class[Any] = classOf[Any]
 
     def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       def filterMethods(candidates: Map[String, List[MethodInfo]]): List[TypingResult] =
