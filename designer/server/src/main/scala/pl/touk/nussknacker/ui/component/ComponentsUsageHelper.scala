@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
+import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.component.ComponentUtil
 import pl.touk.nussknacker.restmodel.component.NodeId
@@ -36,59 +36,17 @@ object ComponentsUsageHelper {
       .groupBy(identity)
       .mapValuesNow(_.size)
 
-  // TODO components-usages: create a helper class(es?) for Map[ComponentId, List[(T, List[NodeId])]] or at least a type alias for List
   def computeComponentsUsage(componentIdProvider: ComponentIdProvider,
                              processes: List[BaseProcessDetails[ScenarioComponentsUsages]]): Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeId])]] = {
-    val fragments = processes.filter(_.isSubprocess)
-    val fragmentComponentsUsages = computeComponentsUsedByFragmentComponents(componentIdProvider, fragments)
     processes
-      .map(processDetails => (processDetails, convertToComponentIdUsages(componentIdProvider, processDetails)))
-      .flatMap { case (processDetails, componentsUsages) => withProcessDetails(processDetails, expandIndirectComponentUsagesByFragment(componentsUsages, fragmentComponentsUsages)) }
-      .groupMap({ case (componentId, _) => componentId })({ case (_, usages) => usages })
-  }
-
-  private def convertToComponentIdUsages(componentIdProvider: ComponentIdProvider,
-                                         processDetails: BaseProcessDetails[ScenarioComponentsUsages]): Map[ComponentId, List[NodeId]] = {
-    val componentsUsages: Map[ComponentIdParts, List[NodeId]] = processDetails.json.value
-    componentsUsages.map { case (ComponentIdParts(componentName, componentType), nodeIds) =>
-      val componentId = componentIdProvider.createComponentId(processDetails.processingType, componentName, componentType)
-      componentId -> nodeIds
-    }
-  }
-
-  private def computeComponentsUsedByFragmentComponents(componentIdProvider: ComponentIdProvider,
-                                                        fragments: List[BaseProcessDetails[ScenarioComponentsUsages]]): Map[ComponentId, List[(ComponentId, List[NodeId])]] = {
-    fragments
-      .flatMap { fragmentDetails =>
-        val fragmentId = componentIdProvider.createComponentId(fragmentDetails.processingType, fragmentDetails.name, ComponentType.Fragments)
-        val componentsUsages: Map[ComponentIdParts, List[NodeId]] = fragmentDetails.json.value
+      .flatMap { processDetails =>
+        val componentsUsages: Map[ComponentIdParts, List[NodeId]] = processDetails.json.value
         componentsUsages.toList.map { case (ComponentIdParts(componentName, componentType), nodeIds) =>
-          val componentId = componentIdProvider.createComponentId(fragmentDetails.processingType, componentName, componentType)
-          fragmentId -> (componentId, nodeIds)
+          val componentId = componentIdProvider.createComponentId(processDetails.processingType, componentName, componentType)
+          componentId -> (processDetails.mapProcess(_ => ()), nodeIds)
         }
       }
       .groupMap({ case (componentId, _) => componentId })({ case (_, usages) => usages })
-  }
-
-  private def expandIndirectComponentUsagesByFragment(componentsUsages: Map[ComponentId, List[NodeId]],
-                                                      fragmentComponentsUsages: Map[ComponentId, List[(ComponentId, List[NodeId])]]): Map[ComponentId, List[NodeId]] = {
-    import cats.implicits._
-
-    componentsUsages.foldLeft(componentsUsages) { case (expandedComponentsUsages, componentUsages) =>
-      val (componentId, nodeIds) = componentUsages
-      val withIndirectFragmentUsages = fragmentComponentsUsages.get(componentId) match {
-        case None => Map(componentUsages)
-        case Some(usagesByFragment) => usagesByFragment.map { case (indirectComponentId, indirectComponentNodeIds) =>
-          val expandedNodeIds = nodeIds.flatMap { nodeId => indirectComponentNodeIds.map { indirectNodeId => s"$nodeId,$indirectNodeId" } }
-          indirectComponentId -> expandedNodeIds
-        }.toMap + componentUsages
-      }
-      expandedComponentsUsages |+| withIndirectFragmentUsages
-    }
-  }
-
-  private def withProcessDetails(processDetails: BaseProcessDetails[_], componentsUsages: Map[ComponentId, List[NodeId]]): Map[ComponentId, (BaseProcessDetails[Unit], List[NodeId])] = {
-    componentsUsages.transform { case (_, componentsUsages) => (processDetails.mapProcess(_ => ()), componentsUsages) }
   }
 
   def computeComponentsUsageOld(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, List[(ProcessDetails, List[NodeId])]] =
