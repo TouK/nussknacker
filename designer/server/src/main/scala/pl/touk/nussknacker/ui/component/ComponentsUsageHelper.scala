@@ -3,15 +3,14 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.component.ComponentUtil
-import pl.touk.nussknacker.restmodel.component.NodeId
-import pl.touk.nussknacker.restmodel.process.{ComponentIdParts, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 
 object ComponentsUsageHelper {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  def computeScenarioUsages(scenario: CanonicalProcess): ScenarioComponentsUsages = {
+  def computeUsagesForScenario(scenario: CanonicalProcess): ScenarioComponentsUsages = {
     val usagesList = for {
       node <- scenario.collectAllNodes
       componentType <- ComponentUtil.extractComponentType(node)
