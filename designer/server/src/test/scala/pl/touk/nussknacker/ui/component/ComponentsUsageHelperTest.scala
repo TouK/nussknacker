@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
@@ -13,8 +13,9 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
-import pl.touk.nussknacker.restmodel.component.ComponentIdParts
-import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
+import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessDetails}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
@@ -93,7 +94,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   test("should compute usages for a single scenario") {
     val table = Table(
-      ("process", "expectedData"),
+      ("scenario", "expectedData"),
       (process1, Map(
         ComponentIdParts(Some(existingSourceFactory), Source) -> List("source"),
         ComponentIdParts(Some(existingStreamTransformer), ComponentType.CustomNode) -> List("custom"),
@@ -123,7 +124,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   test("should compute components usage count") {
     val table = Table(
-      ("processes", "expectedData"),
+      ("processesDetails", "expectedData"),
       (List.empty, Map.empty),
       (List(processDetails2, processDetailsWithSomeBasesStreaming), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
@@ -153,15 +154,15 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       ))
     )
 
-    forAll(table) { (processes, expectedData) =>
-      val result = ComponentsUsageHelper.computeComponentsUsageCountOld(defaultComponentIdProvider, processes)
+    forAll(table) { (processesDetails, expectedData) =>
+      val result = ComponentsUsageHelper.computeComponentsUsageCount(defaultComponentIdProvider, withComponentsUsages(processesDetails))
       result shouldBe expectedData
     }
   }
 
   test("should compute components usage") {
-    val table = Table(
-      ("processes", "expected"),
+    val table: TableFor2[List[ProcessDetails], Map[ComponentId, List[(BaseProcessDetails[DisplayableProcess], List[NodeId])]]] = Table(
+      ("processesDetails", "expected"),
       (List.empty, Map.empty),
       (List(processDetails1ButDeployed), Map(
         sid(Source, existingSourceFactory) -> List((processDetails1ButDeployed, List("source"))),
@@ -195,9 +196,14 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       ))
     )
 
-    forAll(table) { (process, expected) =>
-      val result = ComponentsUsageHelper.computeComponentsUsageOld(defaultComponentIdProvider, process)
-      result shouldBe expected
+    forAll(table) { (processesDetails, expected) =>
+      val result = ComponentsUsageHelper.computeComponentsUsage(defaultComponentIdProvider, withComponentsUsages(processesDetails))
+
+      withEmptyProcess(expected).foreach { case (componentId, usages) =>
+        withClue(s"componentId: $componentId") {
+          result(componentId) should contain theSameElementsAs usages
+        }
+      }
     }
   }
 
@@ -205,4 +211,17 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   private def fid(componentType: ComponentType, id: String) = ComponentId.default(Fraud, id, componentType)
   private def bid(componentType: ComponentType) = ComponentId.forBaseComponent(componentType)
   private def oid(overriddenName: String) = ComponentId(overriddenName)
+
+  private def withComponentsUsages(processesDetails: List[ProcessDetails]): List[BaseProcessDetails[ScenarioComponentsUsages]] = {
+    processesDetails.map { details =>
+      details.mapProcess(p => ComponentsUsageHelper.computeUsagesForScenario(toCanonical(p)))
+    }
+  }
+
+  private def withEmptyProcess(usagesMap: Map[ComponentId, List[(BaseProcessDetails[_], List[NodeId])]]): Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeId])]] = {
+    usagesMap.transform { case (_, usages) =>
+      usages.map { case (processDetails, nodeIds) => (processDetails.mapProcess(_ => ()), nodeIds) }
+    }
+  }
+
 }
