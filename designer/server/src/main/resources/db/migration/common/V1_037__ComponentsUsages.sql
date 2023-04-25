@@ -1,4 +1,4 @@
-ALTER TABLE "process_versions" ADD COLUMN "components_usages" VARCHAR2(1000000);
+ALTER TABLE "process_versions" ADD COLUMN "components_usages" VARCHAR(1000000);
 
 -- Set empty JSON array.
 UPDATE "process_versions" SET "components_usages" = '[]';
