@@ -62,9 +62,12 @@ module.exports = {
   entry: entry,
   output: {
     path: outputPath,
-    filename: isProd ? "[contenthash].js": "[name].js",
+    filename: isProd ? "[contenthash].js" : "[name].js",
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
+  watchOptions: {
+    ignored: /^(?!.*\/src\/).*$/,
+  },
   devServer: {
     client: {
       overlay: false,
@@ -146,23 +149,6 @@ module.exports = {
         ],
       },
       directory: outputPath,
-      watch: {
-        ignored: [
-          "webpack.config.js",
-          "**/dist",
-          "**/target",
-          // ignore vim swap files
-          "**/*.sw[pon]",
-          // TODO: separate src/main, src/test and so on
-          "**/cypress*",
-          "**/.nyc_output",
-          "**/.federated-types/**/*",
-          "**/dist/*-dts.tgz",
-          "**/jest*",
-          "**/test*",
-          "**/*.md",
-        ],
-      },
     },
   },
   plugins: [
@@ -260,7 +246,8 @@ module.exports = {
     new ForkTsCheckerWebpackPlugin({
       typescript: {
         memoryLimit: 5000,
-      }}),
+      },
+    }),
     isProd ? null : new ReactRefreshWebpackPlugin({overlay: false}),
     new webpack.ProgressPlugin(progressBar),
   ].filter(Boolean),
