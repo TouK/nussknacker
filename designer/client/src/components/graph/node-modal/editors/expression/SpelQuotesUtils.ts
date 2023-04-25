@@ -62,7 +62,7 @@ export const unquote = curry((quotationMark: QuotationMark, quoted: string): str
   return quoted
 })
 
-const escapedOnly = mark => `([^(${mark})]|(${escapeQuotes(mark, mark)}))*`
+const escapedOnly = mark => `([^${mark}]|${escapeQuotes(mark, mark)})*`
 
 const getQuotedStringPattern = (marks: string[]): RegExp => {
   const patterns = marks.map(mark => `${mark}${escapedOnly(mark)}${mark}`)
