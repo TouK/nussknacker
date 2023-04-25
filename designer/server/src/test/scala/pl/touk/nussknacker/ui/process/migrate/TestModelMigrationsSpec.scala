@@ -126,7 +126,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val testMigration = new TestModelMigrations(
       mapProcessingTypeDataProvider(Streaming -> new TestMigrations(8)),
-      TestFactory.processValidation
+      TestFactory.flinkProcessValidation
     )
 
     val process =
@@ -152,6 +152,6 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     validationResult.errors.invalidNodes.mapValuesNow(_.map(_.typ))
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations =
-    new TestModelMigrations(mapProcessingTypeDataProvider(Streaming -> testMigrations), TestFactory.processValidation)
+    new TestModelMigrations(mapProcessingTypeDataProvider(Streaming -> testMigrations), TestFactory.flinkProcessValidation)
 
 }

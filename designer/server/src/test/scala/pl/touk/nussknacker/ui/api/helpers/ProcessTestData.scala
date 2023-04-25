@@ -290,7 +290,7 @@ object ProcessTestData {
     )
   }
 
-  def displayableWithAdditionalFieldsWithoutTypeSpecificData(additionalFields: Option[ProcessAdditionalFields]): DisplayableProcess = {
+  def displayableWithAdditionalFields(additionalFields: Option[ProcessAdditionalFields]): DisplayableProcess = {
     val process = validDisplayableProcess.toDisplayable
     val properties = process.properties
 
