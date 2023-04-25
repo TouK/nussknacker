@@ -1,18 +1,35 @@
 import _ from "lodash"
+import {ClassDefinition} from "../../../../../types";
+import HttpService from "../../../../../http/HttpService";
 
 // before indexer['last indexer key
 const INDEXER_REGEX = /^(.*)\['([^\[]*)$/
 
-export default class ExpressionSuggester {
+type CaretPosition2d = {row: number, column: number};
 
-  constructor(typesInformation, variables, processingType, httpService) {
-    this._typesInformation = typesInformation
+export interface ExpressionSuggester {
+  suggestionsFor(inputValue: string, caretPosition2d: CaretPosition2d): Promise<any>;
+}
+
+export class BackendExpressionSuggester implements ExpressionSuggester {
+  private _variables: Record<string, any>;
+
+  constructor(private _typesInformation: ClassDefinition[], variables, private _processingType: string, private _httpService: typeof HttpService) {
     this._variables = _.mapKeys(variables, (value, variableName) => {return `#${variableName}`})
-    this._processingType = processingType
-    this._httpService = httpService
+  }
+  suggestionsFor(inputValue: string, caretPosition2d: CaretPosition2d): Promise<any> {
+    return this._httpService.getExpressionSuggestions(inputValue, caretPosition2d);
+  }
+}
+
+export class RegexExpressionSuggester implements ExpressionSuggester {
+  readonly _variables: Record<string, any>;
+
+  constructor(private _typesInformation: ClassDefinition[], variables, private _processingType: string, private _httpService: Pick<typeof HttpService, "fetchDictLabelSuggestions">) {
+    this._variables = _.mapKeys(variables, (value, variableName) => {return `#${variableName}`})
   }
 
-  suggestionsFor = (inputValue, caretPosition2d) => {
+  suggestionsFor = (inputValue: string, caretPosition2d: CaretPosition2d): Promise<any> => {
     const normalized = this._normalizeMultilineInputToSingleLine(inputValue, caretPosition2d)
     const lastExpressionPart = this._focusedLastExpressionPartWithoutMethodParens(normalized.normalizedInput, normalized.normalizedCaretPosition)
     const properties = this._alreadyTypedProperties(lastExpressionPart)
@@ -21,7 +38,7 @@ export default class ExpressionSuggester {
     return this._getSuggestions(lastExpressionPart, focusedClazz, variablesIncludingSelectionOrProjection)
   }
 
-  _normalizeMultilineInputToSingleLine = (inputValue, caretPosition2d) => {
+  _normalizeMultilineInputToSingleLine = (inputValue: string, caretPosition2d: CaretPosition2d) => {
     const rows = inputValue?.split("\n") || []
     const trimmedRows = _.map(rows, (row) => {
       const trimmedAtStartRow = _.dropWhile(row, (c) => c === " ").join("")
@@ -36,7 +53,7 @@ export default class ExpressionSuggester {
     }
   }
 
-  _getSuggestions = (value, focusedClazz, variables) => {
+  _getSuggestions = (value: string, focusedClazz, variables: Record<string, any>): Promise<any[]> => {
     const variableNames = _.keys(variables)
     const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) || _.includes(value, `${variable}['`) })
     const variableNotSelected = _.some(variableNames, (variable) => { return _.startsWith(variable.toLowerCase(), value.toLowerCase()) })
@@ -77,13 +94,13 @@ export default class ExpressionSuggester {
     })
   }
 
-  _filterSuggestionsForInput = (variables, inputValue) => {
+  _filterSuggestionsForInput = (variables, inputValue: string) => {
     return _.filter(variables, (variable) => {
       return _.includes(variable.methodName.toLowerCase(), inputValue.toLowerCase())
     })
   }
 
-  _findRootClazz = (properties, variables) => {
+  _findRootClazz = (properties: string[], variables: Record<string, any>) => {
     const variableName = properties[0]
     if (_.has(variables, variableName)) {
       const variableClazzName = _.get(variables, variableName)
@@ -96,7 +113,7 @@ export default class ExpressionSuggester {
     }
   }
 
-  _extractMethod(type, prop) {
+  _extractMethod(type, prop: string) {
     if (type.union != null) {
       let foundedTypes = _.filter(_.map(type.union, (clazz) => this._extractMethodFromClass(clazz, prop)), i => i != null)
       // TODO: compute union of extracted methods types
@@ -106,7 +123,7 @@ export default class ExpressionSuggester {
     }
   }
 
-  _extractMethodFromClass(clazz, prop) {
+  _extractMethodFromClass(clazz, prop: string) {
     return _.get(clazz.methods, `${prop}.refClazz`)
   }
 
@@ -137,20 +154,20 @@ export default class ExpressionSuggester {
     return !_.isEmpty(foundData) ? foundData.methods : []
   }
 
-  _focusedLastExpressionPartWithoutMethodParens = (expression, caretPosition) => {
+  _focusedLastExpressionPartWithoutMethodParens = (expression: string, caretPosition: number) => {
     return this._lastExpressionPartWithoutMethodParens(this._currentlyFocusedExpressionPart(expression, caretPosition))
   }
 
-  _currentlyFocusedExpressionPart = (value, caretPosition) => {
+  _currentlyFocusedExpressionPart = (value: string, caretPosition: number): string => {
     return this._removeFinishedSelectionFromExpressionPart(value.slice(0, caretPosition))
   }
 
   //TODO: this does not handle map indices properly... e.g. #input.value.?[#this[""] > 4]
-  _removeFinishedSelectionFromExpressionPart = (currentExpression) => {
+  _removeFinishedSelectionFromExpressionPart = (currentExpression: string): string => {
     return currentExpression.replace(/\.\?\[[^\]]*]/g, "")
   }
 
-  _lastExpressionPartWithoutMethodParens = (value) => {
+  _lastExpressionPartWithoutMethodParens = (value: string): string => {
     //we have to handle cases like: #util.now(#other.quaxString.toUpperCase().__)
     const withoutNestedParenthesis = value.substring(this._lastNonClosedParenthesisIndex(value) + 1, value.length)
     const valueCleaned = withoutNestedParenthesis.replace(/\(.*\)/, "")
@@ -159,7 +176,7 @@ export default class ExpressionSuggester {
     return _.isEmpty(value) ? "" : `#${  _.last(_.split(withSafeNavigationIgnored, "#"))}`
   };
 
-  _lastNonClosedParenthesisIndex = (value) => {
+  _lastNonClosedParenthesisIndex = (value: string): number => {
     let nestingCounter = 0
     for (let i = value.length - 1; i >= 0; i--) {
       if (value[i] === "(") nestingCounter -= 1
@@ -170,15 +187,15 @@ export default class ExpressionSuggester {
     return -1
   };
 
-  _justTypedProperty = (value) => {
+  _justTypedProperty = (value: string): string => {
     return _.last(this._dotSeparatedToProperties(value))
   }
 
-  _alreadyTypedProperties = (value) => {
+  _alreadyTypedProperties = (value: string): string[] => {
     return _.initial(this._dotSeparatedToProperties(value))
   }
 
-  _dotSeparatedToProperties = (value) => {
+  _dotSeparatedToProperties = (value: string): string[] => {
     // TODO: Implement full SpEL support for accessing by indexer the same way as by properties - not just for last indexer
     const indexerMatch = value.match(INDEXER_REGEX)
     if (indexerMatch) {
@@ -195,7 +212,7 @@ export default class ExpressionSuggester {
     return _.concat(splittedProperties, indexerKey)
   }
 
-  _getAllVariables = (normalized) => {
+  _getAllVariables = (normalized): Record<string, any> => {
     const thisClazz = this._findProjectionOrSelectionRootClazz(normalized)
     const data = thisClazz ? {"#this" : thisClazz} : {}
     return _.merge(data, this._variables)
@@ -235,7 +252,7 @@ export default class ExpressionSuggester {
     }
   }
 
-  _findCurrentProjectionOrSelection = (normalized) => {
+  _findCurrentProjectionOrSelection = (normalized): string => {
     const input = normalized.normalizedInput
     const caretPosition = normalized.normalizedCaretPosition
     const currentPart = this._currentlyFocusedExpressionPart(input, caretPosition)

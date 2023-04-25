@@ -213,7 +213,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, new TestModelMigrations(modelData.mapValues(_.migrations), processValidation), environment))
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, futureProcessRepository, processAuthorizer)),
         countsReporter
-          .map(reporter => new ProcessReportResources(reporter, counter, futureProcessRepository))
+          .map(reporter => new ProcessReportResources(reporter, counter, futureProcessRepository)),
+        Some(new ExpressionSuggesterResources(new ExpressionSuggester)).filter(_ => featureTogglesConfig.codeSuggestionsFromBackend)
       ).flatten
       routes ++ optionalRoutes
     }
