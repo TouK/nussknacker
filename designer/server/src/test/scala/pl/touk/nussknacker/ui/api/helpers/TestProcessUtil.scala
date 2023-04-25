@@ -26,6 +26,9 @@ object TestProcessUtil {
   def toDisplayable(espProcess: CanonicalProcess, processingType: ProcessingType = TestProcessingTypes.Streaming, category: Category = TestCategories.Category1): DisplayableProcess =
     ProcessConverter.toDisplayable(espProcess, processingType, category)
 
+  def toCanonical(displayable: DisplayableProcess): CanonicalProcess =
+    ProcessConverter.fromDisplayable(displayable)
+
   def toJson(espProcess: CanonicalProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): Json =
     Encoder[DisplayableProcess].apply(toDisplayable(espProcess, processingType))
 
