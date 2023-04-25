@@ -6,9 +6,6 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
-
 @JsonCodec case class LayoutData(x: Long, y: Long)
 
 // todo: MetaData should hold ProcessName as id
@@ -18,54 +15,24 @@ import scala.concurrent.duration.Duration
   val isSubprocess: Boolean = typeSpecificData.isSubprocess
 }
 
-@ConfiguredJsonCodec sealed trait TypeSpecificData {
-  val isSubprocess = this match {
-    case _: ScenarioSpecificData => false
-    case _: FragmentSpecificData => true
+object MetaData {
+  def apply(id: String, properties: ProcessAdditionalFields, propertiesType: String): MetaData = {
+    val (typeSpecificProperties, fields) = properties.extractTypedData(propertiesType)
+    MetaData(id, typeSpecificProperties, Some(fields))
   }
-  val toGenericMap: Map[String, String];
-}
-
-sealed trait ScenarioSpecificData extends TypeSpecificData
-
-case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData {
-  override val toGenericMap: Map[String, String] = Map(
-    "docsUrl" -> docsUrl.getOrElse(""),
-  )
-}
-
-// TODO: rename to FlinkStreamMetaData
-case class StreamMetaData(parallelism: Option[Int] = None,
-                          //we assume it's safer to spill state to disk and fix performance than to fix heap problems...
-                          spillStateToDisk: Option[Boolean] = Some(true),
-                          useAsyncInterpretation: Option[Boolean] = None,
-                          checkpointIntervalInSeconds: Option[Long] = None) extends ScenarioSpecificData {
-
-  def checkpointIntervalDuration : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
-
-  override val toGenericMap: Map[String, String] = Map(
-    "parallelism" -> parallelism.map(_.toString).getOrElse(""),
-    "spillStateToDisk" -> spillStateToDisk.map(_.toString).getOrElse(""),
-    "useAsyncInterpretation" -> useAsyncInterpretation.map(_.toString).getOrElse(""),
-    "checkpointIntervalInSeconds" -> checkpointIntervalInSeconds.map(_.toString).getOrElse(""),
-  )
-}
-
-// TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
-case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData {
-  override val toGenericMap: Map[String, String] = Map(
-    "parallelism" -> parallelism.map(_.toString).getOrElse(""),
-  )
-}
-
-case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData {
-  override val toGenericMap: Map[String, String] = Map(
-    "slug" -> slug.getOrElse(""),
-  )
 }
 
 case class ProcessAdditionalFields(description: Option[String],
-                                   properties: Map[String, String])
+                                   properties: Map[String, String]) {
+
+  def extractTypedData(propertiesType: String): (TypeSpecificData, ProcessAdditionalFields) = {
+    val typeSpecificData = TypeSpecificData(properties, propertiesType)
+    val typeSpecificPropsList = typeSpecificData.toProperties.keySet
+    val fields = ProcessAdditionalFields(description, properties.filterNot(k => typeSpecificPropsList.contains(k._1)))
+    (typeSpecificData, fields)
+  }
+
+}
 
 object ProcessAdditionalFields {
 
@@ -74,7 +41,7 @@ object ProcessAdditionalFields {
                                                      properties: Option[Map[String, String]])
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
+  = deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
 }
