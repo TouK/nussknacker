@@ -16,7 +16,12 @@ Suspendisse
   \\}# a pellentesque dui, non felis. Maecenas malesuada elit lectus
 `
 
-const concats = `
+const concats = `'
+Lorem ipsum ' + dolor + ' sit amet enim. Etiam '+ullamcorper.
+Suspendisse+' a pellentesque dui, non felis. Maecenas malesuada elit lectus
+'`
+
+const concatsTrim = `
 Lorem ipsum '+dolor+' sit amet enim. Etiam '+ullamcorper.
 Suspendisse+' a pellentesque dui, non felis. Maecenas malesuada elit lectus
 `
@@ -28,17 +33,17 @@ Suspendisse}# a pellentesque dui, non felis. Maecenas malesuada elit lectus
 
 describe("TemplatesUtils", () => {
   describe("templatesToConcats", () => {
-    it("should replace #{value}# with '+value+' ", () => {
-      expect(TemplatesUtils.templatesToConcats(QuotationMark.single, templates)).toBe(concats)
+    it("should replace #{value}# with '+value+'", () => {
+      expect(TemplatesUtils.templatesToConcats(QuotationMark.single, templates)).toBe(concatsTrim)
     })
   })
   describe("concatsToTemplates", () => {
-    it("should replace #{value}# with '+value+' ", () => {
-      expect(TemplatesUtils.concatsToTemplates(QuotationMark.single, concats)).toBe(templatesTrimmed)
+    it("should replace '+value+' with #{value}#", () => {
+      expect(TemplatesUtils.concatsToTemplates(concats)).toBe(templatesTrimmed)
     })
   })
   describe("escapeTemplates", () => {
-    it("should replace #{value}# with #\\{value\\}", () => {
+    it("should replace #{value}# with #\\{value\\}#", () => {
       expect(TemplatesUtils.escapeTemplates(templates)).toBe(templatesEscaped)
     })
   })

@@ -1,5 +1,5 @@
-import {curry} from "lodash"
-import {dotAllReplacement} from "../../../../../common/regexpCompat"
+import {curry, flow} from "lodash"
+import {getQuotationMark, isQuoted, unescapeQuotes, unquote} from "./SpelQuotesUtils"
 
 // serach for: #{value}# with value in $1
 const templatesSearch = /#\{(.*?)\}#/gms
@@ -18,17 +18,27 @@ export function escapeTemplates(value: string): string {
   return value.replace(templatesSearch, `#\\{$1\\}#`)
 }
 
-// serach for: "quotationMark+value+quotationMark" with trimmed value in $1
-function getConcatsSearch(quotationMark: string): RegExp {
-  return RegExp(`${quotationMark}\\+\\s*(${dotAllReplacement}+?)\\s*\\+${quotationMark}`, `gm`)
-}
+export const couplerRegex = /\s*\+\s*/gm
 
 export const templatesToConcats = curry((quotationMark: string, value: string) => value.replace(
   templatesSearchTrim,
   `${quotationMark}+$1+${quotationMark}`,
 ))
 
-export const concatsToTemplates = curry((quotationMark: string, value: string) => value.replace(
-  getConcatsSearch(quotationMark),
-  `#{$1}#`,
-))
+export function splitConcats(value: string) {
+  return value.split(/\s*\+\s*/gm)
+}
+
+export const concatsToTemplates = (value: string) => {
+  return splitConcats(value).map(value => {
+    if (isQuoted(value)) {
+      const qm = getQuotationMark(value)
+      return flow([
+        unquote(qm),
+        unescapeQuotes(qm),
+        escapeTemplates,
+      ])(value)
+    }
+    return `#{${value}}#`
+  }).join("")
+}

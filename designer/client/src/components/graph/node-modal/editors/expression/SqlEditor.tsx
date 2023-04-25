@@ -6,8 +6,8 @@ import ReactAce from "react-ace/lib/ace"
 import {SimpleEditor} from "./Editor"
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
 import RawEditor, {RawEditorProps} from "./RawEditor"
-import {getQuotedStringPattern, QuotationMark} from "./SpelQuotesUtils"
-import {ExpressionLang, ExpressionObj} from "./types"
+import {switchableTo} from "./StringEditor"
+import {ExpressionLang} from "./types"
 
 interface Props extends RawEditorProps {
   formatter: Formatter,
@@ -100,13 +100,7 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
   )
 }
 
-const quotedStringPattern = getQuotedStringPattern([QuotationMark.single, QuotationMark.double])
-
-const parseable = ({expression, language}: ExpressionObj) => {
-  return language === ExpressionLang.SpEL && quotedStringPattern.test(expression.trim())
-}
-
-SqlEditor.switchableTo = (expressionObj) => parseable(expressionObj)
+SqlEditor.switchableTo = switchableTo
 SqlEditor.switchableToHint = () => i18next.t("editors.textarea.switchableToHint", "Switch to basic mode")
 SqlEditor.notSwitchableToHint = () => i18next.t(
   "editors.textarea.notSwitchableToHint",

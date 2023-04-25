@@ -2,8 +2,8 @@ import {flow} from "lodash"
 import moment from "moment"
 import {Duration} from "./Duration/DurationEditor"
 import {Period} from "./Duration/PeriodEditor"
-import {escapeQuotes, getQuotationMark, quote, unescapeQuotes, unquote} from "./SpelQuotesUtils"
-import {concatsToTemplates, escapeTemplates, templatesToConcats, unescapeTemplates} from "./TemplatesUtils"
+import {escapeQuotes, getQuotationMark, quote, simplifyQuotes} from "./SpelQuotesUtils"
+import {concatsToTemplates, templatesToConcats, unescapeTemplates} from "./TemplatesUtils"
 import {CronExpression} from "./Cron/CronEditor"
 
 export type Formatter = {
@@ -23,7 +23,7 @@ export enum FormatterType {
   Sql = "java.lang.String", // for now same as String
 }
 
-const stringSpelFormatter: Formatter = {
+export const stringSpelFormatter: Formatter = {
   encode: value => {
     const qm = getQuotationMark(value)
     return flow([
@@ -31,16 +31,11 @@ const stringSpelFormatter: Formatter = {
       templatesToConcats(qm),
       unescapeTemplates,
       quote(qm),
+      simplifyQuotes(qm),
     ])(value)
   },
   decode: value => {
-    const qm = getQuotationMark(value)
-    return flow([
-      unquote(qm),
-      unescapeQuotes(qm),
-      escapeTemplates,
-      concatsToTemplates(qm),
-    ])(value)
+    return concatsToTemplates(value)
   },
 }
 
@@ -126,8 +121,14 @@ const dateTimeFormatter: Formatter = {
 }
 
 const defaultFormatter: Formatter = {
-  encode: value => value,
-  decode: value => value,
+  encode: value => {
+    console.log("defaultFormatter", "encode", value)
+    return value
+  },
+  decode: value => {
+    console.log("defaultFormatter", "decode", value)
+    return value
+  },
 }
 
 export const spelFormatters: Record<FormatterType, Formatter> = {
