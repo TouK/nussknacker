@@ -21,7 +21,7 @@ export const escapeQuotes = curry((quotationMark: QuotationMark | string, value:
   }
 })
 
-export const unescapeQuotes = curry((quotationMark: QuotationMark, value: string): string => {
+export const unescapeQuotes = curry((quotationMark: QuotationMark | string, value: string): string => {
   switch (quotationMark) {
     case QuotationMark.single:
     case QuotationMark.double:
@@ -62,9 +62,16 @@ export const unquote = curry((quotationMark: QuotationMark, quoted: string): str
   return quoted
 })
 
-export function isQuoted(value: string) {
-  return quotedStringPattern.test(value)
+const escapedOnly = mark => `([^(${mark})]|(${escapeQuotes(mark, mark)}))*`
+
+const getQuotedStringPattern = (marks: string[]): RegExp => {
+  const patterns = marks.map(mark => `${mark}${escapedOnly(mark)}${mark}`)
+  return RegExp(`^\\s*(${patterns.join("|")})\\s*$`)
 }
+
+const quotedStringPattern = getQuotedStringPattern([QuotationMark.single, QuotationMark.double])
+
+export const isQuoted = (value: string): boolean => quotedStringPattern.test(value)
 
 export function getQuotationMark(value: string): QuotationMark {
   switch (value.charAt(0)) {
@@ -82,11 +89,3 @@ export function getQuotationMark(value: string): QuotationMark {
       return defaultQuotationMark
   }
 }
-
-function getQuotedStringPattern(quotationMarks: string[]): RegExp {
-  const escapedOnly = mark => `([^(${mark})]|(${escapeQuotes(mark, mark)}))*`
-  const patterns = quotationMarks.map(mark => `${mark}${escapedOnly(mark)}${mark}`)
-  return RegExp(`^\\s*(${patterns.join("|")})\\s*$`)
-}
-
-export const quotedStringPattern = getQuotedStringPattern([QuotationMark.single, QuotationMark.double])

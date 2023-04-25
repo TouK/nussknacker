@@ -121,14 +121,8 @@ const dateTimeFormatter: Formatter = {
 }
 
 const defaultFormatter: Formatter = {
-  encode: value => {
-    console.log("defaultFormatter", "encode", value)
-    return value
-  },
-  decode: value => {
-    console.log("defaultFormatter", "decode", value)
-    return value
-  },
+  encode: value => value,
+  decode: value => value,
 }
 
 export const spelFormatters: Record<FormatterType, Formatter> = {
