@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, RegExpParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory}
 
@@ -18,7 +19,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
 
   private val validator = new AdditionalPropertiesValidator(
     TestFactory.mapProcessingTypeDataProvider(
-      "streaming" -> Map(
+      "streaming" -> (Map(
         reqFieldName -> AdditionalPropertyConfig(
           None,
           None,
@@ -40,11 +41,11 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
           Some(List(FixedValuesValidator(possibleValues))),
           Some(label)
         )
-      ))
+      ) ++ FlinkStreamingPropertiesConfig.properties))
   )
 
   test("validate non empty config with required property") {
-    val process = ProcessTestData.displayableWithAdditionalFieldsWithoutTypeSpecificData(Some(
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "5"
       ))
@@ -56,7 +57,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate non empty config without required property") {
-    val process = ProcessTestData.displayableWithAdditionalFieldsWithoutTypeSpecificData(Some(
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propOpt" -> "a"
       ))
@@ -70,7 +71,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate non empty config with empty required property") {
-    val process = ProcessTestData.displayableWithAdditionalFieldsWithoutTypeSpecificData(Some(
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> ""
       ))
@@ -86,7 +87,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate regexp config with empty property") {
-    val process = ProcessTestData.displayableWithAdditionalFieldsWithoutTypeSpecificData(Some(
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "1",
         "propRegExp" -> ""
@@ -101,7 +102,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate config with invalid property") {
-    val process = ProcessTestData.displayableWithAdditionalFieldsWithoutTypeSpecificData(Some(
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "1",
         "propRegExp" -> "asd"
@@ -116,7 +117,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate non empty config with required property with wrong type") {
-    val process = ProcessTestData.displayableWithAdditionalFieldsWithoutTypeSpecificData(Some(
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "some text"
       ))
@@ -130,7 +131,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate empty config") {
-    val process = ProcessTestData.displayableWithAdditionalFieldsWithoutTypeSpecificData(None)
+    val process = ProcessTestData.displayableWithAdditionalFields(None)
 
     val result = validator.validate(process)
 
@@ -140,7 +141,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate non empty config with fixed value property with wrong value") {
-    val process = ProcessTestData.displayableWithAdditionalFieldsWithoutTypeSpecificData(Some(
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         optFixedFieldName -> "some text"
       ))
@@ -158,7 +159,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
 
   test("validate non empty config with unknown property") {
     val unknownProperty = "unknown"
-    val process = ProcessTestData.displayableWithAdditionalFieldsWithoutTypeSpecificData(Some(
+    val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "5",
         "unknown" -> "some text"

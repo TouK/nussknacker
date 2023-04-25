@@ -18,17 +18,24 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 object MetaData {
   def apply(id: String, properties: ProcessAdditionalFields, propertiesType: String): MetaData = {
     val (typeSpecificProperties, fields) = properties.extractTypedData(propertiesType)
-    MetaData(id, typeSpecificProperties, Some(fields))
+    MetaData(id, typeSpecificProperties, fields)
   }
 }
 
 case class ProcessAdditionalFields(description: Option[String],
                                    properties: Map[String, String]) {
 
-  def extractTypedData(propertiesType: String): (TypeSpecificData, ProcessAdditionalFields) = {
+  def extractTypedData(propertiesType: String): (TypeSpecificData, Option[ProcessAdditionalFields]) = {
     val typeSpecificData = TypeSpecificData(properties, propertiesType)
     val typeSpecificPropsList = typeSpecificData.toProperties.keySet
-    val fields = ProcessAdditionalFields(description, properties.filterNot(k => typeSpecificPropsList.contains(k._1)))
+
+    // TODO: do this cleaner
+    val otherProps = properties.filterNot(k => typeSpecificPropsList.contains(k._1))
+    val fields = otherProps match {
+      case m if m.isEmpty && description.isEmpty => None
+      case e => Some(ProcessAdditionalFields(description, e))
+    }
+
     (typeSpecificData, fields)
   }
 
