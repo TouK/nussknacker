@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessingTypes}
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
+import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 
 class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
@@ -46,7 +47,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
   val processWithoutAdditionalFields: Json = parse(
     s"""
        |{
-       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}},
+       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }},
        |    "nodes" : [
        |        {
        |            "type" : "Source",
@@ -81,6 +82,6 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
     displayableProcess.id shouldBe "custom"
     displayableProcess.nodes.head.additionalFields shouldBe None
-    displayableProcess.properties.additionalFields shouldBe None
+    displayableProcess.properties.additionalFields shouldBe ProcessAdditionalFields(None, Map("parallelism" -> "2", "spillStateToDisk" -> "true"))
   }
 }
