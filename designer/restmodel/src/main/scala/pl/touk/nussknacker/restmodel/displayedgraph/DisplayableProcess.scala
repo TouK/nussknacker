@@ -3,15 +3,12 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, LiteStreamMetaData, MetaData, ProcessAdditionalFields, RequestResponseMetaData, StreamMetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
-import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties.extractTypedData
-
-import scala.util.Try
 
 //it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
 //or we'd have to do composition which would break many things in client
@@ -52,21 +49,13 @@ import scala.util.Try
 
 }
 
+// TODO: remove propertiesType and additionalFields nesting
 @JsonCodec(decodeOnly = true)
 case class ProcessProperties(additionalFields: ProcessAdditionalFields, propertiesType: String) {
 
-  def toMetaData(id: String): MetaData = {
+  def toMetaData(id: String): MetaData = MetaData(id = id, properties = additionalFields, propertiesType = propertiesType)
 
-    val (typeSpecificData, additionalFields) = extractTypedData(this)
-
-    MetaData(
-      id = id,
-      typeSpecificData = typeSpecificData,
-      additionalFields = additionalFields
-    )
-  }
-
-  val isSubprocess: Boolean = extractTypedData(this)._1.isSubprocess
+  val isSubprocess: Boolean = additionalFields.extractTypedData(propertiesType)._1.isSubprocess
 
 }
 
@@ -74,43 +63,30 @@ object ProcessProperties {
 
   def apply(typeSpecificProperties: TypeSpecificData,
             additionalFields: Option[ProcessAdditionalFields] = None): ProcessProperties = {
-    val genericTypeSpecificData = typeSpecificProperties.toGenericMap
-    val additionalProps = additionalFields.map(a => a.properties).getOrElse(None)
+    val typeSpecificPropertiesMap = typeSpecificProperties.toProperties
+    val propertiesMap = additionalFields.map(a => a.properties).getOrElse(Map())
+    val mergedProps = mergeProperties(typeSpecificPropertiesMap, propertiesMap)
     val description = additionalFields.flatMap(a => a.description)
 
-    val props = ProcessAdditionalFields(description, genericTypeSpecificData ++ additionalProps)
+    val props = ProcessAdditionalFields(description, mergedProps)
 
     // We set the classname to make converting back from generic to typed easier
     val typeSpecificClassName = typeSpecificProperties.getClass.getSimpleName
     ProcessProperties(props, typeSpecificClassName)
   }
 
-  private def extractTypedData(processProperties: ProcessProperties): (TypeSpecificData, Option[ProcessAdditionalFields]) = {
-    val genericProperties = processProperties.additionalFields.properties
-
-    val typeSpecificData = processProperties.propertiesType match {
-      case "StreamMetaData" => StreamMetaData(
-        parallelism = Try(genericProperties.get("parallelism").map(_.toInt)).getOrElse(None),
-        spillStateToDisk = Try(genericProperties.get("spillStateToDisk").map(_.toBoolean)).getOrElse(None),
-        useAsyncInterpretation = Try(genericProperties.get("useAsyncInterpretation").map(_.toBoolean)).getOrElse(None),
-        checkpointIntervalInSeconds = Try(genericProperties.get("checkpointIntervalInSeconds").map(_.toLong)).getOrElse(None)
-      )
-      case "LiteStreamMetaData" => LiteStreamMetaData(
-        parallelism = Try(genericProperties.get("parallelism").map(_.toInt)).getOrElse(None)
-      )
-      case "RequestResponseMetaData" => RequestResponseMetaData(
-        slug = Try(genericProperties.get("slug")).getOrElse(None)
-      )
-      case "FragmentSpecificData" => FragmentSpecificData(
-        docsUrl = Try(genericProperties.get("docsUrl")).getOrElse(None)
-      )
-      case _ => throw new IllegalStateException("Unrecognized metadata type")
-    }
-
-    val typeSpecificPropsList = typeSpecificData.toGenericMap.keySet
-    val additionalFields = Some(ProcessAdditionalFields(processProperties.additionalFields.description, genericProperties.filterNot(k => typeSpecificPropsList.contains(k._1))))
-
-    (typeSpecificData, additionalFields)
+  private def mergeProperties(typeSpecificProperties: Map[String, String],
+                              properties: Map[String, String]): Map[String, String] = {
+    // We check if the additional properties contain a value that could override a scenario property
+    // and throw exception in that case
+    properties.toList
+      .filter(p => typeSpecificProperties.contains(p._1))
+      .filter(duplicate => typeSpecificProperties(duplicate._1) == duplicate._2)
+      .foreach(incompatible => {
+        // TODO: test this
+        throw new IllegalStateException(s"Incompatible duplicate properties in typeSpecificProperties and additionalFields: ${incompatible._1}")
+      })
+    typeSpecificProperties ++ properties
   }
 
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =
