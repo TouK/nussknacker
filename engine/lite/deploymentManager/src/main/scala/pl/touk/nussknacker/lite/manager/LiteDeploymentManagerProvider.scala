@@ -23,14 +23,14 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
-      validators = Some(List(MandatoryParameterValidator, LiteralIntegerValidator, MinimalNumberValidator(1))),
+      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"))
 
   private val slugConfig: (String, AdditionalPropertyConfig) = "slug" ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
-      validators = Some(List(MandatoryParameterValidator)),
+      validators = None,
       label = Some("Slug")
     )
 
@@ -39,7 +39,7 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
   protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String
 
-  override def propertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(
     liteStreamProperties,
     requestResponseProperties
   )

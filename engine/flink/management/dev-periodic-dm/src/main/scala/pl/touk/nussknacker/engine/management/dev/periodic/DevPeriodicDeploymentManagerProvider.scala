@@ -28,7 +28,7 @@ class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
     TypeSpecificInitialData(StreamMetaData(Some(1)))
 
   // TODO: move it to PeriodicDeploymentManagerProvider with ability to override
-  override def propertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
     FlinkStreamingPropertiesConfig.properties ++ cronConfig
 
   private val cronConfig: Map[String, AdditionalPropertyConfig] = Map(

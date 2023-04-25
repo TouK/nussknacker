@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingT
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider with LazyLogging {
+class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider {
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -33,7 +33,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(Some(1)))
 
-  override def propertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = FlinkStreamingPropertiesConfig.properties
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = FlinkStreamingPropertiesConfig.properties
 
 }
 
@@ -57,7 +57,7 @@ object FlinkStreamingPropertiesConfig {
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
-      validators = Some(List(MandatoryParameterValidator, LiteralIntegerValidator, MinimalNumberValidator(1))),
+      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"))
 
   private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
@@ -68,9 +68,9 @@ object FlinkStreamingPropertiesConfig {
       label = Some("Spill state to disk"))
 
   private val asyncPossibleValues = List(
+    FixedExpressionValue("", "Server default"),
     FixedExpressionValue("false", "Synchronous"),
-    FixedExpressionValue("true", "Asynchronous"),
-    FixedExpressionValue("", "Server default"))
+    FixedExpressionValue("true", "Asynchronous"))
 
   private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
     AdditionalPropertyConfig(

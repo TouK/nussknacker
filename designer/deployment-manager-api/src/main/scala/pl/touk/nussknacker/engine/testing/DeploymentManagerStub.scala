@@ -59,5 +59,5 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
 
-  override def propertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map()
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map()
 }

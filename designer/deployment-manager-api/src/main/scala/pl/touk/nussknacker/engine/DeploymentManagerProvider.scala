@@ -21,7 +21,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def typeSpecificInitialData(config: Config): TypeSpecificInitialData
 
-  def propertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]
+  def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]
 
   def additionalValidators(config: Config): List[CustomProcessValidator] = Nil
 
