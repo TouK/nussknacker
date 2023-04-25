@@ -37,39 +37,11 @@ class TestFlinkProcessCompiler(modelData: ModelData,
     collectingListener :: defaults
   }
 
-  private val expressionEvaluator: (Expression, Parameter, NodeId) => ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
-    val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(process.metaData)
-    val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
-    val dumbContext = Context("dumb", Map.empty, None)
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-      case spel: SpelExpressionParser => spel.typingDictLabels
-    }
-    (expression: Expression, parameter: Parameter, nodeId: NodeId) => {
-      expressionCompiler
-        .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
-        .map { typedExpression =>
-          val param = evaluatedparam.Parameter(typedExpression, parameter)
-          evaluator.evaluateParameter(param, dumbContext)(nodeId, process.metaData).value
-        }
-    }
-  }
-
-  private def collectSamples(originalSource: Any, sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked], nodeId: NodeId): List[Object] = {
-    val scenarioJsonRecords = scenarioTestData.testRecords.collect { case testRecord: ScenarioTestJsonRecord => testRecord }.filter(_.sourceId == nodeId)
-    val scenarioParamRecords = scenarioTestData.testRecords.collect { case testRecord: ScenarioTestParametersRecord => testRecord }.filter(_.sourceId == nodeId)
-
-    if(scenarioJsonRecords.nonEmpty && scenarioParamRecords.nonEmpty)
-      throw new IllegalStateException(s"${sourceWithTestSupport.getClass} cannot test both with ScenarioTestJsonRecord and ScenarioTestParametersRecord at the same time")
-
-    if (scenarioJsonRecords.nonEmpty) scenarioJsonRecords.map(jsonRecord => sourceWithTestSupport.testRecordParser.parse(jsonRecord.record))
-    else if (scenarioParamRecords.nonEmpty) {
-      originalSource match {
-        case sourceTestWithParameters: TestWithParametersSupport[Object@unchecked] =>
-          scenarioParamRecords.map { paramRecord => prepareDataForTest(sourceTestWithParameters, paramRecord.parameterExpressions, nodeId) }
-        case _ => throw new IllegalStateException(s"${sourceWithTestSupport.getClass} does not extends TestWithParametersSupport but uses ScenarioTestParametersRecord for tests.")
-      }
-    }
-    else Nil
+  private val dumbContext = Context("dumb", Map.empty, None)
+  private lazy val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(process.metaData)
+  private lazy val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
+  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+    case spel: SpelExpressionParser => spel.typingDictLabels
   }
 
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
@@ -103,6 +75,33 @@ class TestFlinkProcessCompiler(modelData: ModelData,
       override val consumer: FlinkEspExceptionConsumer = _ => {}
     }
     case _ => super.exceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
+  }
+
+  private def expressionEvaluator(expression: Expression, parameter: Parameter, nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
+    expressionCompiler
+      .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
+      .map { typedExpression =>
+        val param = evaluatedparam.Parameter(typedExpression, parameter)
+        evaluator.evaluateParameter(param, dumbContext)(nodeId, process.metaData).value
+      }
+  }
+
+  private def collectSamples(originalSource: Any, sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked], nodeId: NodeId): List[Object] = {
+    val scenarioJsonRecords = scenarioTestData.testRecords.collect { case testRecord: ScenarioTestJsonRecord => testRecord }.filter(_.sourceId == nodeId)
+    val scenarioParamRecords = scenarioTestData.testRecords.collect { case testRecord: ScenarioTestParametersRecord => testRecord }.filter(_.sourceId == nodeId)
+
+    if (scenarioJsonRecords.nonEmpty && scenarioParamRecords.nonEmpty)
+      throw new IllegalStateException(s"${sourceWithTestSupport.getClass} cannot test both with ScenarioTestJsonRecord and ScenarioTestParametersRecord at the same time")
+
+    if (scenarioJsonRecords.nonEmpty) scenarioJsonRecords.map(jsonRecord => sourceWithTestSupport.testRecordParser.parse(jsonRecord.record))
+    else if (scenarioParamRecords.nonEmpty) {
+      originalSource match {
+        case sourceTestWithParameters: TestWithParametersSupport[Object@unchecked] =>
+          scenarioParamRecords.map { paramRecord => prepareDataForTest(sourceTestWithParameters, paramRecord.parameterExpressions, nodeId) }
+        case _ => throw new IllegalStateException(s"${sourceWithTestSupport.getClass} does not extends TestWithParametersSupport but uses ScenarioTestParametersRecord for tests.")
+      }
+    }
+    else Nil
   }
 
   private def prepareDataForTest[T](sourceTestWithParameters: TestWithParametersSupport[T], parameterExpressions: Map[String, Expression], sourceId: NodeId): T = {
