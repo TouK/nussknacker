@@ -402,6 +402,16 @@ class HttpService {
     return promise
   }
 
+  getExpressionSuggestions(expression: string, caret2dPosition: {row: number, column: number}): Promise<any> {
+    const promise = api.post<AdditionalInfo>(`/expressionSuggestions/`, {expression, caret2dPosition})
+    promise.catch(error => this.#addError(
+        i18next.t("notification.error.failedToFetchExpressionSuggestions", "Failed to get expression suggestions"),
+        error,
+        true
+    ))
+    return promise
+  }
+
   getPropertiesAdditionalInfo(processId, processProperties): Promise<AxiosResponse<AdditionalInfo>> {
     const promise = api.post<AdditionalInfo>(`/properties/${encodeURIComponent(processId)}/additionalInfo`, processProperties)
     promise.catch(error => this.#addError(

@@ -2,9 +2,9 @@ import ace from "ace-builds/src-noconflict/ace"
 import {isEmpty, map, overSome} from "lodash"
 import React, {ReactElement, useCallback, useEffect, useMemo, useState} from "react"
 import {useSelector} from "react-redux"
-import {getProcessDefinitionData} from "../../../../../reducers/selectors/settings"
+import {getFeatureSettings, getProcessDefinitionData} from "../../../../../reducers/selectors/settings"
 import {getProcessToDisplay} from "../../../../../reducers/selectors/graph"
-import ExpressionSuggester from "./ExpressionSuggester"
+import {BackendExpressionSuggester, ExpressionSuggester, RegexExpressionSuggester} from "./ExpressionSuggester"
 import HttpService from "../../../../../http/HttpService"
 import ProcessUtils from "../../../../../common/ProcessUtils"
 import ReactDOMServer from "react-dom/server"
@@ -174,13 +174,18 @@ function ExpressionSuggest(props: Props): JSX.Element {
   const processDefinitionData = dataResolved ? definitionData : {processDefinition: {typesInformation: []}}
   const typesInformation = processDefinitionData.processDefinition.typesInformation
   const {processingType} = useSelector(getProcessToDisplay)
+  const {codeSuggestionsFromBackend} = useSelector(getFeatureSettings)
 
   const {value, onValueChange} = inputProps
   const [editorFocused, setEditorFocused] = useState(false)
 
   const expressionSuggester = useMemo(() => {
-    return new ExpressionSuggester(typesInformation, variableTypes, processingType, HttpService)
-  }, [processingType, typesInformation, variableTypes])
+    if(!codeSuggestionsFromBackend) {
+      return new BackendExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);
+    } else {
+      return new RegexExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);
+    }
+  }, [processingType, typesInformation, variableTypes, codeSuggestionsFromBackend])
 
   const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester))
   useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester])
