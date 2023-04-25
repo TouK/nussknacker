@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAc
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
@@ -183,7 +184,7 @@ class DBProcessService(deploymentService: DeploymentService,
         substituted = {
           processResolving.resolveExpressions(action.process, validation.typingInfo)
         }
-        componentsUsages = ComponentsUsageHelper.computeScenarioUsages(substituted)
+        componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(substituted)
         processUpdated <- EitherT(dbioRunner
           .runInTransaction(processRepository
             .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, componentsUsages, Option(action.comment), increaseVersionWhenJsonNotChanged = false))

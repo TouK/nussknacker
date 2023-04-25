@@ -1,7 +1,6 @@
-package pl.touk.nussknacker.restmodel.process
+package pl.touk.nussknacker.restmodel.component
 
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.restmodel.component.NodeId
 
 case class ScenarioComponentsUsages(value: Map[ComponentIdParts, List[NodeId]])
 

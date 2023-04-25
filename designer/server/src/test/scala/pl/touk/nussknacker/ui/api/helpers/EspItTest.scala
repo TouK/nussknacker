@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.{ProcessingType, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
@@ -47,6 +47,7 @@ import slick.dbio.DBIOAction
 import _root_.sttp.client3.SttpBackend
 import _root_.sttp.client3.akkahttp.AkkaHttpBackend
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
+import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}

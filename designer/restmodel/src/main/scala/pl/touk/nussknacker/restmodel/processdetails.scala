@@ -9,8 +9,9 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessStat
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId, ProcessId => ApiProcessId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 
 import java.time.Instant
 

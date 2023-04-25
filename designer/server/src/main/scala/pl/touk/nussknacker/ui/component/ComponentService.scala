@@ -3,9 +3,9 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
-import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
+import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
-import pl.touk.nussknacker.restmodel.process.{ProcessingType, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}

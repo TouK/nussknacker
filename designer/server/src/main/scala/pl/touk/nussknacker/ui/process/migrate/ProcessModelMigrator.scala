@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.migrate
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.migration.{ProcessMigration, ProcessMigrations}
-import pl.touk.nussknacker.restmodel.process.ScenarioComponentsUsages
+import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -18,7 +18,7 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
   def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(
     id = processId,
     canonicalProcess = process,
-    componentsUsages = ComponentsUsageHelper.computeScenarioUsages(process),
+    componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(process),
     comment = Option(migrationsApplied).filter(_.nonEmpty).map(MigrationComment),
     increaseVersionWhenJsonNotChanged = true
   )
