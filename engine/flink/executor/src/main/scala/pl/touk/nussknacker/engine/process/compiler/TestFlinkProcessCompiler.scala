@@ -87,21 +87,16 @@ class TestFlinkProcessCompiler(modelData: ModelData,
   }
 
   private def collectSamples(originalSource: Any, sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked], nodeId: NodeId): List[Object] = {
-    val scenarioJsonRecords = scenarioTestData.testRecords.collect { case testRecord: ScenarioTestJsonRecord => testRecord }.filter(_.sourceId == nodeId)
-    val scenarioParamRecords = scenarioTestData.testRecords.collect { case testRecord: ScenarioTestParametersRecord => testRecord }.filter(_.sourceId == nodeId)
-
-    if (scenarioJsonRecords.nonEmpty && scenarioParamRecords.nonEmpty)
-      throw new IllegalStateException(s"${sourceWithTestSupport.getClass} cannot test both with ScenarioTestJsonRecord and ScenarioTestParametersRecord at the same time")
-
-    if (scenarioJsonRecords.nonEmpty) scenarioJsonRecords.map(jsonRecord => sourceWithTestSupport.testRecordParser.parse(jsonRecord.record))
-    else if (scenarioParamRecords.nonEmpty) {
-      originalSource match {
-        case sourceTestWithParameters: TestWithParametersSupport[Object@unchecked] =>
-          scenarioParamRecords.map { paramRecord => prepareDataForTest(sourceTestWithParameters, paramRecord.parameterExpressions, nodeId) }
-        case _ => throw new IllegalStateException(s"${sourceWithTestSupport.getClass} does not extends TestWithParametersSupport but uses ScenarioTestParametersRecord for tests.")
-      }
+    scenarioTestData.testRecords.filter(_.sourceId == nodeId).map {
+      case testRecord: ScenarioTestJsonRecord =>
+        sourceWithTestSupport.testRecordParser.parse(testRecord.record)
+      case testRecord: ScenarioTestParametersRecord =>
+        originalSource match {
+          case sourceTestWithParameters: TestWithParametersSupport[Object@unchecked] =>
+            prepareDataForTest(sourceTestWithParameters, testRecord.parameterExpressions, nodeId)
+          case _ => throw new IllegalStateException(s"${sourceWithTestSupport.getClass} does not extends TestWithParametersSupport but uses ScenarioTestParametersRecord for tests.")
+        }
     }
-    else Nil
   }
 
   private def prepareDataForTest[T](sourceTestWithParameters: TestWithParametersSupport[T], parameterExpressions: Map[String, Expression], sourceId: NodeId): T = {
