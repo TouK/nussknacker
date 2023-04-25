@@ -1,18 +1,16 @@
 import * as SpelQuotesUtils from "../src/components/graph/node-modal/editors/expression/SpelQuotesUtils"
-import {QuotationMark} from "../src/components/graph/node-modal/editors/expression/SpelQuotesUtils"
+import {isQuoted, QuotationMark} from "../src/components/graph/node-modal/editors/expression/SpelQuotesUtils"
 import {describe, expect, jest} from "@jest/globals"
+import {stringSpelFormatter} from "../src/components/graph/node-modal/editors/expression/Formatter"
 
 const text = `a'b'c"d"e'f'g`
 
 describe("SpelQuotesUtils", () => {
   describe("escapeQuotes", () => {
     it("should return escaped text", () => {
-      expect(SpelQuotesUtils.escapeQuotes(QuotationMark.single, text))
-        .toBe(`a''b''c"d"e''f''g`)
-    })
-
-    it("should ignore QuotationMark.double marks", () => {
-      expect(SpelQuotesUtils.escapeQuotes(QuotationMark.double, text)).toBe(text)
+      expect(SpelQuotesUtils.escapeQuotes(QuotationMark.single, text)).toBe(`a''b''c"d"e''f''g`)
+      expect(SpelQuotesUtils.escapeQuotes(QuotationMark.double, text)).toBe(`a'b'c""d""e'f'g`)
+      expect(SpelQuotesUtils.escapeQuotes("{unknown}", text)).toBe(text)
     })
 
     it("should use replaceAll when available", () => {
@@ -25,6 +23,8 @@ describe("SpelQuotesUtils", () => {
   describe("unescapeQuotes", () => {
     it("should return unescaped text", () => {
       expect(SpelQuotesUtils.unescapeQuotes(QuotationMark.single, `a''b''c"d"e''f''g`)).toBe(text)
+      expect(SpelQuotesUtils.unescapeQuotes(QuotationMark.double, `a'b'c""d""e'f'g`)).toBe(text)
+      expect(SpelQuotesUtils.unescapeQuotes("{unknown}", `a'b'c""d""e''f''g`)).toBe(`a'b'c""d""e''f''g`)
     })
 
     it("should ignore QuotationMark.double marks", () => {
@@ -67,9 +67,39 @@ describe("SpelQuotesUtils", () => {
     })
   })
 
-  describe("getQuotedStringPattern", () => {
-    it("should return right pattern", () => {
-      expect(SpelQuotesUtils.getQuotedStringPattern([`'`, `"`]).toString()).toBe(`/^'[\\0-\uFFFF]*'$|^\"[\\0-\uFFFF]*\"$/`)
+  describe("isQuoted", () => {
+    const notMatching = [
+      `    ## ## ##    `, // not quoted
+      `   '## ## ##"   `, // mixed quotes
+      `   "## ## ##'   `,
+      `   '##'##'##'   `, // unescaped
+      `  ''## ## ##''  `,
+      ` '''##'##'##''' `,
+      `  ""##'##'##""  `,
+      `   "##"##"##"   `,
+      ` """##"##"##""" `,
+    ]
+
+    const matching = [
+      `  '##''##''##'  `,
+      `'''##''##''##'''`,
+      ` '''##"##"##''' `,
+      `   "##'##'##"   `,
+      `  "##""##""##"  `,
+      ` """##'##'##""" `,
+      `"""##""##""##"""`,
+    ]
+
+    notMatching.forEach(text => {
+      it(`should not match ${text.trim()}`, () => {
+        expect(isQuoted(text)).toBeFalsy()
+      })
+    })
+
+    matching.forEach(text => {
+      it(`should match ${text.trim()}`, () => {
+        expect(isQuoted(text)).toBeTruthy()
+      })
     })
   })
 
@@ -85,6 +115,47 @@ describe("SpelQuotesUtils", () => {
 
     it("should return default quotation mark when wrong used", () => {
       expect(SpelQuotesUtils.getQuotationMark("`wrong`")).toBe(`'`)
+    })
+  })
+})
+
+describe("stringSpelFormatter", () => {
+  const values = [
+    //plain         | expected string  | equal strings...
+    [`###`, `'###'`, `"###"`],
+    [`"###"`, `'"###"'`, `"""###"""`],
+    [`'###'`, `"'###'"`, `'''###'''`],
+    [`'###"`, `"'###"""`, `'''###"'`],
+    [`"###`, `'"###'`, `"""###"`],
+    [`'###`, `"'###"`, `'''###'`],
+    [`###'###`, `'###''###'`, `"###'###"`],
+    [`###"###`, `'###"###'`, `"###""###"`],
+    [`#{123}#aaa`, `''+123+'aaa'`], //TODO: remove ''+
+    [`aaa#{123}#bbb`, `'aaa'+123+'bbb'`, `'aaa' + 123 + 'bbb'`, `'aaa' + 123 + "bbb"`],
+    [`aaabbb`, `'aaabbb'`, `'aaa'+'bbb'`, `'aaa' + 'bbb'`, `"aaa" + "bbb"`, `"aaa"+"bbb"`, `"aaa"+""+"bbb"`, `'aaa'+''+'bbb'`, `'aaa'+"bbb"`, `'aa'+'ab'+'bb'`],
+  ]
+
+  values.forEach(([value]) => {
+    it(`should decode encoded value ${value}`, () => {
+      expect(stringSpelFormatter.decode(stringSpelFormatter.encode(value))).toBe(value)
+    })
+  })
+
+  describe("encoder", () => {
+    values.forEach(([value, expected]) => {
+      it(`should encode value ${value}`, () => {
+        expect(stringSpelFormatter.encode(value)).toBe(expected)
+      })
+    })
+  })
+
+  describe("decoder", () => {
+    values.forEach(([expected, ...values]) => {
+      values.forEach(value => {
+        it(`should decode value ${value}`, () => {
+          expect(stringSpelFormatter.decode(value)).toBe(expected)
+        })
+      })
     })
   })
 })
