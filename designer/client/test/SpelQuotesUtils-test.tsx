@@ -1,5 +1,5 @@
 import * as SpelQuotesUtils from "../src/components/graph/node-modal/editors/expression/SpelQuotesUtils"
-import {QuotationMark, quotedStringPattern} from "../src/components/graph/node-modal/editors/expression/SpelQuotesUtils"
+import {isQuoted, QuotationMark} from "../src/components/graph/node-modal/editors/expression/SpelQuotesUtils"
 import {describe, expect, jest} from "@jest/globals"
 import {stringSpelFormatter} from "../src/components/graph/node-modal/editors/expression/Formatter"
 
@@ -10,6 +10,7 @@ describe("SpelQuotesUtils", () => {
     it("should return escaped text", () => {
       expect(SpelQuotesUtils.escapeQuotes(QuotationMark.single, text)).toBe(`a''b''c"d"e''f''g`)
       expect(SpelQuotesUtils.escapeQuotes(QuotationMark.double, text)).toBe(`a'b'c""d""e'f'g`)
+      expect(SpelQuotesUtils.escapeQuotes("{unknown}", text)).toBe(text)
     })
 
     it("should use replaceAll when available", () => {
@@ -22,6 +23,8 @@ describe("SpelQuotesUtils", () => {
   describe("unescapeQuotes", () => {
     it("should return unescaped text", () => {
       expect(SpelQuotesUtils.unescapeQuotes(QuotationMark.single, `a''b''c"d"e''f''g`)).toBe(text)
+      expect(SpelQuotesUtils.unescapeQuotes(QuotationMark.double, `a'b'c""d""e'f'g`)).toBe(text)
+      expect(SpelQuotesUtils.unescapeQuotes("{unknown}", `a'b'c""d""e''f''g`)).toBe(`a'b'c""d""e''f''g`)
     })
 
     it("should ignore QuotationMark.double marks", () => {
@@ -64,7 +67,7 @@ describe("SpelQuotesUtils", () => {
     })
   })
 
-  describe("quotedStringPattern", () => {
+  describe("isQuoted", () => {
     const notMatching = [
       `    ## ## ##    `, // not quoted
       `   '## ## ##"   `, // mixed quotes
@@ -89,13 +92,13 @@ describe("SpelQuotesUtils", () => {
 
     notMatching.forEach(text => {
       it(`should not match ${text.trim()}`, () => {
-        expect(text).not.toMatch(quotedStringPattern)
+        expect(isQuoted(text)).toBeFalsy()
       })
     })
 
     matching.forEach(text => {
       it(`should match ${text.trim()}`, () => {
-        expect(text).toMatch(quotedStringPattern)
+        expect(isQuoted(text)).toBeTruthy()
       })
     })
   })
@@ -119,17 +122,17 @@ describe("SpelQuotesUtils", () => {
 describe("stringSpelFormatter", () => {
   const values = [
     //plain         | expected string  | equal strings...
-    [`###`          , `'###'`          , `"###"`],
-    [`"###"`        , `'"###"'`        , `"""###"""`],
-    [`'###'`        , `"'###'"`        , `'''###'''`],
-    [`'###"`        , `"'###"""`       , `'''###"'`],
-    [`"###`         , `'"###'`         , `"""###"`],
-    [`'###`         , `"'###"`         , `'''###'`],
-    [`###'###`      , `'###''###'`     , `"###'###"`],
-    [`###"###`      , `'###"###'`      , `"###""###"`],
-    [`#{123}#aaa`   , `''+123+'aaa'`   ], //TODO: remove ''+
+    [`###`, `'###'`, `"###"`],
+    [`"###"`, `'"###"'`, `"""###"""`],
+    [`'###'`, `"'###'"`, `'''###'''`],
+    [`'###"`, `"'###"""`, `'''###"'`],
+    [`"###`, `'"###'`, `"""###"`],
+    [`'###`, `"'###"`, `'''###'`],
+    [`###'###`, `'###''###'`, `"###'###"`],
+    [`###"###`, `'###"###'`, `"###""###"`],
+    [`#{123}#aaa`, `''+123+'aaa'`], //TODO: remove ''+
     [`aaa#{123}#bbb`, `'aaa'+123+'bbb'`, `'aaa' + 123 + 'bbb'`, `'aaa' + 123 + "bbb"`],
-    [`aaabbb`       , `'aaabbb'`       , `'aaa'+'bbb'`, `'aaa' + 'bbb'`, `"aaa" + "bbb"`, `"aaa"+"bbb"`,`"aaa"+""+"bbb"`,`'aaa'+''+'bbb'`,`'aaa'+"bbb"`,`'aa'+'ab'+'bb'`],
+    [`aaabbb`, `'aaabbb'`, `'aaa'+'bbb'`, `'aaa' + 'bbb'`, `"aaa" + "bbb"`, `"aaa"+"bbb"`, `"aaa"+""+"bbb"`, `'aaa'+''+'bbb'`, `'aaa'+"bbb"`, `'aa'+'ab'+'bb'`],
   ]
 
   values.forEach(([value]) => {
