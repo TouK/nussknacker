@@ -21,6 +21,9 @@
   * `scala.Option`, `scala.collection.Iterable`: `head`, `nonEmpty`, `orNull`, `tail`
   * `io.circe.*` (deserialized raw JSON objects): `noSpacesSortKeys`, `spaces2SortKeys`, `spaces4SortKeys`
 * [#4298](https://github.com/TouK/nussknacker/pull/4298) Support arrays in `BestEffortJsonEncoder`
+* [#4246](https://github.com/TouK/nussknacker/pull/4246) Store components usages along with scenario json.
+  Components usages by a scenario are stored in the processes version table. It allows to speed up fetching components usages across all scenarios,
+  especially for a big number of scenarios and each with a lot of nodes.
 
 1.9.1 (24 Apr 2023)
 ------------------------
