@@ -3,7 +3,9 @@ import Input from "../field/Input"
 import {SimpleEditor} from "./Editor"
 import {Formatter, FormatterType, typeFormatters} from "./Formatter"
 import i18next from "i18next"
-import {ExpressionLang} from "./types"
+import {ExpressionLang, ExpressionObj} from "./types"
+import {isQuoted} from "./SpelQuotesUtils"
+import {splitConcats} from "./TemplatesUtils"
 
 type Props = {
   expressionObj: $TodoType,
@@ -26,16 +28,11 @@ const StringEditor: SimpleEditor<Props> = (props: Props) => {
   )
 }
 
-//TODO handle expressions with escaped '/"
-const stringPattern = /(^'.*'$)|(^".*"$)/
-
-const parseable = (expressionObj) => {
-  const expression = expressionObj.expression
-  const language = expressionObj.language
-  return stringPattern.test(expression) && language === ExpressionLang.SpEL
+export const switchableTo = ({expression, language}: ExpressionObj) => {
+  return language === ExpressionLang.SpEL && splitConcats(expression.trim()).some(isQuoted)
 }
 
-StringEditor.switchableTo = (expressionObj) => parseable(expressionObj)
+StringEditor.switchableTo = switchableTo
 StringEditor.switchableToHint = () => i18next.t("editors.string.switchableToHint", "Switch to basic mode")
 StringEditor.notSwitchableToHint = () => i18next.t("editors.string.notSwitchableToHint", "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode")
 

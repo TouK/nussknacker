@@ -1,5 +1,4 @@
-import {curry} from "lodash"
-import {dotAllReplacement} from "../../../../../common/regexpCompat"
+import {curry, flow} from "lodash"
 
 export enum QuotationMark {
   single = `'`,
@@ -8,25 +7,50 @@ export enum QuotationMark {
 
 const defaultQuotationMark = QuotationMark.single
 
-export const escapeQuotes = curry((quotationMark: QuotationMark, value: string): string => {
-  return quotationMark === QuotationMark.single ?
-    value.replaceAll ?
-      value.replaceAll(quotationMark, `${quotationMark}${quotationMark}`) :
-      value.split(quotationMark).join(`${quotationMark}${quotationMark}`) :
-    value
+const replace = (value: string, searchValue: string, replaceValue: string) => value.replaceAll ?
+  value.replaceAll(searchValue, replaceValue) :
+  value.split(searchValue).join(replaceValue)
+
+export const escapeQuotes = curry((quotationMark: QuotationMark | string, value: string): string => {
+  switch (quotationMark) {
+    case QuotationMark.single:
+    case QuotationMark.double:
+      return replace(value, quotationMark, `${quotationMark}${quotationMark}`)
+    default:
+      return value
+  }
 })
 
 export const unescapeQuotes = curry((quotationMark: QuotationMark, value: string): string => {
-  return quotationMark === QuotationMark.single ?
-    value.replaceAll ?
-      value.replaceAll(`${quotationMark}${quotationMark}`, quotationMark) :
-      value.split(`${quotationMark}${quotationMark}`).join(quotationMark) :
-    value
+  switch (quotationMark) {
+    case QuotationMark.single:
+    case QuotationMark.double:
+      return replace(value, `${quotationMark}${quotationMark}`, quotationMark)
+    default:
+      return value
+  }
 })
 
 export const quote = curry((quotationMark: QuotationMark, value: string): string => {
   if (Object.values(QuotationMark).includes(quotationMark)) {
     return quotationMark + value + quotationMark
+  }
+  return value
+})
+
+const switchQuotes = curry((quoteBefore: QuotationMark, quoteAfter: QuotationMark, value: string): string => {
+  return flow([
+    unquote(quoteBefore),
+    unescapeQuotes(quoteBefore),
+    escapeQuotes(quoteAfter),
+    quote(quoteAfter),
+  ])(value)
+})
+
+export const simplifyQuotes = curry((qm: QuotationMark, value: string): string => {
+  if (value.startsWith(`${qm}${qm}${qm}`)) {
+    const nextQm = qm === QuotationMark.single ? QuotationMark.double : QuotationMark.single
+    return switchQuotes(qm, nextQm, value)
   }
   return value
 })
@@ -38,19 +62,31 @@ export const unquote = curry((quotationMark: QuotationMark, quoted: string): str
   return quoted
 })
 
-function startsWithQuotationMark(value: string): boolean {
-  return value.startsWith(QuotationMark.double) || value.startsWith(
-    QuotationMark.single,
-  )
+export function isQuoted(value: string) {
+  return quotedStringPattern.test(value)
 }
 
 export function getQuotationMark(value: string): QuotationMark {
-  return startsWithQuotationMark(value) ?
-    value.charAt(0) as QuotationMark :
-    defaultQuotationMark
+  switch (value.charAt(0)) {
+    case QuotationMark.single:
+      if (value.endsWith(QuotationMark.single)) {
+        return QuotationMark.single
+      }
+      return QuotationMark.double
+    case QuotationMark.double:
+      if (value.endsWith(QuotationMark.double)) {
+        return QuotationMark.double
+      }
+      return QuotationMark.single
+    default:
+      return defaultQuotationMark
+  }
 }
 
-export function getQuotedStringPattern(quotationMarks: string[]): RegExp {
-  const patterns = quotationMarks.map(mark => `^${mark}${dotAllReplacement}*${mark}$`)
-  return RegExp(patterns.join(`|`))
+function getQuotedStringPattern(quotationMarks: string[]): RegExp {
+  const escapedOnly = mark => `([^(${mark})]|(${escapeQuotes(mark, mark)}))*`
+  const patterns = quotationMarks.map(mark => `${mark}${escapedOnly(mark)}${mark}`)
+  return RegExp(`^\\s*(${patterns.join("|")})\\s*$`)
 }
+
+export const quotedStringPattern = getQuotedStringPattern([QuotationMark.single, QuotationMark.double])

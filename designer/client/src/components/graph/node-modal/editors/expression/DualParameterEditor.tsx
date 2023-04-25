@@ -24,10 +24,11 @@ type Props = {
   className: string,
   variableTypes: VariableTypes,
   showSwitch: boolean,
+  errors: unknown[],
 }
 
 export default function DualParameterEditor(props: Props): JSX.Element {
-  const {editorConfig, readOnly, valueClassName, expressionObj} = props
+  const {editorConfig, readOnly, valueClassName, expressionObj, errors} = props
   const {t} = useTranslation()
 
   const SimpleEditor = useMemo(
@@ -44,8 +45,8 @@ export default function DualParameterEditor(props: Props): JSX.Element {
   )
 
   const simpleEditorAllowsSwitch = useMemo(
-    () => SimpleEditor?.switchableTo(expressionObj, editorConfig.simpleEditor),
-    [SimpleEditor, editorConfig.simpleEditor, expressionObj]
+    () => !errors.length && SimpleEditor?.switchableTo(expressionObj, editorConfig.simpleEditor),
+    [SimpleEditor, editorConfig.simpleEditor, errors.length, expressionObj]
   )
 
   const initialDisplaySimple = useMemo(
