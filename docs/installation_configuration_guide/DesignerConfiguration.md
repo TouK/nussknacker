@@ -700,6 +700,7 @@ You can configure `secondaryEnvironment` to allow for
 | redirectAfterArchive             | Low        | boolean  | true          | Redirect to scenarios list after archive operation.                                                                                                                                                                         |
 | scenarioStateTimeout             | Low        | duration | 5 seconds     | Timeout for fetching scenario state operation                                                                                                                                                                               |
 | usageStatisticsReports.enabled   | Low        | boolean  | true          | When enabled browser will send anonymous usage statistics reports to `stats.nussknacker.io`                                                                                                                                 |
+| codeSuggestionsFromBackend       | Low        | boolean  | false         | If true then new experimental suggestion system is used                                                                                                                                                                     |
 
 ## Scenario type, categories
 
