@@ -112,7 +112,7 @@ function TestWithFormButton(props: Props) {
 
   return (
     <ToolbarButton
-      name={t("panels.actions.test-with-form.button", "test window")}
+      name={t("panels.actions.test-with-form.button", "test form")}
       icon={<Icon/>}
       disabled={!available || disabled}
       onClick={onButtonClick}
