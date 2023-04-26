@@ -46,10 +46,12 @@ class FlinkTestMain(val modelData: ModelData,
 
   protected def prepareRegistrar[T](collectingListener: ResultsCollectingListener, scenarioTestData: ScenarioTestData): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new TestFlinkProcessCompiler(
-      modelData,
+      modelData.configCreator,
+      modelData.processConfig,
       collectingListener,
       process,
-      scenarioTestData),
+      scenarioTestData,
+      modelData.objectNaming),
       ExecutionConfigPreparer.defaultChain(modelData))
   }
 }

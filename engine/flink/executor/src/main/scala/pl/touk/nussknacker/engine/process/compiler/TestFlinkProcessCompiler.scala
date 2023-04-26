@@ -1,82 +1,39 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import cats.data.ValidatedNel
-import cats.implicits._
-import cats.data.Validated.{Invalid, Valid}
+import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownProperty
-import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ContextInitializer, ProcessObjectDependencies, TestWithParametersSupport}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord, ScenarioTestParametersRecord}
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies, SourceTestSupport}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.api.{Context, MetaData, NodeId, ProcessListener}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
-import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
-import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-class TestFlinkProcessCompiler(modelData: ModelData,
+class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
+                               inputConfigDuringExecution: Config,
                                collectingListener: ResultsCollectingListener,
                                process: CanonicalProcess,
-                               scenarioTestData: ScenarioTestData)
-  extends StubbedFlinkProcessCompiler(process, modelData.configCreator, modelData.processConfig, diskStateBackendSupport = false, modelData.objectNaming, ComponentUseCase.TestRuntime) {
+                               scenarioTestData: ScenarioTestData,
+                               objectNaming: ObjectNaming)
+  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUseCase.TestRuntime) {
 
+  
   override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
     collectingListener :: defaults
-  }
-
-  private val expressionEvaluator: (Expression, Parameter, NodeId) => ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
-    val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(process.metaData)
-    val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
-    val dumbContext = Context("dumb", Map.empty, None)
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-      case spel: SpelExpressionParser => spel.typingDictLabels
-    }
-    (expression: Expression, parameter: Parameter, nodeId: NodeId) => {
-      expressionCompiler
-        .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)
-        .map { typedExpression =>
-          val param = evaluatedparam.Parameter(typedExpression, parameter)
-          evaluator.evaluateParameter(param, dumbContext)(nodeId, process.metaData).value
-        }
-    }
-  }
-
-  private def collectSamples(originalSource: Any, sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked], nodeId: NodeId): List[Object] = {
-    val scenarioJsonRecords = scenarioTestData.testRecords.collect { case testRecord: ScenarioTestJsonRecord => testRecord }.filter(_.sourceId == nodeId)
-    val scenarioParamRecords = scenarioTestData.testRecords.collect { case testRecord: ScenarioTestParametersRecord => testRecord }.filter(_.sourceId == nodeId)
-
-    if(scenarioJsonRecords.nonEmpty && scenarioParamRecords.nonEmpty)
-      throw new IllegalStateException(s"${sourceWithTestSupport.getClass} cannot test both with ScenarioTestJsonRecord and ScenarioTestParametersRecord at the same time")
-
-    if (scenarioJsonRecords.nonEmpty) scenarioJsonRecords.map(jsonRecord => sourceWithTestSupport.testRecordParser.parse(jsonRecord.record))
-    else if (scenarioParamRecords.nonEmpty) {
-      originalSource match {
-        case sourceTestWithParameters: TestWithParametersSupport[Object@unchecked] =>
-          scenarioParamRecords.map { paramRecord => prepareDataForTest(sourceTestWithParameters, paramRecord.parameterExpressions, nodeId) }
-        case _ => throw new IllegalStateException(s"${sourceWithTestSupport.getClass} does not extends TestWithParametersSupport but uses ScenarioTestParametersRecord for tests.")
-      }
-    }
-    else Nil
   }
 
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
     overrideObjectWithMethod(sourceFactory, (originalSource, returnTypeOpt, nodeId) => {
       originalSource match {
         case sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked] =>
-          val samples: List[Object] = collectSamples(originalSource, sourceWithTestSupport, nodeId)
+          val samples = prepareDataForTest(sourceWithTestSupport, scenarioTestData, nodeId)
           val returnType = returnTypeOpt.getOrElse(throw new IllegalStateException(s"${sourceWithTestSupport.getClass} extends FlinkSourceTestSupport and has no return type"))
           sourceWithTestSupport match {
             case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
@@ -105,18 +62,13 @@ class TestFlinkProcessCompiler(modelData: ModelData,
     case _ => super.exceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
   }
 
-  private def prepareDataForTest[T](sourceTestWithParameters: TestWithParametersSupport[T], parameterExpressions: Map[String, Expression], sourceId: NodeId): T = {
-    val listOfExpressions =  sourceTestWithParameters.testParametersDefinition.map { param =>
-      parameterExpressions.get(param.name) match {
-        case Some(expression) => expressionEvaluator(expression, param, sourceId).map(e => param.name -> e)
-        case None => UnknownProperty(param.name)(sourceId).invalidNel
-      }
-    }
-
-    listOfExpressions.sequence match {
-      case Valid(evaluatedParams) => sourceTestWithParameters.parametersToTestData(evaluatedParams.toMap)
-      case Invalid(errors) => throw new IllegalArgumentException(errors.toList.mkString(", "))
-    }
+  private def prepareDataForTest[T](sourceTestSupport: SourceTestSupport[T], scenarioTestData: ScenarioTestData, sourceId: NodeId): List[T] = {
+    val testParserForSource = sourceTestSupport.testRecordParser
+    val testRecordsForSource = scenarioTestData.testRecords
+      .collect{ case testRecord: ScenarioTestJsonRecord => testRecord}
+      .filter(_.sourceId == sourceId)
+      .map(_.record)
+    testRecordsForSource.map(testParserForSource.parse)
   }
 
 }
