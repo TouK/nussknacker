@@ -130,7 +130,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
       basicProcesses = allBasicProcesses.filterNot(_.isSubprocess).filter(processToInclude)
-      basicSubProcesses = allBasicProcesses.filter(_.isSubprocess)
+      basicSubProcesses = allBasicProcesses.filter(_.isSubprocess).filter(processToInclude)
       processes <- fetchGroupByGroup(basicProcesses)
       subProcesses <- fetchGroupByGroup(basicSubProcesses)
     } yield testModelMigrations.testMigrations(processes, subProcesses)).value
