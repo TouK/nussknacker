@@ -149,6 +149,14 @@ module.exports = {
         ],
       },
       directory: outputPath,
+      watch: {
+        ignored: [
+          "**/*.tgz",
+          "**/*.txt",
+          "**/*.json",
+          "**/*.js.map",
+        ],
+      },
     },
   },
   plugins: [
