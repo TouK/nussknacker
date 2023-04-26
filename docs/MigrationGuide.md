@@ -3,7 +3,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.9.0 (not released yet)
+## In version 1.9.0
 
 ### Code API changes
 * [#4030](https://github.com/TouK/nussknacker/pull/4030) Changes for purpose of local testing of designer with other urls than on engine side
