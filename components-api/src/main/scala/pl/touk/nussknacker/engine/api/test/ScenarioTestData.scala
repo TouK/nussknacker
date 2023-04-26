@@ -4,9 +4,7 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-sealed trait ScenarioTestRecord {
-  val sourceId: NodeId
-}
+sealed trait ScenarioTestRecord
 
 case class ScenarioTestJsonRecord(sourceId: NodeId, record: TestRecord) extends ScenarioTestRecord
 case class ScenarioTestParametersRecord(sourceId: NodeId, parameterExpressions: Map[String, Expression]) extends ScenarioTestRecord
