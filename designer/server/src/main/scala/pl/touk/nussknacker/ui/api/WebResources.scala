@@ -6,8 +6,9 @@ import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.util.ResourceLoader
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
+import java.nio.file.{Files, Path, Paths}
 import scala.util.Try
+import java.io.File
 
 class WebResources(publicPath: String) extends Directives with LazyLogging {
 
@@ -21,7 +22,15 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
       logger.error("Failed to find web/static/main.html - probably frontend resources are not packaged in jar. Frontend won't work properly!")
       ""
     }
-    val withPublicPathSubstituted = content.replace("__publicPath__", publicPath)
+
+    val builder = new StringBuilder
+    Files.newDirectoryStream(Paths.get("/Users/j/Work/projects/nussknacker/designer")).forEach { file =>
+      builder.append(file.getFileName)
+      builder.append("\n")
+    }
+
+    val withComment = content.replace("</body>", "<!-- " + builder.toString() + " //-->\n</body>")
+    val withPublicPathSubstituted = withComment.replace("__publicPath__", publicPath)
 
     FileUtils.writeStringToFile(tempMainContentFile, withPublicPathSubstituted, StandardCharsets.UTF_8)
     tempMainContentFile
