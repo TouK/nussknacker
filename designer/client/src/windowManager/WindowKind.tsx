@@ -1,6 +1,7 @@
 export enum WindowKind {
   default,
   confirm,
+  inform,
   viewNode,
   editNode,
   addProcess,
@@ -12,5 +13,6 @@ export enum WindowKind {
   generateDataAndTest,
   compareVersions,
   customAction,
+  genericAction,
   survey,
 }

@@ -14,7 +14,7 @@ function FromFileButton(props: Props) {
   const {processId, processToDisplay, testCapabilities, disabled} = props
   const {testProcessFromFile} = props
   const {t} = useTranslation()
-  const available = !disabled && testCapabilities.canBeTested
+  const available = !disabled && testCapabilities && testCapabilities.canBeTested
 
   return (
     <CapabilitiesToolbarButton

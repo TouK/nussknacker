@@ -1,9 +1,10 @@
-import HttpService, {TestProcessResponse} from "../../http/HttpService"
+import HttpService, {SourceWithParametersTest, TestProcessResponse} from "../../http/HttpService"
 import {displayProcessCounts} from "./displayProcessCounts"
 import {TestResults} from "../../common/TestResultUtils"
-import {Process, ProcessId} from "../../types"
+import {Expression, Process, ProcessId} from "../../types"
 import {ThunkAction} from "../reduxTypes"
 import {withoutHackOfEmptyEdges} from "../../components/graph/GraphPartialsInTS/EdgeUtils"
+import {UIValueParameter} from "./genericAction";
 
 export function testProcessFromFile(id: ProcessId, testDataFile: File, process: Process): ThunkAction {
   return (dispatch) => {
@@ -13,6 +14,19 @@ export function testProcessFromFile(id: ProcessId, testDataFile: File, process: 
 
     const processWithCleanEdges = withoutHackOfEmptyEdges(process)
     HttpService.testProcess(id, testDataFile, processWithCleanEdges)
+      .then(response => dispatch(displayTestResults(response.data)))
+      .catch(() => dispatch({type: "LOADING_FAILED"}))
+  }
+}
+
+export function testProcessWithParameters(id: ProcessId, testData: SourceWithParametersTest, process: Process): ThunkAction {
+  return (dispatch) => {
+    dispatch({
+      type: "PROCESS_LOADING",
+    })
+
+    const processWithCleanEdges = withoutHackOfEmptyEdges(process)
+    HttpService.testProcessWithParameters(id, testData, processWithCleanEdges)
       .then(response => dispatch(displayTestResults(response.data)))
       .catch(() => dispatch({type: "LOADING_FAILED"}))
   }

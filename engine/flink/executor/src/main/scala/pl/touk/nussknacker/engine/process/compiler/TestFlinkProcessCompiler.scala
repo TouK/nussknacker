@@ -5,7 +5,7 @@ import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies, SourceTestSupport}
-import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -64,7 +64,10 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
 
   private def prepareDataForTest[T](sourceTestSupport: SourceTestSupport[T], scenarioTestData: ScenarioTestData, sourceId: NodeId): List[T] = {
     val testParserForSource = sourceTestSupport.testRecordParser
-    val testRecordsForSource = scenarioTestData.testRecords.filter(_.sourceId == sourceId).map(_.record)
+    val testRecordsForSource = scenarioTestData.testRecords
+      .collect{ case testRecord: ScenarioTestJsonRecord => testRecord}
+      .filter(_.sourceId == sourceId)
+      .map(_.record)
     testRecordsForSource.map(testParserForSource.parse)
   }
 

@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.definition.test
 
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -27,7 +28,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       .map(getTestingCapabilities(_, scenario.metaData))
       .foldLeft(TestingCapabilities.Disabled)((tc1, tc2) => TestingCapabilities(
         canBeTested = tc1.canBeTested || tc2.canBeTested,
-        canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData
+        canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
+        canTestWithForm = tc1.canTestWithForm || tc2.canTestWithForm,
       ))
   }
 
@@ -36,15 +38,28 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       sourceObj <- prepareSourceObj(source)(metaData)
       canTest = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
-    } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
+      canTestWithForm = sourceObj.isInstanceOf[TestWithParametersSupport[_]]
+    } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData, canTestWithForm = canTestWithForm)
     testingCapabilities.getOrElse(TestingCapabilities.Disabled)
+  }
+
+  override def getTestParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = modelData.withThisAsContextClassLoader {
+    collectAllSources(scenario)
+      .map(source => source.id -> getTestParameters(source, scenario.metaData)).toMap
+  }
+
+  private def getTestParameters(source: Source, metaData: MetaData): List[Parameter] = modelData.withThisAsContextClassLoader {
+    prepareSourceObj(source)(metaData) match {
+      case Some(s: TestWithParametersSupport[_]) => s.testParametersDefinition
+      case _ => throw new UnsupportedOperationException(s"Requested test parameters from source (${source.id}) that does not implement TestWithParametersSupport.")
+    }
   }
 
   override def generateTestData(scenario: CanonicalProcess, size: Int): Option[PreliminaryScenarioTestData] = {
     val sourceTestDataGenerators = prepareTestDataGenerators(scenario)
     val sourceTestDataList = sourceTestDataGenerators.map { case (sourceId, testDataGenerator) =>
       val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
-      sourceTestRecords.map(testRecord => ScenarioTestRecord(sourceId, testRecord))
+      sourceTestRecords.map(testRecord => ScenarioTestJsonRecord(sourceId, testRecord))
     }
     val scenarioTestRecords = ListUtil.mergeLists(sourceTestDataList, size)
     // Records without timestamp are put at the end of the list.
@@ -72,15 +87,15 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     val allScenarioSourceIds = collectAllSources(scenario).map(_.id).toSet
     preliminaryTestData.testRecords.zipWithIndex.map {
       case (PreliminaryScenarioTestRecord.Standard(sourceId, record, timestamp), _) if allScenarioSourceIds.contains(sourceId) =>
-        Right(ScenarioTestRecord(sourceId, record, timestamp))
+        Right(ScenarioTestJsonRecord(sourceId, record, timestamp))
       case (PreliminaryScenarioTestRecord.Standard(sourceId, _, _), recordIdx) =>
         Left(formatError(s"scenario does not have source id: '$sourceId'", recordIdx))
       case (PreliminaryScenarioTestRecord.Simplified(record), _) if allScenarioSourceIds.size == 1 =>
         val sourceId = allScenarioSourceIds.head
-        Right(ScenarioTestRecord(sourceId, record))
+        Right(ScenarioTestJsonRecord(sourceId, record))
       case (_: PreliminaryScenarioTestRecord.Simplified, recordIdx) =>
         Left(formatError("scenario has multiple sources but got record without source id", recordIdx))
-    }.sequence.map(ScenarioTestData)
+    }.sequence.map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords))
   }
 
   private def collectAllSources(scenario: CanonicalProcess): List[Source] = {

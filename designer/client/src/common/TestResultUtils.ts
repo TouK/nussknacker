@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import {head, uniq, values} from "lodash"
-import {NodeId} from "../types"
+import {NodeId, UIParameter} from "../types"
 
 export interface Context {
   id: string,
@@ -25,6 +25,17 @@ export interface Error {
 
 interface ExternalInvocationResult {
   contextId: Context["id"],
+}
+
+export interface TestCapabilities {
+  canBeTested: boolean,
+  canGenerateTestData: boolean,
+  canTestWithForm: boolean,
+}
+
+export interface TestFormParameters {
+  sourceId: string,
+  parameters: UIParameter[]
 }
 
 export interface TestResults {

@@ -3,19 +3,21 @@ import {AxiosError, AxiosResponse} from "axios"
 import FileSaver from "file-saver"
 import i18next from "i18next"
 import {Moment} from "moment"
-import {SettingsData, ValidationData} from "../actions/nk"
+import {fetchTestFormParameters, SettingsData, ValidationData} from "../actions/nk"
 import api from "../api"
 import {UserData} from "../common/models/User"
 import {ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType} from "../components/Process/types"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {AuthenticationSettings} from "../reducers/settings"
-import {Process, ProcessDefinitionData, ProcessId} from "../types"
+import {Expression, Process, ProcessDefinitionData, ProcessId, VariableTypes} from "../types"
 import {Instant, WithId} from "../types/common"
 import {BackendNotification} from "../containers/Notifications"
 import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
 import {AdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
 import {withoutHackOfEmptyEdges} from "../components/graph/GraphPartialsInTS/EdgeUtils"
+import {UIValueParameter} from "../actions/nk/genericAction";
+import {testProcessWithParameters} from "../actions/nk/displayTestResults";
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -74,6 +76,11 @@ export type ComponentType = {
     icon: string,
     url: string,
   }>,
+}
+
+export type SourceWithParametersTest = {
+  sourceId: string,
+  parameterExpressions: {[paramName: string]: Expression}
 }
 
 export type ComponentUsageType = {
@@ -365,6 +372,16 @@ class HttpService {
     return promise
   }
 
+  validateGenericActionParameters(processId, validationRequest): Promise<AxiosResponse<ValidationData>> {
+    const promise = api.post(`/parameters/${encodeURIComponent(processId)}/validate`, validationRequest)
+    promise.catch(error => this.#addError(
+      i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"),
+      error,
+      true
+    ))
+    return promise
+  }
+
   validateProperties(processId, processProperties): Promise<AxiosResponse<ValidationData>> {
     const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, {processProperties})
     promise.catch(error => this.#addError(
@@ -401,6 +418,16 @@ class HttpService {
     const promise = api.post("/testInfo/capabilities", this.#sanitizeProcess(process))
     promise.catch(error => this.#addError(
       i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"),
+      error,
+      true
+    ))
+    return promise
+  }
+
+  getTestFormParameters(process: Process) {
+    const promise = api.post("/testInfo/testParameters", this.#sanitizeProcess(process))
+    promise.catch(error => this.#addError(
+      i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
       error,
       true
     ))
@@ -476,6 +503,18 @@ class HttpService {
     data.append("processJson", new Blob([JSON.stringify(sanitized)], {type: "application/json"}))
 
     const promise = api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data)
+    promise.catch(error => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
+    return promise
+  }
+
+  testProcessWithParameters(processId: ProcessId, testData: SourceWithParametersTest, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
+    const sanitized = this.#sanitizeProcess(processJson)
+    const request = {
+      sourceParameters: testData,
+      displayableProcess: sanitized
+    }
+
+    const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processId)}`, request)
     promise.catch(error => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
     return promise
   }

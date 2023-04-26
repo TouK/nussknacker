@@ -7,7 +7,7 @@ import io.circe.Json.{Null, fromString, obj}
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
@@ -49,7 +49,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .mapObject(_.add("key", Null)
       .add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa"))))
 
-    val results = run(process, ScenarioTestData(ScenarioTestRecord("start", consumerRecord) :: Nil))
+    val results = run(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
 
     val testResultVars = results.nodeResults("end").head.context.variables
     testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
@@ -66,7 +66,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .mapObject(_.add("key", Null)
         .add("value", obj("id" -> fromString("1234"), "field" -> fromString("abcd"))))
 
-    val results = run(process, ScenarioTestData(ScenarioTestRecord("start", consumerRecord) :: Nil))
+    val results = run(process, ScenarioTestData(ScenarioTestJsonRecord("start", consumerRecord) :: Nil))
 
     results.nodeResults shouldBe Symbol("nonEmpty")
   }

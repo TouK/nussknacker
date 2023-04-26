@@ -28,6 +28,17 @@ export function loadProcessState(processId: ProcessId): ThunkAction {
   }))
 }
 
+export function fetchTestFormParameters(processDetails: Process) {
+  return (dispatch) => HttpService.getTestFormParameters(processDetails).then(
+      ({data}) => {
+        dispatch({
+          type: "UPDATE_TEST_FORM_PARAMETERS",
+          testFormParameters: data,
+        })
+      }
+  )
+}
+
 export function displayTestCapabilities(processDetails: Process) {
   return (dispatch) => HttpService.getTestCapabilities(processDetails).then(
     ({data}) => dispatch({

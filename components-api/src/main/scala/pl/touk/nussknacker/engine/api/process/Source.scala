@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, VariableConstants}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import shapeless.=:!=
 
 import scala.reflect.ClassTag
@@ -35,6 +36,16 @@ trait SourceTestSupport[+T] { self: Source =>
   */
 trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
   def generateTestData(size: Int): TestData
+}
+
+/**
+ * Optional functionality which should provide field definitions based on input schema
+ * Based on those fields UI creates a window allowing user to test scenario based on schema.
+ */
+trait TestWithParametersSupport[+T] { self: Source =>
+  //TODO add support for dynamic parameters
+  def testParametersDefinition: List[Parameter]
+  def parametersToTestData(params: Map[String, AnyRef]): T
 }
 
 /**

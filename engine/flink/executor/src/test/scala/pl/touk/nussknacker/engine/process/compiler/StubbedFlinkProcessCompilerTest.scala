@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -61,7 +61,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   }
 
   test("stubbing for test purpose should work for one source") {
-    val scenarioTestData = ScenarioTestData(List(1, 2, 3).map(v => ScenarioTestRecord("left-source", Json.fromLong(v))))
+    val scenarioTestData = ScenarioTestData(List(1, 2, 3).map(v => ScenarioTestJsonRecord("left-source", Json.fromLong(v))))
     val compiledProcess = testCompile(scenarioWithSingleSource, scenarioTestData)
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.obj
@@ -73,12 +73,12 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
 
   test("stubbing for test purpose should work for multiple sources") {
     val scenarioTestData = ScenarioTestData(List(
-      ScenarioTestRecord("left-source", Json.fromLong(11)),
-      ScenarioTestRecord("right-source", Json.fromLong(21)),
-      ScenarioTestRecord("right-source", Json.fromLong(22)),
-      ScenarioTestRecord("left-source", Json.fromLong(12)),
-      ScenarioTestRecord("left-source", Json.fromLong(13)),
-      ScenarioTestRecord("right-source", Json.fromLong(23)),
+      ScenarioTestJsonRecord("left-source", Json.fromLong(11)),
+      ScenarioTestJsonRecord("right-source", Json.fromLong(21)),
+      ScenarioTestJsonRecord("right-source", Json.fromLong(22)),
+      ScenarioTestJsonRecord("left-source", Json.fromLong(12)),
+      ScenarioTestJsonRecord("left-source", Json.fromLong(13)),
+      ScenarioTestJsonRecord("right-source", Json.fromLong(23)),
     ))
 
     val compiledProcess = testCompile(scenarioWithMultipleSources, scenarioTestData)
