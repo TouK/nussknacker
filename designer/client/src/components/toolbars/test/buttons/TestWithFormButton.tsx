@@ -78,7 +78,7 @@ function TestWithFormButton(props: Props) {
 
   useEffect(() => {
     if(available) dispatch(fetchTestFormParameters(processToDisplay))
-  }, [processToDisplay])
+  }, [processToDisplay, testCapabilities, processIsLatestVersion])
 
   //For now, we select first source and don't provide way to change it
   //Add support for multiple sources in next iteration (?)
@@ -99,16 +99,16 @@ function TestWithFormButton(props: Props) {
     });
   }, [testFormParameters, sourceParameters, selectedSource]);
 
-  const onButtonClick = () => {
+  const onButtonClick = useCallback(() => {
     const sourcesFound = Object.keys(sourceParameters).length
-    if(sourcesFound > 1)  inform({text: `Testing with form support only one source - found ${sourcesFound}.`})
-      else open({
+    if (sourcesFound > 1) inform({text: `Testing with form support only one source - found ${sourcesFound}.`})
+    else open({
       title: t("dialog.title.testWithForm", "Test scenario"),
       isResizable: true,
       kind: WindowKind.genericAction,
       meta: action,
     })
-  }
+  }, [action, sourceParameters])
 
   return (
     <ToolbarButton

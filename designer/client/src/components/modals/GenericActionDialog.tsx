@@ -116,6 +116,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                     showSwitch={true}
                     showValidation={true}
                     variableTypes={action.variableTypes}
+                    errors={{}}
                   />
                 </div>
               )
