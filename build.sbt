@@ -1196,6 +1196,7 @@ lazy val developmentTestsDeploymentManager = (project in development("deployment
     name := "nussknacker-development-tests-manager",
   ).dependsOn(
   deploymentManagerApi % "provided",
+  flinkDeploymentManager % "provided",
   testUtils % "test"
 )
 
