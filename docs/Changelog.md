@@ -6,6 +6,7 @@
 -------------------------
 * [#4204](https://github.com/TouK/nussknacker/pull/4204) ProcessingTypeDataProvider has combined data being a result of all processing types
 * [#4219](https://github.com/TouK/nussknacker/pull/4219) Components are aware of processing data reload
+* [#4256](https://github.com/TouK/nussknacker/pull/4256) Ignore error message and description when comparing errors lists in model migration tests
 
 1.9.0 (not released yet)
 ------------------------

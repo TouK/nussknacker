@@ -50,23 +50,29 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
   }
 
   private def extractNewErrors(before: ValidationResult, after: ValidationResult) : ValidationResult = {
+    // simplified comparison key: we ignore error message and description
+    def errorToKey(error: NodeValidationError) = (error.fieldName, error.errorType, error.typ)
+
+    def diffErrorLists(before: List[NodeValidationError], after: List[NodeValidationError]) = {
+      val errorsBefore = before.map(errorToKey).toSet
+      after.filterNot(error => errorsBefore.contains(errorToKey(error)))
+    }
 
     def diffOnMap(before: Map[String, List[NodeValidationError]], after: Map[String, List[NodeValidationError]]) = {
       after.map {
-        case (nodeId, errors) => (nodeId, errors.diff(before.getOrElse(nodeId, List())))
+        case (nodeId, errorsAfter) => (nodeId, diffErrorLists(before.getOrElse(nodeId, List.empty), errorsAfter))
       }.filterNot(_._2.isEmpty)
     }
 
     ValidationResult(
       ValidationErrors(
         diffOnMap(before.errors.invalidNodes, after.errors.invalidNodes),
-        after.errors.processPropertiesErrors.diff(before.errors.processPropertiesErrors),
-        after.errors.globalErrors.diff(before.errors.globalErrors)
+        diffErrorLists(before.errors.processPropertiesErrors, after.errors.processPropertiesErrors),
+        diffErrorLists(before.errors.globalErrors, after.errors.globalErrors)
       ),
       ValidationWarnings(diffOnMap(before.warnings.invalidNodes, after.warnings.invalidNodes)), Map.empty
     )
   }
-
 
 }
 
@@ -75,5 +81,5 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
     shouldFailOnNewErrors && (newErrors.hasErrors || newErrors.hasWarnings)
   }
 }
-private case class MigratedProcessDetails(newProcess: DisplayableProcess, oldProcessErrors: ValidationResult, shouldFail: Boolean, processCategory: String)
 
+private case class MigratedProcessDetails(newProcess: DisplayableProcess, oldProcessErrors: ValidationResult, shouldFail: Boolean, processCategory: String)
