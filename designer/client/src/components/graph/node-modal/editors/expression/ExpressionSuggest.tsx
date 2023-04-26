@@ -180,7 +180,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
   const [editorFocused, setEditorFocused] = useState(false)
 
   const expressionSuggester = useMemo(() => {
-    if(!codeSuggestionsFromBackend) {
+    if(codeSuggestionsFromBackend) {
       return new BackendExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);
     } else {
       return new RegexExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);

@@ -8,25 +8,25 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
   private val expressionSuggester = new ExpressionSuggester()
 
   private val variables: Map[String, RefClazz] = Map(
-    "input" -> RefClazz(refClazzName = "org.A"),
-    "other" -> RefClazz(refClazzName = "org.C"),
-    "ANOTHER" -> RefClazz(refClazzName = "org.A"),
-    "dynamicMap" -> RefClazz(
-      refClazzName = "java.util.Map",
-      fields = Map(
-        "intField" -> RefClazz(refClazzName = "java.lang.Integer"),
-        "aField" -> RefClazz(refClazzName = "org.A")
-      )
+    "#input" -> RefClazz(refClazzName = Some("org.A")),
+    "#other" -> RefClazz(refClazzName = Some("org.C")),
+    "#ANOTHER" -> RefClazz(refClazzName = Some("org.A")),
+    "#dynamicMap" -> RefClazz(
+      refClazzName = Some("java.util.Map"),
+      fields = Some(Map(
+        "intField" -> RefClazz(refClazzName = Some("java.lang.Integer")),
+        "aField" -> RefClazz(refClazzName = Some("org.A"))
+      ))
     ),
-    "listVar" -> RefClazz(refClazzName = "org.WithList"),
-    "util" -> RefClazz(refClazzName = "org.Util"),
-    "union" -> RefClazz(
-      "union",
-      union = List(
-        RefClazz(refClazzName = "org.A"),
-        RefClazz(refClazzName = "org.B"),
-        RefClazz(refClazzName = "org.AA")
-      )
+    "#listVar" -> RefClazz(refClazzName = Some("org.WithList")),
+    "#util" -> RefClazz(refClazzName = Some("org.Util")),
+    "#union" -> RefClazz(
+      Some("union"),
+      union = Some(List(
+        RefClazz(refClazzName = Some("org.A")),
+        RefClazz(refClazzName = Some("org.B")),
+        RefClazz(refClazzName = Some("org.AA"))
+      ))
     )
   )
 

@@ -16,6 +16,10 @@ import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
 import {AdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
 import {withoutHackOfEmptyEdges} from "../components/graph/GraphPartialsInTS/EdgeUtils"
+import {
+  CaretPosition2d,
+  ExpressionSuggestion
+} from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import {UIValueParameter} from "../actions/nk/genericAction";
 import {testProcessWithParameters} from "../actions/nk/displayTestResults";
 
@@ -402,8 +406,8 @@ class HttpService {
     return promise
   }
 
-  getExpressionSuggestions(expression: string, caret2dPosition: {row: number, column: number}): Promise<any> {
-    const promise = api.post<AdditionalInfo>(`/expressionSuggestions/`, {expression, caret2dPosition})
+  getExpressionSuggestions(expression: string, caretPosition2d: CaretPosition2d, variables: Record<string, any>): Promise<AxiosResponse<ExpressionSuggestion[]>> {
+    const promise = api.post<ExpressionSuggestion[]>(`/expressionSuggestions`, {expression, caretPosition2d, variables})
     promise.catch(error => this.#addError(
         i18next.t("notification.error.failedToFetchExpressionSuggestions", "Failed to get expression suggestions"),
         error,

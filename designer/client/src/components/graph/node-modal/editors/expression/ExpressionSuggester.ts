@@ -5,20 +5,26 @@ import HttpService from "../../../../../http/HttpService";
 // before indexer['last indexer key
 const INDEXER_REGEX = /^(.*)\['([^\[]*)$/
 
-type CaretPosition2d = {row: number, column: number};
-
+export type CaretPosition2d = {row: number, column: number};
+export type ExpressionSuggestion = {
+  methodName: string;
+  refClazz: any;
+  fromClass: boolean;
+  description: string;
+  parameters: any;
+}
 export interface ExpressionSuggester {
-  suggestionsFor(inputValue: string, caretPosition2d: CaretPosition2d): Promise<any>;
+  suggestionsFor(inputValue: string, caretPosition2d: CaretPosition2d): Promise<ExpressionSuggestion[]>;
 }
 
 export class BackendExpressionSuggester implements ExpressionSuggester {
-  private _variables: Record<string, any>;
+  readonly _variables: Record<string, any>;
 
   constructor(private _typesInformation: ClassDefinition[], variables, private _processingType: string, private _httpService: typeof HttpService) {
     this._variables = _.mapKeys(variables, (value, variableName) => {return `#${variableName}`})
   }
-  suggestionsFor(inputValue: string, caretPosition2d: CaretPosition2d): Promise<any> {
-    return this._httpService.getExpressionSuggestions(inputValue, caretPosition2d);
+  suggestionsFor(inputValue: string, caretPosition2d: CaretPosition2d): Promise<ExpressionSuggestion[]> {
+    return this._httpService.getExpressionSuggestions(inputValue, caretPosition2d, this._variables).then(response => response.data);
   }
 }
 
@@ -29,7 +35,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
     this._variables = _.mapKeys(variables, (value, variableName) => {return `#${variableName}`})
   }
 
-  suggestionsFor = (inputValue: string, caretPosition2d: CaretPosition2d): Promise<any> => {
+  suggestionsFor = (inputValue: string, caretPosition2d: CaretPosition2d): Promise<ExpressionSuggestion[]> => {
     const normalized = this._normalizeMultilineInputToSingleLine(inputValue, caretPosition2d)
     const lastExpressionPart = this._focusedLastExpressionPartWithoutMethodParens(normalized.normalizedInput, normalized.normalizedCaretPosition)
     const properties = this._alreadyTypedProperties(lastExpressionPart)

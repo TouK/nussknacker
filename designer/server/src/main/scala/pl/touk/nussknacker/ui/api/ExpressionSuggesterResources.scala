@@ -26,8 +26,7 @@ class ExpressionSuggester() {
   def expressionSuggestions(inputValue: String, caretPosition2d: CaretPosition2d, variables: Map[String, RefClazz]): List[ExpressionSuggestion] = {
     val normalized = normalizeMultilineInputToSingleLine(inputValue, caretPosition2d)
     val lastExpressionPart = focusedLastExpressionPartWithoutMethodParens(normalized.normalizedInput, normalized.normalizedCaretPosition)
-    val variablesIncludingSelectionOrProjection = variables.view.map { case (key, value) => s"#$key" -> value}.toMap
-    getSuggestions(lastExpressionPart, variablesIncludingSelectionOrProjection)
+    getSuggestions(lastExpressionPart, variables)
   }
 
   private def normalizeMultilineInputToSingleLine(inputValue: String, caretPosition2d: CaretPosition2d): Normalized = {
@@ -46,7 +45,7 @@ class ExpressionSuggester() {
     val variableNotSelected = variables.keys.exists(variable => variable.toLowerCase.startsWith(value.toLowerCase))
 
     if (variableNotSelected && value.nonEmpty) {
-      val allVariablesWithClazzRefs = variables.map { case (key, value) => ExpressionSuggestion(key, RefClazz(value.refClazzName))}.toList
+      val allVariablesWithClazzRefs = variables.map { case (key, value) => ExpressionSuggestion(key, value)}.toList
       filterSuggestionsForInput(allVariablesWithClazzRefs, value)
     } else {
       Nil
@@ -81,4 +80,4 @@ case class ExpressionSuggestionRequest(expression: String, caretPosition2d: Care
 case class ExpressionSuggestion(methodName: String, refClazz: RefClazz, fromClass: Boolean = false)
 
 @JsonCodec
-case class RefClazz(refClazzName: String, union: List[RefClazz] = Nil, fields: Map[String, RefClazz] = Map())
+case class RefClazz(refClazzName: Option[String], display: Option[String] = None, union: Option[List[RefClazz]] = None, fields: Option[Map[String, RefClazz]] = None, params: Option[List[RefClazz]] = None)
