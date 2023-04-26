@@ -49,21 +49,21 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
   }
 
   test("should filter global variables suggestions") {
-    suggestionsFor("#ot") shouldBe List(ExpressionSuggestion(methodName = "#other", refClazz = RefClazz(refClazzName = "org.C")))
+    suggestionsFor("#ot") shouldBe List(ExpressionSuggestion(methodName = "#other", refClazz = RefClazz(refClazzName = Some("org.C"))))
   }
 
   test("should filter uppercase global variables suggestions") {
-    suggestionsFor("#ANO") shouldBe List(ExpressionSuggestion(methodName = "#ANOTHER", refClazz = RefClazz(refClazzName = "org.A")))
+    suggestionsFor("#ANO") shouldBe List(ExpressionSuggestion(methodName = "#ANOTHER", refClazz = RefClazz(refClazzName = Some("org.A"))))
   }
 
   test("should suggest global variable") {
-    suggestionsFor("#inpu") shouldBe List(ExpressionSuggestion(methodName = "#input", refClazz = RefClazz(refClazzName = "org.A")))
+    suggestionsFor("#inpu") shouldBe List(ExpressionSuggestion(methodName = "#input", refClazz = RefClazz(refClazzName = Some("org.A"))))
   }
 
   ignore("should suggest global variable methods") {
     suggestionsFor("#input.") shouldBe List(
-      ExpressionSuggestion("fooString", RefClazz("java.lang.String")),
-      ExpressionSuggestion("barB", RefClazz("org.B"))
+      ExpressionSuggestion("fooString", RefClazz(Some("java.lang.String"))),
+      ExpressionSuggestion("barB", RefClazz(Some("org.B")))
     )
   }
 }
