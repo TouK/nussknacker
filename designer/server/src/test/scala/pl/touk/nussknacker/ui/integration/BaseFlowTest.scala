@@ -35,6 +35,7 @@ import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, Multipa
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 import scala.concurrent.duration._
 import scala.util.Properties
@@ -297,7 +298,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     //we generate random parameter
     val parameterUUID = UUID.randomUUID().toString
-    FileUtils.writeStringToFile(dynamicServiceFile, parameterUUID, "UTF-8")
+    FileUtils.writeStringToFile(dynamicServiceFile, parameterUUID, StandardCharsets.UTF_8)
 
     dynamicServiceParametersBeforeReload.exists(_.contains(parameterUUID)) shouldBe false
     dynamicServiceParameters shouldBe dynamicServiceParametersBeforeReload

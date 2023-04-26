@@ -45,7 +45,7 @@ class FileProcessRepository(path: File) extends ProcessRepository {
 
   override def add(id: ProcessName, deploymentData: RequestResponseDeploymentData): Unit = {
     val outFile = new File(path, id.value)
-    Using.resource(new PrintWriter(outFile, StandardCharsets.UTF_8.name())) { writer =>
+    Using.resource(new PrintWriter(outFile, StandardCharsets.UTF_8)) { writer =>
       writer.write(deploymentData.asJson.spaces2)
     }
   }

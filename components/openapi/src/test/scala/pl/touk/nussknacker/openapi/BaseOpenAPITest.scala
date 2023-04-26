@@ -12,6 +12,7 @@ import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
 import sttp.client3.testing.SttpBackendStub
 
 import java.net.URL
+import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
 
 trait BaseOpenAPITest {
@@ -35,7 +36,7 @@ trait BaseOpenAPITest {
   }
 
   protected def parseResource(name: String): String =
-    IOUtils.toString(getClass.getResourceAsStream(s"/swagger/$name"), "UTF-8")
+    IOUtils.toString(getClass.getResourceAsStream(s"/swagger/$name"), StandardCharsets.UTF_8)
 
   protected def parseToEnrichers(resource: String, backend: SttpBackendStub[Future, Any], config: OpenAPIServicesConfig = baseConfig): Map[ServiceName, EagerServiceWithStaticParametersAndReturnType] = {
     val services = parseServicesFromResourceUnsafe(resource, config)

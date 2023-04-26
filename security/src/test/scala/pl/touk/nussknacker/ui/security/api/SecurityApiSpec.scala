@@ -24,7 +24,7 @@ class SecurityApiSpec extends org.scalatest.flatspec.AnyFlatSpec with Matchers w
     Get("/secured") ~> route(basic) ~> check {
       status shouldEqual StatusCodes.Unauthorized
       responseAs[String] shouldEqual "The resource requires authentication, which was not supplied with the request"
-      header[`WWW-Authenticate`].get.challenges.head shouldEqual HttpChallenge("Basic", "nussknacker", Map("charset" -> StandardCharsets.UTF_8.toString))
+      header[`WWW-Authenticate`].get.challenges.head shouldEqual HttpChallenge("Basic", "nussknacker", Map("charset" -> StandardCharsets.UTF_8.name))
     }
   }
   it should "support basic auth" in {
