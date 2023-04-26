@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{AfterRunningStatus, PreparingResourcesStatus, TestStatus}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -195,7 +196,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
-    Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None))
+    Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None)) ++ FlinkStreamingPropertiesConfig.properties
 
   override def name: String = "development-tests"
 
