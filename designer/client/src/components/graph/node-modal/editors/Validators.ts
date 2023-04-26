@@ -72,12 +72,20 @@ export const mandatoryValueValidator: Validator = {
   validatorType: ValidatorType.Frontend,
 }
 
-export const uniqueValueValidator: (values: string[]) => Validator = values => ({
-  isValid: value => !values.includes(value),
-  message: () => i18next.t("uniqueValueValidator.message", "This field has to be unique across scenario"),
+const uniqueValueValidator: (otherValues: string[]) => Validator = otherValues => ({
+  isValid: value => !otherValues.includes(value),
+  message: () => i18next.t("uniqueValueValidator.message", "This field has to be unique"),
   description: () => i18next.t("validator.unique.description", "Please fill field with unique value"),
   handledErrorType: HandledErrorType.UniqueParameter,
   validatorType: ValidatorType.Frontend,
+})
+export const uniqueListValueValidator = (list: string[], currentIndex: number): Validator => ({
+  ...uniqueValueValidator(list.filter((v, i) => i !== currentIndex)),
+  message: () => i18next.t("uniqueListValueValidator.message", "This field has to be unique across list"),
+})
+export const uniqueScenarioValueValidator: typeof uniqueValueValidator = otherValues => ({
+  ...uniqueValueValidator(otherValues),
+  message: () => i18next.t("uniqueScenarioValueValidator.message", "This field has to be unique across scenario"),
 })
 
 export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Validator => ({

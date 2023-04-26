@@ -1,4 +1,4 @@
-import {allValid, mandatoryValueValidator, uniqueValueValidator, Validator} from "./editors/Validators"
+import {allValid, mandatoryValueValidator, uniqueScenarioValueValidator, Validator} from "./editors/Validators"
 import Field, {FieldType} from "./editors/field/Field"
 import React, {useMemo} from "react"
 import {useDiffMark} from "./PathsToMark"
@@ -36,7 +36,7 @@ export function IdField({
   const nodes = useSelector(getProcessNodesIds)
   const otherNodes = useMemo(() => nodes.filter(n => n !== node.id), [node.id, nodes])
 
-  const validators = (additionalValidators || []).concat(mandatoryValueValidator, uniqueValueValidator(otherNodes))
+  const validators = (additionalValidators || []).concat(mandatoryValueValidator, uniqueScenarioValueValidator(otherNodes))
   const [isMarked] = useDiffMark()
   const propName = `id`
   const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node, propName])

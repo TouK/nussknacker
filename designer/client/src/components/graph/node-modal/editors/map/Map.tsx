@@ -3,7 +3,7 @@ import {Field, TypedObjectTypingResult, VariableTypes} from "../../../../../type
 import {FieldsRow} from "../../subprocess-input-definition/FieldsRow"
 import {Items} from "../../subprocess-input-definition/Items"
 import {NodeRowFields} from "../../subprocess-input-definition/NodeRowFields"
-import {Error, mandatoryValueValidator} from "../Validators"
+import {Error, mandatoryValueValidator, uniqueListValueValidator, Validator} from "../Validators"
 import MapKey from "./MapKey"
 import MapValue from "./MapValue"
 import {isEqual} from "lodash"
@@ -49,10 +49,8 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
     }
   }, [props.fields, fields])
 
-  const validators = useMemo(() => [mandatoryValueValidator], [])
-
   const Item = useCallback(
-    ({index, item}: { index: number, item }) => {
+    ({index, item, validators}: { index: number, item , validators: Validator[]}) => {
       const path = `${namespace}[${index}]`
       return (
         <FieldsRow index={index}>
@@ -78,11 +76,17 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
       )
     },
     // "variableTypes" ignored for reason
-    [isMarked, namespace, setProperty, readOnly, showValidation, validators],
+    [isMarked, namespace, setProperty, readOnly, showValidation],
   )
 
   const items = useMemo(
-    () => fields?.map(appendTypeInfo).map((item, index) => ({item, el: <Item key={index} index={index} item={item}/>})),
+    () => fields?.map(appendTypeInfo).map((item, index, list) => {
+      const validators = [
+        mandatoryValueValidator,
+        uniqueListValueValidator(list.map((v) => v.name), index),
+      ]
+      return {item, el: <Item key={index} index={index} item={item} validators={validators}/>}
+    }),
     [Item, appendTypeInfo, fields],
   )
 
