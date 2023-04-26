@@ -166,7 +166,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       HttpMethods.GET,
       "processesDetails" :: Nil,
       Query(
-        ("names", names.map(ns => URLEncoder.encode(ns.value, StandardCharsets.UTF_8.displayName())).mkString(",")),
+        ("names", names.map(ns => URLEncoder.encode(ns.value, StandardCharsets.UTF_8)).mkString(",")),
         ("isArchived", "false"),
       )
     )

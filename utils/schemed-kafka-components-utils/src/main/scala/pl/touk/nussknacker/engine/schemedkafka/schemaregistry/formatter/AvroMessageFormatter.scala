@@ -17,7 +17,7 @@ private[schemaregistry] object AvroMessageFormatter extends DatumReaderWriterMix
   def asJson(obj: Any): Json = {
     val schema = AvroUtils.getSchema(obj)
     val bos = new ByteArrayOutputStream()
-    val output = new PrintStream(bos, true, StandardCharsets.UTF_8.toString)
+    val output = new PrintStream(bos, true, StandardCharsets.UTF_8)
 
     try {
       //pretty = false is important, as we rely on the fact that there are no new lines in message parsing
