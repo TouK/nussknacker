@@ -6,7 +6,7 @@ import "../stylesheets/visualization.styl"
 import {Page} from "./Page"
 import {Navigate} from "react-router-dom"
 
-export function CustomTabWrapper<P extends { tab: DynamicTabData }>(props: P) {
+export function CustomTabWrapper<P extends { tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url" | "type"> }>(props: P) {
   return (
     <Page>
       <DynamicTab {...props}/>
