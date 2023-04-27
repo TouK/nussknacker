@@ -16,8 +16,9 @@ interface Props {
 }
 
 export function NodeGroupContent({node, edges, onChange}: Props): JSX.Element {
-  const errors = node.type ? // for properties node `type` is undefined
-      useSelector((state: RootState) => getNodeErrors(state, node.id)) : useSelector(getPropertiesErrors)
+  const errors = useSelector((state: RootState) => {
+    return node.type ? getNodeErrors(state, node.id) : getPropertiesErrors(state)
+  })
 
   return (
     <div className={css({height: "100%", display: "grid", gridTemplateRows: "auto 1fr"})}>

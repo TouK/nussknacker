@@ -126,9 +126,8 @@ export function NodeTypeDetailsContent({
     dispatch(nodeValidationDataClear(node.id))
   }, [dispatch, node.id])
 
-
-  if (showValidation) {
-    useEffect(() => {
+  useEffect(() => {
+    if (showValidation) {
       dispatch(validateNodeData(processId, {
         //see NODES_CONNECTED/NODES_DISCONNECTED
         outgoingEdges: edges.filter(e => e.to != ""),
@@ -137,8 +136,8 @@ export function NodeTypeDetailsContent({
         branchVariableTypes: getBranchVariableTypes(node.id),
         variableTypes,
       }))
-    }, [dispatch, edges, getBranchVariableTypes, node, processId, processProperties, variableTypes])
-  }
+    }
+  }, [dispatch, edges, getBranchVariableTypes, node, processId, processProperties, showValidation, variableTypes])
 
   useEffect(() => {
     setEditedNode((node) => {
