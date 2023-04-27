@@ -11,7 +11,11 @@
 * [#4219](https://github.com/TouK/nussknacker/pull/4219) Components are aware of processing data reload
 * [#4256](https://github.com/TouK/nussknacker/pull/4256) Ignore error message and description when comparing errors lists in model migration tests
 
-1.9.0 (not released yet)
+1.9.1 (24 Apr 2023)
+------------------------
+* [#4243](https://github.com/TouK/nussknacker/pull/4243) Fix for: Scenario status remain "in-progress" after attempt of deploy of not validating scenario 
+
+1.9.0 (21 Apr 2023)
 ------------------------
 * [#4195](https://github.com/TouK/nussknacker/pull/4195) Add functionality to generate test cases and test scenario without need to download a file.
 * [#3986](https://github.com/TouK/nussknacker/pull/3986) Updated sttp 2.2.9 -> 3.8.11

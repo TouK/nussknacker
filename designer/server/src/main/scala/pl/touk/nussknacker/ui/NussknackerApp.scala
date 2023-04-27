@@ -39,7 +39,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettings
+import pl.touk.nussknacker.ui.statistics.{UsageStatisticsReportsSettings, UsageStatisticsReportsSettingsDeterminer}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -219,11 +219,11 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     }
 
     val usageStatisticsReportsConfig = resolvedConfig.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
-    val usageStatisticsReportsSettings = UsageStatisticsReportsSettings.prepare(usageStatisticsReportsConfig, typeToConfig.mapValues(_.usageStatistics))
+    val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(usageStatisticsReportsConfig, typeToConfig.mapValues(_.usageStatistics))
 
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, authenticationResources.name, analyticsConfig, usageStatisticsReportsSettings).publicRoute(),
+      new SettingsResources(featureTogglesConfig, authenticationResources.name, analyticsConfig, usageStatisticsReportsSettingsDeterminer.determineSettings()).publicRoute(),
       appResources.publicRoute(),
       authenticationResources.routeWithPathPrefix,
     )
