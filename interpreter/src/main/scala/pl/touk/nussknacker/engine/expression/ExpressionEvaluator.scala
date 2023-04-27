@@ -6,10 +6,8 @@ import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessListener, ValueWithContext}
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
@@ -40,8 +38,6 @@ object ExpressionEvaluator {
 class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
                           listeners: Seq[ProcessListener],
                           metaDataToUse: Option[MetaData]) {
-  private implicit val ecToUse: ExecutionContext = SynchronousExecutionContext.ctx
-
   private def prepareGlobals(metaData: MetaData): Map[String, Any] = globalVariablesPreparer.prepareGlobalVariables(metaData).mapValuesNow(_.obj)
 
   private val optimizedGlobals = metaDataToUse.map(prepareGlobals)
@@ -59,7 +55,7 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
   }
 
   def evaluateParameter(param: pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter, ctx: Context)
-                          (implicit nodeId: NodeId, metaData: MetaData): ValueWithContext[AnyRef] = {
+                       (implicit nodeId: NodeId, metaData: MetaData): ValueWithContext[AnyRef] = {
     try {
       val valueWithModifiedContext = evaluate[AnyRef](param.expression, param.name, nodeId.id, ctx)
       valueWithModifiedContext.map { evaluatedValue =>
@@ -83,6 +79,5 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
     listeners.foreach(_.expressionEvaluated(nodeId, expressionId, expr.original, ctx, metaData, value))
     ValueWithContext(value, ctx)
   }
-
 
 }
