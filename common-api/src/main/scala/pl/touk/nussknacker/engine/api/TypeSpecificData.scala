@@ -102,3 +102,8 @@ object RequestResponseMetaData {
       slug = properties.get("slug"))
   }
 }
+
+// Class for tests where type specific properties are not needed
+case class EmptyMetaData() extends ScenarioSpecificData {
+  override val toProperties: Map[String, String] = Map()
+}
