@@ -1,4 +1,3 @@
-import {UnknownFunction} from "../../../../../types/common"
 import {DualEditorMode, editors, EditorType, SimpleEditor} from "./Editor"
 import React, {useCallback, useMemo, useState} from "react"
 import {ExpressionObj} from "./types"
@@ -7,6 +6,7 @@ import {VariableTypes} from "../../../../../types"
 import {css} from "@emotion/css"
 import {RawEditorIcon, SimpleEditorIcon, SwitchButton} from "./SwitchButton"
 import {useTranslation} from "react-i18next"
+import {Validator} from "../Validators"
 
 type Props = {
   editorConfig: {
@@ -14,21 +14,20 @@ type Props = {
     defaultMode: DualEditorMode,
   },
   expressionObj: ExpressionObj,
-  readOnly: boolean,
-  valueClassName: string,
+  readOnly?: boolean,
+  valueClassName?: string,
 
-  validators: Array<$TodoType>,
-  isMarked: boolean,
-  showValidation: boolean,
-  onValueChange: UnknownFunction,
+  validators?: Validator[],
+  isMarked?: boolean,
+  showValidation?: boolean,
+  onValueChange: (value: string) => void,
   className: string,
   variableTypes: VariableTypes,
-  showSwitch: boolean,
-  errors: unknown[],
+  showSwitch?: boolean,
 }
 
 export default function DualParameterEditor(props: Props): JSX.Element {
-  const {editorConfig, readOnly, valueClassName, expressionObj, errors} = props
+  const {editorConfig, readOnly, valueClassName, expressionObj} = props
   const {t} = useTranslation()
 
   const SimpleEditor = useMemo(
@@ -45,8 +44,8 @@ export default function DualParameterEditor(props: Props): JSX.Element {
   )
 
   const simpleEditorAllowsSwitch = useMemo(
-    () => !errors.length && SimpleEditor?.switchableTo(expressionObj, editorConfig.simpleEditor),
-    [SimpleEditor, editorConfig.simpleEditor, errors.length, expressionObj]
+    () => SimpleEditor?.switchableTo(expressionObj, editorConfig.simpleEditor),
+    [SimpleEditor, editorConfig.simpleEditor, expressionObj]
   )
 
   const initialDisplaySimple = useMemo(
