@@ -9,7 +9,7 @@ import RawEditor, {RawEditorProps} from "./RawEditor"
 import {switchableTo} from "./StringEditor"
 import {ExpressionLang} from "./types"
 
-interface Props extends RawEditorProps {
+export interface Props extends RawEditorProps {
   formatter: Formatter,
 }
 

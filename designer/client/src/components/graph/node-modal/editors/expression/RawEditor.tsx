@@ -4,13 +4,14 @@ import ReactAce from "react-ace/lib/ace"
 import ExpressionSuggest from "./ExpressionSuggest"
 import {VariableTypes} from "../../../../../types"
 import {ExpressionObj} from "./types"
+import {Validator} from "../Validators"
 
 export type RawEditorProps = {
   expressionObj: ExpressionObj,
-  validators: Array<$TodoType>,
-  isMarked: boolean,
-  showValidation: boolean,
-  readOnly: boolean,
+  validators?: Validator[],
+  isMarked?: boolean,
+  showValidation?: boolean,
+  readOnly?: boolean,
   onValueChange: (value: string) => void,
   rows?: number,
   cols?: number,

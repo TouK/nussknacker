@@ -6,7 +6,7 @@ import FixedValuesEditor from "./FixedValuesEditor"
 import {concat, isEmpty, omit} from "lodash"
 import {ExpressionObj} from "./types"
 import React from "react"
-import {DateEditor,TimeEditor,DateTimeEditor} from "./DateTimeEditor"
+import {DateEditor, DateTimeEditor, TimeEditor} from "./DateTimeEditor"
 
 import {Error, errorValidator, mandatoryValueValidator, Validator, validators} from "../Validators"
 import DurationEditor from "./Duration/DurationEditor"
@@ -15,20 +15,18 @@ import CronEditor from "./Cron/CronEditor"
 import TextareaEditor from "./TextareaEditor"
 import JsonEditor from "./JsonEditor"
 import DualParameterEditor from "./DualParameterEditor"
-import SpelTemplateEditor from "./SpelTemplateEditor";
+import SpelTemplateEditor from "./SpelTemplateEditor"
 
 export type EditorProps = {
   onValueChange: (value: string) => void,
-  type?: EditorType
+  type?: EditorType,
 }
 
-export type SimpleEditor<P extends EditorProps = EditorProps> = Editor<P> & {
+export type SimpleEditor<P extends EditorProps = EditorProps> = React.ComponentType<P> & {
   switchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean,
   switchableToHint: () => string,
   notSwitchableToHint: () => string,
 }
-
-export type Editor<P extends EditorProps = any> = React.ComponentType<P>
 
 /* eslint-enable i18next/no-literal-string */
 export enum DualEditorMode {
@@ -70,7 +68,7 @@ const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
     .map(v => v.fun(v.args))
 }
 
-export const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Error>, fieldName: string, fieldLabel: string): Array<Validator> => {
+export const simpleEditorValidators = (paramConfig: $TodoType, errors: Error[], fieldName: string, fieldLabel: string): Array<Validator> => {
   const configuredValidators = configureValidators(paramConfig)
   // Identifier or field is in one of places: fieldName or fieldLabel. Because of this we need to collect errors from both of them.
   // Especially for branch fields, "common" branch parameter identifier is in fieldLabel and identifier for specific branch is in fieldName.
@@ -84,7 +82,7 @@ export const simpleEditorValidators = (paramConfig: $TodoType, errors: Array<Err
   )
 }
 
-export const editors: Record<EditorType, Editor> = {
+export const editors = {
   [EditorType.BOOL_PARAMETER_EDITOR]: BoolEditor,
   [EditorType.CRON_EDITOR]: CronEditor,
   [EditorType.DATE]: DateEditor,
