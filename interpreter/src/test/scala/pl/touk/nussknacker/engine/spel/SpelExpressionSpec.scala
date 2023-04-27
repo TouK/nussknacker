@@ -289,7 +289,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("register functions") {
     val twoDaysAgo = LocalDate.now().minusDays(2)
-    val withDays = ctx.withVariable("date", twoDaysAgo)
+    val withDays = ctx
+      .withVariable("date", twoDaysAgo)
+      .withVariable("today", classOf[LocalDate].getDeclaredMethod("now"))
     parse[Any]("#date.until(#today()).days", withDays).validExpression.evaluateSync[Integer](withDays) should equal(2)
   }
 

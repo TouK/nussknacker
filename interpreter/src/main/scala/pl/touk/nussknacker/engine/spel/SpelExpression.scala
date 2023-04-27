@@ -220,12 +220,6 @@ object SpelExpressionParser extends LazyLogging {
               dynamicPropertyAccessAllowed: Boolean,
               spelExpressionExcludeList: SpelExpressionExcludeList,
               conversionService: ConversionService): SpelExpressionParser = {
-    val functions = Map(
-      "today" -> classOf[LocalDate].getDeclaredMethod("now"),
-      "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
-      "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[util.Collection[_]]),
-      "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[util.Collection[_]])
-    )
     val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
       //we have to pass classloader, because default contextClassLoader can be sth different than we expect...
       new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
@@ -234,7 +228,7 @@ object SpelExpressionParser extends LazyLogging {
 
     val classResolutionStrategy = if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union
     val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
-    val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, conversionService, functions, spelExpressionExcludeList)
+    val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, conversionService, spelExpressionExcludeList)
     val validator = new SpelExpressionValidator(new Typer(commonSupertypeFinder, new KeysDictTyper(dictRegistry),
       strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet, evaluationContextPreparer, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour, evaluationContextPreparer)
