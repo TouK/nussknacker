@@ -15,12 +15,11 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
                                 expressionImports: List[String],
                                 propertyAccessors: Seq[PropertyAccessor],
                                 conversionService: ConversionService,
-                                expressionFunctions: Map[String, Method],
                                 spelExpressionExcludeList: SpelExpressionExcludeList) {
 
   //this method is evaluated for *each* expression evaluation, we want to extract as much as possible to fields in this class
   def prepareEvaluationContext(ctx: Context, globals: Map[String, Any]): EvaluationContext = {
-    val optimized = new OptimizedEvaluationContext(ctx, globals, expressionFunctions)
+    val optimized = new OptimizedEvaluationContext(ctx, globals)
     optimized.setTypeLocator(locator)
     optimized.setPropertyAccessors(propertyAccessorsList)
     optimized.setTypeConverter(new StandardTypeConverter(conversionService))
@@ -51,14 +50,12 @@ class EvaluationContextPreparer(classLoader: ClassLoader,
 
 }
 
-class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any],
-                                 expressionFunctions: Map[String, Method]) extends StandardEvaluationContext {
+class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any]) extends StandardEvaluationContext {
 
   //We *don't* want to initialize any Maps here, as this code is in our tightest loop
   override def lookupVariable(name: String): AnyRef = {
     ctx.get(name)
       .orElse(globals.get(name))
-      .orElse(expressionFunctions.get(name))
       .orNull.asInstanceOf[AnyRef]
   }
 
