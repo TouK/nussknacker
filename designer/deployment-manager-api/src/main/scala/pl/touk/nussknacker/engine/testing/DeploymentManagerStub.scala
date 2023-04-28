@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.testing
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntegerValidator, MinimalNumberValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.{EmptyMetaData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
@@ -56,7 +57,49 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def name: String = "stub"
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(EmptyMetaData())
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
 
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map()
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = FlinkStreamingPropertiesConfig.properties
+}
+
+// This is copy-pasted from flink-manager package - the deployment-manager-api cannot depend on that package - it would create a circular dependency.
+// TODO: extract this to somewhere else
+object FlinkStreamingPropertiesConfig {
+
+  lazy val properties: Map[String, AdditionalPropertyConfig] =
+    Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
+
+  private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(StringParameterEditor),
+      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+      label = Some("Parallelism"))
+
+  private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(BoolParameterEditor),
+      validators = None,
+      label = Some("Spill state to disk"))
+
+  private val asyncPossibleValues = List(
+    FixedExpressionValue("", "Server default"),
+    FixedExpressionValue("false", "Synchronous"),
+    FixedExpressionValue("true", "Asynchronous"))
+
+  private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
+      validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
+      label = Some("IO mode"))
+
+  private val checkpointIntervalConfig: (String, AdditionalPropertyConfig) = "checkpointIntervalInSeconds" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(StringParameterEditor),
+      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+      label = Some("Checkpoint interval in seconds"))
+
 }
