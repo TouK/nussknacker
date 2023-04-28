@@ -199,8 +199,7 @@ lazy val commonSettings =
           "-target:jvm-1.8",
         ),
         (2, 13) -> Seq(
-          "-Ymacro-annotations",
-          "-target:jvm-11",
+          "-Ymacro-annotations"
         )
       ),
       javacOptions := Seq(
