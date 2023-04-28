@@ -4,7 +4,7 @@
 
 ## Creating generic functions
 
-Let's create `get` function. We will start by writing this function in scala.
+Let's create `get` function. We will start by writing this function in Scala.
 ```scala
 def head[T](list: java.util.List[T]): T =
   list.get(0)

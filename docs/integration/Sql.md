@@ -10,18 +10,18 @@ Nussknacker `Sql` enricher can connect to SQL databases with HikariCP JDBC conne
 
 It supports:
 
-- real time database lookup - a simplified mode where you can select from table filtering for a specified key.
-- both `databaseQueryEnricher` as well as `databaseLookupEnricher` can cache queries results
+- real time database lookup - a simplified mode where you can select from table and filter for a specified key
+- both `databaseQueryEnricher` as well as `databaseLookupEnricher` can cache query results
 - you can specify cache TTL (Time To Live) duration via `Cache TTL` property
 - for `databaseQueryEnricher` you can specify `Result Strategy`
     - `Result set` - for retrieving whole query result set
-    - `Single result` for retrieving single value
+    - `Single result` for retrieving a single value
 
 ## Configuration
 
-Sample configuration:
+You have to configure database connection pool you will be using in your `Sql` enricher.
 
-You have to configure database connection pool you will be using in your sql enricher
+Sample configuration:
 
 ```
 myDatabasePool {
@@ -46,12 +46,12 @@ myDatabasePool {
 | initialSize     | false    | 0       | Minimum idle size               |
 
 > As a user you have to provide the database driver. 
-> It should be placed in flink /lib folder (/opt/flink/lib), more info can be found in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code).
-> Additionally it should be placed in nussknacker /lib folder (/opt/nussknacker/lib)
+> It should be placed in Flink's /lib folder (/opt/flink/lib), more info can be found in [Flink Documentation](https://ci.apache.org/projects/flink/flink-docs-stable/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code).
+> Additionally it should be placed in Nussknacker's /lib folder (/opt/nussknacker/lib)
 
-Next you have to configure component itself.
+Next you have to configure the component itself.
 
-You can have multiple components for multiple various database connections. You can also specify only one of them.
+You can support various database connections by defining multiple `Sql` component instances.
 
 ```
 components {
@@ -163,7 +163,7 @@ Caused by: java.lang.IllegalArgumentException: Compilation errors: CannotCreateO
 
 Add appropriate database driver to your `/opt/flink/lib` directory
 
-##### Problem: Database driver is missing in nussknacker application - designer
+##### Problem: Database driver is missing in Nussknacker application - Designer
 ```
 Could not create db-query: No suitable driver found for jdbc:postgresql://nussknacker_postgres:5432/world-db
 ```

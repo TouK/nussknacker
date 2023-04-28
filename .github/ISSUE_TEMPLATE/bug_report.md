@@ -25,5 +25,5 @@ Steps to reproduce the behavior.
  - Flink version
  - Java version
  - Scala version
- - Method of running of components [e.g. in Docker, lite, flink]
+ - Method of running of components [e.g. in Docker, Lite, Flink]
  - Browser type and version [e.g. Chrome 73]

@@ -110,7 +110,7 @@ and add dependency to `designer` module like in flink-streaming case.
 
 #### Setting up Kubernetes environment
 
-To run streaming lite scenarios with K8s, we recommend using [k3d](https://k3d.io) with
+To run streaming Lite scenarios with K8s, we recommend using [k3d](https://k3d.io) with
 [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) setup
 - run integration environment, as described above
 - `K3D_FIX_DNS=1 PROJECT_ROOT=$(pwd) k3d cluster create --network nussknacker_network --config=.k3d/single-cluster.yml` 
