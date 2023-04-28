@@ -60,7 +60,7 @@
 * [#4117](https://github.com/TouK/nussknacker/pull/4117)[#4202](https://github.com/TouK/nussknacker/pull/4202) Fragment parameters definition is now computed based on config. Thanks to that you can use `componentsUiConfig` setting to provide
   additional settings like parameter's validators or editors to fragments.
 * [#4201](https://github.com/TouK/nussknacker/pull/4201) Fix for: Dynamic nodes (GenericNodeTransformation) has now initial parameters inferred based on definition instead empty List
-* [#4224](https://github.com/TouK/nussknacker/pull/4224) Fix for (de)serialization of Flink state when using NU with scala 2.13. See MigrationGuide for details.
+* [#4224](https://github.com/TouK/nussknacker/pull/4224) Fix for (de)serialization of Flink state when using NU with Scala 2.13. See MigrationGuide for details.
 
 1.8.1 (28 Feb 2023)
 ------------------------
@@ -76,7 +76,7 @@
 * [#3654](https://github.com/TouK/nussknacker/pull/3654) Removed `/subprocessDetails` in favor of `/processDetails?isSubprocess=true`.
 * [#3823](https://github.com/TouK/nussknacker/pull/3823), [#3836](https://github.com/TouK/nussknacker/pull/3836), [#3843](https://github.com/TouK/nussknacker/pull/3843) - 
   scenarios with multiple sources can be tested from file
-* [#3869](https://github.com/TouK/nussknacker/pull/3869) cross-compile - scala 2.12 & 2.13
+* [#3869](https://github.com/TouK/nussknacker/pull/3869) cross-compile - Scala 2.12 & 2.13
 * [#3874](https://github.com/TouK/nussknacker/pull/3874) Tumbling window with OnEvent trigger saves context
 * [#3853](https://github.com/TouK/nussknacker/pull/3853) [#3924](https://github.com/TouK/nussknacker/pull/3924) Support of patternProperties in sources/sinks with JSON Schema
 * [#3916](https://github.com/TouK/nussknacker/pull/3916) `environmentAlert.cssClass` setting renamed to `environmentAlert.color`
@@ -129,7 +129,7 @@
 
 * [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base Docker image to eclipse temurin due to openjdk deprecation.
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. See MigrationGuide for details.
-* [#3626](https://github.com/TouK/nussknacker/pull/3626) Fix for: using Typed.fromDetailedType with scala type aliases cause exception
+* [#3626](https://github.com/TouK/nussknacker/pull/3626) Fix for: using Typed.fromDetailedType with Scala type aliases cause exception
 * [#3576](https://github.com/TouK/nussknacker/pull/3576) Unified `/processes` and `/processesDetails`. Both endpoints support the same query parameters.
   Added option `skipValidateAndResolve` in `/processesDetails`, `/processes/{name}` and `/processes/{name}/{versionId}`
   to return scenario JSON omitting validation and dictionary resolving.
@@ -147,7 +147,7 @@
 ------------------------
 * [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenAPI definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode
 * [#3657](https://github.com/TouK/nussknacker/pull/3657) Fix for json-schema additionalProperties validation
-* [#3672](https://github.com/TouK/nussknacker/pull/3672) Fix contextId assignment for the output of ForEachTransformer (flink)
+* [#3672](https://github.com/TouK/nussknacker/pull/3672) Fix contextId assignment for the output of ForEachTransformer (Flink)
 * [#3671](https://github.com/TouK/nussknacker/pull/3671) Fix: do not show extra scrollbar on scenario screen when panel too large
 * [#3681](https://github.com/TouK/nussknacker/pull/3681) Fix: validate multiple same fragments used in a row in legacy scenario JSON (without `outputVariableNames` field in `SubprocessRef`)
 * [#3685](https://github.com/TouK/nussknacker/pull/3685) Fix: inconsistent SwaggerDateTime typing (LocalDateTime/ZonedDateTime)
@@ -627,8 +627,8 @@ configuration should be used from now on.
 - SQL can be used as expression language
 - Processes page rendering optimized
 - suggestions for projections/selections in spel
-- upgrade to flink 1.4.2
-- upgrade to scala 2.11.12
+- upgrade to Flink 1.4.2
+- upgrade to Scala 2.11.12
 - Make sinks disableable
 
 0.0.7 (22 Dec 2017)
