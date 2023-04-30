@@ -6,7 +6,7 @@ import java.io.File
 import java.nio.file.Path
 
 class ExtraScriptsListingPreparer(classLoader: ClassLoader,
-                                  extraScriptsPath: String,
+                                  extraScriptsPath: Path,
                                   webResourcesRoot: Path) extends LazyLogging {
   def scriptsListing: String = {
     webResourcesListing.map(resourcePath => s"""<script src="$resourcePath"></script>""").mkString("\n")
@@ -14,7 +14,7 @@ class ExtraScriptsListingPreparer(classLoader: ClassLoader,
 
   private[api] def webResourcesListing: Seq[String] = {
     val matchingFilesForExistingDirectory = for {
-      existingExtraScriptsRoot <- Option(classLoader.getResource(extraScriptsPath))
+      existingExtraScriptsRoot <- Option(classLoader.getResource(extraScriptsPath.toString))
       extraScriptsRootFile = new File(existingExtraScriptsRoot.getFile)
       _ = {
         if (!extraScriptsRootFile.isDirectory) {

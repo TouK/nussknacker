@@ -25,8 +25,9 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
     }
 
     val extraScripts = {
-      val webResourcesRoot = Path.of(Option(publicPath).filterNot(_.isBlank).getOrElse("/"), "static")
-      new ExtraScriptsListingPreparer(getClass.getClassLoader, Path.of(staticRoot, "extra").toString, webResourcesRoot).scriptsListing
+      val extraStaticRoot = Path.of(staticRoot, "extra")
+      val webResourcesRoot = Path.of(Option(publicPath).filterNot(_.isBlank).getOrElse("/")).resolve(extraStaticRoot)
+      new ExtraScriptsListingPreparer(getClass.getClassLoader, extraStaticRoot, webResourcesRoot).scriptsListing
     }
 
     val withPublicPathSubstituted = content
