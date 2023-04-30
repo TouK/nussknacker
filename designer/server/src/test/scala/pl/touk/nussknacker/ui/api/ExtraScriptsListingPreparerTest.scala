@@ -4,39 +4,33 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
 import java.io.File
+import java.nio.file.Path
 import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 class ExtraScriptsListingPreparerTest extends AnyFunSuite with Matchers {
 
-  private val classLoaderUsingDirectory = {
+  private val classLoader = {
     val classpathEntry = new File(getClass.getResource("/extra-scripts-test").getFile).toURI.toURL
     new URLClassLoader(Seq(classpathEntry), getClass.getClassLoader)
   }
 
   test("should prepare correct listing based on classpath files") {
     val listingPreparer = new ExtraScriptsListingPreparer(
-      classLoaderUsingDirectory, "/web-root/extra-scripts-root", "")
+      classLoader, "web-extra", Path.of("/resources-root"))
 
-    listingPreparer.webResourcesListing shouldEqual Seq("/web-root/extra-scripts-root/a.js", "/web-root/extra-scripts-root/b.js")
-  }
-
-  test("should add web resource root") {
-    val listingPreparer = new ExtraScriptsListingPreparer(
-      classLoaderUsingDirectory, "/web-root/extra-scripts-root", "/some-root")
-
-    listingPreparer.webResourcesListing shouldEqual Seq("/some-root/web-root/extra-scripts-root/a.js", "/some-root/web-root/extra-scripts-root/b.js")
+    listingPreparer.webResourcesListing shouldEqual Seq("/resources-root/a.js", "/resources-root/b.js")
   }
 
   test("should return empty list for not existing directory") {
     val listingPreparer = new ExtraScriptsListingPreparer(
-      classLoaderUsingDirectory, "not-existing", "")
+      classLoader, "not-existing", Path.of("/"))
 
     listingPreparer.webResourcesListing shouldBe empty
   }
 
   test("should thrown an exception for extra root which is not a directory") {
     val listingPreparer = new ExtraScriptsListingPreparer(
-      classLoaderUsingDirectory, "/a.js", "")
+      classLoader, "a.js", Path.of("/"))
 
     an[IllegalStateException] shouldBe thrownBy {
       listingPreparer.webResourcesListing
@@ -45,11 +39,11 @@ class ExtraScriptsListingPreparerTest extends AnyFunSuite with Matchers {
 
   test("should list resources as of html scripts") {
     val listingPreparer = new ExtraScriptsListingPreparer(
-      classLoaderUsingDirectory, "web-root/extra-scripts-root", "")
+      classLoader, "web-extra", Path.of("/"))
 
     listingPreparer.scriptsListing shouldEqual
-      """<script src="/web-root/extra-scripts-root/a.js"></script>
-        |<script src="/web-root/extra-scripts-root/b.js"></script>""".stripMargin
+      """<script src="/a.js"></script>
+        |<script src="/b.js"></script>""".stripMargin
   }
 
 }

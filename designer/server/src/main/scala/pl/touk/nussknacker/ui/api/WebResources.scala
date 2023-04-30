@@ -15,8 +15,8 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
   private lazy val mainContentFile = {
     val tempMainContentFile = Files.createTempFile("nussknacker", "main.html").toFile
     tempMainContentFile.deleteOnExit()
-    val staticRoot = "/web/static"
-    val mainPath = Path.of(staticRoot, "main.html").toString
+    val staticRoot = "web/static"
+    val mainPath = Path.of("/", staticRoot, "main.html").toString
     val data = Try(ResourceLoader.load(mainPath))
 
     val content = data.toOption.getOrElse {
@@ -24,7 +24,10 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
       ""
     }
 
-    val extraScripts = new ExtraScriptsListingPreparer(getClass.getClassLoader, Path.of(staticRoot, "extra").toString, publicPath).scriptsListing
+    val extraScripts = {
+      val webResourcesRoot = Path.of(Option(publicPath).filterNot(_.isBlank).getOrElse("/"), "static")
+      new ExtraScriptsListingPreparer(getClass.getClassLoader, Path.of(staticRoot, "extra").toString, webResourcesRoot).scriptsListing
+    }
 
     val withPublicPathSubstituted = content
       .replace("</body>", s"<!--\n $extraScripts //-->\n</body>")
@@ -44,7 +47,7 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
       get {
         encodeResponse {
           extractRequest { matched =>
-            logger.debug(s"Try to get static data from $webSubfolder for:  ${matched.uri.path}.")
+            logger.debug(s"Try to get static data from $webSubfolder for: ${matched.uri.path}.")
             getFromResourceDirectory(s"web/$webSubfolder")
           }
         }

@@ -7,13 +7,14 @@ import java.nio.file.Path
 
 class ExtraScriptsListingPreparer(classLoader: ClassLoader,
                                   extraScriptsPath: String,
-                                  webResourcesRoot: String) extends LazyLogging {
+                                  webResourcesRoot: Path) extends LazyLogging {
+  def scriptsListing: String = {
+    webResourcesListing.map(resourcePath => s"""<script src="$resourcePath"></script>""").mkString("\n")
+  }
 
-  private[api] lazy val webResourcesListing: Seq[String] = {
+  private[api] def webResourcesListing: Seq[String] = {
     val matchingFilesForExistingDirectory = for {
       existingExtraScriptsRoot <- Option(classLoader.getResource(extraScriptsPath))
-        // for resources located as a files (instead of in resources), first slash should be omitted
-        .orElse(Option(classLoader.getResource(extraScriptsPath.replaceFirst("^/", ""))))
       extraScriptsRootFile = new File(existingExtraScriptsRoot.getFile)
       _ = {
         if (!extraScriptsRootFile.isDirectory) {
@@ -37,12 +38,7 @@ class ExtraScriptsListingPreparer(classLoader: ClassLoader,
     }
     matchingFiles
       .sorted
-      .map(name => Path.of(Option(webResourcesRoot).filterNot(_.isBlank).getOrElse("/"), extraScriptsPath, name).toString)
+      .map(name => webResourcesRoot.resolve(name).toString)
   }
-
-  lazy val scriptsListing: String = {
-    webResourcesListing.map(resourcePath => s"""<script src="$resourcePath"></script>""").mkString("\n")
-  }
-
 
 }
