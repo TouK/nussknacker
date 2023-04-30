@@ -16,14 +16,15 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
     val tempMainContentFile = Files.createTempFile("nussknacker", "main.html").toFile
     tempMainContentFile.deleteOnExit()
     val staticRoot = "/web/static"
-    val data = Try(ResourceLoader.load(Path.of(staticRoot, "/main.html").toString))
+    val mainPath = Path.of(staticRoot, "main.html").toString
+    val data = Try(ResourceLoader.load(mainPath))
 
     val content = data.toOption.getOrElse {
-      logger.error("Failed to find web/static/main.html - probably frontend resources are not packaged in jar. Frontend won't work properly!")
+      logger.error(s"Failed to find $mainPath - probably frontend resources are not packaged in jar. Frontend won't work properly!")
       ""
     }
 
-    val extraScripts = new ExtraScriptsListingPreparer(getClass.getClassLoader, "web/static/extra").scriptsListing
+    val extraScripts = new ExtraScriptsListingPreparer(getClass.getClassLoader, Path.of(staticRoot, "extra").toString).scriptsListing
 
     val withPublicPathSubstituted = content
       .replace("</body>", s"<!--\n $extraScripts //-->\n</body>")
