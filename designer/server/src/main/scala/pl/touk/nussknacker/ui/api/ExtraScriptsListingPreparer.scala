@@ -25,6 +25,7 @@ class ExtraScriptsListingPreparer(classLoader: ClassLoader,
       }
       matchingFiles <- Option(new File(existingExtraScriptsRoot.getFile)
         .listFiles((_, fileName) => fileName.endsWith(".js"))
+        .toIndexedSeq
         .map(_.getName))
     } yield {
       logger.debug(s"Extra scripts listed in the directory $extraScriptsPath: ${matchingFiles.mkString(", ")}")
@@ -32,7 +33,7 @@ class ExtraScriptsListingPreparer(classLoader: ClassLoader,
     }
     val matchingFiles = matchingFilesForExistingDirectory.getOrElse {
       logger.debug(s"Directory with extra scripts: $extraScriptsPath is not available from classpath")
-      Array.empty[String]
+      Seq.empty[String]
     }
     matchingFiles
       .sorted
