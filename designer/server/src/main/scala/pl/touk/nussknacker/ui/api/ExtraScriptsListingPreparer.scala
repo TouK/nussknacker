@@ -20,11 +20,8 @@ class ExtraScriptsListingPreparer(classLoader: ClassLoader,
         if (!extraScriptsRootFile.isDirectory) {
           throw new IllegalStateException(s"Extra scripts root: $extraScriptsRootFile is not a directory")
         }
-        if (!extraScriptsRootFile.canRead) {
-          throw new IllegalStateException(s"Can't read extra scripts root: $extraScriptsRootFile")
-        }
       }
-      matchingFiles <- Option(new File(existingExtraScriptsRoot.getFile)
+      matchingFiles <- Option(extraScriptsRootFile
         .listFiles((_, fileName) => fileName.endsWith(".js"))
         .toIndexedSeq
         .map(_.getName))
