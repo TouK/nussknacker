@@ -5,7 +5,6 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.util.ResourceLoader
 
-import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import scala.util.Try
@@ -24,14 +23,7 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
       ""
     }
 
-    val extraScriptsDir = "/extra"
-    val path = getClass.getResource(Path.of(staticRoot, extraScriptsDir).toString)
-    val files = Option(new File(path.getFile).list((_, name) => name.endsWith(".js")))
-    val extraScripts = files
-      .getOrElse(Array.empty)
-      .sorted
-      .map(file => s"<script src=\"${Path.of(publicPath, extraScriptsDir, file)}\"></script>")
-      .mkString("\n")
+    val extraScripts = new ExtraScriptsListingPreparer(getClass.getClassLoader, "web/static/extra").scriptsListing
 
     val withPublicPathSubstituted = content
       .replace("</body>", s"<!--\n $extraScripts //-->\n</body>")
