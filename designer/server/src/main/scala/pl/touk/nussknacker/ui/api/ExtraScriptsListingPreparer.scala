@@ -3,9 +3,11 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.scalalogging.LazyLogging
 
 import java.io.File
+import java.nio.file.Path
 
 class ExtraScriptsListingPreparer(classLoader: ClassLoader,
-                                  extraScriptsPath: String) extends LazyLogging {
+                                  extraScriptsPath: String,
+                                  webResourcesRoot: String) extends LazyLogging {
 
   private[api] lazy val webResourcesListing: Seq[String] = {
     val matchingFilesForExistingDirectory = for {
@@ -30,9 +32,11 @@ class ExtraScriptsListingPreparer(classLoader: ClassLoader,
     }
     val matchingFiles = matchingFilesForExistingDirectory.getOrElse {
       logger.debug(s"Directory with extra scripts: $extraScriptsPath is not available from classpath")
-      Array.empty
+      Array.empty[String]
     }
-    matchingFiles.sorted.map(name => s"$extraScriptsPath/$name")
+    matchingFiles
+      .sorted
+      .map(name => Path.of(Option(webResourcesRoot).filterNot(_.isBlank).getOrElse("/"), extraScriptsPath, name).toString)
   }
 
   lazy val scriptsListing: String = {

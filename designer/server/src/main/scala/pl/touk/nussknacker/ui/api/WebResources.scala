@@ -24,7 +24,7 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
       ""
     }
 
-    val extraScripts = new ExtraScriptsListingPreparer(getClass.getClassLoader, Path.of(staticRoot, "extra").toString).scriptsListing
+    val extraScripts = new ExtraScriptsListingPreparer(getClass.getClassLoader, Path.of(staticRoot, "extra").toString, publicPath).scriptsListing
 
     val withPublicPathSubstituted = content
       .replace("</body>", s"<!--\n $extraScripts //-->\n</body>")
