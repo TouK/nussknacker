@@ -28,13 +28,22 @@ class ExtraScriptsListingPreparerTest extends AnyFunSuite with Matchers {
     listingPreparer.webResourcesListing shouldBe empty
   }
 
-  test("should thrown an exception for extra root which is not a directory") {
+  test("should return empty list for root as which is not a directory") {
     val listingPreparer = new ExtraScriptsListingPreparer(
       classLoader, Path.of("a.js"), Path.of("/"))
 
-    an[IllegalStateException] shouldBe thrownBy {
-      listingPreparer.webResourcesListing
+    listingPreparer.webResourcesListing shouldBe empty
+  }
+
+  test("should use scripts.lst file when available") {
+    val classLoader = {
+      val classpathEntry = new File(getClass.getResource("/extra-scripts-test-lst").getFile).toURI.toURL
+      new URLClassLoader(Seq(classpathEntry), getClass.getClassLoader)
     }
+    val listingPreparer = new ExtraScriptsListingPreparer(
+      classLoader, Path.of("web-extra"), Path.of("/"))
+
+    listingPreparer.webResourcesListing shouldBe Seq("/a.js", "/b.js")
   }
 
   test("should list resources as of html scripts") {

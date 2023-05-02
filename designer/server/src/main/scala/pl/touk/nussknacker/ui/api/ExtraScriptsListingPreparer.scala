@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 import java.io.File
 import java.nio.file.Path
+import scala.io.Source
 
 class ExtraScriptsListingPreparer(classLoader: ClassLoader,
                                   extraScriptsPath: Path,
@@ -13,29 +14,36 @@ class ExtraScriptsListingPreparer(classLoader: ClassLoader,
   }
 
   private[api] def webResourcesListing: Seq[String] = {
-    val matchingFilesForExistingDirectory = for {
-      existingExtraScriptsRoot <- Option(classLoader.getResource(extraScriptsPath.toString))
-      extraScriptsRootFile = new File(existingExtraScriptsRoot.getFile)
-      _ = {
-        if (!extraScriptsRootFile.isDirectory) {
-          throw new IllegalStateException(s"Extra scripts root: $extraScriptsRootFile is not a directory")
-        }
-      }
-      matchingFiles <- Option(extraScriptsRootFile
-        .listFiles((_, fileName) => fileName.endsWith(".js"))
-        .toIndexedSeq
-        .map(_.getName))
-    } yield {
-      logger.debug(s"Extra scripts listed in the directory $extraScriptsPath: ${matchingFiles.mkString(", ")}")
-      matchingFiles
-    }
-    val matchingFiles = matchingFilesForExistingDirectory.getOrElse {
-      logger.debug(s"Directory with extra scripts: $extraScriptsPath is not available from classpath")
+    val matchingFiles = readListingFile orElse listDirector getOrElse {
+      logger.debug(s"Directory with extra scripts: $extraScriptsPath is not available from classpath or is inside a jar")
       Seq.empty[String]
     }
     matchingFiles
       .sorted
       .map(name => webResourcesRoot.resolve(name).toString)
+  }
+
+  private def readListingFile: Option[Seq[String]] = {
+    val listingFilePath = extraScriptsPath.resolve("scripts.lst")
+    Option(classLoader.getResourceAsStream(listingFilePath.toString))
+      .map(Source.fromInputStream)
+      .map(_.getLines().toSeq)
+      .map { seq =>
+        logger.debug(s"Extra scripts listed in the listing file $listingFilePath: ${seq.mkString(", ")}")
+        seq
+      }
+  }
+
+  private def listDirector: Option[Seq[String]] = {
+    for {
+      existingExtraScriptsRoot <- Option(classLoader.getResource(extraScriptsPath.toString))
+      extraScriptsRootFile = new File(existingExtraScriptsRoot.getFile)
+      matchingFiles <- Option(extraScriptsRootFile.listFiles((_, fileName) => fileName.endsWith(".js")))
+      fileNamesSeq = matchingFiles.toIndexedSeq.map(_.getName)
+    } yield {
+      logger.debug(s"Extra scripts listed in the directory $extraScriptsPath: ${matchingFiles.mkString(", ")}")
+      fileNamesSeq
+    }
   }
 
 }
