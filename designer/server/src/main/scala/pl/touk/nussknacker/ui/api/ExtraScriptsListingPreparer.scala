@@ -9,13 +9,16 @@ import scala.io.Source
 class ExtraScriptsListingPreparer(classLoader: ClassLoader,
                                   extraScriptsPath: Path,
                                   webResourcesRoot: Path) extends LazyLogging {
+
+  private val listingFilePath = extraScriptsPath.resolve("scripts.lst")
+
   def scriptsListing: String = {
     webResourcesListing.map(resourcePath => s"""<script src="$resourcePath"></script>""").mkString("\n")
   }
 
   private[api] def webResourcesListing: Seq[String] = {
     val matchingFiles = readListingFile orElse listDirector getOrElse {
-      logger.debug(s"Directory with extra scripts: $extraScriptsPath is not available from classpath or is inside a jar")
+      logger.debug(s"Neither listing file $listingFilePath nor listable directory $extraScriptsPath are available")
       Seq.empty[String]
     }
     matchingFiles
@@ -24,7 +27,6 @@ class ExtraScriptsListingPreparer(classLoader: ClassLoader,
   }
 
   private def readListingFile: Option[Seq[String]] = {
-    val listingFilePath = extraScriptsPath.resolve("scripts.lst")
     Option(classLoader.getResourceAsStream(listingFilePath.toString))
       .map(Source.fromInputStream)
       .map(_.getLines().toSeq)
