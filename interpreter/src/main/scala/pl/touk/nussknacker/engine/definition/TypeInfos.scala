@@ -82,7 +82,7 @@ object TypeInfos {
     def getClazz: Class[_] = this.clazzName match {
       case TypedClass(klass, _) => klass
       case Unknown => AnyClass
-      case _ => ???
+      case typingResult => throw new IllegalAccessException(s"$typingResult not supported. Class and Unknown are only valid inputs for fragment.")
     }
 
     def clazzMatch(typeReferenceClazz: AnyRef): Boolean =
