@@ -39,6 +39,7 @@ import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
+import pl.touk.nussknacker.ui.showcase.{ShowcaseScenariosConfig, ShowcaseScenariosService}
 import pl.touk.nussknacker.ui.statistics.{UsageStatisticsReportsSettings, UsageStatisticsReportsSettingsDeterminer}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
@@ -178,6 +179,15 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val componentService = DefaultComponentService(resolvedConfig, typeToConfig, processService, processCategoryService)
 
     val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, notificationsConfig)
+
+
+    val showcaseScenariosConfig = ShowcaseScenariosConfig(resolvedConfig).getOrElse(ShowcaseScenariosConfig.Default)
+
+    logger.info(s"Showcase scenarios config: $showcaseScenariosConfig")
+
+    new ShowcaseScenariosService(showcaseScenariosConfig, processService, deploymentService)
+      .createAndDeployShowcaseScenarios
+
 
     initMetrics(metricsRegistry, resolvedConfig, futureProcessRepository)
 
