@@ -31,7 +31,7 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
     }
 
     val withPublicPathSubstituted = content
-      .replace("</body>", s"<!--\n $extraScripts //-->\n</body>")
+      .replace("</body>", s"\n$extraScripts\n</body>")
       .replace("__publicPath__", publicPath)
 
     FileUtils.writeStringToFile(tempMainContentFile, withPublicPathSubstituted, StandardCharsets.UTF_8)
