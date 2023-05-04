@@ -16,6 +16,7 @@ export const getTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] 
 export const getTargetEnvironmentId = createSelector(getFeatureSettings, s => s?.remoteEnvironment?.targetEnvironmentId)
 export const getSurveySettings = createSelector(getFeatureSettings, s => s?.surveySettings)
 export const getLoggedUser = createSelector(getSettings, s => s.loggedUser)
+export const getLoggedUserId = createSelector(getLoggedUser, s => s.id)
 export const getProcessDefinitionData = createSelector(getSettings, s => s.processDefinitionData || {} as ProcessDefinitionData)
 export const getCategories = createSelector(getLoggedUser, u => u.categories || [])
 export const getWritableCategories = createSelector(getLoggedUser, getCategories, (user, categories) => categories.filter(c => user.canWrite(c)))

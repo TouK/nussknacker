@@ -22,7 +22,7 @@ class ExtraScriptsListingPreparer(classLoader: ClassLoader,
   private val listingFilePath = extraScriptsPath.resolve("scripts.lst")
 
   def scriptsListing: String = {
-    webResourcesListing.map(resourcePath => s"""<script src="$resourcePath"></script>""").mkString("\n")
+    webResourcesListing.map(resourcePath => s"""<script defer src="$resourcePath"></script>""").mkString("\n")
   }
 
   private[extrajs] def webResourcesListing: Seq[String] = {
