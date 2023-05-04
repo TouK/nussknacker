@@ -126,7 +126,7 @@ object TypeSpecificUtils extends LazyLogging {
       case _: IllegalArgumentException =>
         // We allow for invalid values to be persisted. If we cannot convert a string to a desired type, we set it as
         // None in TypeSpecificData and store the invalid value in AdditionalFields.
-        logger.debug(s"Could not convert property $propertyName with value \"$value\" to desired type.")
+        logger.debug(s"Could not convert property $propertyName with value \'$value\' to desired type.")
         None
     }.get
   }
