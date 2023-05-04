@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.FragmentSpecificData.docsUrlName
 import pl.touk.nussknacker.engine.api.LiteStreamMetaData.parallelismLiteName
 import pl.touk.nussknacker.engine.api.RequestResponseMetaData.slugName
 import pl.touk.nussknacker.engine.api.StreamMetaData.{checkpointIntervalInSecondsName, parallelismFlinkName, spillStateToDiskName, useAsyncInterpretationName}
-import pl.touk.nussknacker.engine.api.utils.{convertPropertyWithLog, toStringMap}
+import pl.touk.nussknacker.engine.api.TypeSpecificUtils.{convertPropertyWithLog, toStringMap}
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {
   val isSubprocess = this match {
@@ -113,7 +113,7 @@ object RequestResponseMetaData {
   }
 }
 
-object utils extends LazyLogging {
+object TypeSpecificUtils extends LazyLogging {
 
   def toStringMap(seq: Seq[Option[(String, Any)]]): Map[String, String] = {
     seq.flatten

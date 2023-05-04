@@ -63,7 +63,7 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 }
 
 // This is copy-pasted from flink-manager package - the deployment-manager-api cannot depend on that package - it would create a circular dependency.
-// TODO: extract this to somewhere else
+// TODO: Replace this class by a BaseDeploymentManagerProvider with default stubbed behavior
 object FlinkStreamingPropertiesConfig {
 
   lazy val properties: Map[String, AdditionalPropertyConfig] =
