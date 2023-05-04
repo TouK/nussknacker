@@ -4,6 +4,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.util.ResourceLoader
+import pl.touk.nussknacker.ui.extrajs.ExtraScriptsListingPreparer
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -13,12 +14,8 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
 
   //see config.js comment
   private lazy val mainContentFile = {
-    val tempMainContentFile = Files.createTempFile("nussknacker", "main.html").toFile
-    tempMainContentFile.deleteOnExit()
-    val staticRoot = "web/static"
-    val mainPath = Path.of("/", staticRoot, "main.html").toString
+    val mainPath = Path.of("/", "web", "static", "main.html").toString
     val data = Try(ResourceLoader.load(mainPath))
-
     val content = data.toOption.getOrElse {
       logger.error(s"Failed to find $mainPath - probably frontend resources are not packaged in jar. Frontend won't work properly!")
       ""
@@ -34,6 +31,8 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
       .replace("</body>", s"\n$extraScripts\n</body>")
       .replace("__publicPath__", publicPath)
 
+    val tempMainContentFile = Files.createTempFile("nussknacker", "main.html").toFile
+    tempMainContentFile.deleteOnExit()
     FileUtils.writeStringToFile(tempMainContentFile, withPublicPathSubstituted, StandardCharsets.UTF_8)
     tempMainContentFile
   }

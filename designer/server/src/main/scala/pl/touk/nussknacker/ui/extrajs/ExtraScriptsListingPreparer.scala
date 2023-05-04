@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.extrajs
 
 import com.typesafe.scalalogging.LazyLogging
 
@@ -6,6 +6,15 @@ import java.io.File
 import java.nio.file.Path
 import scala.io.Source
 
+// The purpose of this this listing is to be possible to dynamically (without changing application image)
+// add some java scripts to our main.html. Example usage:
+//
+// docker run -it --network host -e CLASSPATH="/opt/nussknacker/lib/*:/opt/nussknacker/managers/*:/opt/nussknacker/extra-resources"
+// -v ./extrajs:/opt/nussknacker/extra-resources/web/static/extra -e DEFAULT_SCENARIO_TYPE=request-response-embedded touk/nussknacker:latest
+//
+// After this, all *.js in the extrajs directory will be injected into main.html. Notice that if you want to locally
+// develop with ./buildServer.sh and ./runServer.sh and place js in src/main/resource/web/static/extra, you should add
+// scripts.lst listing file next to them because resources inside jars can't be listed
 class ExtraScriptsListingPreparer(classLoader: ClassLoader,
                                   extraScriptsPath: Path,
                                   webResourcesRoot: Path) extends LazyLogging {
