@@ -1,8 +1,7 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.extrajs
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.ui.extrajs.ExtraScriptsListingPreparer
 
 import java.io.File
 import java.nio.file.Path
