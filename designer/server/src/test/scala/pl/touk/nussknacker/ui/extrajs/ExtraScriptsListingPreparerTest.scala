@@ -51,8 +51,8 @@ class ExtraScriptsListingPreparerTest extends AnyFunSuite with Matchers {
       classLoader, Path.of("web-extra"), Path.of("/"))
 
     listingPreparer.scriptsListing shouldEqual
-      """<script src="/a.js"></script>
-        |<script src="/b.js"></script>""".stripMargin
+      """<script defer src="/a.js"></script>
+        |<script defer src="/b.js"></script>""".stripMargin
   }
 
 }
