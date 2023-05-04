@@ -41,6 +41,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
           Some(List(FixedValuesValidator(possibleValues))),
           Some(label)
         )
+        // We add flink property config because these tests are based on a flink scenario.
       ) ++ FlinkStreamingPropertiesConfig.properties))
   )
 
