@@ -6,6 +6,12 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
 import scala.util.Try
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.FragmentSpecificData.docsUrlName
+import pl.touk.nussknacker.engine.api.LiteStreamMetaData.parallelismLiteName
+import pl.touk.nussknacker.engine.api.RequestResponseMetaData.slugName
+import pl.touk.nussknacker.engine.api.StreamMetaData.{checkpointIntervalInSecondsName, parallelismFlinkName, spillStateToDiskName, useAsyncInterpretationName}
+import pl.touk.nussknacker.engine.api.utils.{convertPropertyWithLog, toStringMap}
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {
   val isSubprocess = this match {
@@ -13,13 +19,6 @@ import scala.util.Try
     case _: FragmentSpecificData => true
   }
   val toProperties: Map[String, String]
-
-  // TODO: extract this to somewhere else?
-  protected def toStringMap(seq: Seq[Option[(String, Any)]]): Map[String, String] = {
-    seq.flatten
-      .map(p => (p._1, p._2.toString))
-      .toMap
-  }
 }
 
 object TypeSpecificData {
@@ -36,14 +35,16 @@ object TypeSpecificData {
 
 case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData {
   override val toProperties: Map[String, String] = toStringMap(List(
-    docsUrl.map("docsUrl" -> _)
+    docsUrl.map(docsUrlName -> _)
   ))
 }
 
 object FragmentSpecificData {
+  private val docsUrlName = "docsUrl"
+
   def apply(properties: Map[String, String]): FragmentSpecificData = {
     FragmentSpecificData(
-      docsUrl = properties.get("docsUrl")
+      docsUrl = properties.get(docsUrlName)
     )
   }
 }
@@ -60,20 +61,25 @@ case class StreamMetaData(parallelism: Option[Int] = None,
   def checkpointIntervalDuration: Option[Duration] = checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
 
   override val toProperties: Map[String, String] = toStringMap(List(
-    parallelism.map("parallelism" -> _),
-    spillStateToDisk.map("spillStateToDisk" -> _),
-    useAsyncInterpretation.map("useAsyncInterpretation" -> _),
-    checkpointIntervalInSeconds.map("checkpointIntervalInSeconds" -> _)
+    parallelism.map(parallelismFlinkName -> _),
+    spillStateToDisk.map(spillStateToDiskName -> _),
+    useAsyncInterpretation.map(useAsyncInterpretationName -> _),
+    checkpointIntervalInSeconds.map(checkpointIntervalInSecondsName -> _)
   ))
 }
 
 object StreamMetaData {
+  private val parallelismFlinkName = "parallelism"
+  private val spillStateToDiskName = "spillStateToDisk"
+  private val useAsyncInterpretationName = "useAsyncInterpretation"
+  private val checkpointIntervalInSecondsName = "checkpointIntervalInSeconds"
+
   def apply(properties: Map[String, String]): StreamMetaData = {
     StreamMetaData(
-      parallelism = properties.get("parallelism").flatMap(p => Try(p.toInt).toOption),
-      spillStateToDisk = properties.get("spillStateToDisk").flatMap(p => Try(p.toBoolean).toOption),
-      useAsyncInterpretation = properties.get("useAsyncInterpretation").flatMap(p => Try(p.toBoolean).toOption),
-      checkpointIntervalInSeconds = properties.get("checkpointIntervalInSeconds").flatMap(p => Try(p.toLong).toOption)
+      parallelism = properties.get(parallelismFlinkName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismFlinkName)),
+      spillStateToDisk = properties.get(spillStateToDiskName).flatMap(convertPropertyWithLog(_, _.toBoolean, spillStateToDiskName)),
+      useAsyncInterpretation = properties.get(useAsyncInterpretationName).flatMap(convertPropertyWithLog(_, _.toBoolean, useAsyncInterpretationName)),
+      checkpointIntervalInSeconds = properties.get(checkpointIntervalInSecondsName).flatMap(convertPropertyWithLog(_, _.toLong, checkpointIntervalInSecondsName))
     )
   }
 }
@@ -81,24 +87,47 @@ object StreamMetaData {
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
 case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData {
   override val toProperties: Map[String, String] = toStringMap(List(
-    parallelism.map("parallelism" -> _)))
+    parallelism.map(parallelismLiteName -> _)))
 }
 
 object LiteStreamMetaData {
+  private val parallelismLiteName = "parallelism"
+
   def apply(properties: Map[String, String]): LiteStreamMetaData = {
     LiteStreamMetaData(
-      parallelism = properties.get("parallelism").flatMap(p => Try(p.toInt).toOption))
+      parallelism = properties.get(parallelismLiteName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismLiteName)))
   }
 }
 
 case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData {
   override val toProperties: Map[String, String] = toStringMap(List(
-    slug.map("slug" -> _)))
+    slug.map(slugName -> _)))
 }
 
 object RequestResponseMetaData {
+  private val slugName = "slug"
+
   def apply(properties: Map[String, String]): RequestResponseMetaData = {
     RequestResponseMetaData(
-      slug = properties.get("slug"))
+      slug = properties.get(slugName))
+  }
+}
+
+object utils extends LazyLogging {
+
+  def toStringMap(seq: Seq[Option[(String, Any)]]): Map[String, String] = {
+    seq.flatten
+      .map(p => (p._1, p._2.toString))
+      .toMap
+  }
+
+  def convertPropertyWithLog[T](value: String, converter: String => T, propertyName: String): Option[T] = {
+    Try(converter(value)).map(Some(_)).recover {
+      case _: IllegalArgumentException =>
+        // We allow for invalid values to be persisted. If we cannot convert a string to a desired type, we set it as
+        // None in TypeSpecificData and store the invalid value in AdditionalFields.
+        logger.debug(s"Could not convert property $propertyName with value \"$value\" to desired type.")
+        None
+    }.get
   }
 }
