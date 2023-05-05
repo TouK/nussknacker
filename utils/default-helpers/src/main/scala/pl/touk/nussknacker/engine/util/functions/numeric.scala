@@ -6,11 +6,11 @@ import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, Gene
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 import pl.touk.nussknacker.engine.util.MathUtils
-import pl.touk.nussknacker.engine.util.functions.numeric.{SingleArgumentMathTypingFunction, LargeNumberOperatorTypingFunction, MinMaxTypingFunction, MathOperatorTypingFunction, ToNumberTypingFunction}
+import pl.touk.nussknacker.engine.util.functions.numeric.{LargeNumberOperatorTypingFunction, MathOperatorTypingFunction, MinMaxTypingFunction, SingleArgumentMathTypingFunction, ToNumberTypingFunction}
 
-trait numeric extends MathUtils {
+trait numeric extends MathUtils with HideToString {
   @GenericType(typingFunction = classOf[MinMaxTypingFunction])
   override def min(n1: Number, n2: Number): Number = super.min(n1, n2)
 

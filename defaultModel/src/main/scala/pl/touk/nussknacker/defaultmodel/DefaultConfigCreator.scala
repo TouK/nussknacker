@@ -13,6 +13,7 @@ class DefaultConfigCreator extends EmptyProcessConfigCreator {
         "GEO" -> anyCategory(geo),
         "NUMERIC" -> anyCategory(numeric),
         "CONV" -> anyCategory(conversion),
+        "COLLECTION" -> anyCategory(collection),
         "DATE" -> anyCategory(date),
         "DATE_FORMAT" -> anyCategory(dateFormat),
         "UTIL" -> anyCategory(util),

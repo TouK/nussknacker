@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import pl.touk.nussknacker.engine.api.Documentation
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString}
 
 import java.time._
 import java.time.temporal.Temporal
 
 object date extends DateUtils(Clock.systemDefaultZone())
 
-class DateUtils(override protected val clock: Clock) extends DateConversions with DateConstants with DateRangeChecker {
+class DateUtils(override protected val clock: Clock) extends DateConversions with DateConstants with DateRangeChecker with HideToString {
 
   @Documentation(description = "Returns current time as an Instant")
   def now(): Instant = Instant.now(clock)
 
-  // We can't has one now() method with multiple overloaded options because ZoneOffset extends ZoneId and we can get
+  // We can't have one now() method with multiple overloaded options because ZoneOffset extends ZoneId and we can get
   // unexpected return type during runtime
   @Documentation(description = "Returns current time at given time zone as a ZonedDateTime")
   def nowAtZone(zoneId: ZoneId): ZonedDateTime = now().atZone(zoneId)
@@ -28,7 +28,6 @@ class DateUtils(override protected val clock: Clock) extends DateConversions wit
 
   @Documentation(description = "Returns zone offset with given zone offset id e.g. +01:00")
   def zoneOffset(offsetId: String): ZoneOffset = ZoneOffset.of(offsetId)
-
 }
 
 trait DateConversions {

@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -22,23 +22,50 @@ trait BaseSpelSpec {
   protected val fixedZoned: ZonedDateTime = ZonedDateTime.of(2020, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
 
   private val globalVariables = Map[String, Any](
+    "COLLECTION" -> collection,
     "DATE" -> new DateUtils(Clock.fixed(fixedZoned.toInstant, ZoneOffset.UTC)),
-    "DATE_FORMAT" -> new DateFormatUtils(Locale.US))
+    "DATE_FORMAT" -> new DateFormatUtils(Locale.US),
+    "UTIL" -> util,
+  )
 
-  private lazy val typeDefinitions = TypeDefinitionSet.forClasses(classOf[DateUtils], classOf[DateFormatUtils])
+  private val parser = SpelExpressionParser.default(
+    getClass.getClassLoader,
+    new SimpleDictRegistry(Map.empty),
+    enableSpelForceCompile = false,
+    strictTypeChecking = true,
+    List.empty,
+    SpelExpressionParser.Standard,
+    strictMethodsChecking = true,
+    staticMethodInvocationsChecking = true,
+    typeDefinitions,
+    methodExecutionForUnknownAllowed = false,
+    dynamicPropertyAccessAllowed = false,
+    SpelExpressionExcludeList.default,
+    DefaultSpelConversionsProvider.getConversionService
+  )
 
-  protected def evaluate[T: TypeTag](expr: String, localVariables: Map[String, Any]): T = {
+  private lazy val typeDefinitions = TypeDefinitionSet.forClasses(
+    collection.getClass,
+    classOf[DateUtils],
+    classOf[DateFormatUtils],
+    util.getClass,
+  )
+
+  protected def evaluate[T: TypeTag](expr: String, localVariables: Map[String, Any] = Map.empty): T = {
     val validationCtx = ValidationContext(localVariables.mapValuesNow(Typed.fromInstance), globalVariables.mapValuesNow(Typed.fromInstance))
     val evaluationCtx = Context("fooId").withVariables(localVariables)
-    parse(expr, validationCtx).value.expression.evaluate[T](evaluationCtx, globalVariables)
+    parser.parse(expr, validationCtx, Typed.fromDetailedType[T]).value.expression.evaluate[T](evaluationCtx, globalVariables)
   }
 
-  protected def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    val parser = SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, strictTypeChecking = true,
-      List.empty, SpelExpressionParser.Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, typeDefinitions,
-      methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default,
-      DefaultSpelConversionsProvider.getConversionService)
-    parser.parse(expr, validationCtx, Typed.fromDetailedType[T])
+  protected def evaluateAny(expr: String, localVariables: Map[String, Any] = Map.empty): AnyRef = {
+    val validationCtx = ValidationContext(localVariables.mapValuesNow(Typed.fromInstance), globalVariables.mapValuesNow(Typed.fromInstance))
+    val evaluationCtx = Context("fooId").withVariables(localVariables)
+    parser.parse(expr, validationCtx, Unknown).value.expression.evaluate[AnyRef](evaluationCtx, globalVariables)
+  }
+
+  protected def evaluateType(expr: String, localVariables: Map[String, Any] = Map.empty, types: Map[String, TypingResult] = Map.empty): Validated[NonEmptyList[ExpressionParseError], String] = {
+    val validationCtx = ValidationContext(localVariables.mapValuesNow(Typed.fromInstance) ++ types, globalVariables.mapValuesNow(Typed.fromInstance))
+    parser.parse(expr, validationCtx, Unknown).map(_.returnType.display)
   }
 
   protected implicit class ValidatedValue[E, A](validated: ValidatedNel[ExpressionParseError, A]) {
