@@ -232,6 +232,8 @@ object SwaggerObject {
       case null => AdditionalPropertiesEnabled(SwaggerAny)
       case schema: Schema[_] if schema.getBooleanSchemaValue == false => AdditionalPropertiesDisabled
       case schema: Schema[_] => AdditionalPropertiesEnabled(SwaggerTyped(schema, swaggerRefSchemas, usedRefs))
+      case additionalPropertyEnabled if additionalPropertyEnabled == true => AdditionalPropertiesEnabled(SwaggerAny)
+      case additionalPropertyEnabled if additionalPropertyEnabled == false => AdditionalPropertiesDisabled
     }
     SwaggerObject(properties, additionalProperties, patternProperties)
   }
