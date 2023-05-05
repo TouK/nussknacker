@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ExpressionCompilerModelData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
@@ -15,7 +16,7 @@ class CronEditorTest extends AnyFunSuite with Matchers {
 
   private val modelData: LocalModelData = LocalModelData(ConfigFactory.load(), new DevProcessConfigCreator)
 
-  private val compiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData)
+  private val compiler = ExpressionCompiler.withoutOptimization(ExpressionCompilerModelData(modelData))
 
   test("parses cron expression") {
     val expression = "new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('0 0 00 1/1 * ? *')"

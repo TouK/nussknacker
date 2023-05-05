@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.definition.{SubprocessComponentDefinitionExtra
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{ModelData, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{ExpressionCompilerModelData, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
@@ -40,7 +40,7 @@ object UIProcessObjectsFactory {
     val processConfig = modelDataForType.processConfig
 
     val toStaticObjectDefinitionTransformer = new ToStaticObjectDefinitionTransformer(
-      ExpressionCompiler.withoutOptimization(modelDataForType.expressionCompilerModelData),
+      ExpressionCompiler.withoutOptimization(ExpressionCompilerModelData(modelDataForType)),
       modelDataForType.modelDefinition.expressionConfig,
       typeSpecificInitialData.forScenario(_, processingType))
 

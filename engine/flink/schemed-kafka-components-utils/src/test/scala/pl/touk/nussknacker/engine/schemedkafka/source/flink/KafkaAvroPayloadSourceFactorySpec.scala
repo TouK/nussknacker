@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.generic.{GenericData, GenericRecord}
+import pl.touk.nussknacker.engine.ExpressionCompilerModelData
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -226,7 +227,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
     val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
 
-    val validator = new GenericNodeTransformationValidator(ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData),
+    val validator = new GenericNodeTransformationValidator(ExpressionCompiler.withoutOptimization(ExpressionCompilerModelData(modelData)),
       modelData.modelDefinition.expressionConfig)
 
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())

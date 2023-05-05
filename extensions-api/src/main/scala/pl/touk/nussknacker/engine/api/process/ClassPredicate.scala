@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 /**
  * Predicate for classes
  */
-trait ClassPredicate extends Serializable{
+trait ClassPredicate extends Serializable {
 
   def matches(clazz: Class[_]): Boolean
 
@@ -16,7 +16,7 @@ trait ClassPredicate extends Serializable{
 
 object ClassPredicate {
 
-  val acceptAny: ClassPredicate = (clazz: Class[_]) => true
+  val acceptAnyClass: ClassPredicate = (_: Class[_]) => true
 
   def apply(p: PartialFunction[Class[_], Boolean]): ClassPredicate = new ClassPredicate {
     override def matches(clazz: Class[_]): Boolean = p.lift(clazz).getOrElse(false)

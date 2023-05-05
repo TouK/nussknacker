@@ -3,6 +3,13 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.10.0 (not released yet)
+
+### Code API changes
+* [#4273](https://github.com/TouK/nussknacker/pull/4273) All `Component` implementations (SourceFactories, SinkFactories, ...) 
+  and all helpers used with Flink engine have to be serializable now. `Component` trait already extends `Serializable`
+  but some changes in code like making some fat objects lazy val may be necessary.
+
 ## In version 1.9.0
 
 ### Code API changes

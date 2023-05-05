@@ -6,7 +6,7 @@ import cats.implicits._
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ExpressionCompilerModelData, ModelData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownProperty
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -58,7 +58,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
       val validationContext = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig).emptyValidationContext(process.metaData)
       val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
       val dumbContext = Context("dumb", Map.empty, None)
-      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData)
+      val expressionCompiler = ExpressionCompiler.withoutOptimization(ExpressionCompilerModelData(modelData))
       (expression: Expression, parameter: Parameter, nodeId: NodeId) => {
         expressionCompiler
           .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)

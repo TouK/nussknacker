@@ -4,7 +4,7 @@ import cats.Applicative
 import cats.data.Validated.{invalidNel, valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits.catsSyntaxTuple2Semigroupal
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ExpressionCompilerModelData, ModelData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -47,7 +47,7 @@ class NodeDataValidator(modelData: ModelData, subprocessResolver: SubprocessReso
               )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
 
-      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData).withExpressionParsers {
+      val expressionCompiler = ExpressionCompiler.withoutOptimization(ExpressionCompilerModelData(modelData)).withExpressionParsers {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
       val compiler = new NodeCompiler(modelData.modelDefinition, SubprocessComponentDefinitionExtractor(modelData),

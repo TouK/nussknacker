@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition.test
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ExpressionCompilerModelData, ModelData}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
@@ -18,7 +18,7 @@ import shapeless.syntax.typeable._
 
 class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider with LazyLogging {
 
-  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData).withExpressionParsers {
+  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(ExpressionCompilerModelData(modelData)).withExpressionParsers {
     case spel: SpelExpressionParser => spel.typingDictLabels
   }
 

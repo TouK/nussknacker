@@ -28,10 +28,7 @@ import scala.concurrent.duration.FiniteDuration
   Instances of this class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
   and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.
  */
-// FIXME
-class FlinkProcessCompiler(// TODO: get rid of passing ProcessConfigCreator, ProcessConfigCreator etc. Instead we should use higher level,
-                           //       serializable definitions (factories)
-                           creator: ProcessConfigCreator,
+class FlinkProcessCompiler(creator: ProcessConfigCreator,
                            val processConfig: Config,
                            val diskStateBackendSupport: Boolean,
                            objectNaming: ObjectNaming,
@@ -91,6 +88,10 @@ class FlinkProcessCompiler(// TODO: get rid of passing ProcessConfigCreator, Pro
       new EndCountingListener(usedNodes.nodes))
   }
 
+  // TODO: We should make ObjectWithMethodDef serializable and pass ModelDefinitionWithTypes to compiler
+  //       instead of recreating it for each compiled scenario part. Thanks to that it will be easier
+  //       to ad-hoc create things like ExpressionCompiler -
+  //       see notice in TestFlinkProcessCompiler.dumbExpressionCompilerImplementationInvoker
   protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
     ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
   }

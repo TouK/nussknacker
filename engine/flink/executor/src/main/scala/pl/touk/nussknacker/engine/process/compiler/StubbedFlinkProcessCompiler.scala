@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
@@ -50,24 +50,33 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
 
   protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef
 
-  protected def overrideObjectWithMethod(original: ObjectWithMethodDef, overrideFromOriginalAndType: (Any, Option[TypingResult], NodeId) => Any): ObjectWithMethodDef = {
-    original.withImplementationInvoker((params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]) => {
-      //this is needed to be able to handle dynamic types in tests
-      def transform(impl: Any): Any = {
-        val typingResult = impl.cast[ReturningType].map(rt => Some(rt.returnType)).getOrElse(original.returnType)
-        val nodeId = additional.collectFirst {
-          case nodeId: NodeId => nodeId
-        }.getOrElse(throw new IllegalArgumentException("Node id is missing in additional parameters"))
-        overrideFromOriginalAndType(impl, typingResult, nodeId)
-      }
+}
 
-      val originalValue = original.implementationInvoker.invokeMethod(params, outputVariableNameOpt, additional)
-      originalValue match {
-        case e: ContextTransformation =>
-          e.copy(implementation = transform(e.implementation))
-        case e => transform(e)
-      }
-    })
+
+abstract class StubbedComponentImplementationInvoker(original: ComponentImplementationInvoker,
+                                                     originalReturnType: Option[TypingResult]) extends ComponentImplementationInvoker {
+
+  def this(componentDefinitionWithImpl: ObjectWithMethodDef) =
+    this(componentDefinitionWithImpl.implementationInvoker, componentDefinitionWithImpl.returnType)
+
+  override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+    def transform(impl: Any): Any = {
+      val typingResult = impl.cast[ReturningType].map(rt => Some(rt.returnType)).getOrElse(originalReturnType)
+      val nodeId = additional.collectFirst {
+        case nodeId: NodeId => nodeId
+      }.getOrElse(throw new IllegalArgumentException("Node id is missing in additional parameters"))
+
+      handleInvoke(impl, typingResult, nodeId)
+    }
+
+    val originalValue = original.invokeMethod(params, outputVariableNameOpt, additional)
+    originalValue match {
+      case e: ContextTransformation =>
+        e.copy(implementation = transform(e.implementation))
+      case e => transform(e)
+    }
   }
+
+  def handleInvoke(impl: Any, typingResult: Option[TypingResult], nodeId: NodeId): Any
 
 }

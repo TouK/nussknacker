@@ -7,10 +7,10 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, TestWithParametersSupport, WithCategories}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord, ScenarioTestParametersRecord, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.{CirceUtil, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
@@ -117,8 +117,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   private val modelData = LocalModelData(minimalFlinkConfig, SampleConfigCreator, objectNaming = DefaultNamespacedObjectNaming)
 
   private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData) = {
-    val testCompiler = new TestFlinkProcessCompiler(SampleConfigCreator, minimalFlinkConfig, modelData.engineSerializableExpressionCompilerModelData, ResultsCollectingListenerHolder.registerRun(identity),
-      scenario, scenarioTestData, DefaultNamespacedObjectNaming)
+    val testCompiler = TestFlinkProcessCompiler(modelData, scenario, scenarioTestData, ResultsCollectingListenerHolder.registerRun(identity))
     testCompiler.compileProcess(scenario, ProcessVersion.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
   }
 

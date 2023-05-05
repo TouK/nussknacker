@@ -6,3 +6,12 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDef
 case class ExpressionCompilerModelData(modelDefinitionWithTypes: ModelDefinitionWithTypes,
                                        dictRegistry: DictRegistry,
                                        modelClassLoader: () => ClassLoader)
+
+object ExpressionCompilerModelData {
+
+  def apply(modelData: ModelData): ExpressionCompilerModelData = ExpressionCompilerModelData(
+    modelData.modelDefinitionWithTypes,
+    modelData.dictServices.dictRegistry,
+    () => modelData.modelClassLoader.classLoader)
+
+}

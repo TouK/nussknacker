@@ -9,7 +9,7 @@ import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import org.springframework.util.ClassUtils
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{ExpressionCompilerModelData, ModelData}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
@@ -123,7 +123,7 @@ object NodesResources {
   def validate(modelData: ModelData, request: ParametersValidationRequest, processName: String): List[NodeValidationError] = {
     implicit val metaData: MetaData = request.processProperties.toMetaData(processName)
     val context = prepareValidationContext(modelData)(request.variableTypes)
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData).withExpressionParsers {
+    val expressionCompiler = ExpressionCompiler.withoutOptimization(ExpressionCompilerModelData(modelData)).withExpressionParsers {
       case spel: SpelExpressionParser => spel.typingDictLabels
     }
     request.parameters
