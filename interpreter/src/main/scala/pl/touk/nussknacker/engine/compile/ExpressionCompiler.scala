@@ -3,24 +3,24 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Valid, invalid, valid}
 import cats.data.ValidatedNel
 import cats.instances.list._
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParser, TypedExpression, TypedExpressionMap}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.graph._
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
-import pl.touk.nussknacker.engine.{ExpressionCompilerModelData, ModelData, TypeDefinitionSet, compiledgraph}
+import pl.touk.nussknacker.engine.{ExpressionCompilerModelData, TypeDefinitionSet, compiledgraph}
 
 object ExpressionCompiler {
 

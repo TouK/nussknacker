@@ -20,9 +20,9 @@ import java.time.Duration
 @silent("deprecated")
 class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Seq[T],
                                                                         timestampAssigner: AssignerWithPunctuatedWatermarks[T])
-  extends FlinkSource {
+  extends FlinkSource with Serializable {
 
-  private val contextInitializer = new BasicContextInitializer[T](Unknown)
+  private lazy val contextInitializer = new BasicContextInitializer[T](Unknown)
 
   private val flinkSourceFunction: SourceFunction[T] = {
     // extracted for serialization purpose

@@ -75,7 +75,7 @@ trait numeric extends MathUtils {
 
 }
 
-object numeric extends numeric {
+case object numeric extends numeric {
   class ToNumberTypingFunction extends TypingFunction {
     override def signatures: Option[NonEmptyList[MethodTypeInfo]] = Some(NonEmptyList.of(
       MethodTypeInfo.withoutVarargs(Parameter("stringOrNumber", Typed(Typed[String], Typed[Number])) :: Nil, Typed[Number])

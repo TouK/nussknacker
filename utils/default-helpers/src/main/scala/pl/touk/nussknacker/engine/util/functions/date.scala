@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.Documentation
 import java.time._
 import java.time.temporal.Temporal
 
-object date extends DateUtils(Clock.systemDefaultZone())
+case object date extends DateUtils(Clock.systemDefaultZone())
 
 class DateUtils(override protected val clock: Clock) extends DateConversions with DateConstants with DateRangeChecker {
 

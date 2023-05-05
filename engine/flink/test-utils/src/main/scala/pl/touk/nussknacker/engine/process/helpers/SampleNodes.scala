@@ -750,7 +750,7 @@ object SampleNodes {
     override def nodeDependencies: List[NodeDependency] = List(componentUseCaseDependency)
   }
 
-  object ProcessHelper {
+  case object ProcessHelper {
 
     val constant = 4
 

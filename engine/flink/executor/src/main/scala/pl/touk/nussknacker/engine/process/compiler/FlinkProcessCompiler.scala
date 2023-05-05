@@ -2,15 +2,14 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, ModelDefinitionWithTypes}
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
+import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
 import pl.touk.nussknacker.engine.process.async.DefaultAsyncExecutionConfigPreparer
@@ -28,7 +27,8 @@ import scala.concurrent.duration.FiniteDuration
   Instances of this class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
   and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.
  */
-class FlinkProcessCompiler(creator: ProcessConfigCreator,
+class FlinkProcessCompiler(modelDefinition: ModelDefinitionWithTypes,
+                           creator: ProcessConfigCreator,
                            val processConfig: Config,
                            val diskStateBackendSupport: Boolean,
                            objectNaming: ObjectNaming,
@@ -36,9 +36,8 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.Implicits._
 
-  def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, componentUseCase = ComponentUseCase.EngineRuntime)
+  def this(modelData: ModelData) = this(modelData.modelDefinitionWithTypes, modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, componentUseCase = ComponentUseCase.EngineRuntime)
 
   def compileProcess(process: CanonicalProcess,
                      processVersion: ProcessVersion,
@@ -62,7 +61,6 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(processObjectDependencies)
     val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
 
-    val modelDefinition = ModelDefinitionWithTypes(definitions(processObjectDependencies))
     val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(processConfig, userCodeClassLoader)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
@@ -88,13 +86,6 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       new EndCountingListener(usedNodes.nodes))
   }
 
-  // TODO: We should pass ModelDefinitionWithTypes to compiler instead of recreating definition for each compiled scenario part.
-  //       Thanks to that it will faster and will be easier to ad-hoc create things like ExpressionCompiler -
-  //       see TestFlinkProcessCompiler.expressionCompilerModelData
-  protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
-    ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
-  }
-
   protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = defaults
 
   protected def exceptionHandler(metaData: MetaData,
@@ -105,7 +96,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       case ComponentUseCase.TestRuntime =>
         new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
           override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
-          override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()
+          override protected val consumer: FlinkEspExceptionConsumer = _ => {}
         }
       case _ => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)
     }

@@ -30,7 +30,7 @@ class FlinkVerificationMain(val modelData: ModelData, val process: CanonicalProc
   }
 
   protected def prepareRegistrar(): FlinkProcessRegistrar = {
-    FlinkProcessRegistrar(new VerificationFlinkProcessCompiler(
-      process, modelData.configCreator, modelData.processConfig, modelData.objectNaming), ExecutionConfigPreparer.defaultChain(modelData))
+    val processCompiler = VerificationFlinkProcessCompiler(modelData, process)
+    FlinkProcessRegistrar(processCompiler, ExecutionConfigPreparer.defaultChain(modelData))
   }
 }

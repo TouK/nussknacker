@@ -7,7 +7,7 @@ import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 import java.time.temporal.TemporalAccessor
 import java.util.Locale
 
-object dateFormat extends DateFormatUtils(Locale.getDefault)
+case object dateFormat extends DateFormatUtils(Locale.getDefault)
 
 class DateFormatUtils(defaultLocale: Locale) {
 

@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
-class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
+class ComponentsImplementationStubberTest extends AnyFunSuite with Matchers {
 
   private implicit val intTypeInformation: TypeInformation[Int] = TypeInformation.of(classOf[Int])
 
@@ -56,7 +56,8 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     .withValue("exceptionHandler.withRateMeter", fromAnyRef(true))
 
   test("stubbing for verification purpose should stub all sources") {
-    val verificationCompiler = new VerificationFlinkProcessCompiler(scenarioWithMultipleSources, SampleConfigCreator, minimalFlinkConfig, DefaultNamespacedObjectNaming)
+    val modelData = LocalModelData(minimalFlinkConfig, SampleConfigCreator)
+    val verificationCompiler = VerificationFlinkProcessCompiler(modelData, scenarioWithMultipleSources)
     val compiledProcess = verificationCompiler.compileProcess(scenarioWithMultipleSources, ProcessVersion.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.obj

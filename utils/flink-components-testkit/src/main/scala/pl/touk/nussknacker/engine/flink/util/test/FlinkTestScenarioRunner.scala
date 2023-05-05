@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, SourceFactory}
@@ -80,7 +79,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
     //It's copied from registrar.register only for handling compilation errors..
     //TODO: figure how to get compilation result on highest level - registrar.register?
-    val compiler = new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData)
+    val compiler = FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData)
     val compileProcessData = compiler.compileProcess(scenario, ProcessVersion.empty, ProductionServiceInvocationCollector, getClass.getClassLoader)
 
     compileProcessData.compileProcess().map { _ =>

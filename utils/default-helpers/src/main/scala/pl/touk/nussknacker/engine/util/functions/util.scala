@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.Documentation
 
 import java.util.UUID
 
-object util {
+case object util {
 
   @Documentation(description = "Generate unique identifier (https://en.wikipedia.org/wiki/Universally_unique_identifier)")
   def uuid: String = UUID.randomUUID().toString
