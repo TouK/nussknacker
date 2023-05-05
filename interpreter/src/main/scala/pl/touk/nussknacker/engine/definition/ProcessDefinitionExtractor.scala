@@ -84,7 +84,7 @@ object ProcessDefinitionExtractor {
   case class CustomTransformerAdditionalData(manyInputs: Boolean, canBeEnding: Boolean)
 
   case class ModelDefinitionWithTypes(modelDefinition: ProcessDefinition[ObjectWithMethodDef]) {
-    lazy val typeDefinitions: TypeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(modelDefinition))
+    @transient lazy val typeDefinitions: TypeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(modelDefinition))
 
     def filter(predicate: ObjectWithMethodDef => Boolean): ModelDefinitionWithTypes = {
       ModelDefinitionWithTypes(modelDefinition.filter(predicate))

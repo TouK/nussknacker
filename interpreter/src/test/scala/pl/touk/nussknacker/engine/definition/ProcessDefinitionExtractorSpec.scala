@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.StandardObjectWithMethodDef.StaticComponentImplementationInvoker
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.MethodBasedComponentImplementationInvoker
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{GenericNodeTransformationMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -34,9 +34,9 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
 
   test("extract additional variables info from annotation") {
     val methodDef = processDefinition.customStreamTransformers("transformer1")._1.asInstanceOf[
-      StandardObjectWithMethodDef].implementationInvoker.asInstanceOf[StaticComponentImplementationInvoker]
+      StandardObjectWithMethodDef].implementationInvoker.asInstanceOf[MethodBasedComponentImplementationInvoker]
       .methodDef
-    val additionalVars = methodDef.orderedDependencies.definedParameters.head.additionalVariables
+    val additionalVars = methodDef.definedParameters.head.additionalVariables
     additionalVars("var1") shouldBe AdditionalVariableProvidedInRuntime[OnlyUsedInAdditionalVariable]
   }
 

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.definition.TypedNodeDependency
 
 import scala.util.{Failure, Success, Try}
 
-class JsonSchemaExtractor {
+object JsonSchemaExtractor {
 
   def getSchemaFromProperty(property: String, metaData: MetaData, nodeId: NodeId): Validated[NonEmptyList[ProcessCompilationError], Schema] = {
     def invalid(message: String): Invalid[NonEmptyList[CustomNodeError]] = Invalid(NonEmptyList.one(CustomNodeError(message, None)(nodeId)))

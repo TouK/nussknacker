@@ -88,10 +88,9 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       new EndCountingListener(usedNodes.nodes))
   }
 
-  // TODO: We should make ObjectWithMethodDef serializable and pass ModelDefinitionWithTypes to compiler
-  //       instead of recreating it for each compiled scenario part. Thanks to that it will be easier
-  //       to ad-hoc create things like ExpressionCompiler -
-  //       see notice in TestFlinkProcessCompiler.dumbExpressionCompilerImplementationInvoker
+  // TODO: We should pass ModelDefinitionWithTypes to compiler instead of recreating definition for each compiled scenario part.
+  //       Thanks to that it will faster and will be easier to ad-hoc create things like ExpressionCompiler -
+  //       see TestFlinkProcessCompiler.expressionCompilerModelData
   protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
     ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
   }

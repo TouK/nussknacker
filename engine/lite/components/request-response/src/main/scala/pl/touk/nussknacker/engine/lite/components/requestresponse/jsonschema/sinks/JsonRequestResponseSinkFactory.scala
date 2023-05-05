@@ -26,7 +26,6 @@ object JsonRequestResponseSink {
 class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactory) extends SingleInputGenericNodeTransformation[Sink] with SinkFactory {
   import JsonRequestResponseSink._
   override type State = EditorTransformationState
-  private val jsonSchemaExtractor = new JsonSchemaExtractor()
   private val rawModeParam: Parameter = Parameter[Boolean](SinkRawEditorParamName).copy(defaultValue = Some(Expression.spel("false")), editor = Some(BoolParameterEditor), validators = List(MandatoryParameterValidator))
   private val rawValueParam = ParameterWithExtractor.lazyMandatory[AnyRef](SinkRawValueParamName)
   private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(
@@ -53,7 +52,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
       (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
       (SinkRawValueParamName, value) :: Nil, _
     ) =>
-      jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
+      JsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
           val valueParam = SinkSingleValueParameter(
             rawValueParam.parameter,
@@ -67,7 +66,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
 
   protected def valueEditorParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: Nil, _) =>
-      jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
+      JsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
           //in editor mode we use lax validation mode, to be backward compatible
           JsonSinkValueParameter(schema, SinkRawValueParamName, ValidationMode.lax).map { valueParam =>

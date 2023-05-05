@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.api.definition
 
-import cats.instances.list._
-import cats.syntax.traverse._
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -11,7 +9,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
-sealed trait NodeDependency
+sealed trait NodeDependency extends Serializable
 
 /**
  * This trait reduce boilerplate defining `GenericNodeTransformation` and reduce risk that definition of node dependencies

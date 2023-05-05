@@ -21,12 +21,10 @@ class JsonSchemaRequestResponseSourceFactory extends RequestResponseSourceFactor
 
   override def nodeDependencies: List[NodeDependency] = List(nodeIdDependency, metaDataDependency)
 
-  private val jsonSchemaExtractor = new JsonSchemaExtractor()
-
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
-      val inputSchema = jsonSchemaExtractor.getSchemaFromProperty(InputSchemaProperty, dependencies)
-      val outputSchema = jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
+      val inputSchema = JsonSchemaExtractor.getSchemaFromProperty(InputSchemaProperty, dependencies)
+      val outputSchema = JsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
       val validationResult = inputSchema.product(outputSchema).swap.toList.flatMap(_.toList)
       val finalState = inputSchema.product(outputSchema).toOption
       val finalInitializer = inputSchema.toOption.fold(new BasicContextInitializer(Unknown)) { schema =>

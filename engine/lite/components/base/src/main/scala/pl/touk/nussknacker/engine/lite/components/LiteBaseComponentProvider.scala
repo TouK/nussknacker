@@ -35,7 +35,7 @@ class LiteBaseComponentProvider extends ComponentProvider {
   override def isAutoLoaded: Boolean = true
 }
 
-object DeadEndSink extends LiteSink[Nothing] {
+object DeadEndSink extends LiteSink[Nothing] with Serializable {
   override def createTransformation[F[_] : Monad](evaluateLazyParameter: customComponentTypes.CustomComponentContext[F]): (typing.TypingResult, commonTypes.DataBatch => F[ResultType[(Context, Nothing)]]) =
     (typing.Unknown, _ => implicitly[Monad[F]].pure(Writer.value(List.empty)))
 }

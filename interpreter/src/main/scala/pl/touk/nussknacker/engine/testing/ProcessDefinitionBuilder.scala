@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -53,8 +53,7 @@ object ProcessDefinitionBuilder {
       expressionConfig.customConversionsProviders)
 
   private def makeDummyDefinition(objectDefinition: ObjectDefinition, realType: Class[_] = classOf[Any]): ObjectWithMethodDef =
-    StandardObjectWithMethodDef(null, MethodDefinition("", (_, _) => null, new OrderedDependencies(objectDefinition.parameters),
-      Unknown, realType, List()), objectDefinition)
+    StandardObjectWithMethodDef(ComponentImplementationInvoker.nullImplementationInvoker,  null, objectDefinition, realType)
 
   implicit class ObjectProcessDefinition(definition: ProcessDefinition[ObjectDefinition]) {
     def withService(id: String, returnType: Option[TypingResult], params: Parameter*): ProcessDefinition[ObjectDefinition] =

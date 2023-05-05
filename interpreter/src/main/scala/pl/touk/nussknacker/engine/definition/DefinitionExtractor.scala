@@ -7,12 +7,11 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 
-import java.lang.reflect.{InvocationTargetException, Method}
+import java.lang.reflect.Method
 import scala.runtime.BoxedUnit
 
 class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
@@ -24,35 +23,23 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       // TODO: Use ContextTransformation API to check if custom node is adding some output variable
       def notReturnAnything(typ: TypingResult) = Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
       val objectDefinition = ObjectDefinition(
-        methodDef.orderedDependencies.definedParameters,
+        methodDef.definedParameters,
         Option(methodDef.returnType).filterNot(notReturnAnything),
         objWithCategories.categories,
         mergedComponentConfig)
-      StandardObjectWithMethodDef(obj, methodDef, objectDefinition)
+      val implementationInvoker = new MethodBasedComponentImplementationInvoker(obj, methodDef)
+      StandardObjectWithMethodDef(implementationInvoker, obj, objectDefinition, methodDef.runtimeClass)
     }
 
     (obj match {
       case e: GenericNodeTransformation[_] =>
         Right(GenericNodeTransformationMethodDef(e, objWithCategories.categories, mergedComponentConfig))
       case _ =>
-        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig).map(fromMethodDefinition)
+        methodDefinitionExtractor.extractMethodDefinition(obj, mergedComponentConfig).map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   }
 
-  private def findMethodToInvoke(obj: Any): Method = {
-    val methodsToInvoke = obj.getClass.getMethods.toList.filter { m =>
-      m.getAnnotation(classOf[MethodToInvoke]) != null
-    }
-    methodsToInvoke match {
-      case Nil =>
-        throw new IllegalArgumentException(s"Missing method to invoke for object: " + obj)
-      case head :: Nil =>
-        head
-      case moreThanOne =>
-        throw new IllegalArgumentException(s"More than one method to invoke: " + moreThanOne + " in object: " + obj)
-    }
-  }
 
 }
 
@@ -81,13 +68,24 @@ object DefinitionExtractor {
 
   }
 
-  trait ComponentImplementationInvoker {
+  trait ComponentImplementationInvoker extends Serializable {
 
     def invokeMethod(params: Map[String, Any],
                      outputVariableNameOpt: Option[String],
                      additional: Seq[AnyRef]): Any
 
   }
+
+  object ComponentImplementationInvoker {
+
+    val nullImplementationInvoker: ComponentImplementationInvoker = new ComponentImplementationInvoker {
+      override def invokeMethod(params: Map[String, Any],
+                                outputVariableNameOpt: Option[String],
+                                additional: Seq[AnyRef]): Any = null
+    }
+
+  }
+
 
   case class GenericNodeTransformationMethodDef(override val implementationInvoker: ComponentImplementationInvoker,
                                                 obj: GenericNodeTransformation[_],
@@ -129,7 +127,7 @@ object DefinitionExtractor {
 
   case class FinalStateValue(value: Option[Any])
 
-  // TOOD: rename to StaticComponentWithImplementation
+  // TOOD: rename to MethodBasedComponentWithImplementation
   case class StandardObjectWithMethodDef(implementationInvoker: ComponentImplementationInvoker,
                                          obj: Any,
                                          objectDefinition: ObjectDefinition,
@@ -148,37 +146,12 @@ object DefinitionExtractor {
 
   }
 
-  object StandardObjectWithMethodDef extends LazyLogging {
+  private[definition] class MethodBasedComponentImplementationInvoker(obj: Any, private[definition] val methodDef: MethodDefinition)
+    extends ComponentImplementationInvoker with LazyLogging {
 
-    def apply(obj: Any,
-              methodDef: MethodDefinition,
-              objectDefinition: ObjectDefinition): StandardObjectWithMethodDef = {
-      val implementationInvoker = new StaticComponentImplementationInvoker(obj, methodDef)
-      new StandardObjectWithMethodDef(implementationInvoker, obj, objectDefinition, methodDef.runtimeClass)
+    override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+      methodDef.invoke(obj, params, outputVariableNameOpt, additional)
     }
-
-    private[definition] class StaticComponentImplementationInvoker(obj: Any, private[definition] val methodDef: MethodDefinition) extends ComponentImplementationInvoker {
-      override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
-        val values = methodDef.orderedDependencies.prepareValues(params, outputVariableNameOpt, additional)
-        try {
-          methodDef.invocation(obj, values)
-        } catch {
-          case ex: IllegalArgumentException =>
-            //this usually indicates that parameters do not match or argument list is incorrect
-            logger.debug(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
-
-            def className(obj: Any) = Option(obj).map(o => ReflectUtils.simpleNameWithoutSuffix(o.getClass)).getOrElse("null")
-
-            val parameterValues = methodDef.orderedDependencies.definedParameters.map(_.name).map(params)
-            throw new IllegalArgumentException(
-              s"""Failed to invoke "${methodDef.name}" on ${className(obj)} with parameter types: ${parameterValues.map(className)}: ${ex.getMessage}""", ex)
-          //this is somehow an edge case - normally service returns failed future for exceptions
-          case ex: InvocationTargetException =>
-            throw ex.getTargetException
-        }
-      }
-    }
-
   }
 
   // TODO: rename to ComponentStaticDefinition

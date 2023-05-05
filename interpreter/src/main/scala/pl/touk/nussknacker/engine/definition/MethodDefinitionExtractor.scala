@@ -1,33 +1,39 @@
 package pl.touk.nussknacker.engine.definition
 
-import java.lang.annotation.Annotation
-import java.lang.reflect.Method
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.MissingOutputVariableException
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
+import pl.touk.nussknacker.engine.api.util.ReflectUtils
+import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies, findMethodToInvoke}
 import pl.touk.nussknacker.engine.definition.parameter.ParameterExtractor
 import pl.touk.nussknacker.engine.types.EspTypeUtils
+
+import java.lang.reflect.{InvocationTargetException, Method}
 
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
 // BindingAnnotation in guice meaning. Maybe we should switch to some lightweight DI framework (like guice) instead
 // of writing its on ours own?
 private[definition] trait MethodDefinitionExtractor[T] {
 
-  def extractMethodDefinition(obj: T, methodToInvoke: Method, componentConfig: SingleComponentConfig): Either[String, MethodDefinition]
+  def extractMethodDefinition(obj: T, componentConfig: SingleComponentConfig): Either[String, MethodDefinition]
 
 }
 
 private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDefinitionExtractor[T] {
 
-  def extractMethodDefinition(obj: T, methodToInvoke: Method, componentConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
+  def extractMethodDefinition(obj: T, componentConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
+    val clazz = obj.getClass
+    val methodToInvoke = findMethodToInvoke(clazz)
     findMatchingMethod(obj, methodToInvoke).map { method =>
-      MethodDefinition(methodToInvoke.getName,
-        (obj, args) => method.invoke(obj, args.map(_.asInstanceOf[Object]):_*), extractParameters(obj, method, componentConfig),
-        extractReturnTypeFromMethod(obj, method), method.getReturnType, method.getAnnotations.toList)
+      new MethodDefinition(
+        clazz,
+        extractParameters(obj, method, componentConfig),
+        extractReturnTypeFromMethod(method),
+        method.getReturnType)
     }
   }
 
@@ -60,7 +66,7 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
     new OrderedDependencies(dependencies)
   }
 
-  protected def extractReturnTypeFromMethod(obj: T, method: Method): TypingResult = {
+  private def extractReturnTypeFromMethod(method: Method): TypingResult = {
     val typeFromAnnotation =
       Option(method.getAnnotation(classOf[MethodToInvoke])).map(_.returnType())
       .filterNot(_ == classOf[Object])
@@ -86,15 +92,54 @@ private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDef
 
 object MethodDefinitionExtractor {
 
-  case class MethodDefinition(name: String,
-                              invocation: (Any, Seq[Any]) => Any,
-                              orderedDependencies: OrderedDependencies,
-                              // TODO: remove after full switch to ContextTransformation API
-                              returnType: TypingResult,
-                              runtimeClass: Class[_],
-                              annotations: List[Annotation])
+  class MethodDefinition(clazz: Class[_],
+                         orderedDependencies: OrderedDependencies,
+                         // TODO: remove after full switch to ContextTransformation API
+                         val returnType: TypingResult,
+                         val runtimeClass: Class[_]) extends Serializable with LazyLogging {
 
-  class OrderedDependencies(dependencies: List[NodeDependency]) {
+    // It is lazy val to be able to serialize this class
+    @transient private lazy val method: Method = findMethodToInvoke(clazz)
+
+    def definedParameters: List[Parameter] = orderedDependencies.definedParameters
+
+    def invoke(obj: Any, params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): AnyRef = {
+      val values = orderedDependencies.prepareValues(params, outputVariableNameOpt, additional)
+      try {
+        method.invoke(obj, values.map(_.asInstanceOf[Object]):_*)
+      } catch {
+        case ex: IllegalArgumentException =>
+          //this usually indicates that parameters do not match or argument list is incorrect
+          logger.debug(s"Failed to invoke method: ${method.getName}, with params: $values", ex)
+
+          def className(obj: Any) = Option(obj).map(o => ReflectUtils.simpleNameWithoutSuffix(o.getClass)).getOrElse("null")
+
+          val parameterValues = orderedDependencies.definedParameters.map(_.name).map(params)
+          throw new IllegalArgumentException(
+            s"""Failed to invoke "${method.getName}" on ${className(obj)} with parameter types: ${parameterValues.map(className)}: ${ex.getMessage}""", ex)
+        //this is somehow an edge case - normally service returns failed future for exceptions
+        case ex: InvocationTargetException =>
+          throw ex.getTargetException
+      }
+    }
+
+  }
+
+  private[definition] def findMethodToInvoke(clazz: Class[_]): Method = {
+    val methodsToInvoke = clazz.getMethods.toList.filter { m =>
+      m.getAnnotation(classOf[MethodToInvoke]) != null
+    }
+    methodsToInvoke match {
+      case Nil =>
+        throw new IllegalArgumentException(s"Missing method to invoke in class: $clazz")
+      case head :: Nil =>
+        head
+      case moreThanOne =>
+        throw new IllegalArgumentException(s"More than one method to invoke: $moreThanOne in class: $clazz")
+    }
+  }
+
+  class OrderedDependencies(dependencies: List[NodeDependency]) extends Serializable {
 
     lazy val definedParameters: List[Parameter] = dependencies.collect {
       case param: Parameter => param
@@ -118,10 +163,10 @@ object MethodDefinitionExtractor {
   private[definition] class UnionDefinitionExtractor[T](seq: List[MethodDefinitionExtractor[T]])
     extends MethodDefinitionExtractor[T] {
 
-    override def extractMethodDefinition(obj: T, methodToInvoke: Method, componentConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
+    override def extractMethodDefinition(obj: T, componentConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
       val extractorsWithDefinitions = for {
         extractor <- seq
-        definition <- extractor.extractMethodDefinition(obj, methodToInvoke, componentConfig).toOption
+        definition <- extractor.extractMethodDefinition(obj, componentConfig).toOption
       } yield (extractor, definition)
       extractorsWithDefinitions match {
         case Nil =>

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.{Context, MetaData, NodeId, ProcessListene
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
@@ -128,7 +128,7 @@ object TestFlinkProcessCompiler {
             collectingListener: ResultsCollectingListener): FlinkProcessCompiler = {
     val configCreator = modelData.configCreator
     val expressionCompilerModelData = ExpressionCompilerModelData(
-      modelData.modelDefinitionWithTypes.transform(_.withImplementationInvoker(dumbExpressionCompilerImplementationInvoker)),
+      modelData.modelDefinitionWithTypes,
       // TODO: we should use DictServicesFactory.createEngineDictRegistry instead
       modelData.dictServices.dictRegistry.toEngineRegistry,
       () => configCreator.getClass.getClassLoader)
@@ -140,13 +140,6 @@ object TestFlinkProcessCompiler {
       scenarioTestData,
       collectingListener,
       expressionCompilerModelData)
-  }
-
-  // TODO: make StaticComponentImplementationInvoker serializable and use modelData.modelDefinitionWithTypes
-  //       here and in FlinkProcessCompiler
-  private val dumbExpressionCompilerImplementationInvoker = new ComponentImplementationInvoker with Serializable {
-    override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any =
-      throw new IllegalAccessError("Implementation shouldn't be invoked during compilation of expressions")
   }
 
 }

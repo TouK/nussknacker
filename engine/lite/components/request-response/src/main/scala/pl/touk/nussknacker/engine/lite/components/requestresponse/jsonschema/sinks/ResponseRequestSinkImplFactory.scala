@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 
-trait ResponseRequestSinkImplFactory {
+trait ResponseRequestSinkImplFactory extends Serializable {
   def createSink(value: LazyParameter[AnyRef], schema: Schema): Sink
 }
 
