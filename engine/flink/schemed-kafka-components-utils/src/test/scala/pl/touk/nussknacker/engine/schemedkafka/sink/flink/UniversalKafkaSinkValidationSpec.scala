@@ -31,7 +31,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
   private def validate(params: (String, Expression)*): TransformationResult = {
     val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator)
     val validator = new GenericNodeTransformationValidator(ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData),
-      modelData.processWithObjectsDefinition.expressionConfig)
+      modelData.modelDefinition.expressionConfig)
 
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")

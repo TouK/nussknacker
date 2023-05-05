@@ -42,7 +42,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
   }
 
   private lazy val dumbContext = Context("dumb", Map.empty, None)
-  private lazy val globalVariablesPreparer: GlobalVariablesPreparer = GlobalVariablesPreparer(compilerModelData.processWithObjectsDefinition.expressionConfig)
+  private lazy val globalVariablesPreparer: GlobalVariablesPreparer = GlobalVariablesPreparer(compilerModelData.modelDefinitionWithTypes.modelDefinition.expressionConfig)
   private lazy val validationContext = globalVariablesPreparer.emptyValidationContext(process.metaData)
   private lazy val evaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(compilerModelData)

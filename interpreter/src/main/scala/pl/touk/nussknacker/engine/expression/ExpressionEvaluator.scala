@@ -31,7 +31,7 @@ object ExpressionEvaluator {
     new ExpressionEvaluator(globalVariablesPreparer, Nil, None)
 
   def unOptimizedEvaluator(modelData: ModelData): ExpressionEvaluator =
-    unOptimizedEvaluator(GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig))
+    unOptimizedEvaluator(GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig))
 
 }
 

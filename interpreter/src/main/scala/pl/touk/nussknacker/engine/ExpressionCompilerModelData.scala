@@ -1,13 +1,8 @@
 package pl.touk.nussknacker.engine
 
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 
-case class ExpressionCompilerModelData(processWithObjectsDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef],
+case class ExpressionCompilerModelData(modelDefinitionWithTypes: ModelDefinitionWithTypes,
                                        dictRegistry: DictRegistry,
-                                       modelClassLoader: () => ClassLoader) {
-
-  lazy val typeDefinitions: Set[TypeInfos.ClazzDefinition] = ProcessDefinitionExtractor.extractTypes(processWithObjectsDefinition)
-
-}
+                                       modelClassLoader: () => ClassLoader)

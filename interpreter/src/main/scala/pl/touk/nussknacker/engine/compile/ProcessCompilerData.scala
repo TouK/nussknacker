@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, ModelDefinitionWithTypes}
 import pl.touk.nussknacker.engine.definition.{LazyInterpreterDependencies, ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
@@ -28,26 +28,26 @@ import scala.concurrent.duration.FiniteDuration
 object ProcessCompilerData {
 
   def prepare(process: CanonicalProcess,
-              definitions: ProcessDefinition[ObjectWithMethodDef],
+              definitionWithTypes: ModelDefinitionWithTypes,
               subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor,
               listeners: Seq[ProcessListener],
               userCodeClassLoader: ClassLoader,
               resultsCollector: ResultCollector,
               componentUseCase: ComponentUseCase,
               customProcessValidator: CustomProcessValidator): ProcessCompilerData = {
-    val servicesDefs = definitions.services
+    import definitionWithTypes.modelDefinition
+    val servicesDefs = modelDefinition.services
 
     val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
-    val dictRegistry = dictRegistryFactory.createEngineDictRegistry(definitions.expressionConfig.dictionaries)
+    val dictRegistry = dictRegistryFactory.createEngineDictRegistry(modelDefinition.expressionConfig.dictionaries)
 
-    val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
-    val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
+    val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, modelDefinition.expressionConfig, modelDefinition.settings, definitionWithTypes.typeDefinitions)
     //for testing environment it's important to take classloader from user jar
-    val nodeCompiler = new NodeCompiler(definitions, subprocessDefinitionExtractor, expressionCompiler, userCodeClassLoader, resultsCollector, componentUseCase)
+    val nodeCompiler = new NodeCompiler(modelDefinition, subprocessDefinitionExtractor, expressionCompiler, userCodeClassLoader, resultsCollector, componentUseCase)
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
-    val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler, customProcessValidator)
+    val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(modelDefinition.expressionConfig), nodeCompiler, customProcessValidator)
 
-    val globalVariablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
+    val globalVariablesPreparer = GlobalVariablesPreparer(modelDefinition.expressionConfig)
 
     val expressionEvaluator = ExpressionEvaluator.optimizedEvaluator(globalVariablesPreparer, listeners, process.metaData)
 

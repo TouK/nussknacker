@@ -58,7 +58,7 @@ trait ClassExtractionBaseTest extends AnyFunSuite with Matchers with Inside {
   }
 
   test("check extracted class for model") {
-    val types = ProcessDefinitionExtractor.extractTypes(model.processWithObjectsDefinition)
+    val types = model.modelDefinitionWithTypes.typeDefinitions.typeDefinitions
 //    printFoundClasses(types)
     if (Option(System.getProperty("CLASS_EXTRACTION_PRINT")).exists(_.toBoolean)) {
       FileUtils.write(new File(s"/tmp/${getClass.getSimpleName}-result.json"), encode(types), StandardCharsets.UTF_8)

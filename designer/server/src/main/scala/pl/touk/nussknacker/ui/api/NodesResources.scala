@@ -159,7 +159,7 @@ object NodesResources {
   }
 
   def prepareValidationContext(modelData: ModelData)(variableTypes: Map[String, TypingResult])(implicit metaData: MetaData): ValidationContext = {
-    val emptyCtx = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(metaData)
+    val emptyCtx = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig).emptyValidationContext(metaData)
     //It's a bit tricky, because FE does not distinguish between global and local vars...
     val localVars = variableTypes.filterNot(e => emptyCtx.globalVariables.keys.toSet.contains(e._1))
     emptyCtx.copy(localVariables = localVars)

@@ -39,23 +39,26 @@ object UIProcessObjectsFactory {
                               processingType: ProcessingType): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
-    val expressionCompilerModelData = modelDataForType.expressionCompilerModelData
     val toStaticObjectDefinitionTransformer = new ToStaticObjectDefinitionTransformer(
-      ExpressionCompiler.withoutOptimization(expressionCompilerModelData),
-      modelDataForType.processWithObjectsDefinition.expressionConfig,
+      ExpressionCompiler.withoutOptimization(modelDataForType.expressionCompilerModelData),
+      modelDataForType.modelDefinition.expressionConfig,
       typeSpecificInitialData.forScenario(_, processingType))
 
     val processDefinition: ProcessDefinition[ObjectDefinition] = {
       // We have to wrap this block with model's class loader because it invokes node compilation under the hood
       modelDataForType.withThisAsContextClassLoader {
-        modelDataForType.processWithObjectsDefinition.transform(toStaticObjectDefinitionTransformer.toStaticObjectDefinition)
+        modelDataForType.modelDefinition.transform(toStaticObjectDefinitionTransformer.toStaticObjectDefinition)
       }
     }
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = extractSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
-    val uiProcessDefinition = createUIProcessDefinition(processDefinition, subprocessInputs, expressionCompilerModelData.typeDefinitions.map(prepareClazzDefinition), processCategoryService)
+    val uiProcessDefinition = createUIProcessDefinition(
+      processDefinition,
+      subprocessInputs,
+      modelDataForType.modelDefinitionWithTypes.typeDefinitions.typeDefinitions.map(prepareClazzDefinition),
+      processCategoryService)
 
     val customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2)
 

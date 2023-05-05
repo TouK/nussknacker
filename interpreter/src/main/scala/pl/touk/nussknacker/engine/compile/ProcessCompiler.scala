@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, Type
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, ModelDefinitionWithTypes}
 import pl.touk.nussknacker.engine.graph.node.{Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.split._
@@ -250,12 +250,21 @@ protected trait ProcessCompilerBase {
 
 object ProcessValidator {
 
-  def default(definitions: ProcessDefinition[ObjectWithMethodDef], subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor, dictRegistry: DictRegistry, customProcessValidator: CustomProcessValidator, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
-    val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
-    val nodeCompiler = new NodeCompiler(definitions, subprocessDefinitionExtractor, expressionCompiler, classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
+  def default(modelData: ModelData, categoryOpt: Option[String]): ProcessValidator = {
+    default(
+      categoryOpt.map(category => modelData.modelDefinitionWithTypes.filter(_.availableForCategory(category))).getOrElse(modelData.modelDefinitionWithTypes),
+      SubprocessComponentDefinitionExtractor(modelData),
+      modelData.dictServices.dictRegistry,
+      modelData.customProcessValidator,
+      modelData.modelClassLoader.classLoader)
+  }
+
+  def default(definitionWithTypes: ModelDefinitionWithTypes, subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor, dictRegistry: DictRegistry, customProcessValidator: CustomProcessValidator, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
+    import definitionWithTypes.modelDefinition
+    val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, modelDefinition.expressionConfig, modelDefinition.settings, definitionWithTypes.typeDefinitions)
+    val nodeCompiler = new NodeCompiler(modelDefinition, subprocessDefinitionExtractor, expressionCompiler, classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
     val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
-    new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler, customProcessValidator)
+    new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(modelDefinition.expressionConfig), nodeCompiler, customProcessValidator)
   }
 
 }

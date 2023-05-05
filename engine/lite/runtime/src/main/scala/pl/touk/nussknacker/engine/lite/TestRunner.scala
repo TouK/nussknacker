@@ -55,7 +55,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
     val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime
 
     val expressionEvaluator: (Expression, Parameter, NodeId) => ValidatedNel[PartSubGraphCompilationError, AnyRef] = {
-      val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(process.metaData)
+      val validationContext = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig).emptyValidationContext(process.metaData)
       val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
       val dumbContext = Context("dumb", Map.empty, None)
       val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData)

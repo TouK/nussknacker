@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ComponentImplementationInvoker
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, ModelDefinitionWithTypes}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
@@ -90,30 +90,21 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   def configCreator: ProcessConfigCreator
 
-  lazy val processWithObjectsDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
-    withThisAsContextClassLoader {
+  lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes = {
+    val processDefinitions = withThisAsContextClassLoader {
       ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, ProcessObjectDependencies(processConfig, objectNaming))
     }
+    ModelDefinitionWithTypes(processDefinitions)
+  }
 
-  lazy val subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor = SubprocessComponentDefinitionExtractor(this)
+  def modelDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] = modelDefinitionWithTypes.modelDefinition
 
   // We can create dict services here because ModelData is fat object that is created once on start
   lazy val dictServices: UiDictServices =
-    DictServicesFactoryLoader.justOne(modelClassLoader.classLoader).createUiDictServices(processWithObjectsDefinition.expressionConfig.dictionaries, processConfig)
+    DictServicesFactoryLoader.justOne(modelClassLoader.classLoader).createUiDictServices(modelDefinition.expressionConfig.dictionaries, processConfig)
 
   def customProcessValidator: CustomProcessValidator = {
     CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, processConfig)
-  }
-
-  def prepareValidatorForCategory(categoryOpt: Option[String]): ProcessValidator = {
-    ProcessValidator.
-      default(
-        categoryOpt.map(category => processWithObjectsDefinition.filter(_.availableForCategory(category))).getOrElse(processWithObjectsDefinition),
-        subprocessDefinitionExtractor,
-        dictServices.dictRegistry,
-        customProcessValidator,
-        modelClassLoader.classLoader
-      )
   }
 
   def withThisAsContextClassLoader[T](block: => T) : T = {
@@ -130,10 +121,10 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   override lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
 
-  lazy val expressionCompilerModelData: ExpressionCompilerModelData = ExpressionCompilerModelData(processWithObjectsDefinition, dictServices.dictRegistry, () => modelClassLoader.classLoader)
+  lazy val expressionCompilerModelData: ExpressionCompilerModelData = ExpressionCompilerModelData(modelDefinitionWithTypes, dictServices.dictRegistry, () => modelClassLoader.classLoader)
 
   lazy val engineSerializableExpressionCompilerModelData: ExpressionCompilerModelData = ExpressionCompilerModelData(
-    processWithObjectsDefinition.transform(_.withImplementationInvoker(dumbExpressionCompilerImplementationInvoker)),
+    modelDefinitionWithTypes.transform(_.withImplementationInvoker(dumbExpressionCompilerImplementationInvoker)),
     dictServices.dictRegistry.toEngineRegistry,
     () => classOf[ExpressionCompilerModelData].getClassLoader)
 

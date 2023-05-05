@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, Proce
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, ModelDefinitionWithTypes}
 import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
@@ -28,7 +28,10 @@ import scala.concurrent.duration.FiniteDuration
   Instances of this class is serialized in Flink Job graph, on jobmanager etc. That's why we struggle to keep parameters as small as possible
   and we have InputConfigDuringExecution with ModelConfigLoader and not whole config.
  */
-class FlinkProcessCompiler(creator: ProcessConfigCreator,
+// FIXME
+class FlinkProcessCompiler(// TODO: get rid of passing ProcessConfigCreator, ProcessConfigCreator etc. Instead we should use higher level,
+                           //       serializable definitions (factories)
+                           creator: ProcessConfigCreator,
                            val processConfig: Config,
                            val diskStateBackendSupport: Boolean,
                            objectNaming: ObjectNaming,
@@ -62,11 +65,11 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(processObjectDependencies)
     val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
 
-    val processDefinition = definitions(processObjectDependencies)
+    val modelDefinition = ModelDefinitionWithTypes(definitions(processObjectDependencies))
     val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(processConfig, userCodeClassLoader)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
-      ProcessCompilerData.prepare(process, processDefinition, subprocessDefinitionExtractor, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
+      ProcessCompilerData.prepare(process, modelDefinition, subprocessDefinitionExtractor, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
 
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,

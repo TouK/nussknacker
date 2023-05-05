@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
 class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProcessMixin {
 
   test("should extract valid type definitions from source based on GenericNodeTransformation with explicit type definitions") {
-    val extractedTypes = extractTypes(processDefinition)
+    val extractedTypes = modelDefinitionWithTypes.typeDefinitions.typeDefinitions
 
     // Here we are checking explicit type extraction for sources based on GenericNodeTransformation
     // with defined explicit type extraction.

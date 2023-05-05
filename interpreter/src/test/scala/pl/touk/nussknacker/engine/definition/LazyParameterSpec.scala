@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.lazyparam.EvaluableLazyParameter
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition, ModelDefinitionWithTypes}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -75,7 +75,8 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
       methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, spelExpressionExcludeList = SpelExpressionExcludeList.default,
       customConversionsProviders = List.empty)
     val processDef: ProcessDefinition[ObjectWithMethodDef] = ProcessDefinition(Map.empty, Map.empty, Map.empty, Map.empty, exprDef, ClassExtractionSettings.Default)
-    val lazyInterpreterDeps = prepareLazyInterpreterDeps(processDef)
+    val definitionWithTypes = ModelDefinitionWithTypes(processDef)
+    val lazyInterpreterDeps = prepareLazyInterpreterDeps(definitionWithTypes)
 
     new CompilerLazyParameterInterpreter {
       override def deps: LazyInterpreterDependencies = lazyInterpreterDeps
@@ -84,12 +85,12 @@ class LazyParameterSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  def prepareLazyInterpreterDeps(definitions: ProcessDefinition[ObjectWithMethodDef]): LazyInterpreterDependencies = {
+  def prepareLazyInterpreterDeps(definitionWithTypes: ModelDefinitionWithTypes): LazyInterpreterDependencies = {
+    val definitions = definitionWithTypes.modelDefinition
     val expressionEvaluator =  ExpressionEvaluator.unOptimizedEvaluator(GlobalVariablesPreparer(definitions.expressionConfig))
-    val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
     val expressionCompiler = ExpressionCompiler.withOptimization(getClass.getClassLoader,
       new SimpleDictRegistry(Map.empty), definitions.expressionConfig,
-      ClassExtractionSettings.Default, typeDefinitionSet)
+      ClassExtractionSettings.Default, definitionWithTypes.typeDefinitions)
     LazyInterpreterDependencies(expressionEvaluator, expressionCompiler, 10.seconds)
   }
 
