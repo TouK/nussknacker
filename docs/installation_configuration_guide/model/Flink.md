@@ -1,5 +1,6 @@
 ---
 sidebar_label: "Flink"
+description: Flink specific model configuration
 ---
 
 # Flink specific model configuration
