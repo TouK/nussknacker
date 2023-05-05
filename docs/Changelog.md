@@ -4,6 +4,9 @@
 
 1.10.0 (not released yet)
 -------------------------
+* [#4275](https://github.com/TouK/nussknacker/pull/4275) Add helper methods for use in expressions:
+  * `#COLLECTION`: `concat`, `merge`, `min`, `max`, `slice`, `sum`, `sortedAsc`, `sortedDesc`, `take`, `takeLast`, `join`, `product`, `diff`, `intersect`, `distinct`, `shuffle`, `flatten`
+  * `#UTIL`: `split`
 * [#4315](https://github.com/TouK/nussknacker/pull/4315) Add support for test with parameters for kafka sources - FlinkKafkaSource / LiteKafkaSource.
 * [#4261](https://github.com/TouK/nussknacker/pull/4261) Add TestWithParametersSupport support for flink engine
 * [#4294](https://github.com/TouK/nussknacker/pull/4294) Allow to pass username while migrating scenario to secondary environment.

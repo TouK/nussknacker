@@ -256,6 +256,8 @@ listOfPersons = {person1, person2}
 | `#listOfPersons.![#this.age]`  | {42, 24}         | List[Integer] |
 | `#listOfPersons.![7]`          | {7, 7}           | List[Integer] |
 
+For other operations on lists, please see the `#COLLECTION` [helper](#built-in-helpers).
+
 ## Safe navigation
 
 When you access nested structure, you have to take care of null fields, otherwise you'll end up with 
@@ -318,11 +320,11 @@ You can also use explicit conversions that are available in utility classes and 
 ## Built-in helpers 
 
 | Helper        | Functions                                      |
-| -------       | -----------                                    |
-| `GEO`         | Simple distance measurements                   |
-| `NUMERIC`     | Number parsing                                 |
+|---------------|------------------------------------------------|
+| `COLLECTION`  | Operations on collections                      |
 | `CONV`        | General conversion functions                   |
 | `DATE`        | Date operations (conversions, useful helpers)  |
 | `DATE_FORMAT` | Date formatting/parsing operations             |
+| `GEO`         | Simple distance measurements                   |
+| `NUMERIC`     | Number parsing                                 |
 | `UTIL`        | Various utilities (e.g. identifier generation) |
-| `AGG`         | Aggregator functions                           |
