@@ -58,9 +58,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
       val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(process.metaData)
       val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
       val dumbContext = Context("dumb", Map.empty, None)
-      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-        case spel: SpelExpressionParser => spel.typingDictLabels
-      }
+      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData)
       (expression: Expression, parameter: Parameter, nodeId: NodeId) => {
         expressionCompiler
           .compile(expression, Some(parameter.name), validationContext, parameter.typ)(nodeId)

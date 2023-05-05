@@ -19,19 +19,16 @@ trait DictRegistry extends AutoCloseable {
    */
   def labelByKey(dictId: String, key: String): Validated[DictLookupError, Option[String]]
 
-  def toEngineRegistry: EngineDictRegistry = new EngineDictRegistry {
-    override def labelByKey(dictId: String, label: String): Validated[DictLookupError, Option[String]] =
-      DictRegistry.this.labelByKey(dictId, label)
-
-    override def close(): Unit = {}
-  }
+  def toEngineRegistry: EngineDictRegistry = (dictId: String, label: String) => DictRegistry.this.labelByKey(dictId, label)
 
 }
 
-trait EngineDictRegistry extends DictRegistry {
+abstract class EngineDictRegistry extends DictRegistry with Serializable {
 
   final override def keyByLabel(dictId: String, label: String): Validated[DictLookupError, String] =
     throw new IllegalAccessException("DictRegistry.keyByLabel shouldn't be used on engine side")
+
+  override def close(): Unit = {}
 
 }
 

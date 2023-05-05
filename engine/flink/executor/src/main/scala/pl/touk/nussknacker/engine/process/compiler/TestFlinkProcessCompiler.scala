@@ -1,15 +1,17 @@
 package pl.touk.nussknacker.engine.process.compiler
 
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import cats.implicits._
-import cats.data.Validated.{Invalid, Valid}
+import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.ExpressionCompilerModelData
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownProperty
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ContextInitializer, ProcessObjectDependencies, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord, ScenarioTestParametersRecord}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{Context, MetaData, NodeId, ProcessListener}
@@ -23,26 +25,27 @@ import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource,
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
-class TestFlinkProcessCompiler(modelData: ModelData,
+class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
+                               inputConfigDuringExecution: Config,
+                               compilerModelData: ExpressionCompilerModelData,
                                collectingListener: ResultsCollectingListener,
                                process: CanonicalProcess,
-                               scenarioTestData: ScenarioTestData)
-  extends StubbedFlinkProcessCompiler(process, modelData.configCreator, modelData.processConfig, diskStateBackendSupport = false, modelData.objectNaming, ComponentUseCase.TestRuntime) {
+                               scenarioTestData: ScenarioTestData,
+                               objectNaming: ObjectNaming)
+  extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUseCase.TestRuntime) {
 
   override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
     collectingListener :: defaults
   }
 
-  private val dumbContext = Context("dumb", Map.empty, None)
-  private lazy val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(process.metaData)
-  private lazy val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
-  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
-    case spel: SpelExpressionParser => spel.typingDictLabels
-  }
+  private lazy val dumbContext = Context("dumb", Map.empty, None)
+  private lazy val globalVariablesPreparer: GlobalVariablesPreparer = GlobalVariablesPreparer(compilerModelData.processWithObjectsDefinition.expressionConfig)
+  private lazy val validationContext = globalVariablesPreparer.emptyValidationContext(process.metaData)
+  private lazy val evaluator = ExpressionEvaluator.unOptimizedEvaluator(globalVariablesPreparer)
+  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(compilerModelData)
 
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
     overrideObjectWithMethod(sourceFactory, (originalSource, returnTypeOpt, nodeId) => {

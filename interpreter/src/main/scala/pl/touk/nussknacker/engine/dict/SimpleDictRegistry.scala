@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
  * This is simple implementation of DictRegistry which handles only EmbeddedDictRegistry
  */
-class SimpleDictRegistry(protected val declarations: Map[String, DictDefinition]) extends EmbeddedDictRegistry {
+class SimpleDictRegistry(protected val declarations: Map[String, DictDefinition]) extends EmbeddedDictRegistry with Serializable {
 
   override protected def handleNotEmbeddedKeyBeLabel(dictId: String, definition: DictDefinition, label: String): Validated[DictRegistry.DictEntryWithLabelNotExists, String] =
     throw new IllegalStateException(s"Not supported dict definition: $definition for dictId: $dictId")

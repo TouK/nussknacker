@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSink, FlinkLazyPa
 
 object EmptySink extends EmptySink
 
-trait EmptySink extends BasicFlinkSink {
+trait EmptySink extends BasicFlinkSink with Serializable {
 
   type Value = AnyRef
 

@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 
-class OneSource extends BasicFlinkSource[String] {
+class OneSource extends BasicFlinkSource[String] with Serializable {
 
   override def timestampAssigner: Option[Nothing] = None
 

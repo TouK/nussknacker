@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 import scala.concurrent.{ExecutionContext, Future}
 

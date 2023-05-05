@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSour
 import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 
-class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator {
+class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator with Serializable {
 
   override val typeInformation: TypeInformation[CsvRecord] = TypeInformation.of(classOf[CsvRecord])
 

@@ -132,12 +132,11 @@ object DefinitionExtractor {
   // TOOD: rename to StaticComponentWithImplementation
   case class StandardObjectWithMethodDef(implementationInvoker: ComponentImplementationInvoker,
                                          obj: Any,
-                                         methodDef: MethodDefinition,
-                                         objectDefinition: ObjectDefinition) extends ObjectWithMethodDef {
+                                         objectDefinition: ObjectDefinition,
+                                         // TODO: it should be removed - instead implementationInvoker should be transformed
+                                         runtimeClass: Class[_]) extends ObjectWithMethodDef {
     override def withImplementationInvoker(implementationInvoker: ComponentImplementationInvoker): ObjectWithMethodDef =
       copy(implementationInvoker = implementationInvoker)
-
-    def runtimeClass: Class[_] = methodDef.runtimeClass
 
     def parameters: List[Parameter] = objectDefinition.parameters
 
@@ -154,28 +153,30 @@ object DefinitionExtractor {
     def apply(obj: Any,
               methodDef: MethodDefinition,
               objectDefinition: ObjectDefinition): StandardObjectWithMethodDef = {
-      val implementationInvoker = new ComponentImplementationInvoker {
-        override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
-          val values = methodDef.orderedDependencies.prepareValues(params, outputVariableNameOpt, additional)
-          try {
-            methodDef.invocation(obj, values)
-          } catch {
-            case ex: IllegalArgumentException =>
-              //this usually indicates that parameters do not match or argument list is incorrect
-              logger.debug(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
+      val implementationInvoker = new StaticComponentImplementationInvoker(obj, methodDef)
+      new StandardObjectWithMethodDef(implementationInvoker, obj, objectDefinition, methodDef.runtimeClass)
+    }
 
-              def className(obj: Any) = Option(obj).map(o => ReflectUtils.simpleNameWithoutSuffix(o.getClass)).getOrElse("null")
+    private[definition] class StaticComponentImplementationInvoker(obj: Any, private[definition] val methodDef: MethodDefinition) extends ComponentImplementationInvoker {
+      override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+        val values = methodDef.orderedDependencies.prepareValues(params, outputVariableNameOpt, additional)
+        try {
+          methodDef.invocation(obj, values)
+        } catch {
+          case ex: IllegalArgumentException =>
+            //this usually indicates that parameters do not match or argument list is incorrect
+            logger.debug(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
 
-              val parameterValues = methodDef.orderedDependencies.definedParameters.map(_.name).map(params)
-              throw new IllegalArgumentException(
-                s"""Failed to invoke "${methodDef.name}" on ${className(obj)} with parameter types: ${parameterValues.map(className)}: ${ex.getMessage}""", ex)
-            //this is somehow an edge case - normally service returns failed future for exceptions
-            case ex: InvocationTargetException =>
-              throw ex.getTargetException
-          }
+            def className(obj: Any) = Option(obj).map(o => ReflectUtils.simpleNameWithoutSuffix(o.getClass)).getOrElse("null")
+
+            val parameterValues = methodDef.orderedDependencies.definedParameters.map(_.name).map(params)
+            throw new IllegalArgumentException(
+              s"""Failed to invoke "${methodDef.name}" on ${className(obj)} with parameter types: ${parameterValues.map(className)}: ${ex.getMessage}""", ex)
+          //this is somehow an edge case - normally service returns failed future for exceptions
+          case ex: InvocationTargetException =>
+            throw ex.getTargetException
         }
       }
-      new StandardObjectWithMethodDef(implementationInvoker, obj, methodDef, objectDefinition)
     }
 
   }

@@ -20,7 +20,7 @@ object BestEffortJsonEncoder {
 
 }
 
-case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader, highPriority: PartialFunction[Any, Json] = Map()) {
+case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: () => ClassLoader, highPriority: PartialFunction[Any, Json] = Map()) {
 
   private val safeString = safeJson[String](fromString)
   private val safeLong = safeJson[Long](fromLong)
@@ -33,7 +33,7 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
 
   val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(encode)
 
-  private val optionalEncoders = ServiceLoader.load(classOf[ToJsonEncoder], classLoader).asScala.map(_.encoder(this.encode))
+  private val optionalEncoders = ServiceLoader.load(classOf[ToJsonEncoder], classLoader()).asScala.map(_.encoder(this.encode))
 
   def encode(obj: Any): Json = optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse(obj, (any: Any) =>
     any match {

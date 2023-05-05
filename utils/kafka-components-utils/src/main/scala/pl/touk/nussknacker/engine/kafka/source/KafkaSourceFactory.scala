@@ -159,7 +159,7 @@ object KafkaSourceFactory {
 
   case class KafkaSourceFactoryState[K, V](contextInitializer: ContextInitializer[ConsumerRecord[K, V]])
 
-  trait KafkaSourceImplFactory[K, V] {
+  trait KafkaSourceImplFactory[K, V] extends Serializable {
 
     def createSource(params: Map[String, Any],
                      dependencies: List[NodeDependencyValue],

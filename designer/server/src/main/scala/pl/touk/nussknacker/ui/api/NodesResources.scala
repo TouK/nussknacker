@@ -123,7 +123,7 @@ object NodesResources {
   def validate(modelData: ModelData, request: ParametersValidationRequest, processName: String): List[NodeValidationError] = {
     implicit val metaData: MetaData = request.processProperties.toMetaData(processName)
     val context = prepareValidationContext(modelData)(request.variableTypes)
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+    val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData).withExpressionParsers {
       case spel: SpelExpressionParser => spel.typingDictLabels
     }
     request.parameters

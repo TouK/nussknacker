@@ -47,7 +47,7 @@ abstract class BaseKafkaSinkFactory(serializationSchemaFactory: KafkaSerializati
 
 }
 
-trait KafkaSinkImplFactory {
+trait KafkaSinkImplFactory extends Serializable {
 
   // TODO: handle key passed by user - not only extracted by serialization schema from value
   def prepareSink(topic: PreparedKafkaTopic, value: LazyParameter[AnyRef], kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[AnyRef], clientId: String): Sink

@@ -77,7 +77,7 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
 
     ClassLoaderWithServices.withCustomServices(List(classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder1],
       classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder2])) { classLoader =>
-      val encoder = BestEffortJsonEncoder(failOnUnkown = true, classLoader)
+      val encoder = BestEffortJsonEncoder(failOnUnkown = true, () => classLoader)
 
       encoder.encode(Map("custom1" ->
         CustomClassToEncode(Map("custom2" -> new NestedClassToEncode)))) shouldBe obj("custom1" ->

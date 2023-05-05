@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
-trait KafkaAvroSinkImplFactory {
+trait KafkaAvroSinkImplFactory extends Serializable {
 
   def createSink(preparedTopic: PreparedKafkaTopic,
                  key: LazyParameter[AnyRef],

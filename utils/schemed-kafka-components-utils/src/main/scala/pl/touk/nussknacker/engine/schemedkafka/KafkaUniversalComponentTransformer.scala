@@ -46,7 +46,7 @@ trait KafkaUniversalComponentTransformer[T] extends SingleInputGenericNodeTransf
 
   protected val kafkaConfig: KafkaConfig = prepareKafkaConfig
 
-  protected val schemaSupportDispatcher: UniversalSchemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaConfig)
+  protected lazy val schemaSupportDispatcher: UniversalSchemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaConfig)
 
   protected def prepareKafkaConfig: KafkaConfig = {
     KafkaConfig.parseConfig(processObjectDependencies.config)

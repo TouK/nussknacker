@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, VariableConst
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
 
-class LiteCsvSource(override val nodeId: NodeId) extends BaseLiteSource[CsvRecord] with SourceTestSupport[CsvRecord] with TestDataGenerator {
+class LiteCsvSource(override val nodeId: NodeId) extends BaseLiteSource[CsvRecord] with SourceTestSupport[CsvRecord] with TestDataGenerator with Serializable {
 
   override def transform(record: CsvRecord): Context =
     Context(contextIdGenerator.nextContextId())

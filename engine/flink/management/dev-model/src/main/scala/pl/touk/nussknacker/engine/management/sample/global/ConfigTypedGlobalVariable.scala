@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, TypedMap}
 /**
   * Returns sample configuration - list of typed maps, based on environment property from process properties.
   */
-object ConfigTypedGlobalVariable extends TypedGlobalVariable {
+case object ConfigTypedGlobalVariable extends TypedGlobalVariable {
 
   import scala.jdk.CollectionConverters._
 

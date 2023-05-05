@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSour
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
-class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSupport[String] {
+class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSupport[String] with Serializable {
   override val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
 
   override def timestampAssigner: Option[TimestampWatermarkHandler[String]] = Option(StandardTimestampWatermarkHandler

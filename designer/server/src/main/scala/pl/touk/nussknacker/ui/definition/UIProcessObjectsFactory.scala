@@ -39,8 +39,9 @@ object UIProcessObjectsFactory {
                               processingType: ProcessingType): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
+    val expressionCompilerModelData = modelDataForType.expressionCompilerModelData
     val toStaticObjectDefinitionTransformer = new ToStaticObjectDefinitionTransformer(
-      ExpressionCompiler.withoutOptimization(modelDataForType),
+      ExpressionCompiler.withoutOptimization(expressionCompilerModelData),
       modelDataForType.processWithObjectsDefinition.expressionConfig,
       typeSpecificInitialData.forScenario(_, processingType))
 
@@ -54,7 +55,7 @@ object UIProcessObjectsFactory {
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = extractSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
-    val uiProcessDefinition = createUIProcessDefinition(processDefinition, subprocessInputs, modelDataForType.typeDefinitions.map(prepareClazzDefinition), processCategoryService)
+    val uiProcessDefinition = createUIProcessDefinition(processDefinition, subprocessInputs, expressionCompilerModelData.typeDefinitions.map(prepareClazzDefinition), processCategoryService)
 
     val customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2)
 

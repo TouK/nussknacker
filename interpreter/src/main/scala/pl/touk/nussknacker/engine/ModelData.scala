@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine
 
-import java.net.URL
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ModelData.dumbExpressionCompilerImplementationInvoker
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ComponentImplementationInvoker
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor, TypeInfos}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution, ModelConfigLoader}
@@ -16,6 +17,8 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.{ModelClassLoader, ProcessConfigCreatorLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
+
+import java.net.URL
 
 object ModelData extends LazyLogging {
 
@@ -41,6 +44,11 @@ object ModelData extends LazyLogging {
 
   implicit class BaseModelDataExt(baseModelData: BaseModelData) {
     def asInvokableModelData: ModelData = baseModelData.asInstanceOf[ModelData]
+  }
+
+  private val dumbExpressionCompilerImplementationInvoker = new ComponentImplementationInvoker with Serializable {
+    override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any =
+      throw new IllegalAccessError("Implementation shouldn't be invoked during compilation of expressions")
   }
 
 }
@@ -89,8 +97,6 @@ trait ModelData extends BaseModelData with AutoCloseable {
 
   lazy val subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor = SubprocessComponentDefinitionExtractor(this)
 
-  lazy val typeDefinitions: Set[TypeInfos.ClazzDefinition] = ProcessDefinitionExtractor.extractTypes(processWithObjectsDefinition)
-
   // We can create dict services here because ModelData is fat object that is created once on start
   lazy val dictServices: UiDictServices =
     DictServicesFactoryLoader.justOne(modelClassLoader.classLoader).createUiDictServices(processWithObjectsDefinition.expressionConfig.dictionaries, processConfig)
@@ -123,6 +129,13 @@ trait ModelData extends BaseModelData with AutoCloseable {
   def modelConfigLoader: ModelConfigLoader
 
   override lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
+
+  lazy val expressionCompilerModelData: ExpressionCompilerModelData = ExpressionCompilerModelData(processWithObjectsDefinition, dictServices.dictRegistry, () => modelClassLoader.classLoader)
+
+  lazy val engineSerializableExpressionCompilerModelData: ExpressionCompilerModelData = ExpressionCompilerModelData(
+    processWithObjectsDefinition.transform(_.withImplementationInvoker(dumbExpressionCompilerImplementationInvoker)),
+    dictServices.dictRegistry.toEngineRegistry,
+    () => classOf[ExpressionCompilerModelData].getClassLoader)
 
   def close(): Unit = {
     dictServices.close()

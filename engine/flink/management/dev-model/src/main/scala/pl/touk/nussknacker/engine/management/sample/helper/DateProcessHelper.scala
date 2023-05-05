@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
-object DateProcessHelper extends HideToString {
+case object DateProcessHelper extends HideToString {
   @Documentation(
     description = "Returns current time in milliseconds"
   )

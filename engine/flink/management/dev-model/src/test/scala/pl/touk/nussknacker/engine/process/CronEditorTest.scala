@@ -15,7 +15,7 @@ class CronEditorTest extends AnyFunSuite with Matchers {
 
   private val modelData: LocalModelData = LocalModelData(ConfigFactory.load(), new DevProcessConfigCreator)
 
-  private val compiler = ExpressionCompiler.withoutOptimization(modelData)
+  private val compiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData)
 
   test("parses cron expression") {
     val expression = "new com.cronutils.parser.CronParser(T(com.cronutils.model.definition.CronDefinitionBuilder).instanceDefinitionFor(T(com.cronutils.model.CronType).QUARTZ)).parse('0 0 00 1/1 * ? *')"

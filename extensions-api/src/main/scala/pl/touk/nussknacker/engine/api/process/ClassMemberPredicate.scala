@@ -26,7 +26,7 @@ object ClassMemberPredicate {
 
 }
 
-case class ReturnMemberPredicate(returnClassPredicate: ClassPredicate, classPredicate: ClassPredicate = _ => true) extends ClassMemberPredicate {
+case class ReturnMemberPredicate(returnClassPredicate: ClassPredicate, classPredicate: ClassPredicate = ClassPredicate.acceptAny) extends ClassMemberPredicate {
 
   override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
 

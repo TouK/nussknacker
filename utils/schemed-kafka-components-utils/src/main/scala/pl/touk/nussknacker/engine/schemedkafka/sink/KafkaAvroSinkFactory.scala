@@ -38,7 +38,7 @@ class KafkaAvroSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClient
 
   override type State = KafkaAvroSinkFactoryState
 
-  private val outputValidatorErrorsConverter = new OutputValidatorErrorsConverter(KafkaUniversalComponentTransformer.SinkValueParamName)
+  private lazy val outputValidatorErrorsConverter = new OutputValidatorErrorsConverter(KafkaUniversalComponentTransformer.SinkValueParamName)
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {

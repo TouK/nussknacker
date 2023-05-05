@@ -46,7 +46,7 @@ class NodeDataValidator(modelData: ModelData, subprocessResolver: SubprocessReso
               )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
 
-      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+      val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData).withExpressionParsers {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
       val compiler = new NodeCompiler(modelData.processWithObjectsDefinition, modelData.subprocessDefinitionExtractor,

@@ -59,7 +59,7 @@ object InputMeta {
 
 }
 
-class InputMetaToJson extends ToJsonEncoder {
+class InputMetaToJson extends ToJsonEncoder with Serializable {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
   import pl.touk.nussknacker.engine.api.CirceUtil.codecs._

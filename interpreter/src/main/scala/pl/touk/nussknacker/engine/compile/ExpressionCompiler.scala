@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
-import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph}
+import pl.touk.nussknacker.engine.{ExpressionCompilerModelData, ModelData, TypeDefinitionSet, compiledgraph}
 
 object ExpressionCompiler {
 
@@ -32,9 +32,9 @@ object ExpressionCompiler {
                           settings: ClassExtractionSettings, typeDefinitionSet: TypeDefinitionSet): ExpressionCompiler
   = default(loader, dictRegistry, expressionConfig, optimizeCompilation = false, settings, typeDefinitionSet)
 
-  def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
-    withoutOptimization(modelData.modelClassLoader.classLoader,
-      modelData.dictServices.dictRegistry,
+  def withoutOptimization(modelData: ExpressionCompilerModelData): ExpressionCompiler = {
+    withoutOptimization(modelData.modelClassLoader(),
+      modelData.dictRegistry,
       modelData.processWithObjectsDefinition.expressionConfig,
       modelData.processWithObjectsDefinition.settings,
       TypeDefinitionSet(modelData.typeDefinitions))

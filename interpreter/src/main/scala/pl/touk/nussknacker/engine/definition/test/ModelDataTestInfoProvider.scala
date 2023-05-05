@@ -17,7 +17,7 @@ import shapeless.syntax.typeable._
 
 class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider with LazyLogging {
 
-  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
+  private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData.expressionCompilerModelData).withExpressionParsers {
     case spel: SpelExpressionParser => spel.typingDictLabels
   }
 

@@ -8,8 +8,10 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 
 /*
   Service, SourceFactory, SinkFactory, CustomStreamTransformer
+  Classes implementing this interface, used with Flink engine, should be serializable - all "fat" objects like
+  connection pools or thread pools should be created lazily
  */
-trait Component
+trait Component extends Serializable
 
 object ComponentProviderConfig {
 
