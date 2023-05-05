@@ -10,6 +10,7 @@
 * [#4204](https://github.com/TouK/nussknacker/pull/4204) ProcessingTypeDataProvider has combined data being a result of all processing types
 * [#4219](https://github.com/TouK/nussknacker/pull/4219) Components are aware of processing data reload
 * [#4256](https://github.com/TouK/nussknacker/pull/4256) Ignore error message and description when comparing errors lists in model migration tests
+* [#4264](https://github.com/TouK/nussknacker/pull/4264) Add Unknown type as valid fragment input
 
 1.9.1 (24 Apr 2023)
 ------------------------
