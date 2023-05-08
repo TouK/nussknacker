@@ -44,22 +44,26 @@ class ExpressionSuggester {
         case p: PropertyOrFieldReference =>
           //TODO: this solution only looks for first previous node, so it works for single nested expression, like #var.field
           val prevNode = findPrevNodeInPosition(ast, p.getStartPosition)
+
           def filterClassMethods(classDefinition: ClazzDefinition): List[ExpressionSuggestion] = {
             val methods = filterMapByName(classDefinition.methods, p.getName)
+
             def extractClass(result: TypingResult): Option[String] = {
               result match {
                 case r: TypedClass => Some(r.klass.getName)
                 case _ => None
               }
             }
+
             methods.values.flatten
               .map(m => ExpressionSuggestion(m.name, RefClazz(extractClass(m.signatures.head.result), display = Some(m.signatures.head.result.display)), false))
               .toList
           }
+
           val prevNodeVariable = prevNode.map(n => n.toStringAST.stripPrefix("#"))
             .flatMap(v => variables.get(v))
           prevNodeVariable.flatMap(c => c.refClazzName)
-          .flatMap(c => typeDefinitions.find(t => t.clazzName.klass.getName == c))
+            .flatMap(c => typeDefinitions.find(t => t.getClazz.getName == c))
             .map(filterClassMethods).getOrElse(Nil) ++
             prevNodeVariable.flatMap(_.fields).map(filterMapByName(_, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false) }).getOrElse(Nil)
         case _ => Nil
