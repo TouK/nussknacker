@@ -33,7 +33,7 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   test("show how to override topic selection strategy") {
-    new UniversalKafkaSourceFactory(schemaRegistryClientFactory, UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory), testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+    new UniversalKafkaSourceFactory[Any, Any](schemaRegistryClientFactory, UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory), testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override def topicSelectionStrategy = new TopicPatternSelectionStrategy(Pattern.compile("test-.*"))
     }
   }

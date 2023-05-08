@@ -3,6 +3,14 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.10.0
+
+### Code API changes
+* [#4278](https://github.com/TouK/nussknacker/pull/4278) Now expression compiler and code suggestions mechanism are reusing the same
+  types extracted based on model. Before the change types in compiler were lazily extracted. Because of this change, some expressions
+  can stop to compile. You may need to add `WithExplicitTypesToExtract` to some of yours `SourceFactory` implementations.
+  See extending classes for examples on how to implement it.
+
 ## In version 1.9.0
 
 ### Code API changes

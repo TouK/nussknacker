@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
@@ -22,11 +21,11 @@ import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
+import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.{TypeDefinitionSet, api}
-import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util
@@ -220,8 +219,7 @@ object SpelExpressionParser extends LazyLogging {
               methodExecutionForUnknownAllowed: Boolean,
               dynamicPropertyAccessAllowed: Boolean,
               spelExpressionExcludeList: SpelExpressionExcludeList,
-              conversionService: ConversionService)
-             (implicit classExtractionSettings: ClassExtractionSettings): SpelExpressionParser = {
+              conversionService: ConversionService): SpelExpressionParser = {
     val functions = Map(
       "today" -> classOf[LocalDate].getDeclaredMethod("now"),
       "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
@@ -237,7 +235,7 @@ object SpelExpressionParser extends LazyLogging {
     val classResolutionStrategy = if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union
     val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
     val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, conversionService, functions, spelExpressionExcludeList)
-    val validator = new SpelExpressionValidator(new Typer(classLoader, commonSupertypeFinder, new KeysDictTyper(dictRegistry),
+    val validator = new SpelExpressionValidator(new Typer(commonSupertypeFinder, new KeysDictTyper(dictRegistry),
       strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet, evaluationContextPreparer, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour, evaluationContextPreparer)
   }

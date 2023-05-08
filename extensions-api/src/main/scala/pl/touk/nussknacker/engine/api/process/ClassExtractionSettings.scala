@@ -136,7 +136,7 @@ object ClassExtractionSettings {
       BasePackagePredicate("com.cronutils.model.field")
     )
 
-  lazy val DefaultExcludedMembers: List[ClassMemberPredicate] = CommonExcludedMembers ++ AvroExcludedMembers ++ JavaTimeExcludeMembers :+
+  lazy val DefaultExcludedMembers: List[ClassMemberPredicate] = CommonExcludedMembers ++ KafkaExcludedMembers ++ AvroExcludedMembers ++ JavaTimeExcludeMembers :+
     ReturnMemberPredicate(SuperClassPredicate(ExactClassPredicate(classOf[Decoder[_]], classOf[Encoder[_]]))) :+
     ReturnMemberPredicate(SuperClassPredicate(ExactClassPredicate[ParameterEditor]))
 
@@ -157,6 +157,12 @@ object ClassExtractionSettings {
         case m: Method => List("declaringClass", "getDeclaringClass").contains(m.getName)
       })
     )
+
+  lazy val KafkaExcludedMembers: List[ClassMemberPredicate] = List(
+    ClassMemberPatternPredicate(
+      SuperClassPredicate(ClassPatternPredicate(Pattern.compile("pl\\.touk\\.nussknacker\\.engine\\.kafka\\.source\\.InputMeta"))),
+      Pattern.compile("(withType|apply|keyParameterName)"))
+  )
 
   lazy val AvroExcludedMembers: List[ClassMemberPredicate] =
     List(

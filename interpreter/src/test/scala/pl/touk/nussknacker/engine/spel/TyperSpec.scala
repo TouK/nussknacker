@@ -2,23 +2,21 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
-import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.common.TemplateParserContext
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class TyperSpec extends AnyFunSuite with Matchers {
+class TyperSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   test("simple expression") {
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map(
@@ -33,30 +31,30 @@ class TyperSpec extends AnyFunSuite with Matchers {
   }
 
   test("detect proper selection types") {
-    typeExpression("{1,2}.?[(#this==1)]").toOption.get.finalResult.typingResult shouldBe
+    typeExpression("{1,2}.?[(#this==1)]").validValue.finalResult.typingResult shouldBe
       Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
   }
 
   test("detect proper first selection types") {
-    typeExpression("{1,2}.$[(#this==1)]").toOption.get.finalResult.typingResult shouldBe Typed.typedClass[Int]
+    typeExpression("{1,2}.$[(#this==1)]").validValue.finalResult.typingResult shouldBe Typed.typedClass[Int]
   }
 
   test("detect proper last selection types") {
-    typeExpression("{1,2}.^[(#this==1)]").toOption.get.finalResult.typingResult shouldBe Typed.typedClass[Int]
+    typeExpression("{1,2}.^[(#this==1)]").validValue.finalResult.typingResult shouldBe Typed.typedClass[Int]
   }
 
   test("detect proper nested selection types") {
-    typeExpression("{{1},{1,2}}.$[(#this.size > 1)]").toOption.get.finalResult.typingResult shouldBe
+    typeExpression("{{1},{1,2}}.$[(#this.size > 1)]").validValue.finalResult.typingResult shouldBe
       Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
   }
 
   test("detect proper chained selection types") {
-    typeExpression("{{1},{1,2}}.$[(#this.size > 1)].^[(#this==1)]").toOption.get.finalResult.typingResult shouldBe
+    typeExpression("{{1},{1,2}}.$[(#this.size > 1)].^[(#this==1)]").validValue.finalResult.typingResult shouldBe
       Typed.typedClass[Int]
   }
 
   test("restricting simple type selection") {
-    typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").toEither.swap.toOption.get.head.message shouldBe
+    typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").invalidValue.head.message shouldBe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
   }
 
@@ -68,8 +66,8 @@ class TyperSpec extends AnyFunSuite with Matchers {
   private val classResolutionStrategy = SupertypeClassResolutionStrategy.Union
   private val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
   private val dict = new SimpleDictRegistry(Map.empty)
-  private val typer = new Typer(this.getClass.getClassLoader, commonSupertypeFinder, new KeysDictTyper(dict), strictMethodsChecking, staticMethodInvocationsChecking,
-    TypeDefinitionSet.empty, evaluationContextPreparer = null, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed)(ClassExtractionSettings.Default)
+  private val typer = new Typer(commonSupertypeFinder, new KeysDictTyper(dict), strictMethodsChecking, staticMethodInvocationsChecking,
+    TypeDefinitionSet.forDefaultAdditionalClasses, evaluationContextPreparer = null, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed)
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser()
 
   private def typeExpression(expr: String, variables: (String, Any)*): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {

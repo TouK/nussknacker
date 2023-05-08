@@ -4,21 +4,23 @@ import cats.data.Validated
 import cats.data.Validated.Valid
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.util.NotNothing
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
+import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.schemedkafka.{AvroSchemaDeterminer, KafkaUniversalComponentTransformer, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
-import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 
 import scala.reflect.ClassTag
 
@@ -38,14 +40,17 @@ import scala.reflect.ClassTag
   * @tparam K - type of event's key, used to determine if key object is Specific or Generic (for GenericRecords use Any)
   * @tparam V - type of event's value, used to determine if value object is Specific or Generic (for GenericRecords use Any)
   */
-class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                       val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-                                                       val processObjectDependencies: ProcessObjectDependencies,
-                                                       protected val implProvider: KafkaSourceImplFactory[K, V])
+class KafkaAvroSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](val schemaRegistryClientFactory: SchemaRegistryClientFactory,
+                                                                               val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
+                                                                               val processObjectDependencies: ProcessObjectDependencies,
+                                                                               protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory
-    with KafkaUniversalComponentTransformer[Source] {
+    with KafkaUniversalComponentTransformer[Source]
+    with WithExplicitTypesToExtract {
 
   override type State = KafkaAvroSourceFactoryState[K, V]
+
+  override def typesToExtract: List[TypedClass] = Typed.typedClassOpt[K].toList ::: Typed.typedClassOpt[V].toList ::: Typed.typedClass[TimestampType] :: Nil
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: NodeId): NodeTransformationDefinition =

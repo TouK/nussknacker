@@ -3,14 +3,13 @@ package pl.touk.nussknacker.engine.benchmarks.spel
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
+import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /* This is helper class for testing SpEL expressions, see SampleSpelBenchmark for usage */
@@ -22,7 +21,7 @@ class SpelSecurityBenchmarkSetup(expression: String, vars: Map[String, AnyRef]) 
     spelExpressionExcludeList = SpelExpressionExcludeList.default, customConversionsProviders = List.empty)
 
   private val expressionCompiler = ExpressionCompiler.withOptimization(
-    getClass.getClassLoader, new SimpleDictRegistry(Map.empty), expressionDefinition, settings = ClassExtractionSettings.Default, typeDefinitionSet = TypeDefinitionSet.empty)
+    getClass.getClassLoader, new SimpleDictRegistry(Map.empty), expressionDefinition, typeDefinitionSet = TypeDefinitionSet.forDefaultAdditionalClasses)
 
   private val validationContext = ValidationContext(vars.mapValuesNow(Typed.fromInstance), Map.empty)
 

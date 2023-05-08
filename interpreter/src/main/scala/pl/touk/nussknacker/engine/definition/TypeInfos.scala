@@ -85,9 +85,6 @@ object TypeInfos {
       case typingResult => throw new IllegalAccessException(s"$typingResult not supported. Class and Unknown are only valid inputs for fragment.")
     }
 
-    def clazzMatch(typeReferenceClazz: AnyRef): Boolean =
-      getClazz.equals(typeReferenceClazz)
-
     private def asProperty(info: MethodInfo): Option[TypingResult] = info.computeResultType(List()).toOption
 
     private val AnyClass: Class[Any] = classOf[Any]

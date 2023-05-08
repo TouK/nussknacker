@@ -33,9 +33,9 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
     // Simple implementations e.g. FullNameV1, although they extend SimpleRecordBase, are not recognized as SpecificRecord classes.
     def avroSpecificSourceFactory[V <: SpecificRecord : ClassTag] = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
 
-    val universalSourceFactory = new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalPayload, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
-    val avroGenericSourceFactory = new KafkaAvroSourceFactory(schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
-    val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalPayload, processObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+    val universalSourceFactory = new UniversalKafkaSourceFactory[Any, Any](schemaRegistryClientFactory, universalPayload, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
+    val avroGenericSourceFactory = new KafkaAvroSourceFactory[Any, Any](schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
+    val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory[Any, Any](schemaRegistryClientFactory, universalPayload, processObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)
     }
 

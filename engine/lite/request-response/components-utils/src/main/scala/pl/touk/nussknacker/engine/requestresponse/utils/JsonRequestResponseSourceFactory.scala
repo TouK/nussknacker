@@ -2,16 +2,17 @@ package pl.touk.nussknacker.engine.requestresponse.utils
 
 import io.circe.Decoder
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
+import pl.touk.nussknacker.engine.api.definition.WithExplicitTypesToExtract
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CirceUtil, MethodToInvoke, NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, RequestResponseSourceFactory}
 
-import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
 
-class JsonRequestResponseSourceFactory[T: Decoder : ClassTag] extends RequestResponseSourceFactory {
+class JsonRequestResponseSourceFactory[T: Decoder : ClassTag] extends RequestResponseSourceFactory with WithExplicitTypesToExtract {
 
   @MethodToInvoke
   def create(implicit nodeIdPassed: NodeId): ContextTransformation = ContextTransformation
@@ -29,5 +30,7 @@ class JsonRequestResponseSourceFactory[T: Decoder : ClassTag] extends RequestRes
           CirceUtil.decodeJsonUnsafe(testRecord.json, "invalid request in request-response source")
 
       })
+
+  override def typesToExtract: List[typing.TypedClass] = Typed.typedClassOpt[T].toList
 
 }

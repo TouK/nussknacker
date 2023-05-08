@@ -15,10 +15,9 @@ import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, GenericType, TypingFunction}
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{KnownTypingResult, SingleTypingResult, Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypedUnion, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -37,8 +36,8 @@ import java.time.{LocalDate, LocalDateTime}
 import java.util
 import java.util.{Collections, Locale}
 import scala.annotation.varargs
-import scala.jdk.CollectionConverters._
 import scala.collection.immutable.ListMap
+import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
 
@@ -93,10 +92,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
                                  staticMethodInvocationsChecking: Boolean = defaultStaticMethodInvocationsChecking,
                                  methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
                                  dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    expressionParser(dictionaries, flavour, strictMethodsChecking, staticMethodInvocationsChecking, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed).parse(expr, validationCtx, Typed.fromDetailedType[T])
+    expressionParser(validationCtx.variables.values.toSeq, dictionaries, flavour, strictMethodsChecking, staticMethodInvocationsChecking, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed)
+      .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
-  private def expressionParser(dictionaries: Map[String, DictDefinition] = Map.empty,
+  private def expressionParser(globalVariableTypes: Seq[TypingResult] = Seq.empty,
+                               dictionaries: Map[String, DictDefinition] = Map.empty,
                                flavour: Flavour = Standard,
                                strictMethodsChecking: Boolean = defaultStrictMethodsChecking,
                                staticMethodInvocationsChecking: Boolean = defaultStaticMethodInvocationsChecking,
@@ -104,9 +105,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
                                dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed) = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
-      imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking, typeDefinitionSetWithCustomClasses,
-      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed,
-      spelExpressionExcludeListWithCustomPatterns, DefaultSpelConversionsProvider.getConversionService)(ClassExtractionSettings.Default)
+      imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking,
+      typeDefinitionSetWithCustomClasses(globalVariableTypes), methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed,
+      dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionExcludeListWithCustomPatterns, DefaultSpelConversionsProvider.getConversionService)
   }
 
   private def spelExpressionExcludeListWithCustomPatterns: SpelExpressionExcludeList = {
@@ -119,22 +120,24 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ))
   }
 
-  private def typeDefinitionSetWithCustomClasses: TypeDefinitionSet = {
-
-    val typingResults = Set(
-      Typed.typedClass[String],
-      Typed.typedClass[java.text.NumberFormat],
-      Typed.typedClass[java.lang.Long],
-      Typed.typedClass[java.lang.Integer],
-      Typed.typedClass[java.math.BigInteger],
-      Typed.typedClass[java.math.MathContext],
-      Typed.typedClass[java.math.BigDecimal],
-      Typed.typedClass[LocalDate],
-      Typed.typedClass[ChronoLocalDate],
-      Typed.typedClass[SampleValue],
-      Typed.typedClass(Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject"))
-    )
-    TypeDefinitionSet(typingResults.map(ClazzDefinition(_, Map.empty, Map.empty)))
+  private def typeDefinitionSetWithCustomClasses(globalVariableTypes: Seq[TypingResult]): TypeDefinitionSet = {
+    val typesFromGlobalVariables = globalVariableTypes.flatMap(_.asInstanceOf[KnownTypingResult] match {
+      case single: SingleTypingResult => Set(single)
+      case TypedUnion(types) => types
+    }).map(_.objType.klass)
+    val customClasses = Seq(
+      classOf[String],
+      classOf[java.text.NumberFormat],
+      classOf[java.lang.Long],
+      classOf[java.lang.Integer],
+      classOf[java.math.BigInteger],
+      classOf[java.math.MathContext],
+      classOf[java.math.BigDecimal],
+      classOf[LocalDate],
+      classOf[ChronoLocalDate],
+      classOf[SampleValue],
+      Class.forName("pl.touk.nussknacker.engine.spel.SampleGlobalObject"))
+    TypeDefinitionSet.forClasses(typesFromGlobalVariables ++ customClasses: _*)
   }
 
   test("parsing first selection on array") {
@@ -496,12 +499,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("not allow unknown variables in methods") {
-    inside(parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject.getClass))) {
+    inside(parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject))) {
       case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
         error.message shouldBe "Unresolved reference 'a'"
     }
 
-    inside(parse[Any]("T(pl.touk.nussknacker.engine.spel.SampleGlobalObject).add(#a, 1)", ctx)) {
+    inside(parse[Any]("T(java.text.NumberFormat).getNumberInstance('PL').format(#a)", ctx)) {
       case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
         error.message shouldBe "Unresolved reference 'a'"
     }

@@ -5,14 +5,16 @@ import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.OtherError
-import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, GenericType, Signature, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics._
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
-import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference
+import pl.touk.nussknacker.engine.spel.typer.MethodReferenceTyper
+import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 
-class TypeMethodReferenceSpec extends AnyFunSuite with Matchers {
+class MethodReferenceTyperSpec extends AnyFunSuite with Matchers {
   private case class Helper() {
     def simpleFunction(a: Int): Int = ???
 
@@ -46,8 +48,13 @@ class TypeMethodReferenceSpec extends AnyFunSuite with Matchers {
     def overloadedMultipleGenericFunction(a: Int, b: Double): Float = ???
   }
 
+ private val methodReferenceTyper = {
+   val typeDefinitionSet = TypeDefinitionSet(TypesInformationExtractor.clazzAndItsChildrenDefinition(List(Typed[Helper]))(ClassExtractionSettings.Default))
+   new MethodReferenceTyper(typeDefinitionSet, methodExecutionForUnknownAllowed = false)
+  }
+
   private def extractMethod(name: String, args: List[TypingResult]): Either[ExpressionParseError, TypingResult] = {
-    TypeMethodReference(name, Typed[Helper], args, isStatic = false, methodExecutionForUnknownAllowed = false)(ClassExtractionSettings.Default)
+    methodReferenceTyper.typeMethodReference(typer.MethodReference(Typed[Helper], isStatic = false, name, args))
   }
 
   private def checkErrorEquality(a: ArgumentTypeError, b: ArgumentTypeError): Unit = {

@@ -25,23 +25,6 @@
     "staticMethods": {}
   },
   {
-    "clazzName": {
-      "type" : "Unknown"
-    },
-    "methods": {
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
     "clazzName": {"refClazzName": "com.cronutils.model.Cron"},
     "methods": {
       "asString": [
@@ -2858,6 +2841,21 @@
           }
         }
       ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {"type": "Unknown"},
+    "methods": {
       "toString": [
         {
           "name": "toString",
@@ -11669,6 +11667,150 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "org.apache.kafka.common.record.TimestampType"},
+    "methods": {
+      "compareTo": [
+        {
+          "name": "compareTo",
+          "signature": {
+            "noVarArgs": [
+              {
+                "name": "arg0",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.lang.Enum"
+                }
+              }
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        },
+        {
+          "name": "compareTo",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "id": [
+        {
+          "name": "id",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "name": [
+        {
+          "name": "name",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "ordinal": [
+        {
+          "name": "ordinal",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.Integer"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {
+      "CREATE_TIME": [
+        {
+          "name": "CREATE_TIME",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "org.apache.kafka.common.record.TimestampType"}
+          }
+        }
+      ],
+      "LOG_APPEND_TIME": [
+        {
+          "name": "LOG_APPEND_TIME",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "org.apache.kafka.common.record.TimestampType"}
+          }
+        }
+      ],
+      "NO_TIMESTAMP_TYPE": [
+        {
+          "name": "NO_TIMESTAMP_TYPE",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "org.apache.kafka.common.record.TimestampType"}
+          }
+        }
+      ],
+      "forName": [
+        {
+          "name": "forName",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "org.apache.kafka.common.record.TimestampType"}
+          }
+        }
+      ],
+      "valueOf": [
+        {
+          "name": "valueOf",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "org.apache.kafka.common.record.TimestampType"}
+          }
+        }
+      ],
+      "values": [
+        {
+          "name": "values",
+          "signature": {
+            "noVarArgs": [],
+            "result": {
+              "params": [
+                {
+                  "display": "TimestampType",
+                  "params": [],
+                  "refClazzName": "org.apache.kafka.common.record.TimestampType",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "[Ljava.lang.Object;"
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     "clazzName": {"refClazzName": "org.slf4j.event.Level"},
     "methods": {
       "compareTo": [
@@ -12276,6 +12418,48 @@
         }
       ]
     }
+  },
+  {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.CsvRecord"},
+    "methods": {
+      "asJson": [
+        {
+          "name": "asJson",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "io.circe.Json"}
+          }
+        }
+      ],
+      "firstField": [
+        {
+          "name": "firstField",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "originalDisplay": [
+        {
+          "name": "originalDisplay",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
   },
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.dto.RichObject"},

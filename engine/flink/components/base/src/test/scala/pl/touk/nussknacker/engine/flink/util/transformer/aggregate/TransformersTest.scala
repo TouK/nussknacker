@@ -564,10 +564,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
+    implicit val testRecordTypeInfo: TypeInformation[TestRecord] = TypeInformation.of(classOf[TestRecord])
     Map("start" -> WithCategories(SourceFactory.noParam[TestRecord](EmitWatermarkAfterEachElementCollectionSource
-      .create[TestRecord](input, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord])))))
+      .create[TestRecord](input, _.timestamp, Duration.ofHours(1)))))
   }
-
 
 }
 

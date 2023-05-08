@@ -223,6 +223,12 @@ object typing {
 
     def typedClass(klass: Class[_]): TypedClass = typedClass(klass, None)
 
+    def typedClassOpt[T: ClassTag]: Option[TypedClass] = typedClassOpt(toRuntime[T])
+
+    def typedClassOpt(klass: Class[_]): Option[TypedClass] = Option(Typed(klass)).collect {
+      case cl: TypedClass => cl
+    }
+
     private def toRuntime[T:ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     // parameters - None if you are not in generic aware context, Some - otherwise

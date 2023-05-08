@@ -9,16 +9,15 @@ import cats.instances.map._
 import cats.kernel.{Monoid, Semigroup}
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.LazyLogging
-import org.springframework.expression.Expression
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.{SpelNode, standard}
+import org.springframework.expression.{EvaluationContext, Expression}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
@@ -34,24 +33,28 @@ import pl.touk.nussknacker.engine.spel.Typer._
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
-import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, TypeMethodReference}
-import pl.touk.nussknacker.engine.types.EspTypeUtils
+import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, MethodReferenceTyper, TypeReferenceTyper}
 import pl.touk.nussknacker.engine.util.MathUtils
 
 import scala.annotation.tailrec
 import scala.reflect.runtime._
 import scala.util.{Failure, Success, Try}
 
-private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: CommonSupertypeFinder,
+private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
                           dictTyper: SpelDictTyper, strictMethodsChecking: Boolean,
                           staticMethodInvocationsChecking: Boolean,
                           typeDefinitionSet: TypeDefinitionSet,
                           evaluationContextPreparer: EvaluationContextPreparer,
                           methodExecutionForUnknownAllowed: Boolean,
-                          dynamicPropertyAccessAllowed: Boolean
-                         )(implicit settings: ClassExtractionSettings) extends LazyLogging {
+                          dynamicPropertyAccessAllowed: Boolean) extends LazyLogging {
 
   import ast.SpelAst._
+
+  private lazy val evaluationContext: EvaluationContext = evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty)
+
+  private val methodReferenceTyper = new MethodReferenceTyper(typeDefinitionSet, methodExecutionForUnknownAllowed)
+
+  private lazy val typeReferenceTyper = new TypeReferenceTyper(evaluationContext, typeDefinitionSet)
 
   type NodeTypingResult = ValidatedNel[ExpressionParseError, CollectedTypingResult]
 
@@ -167,9 +170,9 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: ConstructorReference => withTypedChildren { _ =>
         val className = e.getChild(0).toStringAST
-        val classToUse = Try(evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty).getTypeLocator.findType(className)).toOption
+        val classToUse = Try(evaluationContext.getTypeLocator.findType(className)).toOption
         //TODO: validate constructor parameters...
-        val clazz = classToUse.flatMap(kl => typeDefinitionSet.typeDefinitions.find(_.clazzMatch(kl)).map(_.clazzName))
+        val clazz = classToUse.flatMap(kl => typeDefinitionSet.get(kl).map(_.clazzName))
         clazz match {
           case Some(typedClass) => Valid(TypingResultWithContext(typedClass))
           case None => ConstructionOfUnknown(classToUse).invalidNel
@@ -223,7 +226,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         }
 
       case e: MethodReference =>
-        extractMethodReference(e, validationContext, node, current, methodExecutionForUnknownAllowed)
+        extractMethodReference(e, validationContext, node, current)
 
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current, isEquality = true)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current, isEquality = false)
@@ -344,7 +347,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: TypeReference =>
         if (staticMethodInvocationsChecking) {
-          typeDefinitionSet.validateTypeReference(e, evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty))
+          typeReferenceTyper.typeTypeReference(e)
             .map(typedClass => current.toResult(TypedNode(e, TypingResultWithContext(typedClass, staticContext = true))))
         } else {
           valid(Unknown)
@@ -450,19 +453,16 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def extractMethodReference(reference: MethodReference,
                                      validationContext: ValidationContext,
                                      node: SpelNode,
-                                     context: TypingContext,
-                                     disableMethodExecutionForUnknown: Boolean): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
-
+                                     context: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     context.stack match {
       case head :: tail =>
         val isStatic = head.staticContext
         typeChildren(validationContext, node, context.copy(stack = tail)) { typedParams =>
-          TypeMethodReference(
-            reference.getName, 
-            head.typingResult, 
-            typedParams.map(_.typingResult),
+          methodReferenceTyper.typeMethodReference(typer.MethodReference(
+            head.typingResult,
             isStatic,
-            methodExecutionForUnknownAllowed
+            reference.getName,
+            typedParams.map(_.typingResult))
           ).map(TypingResultWithContext(_)) match {
             case Right(x) => x.validNel
             case Left(x) if strictMethodsChecking => x.invalidNel
@@ -481,12 +481,13 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case typedObjectWithData: TypedObjectWithData =>
         extractSingleProperty(e)(typedObjectWithData.objType)
       case typedClass: TypedClass =>
-        propertyTypeBasedOnMethod(e)(typedClass).orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
+        propertyTypeBasedOnMethod(typedClass, e)
+          .orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
           .map(Valid(_))
           .getOrElse(NoPropertyError(t, e.getName).invalidNel)
       case TypedObjectTypingResult(fields, objType, _) =>
         val typeBasedOnFields = fields.get(e.getName)
-        typeBasedOnFields.orElse(propertyTypeBasedOnMethod(e)(objType))
+        typeBasedOnFields.orElse(propertyTypeBasedOnMethod(objType, e))
           .map(Valid(_))
           .getOrElse(NoPropertyError(t, e.getName).invalidNel)
       case dict: TypedDict =>
@@ -494,9 +495,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     }
   }
 
-  private def propertyTypeBasedOnMethod(e: PropertyOrFieldReference)(typedClass: TypedClass) = {
-    val clazzDefinition = EspTypeUtils.clazzDefinition(typedClass.klass)
-    clazzDefinition.getPropertyOrFieldType(e.getName)
+  private def propertyTypeBasedOnMethod(typedClass: TypedClass, e: PropertyOrFieldReference) = {
+    typeDefinitionSet.get(typedClass.klass).flatMap(_.getPropertyOrFieldType(e.getName))
   }
 
   private def extractIterativeType(parent: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
@@ -538,7 +538,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   }
 
   def withDictTyper(dictTyper: SpelDictTyper) =
-    new Typer(classLoader, commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking,
+    new Typer(commonSupertypeFinder, dictTyper, strictMethodsChecking = strictMethodsChecking,
       staticMethodInvocationsChecking, typeDefinitionSet, evaluationContextPreparer, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed)
 
 }

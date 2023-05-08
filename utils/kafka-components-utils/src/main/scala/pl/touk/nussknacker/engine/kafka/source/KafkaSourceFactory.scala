@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.engine.kafka.source
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.MetaData
+import org.apache.kafka.common.record.TimestampType
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.{KafkaDeserializationSchema, KafkaDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory._
-import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 
 import scala.reflect.ClassTag
@@ -54,7 +54,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
   // - validation context indicates that #input is TypedClass(classOf(SampleProduct)), that is used by node compilation and validation
   // - definition extractor provides detailed definition of "pl.touk.nussknacker.engine.management.sample.dto.SampleProduct"
   // See also ProcessDefinitionExtractor.
-  def typesToExtract: List[TypedClass] = List(keyTypingResult, valueTypingResult)
+  override def typesToExtract: List[TypedClass] = List(keyTypingResult, valueTypingResult, Typed.typedClass[TimestampType])
 
   override type State = KafkaSourceFactoryState[K, V]
 
