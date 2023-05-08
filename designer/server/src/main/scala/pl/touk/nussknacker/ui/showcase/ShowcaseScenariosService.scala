@@ -60,7 +60,7 @@ class ShowcaseScenariosService(config: ShowcaseScenariosConfig, processService: 
       active <- processService.getProcesses[Unit](user)
       all = archived ++ active
       maybeCreated <-
-        if (all.map(p => (p.processCategory, p.name)).contains((category, name)))
+        if (!all.map(p => (p.processCategory, p.name)).contains((category, name)))
           processService.createProcess(CreateProcessCommand(ProcessName(name), category, isSubprocess = false)).flatMap {
             case Left(error) => Future.failed(new RuntimeException(s"Failed to create showcase scenario $name: $error"))
             case Right(response) => Future.successful(ProcessIdWithName(response.id, response.processName))
