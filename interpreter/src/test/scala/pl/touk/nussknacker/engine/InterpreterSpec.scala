@@ -392,6 +392,37 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
   }
 
+  test("handle fragment with unknown as input") {
+
+    val process = ScenarioBuilder.streaming("test")
+      .source("source", "transaction-source")
+      .subprocessOneOut("sub1", "subProcess1", "output", "fragmentResult", "param" -> "#input.accountId")
+      .subprocessOneOut("sub2", "subProcess1", "output", "fragmentResult2", "param" -> "#fragmentResult.result")
+      .buildSimpleVariable("result-sink", resultVariable, "'result'")
+      .emptySink("end-sink", "dummySink")
+
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+      List(
+        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[Any])))),
+        canonicalnode.FilterNode(Filter("f1", "#param == '333'"),
+          List(FlatNode(Variable("result", resultVariable, "100")), FlatNode(Sink("deadEnd", SinkRef("dummySink", List())))
+          )
+        ),
+        canonicalnode.FilterNode(Filter("f12", "#param == null"),
+          List(FlatNode(Variable("result2", resultVariable, "'deadEnd2'")), FlatNode(Sink("deadEnd2", SinkRef("dummySink", List())))
+          )
+        )
+        , FlatNode(SubprocessOutputDefinition("out1", "output", List(Field("result", "200"))))), List.empty)
+
+    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
+
+    resolved shouldBe Symbol("valid")
+
+    interpretValidatedProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd2"
+    interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe 100
+  }
+
+
   test("return error when used fragment without input definition") {
     val process = ScenarioBuilder.streaming("test")
       .source("source", "transaction-source")

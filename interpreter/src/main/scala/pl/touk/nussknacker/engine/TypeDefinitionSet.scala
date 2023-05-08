@@ -6,7 +6,7 @@ import org.springframework.expression.{EvaluationContext, EvaluationException}
 import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.TypeReferenceError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownClassError
@@ -23,7 +23,7 @@ object TypeDefinitionSet {
 
 case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
 
-  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
+  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
 
     /**
       * getValue mutates TypeReference but is still safe
@@ -33,7 +33,7 @@ case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
 
     typeReferenceClazz match {
       case Success(typeReferenceClazz) =>
-        typeDefinitions.find(typeDefinition => typeDefinition.clazzName.klass.equals(typeReferenceClazz)) match {
+        typeDefinitions.find(typeDefinition => typeDefinition.clazzMatch(typeReferenceClazz)) match {
           case Some(clazzDefinition: TypeInfos.ClazzDefinition) => Valid(clazzDefinition.clazzName)
           case None => Invalid(NonEmptyList.of(TypeReferenceError(typeReferenceClazz.toString)))
         }

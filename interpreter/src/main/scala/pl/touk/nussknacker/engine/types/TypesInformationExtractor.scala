@@ -36,7 +36,8 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     classOf[java.math.BigDecimal],
     classOf[Number],
     classOf[String],
-    classOf[MetaVariables]
+    classOf[MetaVariables],
+    classOf[Any]
   ) ++
     // Literals for primitive types are wrapped to boxed representations
     primitiveTypes.map(ClassUtils.primitiveToWrapper)).map(Typed(_))
@@ -93,6 +94,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
           definitionsFromMethods(classDefinition)(collectedSoFar, path) + classDefinition
         }
         definitionsForClass ++ definitionsFromGenericParameters(e)(collectedSoFar, path)
+      case Unknown => Set(clazzDefinitionWithLogging(classOf[Any])(path))
       case _ => Set.empty[ClazzDefinition]
     }
   }

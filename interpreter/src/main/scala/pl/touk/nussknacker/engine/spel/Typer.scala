@@ -169,7 +169,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         val className = e.getChild(0).toStringAST
         val classToUse = Try(evaluationContextPreparer.prepareEvaluationContext(Context(""), Map.empty).getTypeLocator.findType(className)).toOption
         //TODO: validate constructor parameters...
-        val clazz = classToUse.flatMap(kl => typeDefinitionSet.typeDefinitions.find(_.clazzName.klass == kl).map(_.clazzName))
+        val clazz = classToUse.flatMap(kl => typeDefinitionSet.typeDefinitions.find(_.clazzMatch(kl)).map(_.clazzName))
         clazz match {
           case Some(typedClass) => Valid(TypingResultWithContext(typedClass))
           case None => ConstructionOfUnknown(classToUse).invalidNel
