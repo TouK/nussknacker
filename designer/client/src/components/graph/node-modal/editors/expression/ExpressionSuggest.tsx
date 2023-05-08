@@ -173,19 +173,19 @@ function ExpressionSuggest(props: Props): JSX.Element {
   const dataResolved = !isEmpty(definitionData)
   const processDefinitionData = dataResolved ? definitionData : {processDefinition: {typesInformation: []}}
   const typesInformation = processDefinitionData.processDefinition.typesInformation
-  const {processingType} = useSelector(getProcessToDisplay)
-  const {codeSuggestionsFromBackend} = useSelector(getFeatureSettings)
+  const {id, processingType} = useSelector(getProcessToDisplay)
+  const {backendCodeSuggestions} = useSelector(getFeatureSettings)
 
   const {value, onValueChange} = inputProps
   const [editorFocused, setEditorFocused] = useState(false)
 
   const expressionSuggester = useMemo(() => {
-    if(codeSuggestionsFromBackend) {
-      return new BackendExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);
+    if(backendCodeSuggestions) {
+      return new BackendExpressionSuggester(id, typesInformation, variableTypes, processingType, HttpService);
     } else {
       return new RegexExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);
     }
-  }, [processingType, typesInformation, variableTypes, codeSuggestionsFromBackend])
+  }, [id, processingType, typesInformation, variableTypes, backendCodeSuggestions])
 
   const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester))
   useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester])

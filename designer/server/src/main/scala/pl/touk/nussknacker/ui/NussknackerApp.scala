@@ -192,7 +192,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener
         ),
-        new NodesResources(futureProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
+        new NodesResources(futureProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation, new ExpressionSuggester),
         new ProcessesExportResources(futureProcessRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, futureProcessRepository, processAuthorizer),
         new ManagementResources(processAuthorizer, futureProcessRepository, featureTogglesConfig.deploymentCommentSettings,
@@ -214,7 +214,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, futureProcessRepository, processAuthorizer)),
         countsReporter
           .map(reporter => new ProcessReportResources(reporter, counter, futureProcessRepository)),
-        Some(new ExpressionSuggesterResources(new ExpressionSuggester)).filter(_ => featureTogglesConfig.codeSuggestionsFromBackend)
       ).flatten
       routes ++ optionalRoutes
     }

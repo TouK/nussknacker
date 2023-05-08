@@ -38,7 +38,7 @@ export type FeaturesSettings = {
   redirectAfterArchive: boolean,
   usageStatisticsReports: UsageStatisticsReports,
   surveySettings: SurveySettings,
-  codeSuggestionsFromBackend: boolean,
+  backendCodeSuggestions: boolean,
 }
 
 export type TestDataSettings = {

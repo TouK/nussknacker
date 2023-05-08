@@ -18,13 +18,10 @@ export interface ExpressionSuggester {
 }
 
 export class BackendExpressionSuggester implements ExpressionSuggester {
-  readonly _variables: Record<string, any>;
 
-  constructor(private _typesInformation: ClassDefinition[], variables, private _processingType: string, private _httpService: typeof HttpService) {
-    this._variables = _.mapKeys(variables, (value, variableName) => {return `#${variableName}`})
-  }
+  constructor(private processId: string, private _typesInformation: ClassDefinition[], private variables: Record<string, any>, private _processingType: string, private _httpService: typeof HttpService) {}
   suggestionsFor(inputValue: string, caretPosition2d: CaretPosition2d): Promise<ExpressionSuggestion[]> {
-    return this._httpService.getExpressionSuggestions(inputValue, caretPosition2d, this._variables).then(response => response.data);
+    return this._httpService.getExpressionSuggestions(this.processId, inputValue, caretPosition2d, this.variables).then(response => response.data);
   }
 }
 
