@@ -41,20 +41,22 @@ object UIProcessObjectsFactory {
 
     val toStaticObjectDefinitionTransformer = new ToStaticObjectDefinitionTransformer(
       ExpressionCompiler.withoutOptimization(modelDataForType),
-      modelDataForType.processWithObjectsDefinition.expressionConfig,
+      modelDataForType.modelDefinition.expressionConfig,
       typeSpecificInitialData.forScenario(_, processingType))
 
     val processDefinition: ProcessDefinition[ObjectDefinition] = {
       // We have to wrap this block with model's class loader because it invokes node compilation under the hood
       modelDataForType.withThisAsContextClassLoader {
-        modelDataForType.processWithObjectsDefinition.transform(toStaticObjectDefinitionTransformer.toStaticObjectDefinition)
+        modelDataForType.modelDefinition.transform(toStaticObjectDefinitionTransformer.toStaticObjectDefinition)
       }
     }
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = extractSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
-    val uiProcessDefinition = createUIProcessDefinition(processDefinition, subprocessInputs, modelDataForType.typeDefinitions.map(prepareClazzDefinition), processCategoryService)
+    val uiClazzDefinitions = modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition)
+    val uiProcessDefinition = createUIProcessDefinition(processDefinition, subprocessInputs,
+      uiClazzDefinitions, processCategoryService)
 
     val customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2)
 

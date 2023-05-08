@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.function.ProcessFunctionInterceptor
@@ -367,7 +368,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
     val model = LocalModelData(ConfigFactory.empty(), new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
-    val processValidator = model.prepareValidatorForCategory(None)
+    val processValidator = ProcessValidator.default(model, None)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
   }
@@ -408,7 +409,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
     val model = LocalModelData(ConfigFactory.empty(), new FullOuterJoinTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
-    val processValidator = model.prepareValidatorForCategory(None)
+    val processValidator = ProcessValidator.default(model, None)
     val validationResult = processValidator.validate(process).result
     assert(validationResult.isInvalid)
   }

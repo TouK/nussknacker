@@ -34,8 +34,8 @@ object ExpressionCompiler {
   def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
     withoutOptimization(modelData.modelClassLoader.classLoader,
       modelData.dictServices.dictRegistry,
-      modelData.processWithObjectsDefinition.expressionConfig,
-      TypeDefinitionSet(modelData.typeDefinitions))
+      modelData.modelDefinition.expressionConfig,
+      modelData.modelDefinitionWithTypes.typeDefinitions)
   }
 
   private def default(classLoader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[_],

@@ -4,11 +4,11 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.definition.ProcessObjectDefinitionExtractor
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.util.test.TestComponentsHolder
@@ -24,8 +24,8 @@ class FlinkProcessCompilerWithTestComponents(creator: ProcessConfigCreator,
   extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
 
 
-  override protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
-    val definitions = super.definitions(processObjectDependencies)
+  override protected def definitions(processObjectDependencies: ProcessObjectDependencies): ModelDefinitionWithTypes = {
+    val definitions = super.definitions(processObjectDependencies).modelDefinition
     val componentsUiConfig = ComponentsUiConfigExtractor.extract(processObjectDependencies.config)
     val testServicesDefs = ObjectWithMethodDef.forMap(testComponentsWithCategories[Service], ProcessObjectDefinitionExtractor.service, componentsUiConfig)
     val testSourceDefs = ObjectWithMethodDef.forMap(testComponentsWithCategories[SourceFactory], ProcessObjectDefinitionExtractor.source, componentsUiConfig)
@@ -37,7 +37,7 @@ class FlinkProcessCompilerWithTestComponents(creator: ProcessConfigCreator,
     //not implemented completely, add additional data
     val customStreamTransformersWithTests = definitions.customStreamTransformers ++ testCustomStreamTransformerDefs
     val definitionsWithTestComponents = definitions.copy(services = servicesWithTests, sinkFactories = sinksWithTests, sourceFactories = sourcesWithTests)
-    definitionsWithTestComponents
+    ModelDefinitionWithTypes(definitionsWithTestComponents)
   }
 
   private def testComponentsWithCategories[T <: Component : ClassTag] = testComponentsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap

@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedGlobalVariable
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{GenericNodeTransformationMethodDef, StandardObjectWithMethodDef}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
@@ -28,6 +29,8 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
     ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator,
       process.ProcessObjectDependencies(ConfigFactory.load(), ObjectNamingProvider(getClass.getClassLoader)))
 
+  private val definitionWithTypes = ModelDefinitionWithTypes(processDefinition)
+
   test("extract additional variables info from annotation") {
     val methodDef = processDefinition.customStreamTransformers("transformer1")._1.asInstanceOf[StandardObjectWithMethodDef].methodDef
     val additionalVars = methodDef.orderedDependencies.definedParameters.head.additionalVariables
@@ -35,14 +38,12 @@ class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with Opti
   }
 
   test("extract type info from classes from additional variables") {
-    val types = ProcessDefinitionExtractor.extractTypes(processDefinition)
-    val classDefinition = types.find(_.clazzName == Typed[OnlyUsedInAdditionalVariable])
-      classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
+    val classDefinition = definitionWithTypes.typeDefinitions.get(classOf[OnlyUsedInAdditionalVariable])
+    classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
   }
 
   test("extract type info from additional classes") {
-    val types = ProcessDefinitionExtractor.extractTypes(processDefinition)
-    val classDefinition = types.find(_.clazzName == Typed[AdditionalClass])
+    val classDefinition = definitionWithTypes.typeDefinitions.get(classOf[AdditionalClass])
     classDefinition.map(_.methods.keys) shouldBe Some(Set("someField", "toString"))
   }
 

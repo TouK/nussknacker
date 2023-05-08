@@ -6,7 +6,6 @@ import cats.implicits._
 import cats.{Monad, Monoid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnsupportedPart
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ProcessCompilationError, ValidationContext}
@@ -19,18 +18,18 @@ import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, ExceptionCountingListener, NodeCountingListener}
 import pl.touk.nussknacker.engine.{InterpretationResult, ModelData, compiledgraph}
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object ScenarioInterpreterFactory {
 
@@ -56,16 +55,13 @@ object ScenarioInterpreterFactory {
     val creator = modelData.configCreator
     val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
-    val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(modelData.processConfig, modelData.modelClassLoader.classLoader)
-
     val allNodes = process.collectAllNodes
     val countingListeners = List(new NodeCountingListener(allNodes.map(_.id)), new ExceptionCountingListener, new EndCountingListener(allNodes))
     val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
 
     val compilerData = ProcessCompilerData.prepare(process,
-      definitions,
-      modelData.subprocessDefinitionExtractor,
+      modelData.modelDefinitionWithTypes,
+      SubprocessComponentDefinitionExtractor(modelData),
       listeners,
       modelData.modelClassLoader.classLoader, resultCollector,
       componentUseCase,

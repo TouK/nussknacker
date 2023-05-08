@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
@@ -33,12 +34,9 @@ trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with Kafk
 
   protected  lazy val creator: ProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator()
 
-  protected lazy val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
-    ProcessDefinitionExtractor.extractObjectWithMethods(creator,
-      process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)))
-
-  protected def extractTypes(definition: ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] =
-    ProcessDefinitionExtractor.extractTypes(definition)
+  protected lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes =
+    ModelDefinitionWithTypes(ProcessDefinitionExtractor.extractObjectWithMethods(creator,
+      process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))))
 
   protected override def beforeAll(): Unit = {
     super.beforeAll()

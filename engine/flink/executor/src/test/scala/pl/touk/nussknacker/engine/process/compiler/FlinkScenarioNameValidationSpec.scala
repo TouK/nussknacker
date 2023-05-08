@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ScenarioNameValidationError
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -23,7 +24,7 @@ class FlinkScenarioNameValidationSpec extends AnyFunSuite with Matchers with Pro
 
     val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(List.empty, ConfigFactory.empty())
     val modelData = LocalModelData(config, creator)
-    val processValidator = modelData.prepareValidatorForCategory(None)
+    val processValidator = ProcessValidator.default(modelData, None)
 
     val validationResult = processValidator
       .validate(processWithInvalidName)
