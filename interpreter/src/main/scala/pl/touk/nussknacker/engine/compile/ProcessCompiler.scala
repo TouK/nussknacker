@@ -253,7 +253,7 @@ object ProcessValidator {
     default(
       categoryOpt.map(category => modelData.modelDefinitionWithTypes.filter(_.availableForCategory(category))).getOrElse(modelData.modelDefinitionWithTypes),
       SubprocessComponentDefinitionExtractor(modelData),
-      modelData.dictServices.dictRegistry,
+      modelData.uiDictServices.dictRegistry,
       modelData.customProcessValidator,
       modelData.modelClassLoader.classLoader)
   }

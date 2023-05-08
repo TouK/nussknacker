@@ -17,7 +17,7 @@ class DictResources(implicit ec: ExecutionContext) extends Directives with FailF
       get {
         parameter("label".as[String]) { labelPattern =>
           complete {
-            modelDataForType.dictServices.dictQueryService.queryEntriesByLabel(dictId, labelPattern)
+            modelDataForType.uiDictServices.dictQueryService.queryEntriesByLabel(dictId, labelPattern)
               .map(ToResponseMarshallable(_))
               .valueOr(error => HttpResponse(status = StatusCodes.NotFound, entity = s"Dictionary: ${error.dictId} not found"))
           }

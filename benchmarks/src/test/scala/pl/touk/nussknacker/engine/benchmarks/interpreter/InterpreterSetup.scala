@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
@@ -58,7 +59,9 @@ class InterpreterSetup[T:ClassTag] {
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
     val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
 
-    ProcessCompilerData.prepare(process, definitionsWithTypes, subprocessDefinitionExtractor, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime, CustomProcessValidatorLoader.emptyCustomProcessValidator)
+    ProcessCompilerData.prepare(process, definitionsWithTypes, new SimpleDictRegistry(Map.empty).toEngineRegistry,
+      subprocessDefinitionExtractor, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector,
+      ComponentUseCase.EngineRuntime, CustomProcessValidatorLoader.emptyCustomProcessValidator)
   }
 
   private def failOnErrors[Y](obj: ValidatedNel[ProcessCompilationError, Y]): Y = obj match {

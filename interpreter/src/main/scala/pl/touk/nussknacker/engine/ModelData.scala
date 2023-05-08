@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.dict.UiDictServices
+import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
@@ -92,9 +92,13 @@ trait ModelData extends BaseModelData with AutoCloseable {
   final def modelDefinition: ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     modelDefinitionWithTypes.modelDefinition
 
-  // We can create dict services here because ModelData is fat object that is created once on start
-  lazy val dictServices: UiDictServices =
-    DictServicesFactoryLoader.justOne(modelClassLoader.classLoader).createUiDictServices(modelDefinition.expressionConfig.dictionaries, processConfig)
+  private lazy val dictServicesFactory: DictServicesFactory = DictServicesFactoryLoader.justOne(modelClassLoader.classLoader)
+
+  lazy val uiDictServices: UiDictServices =
+    dictServicesFactory.createUiDictServices(modelDefinition.expressionConfig.dictionaries, processConfig)
+
+  lazy val engineDictRegistry: EngineDictRegistry =
+    dictServicesFactory.createEngineDictRegistry(modelDefinition.expressionConfig.dictionaries)
 
   def customProcessValidator: CustomProcessValidator = {
     CustomProcessValidatorLoader.loadProcessValidators(modelClassLoader.classLoader, processConfig)
@@ -115,7 +119,7 @@ trait ModelData extends BaseModelData with AutoCloseable {
   override lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
 
   def close(): Unit = {
-    dictServices.close()
+    uiDictServices.close()
   }
 
 }
