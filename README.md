@@ -16,7 +16,7 @@
 <h3 align="center">
   <a href="https://demo.nussknacker.io"><b>Demo</b></a> &bull;
   <a href="https://nussknacker.io/documentation"><b>Documentation</b></a> &bull;
-  <a href="https://nussknacker.io/documentation/docs/installation_configuration_guide/Installation/"><b>Instalation</b></a> &bull;
+  <a href="https://nussknacker.io/documentation/docs/installation/"><b>Installation</b></a> &bull;
   <a href="https://cloud.nussknacker.io"><b>Nu Cloud</b></a>  
 </h3>
 
