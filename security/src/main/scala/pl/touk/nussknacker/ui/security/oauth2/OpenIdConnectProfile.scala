@@ -6,7 +6,7 @@ import java.time.{Instant, LocalDate}
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, getUserUsername}
 
 import scala.concurrent.duration.Deadline
 
@@ -73,7 +73,11 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
     val userRoles =
       profile.roles ++
       getUserRoles(profile.subject.get, configuration)
-    val username = profile.preferredUsername.orElse(profile.nickname).orElse(profile.subject).get
+    val username =
+      getUserUsername(profile.subject.get, configuration)
+        .orElse(profile.preferredUsername)
+        .orElse(profile.nickname)
+        .orElse(profile.subject).get
     AuthenticatedUser(id = profile.subject.get, username = username, userRoles)
   }
 }

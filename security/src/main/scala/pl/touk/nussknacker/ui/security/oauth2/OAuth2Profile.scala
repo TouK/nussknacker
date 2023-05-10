@@ -13,4 +13,10 @@ object OAuth2Profile {
       .find(us => identity.equals(us.identity))
       .map(_.roles ++ defaults)
       .getOrElse(defaults)
+
+  def getUserUsername(identity: String, configuration: OAuth2Configuration): Option[String] =
+    configuration
+      .users
+      .find(us => identity.equals(us.identity))
+      .flatMap(_.username)
 }
