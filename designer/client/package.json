@@ -33,7 +33,8 @@
     "test:e2e:linux:update": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client -e CYPRESS_SNAPSHOT_UPDATE=true cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3000",
     "coverage": "npx merge-cypress-jest-coverage",
     "commit": "lint-staged",
-    "make-types": "make-federated-types --outputDir ./.federated-types"
+    "make-types": "make-federated-types --outputDir ./.federated-types",
+    "prepare": "cd ../.. && husky install"
   },
   "dependencies": {
     "@emotion/css": "11.9.0",
@@ -179,8 +180,8 @@
     "@types/uuid": "8.3.4",
     "@types/webpack-dev-server": "4.7.2",
     "@types/webpack-env": "1.16.3",
-    "@typescript-eslint/eslint-plugin": "5.40.0",
-    "@typescript-eslint/parser": "5.40.0",
+    "@typescript-eslint/eslint-plugin": "5.59.5",
+    "@typescript-eslint/parser": "5.59.5",
     "@vue/preload-webpack-plugin": "2.0.0",
     "@wojtekmaj/enzyme-adapter-react-17": "0.6.6",
     "autoprefixer": "10.4.2",
@@ -195,6 +196,7 @@
     "cypress-recurse": "1.26.0",
     "enzyme": "3.11.0",
     "eslint": "8.25.0",
+    "eslint-config-prettier": "8.8.0",
     "eslint-plugin-i18next": "6.0.0-4",
     "eslint-plugin-import": "2.26.0",
     "eslint-plugin-react": "7.31.10",
@@ -207,7 +209,7 @@
     "html-webpack-harddisk-plugin": "2.0.0",
     "html-webpack-plugin": "5.5.0",
     "http-proxy-middleware": "2.0.2",
-    "husky": "8.0.2",
+    "husky": "8.0.3",
     "i18next-intervalplural-postprocessor": "3.0.0",
     "i18next-parser": "5.4.0",
     "jasmine-core": "3.9.0",
@@ -226,6 +228,7 @@
     "postcss-import": "14.1.0",
     "postcss-loader": "6.2.1",
     "postcss-move-props-to-bg-image-query": "4.0.0",
+    "prettier": "2.8.8",
     "process": "0.11.10",
     "querystring": "0.2.1",
     "raw-loader": "4.0.2",
@@ -256,14 +259,9 @@
   },
   "@comment lint-staged": "We add svgo preprocessing as a pre-commit hook to avoid surprise that someone based on global style classes from svgo that won't be available anymore after preprocessing",
   "lint-staged": {
-    "**/*.(js|ts)?(x)": [
-      "npm run lint -- --rule 'i18next/no-literal-string: warn' --fix",
-      "git add"
-    ],
-    "**/*.svg": [
-      "npm run svgo",
-      "git add"
-    ]
+    "*.svg": "npm run svgo",
+    "*.{js,jsx,ts,tsx}": "eslint --cache --fix --rule 'i18next/no-literal-string: warn'",
+    "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
   },
   "nyc": {
     "report-dir": "cypress-coverage",

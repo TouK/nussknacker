@@ -15,300 +15,319 @@ import postcss_move_props_to_bg_image_query from "postcss-move-props-to-bg-image
 import { withModuleFederationPlugins } from "./configs/withModuleFederationPlugins";
 import { hash, version } from "./version";
 import "webpack-dev-server";
+import { dependencies } from "./package.json";
 
-const isProd = process.env.NODE_ENV === "production"
-const {ModuleFederationPlugin} = webpack.container
+const isProd = process.env.NODE_ENV === "production";
 const entry = {
-  main: path.resolve(__dirname, "./src/init.js"),
-}
+    main: path.resolve(__dirname, "./src/init.js"),
+};
 
 const cssPreLoaders = [
-  {
-    loader: "postcss-loader",
-    options: {
-      postcssOptions: {
-        plugins: [
-          autoprefixer,
-          postcss_move_props_to_bg_image_query,
-        ],
-      },
+    {
+        loader: "postcss-loader",
+        options: {
+            postcssOptions: {
+                plugins: [autoprefixer, postcss_move_props_to_bg_image_query],
+            },
+        },
     },
-  },
-]
+];
 
 const fileLoader = {
-  loader: "file-loader",
-  options: {
-    name: "assets/images/[name][hash].[ext]",
-  },
-}
-const outputPath = path.join(process.cwd(), "dist")
+    loader: "file-loader",
+    options: {
+        name: "assets/images/[name][hash].[ext]",
+    },
+};
+const outputPath = path.join(process.cwd(), "dist");
 
-const mode = isProd ? "production" : "development"
+const mode = isProd ? "production" : "development";
 const config: Configuration = {
-  mode: mode,
-  performance: {
-    maxEntrypointSize: 3000000,
-    maxAssetSize: 3000000,
-  },
-  resolve: {
-    extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
-    fallback: {
-      path: require.resolve("path-browserify"), //reason: react-markdown
-      crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
-      stream: require.resolve("stream-browserify"), //reason: jsonwebtoken
-      fs: false,
+    mode: mode,
+    performance: {
+        maxEntrypointSize: 3000000,
+        maxAssetSize: 3000000,
     },
-  },
-  entry: entry,
-  output: {
-    path: outputPath,
-    filename: isProd ? "[contenthash].js" : "[name].js",
-  },
-  devtool: isProd ? "hidden-source-map" : "eval-source-map",
-  watchOptions: {
-    ignored: /^(?!.*\/src\/).*$/,
-  },
-  devServer: {
-    client: {
-      overlay: false,
+    resolve: {
+        extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
+        fallback: {
+            path: require.resolve("path-browserify"), //reason: react-markdown
+            crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
+            stream: require.resolve("stream-browserify"), //reason: jsonwebtoken
+            fs: false,
+        },
     },
-    historyApiFallback: {
-      index: "/main.html",
-      disableDotRule: true,
+    entry: entry,
+    output: {
+        path: outputPath,
+        filename: isProd ? "[contenthash].js" : "[name].js",
     },
-    hot: true,
-    host: "0.0.0.0",
-    allowedHosts: "all",
-    headers: {
-      "Access-Control-Allow-Credentials": "true",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-      "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization",
+    devtool: isProd ? "hidden-source-map" : "eval-source-map",
+    watchOptions: {
+        ignored: /^(?!.*\/src\/).*$/,
     },
-    port: 3000,
-    proxy: {
-      "/api": {
-        target: process.env.BACKEND_DOMAIN,
-        changeOrigin: true,
-        onProxyRes: (proxyRes, req) => {
-          if (req.headers?.origin) {
-            proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin
-          }
+    devServer: {
+        client: {
+            overlay: false,
         },
-      },
-      "/grafana": {
-        target: process.env.BACKEND_DOMAIN,
-        changeOrigin: true,
-        onProxyRes: (proxyRes, req) => {
-          if (req.headers?.origin) {
-            proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin
-          }
+        historyApiFallback: {
+            index: "/main.html",
+            disableDotRule: true,
         },
-      },
-      "/be-static": {
-        target: process.env.BACKEND_DOMAIN,
-        changeOrigin: true,
-        onProxyRes: (proxyRes, req) => {
-          if (req.headers?.origin) {
-            proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin
-          }
+        hot: true,
+        host: "0.0.0.0",
+        allowedHosts: "all",
+        headers: {
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization",
         },
-        pathRewrite: {
-          "^/be-static": "/static",
-        },
-      },
-      "/submodules/components": {
-        target: "http://localhost:5001",
-        changeOrigin: true,
-        pathRewrite: {
-          "^/submodules/components": "/",
-        },
-      },
-      "/submodules/legacy_scenarios": {
-        target: "http://localhost:5002",
-        changeOrigin: true,
-        pathRewrite: {
-          "^/submodules/legacy_scenarios": "/",
-        },
-      },
-      "/submodules": {
-        target: process.env.BACKEND_DOMAIN,
-        changeOrigin: true,
-      },
-      "/static": {
-        target: "http://localhost:3000",
-        changeOrigin: true,
-        pathRewrite: {
-          "^/static": "/",
-        },
-      },
-    },
-    static: {
-      directory: outputPath,
-      watch: {
-        ignored: [
-          "**/*.tgz",
-          "**/*.txt",
-          "**/*.json",
-          "**/*.js.map",
-        ],
-      },
-    },
-  },
-  plugins: [
-    new MomentLocalesPlugin({
-      localesToKeep: ["en"],
-    }),
-    new HtmlWebpackPlugin({
-      title: "Nussknacker",
-      chunks: ["runtime", "main"],
-      //see ./config.ts
-      base: isProd ? "__publicPath__/static/" : "/",
-      filename: "main.html",
-      favicon: "src/assets/img/favicon.svg",
-    }),
-    new HtmlWebpackHarddiskPlugin(),
-    new CopyPlugin({
-      patterns: [
-        {from: "translations", to: "assets/locales", noErrorOnMissing: true},
-        {from: "assets/img/icons/license", to: "license", noErrorOnMissing: true},
-      ],
-    }),
-    new PreloadWebpackPlugin({
-      rel: "preload",
-      as: "font",
-      include: "allAssets",
-      fileWhitelist: [/\.(woff2?|eot|ttf|otf)(\?.*)?$/i],
-    }),
-    new PreloadWebpackPlugin({
-      rel: "preload",
-      as: "image",
-      include: "allAssets",
-      fileWhitelist: [/\.(svg)(\?.*)?$/i],
-    }),
-    new webpack.ProvidePlugin({
-      process: "process/browser",
-    }),
-    new webpack.DefinePlugin({
-      __DEV__: !isProd,
-      "process.version": JSON.stringify(process.version), //reason: jsonwebtoken
-      "process.browser": true, //reason: jsonwebtoken
-      "process.env": {
-        NODE_ENV: JSON.stringify(mode),
-      },
-      __BUILD_VERSION__: JSON.stringify(version),
-      __BUILD_HASH__: JSON.stringify(hash),
-    }),
-    new ForkTsCheckerWebpackPlugin({
-      typescript: {
-        memoryLimit: 5000,
-      },
-    }),
-    isProd ? null : new ReactRefreshWebpackPlugin({overlay: false}),
-    new webpack.ProgressPlugin(progressBar),
-  ].filter(Boolean),
-  module: {
-    rules: [
-      {
-        test: /\.html$/,
-        use: {
-          loader: "html-loader",
-          options: {
-            minimize: false,
-          },
-        },
-      },
-      {
-        test: /\.[tj]sx?$/,
-        exclude: /node_modules/,
-        use: ["babel-loader"],
-      },
-      {
-        test: /\.(css|styl|less)?$/,
-        use: [
-          "style-loader",
-          {
-            loader: "css-loader",
-            options: {
-              modules: {
-                mode: "global",
-                exportGlobals: true,
-                localIdentName: "[name]--[local]--[hash:base64:5]",
-                exportLocalsConvention: "camelCase",
-              },
-            },
-          },
-        ],
-      },
-      {
-        test: /\.css?$/,
-        enforce: "pre",
-        exclude: /node_modules/,
-        use: cssPreLoaders,
-      },
-      {
-        test: /\.styl$/,
-        enforce: "pre",
-        exclude: /node_modules/,
-        use: [
-          ...cssPreLoaders,
-          {
-            loader: "stylus-loader",
-            options: {
-              stylusOptions: {
-                use: [bootstrap()],
-              },
-            },
-          },
-        ],
-      },
-      {
-        test: /\.less$/,
-        enforce: "pre",
-        exclude: /node_modules/,
-        use: [...cssPreLoaders, "less-loader"],
-      },
-      {
-        test: /\.(eot|ttf|woff|woff2)$/,
-        use: [fileLoader],
-      },
-      {
-        test: /\.(png|jpg)$/,
-        use: [fileLoader],
-      },
-      {
-        test: /\.svg$/,
-        enforce: "pre",
-        exclude: /font/,
-        use: [
-          "svg-transform-loader",
-          "svgo-loader",
-        ],
-      },
-
-      {
-        test: /\.svg$/,
-        oneOf: [
-          {
-            issuer: /\.[tj]sx?$/,
-            use: [
-              "babel-loader",
-              {
-                loader: "@svgr/webpack",
-                options: {
-                  svgo: true,
+        port: 3000,
+        proxy: {
+            "/api": {
+                target: process.env.BACKEND_DOMAIN,
+                changeOrigin: true,
+                onProxyRes: (proxyRes, req) => {
+                    if (req.headers?.origin) {
+                        proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
+                    }
                 },
-              },
-              fileLoader,
+            },
+            "/grafana": {
+                target: process.env.BACKEND_DOMAIN,
+                changeOrigin: true,
+                onProxyRes: (proxyRes, req) => {
+                    if (req.headers?.origin) {
+                        proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
+                    }
+                },
+            },
+            "/be-static": {
+                target: process.env.BACKEND_DOMAIN,
+                changeOrigin: true,
+                onProxyRes: (proxyRes, req) => {
+                    if (req.headers?.origin) {
+                        proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
+                    }
+                },
+                pathRewrite: {
+                    "^/be-static": "/static",
+                },
+            },
+            "/submodules/components": {
+                target: "http://localhost:5001",
+                changeOrigin: true,
+                pathRewrite: {
+                    "^/submodules/components": "/",
+                },
+            },
+            "/submodules/legacy_scenarios": {
+                target: "http://localhost:5002",
+                changeOrigin: true,
+                pathRewrite: {
+                    "^/submodules/legacy_scenarios": "/",
+                },
+            },
+            "/submodules": {
+                target: process.env.BACKEND_DOMAIN,
+                changeOrigin: true,
+            },
+            "/static": {
+                target: "http://localhost:3000",
+                changeOrigin: true,
+                pathRewrite: {
+                    "^/static": "/",
+                },
+            },
+        },
+        static: {
+            directory: outputPath,
+            watch: {
+                ignored: ["**/*.tgz", "**/*.txt", "**/*.json", "**/*.js.map"],
+            },
+        },
+    },
+    plugins: [
+        new MomentLocalesPlugin({
+            localesToKeep: ["en"],
+        }),
+        new HtmlWebpackPlugin({
+            title: "Nussknacker",
+            chunks: ["runtime", "main"],
+            //see ./config.ts
+            base: isProd ? "__publicPath__/static/" : "/",
+            filename: "main.html",
+            favicon: "src/assets/img/favicon.svg",
+        }),
+        new HtmlWebpackHarddiskPlugin(),
+        new CopyPlugin({
+            patterns: [
+                { from: "translations", to: "assets/locales", noErrorOnMissing: true },
+                { from: "assets/img/icons/license", to: "license", noErrorOnMissing: true },
             ],
-          },
-          {
-            use: [fileLoader],
-          },
-        ],
-      },
-    ],
-  },
-}
+        }),
+        new PreloadWebpackPlugin({
+            rel: "preload",
+            as: "font",
+            include: "allAssets",
+            fileWhitelist: [/\.(woff2?|eot|ttf|otf)(\?.*)?$/i],
+        }),
+        new PreloadWebpackPlugin({
+            rel: "preload",
+            as: "image",
+            include: "allAssets",
+            fileWhitelist: [/\.(svg)(\?.*)?$/i],
+        }),
+        new webpack.ProvidePlugin({
+            process: "process/browser",
+        }),
+        new webpack.DefinePlugin({
+            __DEV__: !isProd,
+            "process.version": JSON.stringify(process.version), //reason: jsonwebtoken
+            "process.browser": true, //reason: jsonwebtoken
+            "process.env": {
+                NODE_ENV: JSON.stringify(mode),
+            },
+            __BUILD_VERSION__: JSON.stringify(version),
+            __BUILD_HASH__: JSON.stringify(hash),
+        }),
+        new ForkTsCheckerWebpackPlugin({
+            typescript: {
+                memoryLimit: 5000,
+            },
+        }),
+        isProd ? null : new ReactRefreshWebpackPlugin({ overlay: false }),
+        new webpack.ProgressPlugin(progressBar),
+    ].filter(Boolean),
+    module: {
+        rules: [
+            {
+                test: /\.html$/,
+                use: {
+                    loader: "html-loader",
+                    options: {
+                        minimize: false,
+                    },
+                },
+            },
+            {
+                test: /\.[tj]sx?$/,
+                exclude: /node_modules/,
+                use: ["babel-loader"],
+            },
+            {
+                test: /\.(css|styl|less)?$/,
+                use: [
+                    "style-loader",
+                    {
+                        loader: "css-loader",
+                        options: {
+                            modules: {
+                                mode: "global",
+                                exportGlobals: true,
+                                localIdentName: "[name]--[local]--[hash:base64:5]",
+                                exportLocalsConvention: "camelCase",
+                            },
+                        },
+                    },
+                ],
+            },
+            {
+                test: /\.css?$/,
+                enforce: "pre",
+                exclude: /node_modules/,
+                use: cssPreLoaders,
+            },
+            {
+                test: /\.styl$/,
+                enforce: "pre",
+                exclude: /node_modules/,
+                use: [
+                    ...cssPreLoaders,
+                    {
+                        loader: "stylus-loader",
+                        options: {
+                            stylusOptions: {
+                                use: [bootstrap()],
+                            },
+                        },
+                    },
+                ],
+            },
+            {
+                test: /\.less$/,
+                enforce: "pre",
+                exclude: /node_modules/,
+                use: [...cssPreLoaders, "less-loader"],
+            },
+            {
+                test: /\.(eot|ttf|woff|woff2)$/,
+                use: [fileLoader],
+            },
+            {
+                test: /\.(png|jpg)$/,
+                use: [fileLoader],
+            },
+            {
+                test: /\.svg$/,
+                enforce: "pre",
+                exclude: /font/,
+                use: ["svg-transform-loader", "svgo-loader"],
+            },
 
-module.exports = withModuleFederationPlugins(config)
+            {
+                test: /\.svg$/,
+                oneOf: [
+                    {
+                        issuer: /\.[tj]sx?$/,
+                        use: [
+                            "babel-loader",
+                            {
+                                loader: "@svgr/webpack",
+                                options: {
+                                    svgo: true,
+                                },
+                            },
+                            fileLoader,
+                        ],
+                    },
+                    {
+                        use: [fileLoader],
+                    },
+                ],
+            },
+        ],
+    },
+};
+
+module.exports = withModuleFederationPlugins(config, {
+    shared: {
+        ...dependencies,
+        "@touk/window-manager": {
+            singleton: true,
+            requiredVersion: dependencies["@touk/window-manager"],
+        },
+        "@emotion/react": {
+            singleton: true,
+            requiredVersion: dependencies["@emotion/react"],
+        },
+        "@mui/private-theming/ThemeProvider": {
+            singleton: true,
+            requiredVersion: dependencies["@mui/private-theming/ThemeProvider"],
+        },
+        "@mui/private-theming/useTheme": {
+            singleton: true,
+            requiredVersion: dependencies["@mui/private-theming/useTheme"],
+        },
+        react: {
+            eager: true,
+            singleton: true,
+            requiredVersion: dependencies["react"],
+        },
+        "react-dom": {
+            eager: true,
+            singleton: true,
+            requiredVersion: dependencies["react-dom"],
+        },
+    },
+});
