@@ -29,6 +29,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
                                            jwksUri: Option[URI] = None,
                                            rolesClaims: Option[List[String]] = None,
                                            tokenCookie: Option[TokenCookieConfig] = None,
+                                           accessTokenIsJwt: Boolean = true,
                                           ) extends URIExtensions {
 
   lazy val oAuth2Configuration: OAuth2Configuration = OAuth2Configuration(
@@ -45,7 +46,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
       .getOrElse(throw new NoSuchElementException("A tokenEndpoint must provided or OIDC Discovery available")),
     redirectUri = redirectUri,
     jwt = Some(new JwtConfiguration {
-      def accessTokenIsJwt: Boolean = OidcAuthenticationConfiguration.this.audience.isDefined
+      def accessTokenIsJwt: Boolean = OidcAuthenticationConfiguration.this.accessTokenIsJwt
       def userinfoFromIdToken: Boolean = true
       def audience: Option[String] = OidcAuthenticationConfiguration.this.audience
       def authServerPublicKey: Option[PublicKey] = None

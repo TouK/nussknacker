@@ -101,6 +101,17 @@
       "nodeReRegistrationTimeout": -1,
       "protocolMappers": [
         {
+          "name":"audience",
+          "protocol":"openid-connect",
+          "protocolMapper":"oidc-audience-mapper",
+          "consentRequired":false,
+          "config":{
+            "included.client.audience":"test-client",
+            "id.token.claim":"false",
+            "access.token.claim":"true"
+          }
+        },
+        {
           "name": "name",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-full-name-mapper",

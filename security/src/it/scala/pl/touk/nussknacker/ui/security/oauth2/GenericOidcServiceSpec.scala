@@ -30,29 +30,28 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 
 
   test("Basic OpenIDConnect flow") {
-
     val config = oauth2Conf
-    // TODO: Change to JWT then token caching will not be required.
-    //  However, with the current configuration KeyCloak access tokens seem not to contain the AUD claim.
-    val open = new CachingOAuth2Service(
-      new UserMappingOAuth2Service(
-        new OidcService(config),
-        (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, config.oAuth2Configuration)
-      ),
-      config.oAuth2Configuration
+    val oidcService = new UserMappingOAuth2Service(
+      new OidcService(config),
+      (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, config.oAuth2Configuration)
     )
 
-    //we emulate FE part
-    val loginResult = keyCloakLogin(config.oAuth2Configuration)
-    val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
+    val oidcServiceWithCache = new CachingOAuth2Service(oidcService, config.oAuth2Configuration)
 
-    val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.get.toString).futureValue
-    userData.username shouldBe "user1"
-    userData.roles should contain ("ARole")
+    List(oidcService, oidcServiceWithCache).foreach { open =>
+      //we emulate FE part
+      val loginResult = keyCloakLogin(config.oAuth2Configuration)
+      val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
 
-    val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
-    profile._1.username shouldBe "user1"
-    profile._1.roles should contain ("ARole")
+      val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.get.toString).futureValue
+      userData.username shouldBe "user1"
+      userData.roles should contain("ARole")
+
+      val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
+      profile._1.username shouldBe "user1"
+      profile._1.roles should contain("ARole")
+
+    }
   }
 
   //We emulate keycloak login form :)
