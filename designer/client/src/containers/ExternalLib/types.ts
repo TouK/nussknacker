@@ -1,13 +1,5 @@
 import {ComponentType} from "react"
 
-declare global {
-  let __webpack_init_sharing__: (name: string) => unknown
-  let __webpack_share_scopes__: {
-    [name: string]: unknown,
-    default: unknown,
-  }
-}
-
 export interface Container {
   init(scope: unknown): Promise<unknown>,
 

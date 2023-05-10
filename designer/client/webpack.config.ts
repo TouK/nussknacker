@@ -1,21 +1,22 @@
 /* eslint-disable i18next/no-literal-string */
-const progressBar = require("./progressBar.js")
-const bootstrap = require("bootstrap")
-const path = require("path")
-const webpack = require("webpack")
-const HtmlWebpackPlugin = require("html-webpack-plugin")
-const HtmlWebpackHarddiskPlugin = require("html-webpack-harddisk-plugin")
-const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
-const federationConfig = require("./federation.config.json")
-const MomentLocalesPlugin = require("moment-locales-webpack-plugin")
-const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin")
-const PreloadWebpackPlugin = require("@vue/preload-webpack-plugin")
-const WebpackShellPluginNext = require("webpack-shell-plugin-next")
-const CopyPlugin = require("copy-webpack-plugin")
+import progressBar from "./progressBar.js";
+import bootstrap from "bootstrap";
+import path from "path";
+import webpack, { Configuration } from "webpack";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import HtmlWebpackHarddiskPlugin from "html-webpack-harddisk-plugin";
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
+import MomentLocalesPlugin from "moment-locales-webpack-plugin";
+import ReactRefreshWebpackPlugin from "@pmmmwh/react-refresh-webpack-plugin";
+import PreloadWebpackPlugin from "@vue/preload-webpack-plugin";
+import CopyPlugin from "copy-webpack-plugin";
+import autoprefixer from "autoprefixer";
+import postcss_move_props_to_bg_image_query from "postcss-move-props-to-bg-image-query";
+import { withModuleFederationPlugins } from "./configs/withModuleFederationPlugins";
+import { hash, version } from "./version";
+import "webpack-dev-server";
 
-const NODE_ENV = process.env.NODE_ENV || "development"
-const isProd = NODE_ENV === "production"
-
+const isProd = process.env.NODE_ENV === "production"
 const {ModuleFederationPlugin} = webpack.container
 const entry = {
   main: path.resolve(__dirname, "./src/init.js"),
@@ -27,8 +28,8 @@ const cssPreLoaders = [
     options: {
       postcssOptions: {
         plugins: [
-          require("autoprefixer"),
-          require("postcss-move-props-to-bg-image-query"),
+          autoprefixer,
+          postcss_move_props_to_bg_image_query,
         ],
       },
     },
@@ -42,10 +43,10 @@ const fileLoader = {
   },
 }
 const outputPath = path.join(process.cwd(), "dist")
-const {dependencies} = require("./package.json")
 
-module.exports = {
-  mode: NODE_ENV,
+const mode = isProd ? "production" : "development"
+const config: Configuration = {
+  mode: mode,
   performance: {
     maxEntrypointSize: 3000000,
     maxAssetSize: 3000000,
@@ -143,11 +144,6 @@ module.exports = {
       },
     },
     static: {
-      staticOptions: {
-        contentBase: [
-          path.join(__dirname, "dist"),
-        ],
-      },
       directory: outputPath,
       watch: {
         ignored: [
@@ -163,41 +159,6 @@ module.exports = {
     new MomentLocalesPlugin({
       localesToKeep: ["en"],
     }),
-    new ModuleFederationPlugin({
-      filename: "remoteEntry.js",
-      // `federation.config.json` is used by @pixability-ui/federated-types,
-      // it's also good method to connect all places where `name` is needed.
-      ...federationConfig,
-      shared: {
-        ...dependencies,
-        "@touk/window-manager": {
-          singleton: true,
-          requiredVersion: dependencies["@touk/window-manager"],
-        },
-        "@emotion/react": {
-          singleton: true,
-          requiredVersion: dependencies["@emotion/react"],
-        },
-        "@mui/private-theming/ThemeProvider": {
-          singleton: true,
-          requiredVersion: dependencies["@mui/private-theming/ThemeProvider"],
-        },
-        "@mui/private-theming/useTheme": {
-          singleton: true,
-          requiredVersion: dependencies["@mui/private-theming/useTheme"],
-        },
-        react: {
-          eager: true,
-          singleton: true,
-          requiredVersion: dependencies["react"],
-        },
-        "react-dom": {
-          eager: true,
-          singleton: true,
-          requiredVersion: dependencies["react-dom"],
-        },
-      },
-    }),
     new HtmlWebpackPlugin({
       title: "Nussknacker",
       chunks: ["runtime", "main"],
@@ -207,19 +168,6 @@ module.exports = {
       favicon: "src/assets/img/favicon.svg",
     }),
     new HtmlWebpackHarddiskPlugin(),
-    new WebpackShellPluginNext({
-      swallowError: !isProd,
-      onAfterDone: {
-        scripts: [
-          `rm -rf .federated-types/*`,
-          `npx make-federated-types --outputDir .federated-types/${federationConfig.name}`,
-          // this .tgz with types for exposed modules lands in public root
-          // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
-          `mkdir -p "${outputPath}"`,
-          `tar -C .federated-types/${federationConfig.name} -czf "${path.join(outputPath, `${federationConfig.name}-dts.tgz`)}" .`,
-        ],
-      },
-    }),
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales", noErrorOnMissing: true},
@@ -246,10 +194,10 @@ module.exports = {
       "process.version": JSON.stringify(process.version), //reason: jsonwebtoken
       "process.browser": true, //reason: jsonwebtoken
       "process.env": {
-        NODE_ENV: JSON.stringify(NODE_ENV),
+        NODE_ENV: JSON.stringify(mode),
       },
-      __BUILD_VERSION__: JSON.stringify(require("./version").version),
-      __BUILD_HASH__: JSON.stringify(require("./version").hash),
+      __BUILD_VERSION__: JSON.stringify(version),
+      __BUILD_HASH__: JSON.stringify(hash),
     }),
     new ForkTsCheckerWebpackPlugin({
       typescript: {
@@ -362,3 +310,5 @@ module.exports = {
     ],
   },
 }
+
+module.exports = withModuleFederationPlugins(config)

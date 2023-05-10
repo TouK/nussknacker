@@ -25,12 +25,21 @@
           "classnameTransform": "camelCase"
         }
       }
-    ]
+    ],
+    "paths": {
+      "*": ["*", "types/@remote/*", "types/*"]
+    },
+    "typeRoots": ["node_modules/@types", "types/@remote", "types"]
   },
   "exclude": [
     "node_modules",
     ".federated-types",
-    "flow_typed",
     "cypress"
-  ]
+  ],
+  "ts-node": {
+    "compilerOptions": {
+      "target": "es5",
+      "module": "CommonJS"
+    }
+  }
 }
