@@ -41,7 +41,7 @@ object ProcessCompilerData {
     val dictRegistry = dictRegistryFactory.createEngineDictRegistry(definitions.expressionConfig.dictionaries)
 
     val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
-    val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
+    val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, definitions.expressionConfig, typeDefinitionSet)
     //for testing environment it's important to take classloader from user jar
     val nodeCompiler = new NodeCompiler(definitions, subprocessDefinitionExtractor, expressionCompiler, userCodeClassLoader, resultsCollector, componentUseCase)
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)

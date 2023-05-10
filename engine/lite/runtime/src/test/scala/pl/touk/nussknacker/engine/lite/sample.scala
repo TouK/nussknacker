@@ -179,7 +179,7 @@ object sample {
 
   object SimpleSourceWithParameterTestingFactory extends SourceFactory {
 
-    @MethodToInvoke
+    @MethodToInvoke(returnType = classOf[SampleInputWithListAndMap])
     def create(): Source = new LiteSource[SampleInputWithListAndMap] with TestWithParametersSupport[SampleInputWithListAndMap] with ReturningType {
       override def returnType: typing.TypingResult = Typed[SampleInputWithListAndMap]
       override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): SampleInputWithListAndMap => ValidatedNel[ErrorType, Context] =

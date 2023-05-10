@@ -4,12 +4,14 @@ import cats.data.Validated
 import cats.data.Validated.Valid
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, Parameter, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
@@ -25,14 +27,17 @@ import scala.reflect.ClassTag
   * This is universal kafka source - it will handle both avro and json
   * TODO: Move it to some other module when json schema handling will be available
   */
-class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                            val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
-                                                            val processObjectDependencies: ProcessObjectDependencies,
-                                                            protected val implProvider: KafkaSourceImplFactory[K, V])
+class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](val schemaRegistryClientFactory: SchemaRegistryClientFactory,
+                                                                                    val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
+                                                                                    val processObjectDependencies: ProcessObjectDependencies,
+                                                                                    protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory
-    with KafkaUniversalComponentTransformer[Source] {
+    with KafkaUniversalComponentTransformer[Source]
+    with WithExplicitTypesToExtract {
 
   override type State = UniversalKafkaSourceFactoryState[K, V]
+
+  override def typesToExtract: List[TypedClass] = Typed.typedClassOpt[K].toList ::: Typed.typedClassOpt[V].toList ::: Typed.typedClass[TimestampType] :: Nil
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: NodeId): NodeTransformationDefinition =

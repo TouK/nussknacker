@@ -2,32 +2,20 @@ package pl.touk.nussknacker.engine.spel.typer
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, OverloadedFunctionError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.IllegalInvocationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownMethodError
-import pl.touk.nussknacker.engine.types.EspTypeUtils
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, OverloadedFunctionError}
 
-object TypeMethodReference {
-  def apply(methodName: String,
-            invocationTarget: TypingResult,
-            params: List[TypingResult],
-            isStatic: Boolean,
-            methodExecutionForUnknownAllowed: Boolean)
-           (implicit settings: ClassExtractionSettings): Either[ExpressionParseError, TypingResult] =
-    new TypeMethodReference(methodName, invocationTarget, params, isStatic, methodExecutionForUnknownAllowed).call
-}
+class MethodReferenceTyper(typeDefinitionSet: TypeDefinitionSet,
+                           methodExecutionForUnknownAllowed: Boolean) {
 
-class TypeMethodReference(methodName: String,
-                          invocationTarget: TypingResult,
-                          calledParams: List[TypingResult],
-                          isStatic: Boolean,
-                          methodExecutionForUnknownAllowed: Boolean) {
-  def call(implicit settings: ClassExtractionSettings): Either[ExpressionParseError, TypingResult] =
-    invocationTarget match {
+  def typeMethodReference(reference: MethodReference): Either[ExpressionParseError, TypingResult] = {
+    implicit val implicitReference: MethodReference = reference
+    reference.invocationTarget match {
       case tc: SingleTypingResult =>
         typeFromClazzDefinitions(extractClazzDefinitions(Set(tc)))
       case TypedUnion(nestedTypes) =>
@@ -37,14 +25,14 @@ class TypeMethodReference(methodName: String,
       case Unknown =>
         if(methodExecutionForUnknownAllowed) Right(Unknown) else Left(IllegalInvocationError(Unknown))
     }
+  }
 
-  private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult])
-                                     (implicit settings: ClassExtractionSettings): List[ClazzDefinition] =
-    typedClasses.map(typedClass =>
-      EspTypeUtils.clazzDefinition(typedClass.objType.klass)
-    ).toList
+  private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult]): List[ClazzDefinition] = {
+    typedClasses.flatMap(tc => typeDefinitionSet.get(tc.objType.klass)).toList
+  }
 
-  private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition]): Either[ExpressionParseError, TypingResult] = {
+  private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition])
+                                      (implicit reference: MethodReference): Either[ExpressionParseError, TypingResult] = {
     val validatedType = for {
       nonEmptyClassDefinitions <- validateClassDefinitionsNonEmpty(clazzDefinitions)
       nonEmptyMethods <- validateMethodsNonEmpty(nonEmptyClassDefinitions)
@@ -61,25 +49,27 @@ class TypeMethodReference(methodName: String,
   private def validateClassDefinitionsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[ExpressionParseError], List[ClazzDefinition]] =
     if (clazzDefinitions.isEmpty) Left(None) else Right(clazzDefinitions)
 
-  private def validateMethodsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[ExpressionParseError], List[MethodInfo]] = {
+  private def validateMethodsNonEmpty(clazzDefinitions: List[ClazzDefinition])
+                                     (implicit reference: MethodReference): Either[Option[ExpressionParseError], List[MethodInfo]] = {
     def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).mkString(", ")
     def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
 
     val clazzMethods =
-      if(isStatic) clazzDefinitions.flatMap(_.staticMethods.get(methodName).toList.flatten)
-      else clazzDefinitions.flatMap(_.methods.get(methodName).toList.flatten)
+      if (reference.isStatic) clazzDefinitions.flatMap(_.staticMethods.get(reference.methodName).toList.flatten)
+      else clazzDefinitions.flatMap(_.methods.get(reference.methodName).toList.flatten)
     clazzMethods match {
       //Static method can be invoked - we cannot find them ATM
       case Nil if isClass => Left(None)
-      case Nil => Left(Some(UnknownMethodError(methodName, displayableType)))
+      case Nil => Left(Some(UnknownMethodError(reference.methodName, displayableType)))
       case methodInfos => Right(methodInfos)
     }
   }
 
-  private def validateMethodParameterTypes(methodInfos: List[MethodInfo]): Either[Option[ExpressionParseError], List[TypingResult]] = {
+  private def validateMethodParameterTypes(methodInfos: List[MethodInfo])
+                                          (implicit reference: MethodReference): Either[Option[ExpressionParseError], List[TypingResult]] = {
     // We combine MethodInfo with errors so we can use it to decide which
     // error to display.
-    val infosWithValidationResults = methodInfos.map(x => (x, x.computeResultType(calledParams)))
+    val infosWithValidationResults = methodInfos.map(x => (x, x.computeResultType(reference.params)))
     val returnTypes = infosWithValidationResults.map{case (info, typ) => typ.leftMap(_.map((info, _)))}
     val combinedReturnTypes = returnTypes.map(x => x.map(List(_))).reduce((x, y) => (x, y) match {
       case (Valid(xs), Valid(ys)) => Valid(xs ::: ys)
@@ -112,4 +102,7 @@ class TypeMethodReference(methodName: String,
     case _ =>
       OverloadedFunctionError
   }
+
 }
+
+case class MethodReference(invocationTarget: TypingResult, isStatic: Boolean, methodName: String, params: List[TypingResult])

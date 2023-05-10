@@ -5,18 +5,17 @@ import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.text.ParseException
 import java.time.{Clock, ZoneOffset, ZonedDateTime}
 import java.util.Locale
 import scala.reflect.runtime.universe._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 trait BaseSpelSpec {
 
@@ -26,6 +25,8 @@ trait BaseSpelSpec {
     "DATE" -> new DateUtils(Clock.fixed(fixedZoned.toInstant, ZoneOffset.UTC)),
     "DATE_FORMAT" -> new DateFormatUtils(Locale.US))
 
+  private lazy val typeDefinitions = TypeDefinitionSet.forClasses(classOf[DateUtils], classOf[DateFormatUtils])
+
   protected def evaluate[T: TypeTag](expr: String, localVariables: Map[String, Any]): T = {
     val validationCtx = ValidationContext(localVariables.mapValuesNow(Typed.fromInstance), globalVariables.mapValuesNow(Typed.fromInstance))
     val evaluationCtx = Context("fooId").withVariables(localVariables)
@@ -34,9 +35,9 @@ trait BaseSpelSpec {
 
   protected def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
     val parser = SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, strictTypeChecking = true,
-      List.empty, SpelExpressionParser.Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, TypeDefinitionSet.empty,
+      List.empty, SpelExpressionParser.Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, typeDefinitions,
       methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default,
-      DefaultSpelConversionsProvider.getConversionService)(ClassExtractionSettings.Default)
+      DefaultSpelConversionsProvider.getConversionService)
     parser.parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 

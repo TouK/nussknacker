@@ -8,17 +8,15 @@ import org.apache.avro.generic.GenericRecord
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
+import pl.touk.nussknacker.engine.api.{NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.expression.TypedExpression
-import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedDict}
-import pl.touk.nussknacker.engine.schemedkafka.schema.{PaymentV1, PaymentV2}
-import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedDict}
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
+import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Standard
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
@@ -211,9 +209,9 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))), enableSpelForceCompile = true,
-      strictTypeChecking = true, Nil, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = false, TypeDefinitionSet.empty, methodExecutionForUnknownAllowed = false,
+      strictTypeChecking = true, Nil, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = false, TypeDefinitionSet.forClasses(classOf[EnumSymbol]), methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default, DefaultSpelConversionsProvider.getConversionService
-    )(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+    ).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   private def wrapWithRecordSchema(fieldsDefinition: String) =

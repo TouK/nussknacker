@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
 import com.typesafe.config.ConfigFactory
-import org.scalatest.Inside
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
@@ -40,8 +40,7 @@ import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
-
+class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with OptionValues {
 
   private val emptyQueryNamesData = CustomTransformerAdditionalData(false, false)
 
@@ -246,7 +245,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
       .filter("filter3", "#input.intAsAny + 1 > 1")
       .processor("sampleProcessor1", "sampleEnricher")
       .enricher("sampleProcessor2", "out", "sampleEnricher")
-      .buildVariable("bv1", "vars", "v1" -> "42",
+      .buildVariable("bv1", "vars",
+        "v1" -> "42",
         "mapVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
         "spelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
       )
@@ -258,26 +258,22 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
       case Valid(_) =>
     }
 
-    compilationResult.variablesInNodes shouldBe Map(
-      "id1" -> Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
-      "filter1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
-      "filter2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
-      "filter3" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
-      "sampleProcessor1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
-      "sampleProcessor2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass)),
-      "bv1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord]),
-      "id2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord],
-        "vars" -> TypedObjectTypingResult(ListMap(
-          "v1" -> Typed.fromInstance(42),
-          "mapVariable" -> TypedObjectTypingResult(ListMap(
-            "Field1" -> Typed.fromInstance("Field1Value"),
-            "Field2" -> Typed.fromInstance("Field2Value"),
-            "Field3" -> Typed[BigDecimal]
-          )),
-          "spelVariable" ->  Typed[Boolean]
-        ))
-      )
-    )
+    compilationResult.variablesInNodes.keySet shouldEqual Set("id1", "filter1", "filter2", "filter3", "sampleProcessor1", "sampleProcessor2", "bv1", "id2")
+    compilationResult.variablesInNodes.get("id1").value shouldEqual Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
+    compilationResult.variablesInNodes.get("filter1").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
+    compilationResult.variablesInNodes.get("filter2").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
+    compilationResult.variablesInNodes.get("filter3").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
+    compilationResult.variablesInNodes.get("sampleProcessor1").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
+    compilationResult.variablesInNodes.get("sampleProcessor2").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
+    compilationResult.variablesInNodes.get("bv1").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord])
+    val varsType = compilationResult.variablesInNodes.get("id2").value.get("vars").value.asInstanceOf[TypedObjectTypingResult]
+    varsType.fields.get("v1").value shouldEqual Typed.fromInstance(42)
+    varsType.fields.get("mapVariable").value shouldEqual TypedObjectTypingResult(ListMap(
+      "Field1" -> Typed.fromInstance("Field1Value"),
+      "Field2" -> Typed.fromInstance("Field2Value"),
+      "Field3" -> Typed[BigDecimal]
+    ))
+    varsType.fields.get("spelVariable").value shouldEqual Typed[Boolean]
   }
 
   test("allow global variables in source definition") {

@@ -252,7 +252,7 @@ object ProcessValidator {
 
   def default(definitions: ProcessDefinition[ObjectWithMethodDef], subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor, dictRegistry: DictRegistry, customProcessValidator: CustomProcessValidator, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
     val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
-    val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
+    val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, definitions.expressionConfig, typeDefinitionSet)
     val nodeCompiler = new NodeCompiler(definitions, subprocessDefinitionExtractor, expressionCompiler, classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
     val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler, customProcessValidator)

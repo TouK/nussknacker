@@ -1,47 +1,28 @@
 package pl.touk.nussknacker.engine
 
-import cats.data.{NonEmptyList, Validated}
-import cats.data.Validated.{Invalid, Valid}
-import org.springframework.expression.{EvaluationContext, EvaluationException}
-import org.springframework.expression.spel.ExpressionState
-import org.springframework.expression.spel.ast.TypeReference
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
-import pl.touk.nussknacker.engine.definition.TypeInfos
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.TypeReferenceError
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownClassError
-
-import scala.util.{Failure, Success, Try}
-
-
+import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ExpressionConfig}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.TypesInformation
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 
 object TypeDefinitionSet {
 
-  def empty: TypeDefinitionSet = TypeDefinitionSet(Set.empty)
+  def forClasses(classes: Class[_]*): TypeDefinitionSet = TypeDefinitionSet(
+    TypesInformation.extractFromClassList(classes ++ ExpressionConfig.defaultAdditionalClasses)(ClassExtractionSettings.Default))
+
+  def forDefaultAdditionalClasses: TypeDefinitionSet = TypeDefinitionSet(
+    TypesInformation.extractFromClassList(ExpressionConfig.defaultAdditionalClasses)(ClassExtractionSettings.Default))
+
+  def apply(typeDefinitions: Set[ClazzDefinition]): TypeDefinitionSet = {
+    new TypeDefinitionSet(typeDefinitions.toList.map(classDef => classDef.getClazz -> classDef).toMap)
+  }
 
 }
 
-case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
+case class TypeDefinitionSet(typeDefinitions: Map[Class[_], ClazzDefinition]) {
 
-  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[ExpressionParseError], TypingResult] = {
-
-    /**
-      * getValue mutates TypeReference but is still safe
-      * it adds values to fields type and exitTypeDescriptor but field type is transient and exitTypeDescriptor is of a primitive type (String)
-      */
-    val typeReferenceClazz = Try(typeReference.getValue(new ExpressionState(evaluationContext)))
-
-    typeReferenceClazz match {
-      case Success(typeReferenceClazz) =>
-        typeDefinitions.find(typeDefinition => typeDefinition.clazzMatch(typeReferenceClazz)) match {
-          case Some(clazzDefinition: TypeInfos.ClazzDefinition) => Valid(clazzDefinition.clazzName)
-          case None => Invalid(NonEmptyList.of(TypeReferenceError(typeReferenceClazz.toString)))
-        }
-      case Failure(_: EvaluationException) => Invalid(NonEmptyList.of(UnknownClassError(typeReference.toStringAST)))
-      case Failure(exception) => throw exception
-    }
-
-  }
+  def get(clazz: Class[_]): Option[ClazzDefinition] =
+    typeDefinitions.get(clazz)
 
 }
 
