@@ -18,6 +18,6 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.6")
 
 addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.3.2")
 
-addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.2")
+addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.4")
 
 addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.6")
