@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.definition
 
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.{ConversionsProvider, CustomStreamTransformer, SpelExpressionExcludeList}
@@ -81,6 +82,18 @@ object ProcessDefinitionExtractor {
   }
 
   case class CustomTransformerAdditionalData(manyInputs: Boolean, canBeEnding: Boolean)
+
+  case class ModelDefinitionWithTypes(modelDefinition: ProcessDefinition[ObjectWithMethodDef]) {
+    @transient lazy val typeDefinitions: TypeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(modelDefinition))
+
+    def filter(predicate: ObjectWithMethodDef => Boolean): ModelDefinitionWithTypes = {
+      ModelDefinitionWithTypes(modelDefinition.filter(predicate))
+    }
+
+    def transform(f: ObjectWithMethodDef => ObjectWithMethodDef): ModelDefinitionWithTypes = {
+      ModelDefinitionWithTypes(modelDefinition.transform(f))
+    }
+  }
 
   case class ProcessDefinition[T](services: Map[String,T],
                                   sourceFactories: Map[String, T],

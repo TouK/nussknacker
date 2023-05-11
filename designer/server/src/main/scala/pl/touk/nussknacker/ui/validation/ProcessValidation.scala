@@ -97,7 +97,7 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData, _],
                                          additionalValidators: List[CustomProcessValidator],
                                          category: Category): ValidationResult = {
     val processValidator = processValidatorCache.getOrCreate(ValidatorKey(modelData, category)) {
-      val modelCategoryValidator = modelData.prepareValidatorForCategory(Some(category))
+      val modelCategoryValidator = ProcessValidator.default(modelData, Some(category))
 
       expressionParsers
         .map(modelCategoryValidator.withExpressionParsers)

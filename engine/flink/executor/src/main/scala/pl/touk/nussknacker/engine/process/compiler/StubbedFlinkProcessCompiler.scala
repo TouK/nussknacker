@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
 
@@ -23,8 +24,8 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  override protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
-    val createdDefinitions = super.definitions(processObjectDependencies)
+  override protected def definitions(processObjectDependencies: ProcessObjectDependencies): ModelDefinitionWithTypes = {
+    val createdDefinitions = super.definitions(processObjectDependencies).modelDefinition
 
     val collectedSources = process.allStartNodes.map(_.head.data).collect {
       case source: Source => source
@@ -40,10 +41,11 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
 
     val stubbedServices = createdDefinitions.services.mapValuesNow(prepareService)
 
-    createdDefinitions
-      .copy(
-        sourceFactories = createdDefinitions.sourceFactories ++ stubbedSources,
-        services = stubbedServices)
+    ModelDefinitionWithTypes(
+      createdDefinitions
+        .copy(
+          sourceFactories = createdDefinitions.sourceFactories ++ stubbedSources,
+          services = stubbedServices))
   }
 
   protected def prepareService(service: ObjectWithMethodDef): ObjectWithMethodDef

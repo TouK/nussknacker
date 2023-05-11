@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.compile.CompilationResult
+import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
@@ -74,7 +74,7 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
         Map("dumb" -> WithCategories.anyCategory(DumbService))
     }
     val modelData = LocalModelData(ConfigFactory.empty(), configCreator)
-    val validator = modelData.prepareValidatorForCategory(None)
+    val validator = ProcessValidator.default(modelData, None)
     val validationResult = validator.validate(scenario)
     validationResult
   }

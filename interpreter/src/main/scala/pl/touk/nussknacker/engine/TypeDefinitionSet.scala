@@ -21,6 +21,8 @@ object TypeDefinitionSet {
 
 case class TypeDefinitionSet(typeDefinitions: Map[Class[_], ClazzDefinition]) {
 
+  def all: Set[ClazzDefinition] = typeDefinitions.values.toSet
+
   def get(clazz: Class[_]): Option[ClazzDefinition] =
     typeDefinitions.get(clazz)
 

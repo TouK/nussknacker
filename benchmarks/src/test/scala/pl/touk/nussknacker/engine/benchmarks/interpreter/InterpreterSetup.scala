@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -54,9 +55,10 @@ class InterpreterSetup[T:ClassTag] {
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator,
       api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
+    val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
     val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
 
-    ProcessCompilerData.prepare(process, definitions, subprocessDefinitionExtractor, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime, CustomProcessValidatorLoader.emptyCustomProcessValidator)
+    ProcessCompilerData.prepare(process, definitionsWithTypes, subprocessDefinitionExtractor, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime, CustomProcessValidatorLoader.emptyCustomProcessValidator)
   }
 
   private def failOnErrors[Y](obj: ValidatedNel[ProcessCompilationError, Y]): Y = obj match {

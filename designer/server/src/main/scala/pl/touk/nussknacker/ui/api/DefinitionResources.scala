@@ -27,7 +27,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
       get {
         complete {
           val subprocessIds = subprocessRepository.loadSubprocessIds()
-          ProcessObjectsFinder.componentIds(modelDataProvider.all.values.map(_.processWithObjectsDefinition).toList, subprocessIds)
+          ProcessObjectsFinder.componentIds(modelDataProvider.all.values.map(_.modelDefinition).toList, subprocessIds)
         }
       }
     } ~ pathPrefix("processDefinitionData" / Segment) { processingType =>

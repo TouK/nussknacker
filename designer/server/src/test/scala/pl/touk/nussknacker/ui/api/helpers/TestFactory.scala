@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
@@ -126,7 +126,7 @@ object TestFactory extends TestPermissions{
 
   def createValidator(processDefinition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
     val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
-    ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), subprocessDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator)
+    ProcessValidator.default(ModelDefinitionWithTypes(ProcessDefinitionBuilder.withEmptyObjects(processDefinition)), subprocessDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator)
   }
 
 }

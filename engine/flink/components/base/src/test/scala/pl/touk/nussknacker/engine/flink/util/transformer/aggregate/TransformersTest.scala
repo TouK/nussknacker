@@ -52,7 +52,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         .getOrElse(config), new Creator(list))
   }
 
-  private val processValidator: ProcessValidator = modelData().prepareValidatorForCategory(None)
+  private val processValidator: ProcessValidator = ProcessValidator.default(modelData(), None)
 
   test("aggregates are properly validated") {
     validateOk("#AGG.approxCardinality", "#input.str", Typed[Long])

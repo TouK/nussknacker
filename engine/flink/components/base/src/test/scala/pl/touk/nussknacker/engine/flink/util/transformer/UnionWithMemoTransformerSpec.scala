@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
@@ -124,7 +125,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
-    val processValidator = model.prepareValidatorForCategory(None)
+    val processValidator = ProcessValidator.default(model, None)
     val validationResult = processValidator.validate(process).result
 
     val expectedMessage = s"""Input node can not be named "${UnionWithMemoTransformer.KeyField}""""
@@ -165,7 +166,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
-    val processValidator = model.prepareValidatorForCategory(None)
+    val processValidator = ProcessValidator.default(model, None)
     val validationResult = processValidator.validate(process).result
 
     val expectedMessage = s"""Nodes "$BranchFooId", "$BranchBarId" have too similar names"""

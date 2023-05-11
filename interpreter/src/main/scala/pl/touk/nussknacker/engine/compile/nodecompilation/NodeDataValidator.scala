@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, Output, SubprocessResolver}
+import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
@@ -49,7 +50,7 @@ class NodeDataValidator(modelData: ModelData, subprocessResolver: SubprocessReso
       val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
         case spel: SpelExpressionParser => spel.typingDictLabels
       }
-      val compiler = new NodeCompiler(modelData.processWithObjectsDefinition, modelData.subprocessDefinitionExtractor,
+      val compiler = new NodeCompiler(modelData.modelDefinition, SubprocessComponentDefinitionExtractor(modelData),
         expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
       implicit val nodeId: NodeId = NodeId(nodeData.id)
 

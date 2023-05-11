@@ -8,8 +8,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCr
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
@@ -36,7 +35,6 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.Implicits._
 
   def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, componentUseCase = ComponentUseCase.EngineRuntime)
 
@@ -62,11 +60,11 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(processObjectDependencies)
     val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
 
-    val processDefinition = definitions(processObjectDependencies)
+    val definitionWithTypes = definitions(processObjectDependencies)
     val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(processConfig, userCodeClassLoader)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
-      ProcessCompilerData.prepare(process, processDefinition, subprocessDefinitionExtractor, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
+      ProcessCompilerData.prepare(process, definitionWithTypes, subprocessDefinitionExtractor, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
 
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,
@@ -88,8 +86,8 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       new EndCountingListener(usedNodes.nodes))
   }
 
-  protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
-    ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
+  protected def definitions(processObjectDependencies: ProcessObjectDependencies): ModelDefinitionWithTypes = {
+    ModelDefinitionWithTypes(ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies))
   }
 
   protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = defaults
