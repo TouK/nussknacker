@@ -38,7 +38,7 @@ class TestFlinkProcessCompiler(modelData: ModelData,
   }
 
   private val dumbContext = Context("dumb", Map.empty, None)
-  private lazy val validationContext = GlobalVariablesPreparer(modelData.processWithObjectsDefinition.expressionConfig).emptyValidationContext(process.metaData)
+  private lazy val validationContext = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig).emptyValidationContext(process.metaData)
   private lazy val evaluator = ExpressionEvaluator.unOptimizedEvaluator(modelData)
   private lazy val expressionCompiler = ExpressionCompiler.withoutOptimization(modelData).withExpressionParsers {
     case spel: SpelExpressionParser => spel.typingDictLabels
