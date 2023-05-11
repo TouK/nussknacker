@@ -81,7 +81,8 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       clientId = realmClientId,
       clientSecret = Some(realmClientSecret),
       redirectUri = Some(URI.create("http://localhost:1234")),
-      rolesClaims = Some(List("http://namespace/roles", "http://other.namespace/roles"))
+      rolesClaims = Some(List("http://namespace/roles", "http://other.namespace/roles")),
+      accessTokenIsJwt = true,
     ).withDiscovery
 }
 

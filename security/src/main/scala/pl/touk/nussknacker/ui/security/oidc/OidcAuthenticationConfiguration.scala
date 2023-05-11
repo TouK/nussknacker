@@ -29,7 +29,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
                                            jwksUri: Option[URI] = None,
                                            rolesClaims: Option[List[String]] = None,
                                            tokenCookie: Option[TokenCookieConfig] = None,
-                                           accessTokenIsJwt: Boolean = true,
+                                           accessTokenIsJwt: Boolean = false,
                                           ) extends URIExtensions {
 
   lazy val oAuth2Configuration: OAuth2Configuration = OAuth2Configuration(

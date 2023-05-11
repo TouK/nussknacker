@@ -21,6 +21,9 @@
   * `scala.Option`, `scala.collection.Iterable`: `head`, `nonEmpty`, `orNull`, `tail`
   * `io.circe.*` (deserialized raw JSON objects): `noSpacesSortKeys`, `spaces2SortKeys`, `spaces4SortKeys`
 * [#4298](https://github.com/TouK/nussknacker/pull/4298) Support arrays in `BestEffortJsonEncoder`
+* [#4283](https://github.com/TouK/nussknacker/pull/4283) Fix for OIDC provider access token verification. For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
+  This change also introduced a possibility to override username incoming from OIDC provider. 
+  For more see `usersFile` configuration. This might be helpful when other systems authenticate in Nussknacker in `machine to machine` manner. 
 
 1.9.1 (24 Apr 2023)
 ------------------------
