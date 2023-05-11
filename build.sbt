@@ -1293,7 +1293,8 @@ lazy val commonApi = (project in file("common-api")).
       "io.circe" %% "circe-parser" % circeV,
       "io.circe" %% "circe-generic" % circeV,
       "io.circe" %% "circe-generic-extras" % circeGenericExtrasV,
-      "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
+      "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+      "org.scalatest" %% "scalatest" % scalaTestV
     )
   )
 
@@ -1464,7 +1465,7 @@ lazy val restmodel = (project in file("designer/restmodel"))
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
     )}
   )
-  .dependsOn(extensionsApi, testUtils % "test")
+  .dependsOn(extensionsApi % "compile;test->test", testUtils % "test")
 
 lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(commonSettings)
