@@ -350,21 +350,22 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     }
   }
 
-
   /**
-    * Returns latest deployment. It can be in any status (consult [[PeriodicProcessDeploymentStatus]]).
-    * For multiple schedules only single schedule is returned in the following order:
-    * <ol>
-    * <li>If there are any deployed scenarios, then the first one is returned. Please be aware that deployment of previous
-    * schedule could fail.</li>
-    * <li>If there are any failed scenarios, then the last one is returned. We want to inform user, that some deployments
-    * failed and the scenario should be rescheduled/retried manually.
-    * <li>If there are any scheduled scenarios, then the first one to be run is returned.
-    * <li>If there are any finished scenarios, then the last one is returned. It should not happen because the scenario
-    * should be deactivated earlier.
-    * </ol>
-    */
-  private[periodic] def getLatestDeployment(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
+   * @Important: this method has to be public because it can be used by dedicated process manager
+   *
+   * Returns latest deployment. It can be in any status (consult [[PeriodicProcessDeploymentStatus]]).
+   * For multiple schedules only single schedule is returned in the following order:
+   * <ol>
+   * <li>If there are any deployed scenarios, then the first one is returned. Please be aware that deployment of previous
+   * schedule could fail.</li>
+   * <li>If there are any failed scenarios, then the last one is returned. We want to inform user, that some deployments
+   * failed and the scenario should be rescheduled/retried manually.
+   * <li>If there are any scheduled scenarios, then the first one to be run is returned.
+   * <li>If there are any finished scenarios, then the last one is returned. It should not happen because the scenario
+   * should be deactivated earlier.
+   * </ol>
+   */
+  def getLatestDeployment(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
     scheduledProcessesRepository.getLatestDeploymentForEachSchedule(processName)
       .map(_.sortBy(_.runAt)).run
       .map { deployments =>

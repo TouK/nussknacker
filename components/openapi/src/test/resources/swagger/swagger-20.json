@@ -78,8 +78,9 @@
                   "type": "integer",
                   "format": "int32"
                 }
-              }
-              }
+              },
+              "additionalProperties": false
+            }
           },
           "400": {
             "description": "Problem with request"
