@@ -17,20 +17,19 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 
 object MetaData {
   def apply(id: String, properties: ProcessAdditionalFields, propertiesType: String): MetaData = {
-    val (typeSpecificProperties, fields) = properties.extractTypedData(propertiesType)
+    val (typeSpecificProperties, fields) = properties.extractTypeSpecificData(propertiesType)
     MetaData(id, typeSpecificProperties, fields)
   }
 }
 
-case class ProcessAdditionalFields(description: Option[String],
+case class ProcessAdditionalFields(description: Option[String] = None,
                                    properties: Map[String, String]) {
 
-  def extractTypedData(propertiesType: String): (TypeSpecificData, Option[ProcessAdditionalFields]) = {
+  def extractTypeSpecificData(propertiesType: String): (TypeSpecificData, Option[ProcessAdditionalFields]) = {
     val typeSpecificData = TypeSpecificData(properties, propertiesType)
-    val typeSpecificPropsList = typeSpecificData.toProperties.keySet
+    val typeSpecificPropNamesList = typeSpecificData.toProperties.keySet
 
-    // TODO: do this cleaner
-    val otherProps = properties.filterNot(k => typeSpecificPropsList.contains(k._1))
+    val otherProps = properties.filterNot(k => typeSpecificPropNamesList.contains(k._1))
     val fields = otherProps match {
       case m if m.isEmpty && description.isEmpty => None
       case e => Some(ProcessAdditionalFields(description, e))
@@ -42,6 +41,8 @@ case class ProcessAdditionalFields(description: Option[String],
 }
 
 object ProcessAdditionalFields {
+
+  val empty: ProcessAdditionalFields = ProcessAdditionalFields(None, Map.empty)
 
   //TODO: is this currently needed?
   private case class OptionalProcessAdditionalFields(description: Option[String],
