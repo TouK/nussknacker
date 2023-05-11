@@ -96,7 +96,7 @@ object ProcessProperties extends LazyLogging {
     typeSpecificData.toProperties
       .filter(p => fields.properties.contains(p._1))
       .foreach(p => logger.warn(s"Duplicate properties with the same name '${p._1}'. Overwriting additional property " +
-        s"with value '${fields.properties(p._1)}' with type specific property with value '${p._2}''"))
+        s"with value '${fields.properties(p._1)}' with type specific property with value '${p._2}'."))
 
     val mergedProps = fields.properties ++ typeSpecificData.toProperties
     ProcessAdditionalFields(fields.description, mergedProps)
