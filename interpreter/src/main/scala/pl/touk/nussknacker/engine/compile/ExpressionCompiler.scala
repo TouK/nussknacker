@@ -33,7 +33,7 @@ object ExpressionCompiler {
 
   def withoutOptimization(modelData: ModelData): ExpressionCompiler = {
     withoutOptimization(modelData.modelClassLoader.classLoader,
-      modelData.dictServices.dictRegistry,
+      modelData.uiDictServices.dictRegistry,
       modelData.modelDefinition.expressionConfig,
       modelData.modelDefinitionWithTypes.typeDefinitions)
   }

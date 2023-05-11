@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import pl.touk.nussknacker.engine.api.dict.EngineDictRegistry
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
@@ -10,6 +11,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
 import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
 import pl.touk.nussknacker.engine.process.async.DefaultAsyncExecutionConfigPreparer
@@ -60,11 +62,12 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val defaultListeners = prepareDefaultListeners(usedNodes) ++ creator.listeners(processObjectDependencies)
     val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
 
-    val definitionWithTypes = definitions(processObjectDependencies)
+    val (definitionWithTypes, dictRegistry) = definitions(processObjectDependencies, userCodeClassLoader)
     val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(processConfig, userCodeClassLoader)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
-      ProcessCompilerData.prepare(process, definitionWithTypes, subprocessDefinitionExtractor, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
+      ProcessCompilerData.prepare(process, definitionWithTypes, dictRegistry, subprocessDefinitionExtractor, listenersToUse,
+        userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
 
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,
@@ -86,9 +89,20 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       new EndCountingListener(usedNodes.nodes))
   }
 
-  protected def definitions(processObjectDependencies: ProcessObjectDependencies): ModelDefinitionWithTypes = {
-    ModelDefinitionWithTypes(ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies))
+
+  protected def definitions(processObjectDependencies: ProcessObjectDependencies, userCodeClassLoader: ClassLoader): (ModelDefinitionWithTypes, EngineDictRegistry) = {
+    val dictRegistryFactory = loadDictRegistry(userCodeClassLoader)
+    val modelDefinitionWithTypes = ModelDefinitionWithTypes(ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies))
+    val dictRegistry = dictRegistryFactory.createEngineDictRegistry(modelDefinitionWithTypes.modelDefinition.expressionConfig.dictionaries)
+    (modelDefinitionWithTypes, dictRegistry)
   }
+
+  private def loadDictRegistry(userCodeClassLoader: ClassLoader) = {
+    // we are loading DictServicesFactory on TaskManager side. It may be tricky because of class loaders...
+    DictServicesFactoryLoader.justOne(userCodeClassLoader)
+  }
+
+
 
   protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = defaults
 

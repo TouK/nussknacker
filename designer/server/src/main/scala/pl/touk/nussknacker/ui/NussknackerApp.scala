@@ -118,7 +118,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val additionalProperties = typeToConfig.mapValues(_.additionalPropertiesConfig)
     val processValidation = ProcessValidation(modelData, additionalProperties, typeToConfig.mapValues(_.additionalValidators), subprocessResolver)
 
-    val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
+    val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.uiDictServices.dictRegistry))
     val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
 
     val dbioRunner = DBIOActionRunner(dbConfig)

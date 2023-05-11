@@ -117,8 +117,8 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   private val modelData = LocalModelData(minimalFlinkConfig, SampleConfigCreator, objectNaming = DefaultNamespacedObjectNaming)
 
   private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData) = {
-    val testCompiler = new TestFlinkProcessCompiler(modelData, ResultsCollectingListenerHolder.registerRun(identity),
-      scenario, scenarioTestData)
+    val testCompiler = new TestFlinkProcessCompiler(modelData.configCreator, modelData.processConfig, ResultsCollectingListenerHolder.registerRun(identity),
+      scenario, modelData.objectNaming, scenarioTestData)
     testCompiler.compileProcess(scenario, ProcessVersion.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
   }
 
