@@ -74,7 +74,7 @@ object PropertyFromGetterExtractionStrategy {
 
 object ClassExtractionSettings {
 
-  val ToStringMethod = "toString"
+  val ToStringMethod: String = "toString"
 
   val Default: ClassExtractionSettings = ClassExtractionSettings(DefaultExcludedClasses, DefaultExcludedMembers, DefaultIncludedMembers,
     PropertyFromGetterExtractionStrategy.AddPropertyNextToGetter)
@@ -91,29 +91,27 @@ object ClassExtractionSettings {
 
       ExactClassPredicate[ReturningSingleClassPromotionStrategy],
       // We use this type only programmable
-      ClassPatternPredicate(Pattern.compile("pl\\.touk\\.nussknacker\\.engine\\.spel\\.SpelExpressionRepr")),
+      ClassNamePredicate("pl.touk.nussknacker.engine.spel.SpelExpressionRepr"),
     )
 
-  lazy val ExcludedCollectionFunctionalClasses = List(
+  lazy val ExcludedCollectionFunctionalClasses: List[ClassPredicate] = List(
     // In case if someone return function for lazy evaluation purpose
     BasePackagePredicate("java.util.function"),
-    ClassPatternPredicate(Pattern.compile("scala\\.Function.*")),
+    ClassNamePrefixPredicate("scala.Function"),
     BasePackagePredicate("java.util.stream"),
     //Scala collections are cumbersome to use with Spel
     BasePackagePredicate("scala.collection"),
-    ClassPatternPredicate(Pattern.compile("scala\\.Tuple.*")),
+    ClassNamePrefixPredicate("scala.Tuple"),
     ExactClassPredicate[Option[_]],
   )
 
-  lazy val ExcludedVoidClasses = List(
+  lazy val ExcludedVoidClasses: List[ClassPredicate] = List(
     // Void types
-    ClassPatternPredicate(Pattern.compile("void")),
-    ClassPatternPredicate(Pattern.compile("java\\.lang\\.Void")),
-    ClassPatternPredicate(Pattern.compile("scala\\.Unit.*")),
-    ClassPatternPredicate(Pattern.compile("scala\\.runtime\\.BoxedUnit"))
+    ClassNamePredicate("void", "java.lang.Void", "scala.runtime.BoxedUnit"),
+    ClassNamePrefixPredicate("scala.Unit.*"),
   )
 
-  lazy val ExcludedTimeClasses = List(
+  lazy val ExcludedTimeClasses: List[ClassPredicate] = List(
     //we want to have Chrono*Time classes, as many parameters/return types of Local/ZonedDate(Time) use them
     ExceptOfClassesPredicate(BasePackagePredicate("java.time.chrono"),
       ExactClassPredicate(classOf[ChronoLocalDateTime[_]], classOf[ChronoLocalDate], classOf[ChronoZonedDateTime[_]])),
@@ -137,13 +135,14 @@ object ClassExtractionSettings {
     )
 
   lazy val DefaultExcludedMembers: List[ClassMemberPredicate] = CommonExcludedMembers ++ KafkaExcludedMembers ++ AvroExcludedMembers ++ JavaTimeExcludeMembers :+
-    ReturnMemberPredicate(SuperClassPredicate(ExactClassPredicate(classOf[Decoder[_]], classOf[Encoder[_]]))) :+
-    ReturnMemberPredicate(SuperClassPredicate(ExactClassPredicate[ParameterEditor]))
+    ReturnMemberPredicate(SuperClassPredicate(ExactClassPredicate(
+      classOf[Decoder[_]], classOf[Encoder[_]], classOf[ParameterEditor]
+    )))
 
   lazy val CommonExcludedMembers: List[ClassMemberPredicate] =
     List(
       // We want to hide all technical methods in every class, toString can be useful so we will leave it
-      AllMethodNamesPredicate(classOf[DumpCaseClass], Set(ToStringMethod)),
+      AllMembersPredicate(classOf[DumpCaseClass], Set(ToStringMethod)),
       ClassMemberPredicate(ClassPredicate { case _ => true }, {
         case m => m.getName.contains("$")
       }),
@@ -159,85 +158,88 @@ object ClassExtractionSettings {
     )
 
   lazy val KafkaExcludedMembers: List[ClassMemberPredicate] = List(
-    ClassMemberPatternPredicate(
-      SuperClassPredicate(ClassPatternPredicate(Pattern.compile("pl\\.touk\\.nussknacker\\.engine\\.kafka\\.source\\.InputMeta"))),
-      Pattern.compile("(withType|apply|keyParameterName)"))
+    MemberNamePredicate(
+      SuperClassPredicate(ClassNamePredicate("pl.touk.nussknacker.engine.kafka.source.InputMeta")),
+      Set("withType", "apply", "keyParameterName"))
   )
 
   lazy val AvroExcludedMembers: List[ClassMemberPredicate] =
     List(
-      ClassMemberPatternPredicate(
-        SuperClassPredicate(ClassPatternPredicate(Pattern.compile("org\\.apache\\.avro\\.generic\\.IndexedRecord"))),
-        Pattern.compile("(get|getSchema|compareTo|put)")),
-      ClassMemberPatternPredicate(
-        SuperClassPredicate(ClassPatternPredicate(Pattern.compile("org\\.apache\\.avro\\.specific\\.SpecificRecordBase"))),
-        Pattern.compile("(getConverion|getConversion|writeExternal|readExternal|toByteBuffer|set[A-Z].*)"))
+      MemberNamePredicate(
+        SuperClassPredicate(ClassNamePredicate("org.apache.avro.generic.IndexedRecord")),
+        Set("get", "getSchema", "compareTo", "put")),
+      MemberNamePatternPredicate(
+        SuperClassPredicate(ClassNamePredicate("org.apache.avro.specific.SpecificRecordBase")),
+        Pattern.compile("(getConversion|writeExternal|readExternal|toByteBuffer|set[A-Z].*)"))
     )
 
   lazy val JavaTimeExcludeMembers: List[ClassMemberPredicate] =
     List(
-      ClassMemberPatternPredicate(
-        SuperClassPredicate(ClassPatternPredicate(Pattern.compile("java\\.time\\.temporal\\.TemporalAccessor"))),
-        Pattern.compile("(adjustInto|from)")))
+      MemberNamePredicate(
+        SuperClassPredicate(ClassNamePredicate("java.time.temporal.TemporalAccessor")),
+        Set("adjustInto", "from")))
 
   lazy val DefaultIncludedMembers: List[ClassMemberPredicate] = IncludedUtilsMembers ++ IncludedSerializableMembers ++ IncludedStdMembers
 
   lazy val IncludedStdMembers: List[ClassMemberPredicate] =
     List(
       // For other std types we don't want to see anything but toString method
-      ClassMemberPatternPredicate(
-        ClassPatternPredicate(Pattern.compile("java\\..*")),
-        Pattern.compile(ToStringMethod)),
-      ClassMemberPatternPredicate(
-        ClassPatternPredicate(Pattern.compile("scala\\..*")),
-        Pattern.compile(ToStringMethod))
+      MemberNamePredicate(
+        ClassNamePrefixPredicate("java."),
+        Set(ToStringMethod)),
+      MemberNamePredicate(
+        ClassNamePrefixPredicate("scala."),
+        Set(ToStringMethod))
     )
 
   lazy val IncludedUtilsMembers: List[ClassMemberPredicate] =
     List(
       // For numeric types, strings an collections, date types we want to see all useful methods - we need this explicitly define here because
       // we have another, more general rule: IncludedStdMembers and both predicates are composed
-      ClassMemberPatternPredicate(
+      ClassMemberPredicate(
         SuperClassPredicate(ExactClassPredicate(classOf[java.lang.Boolean], classOf[Number], classOf[Date], classOf[Calendar], classOf[TimeUnit])),
-        Pattern.compile(".*")),
-      ClassMemberPatternPredicate(
-        ClassPatternPredicate(Pattern.compile("java\\.time\\..*")),
-        Pattern.compile(".*")),
-      ClassMemberPatternPredicate(
-        ClassPatternPredicate(Pattern.compile("scala\\.concurrent\\.duration\\..*")),
-        Pattern.compile(".*")),
-      ClassMemberPatternPredicate(
+        { case _ => true }),
+      ClassMemberPredicate(
+        ClassNamePrefixPredicate("java.time."),
+        { case _ => true }),
+      ClassMemberPredicate(
+        ClassNamePrefixPredicate("scala.concurrent.duration."),
+        { case _ => true }),
+      MemberNamePatternPredicate(
         SuperClassPredicate(ExactClassPredicate[CharSequence]),
         Pattern.compile(s"charAt|compareTo.*|concat|contains|endsWith|equalsIgnoreCase|format|indexOf|isBlank|isEmpty|join|lastIndexOf|length|matches|" +
           s"replaceAll|replaceFirst|split|startsWith|strip.*|substring|toLowerCase|toUpperCase|trim|$ToStringMethod")),
-      ClassMemberPatternPredicate(
+      MemberNamePatternPredicate(
         SuperClassPredicate(ExactClassPredicate[NumberFormat]),
         Pattern.compile(s"get.*Instance|format|parse")),
-      ClassMemberPatternPredicate(
+      MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[util.Collection[_]]),
-        Pattern.compile(s"contains|containsAll|get|getOrDefault|indexOf|isEmpty|size")),
-      ClassMemberPatternPredicate(
+        Set("contains", "containsAll", "get", "getOrDefault", "indexOf", "isEmpty", "size")),
+      MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[util.Map[_, _]]),
-        Pattern.compile(s"containsKey|containsValue|get|getOrDefault|isEmpty|size|values|keySet")),
-      ClassMemberPatternPredicate(
+        Set("containsKey", "containsValue", "get", "getOrDefault", "isEmpty", "size", "values", "keySet")),
+      MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[Optional[_]]),
-        Pattern.compile(s"get|isPresent|orElse")),
-      ClassMemberPatternPredicate(
+        Set("get", "isPresent", "orElse")),
+      MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[UUID]),
-        Pattern.compile(s"clockSequence|randomUUID|fromString|getLeastSignificantBits|getMostSignificantBits|node|timestamp|$ToStringMethod|variant|version")),
-      ClassMemberPatternPredicate(
+        Set("clockSequence", "randomUUID", "fromString", "getLeastSignificantBits", "getMostSignificantBits", "node", "timestamp", ToStringMethod, "variant", "version")),
+      MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate(classOf[Iterable[_]], classOf[Option[_]])),
-        Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|values|keys|diff"))
+        Set("apply", "applyOrElse", "contains", "get", "getOrDefault", "indexOf", "isDefined", "isEmpty", "size", "values", "keys", "diff"))
     )
 
   lazy val IncludedSerializableMembers: List[ClassMemberPredicate] =
     List(
-      ClassMemberPatternPredicate(
-        ClassPatternPredicate(Pattern.compile("scala\\.xml\\..*")),
-        Pattern.compile(ToStringMethod)),
-      ClassMemberPatternPredicate(
-        ClassPatternPredicate(Pattern.compile("(io\\.circe\\..*|argonaut\\..*)")),
-        Pattern.compile(s"noSpaces|nospaces|spaces2|spaces4|$ToStringMethod"))
+      MemberNamePredicate(
+        ClassNamePrefixPredicate("scala.xml."),
+        Set(ToStringMethod)),
+      MemberNamePredicate(
+        ClassNamePrefixPredicate("io.circe."),
+        Set("noSpaces", "nospaces", "spaces2", "spaces4", ToStringMethod)),
+      MemberNamePredicate(
+        ClassNamePrefixPredicate("argonaut."),
+        Set("noSpaces", "nospaces", "spaces2", "spaces4", ToStringMethod)),
     )
 
   private case class DumpCaseClass()

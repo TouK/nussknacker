@@ -10,6 +10,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   types extracted based on model. Before the change types in compiler were lazily extracted. Because of this change, some expressions
   can stop to compile. You may need to add `WithExplicitTypesToExtract` to some of yours `SourceFactory` implementations.
   See extending classes for examples on how to implement it.
+* [#4290](https://github.com/TouK/nussknacker/pull/4290) Renamed predicates used in `ClassExtractionSettings`:
+  * `ClassMemberPatternPredicate` renamed to `MemberNamePatternPredicate`
+  * `AllMethodNamesPredicate` renamed to AllMembersPredicate
 
 ## In version 1.9.0
 
