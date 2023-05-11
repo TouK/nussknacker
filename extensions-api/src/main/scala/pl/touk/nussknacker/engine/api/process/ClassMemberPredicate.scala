@@ -38,29 +38,42 @@ case class ReturnMemberPredicate(returnClassPredicate: ClassPredicate, classPred
 }
 
 /**
-  * Simple implementation of ClassMemberPredicate based on class member's name pattern
+  * Simple implementation of ClassMemberPredicate based on class member's name
   * @param classPredicate - class predicate
-  * @param classMemberPattern - class member's name pattern
+  * @param memberNames - class member names
   */
-case class ClassMemberPatternPredicate(classPredicate: ClassPredicate, classMemberPattern: Pattern) extends ClassMemberPredicate {
+case class MemberNamePredicate(classPredicate: ClassPredicate, memberNames: Set[String]) extends ClassMemberPredicate {
 
   override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
 
-  override def matchesMember(member: Member): Boolean = classMemberPattern.matcher(member.getName).matches()
+  override def matchesMember(member: Member): Boolean = memberNames.contains(member.getName)
+
+}
+
+/**
+  * Simple implementation of ClassMemberPredicate based on class member's name pattern
+  * @param classPredicate - class predicate
+  * @param memberNamePattern - class member's name pattern
+  */
+case class MemberNamePatternPredicate(classPredicate: ClassPredicate, memberNamePattern: Pattern) extends ClassMemberPredicate {
+
+  override def matchesClass(clazz: Class[_]): Boolean = classPredicate.matches(clazz)
+
+  override def matchesMember(member: Member): Boolean = memberNamePattern.matcher(member.getName).matches()
 
 }
 
 /**
  * Implementation of ClassMemberPredicate matching all methods that has the same name as methods in given class
  * @param clazz - class which method names will match predicate
- * @param exceptMethodNames - method names that will be excluded from matching
+ * @param exceptNames - method names that will be excluded from matching
  */
-case class AllMethodNamesPredicate(clazz: Class[_], exceptMethodNames: Set[String] = Set.empty) extends ClassMemberPredicate {
+case class AllMembersPredicate(clazz: Class[_], exceptNames: Set[String] = Set.empty) extends ClassMemberPredicate {
 
-  private val matchingMethodNames = clazz.getMethods.map(_.getName).toSet -- exceptMethodNames
+  private val matchingMethodNames = clazz.getMethods.map(_.getName).toSet -- exceptNames
 
   override def matchesClass(clazz: Class[_]): Boolean = true
 
-  override def matchesMember(member: Member): Boolean =matchingMethodNames.contains(member.getName)
+  override def matchesMember(member: Member): Boolean = matchingMethodNames.contains(member.getName)
 
 }

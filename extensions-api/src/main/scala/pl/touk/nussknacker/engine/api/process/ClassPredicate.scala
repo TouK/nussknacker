@@ -23,8 +23,34 @@ object ClassPredicate {
 }
 
 /**
- * Simple implementation of ClassPredicate based on pattern of class name
- * @param classPattern - class name pattern
+  * Matches classes using their exact names
+  * @param classNames class names
+  */
+case class ClassNamePredicate(classNames: Set[String]) extends ClassPredicate {
+
+  override def matches(clazz: Class[_]): Boolean = classNames.contains(clazz.getName)
+
+}
+
+object ClassNamePredicate {
+
+  def apply(classNames: String*): ClassNamePredicate = ClassNamePredicate(classNames.toSet)
+
+}
+
+/**
+  * Matches classes by prefix of their name
+  * @param classPrefix class name prefix
+  */
+case class ClassNamePrefixPredicate(classPrefix: String) extends ClassPredicate {
+
+  override def matches(clazz: Class[_]): Boolean = clazz.getName.startsWith(classPrefix)
+
+}
+
+/**
+ * Matches classes by their name, using passed Pattern
+ * @param classPattern class name pattern
  */
 case class ClassPatternPredicate(classPattern: Pattern) extends ClassPredicate {
 
@@ -40,30 +66,30 @@ object ExactClassPredicate {
 
   def apply[T: ClassTag]: ExactClassPredicate = ExactClassPredicate(implicitly[ClassTag[T]].runtimeClass)
 
+  def apply(classes: Class[_]*): ExactClassPredicate = ExactClassPredicate(classes.toSet)
+
 }
 
 case class ExceptOfClassesPredicate(predicate: ClassPredicate, exceptions: ClassPredicate) extends ClassPredicate {
   override def matches(clazz: Class[_]): Boolean = predicate.matches(clazz) && !exceptions.matches(clazz)
 }
 
-case class ExactClassPredicate(classes: Class[_]*) extends ClassPredicate {
+case class ExactClassPredicate(classes: Set[Class[_]]) extends ClassPredicate {
   override def matches(clazz: Class[_]): Boolean = classes.contains(clazz)
 }
 
 /**
  * Predicate that matches all superclasses and interfaces based on pattern
- * @param superClassPredicate - class predicate
+ * @param classPredicate - class predicate
  */
-case class SuperClassPredicate(superClassPredicate: ClassPredicate) extends ClassPredicate {
+case class SuperClassPredicate(classPredicate: ClassPredicate) extends ClassPredicate {
+  import scala.jdk.CollectionConverters._
 
-  def matches(clazz: Class[_]): Boolean =
-    superClasses(clazz).exists(cl => superClassPredicate.matches(cl))
-
-  private def superClasses(clazz: Class[_]): Seq[Class[_]] = {
-    import scala.jdk.CollectionConverters._
-    Seq(clazz) ++
-      ClassUtils.getAllSuperclasses(clazz).asScala ++
-      ClassUtils.getAllInterfaces(clazz).asScala
+  def matches(clazz: Class[_]): Boolean = {
+    // this is meant to be fast and do minimal allocations
+    classPredicate.matches(clazz) ||
+      ClassUtils.getAllSuperclasses(clazz).asScala.exists(cl => classPredicate.matches(cl)) ||
+      ClassUtils.getAllInterfaces(clazz).asScala.exists(cl => classPredicate.matches(cl))
   }
 
 }

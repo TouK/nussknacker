@@ -13,6 +13,7 @@
 * [#4264](https://github.com/TouK/nussknacker/pull/4264) Add Unknown type as valid fragment input
 * [#4278](https://github.com/TouK/nussknacker/pull/4278) Expression compilation speedup: reusage of type definitions extracted for code suggestions purpose + 
   added completions for some missing types like `TimestampType` (`#inputMeta.timestampType`) 
+* [#4290](https://github.com/TouK/nussknacker/pull/4290) Expression compilation speedup: replace most regular expression matching with plain string matching
 
 1.9.1 (24 Apr 2023)
 ------------------------
