@@ -1465,7 +1465,7 @@ lazy val restmodel = (project in file("designer/restmodel"))
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
     )}
   )
-  .dependsOn(extensionsApi % "compile;test->test", testUtils % "test")
+  .dependsOn(extensionsApi, commonApi % "test->test", testUtils % "test")
 
 lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(commonSettings)
