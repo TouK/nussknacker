@@ -7,6 +7,7 @@ import org.everit.json.schema.{ArraySchema, CombinedSchema, NullSchema, NumberSc
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.SpecialSpELElement
 
+import java.lang.Long
 import java.time.Year
 
 object JsonTestData {
@@ -25,34 +26,34 @@ object JsonTestData {
 
   val schemaPersonWithLowerLimits: Schema = schemaPerson(Some(300), None, exclusiveMinimum = true)
 
-  val trueSchema: Schema = JsonSchemaBuilder.parseSchema("true")
+  val schemaTrue: Schema = JsonSchemaBuilder.parseSchema("true")
 
-  val emptySchema: Schema = JsonSchemaBuilder.parseSchema("{}")
+  val schemaEmpty: Schema = JsonSchemaBuilder.parseSchema("{}")
 
   val schemaNull: Schema = NullSchema.INSTANCE
 
   val schemaString: Schema = StringSchema.builder().build()
 
-  val schemaInteger: Schema = NumberSchema.builder().requiresInteger(true).build()
-
-  val schemaUnionStrInt: Schema = asSchema(schemaString, schemaInteger)
-
-  val schemaIntegerRange: Schema = NumberSchema.builder()
+  val schemaInt: Schema = NumberSchema.builder()
     .requiresInteger(true)
     .minimum(Integer.MIN_VALUE)
     .maximum(Integer.MAX_VALUE)
     .build()
 
-  val schemaIntegerRange0to100: Schema = NumberSchema.builder()
+  val schemaIntRange0to100: Schema = NumberSchema.builder()
     .requiresInteger(true)
     .minimum(0)
     .maximum(100)
     .build()
 
-  val schemaIntegerRangeTo100: Schema = NumberSchema.builder()
+  val schemaIntRangeTo100: Schema = NumberSchema.builder()
     .requiresInteger(true)
     .maximum(100)
     .build()
+
+  val schemaLong: Schema = NumberSchema.builder().requiresInteger(true).build()
+
+  val schemaBigDecimal: Schema = NumberSchema.builder().build()
 
   val nameAndLastNameSchema: Schema = nameAndLastNameSchema(true)
 
@@ -70,15 +71,15 @@ object JsonTestData {
        |  "additionalProperties": $additionalProperties
        |}""".stripMargin)
 
-  val schemaArrayInt: Schema = createArraySchema(schemaInteger)
+  val schemaArrayLong: Schema = createArraySchema(schemaLong)
 
   val schemaMapAny: ObjectSchema = createMapSchema()
 
   val schemaMapStr: ObjectSchema = createMapSchema(schemaString)
 
-  val schemaMapInt: ObjectSchema = createMapSchema(schemaInteger)
+  val schemaMapLong: ObjectSchema = createMapSchema(schemaLong)
 
-  val schemaMapStringOrInt: ObjectSchema = createMapSchema(schemaString, schemaInteger)
+  val schemaMapStringOrLong: ObjectSchema = createMapSchema(schemaString, schemaLong)
 
   val schemaMapObjPerson: ObjectSchema = createMapSchema(schemaPerson)
 
@@ -86,9 +87,9 @@ object JsonTestData {
 
   val schemaObjMapAny: ObjectSchema = createObjSchema(schemaMapAny)
 
-  val schemaObjMapInt: ObjectSchema = createObjSchema(schemaMapInt)
+  val schemaObjMapLong: ObjectSchema = createObjSchema(schemaMapLong)
 
-  val schemaObjInt: ObjectSchema = createObjSchema(schemaInteger)
+  val schemaObjLong: ObjectSchema = createObjSchema(schemaLong)
 
   val schemaObjStr: ObjectSchema = createObjSchema(schemaString)
 
@@ -137,6 +138,12 @@ object JsonTestData {
   /* Input / Output json configuration */
 
   val sampleJInt: Json = fromInt(sampleInt)
+
+  val sampleJLongFromInt: Json = fromLong(sampleInt)
+
+  val sampleJBigDecimalFromInt: Json = fromBigDecimal(sampleInt)
+
+  val sampleJLong: Json = fromLong(Integer.MAX_VALUE.toLong + 1)
 
   val sampleJMinInt: Json = fromInt(Int.MinValue)
 
