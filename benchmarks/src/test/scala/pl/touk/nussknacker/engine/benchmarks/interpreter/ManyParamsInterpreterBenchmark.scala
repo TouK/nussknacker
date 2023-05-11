@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.benchmarks.interpreter
 
 import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder

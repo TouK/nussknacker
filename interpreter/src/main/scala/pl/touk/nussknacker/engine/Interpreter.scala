@@ -268,10 +268,15 @@ object Interpreter {
 
     override def monad: Monad[IO] = Monad[IO]
 
+<<<<<<< HEAD
     override def fromFuture[T]: Future[T] => IO[Either[T, Throwable]] = {
       implicit val ctx = SynchronousExecutionContext.ctx
       f => IO.fromFuture(IO(transform(f)))(IO.contextShift(ctx))
     }
+=======
+    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => IO[Either[T, Throwable]] =
+      f => IO.fromFuture(IO.pure(transform(f)))
+>>>>>>> ee8e844071 (Improvements: bump cats effect)
   }
 
   class FutureShape(implicit ec: ExecutionContext) extends InterpreterShape[Future] {

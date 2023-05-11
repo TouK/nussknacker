@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
@@ -61,6 +62,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
     implicit val ec: ExecutionContext = executionContext
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
+      implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global //TODO: Global is not good idea..
       interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunAsync(callback)
     } else {
       implicit val future: FutureShape = new FutureShape()

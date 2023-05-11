@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
+import cats.effect.unsafe.IORuntime
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.InterpretationResult
@@ -23,6 +24,8 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
   extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
+  private lazy implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global //TODO: Global is not good idea..
+
   private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
   import compiledProcessWithDeps._

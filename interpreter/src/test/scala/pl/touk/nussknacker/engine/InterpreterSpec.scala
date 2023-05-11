@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -89,6 +90,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     NameDictService.clear()
 
     val metaData = scenario.metaData
+    implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global
     implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
     val processCompilerData = compile(services, transformers, scenario, listeners)
     val interpreter = processCompilerData.interpreter

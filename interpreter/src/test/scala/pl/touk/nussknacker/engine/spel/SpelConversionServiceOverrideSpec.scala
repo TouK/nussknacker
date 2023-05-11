@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.effect.unsafe.IORuntime
 import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
@@ -88,6 +89,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     val compiledNode = compilerData.subPartCompiler.compile(source.node, source.validationContext)(process.metaData).result.value
 
     val inputContext = Context("foo").withVariable(VariableConstants.InputVariableName, inputValue)
+    implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global
     Validated.fromEither(compilerData.interpreter.interpret(compiledNode, parts.metaData, inputContext).unsafeRunSync().head.swap).toValidatedNel
   }
 
