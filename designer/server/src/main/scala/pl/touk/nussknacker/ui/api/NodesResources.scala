@@ -121,7 +121,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
                 expressionSuggestionRequest.expression,
                 expressionSuggestionRequest.caretPosition2d,
                 expressionSuggestionRequest.variables,
-                modelData.typeDefinitions
+                modelData.modelDefinitionWithTypes.typeDefinitions
               )
             }
           }

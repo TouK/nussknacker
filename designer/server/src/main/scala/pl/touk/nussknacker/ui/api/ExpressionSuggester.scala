@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import io.circe.generic.JsonCodec
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast.{PropertyOrFieldReference, VariableReference}
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
@@ -13,7 +14,7 @@ class ExpressionSuggester {
 
   private lazy val parser = new org.springframework.expression.spel.standard.SpelExpressionParser
 
-  def expressionSuggestions(inputValue: String, caretPosition2d: CaretPosition2d, variables: Map[String, RefClazz], typeDefinitions: Set[TypeInfos.ClazzDefinition]): List[ExpressionSuggestion] = {
+  def expressionSuggestions(inputValue: String, caretPosition2d: CaretPosition2d, variables: Map[String, RefClazz], typeDefinitions: TypeDefinitionSet): List[ExpressionSuggestion] = {
     val normalizedCaret = normalizedCaretPosition(inputValue, caretPosition2d)
     if (normalizedCaret == 0) {
       return Nil
@@ -63,7 +64,7 @@ class ExpressionSuggester {
           val prevNodeVariable = prevNode.map(n => n.toStringAST.stripPrefix("#"))
             .flatMap(v => variables.get(v))
           prevNodeVariable.flatMap(c => c.refClazzName)
-            .flatMap(c => typeDefinitions.find(t => t.getClazz.getName == c))
+            .flatMap(c => typeDefinitions.all.find(t => t.getClazz.getName == c)) // TODO: use get(Class[_])
             .map(filterClassMethods).getOrElse(Nil) ++
             prevNodeVariable.flatMap(_.fields).map(filterMapByName(_, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false) }).getOrElse(Nil)
         case _ => Nil

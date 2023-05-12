@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -41,7 +42,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
 
   private val expressionSuggester = new ExpressionSuggester
 
-  private val clazzDefinitions: Set[ClazzDefinition] = Set(
+  private val clazzDefinitions: TypeDefinitionSet = TypeDefinitionSet(Set(
     EspTypeUtils.clazzDefinition(classOf[A]),
     EspTypeUtils.clazzDefinition(classOf[B]),
     EspTypeUtils.clazzDefinition(classOf[C]),
@@ -58,7 +59,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
       Map.empty
     ),
     EspTypeUtils.clazzDefinition(classOf[Util]),
-  )
+  ))
 
   private val variables: Map[String, RefClazz] = Map(
     "input" -> RefClazz(refClazzName = Some(classOf[A].getName)),
