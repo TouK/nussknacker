@@ -150,7 +150,7 @@ object ClassExtractionSettings {
         case m: Member with AccessibleObject => m.getAnnotation(classOf[Hidden]) != null
       }),
       ClassMemberPredicate(ClassPredicate { case cl => classOf[HideToString].isAssignableFrom(cl) }, {
-        case m: Method => m.getName == "toString" && m.getParameterCount == 0
+        case m: Method => m.getName == ToStringMethod && m.getParameterCount == 0
       }),
       ClassMemberPredicate(ClassPredicate { case cl => cl.isEnum }, {
         case m: Method => List("declaringClass", "getDeclaringClass").contains(m.getName)
@@ -208,25 +208,25 @@ object ClassExtractionSettings {
       MemberNamePatternPredicate(
         SuperClassPredicate(ExactClassPredicate[CharSequence]),
         Pattern.compile(s"charAt|compareTo.*|concat|contains|endsWith|equalsIgnoreCase|format|indexOf|isBlank|isEmpty|join|lastIndexOf|length|matches|" +
-          s"replaceAll|replaceFirst|split|startsWith|strip.*|substring|toLowerCase|toUpperCase|trim|$ToStringMethod")),
+          s"replace|replaceAll|replaceFirst|split|startsWith|strip.*|substring|toLowerCase|toUpperCase|trim|$ToStringMethod")),
       MemberNamePatternPredicate(
         SuperClassPredicate(ExactClassPredicate[NumberFormat]),
         Pattern.compile(s"get.*Instance|format|parse")),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[util.Collection[_]]),
-        Set("contains", "containsAll", "get", "getOrDefault", "indexOf", "isEmpty", "size")),
+        Set("contains", "containsAll", "get", "getOrDefault", "indexOf", "isEmpty", "lastIndexOf", "size")),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[util.Map[_, _]]),
         Set("containsKey", "containsValue", "get", "getOrDefault", "isEmpty", "size", "values", "keySet")),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[Optional[_]]),
-        Set("get", "isPresent", "orElse")),
+        Set("get", "isEmpty", "isPresent", "orElse")),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate[UUID]),
         Set("clockSequence", "randomUUID", "fromString", "getLeastSignificantBits", "getMostSignificantBits", "node", "timestamp", ToStringMethod, "variant", "version")),
       MemberNamePredicate(
         SuperClassPredicate(ExactClassPredicate(classOf[Iterable[_]], classOf[Option[_]])),
-        Set("apply", "applyOrElse", "contains", "get", "getOrDefault", "indexOf", "isDefined", "isEmpty", "size", "values", "keys", "diff"))
+        Set("apply", "applyOrElse", "contains", "get", "getOrDefault", "head", "indexOf", "isDefined", "isEmpty", "nonEmpty", "orNull", "size", "tail", "values", "keys", "diff"))
     )
 
   lazy val IncludedSerializableMembers: List[ClassMemberPredicate] =
@@ -236,10 +236,7 @@ object ClassExtractionSettings {
         Set(ToStringMethod)),
       MemberNamePredicate(
         ClassNamePrefixPredicate("io.circe."),
-        Set("noSpaces", "nospaces", "spaces2", "spaces4", ToStringMethod)),
-      MemberNamePredicate(
-        ClassNamePrefixPredicate("argonaut."),
-        Set("noSpaces", "nospaces", "spaces2", "spaces4", ToStringMethod)),
+        Set("noSpaces", "noSpacesSortKeys", "spaces2", "spaces2SortKeys", "spaces4", "spaces4SortKeys", ToStringMethod)),
     )
 
   private case class DumpCaseClass()

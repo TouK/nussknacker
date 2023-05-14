@@ -2896,6 +2896,28 @@
           }
         }
       ],
+      "replace": [
+        {
+          "name": "replace",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Character"}},
+              {"name": "arg1", "refClazz": {"refClazzName": "java.lang.Character"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        },
+        {
+          "name": "replace",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.CharSequence"}},
+              {"name": "arg1", "refClazz": {"refClazzName": "java.lang.CharSequence"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
       "replaceAll": [
         {
           "name": "replaceAll",
@@ -11592,6 +11614,17 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "lastIndexOf": [
+        {
+          "name": "lastIndexOf",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
           }
         }
       ],
