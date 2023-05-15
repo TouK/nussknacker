@@ -48,6 +48,7 @@ import _root_.sttp.client3.SttpBackend
 import _root_.sttp.client3.akkahttp.AkkaHttpBackend
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
+import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
@@ -331,7 +332,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   private def saveAndGetId(process: CanonicalProcess, category: String, isSubprocess: Boolean, processingType: ProcessingType = Streaming): Future[ProcessId] = {
     val processName = ProcessName(process.id)
-    val action = CreateProcessAction(processName, category, process, processingType, isSubprocess, ScenarioComponentsUsages.Empty)
+    val action = CreateProcessAction(processName, category, process, processingType, isSubprocess, ComponentsUsageHelper.computeUsagesForScenario(process))
     for {
       _ <- dbioRunner.runInTransaction(writeProcessRepository.saveNewProcess(action))
       id <- futureFetchingProcessRepository.fetchProcessId(processName).map(_.get)
