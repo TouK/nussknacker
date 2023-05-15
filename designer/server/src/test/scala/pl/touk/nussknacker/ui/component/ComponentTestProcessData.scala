@@ -101,19 +101,16 @@ object ComponentTestProcessData {
     category = CategoryFraud
   ).copy(lastAction = Some(archivedAction))
 
-  private val fraudDisplayableSubprocess: DisplayableProcess = createDisplayableSubprocess(
-    name = FraudSubprocessName,
-    nodes = List(
-      SubprocessInputDefinition("fraudStart", List(SubprocessParameter("in", SubprocessClazzRef[String]))),
-      FilterNodeData(SubprocessFilterName, "#input.id != null"),
-      SubprocessOutputDefinition("fraudEnd", "output", List.empty)
-    ),
-    processingType = Fraud,
-    category = CategoryFraud
-  )
-
-  val FraudSubprocess: ProcessDetails = createSubProcess(
-    FraudSubprocessName, CategoryFraud, processingType = Fraud, json = Some(fraudDisplayableSubprocess)
+  val FraudSubprocess: ProcessDetails = displayableToProcess(
+    displayable = {
+      val scenario = ScenarioBuilder
+        .fragment(FraudSubprocessName, "in" -> classOf[String])
+        .filter(SubprocessFilterName, "#input.id != null")
+        .fragmentOutput("fraudEnd", "output")
+      toDisplayable(scenario, processingType = Fraud)
+    },
+    category = CategoryFraud,
+    isSubprocess = true,
   )
 
   val FraudProcessWithSubprocess: ProcessDetails = displayableToProcess(

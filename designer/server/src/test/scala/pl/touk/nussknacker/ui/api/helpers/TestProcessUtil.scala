@@ -36,8 +36,8 @@ object TestProcessUtil {
   def createSubProcess(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None): BaseProcessDetails[DisplayableProcess] =
     toDetails(name, category, isSubprocess = true, isArchived, processingType, lastAction = lastAction, json = Some(json.getOrElse(createDisplayableSubprocess(name, processingType, category))))
 
-  def displayableToProcess(displayable: DisplayableProcess, category: Category = TestCategories.Category1, isArchived: Boolean = false) : ProcessDetails =
-    toDetails(displayable.id, category, isArchived = isArchived, processingType = displayable.processingType, json = Some(displayable))
+  def displayableToProcess(displayable: DisplayableProcess, category: Category = TestCategories.Category1, isArchived: Boolean = false, isSubprocess: Boolean = false) : ProcessDetails =
+    toDetails(displayable.id, category, isArchived = isArchived, processingType = displayable.processingType, json = Some(displayable), isSubprocess = isSubprocess)
 
   def validatedToProcess(displayable: ValidatedDisplayableProcess) : ValidatedProcessDetails =
     toDetails(

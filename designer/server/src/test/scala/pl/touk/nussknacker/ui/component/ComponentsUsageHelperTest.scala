@@ -199,6 +199,8 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     forAll(table) { (processesDetails, expected) =>
       val result = ComponentsUsageHelper.computeComponentsUsage(defaultComponentIdProvider, withComponentsUsages(processesDetails))
 
+      result should have size expected.size
+
       withEmptyProcess(expected).foreach { case (componentId, usages) =>
         withClue(s"componentId: $componentId") {
           result(componentId) should contain theSameElementsAs usages

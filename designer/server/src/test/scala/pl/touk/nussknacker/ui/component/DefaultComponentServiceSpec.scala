@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
+import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElem
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockFetchingProcessRepository, TestFactory}
@@ -34,7 +35,8 @@ import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
+class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures
+  with EitherValuesDetailedMessage with OptionValues {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
 
