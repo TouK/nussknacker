@@ -25,6 +25,8 @@ object GlobalVariableDefinitionExtractor {
       componentConfig = varWithCategories.componentConfig
     )
     StandardObjectWithMethodDef(
+      // Global variables are always accessed by StandardObjectWithMethodDef.obj - see GlobalVariablesPreparer
+      // and comment in ObjectWithMethodDef.implementationInvoker
       ComponentImplementationInvoker.nullImplementationInvoker,
       varWithCategories.value,
       objectDef,

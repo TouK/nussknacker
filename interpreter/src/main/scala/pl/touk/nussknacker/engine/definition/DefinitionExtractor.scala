@@ -63,6 +63,7 @@ object DefinitionExtractor {
   // TODO: rename to ComponentDefinitionWithImplementation
   sealed trait ObjectWithMethodDef {
 
+    // TODO: It should be exposed only for components - not for global variables
     def implementationInvoker: ComponentImplementationInvoker
 
     // For purpose of transforming (e.g.) stubbing of the implementation
