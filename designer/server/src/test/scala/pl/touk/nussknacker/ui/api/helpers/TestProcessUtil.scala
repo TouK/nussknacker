@@ -19,8 +19,6 @@ import scala.util.Random
 
 object TestProcessUtil {
 
-  type ProcessWithJson = BaseProcessDetails[DisplayableProcess]
-
   private val randomGenerator = new Random()
 
   def toDisplayable(espProcess: CanonicalProcess, processingType: ProcessingType = TestProcessingTypes.Streaming, category: Category = TestCategories.Category1): DisplayableProcess =
