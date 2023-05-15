@@ -1,16 +1,13 @@
 package pl.touk.nussknacker.engine.spel.internal
 
-import java.lang.reflect.{Method, Modifier}
-import java.util.Optional
 import org.apache.commons.lang3.ClassUtils
 import org.springframework.expression.spel.support.ReflectivePropertyAccessor
 import org.springframework.expression.{EvaluationContext, PropertyAccessor, TypedValue}
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.typed.TypedMap
 
+import java.lang.reflect.Method
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
 
 object propertyAccessors {
 
@@ -19,11 +16,8 @@ object propertyAccessors {
     Seq(
       new ReflectivePropertyAccessor(),
       NullPropertyAccessor, //must come before other non-standard ones
-      ScalaOptionOrNullPropertyAccessor, // must be before scalaPropertyAccessor
-      JavaOptionalOrNullPropertyAccessor,
       NoParamMethodPropertyAccessor,
       PrimitiveOrWrappersPropertyAccessor,
-      StaticPropertyAccessor,
       MapPropertyAccessor,
       TypedDictInstancePropertyAccessor,
       // it can add performance overhead so it will be better to keep it on the bottom
@@ -79,51 +73,6 @@ object propertyAccessors {
     override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
       target.getMethods.find(m => ClassUtils.isPrimitiveOrWrapper(target) && m.getParameterCount == 0 && m.getName == name)
     }
-  }
-
-  object StaticPropertyAccessor extends PropertyAccessor with ReadOnly with StaticMethodCaching {
-
-    override protected def reallyFindMethod(name: String, target: Class[_]): Option[Method] = {
-      target.asInstanceOf[Class[_]].getMethods.find(m =>
-        m.getParameterCount == 0 && m.getName == name && Modifier.isStatic(m.getModifiers)
-      )
-    }
-
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
-      method.invoke(target)
-    }
-
-    override def getSpecificTargetClasses: Array[Class[_]] = null
-  }
-
-  // TODO: handle methods with multiple args or at least validate that they can't be called
-  //       - see test for similar case for Futures: "usage of methods with some argument returning future"
-  object ScalaOptionOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
-
-    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
-      target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name && classOf[Option[_]].isAssignableFrom(m.getReturnType))
-    }
-
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
-      method.invoke(target).asInstanceOf[Option[Any]].orNull
-    }
-
-    override def getSpecificTargetClasses: Array[Class[_]] = null
-  }
-
-  // TODO: handle methods with multiple args or at least validate that they can't be called
-  //       - see test for similar case for Futures: "usage of methods with some argument returning future"
-  object JavaOptionalOrNullPropertyAccessor extends PropertyAccessor with ReadOnly with Caching {
-
-    override protected def reallyFindMethod(name: String, target: Class[_]) : Option[Method] = {
-      target.getMethods.find(m => m.getParameterCount == 0 && m.getName == name && classOf[Optional[_]].isAssignableFrom(m.getReturnType))
-    }
-
-    override protected def invokeMethod(propertyName: String, method: Method, target: Any, context: EvaluationContext): Any = {
-      method.invoke(target).asInstanceOf[Optional[Any]].orElse(null)
-    }
-
-    override def getSpecificTargetClasses: Array[Class[_]] = null
   }
 
   object MapPropertyAccessor extends PropertyAccessor with ReadOnly {
