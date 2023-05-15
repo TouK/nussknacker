@@ -63,7 +63,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val CanonicalShape = ProcessShapeFetchStrategy.FetchCanonical
   private val NoneShape = ProcessShapeFetchStrategy.NotFetch
 
-  private val mockRepository = new MockFetchingProcessRepository(processes)
+  private val mockRepository = MockFetchingProcessRepository.withProcessesDetails(processes)
 
   it should "fetchProcessesDetails for each user" in {
     val testingData = Table(
@@ -123,17 +123,16 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   }
 
   it should "fetchSubProcessesDetails with each processing shape strategy" in {
-    val canonicalFraudSubprocess = fraudSubprocess.copy(json = ProcessConverter.fromDisplayable(fraudSubprocess.json))
-    val subprocesses = List(marketingSubprocess, canonicalFraudSubprocess, fraudSecondSubprocess, secretSubprocess)
-    val mixedMockRepository = new MockFetchingProcessRepository(subprocesses)
+    val subprocesses = List(marketingSubprocess, fraudSubprocess, fraudSecondSubprocess, secretSubprocess)
+    val mockRepository = MockFetchingProcessRepository.withProcessesDetails(subprocesses)
 
     val displayableSubProcesses = List(marketingSubprocess, fraudSubprocess, fraudSecondSubprocess, secretSubprocess)
     val canonicalSubProcesses = displayableSubProcesses.map(p => p.copy(json = ProcessConverter.fromDisplayable(p.json)))
     val noneSubProcesses = displayableSubProcesses.map(p => p.copy(json = ()))
 
-    mixedMockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(DisplayableShape, admin, global).futureValue shouldBe displayableSubProcesses
-    mixedMockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(CanonicalShape, admin, global).futureValue shouldBe canonicalSubProcesses
-    mixedMockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(NoneShape, admin, global).futureValue shouldBe noneSubProcesses
+    mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(DisplayableShape, admin, global).futureValue shouldBe displayableSubProcesses
+    mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(CanonicalShape, admin, global).futureValue shouldBe canonicalSubProcesses
+    mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(NoneShape, admin, global).futureValue shouldBe noneSubProcesses
   }
 
   it should "fetchAllProcessesDetails for each user" in {

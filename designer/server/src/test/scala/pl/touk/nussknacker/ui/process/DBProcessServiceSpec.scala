@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process
 
-import akka.util.Timeout
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
@@ -8,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.EspError
@@ -22,7 +21,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 
 class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
 
@@ -96,7 +94,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   }
 
   it should "return user subprocesses" in {
-    val dBProcessService = createDbProcessService[DisplayableProcess](subprocesses.toList)
+    val dBProcessService = createDbProcessService(subprocesses.toList)
 
     val testingData = Table(
       ("user", "subprocesses"),
@@ -149,14 +147,14 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     Right(new ValidatedDisplayableProcess(displayableProcess, ValidationResult.success.copy(nodeResults = nodeResults)))
   }
 
-  private def createDbProcessService[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]] = Nil): DBProcessService =
+  private def createDbProcessService(processes: List[ProcessDetails] = Nil): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
-      fetchingProcessRepository = new MockFetchingProcessRepository(processes),
+      fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),
       processValidation = TestFactory.processValidation

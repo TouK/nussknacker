@@ -524,7 +524,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
-      fetchingProcessRepository = new MockFetchingProcessRepository(processes),
+      fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),
       processValidation = TestFactory.processValidation
