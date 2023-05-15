@@ -19,7 +19,9 @@ object ComponentsUsageHelper {
       (componentName, componentType, node.id)
     }
     val usagesMap = usagesList
-      .groupMap({ case (componentName, componentType, _) => ComponentIdParts(componentName, componentType) })({ case (_, _, nodeIds) => nodeIds })
+      // Can be replaced with .groupMap from Scala 2.13.
+      .groupBy { case (componentName, componentType, _) => ComponentIdParts(componentName, componentType) }
+      .transform { (_, usages) => usages.map { case (_, _, nodeId) => nodeId } }
     ScenarioComponentsUsages(usagesMap)
   }
 
@@ -42,7 +44,9 @@ object ComponentsUsageHelper {
 
     processesDetails
       .flatMap(toComponentIdUsages)
-      .groupMap({ case (componentId, _) => componentId })({ case (_, usages) => usages })
+      // Can be replaced with .groupMap from Scala 2.13.
+      .groupBy { case (componentId, _) => componentId }
+      .transform { case (_, usages) => usages.map { case (_, processDetails) => processDetails } }
   }
 
 }
