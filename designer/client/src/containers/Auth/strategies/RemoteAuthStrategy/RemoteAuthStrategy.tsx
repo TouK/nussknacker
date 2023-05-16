@@ -3,21 +3,14 @@ import { PendingPromise } from "../../../../common/PendingPromise";
 import SystemUtils from "../../../../common/SystemUtils";
 import ErrorBoundary from "../../../../components/common/ErrorBoundary";
 import { RemoteAuthenticationSettings } from "../../../../reducers/settings";
-import { ExternalModule, splitUrl, useExternalLib } from "../../../ExternalLib";
+import { splitUrl } from "../../../ExternalLib";
 import { ModuleString, ModuleUrl } from "../../../ExternalLib/types";
 import { AuthErrorCodes } from "../../AuthErrorCodes";
 import { Strategy, StrategyConstructor } from "../../Strategy";
-import { AuthClient, ExternalAuthModule } from "./externalAuthModule";
+import { AuthClient } from "./externalAuthModule";
+import { RemoteComponent } from "../../../ExternalLib/RemoteComponent";
 
 type AuthLibCallback = (a: AuthClient) => void;
-
-function AuthProvider(props: PropsWithChildren<{ scope: ModuleString; onInit: AuthLibCallback }>) {
-    const { scope, onInit, children } = props;
-    const {
-        module: { default: Component },
-    } = useExternalLib<ExternalAuthModule>(scope);
-    return <Component onInit={onInit}>{children}</Component>;
-}
 
 function createAuthWrapper(
     { url, scope }: { url: ModuleUrl; scope: ModuleString },
@@ -25,13 +18,11 @@ function createAuthWrapper(
 ): FunctionComponent {
     return function Wrapper({ children }: PropsWithChildren<unknown>) {
         return (
-            <ExternalModule url={url}>
-                <ErrorBoundary>
-                    <AuthProvider scope={scope} onInit={onInit}>
-                        {children}
-                    </AuthProvider>
-                </ErrorBoundary>
-            </ExternalModule>
+            <ErrorBoundary>
+                <RemoteComponent url={url} scope={scope} onInit={onInit}>
+                    {children}
+                </RemoteComponent>
+            </ErrorBoundary>
         );
     };
 }
