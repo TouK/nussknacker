@@ -20,6 +20,10 @@ const configuration = withDefaultConfig(
                 singleton: true,
                 requiredVersion: dependencies["@emotion/react"],
             },
+            "@mui/material": {
+                singleton: true,
+                requiredVersion: dependencies["@mui/material"],
+            },
             react: {
                 eager: true,
                 singleton: true,

@@ -5,7 +5,7 @@
   "author": "",
   "contextPath": "components",
   "dependencies": {
-    "@emotion/react": "11.9.0",
+    "@emotion/react": "11.10.4",
     "@emotion/styled": "11.10.4",
     "@loadable/component": "5.15.2",
     "@mui/icons-material": "5.6.2",

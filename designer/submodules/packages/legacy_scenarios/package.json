@@ -5,8 +5,8 @@
   "author": "",
   "contextPath": "legacy_scenarios",
   "dependencies": {
-    "@emotion/css": "11.9.0",
-    "@emotion/react": "11.9.0",
+    "@emotion/css": "11.10.8",
+    "@emotion/react": "11.10.4",
     "@emotion/styled": "11.10.4",
     "@juggle/resize-observer": "3.3.1",
     "@loadable/component": "5.15.2",
