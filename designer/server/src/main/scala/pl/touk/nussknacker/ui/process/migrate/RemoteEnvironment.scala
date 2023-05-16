@@ -20,7 +20,7 @@ import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetail
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
-import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
+import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
@@ -34,7 +34,11 @@ trait RemoteEnvironment {
 
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessVersion]]
 
+  //TODO remove when we switch to `migrateScenario`
   def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
+
+  //works like migrate but provides users information
+  def migrateScenario(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
 
   def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext) : Future[Either[EspError, List[TestMigrationResult]]]
 }
@@ -103,6 +107,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     } yield compared).value
   }
 
+  //TODO remove when we switch to `migrateScenario`
   override def migrate(localProcess: DisplayableProcess, category: String)
                       (implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]] = {
     (for {
@@ -119,6 +124,31 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     } yield ()).value
   }
 
+  override def migrateScenario(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[EspError, Unit]] = {
+    (for {
+      validation <- EitherT(validateProcess(localProcess))
+      _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
+      processEither <- fetchProcessDetails(localProcess.id)
+      _ <- processEither match {
+        case Right(processDetails) if processDetails.isArchived => EitherT.leftT[Future, EspError](MigrationToArchivedError(processDetails.idWithName.name, environmentId))
+        case Right(_) => EitherT.rightT[Future, EspError](())
+        case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) => createScenarioOnRemote(localProcess, category, loggedUser)
+        case Left(other) => EitherT.leftT[Future, EspError](other)
+      }
+      _ <- EitherT.right[EspError](saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}"), Some(loggedUser.username)))
+    } yield ()).value
+  }
+
+  private def createScenarioOnRemote(localProcess: DisplayableProcess, category: String, loggedUser: LoggedUser)
+                                    (implicit ec: ExecutionContext): FutureE[Unit] = {
+    val command = CreateProcessCommand(localProcess.processName, category, localProcess.metaData.isSubprocess, Some(loggedUser.username))
+    EitherT {
+      Marshal(command).to[MessageEntity]
+        .flatMap(createScenarioCommand => invokeForSuccess(HttpMethods.POST, List("migrateScenario"), requestEntity = createScenarioCommand))
+    }
+  }
+
+  //TODO remove when we switch to `migrateScenario`
   private def createProcessOnRemote(localProcess: DisplayableProcess, category: String)
                                  (implicit ec: ExecutionContext): FutureE[Unit] = {
     EitherT {
@@ -179,9 +209,9 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     } yield validation
   }
 
-  private def saveProcess(process: DisplayableProcess, comment: UpdateProcessComment)(implicit ec: ExecutionContext): Future[Unit] = {
+  private def saveProcess(process: DisplayableProcess, comment: UpdateProcessComment, createdBy: Option[String] = None)(implicit ec: ExecutionContext): Future[Unit] = {
     for {
-      processToSave <- Marshal(UpdateProcessCommand(process, comment)).to[MessageEntity](marshaller, ec)
+      processToSave <- Marshal(UpdateProcessCommand(process, comment, createdBy)).to[MessageEntity](marshaller, ec)
       _ <- invokeJson[ValidationResult](HttpMethods.PUT, List("processes", process.id), requestEntity = processToSave)
     } yield ()
   }
@@ -194,8 +224,8 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     request(uri, method, requestEntity) flatMap f
   }
 
-  private def invokeForSuccess(method: HttpMethod, pathParts: List[String], query: Query = Query.Empty)(implicit ec: ExecutionContext): Future[XError[Unit]] =
-    invoke(method, pathParts, query) { response =>
+  private def invokeForSuccess(method: HttpMethod, pathParts: List[String], query: Query = Query.Empty, requestEntity: RequestEntity = HttpEntity.Empty)(implicit ec: ExecutionContext): Future[XError[Unit]] =
+    invoke(method, pathParts, query, requestEntity) { response =>
       if (response.status.isSuccess()) {
         response.discardEntityBytes()
         Future.successful(().asRight)

@@ -206,6 +206,21 @@ class ProcessesResources(
               }
             }
           }
+        } ~ path("migrateScenario") {
+          entity(as[CreateProcessCommand]) { command =>
+            authorize(user.can(command.category, Permission.Write)) {
+              post {
+                complete {
+                  processService
+                    .createProcess(command)
+                    .withSideEffect(response => sideEffectAction(response) { process =>
+                      OnSaved(process.id, process.versionId)
+                    })
+                    .map(toResponseEither[ProcessResponse](_, StatusCodes.Created))
+                }
+              }
+            }
+          }
         } ~ path("processes" / Segment / "status") { processName =>
           (get & processId(processName)) { processId =>
             complete {

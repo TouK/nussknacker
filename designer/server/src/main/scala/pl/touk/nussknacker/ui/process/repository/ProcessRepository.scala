@@ -31,9 +31,9 @@ object ProcessRepository {
   def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
     new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
 
-  case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: Option[Comment], increaseVersionWhenJsonNotChanged: Boolean)
+  case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: Option[Comment], increaseVersionWhenJsonNotChanged: Boolean, createdBy: Option[String] = None)
 
-  case class CreateProcessAction(processName: ProcessName, category: String, canonicalProcess: CanonicalProcess, processingType: ProcessingType, isSubprocess: Boolean)
+  case class CreateProcessAction(processName: ProcessName, category: String, canonicalProcess: CanonicalProcess, processingType: ProcessingType, isSubprocess: Boolean, createdBy: Option[String] = None)
 
   case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
@@ -67,21 +67,22 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     * These action should be done on transaction - move it to ProcessService.createProcess
     */
   def saveNewProcess(action: CreateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[Option[ProcessCreated]]] = {
+    val userName = action.createdBy.getOrElse(loggedUser.username)
     val processToSave = ProcessEntityData(
       id = ProcessId(-1L), name = action.processName, processCategory = action.category, description = None,
       processingType = action.processingType, isSubprocess = action.isSubprocess, isArchived = false,
-      createdAt = Timestamp.from(now), createdBy = loggedUser.username
+      createdAt = Timestamp.from(now), createdBy = userName
     )
 
     val insertNew = processesTable.returning(processesTable.map(_.id)).into { case (entity, newId) => entity.copy(id = newId) }
 
-    val insertAction = logDebug(s"Saving scenario ${action.processName.value} by user $loggedUser").flatMap { _ =>
+    val insertAction = logDebug(s"Saving scenario ${action.processName.value} by user $userName").flatMap { _ =>
       latestProcessVersionsNoJsonQuery(action.processName).result.headOption.flatMap {
         case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
         case None => processesTable.filter(_.name === action.processName).result.headOption.flatMap {
           case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
           case None => (insertNew += processToSave)
-            .flatMap(entity => updateProcessInternal(entity.id, action.canonicalProcess, increaseVersionWhenJsonNotChanged = false))
+            .flatMap(entity => updateProcessInternal(entity.id, action.canonicalProcess, increaseVersionWhenJsonNotChanged = false, userName = userName))
             .map(_.map(res => res.newVersion.map(ProcessCreated(res.processId, _))))
         }
       }
@@ -91,11 +92,13 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
   }
 
   def updateProcess(updateProcessAction: UpdateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
+    val userName = updateProcessAction.createdBy.getOrElse(loggedUser.username)
+
     def addNewCommentToVersion(processId: ProcessId, versionId: VersionId) = {
       newCommentAction(processId, versionId, updateProcessAction.comment)
     }
 
-    updateProcessInternal(updateProcessAction.id, updateProcessAction.canonicalProcess, updateProcessAction.increaseVersionWhenJsonNotChanged).flatMap {
+    updateProcessInternal(updateProcessAction.id, updateProcessAction.canonicalProcess, updateProcessAction.increaseVersionWhenJsonNotChanged, userName).flatMap {
       // Comment should be added via ProcessService not to mix this repository responsibility.
       case updateProcessRes@Right(ProcessUpdated(processId, _, Some(newVersion))) =>
         addNewCommentToVersion(processId, newVersion).map(_ => updateProcessRes)
@@ -105,10 +108,10 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     }
   }
 
-  private def updateProcessInternal(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
+  private def updateProcessInternal(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean, userName: String)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     def createProcessVersionEntityData(version: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
       id = version, processId = processId, json = Some(canonicalProcess), createDate = Timestamp.from(now),
-      user = loggedUser.username, modelVersion = modelVersion.forType(processingType)
+      user = userName, modelVersion = modelVersion.forType(processingType)
     )
 
     def isLastVersionContainsSameProcess(lastVersion: ProcessVersionEntityData): Boolean =
@@ -128,7 +131,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     def rightT[T](value: DB[T]): EitherT[DB, EspError, T] = EitherT[DB, EspError, T](value.map(Right(_)))
 
     val insertAction = for {
-      _ <- rightT(logDebug(s"Updating scenario $processId by user $loggedUser"))
+      _ <- rightT(logDebug(s"Updating scenario $processId by user $userName"))
       maybeProcess <- rightT(processTableFilteredByUser.filter(_.id === processId).result.headOption)
       process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value.toString)))
       latestProcessVersion <- rightT(fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.headOption)

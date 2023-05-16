@@ -36,9 +36,9 @@ import scala.language.higherKinds
 object ProcessService {
   type EmptyResponse = XError[Unit]
 
-  @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isSubprocess: Boolean)
+  @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isSubprocess: Boolean, createdBy: Option[String] = None)
 
-  @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment)
+  @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment, createdBy: Option[String] = None)
 }
 
 trait ProcessService {
@@ -152,7 +152,7 @@ class DBProcessService(deploymentService: DeploymentService,
   override def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[XError[ProcessResponse]] =
     withProcessingType(command.category) { processingType =>
       val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isSubprocess)
-      val action = CreateProcessAction(command.processName, command.category, emptyCanonicalProcess, processingType, command.isSubprocess)
+      val action = CreateProcessAction(command.processName, command.category, emptyCanonicalProcess, processingType, command.isSubprocess, command.createdBy)
 
       val propertiesErrors = validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.category)
 
@@ -184,7 +184,7 @@ class DBProcessService(deploymentService: DeploymentService,
         }
         processUpdated <- EitherT(dbioRunner
           .runInTransaction(processRepository
-            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, Option(action.comment), increaseVersionWhenJsonNotChanged = false))
+            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, Option(action.comment), increaseVersionWhenJsonNotChanged = false, createdBy = action.createdBy))
           ))
       } yield UpdateProcessResponse(
         processUpdated
