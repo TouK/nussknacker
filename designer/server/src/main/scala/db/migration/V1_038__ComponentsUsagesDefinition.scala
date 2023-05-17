@@ -4,7 +4,7 @@ import io.circe._
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
 
-trait V1_037__ComponentsUsagesDefinition extends SlickMigration with EspTables {
+trait V1_038__ComponentsUsagesDefinition extends SlickMigration with EspTables {
 
   import profile.api._
   import slick.dbio.DBIOAction
@@ -21,7 +21,7 @@ trait V1_037__ComponentsUsagesDefinition extends SlickMigration with EspTables {
 
 }
 
-object V1_037__ComponentsUsagesDefinition {
+object V1_038__ComponentsUsagesDefinition {
 
   private val legacyProperty = "path"
   private val newProperty = "slug"
