@@ -29,10 +29,10 @@ case class ProcessAdditionalFields(description: Option[String] = None,
     val typeSpecificData = TypeSpecificData(properties, propertiesType)
     val typeSpecificPropNamesList = typeSpecificData.toProperties.keySet
 
-    val otherProps = properties.filterNot(k => typeSpecificPropNamesList.contains(k._1))
+    val otherProps = properties.filterNot(p => typeSpecificPropNamesList.contains(p._1))
     val fields = otherProps match {
-      case m if m.isEmpty && description.isEmpty => None
-      case e => Some(ProcessAdditionalFields(description, e))
+      case p if p.isEmpty && description.isEmpty => None
+      case p => Some(ProcessAdditionalFields(description, p))
     }
 
     (typeSpecificData, fields)
