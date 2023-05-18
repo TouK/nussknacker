@@ -43,7 +43,7 @@ case object SwaggerDouble extends SwaggerTyped
 
 case object SwaggerNull extends SwaggerTyped
 
-case object SwaggerBigDecimal extends SwaggerTyped
+case object SwaggerNumber extends SwaggerTyped
 
 case object SwaggerDateTime extends SwaggerTyped
 
@@ -117,7 +117,7 @@ object SwaggerTyped {
         case (Some("string"), _) => SwaggerString
         case (Some("integer"), _) => inferredIntType(schema.getMinimum, schema.getExclusiveMinimumValue, schema.getMaximum, schema.getExclusiveMaximumValue)
         //we refuse to accept invalid formats (e.g. integer, int32, decimal etc.)
-        case (Some("number"), None) => SwaggerBigDecimal
+        case (Some("number"), None) => SwaggerNumber
         case (Some("number"), Some("double")) => SwaggerDouble
         case (Some("number"), Some("float")) => SwaggerDouble
         case (Some("null"), None) => SwaggerNull
@@ -163,8 +163,8 @@ object SwaggerTyped {
       Typed.typedClass[java.math.BigInteger]
     case SwaggerDouble =>
       Typed.typedClass[java.lang.Double]
-    case SwaggerBigDecimal =>
-      Typed.typedClass[java.math.BigDecimal]
+    case SwaggerNumber =>
+      Typed.typedClass[java.lang.Number]
     case SwaggerDateTime =>
       Typed.typedClass[ZonedDateTime]
     case SwaggerDate =>

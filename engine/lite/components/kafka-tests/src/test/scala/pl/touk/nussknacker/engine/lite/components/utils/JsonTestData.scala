@@ -108,6 +108,8 @@ object JsonTestData {
   /* SpEL sink output configuration */
   val sampleInt = 13
 
+  val sampleLong = Integer.MAX_VALUE.toLong + 1
+
   val sampleStr = "json-str"
 
   val year: Int = Year.now.getValue
@@ -143,7 +145,9 @@ object JsonTestData {
 
   val sampleJBigDecimalFromInt: Json = fromBigDecimal(sampleInt)
 
-  val sampleJLong: Json = fromLong(Integer.MAX_VALUE.toLong + 1)
+  val sampleJLong: Json = fromLong(sampleLong)
+
+  val sampleJBigDecimalFromLong: Json = fromBigDecimal(sampleLong)
 
   val sampleJMinInt: Json = fromInt(Int.MinValue)
 

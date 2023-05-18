@@ -68,8 +68,8 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       ("config", "result"),
       //Primitive integer validations
       (config(sampleJLong, schemaLong, schemaInt), invalidTypes("actual: 'Long' expected: 'Integer'")),
-      (config(sampleJBigDecimalFromInt, schemaBigDecimal, schemaInt), invalidTypes("actual: 'BigDecimal' expected: 'Integer'")),
-      (config(sampleJBigDecimalFromInt, schemaBigDecimal, schemaLong), invalidTypes("actual: 'BigDecimal' expected: 'Long'")),
+      (config(sampleJBigDecimalFromInt, schemaBigDecimal, schemaInt), invalidTypes("actual: 'Number' expected: 'Integer'")),
+      (config(sampleJBigDecimalFromInt, schemaBigDecimal, schemaLong), invalidTypes("actual: 'Number' expected: 'Long'")),
       (config(sampleJInt, schemaLong, schemaIntRange0to100, fromInt(200)), invalidRanges("actual value: '200' should be between 0 and 100")),
       (config(sampleJInt, schemaLong, schemaIntRangeTo100, fromInt(200)), invalidRanges("actual value: '200' should be less than or equal to 100")),
       (config(sampleJInt, schemaLong, schemaIntRange0to100, fromInt(100)), valid(fromInt(100))),
@@ -84,7 +84,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (config(sampleJStr, schemaString, schemaBigDecimal, sampleJInt), valid(sampleJBigDecimalFromInt)),
 
       (config(sampleJInt, schemaLong, schemaBigDecimal), valid(sampleJBigDecimalFromInt)),
-      (config(sampleJStr, schemaString, schemaBigDecimal, sampleJLong), valid(sampleJBigDecimalFromInt)),
+      (config(sampleJStr, schemaString, schemaBigDecimal, sampleLong), valid(sampleJBigDecimalFromLong)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>

@@ -232,7 +232,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     val schemaAsTypedResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(rootSchema)).typingResult
 
     (schemaAsTypedResult, typingResult) match {
-      case (schema@TypedClass(_, Nil), typing@TypedClass(_, Nil)) if ClassUtils.isAssignable(typing.primitiveClass, schema.primitiveClass, false) => valid
+      case (schema@TypedClass(_, Nil), typing@TypedClass(_, Nil)) if ClassUtils.isAssignable(typing.primitiveClass, schema.primitiveClass, true) => valid
       case (TypedClass(_, Nil), TypedClass(_, Nil)) => invalid(typingResult, schema, rootSchema, path)
       case _ => condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
         OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema)))
