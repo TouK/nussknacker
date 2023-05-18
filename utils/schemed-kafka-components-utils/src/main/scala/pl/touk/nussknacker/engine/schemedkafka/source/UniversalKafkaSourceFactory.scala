@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.source
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.Valid
+import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.json.JsonSchema
@@ -17,11 +18,14 @@ import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.json.JsonSinkValueParameter
+import pl.touk.nussknacker.engine.kafka.KafkaFactory.SinkValueParamName
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
-import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
+import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SchemaVersionParamName
+import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{AvroSchemaSupport, JsonPayloadRecordFormatterSupport, UnsupportedSchemaType}
 import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
@@ -130,10 +134,11 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
     val formatterSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
     val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
 
-    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema, recordFormatter, kafkaContextInitializer, getParameters(preparedTopic, versionOption))
+    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema,
+      recordFormatter, kafkaContextInitializer, getParameters(preparedTopic, versionOption))
   }
 
-  private def getParameters(topic: PreparedKafkaTopic, version: SchemaVersionOption)(implicit nodeId: NodeId): List[Parameter] = {
+  private def getParameters(topic: PreparedKafkaTopic, version: SchemaVersionOption)(implicit nodeId: NodeId): KafkaTestParametersInfo = {
     getSchema(topic, version)
       .andThen(handleSchemaType)
       .valueOr(e => throw new RuntimeException(e.toList.mkString("")))
@@ -152,12 +157,24 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
       }
   }
 
-
-  private def handleSchemaType(determinedSchema: RuntimeSchemaData[ParsedSchema])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] = {
-    determinedSchema.schema match {
+  private def handleSchemaType(determinedSchema: RuntimeSchemaData[ParsedSchema])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, KafkaTestParametersInfo] = {
+    (determinedSchema.schema match {
       case s: AvroSchema => AvroSinkValueParameter(s.rawSchema()).map(_.toParameters)
-      case s: JsonSchema => JsonSinkValueParameter(s.rawSchema(), "value", ValidationMode.lax)(nodeId).map(_.toParameters)
+      case s: JsonSchema => JsonSinkValueParameter(s.rawSchema(), SinkValueParamName, ValidationMode.lax)(nodeId).map(_.toParameters)
       case s => Validated.invalidNel(FatalUnknownError(s"Avro or Json schema is required, but got ${s.schemaType()}"))
+    }).map { params =>
+      KafkaTestParametersInfo(params, determinedSchema.schemaIdOpt.map(_.asInt), prepareMessageFormatter(determinedSchema.schema))
+    }
+  }
+
+  private def prepareMessageFormatter(schema: ParsedSchema): Any => Json = {
+    schema match {
+      case s: AvroSchema =>
+        val encoder = BestEffortAvroEncoder(ValidationMode.lax)
+        val recordFormatterSupport = new AvroSchemaSupport(kafkaConfig).recordFormatterSupport(schemaRegistryClient)
+        (data: Any) => recordFormatterSupport.formatMessage(encoder.encodeOrError(data, s.rawSchema()))
+      case _: JsonSchema => JsonPayloadRecordFormatterSupport.formatMessage
+      case _ => throw new UnsupportedSchemaType(schema.schemaType())
     }
   }
 

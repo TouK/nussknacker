@@ -1,21 +1,18 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import io.circe.Json
-import io.circe.Json.Null
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.json.JSONObject
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, NodeId, VariableConstants}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, VariableConstants}
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.definition.{Parameter, TypedNodeDependency}
-import pl.touk.nussknacker.engine.api.process.{TestWithParametersSupport, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.json.JsonSinkValueParameter
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.source._
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterBaseTestDataGenerator}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
 
@@ -27,8 +24,8 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                             formatter: RecordFormatter,
                             contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-                            uiParameters: List[Parameter] = Nil): Source = {
-    new LiteKafkaSourceImpl(contextInitializer, deserializationSchema, TypedNodeDependency[NodeId].extract(dependencies), preparedTopics, kafkaConfig, formatter, uiParameters)
+                            testParametersInfo: KafkaTestParametersInfo): Source = {
+    new LiteKafkaSourceImpl(contextInitializer, deserializationSchema, TypedNodeDependency[NodeId].extract(dependencies), preparedTopics, kafkaConfig, formatter, testParametersInfo)
   }
 
 }
@@ -39,7 +36,7 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
                                 preparedTopics: List[PreparedKafkaTopic],
                                 val kafkaConfig: KafkaConfig,
                                 val formatter: RecordFormatter,
-                                uiParameters: List[Parameter]) extends LiteKafkaSource with
+                                testParametersInfo: KafkaTestParametersInfo) extends LiteKafkaSource with
   SourceTestSupport[ConsumerRecord[Array[Byte], Array[Byte]]] with RecordFormatterBaseTestDataGenerator with TestWithParametersSupport[ConsumerRecord[Array[Byte], Array[Byte]]] {
 
   private var initializerFun: ContextInitializingFunction[ConsumerRecord[K, V]] = _
@@ -63,28 +60,13 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
   override def testRecordParser: TestRecordParser[ConsumerRecord[Array[Byte], Array[Byte]]] = (testRecord: TestRecord) =>
     formatter.parseRecord(topics.head, testRecord)
 
-  override def testParametersDefinition: List[Parameter] = uiParameters
-
-  private def testKafkaRecordWrapper(testData: Json) = {
-    BestEffortJsonEncoder.defaultForTests.encode(Map(
-      "keySchemaId" -> null,
-      "valueSchemaId" -> null,
-      "consumerRecord" -> Map(
-        "value" -> testData,
-        "topic" -> topics.head,
-        "partition" -> 0,
-        "offset" -> 269616234,
-        "timestamp" -> 1684338134162L,
-        "timestampType" -> "CreateTime",
-        "headers" -> Map[String, String](),
-        "leaderEpoch" -> 47
-      )))
-  }
+  override def testParametersDefinition: List[Parameter] = testParametersInfo.uiParameters
 
   override def parametersToTestData(params: Map[String, AnyRef]): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    val json = BestEffortJsonEncoder.defaultForTests.encode(JsonSinkValueParameter.unflattenParameters(params))
-    val uJson = testKafkaRecordWrapper(json)
-    println(uJson)
-    formatter.parseRecord(topics.head, TestRecord(uJson))
+    val flatParams = JsonSinkValueParameter.unflattenParameters(params)
+    val formattedJson = testParametersInfo.formatMessage(flatParams)
+    val jsonTestData = KafkaTestParametersInfo.wrapWithConsumerData(formattedJson, testParametersInfo.schemaIntId, topics.head)
+    formatter.parseRecord(topics.head, TestRecord(jsonTestData))
   }
+
 }
