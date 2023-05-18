@@ -1,25 +1,30 @@
 package pl.touk.nussknacker.engine.schemedkafka.source
 
-import cats.data.Validated
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.Valid
 import io.confluent.kafka.schemaregistry.ParsedSchema
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.NotNothing
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.json.JsonSinkValueParameter
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
+import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
-import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 
 import scala.reflect.ClassTag
 
@@ -111,7 +116,10 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
+    implicit val nodeId: NodeId = TypedNodeDependency[NodeId].extract(dependencies)
+
     val preparedTopic = extractPreparedTopic(params)
+    val versionOption = parseVersionOption(params)
     val UniversalKafkaSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
 
     // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
@@ -122,7 +130,35 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
     val formatterSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
     val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
 
-    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema, recordFormatter, kafkaContextInitializer)
+    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema, recordFormatter, kafkaContextInitializer, getParameters(preparedTopic, versionOption))
+  }
+
+  private def getParameters(topic: PreparedKafkaTopic, version: SchemaVersionOption)(implicit nodeId: NodeId): List[Parameter] = {
+    getSchema(topic, version)
+      .andThen(handleSchemaType)
+      .valueOr(e => throw new RuntimeException(e.toList.mkString("")))
+  }
+
+  private def getSchema(topic: PreparedKafkaTopic, version: SchemaVersionOption)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, RuntimeSchemaData[ParsedSchema]] = {
+    val schemaDeterminer = prepareUniversalValueSchemaDeterminer(topic, version)
+    schemaDeterminer
+      .determineSchemaUsedInTyping
+      .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
+      .leftMap(NonEmptyList.one)
+      .andThen { runtimeSchema =>
+        schemaBasedMessagesSerdeProvider.schemaValidator.validateSchema(runtimeSchema.schema)
+          .map(_ => runtimeSchema)
+          .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
+      }
+  }
+
+
+  private def handleSchemaType(determinedSchema: RuntimeSchemaData[ParsedSchema])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] = {
+    determinedSchema.schema match {
+      case s: AvroSchema => AvroSinkValueParameter(s.rawSchema()).map(_.toParameters)
+      case s: JsonSchema => JsonSinkValueParameter(s.rawSchema(), "value", ValidationMode.lax)(nodeId).map(_.toParameters)
+      case s => Validated.invalidNel(FatalUnknownError(s"Avro or Json schema is required, but got ${s.schemaType()}"))
+    }
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],

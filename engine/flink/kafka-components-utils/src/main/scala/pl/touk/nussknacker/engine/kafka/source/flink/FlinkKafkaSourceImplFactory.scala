@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
+import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
@@ -17,7 +18,8 @@ class FlinkKafkaSourceImplFactory[K, V](protected val timestampAssigner: Option[
                             kafkaConfig: KafkaConfig,
                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                             formatter: RecordFormatter,
-                            contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source =
+                            contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
+                            uiParameters: List[Parameter] = Nil): Source =
     new FlinkConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer)
 
 }
