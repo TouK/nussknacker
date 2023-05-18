@@ -28,10 +28,10 @@ trait DeploymentManager extends AutoCloseable {
 
   def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]]
 
-  /**
-    * Gets status from the engine
-    */
+  // TDDO: remove this method and use getProcessStates everywhere
   def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]]
+
+  def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]]
 
   /**
     * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
@@ -62,6 +62,13 @@ trait AlwaysFreshProcessState { self: DeploymentManager =>
                                     (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]] =
     getFreshProcessState(name).map(WithDataFreshnessStatus(_, cached = false))
 
+
+  override def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
+    getFreshProcessStates(name).map(WithDataFreshnessStatus(_, cached = false))
+
+  // TDDO: remove this method and use getFreshProcessStates everywhere
   protected def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]]
+
+  protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]]
 
 }

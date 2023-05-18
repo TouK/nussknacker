@@ -36,6 +36,8 @@ class DeploymentManagerStub extends BaseDeploymentManager {
   override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
     Future.successful(WithDataFreshnessStatus(processStateDefinitionManager.processState(jobStatus.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed))), cached = false))
 
+  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = Future.successful(jobStatus.toList)
+
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = Future.successful(jobStatus)
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())

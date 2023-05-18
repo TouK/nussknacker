@@ -39,6 +39,11 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(implicit
   private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[StatusDetails] =
     Some(StatusDetails(status, Some(ExternalDeploymentId("1")), version))
 
+  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+    // TODO: switch tests to this method - stub with List instead of Option, probable remove defaultProcessStateStatus
+    ???
+  }
+
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)

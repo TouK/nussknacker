@@ -30,6 +30,25 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
 
   private val slotsChecker = new FlinkSlotsChecker(client)
 
+  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+    val preparedName = modelData.objectNaming.prepareName(name.value, modelData.processConfig, new NamingContext(FlinkUsageKey))
+    client.findJobsByName(preparedName)
+      .flatMap(jobs => Future.sequence(jobs
+        .map(job => withVersion(job.jid, name).map { version =>
+          if (version.isEmpty) {
+            logger.debug(s"No correct version in deployed scenario: ${job.name}")
+          }
+          StatusDetails(
+            mapJobStatus(job),
+            Some(ExternalDeploymentId(job.jid)),
+            version = version,
+            startTime = Some(job.`start-time`),
+            attributes = Option.empty,
+            errors = List.empty
+          )
+        })))
+  }
+
   /*
     It's ok to have many jobs with same name, however:
     - there MUST be at most 1 job in *non-terminal* state with given name

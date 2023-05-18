@@ -194,6 +194,17 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
     }
   }
 
+  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+    val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
+    for {
+      deployments <- scenarioStateK8sClient.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
+      pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
+    } yield {
+      // TODO: we should filter pods created by given deployment
+      deployments.map(mapper.status(_, pods))
+    }
+  }
+
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
