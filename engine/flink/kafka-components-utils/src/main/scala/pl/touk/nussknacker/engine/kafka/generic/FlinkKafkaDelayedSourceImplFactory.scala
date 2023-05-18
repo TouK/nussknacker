@@ -4,12 +4,12 @@ import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.kafka.source.delayed.{DelayCalculator, FixedDelayCalculator}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 import pl.touk.nussknacker.engine.kafka.source.flink.{FlinkConsumerRecordBasedKafkaSource, FlinkKafkaSource, FlinkKafkaSourceImplFactory}
@@ -36,7 +36,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](timestampAssigner: Option[Timesta
                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                             formatter: RecordFormatter,
                             contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-                            uiParameters: List[Parameter] = Nil): Source = {
+                            testParametersInfo: KafkaTestParametersInfo): Source = {
     extractDelayInMillis(params) match {
       case millis if millis > 0 =>
         val timestampFieldName = extractTimestampField(params)
@@ -46,7 +46,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](timestampAssigner: Option[Timesta
           ).orElse(timestampAssigner)
         createDelayedKafkaSourceWithFixedDelay(preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, contextInitializer, millis)
       case _ =>
-        super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, formatter, contextInitializer)
+        super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, formatter, contextInitializer, KafkaTestParametersInfo.empty)
     }
   }
 

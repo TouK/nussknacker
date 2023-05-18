@@ -126,7 +126,7 @@ class KafkaSourceFactory[K: ClassTag, V: ClassTag](protected val deserialization
     val deserializationSchema = deserializationSchemaFactory.create(topics, kafkaConfig)
     val formatter = formatterFactory.create(kafkaConfig, deserializationSchema)
     val contextInitializer = finalState.get.contextInitializer
-    implProvider.createSource(params, dependencies, finalState.get, preparedTopics, kafkaConfig, deserializationSchema, formatter, contextInitializer, Nil)
+    implProvider.createSource(params, dependencies, finalState.get, preparedTopics, kafkaConfig, deserializationSchema, formatter, contextInitializer, KafkaTestParametersInfo.empty)
   }
 
   /**
@@ -169,7 +169,7 @@ object KafkaSourceFactory {
                      deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                      formatter: RecordFormatter,
                      contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
-                     uiParameters: List[Parameter]): Source
+                     testParametersInfo: KafkaTestParametersInfo): Source
 
   }
 
