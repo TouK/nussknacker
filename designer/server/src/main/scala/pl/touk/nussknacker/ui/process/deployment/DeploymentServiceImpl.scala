@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionId
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
@@ -256,7 +256,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       cancelActionOpt <- handleFinishedProcess(processDetails, state.value)
     } yield {
       val lastAction = cancelActionOpt.orElse(processDetails.lastAction)
-      val finalState = ObsoleteStateDetector.handleObsoleteStatus(state.value, lastAction)
+      val finalState = InconsistentStateDetector.handleStatus(state.value, lastAction)
       logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${lastAction.map(_.action)})")
       finalState
     }
