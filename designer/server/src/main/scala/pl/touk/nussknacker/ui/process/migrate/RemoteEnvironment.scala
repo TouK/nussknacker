@@ -30,11 +30,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait RemoteEnvironment {
 
+  val passUsernameInMigration: Boolean = true
+
   def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
 
   def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessVersion]]
 
-  //TODO remove when we switch to `migrateScenario`
+  //TODO remove `passUsernameInMigration` and `migrate` method when we switch to `migrateScenario`
   def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
 
   //works like migrate but provides users information
@@ -58,7 +60,7 @@ case class MigrationToArchivedError(processName: ProcessName, environment: Strin
 }
 
 case class HttpRemoteEnvironmentConfig(user: String, password: String, targetEnvironmentId: String,
-                                       remoteConfig: StandardRemoteEnvironmentConfig)
+                                       remoteConfig: StandardRemoteEnvironmentConfig, passUsernameInMigration: Boolean = true)
 
 class HttpRemoteEnvironment(httpConfig: HttpRemoteEnvironmentConfig,
                             val testModelMigrations: TestModelMigrations,
@@ -66,6 +68,7 @@ class HttpRemoteEnvironment(httpConfig: HttpRemoteEnvironmentConfig,
                            (implicit as: ActorSystem, val materializer: Materializer, ec: ExecutionContext) extends StandardRemoteEnvironment {
   override val config: StandardRemoteEnvironmentConfig = httpConfig.remoteConfig
 
+  override val passUsernameInMigration: Boolean = httpConfig.passUsernameInMigration
 
   val http = Http()
 

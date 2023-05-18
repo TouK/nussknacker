@@ -28,12 +28,20 @@ import scala.language.higherKinds
 
 object ProcessRepository {
 
+  private def forwardedNameWrapper(name: String) = s"Remote[$name]"
+
   def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
     new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
 
-  case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: Option[Comment], increaseVersionWhenJsonNotChanged: Boolean, createdBy: Option[String] = None)
+  case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: Option[Comment],
+                                 increaseVersionWhenJsonNotChanged: Boolean, private val forwardedUserName: Option[String] = None) {
+    val createdBy: Option[String] = forwardedUserName.map(forwardedNameWrapper)
+  }
 
-  case class CreateProcessAction(processName: ProcessName, category: String, canonicalProcess: CanonicalProcess, processingType: ProcessingType, isSubprocess: Boolean, createdBy: Option[String] = None)
+  case class CreateProcessAction(processName: ProcessName, category: String, canonicalProcess: CanonicalProcess,
+                                 processingType: ProcessingType, isSubprocess: Boolean, private val forwardedUserName: Option[String] = None) {
+    val createdBy: Option[String] = forwardedUserName.map(forwardedNameWrapper)
+  }
 
   case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 

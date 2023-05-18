@@ -55,7 +55,8 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
           path(Segment / VersionIdSegment / "migrate") { (processName, version) =>
             (post & processId(processName)) { processId =>
               complete {
-                withProcess(processId.id, version, remoteEnvironment.migrateScenario)
+                val migrateAction = if(remoteEnvironment.passUsernameInMigration) remoteEnvironment.migrateScenario _ else remoteEnvironment.migrate _
+                withProcess(processId.id, version, migrateAction)
               }
             }
           } ~
