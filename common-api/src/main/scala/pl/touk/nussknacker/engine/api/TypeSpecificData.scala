@@ -74,10 +74,12 @@ object StreamMetaData {
   private val useAsyncInterpretationName = "useAsyncInterpretation"
   private val checkpointIntervalInSecondsName = "checkpointIntervalInSeconds"
 
+  private val defaultSpillStateToDisk = Option(true)
+
   def apply(properties: Map[String, String]): StreamMetaData = {
     StreamMetaData(
       parallelism = properties.get(parallelismName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismName)),
-      spillStateToDisk = properties.get(spillStateToDiskName).flatMap(convertPropertyWithLog(_, _.toBoolean, spillStateToDiskName)),
+      spillStateToDisk = properties.get(spillStateToDiskName).fold(defaultSpillStateToDisk)(convertPropertyWithLog(_, _.toBoolean, spillStateToDiskName)),
       useAsyncInterpretation = properties.get(useAsyncInterpretationName).flatMap(convertPropertyWithLog(_, _.toBoolean, useAsyncInterpretationName)),
       checkpointIntervalInSeconds = properties.get(checkpointIntervalInSecondsName).flatMap(convertPropertyWithLog(_, _.toLong, checkpointIntervalInSecondsName))
     )

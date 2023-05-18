@@ -23,8 +23,8 @@ class TypeSpecificDataTest extends AnyFunSuite with Matchers {
     flinkEmptyTypeData.toProperties shouldBe Map.empty
   }
 
-  test("convert empty properties to empty type specific data") {
-    TypeSpecificData(Map.empty, flinkMetaDataName) shouldBe flinkEmptyTypeData
+  test("convert empty properties to empty type specific data with defaults") {
+    TypeSpecificData(Map.empty, flinkMetaDataName) shouldBe flinkDefaultTypeData
   }
 
   test("throw exception for unrecognized type specific name") {

@@ -7,6 +7,7 @@ object MetaDataTestData {
 
   // flink
   val flinkEmptyTypeData: StreamMetaData = StreamMetaData(None, None, None, None)
+  val flinkDefaultTypeData: StreamMetaData = StreamMetaData()
   val flinkFullTypeData: StreamMetaData = StreamMetaData(
     parallelism = Some(5),
     spillStateToDisk = Some(false),
