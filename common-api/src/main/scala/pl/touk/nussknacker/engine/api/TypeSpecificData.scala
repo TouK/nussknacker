@@ -8,9 +8,9 @@ import scala.concurrent.duration.Duration
 import scala.util.Try
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.FragmentSpecificData.docsUrlName
-import pl.touk.nussknacker.engine.api.LiteStreamMetaData.parallelismLiteName
+import pl.touk.nussknacker.engine.api.LiteStreamMetaData.parallelismName
 import pl.touk.nussknacker.engine.api.RequestResponseMetaData.slugName
-import pl.touk.nussknacker.engine.api.StreamMetaData.{checkpointIntervalInSecondsName, parallelismFlinkName, spillStateToDiskName, useAsyncInterpretationName}
+import pl.touk.nussknacker.engine.api.StreamMetaData.{checkpointIntervalInSecondsName, parallelismName, spillStateToDiskName, useAsyncInterpretationName}
 import pl.touk.nussknacker.engine.api.TypeSpecificUtils.{convertPropertyWithLog, toStringMap}
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {
@@ -61,7 +61,7 @@ case class StreamMetaData(parallelism: Option[Int] = None,
   def checkpointIntervalDuration: Option[Duration] = checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
 
   override val toProperties: Map[String, String] = toStringMap(List(
-    parallelism.map(parallelismFlinkName -> _),
+    parallelism.map(parallelismName -> _),
     spillStateToDisk.map(spillStateToDiskName -> _),
     useAsyncInterpretation.map(useAsyncInterpretationName -> _),
     checkpointIntervalInSeconds.map(checkpointIntervalInSecondsName -> _)
@@ -69,14 +69,14 @@ case class StreamMetaData(parallelism: Option[Int] = None,
 }
 
 object StreamMetaData {
-  private val parallelismFlinkName = "parallelism"
+  private val parallelismName = "parallelism"
   private val spillStateToDiskName = "spillStateToDisk"
   private val useAsyncInterpretationName = "useAsyncInterpretation"
   private val checkpointIntervalInSecondsName = "checkpointIntervalInSeconds"
 
   def apply(properties: Map[String, String]): StreamMetaData = {
     StreamMetaData(
-      parallelism = properties.get(parallelismFlinkName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismFlinkName)),
+      parallelism = properties.get(parallelismName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismName)),
       spillStateToDisk = properties.get(spillStateToDiskName).flatMap(convertPropertyWithLog(_, _.toBoolean, spillStateToDiskName)),
       useAsyncInterpretation = properties.get(useAsyncInterpretationName).flatMap(convertPropertyWithLog(_, _.toBoolean, useAsyncInterpretationName)),
       checkpointIntervalInSeconds = properties.get(checkpointIntervalInSecondsName).flatMap(convertPropertyWithLog(_, _.toLong, checkpointIntervalInSecondsName))
@@ -87,15 +87,15 @@ object StreamMetaData {
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
 case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData {
   override val toProperties: Map[String, String] = toStringMap(List(
-    parallelism.map(parallelismLiteName -> _)))
+    parallelism.map(parallelismName -> _)))
 }
 
 object LiteStreamMetaData {
-  private val parallelismLiteName = "parallelism"
+  private val parallelismName = "parallelism"
 
   def apply(properties: Map[String, String]): LiteStreamMetaData = {
     LiteStreamMetaData(
-      parallelism = properties.get(parallelismLiteName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismLiteName)))
+      parallelism = properties.get(parallelismName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismName)))
   }
 }
 
