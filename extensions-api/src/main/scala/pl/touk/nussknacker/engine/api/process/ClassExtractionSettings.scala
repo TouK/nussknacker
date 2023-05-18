@@ -225,7 +225,7 @@ object ClassExtractionSettings {
         SuperClassPredicate(ExactClassPredicate[UUID]),
         Set("clockSequence", "randomUUID", "fromString", "getLeastSignificantBits", "getMostSignificantBits", "node", "timestamp", ToStringMethod, "variant", "version")),
       MemberNamePredicate(
-        SuperClassPredicate(ExactClassPredicate(classOf[Iterable[_]], classOf[Option[_]])),
+        SuperClassPredicate(ExactClassPredicate(classOf[Iterable[_]], classOf[Option[_]], classOf[Array[_]])),
         Set("apply", "applyOrElse", "contains", "get", "getOrDefault", "head", "indexOf", "isDefined", "isEmpty", "nonEmpty", "orNull", "size", "tail", "values", "keys", "diff"))
     )
 
