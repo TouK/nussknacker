@@ -22,7 +22,7 @@ class RecordFormatterSupportDispatcher(kafkaConfig: KafkaConfig, schemaRegistryC
 
 }
 
-trait RecordFormatterSupport {
+sealed trait RecordFormatterSupport {
   def formatMessage(data: Any): Json
   def readKeyMessage(topic: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte]
   def readValueMessage(topic: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte]
