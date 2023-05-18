@@ -189,7 +189,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
     }
 
-    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory, passUsername = false)) { result =>
       result.leftValue shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
     }
 
@@ -206,7 +206,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       migrationFuture => migrated = Some(migrationFuture)
     )
     whenReady(
-      remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
+      remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory, passUsername = false)) { result =>
       result.leftValue shouldBe MigrationToArchivedError(ProcessName(validProcess.id), remoteEnvironment.environmentId)
     }
   }
@@ -264,7 +264,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       migrationFuture => migrated = Some(migrationFuture)
     )
 
-    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory, passUsername = false)) { result =>
       result shouldBe Symbol("right")
     }
 
@@ -287,7 +287,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       migrationFuture => migrated = Some(migrationFuture)
     )
 
-    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
+    whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory, passUsername = false)) { result =>
       result shouldBe Symbol("right")
     }
 
@@ -313,7 +313,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       onMigrate = migrationFuture => migrated = Some(migrationFuture)
     )
 
-    remoteEnvironment.migrate(subprocess.toDisplayable, category).futureValue shouldBe Symbol("right")
+    remoteEnvironment.migrate(subprocess.toDisplayable, category, passUsername = false).futureValue shouldBe Symbol("right")
     migrated shouldBe Symbol("defined")
     remoteEnvironment.triedToAddProcess shouldBe true
     remoteEnvironment.addedSubprocess shouldBe Some(true)
