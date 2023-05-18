@@ -27,7 +27,7 @@ class RequestResponseOpenApiGenerator(oApiVersion: String, oApiInfo: OApiInfo) {
 
 object RequestResponseOpenApiGenerator {
 
-  private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+  private val jsonEncoder = BestEffortJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
 
   private[requestresponse] def generateScenarioDefinition(operationId: String,
                                                           summary: String,

@@ -29,7 +29,7 @@ trait RecordFormatterSupport {
 }
 
 object JsonPayloadRecordFormatterSupport extends RecordFormatterSupport {
-  override def formatMessage(data: Any): Json = BestEffortJsonEncoder(failOnUnkown = false, classLoader = getClass.getClassLoader).encode(data)
+  override def formatMessage(data: Any): Json = BestEffortJsonEncoder(failOnUnknown = false, classLoader = getClass.getClassLoader).encode(data)
 
   override def readKeyMessage(topic: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] = readMessage(topic, schemaOpt, jsonObj)
 
