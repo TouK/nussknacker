@@ -89,10 +89,6 @@ object ProcessActionState extends Enumeration {
 
 object StateStatus {
   type StatusName = String
-  implicit val configuration: Configuration = Configuration
-    .default
-    .withDefaults
-    .withDiscriminator("type")
 
   // Temporary encoder/decoder
   implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeString.contramap(_.name)
@@ -101,7 +97,7 @@ object StateStatus {
   })
 }
 
-sealed trait StateStatus {
+trait StateStatus {
   //used for filtering processes (e.g. shouldBeRunning)
   def isDuringDeploy: Boolean = false
   //used for handling finished
@@ -114,27 +110,6 @@ sealed trait StateStatus {
   def name: StatusName
 
 }
-
-final case class AllowDeployStateStatus(name: StatusName) extends StateStatus
-
-final case class NotEstablishedStateStatus(name: StatusName) extends StateStatus
-
-final case class DuringDeployStateStatus(name: StatusName) extends StateStatus {
-  override def isDuringDeploy: Boolean = true
-}
-
-final case class FinishedStateStatus(name: StatusName) extends StateStatus {
-  override def isFinished: Boolean = true
-}
-
-final case class RunningStateStatus(name: StatusName) extends StateStatus {
-  override def isRunning: Boolean = true
-}
-
-// This status class is a walk around for fact that StateStatus is encoded and decoded. It causes that there is no easy option
-// to add own status with some specific fields without passing Encoders and Decoders to many places in application.
-// TODO: we should find places where StateStatuses are encoded and decoded and replace them with some DTOs for this purpose
-class CustomStateStatus(val name: StatusName) extends StateStatus
 
 /**
   * It is used to specify:

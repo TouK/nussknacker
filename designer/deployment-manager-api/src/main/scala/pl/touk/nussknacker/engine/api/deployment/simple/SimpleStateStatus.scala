@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment.simple
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
-import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, CustomStateStatus, DuringDeployStateStatus, FinishedStateStatus, NotEstablishedStateStatus, ProcessActionType, RunningStateStatus, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, StateDefinitionDetails, StateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
@@ -11,7 +11,8 @@ import java.net.URI
 object SimpleStateStatus {
 
   // Represents general problem.
-  case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions) extends CustomStateStatus(ProblemStateStatus.name) {
+  case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions) extends StateStatus {
+    override def name: StatusName = ProblemStateStatus.name
     override def isFailed: Boolean = true
   }
   case object ProblemStateStatus {
@@ -50,13 +51,30 @@ object SimpleStateStatus {
 
   }
 
-  val NotDeployed: StateStatus = AllowDeployStateStatus("NOT_DEPLOYED")
-  val DuringDeploy: StateStatus = DuringDeployStateStatus("DURING_DEPLOY")
-  val Running: StateStatus = RunningStateStatus("RUNNING")
-  val Finished: StateStatus = FinishedStateStatus("FINISHED")
-  val Restarting: StateStatus = NotEstablishedStateStatus("RESTARTING")
-  val DuringCancel: StateStatus = NotEstablishedStateStatus("DURING_CANCEL")
-  val Canceled: StateStatus = AllowDeployStateStatus("CANCELED")
+  val NotDeployed: StateStatus = new StateStatus {
+    override def name: StatusName = "NOT_DEPLOYED"
+  }
+  val DuringDeploy: StateStatus = new StateStatus {
+    override def name: StatusName = "DURING_DEPLOY"
+    override def isDuringDeploy: Boolean = true
+  }
+  val Running: StateStatus = new StateStatus {
+    override def name: StatusName = "RUNNING"
+    override def isRunning: Boolean = true
+  }
+  val Finished: StateStatus = new StateStatus {
+    override def name: StatusName = "FINISHED"
+    override def isFinished: Boolean = true
+  }
+  val Restarting: StateStatus = new StateStatus {
+    override def name: StatusName = "RESTARTING"
+  }
+  val DuringCancel: StateStatus = new StateStatus {
+    override def name: StatusName = "DURING_CANCEL"
+  }
+  val Canceled: StateStatus = new StateStatus {
+    override def name: StatusName = "CANCELED"
+  }
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Archive)
@@ -65,6 +83,7 @@ object SimpleStateStatus {
     case SimpleStateStatus.Canceled => List(ProcessActionType.Deploy, ProcessActionType.Archive)
     case SimpleStateStatus.Restarting => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     case SimpleStateStatus.Finished => List(ProcessActionType.Deploy, ProcessActionType.Archive)
+    case SimpleStateStatus.DuringCancel => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
     case SimpleStateStatus.ProblemStateStatus(_, allowedActions) => allowedActions

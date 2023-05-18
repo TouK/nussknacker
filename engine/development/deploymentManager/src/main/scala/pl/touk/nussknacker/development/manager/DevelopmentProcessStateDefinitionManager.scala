@@ -3,7 +3,7 @@ package pl.touk.nussknacker.development.manager
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, OverridingProcessStateDefinitionManager, ProcessActionType, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{OverridingProcessStateDefinitionManager, ProcessActionType, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
 
 class DevelopmentProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager) extends OverridingProcessStateDefinitionManager(
   statusActionsPF = DevelopmentStateStatus.statusActionsPF,
@@ -40,12 +40,17 @@ object DevelopmentStateStatus {
     ),
   )
 
-  case object AfterRunningStatus extends CustomStateStatus("AFTER") {
+  case object AfterRunningStatus extends StateStatus {
+    override def name: StatusName = "AFTER"
     override def isRunning: Boolean = true
   }
 
-  case object PreparingResourcesStatus extends CustomStateStatus("PREPARING")
+  case object PreparingResourcesStatus extends StateStatus {
+    override def name: StatusName = "PREPARING"
+  }
 
-  case object TestStatus extends CustomStateStatus("TEST")
+  case object TestStatus extends StateStatus {
+    override def name: StatusName = "TEST"
+  }
 
 }

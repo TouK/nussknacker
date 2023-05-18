@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{CustomStateStatus, ProcessActionType, RunningStateStatus, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, StateDefinitionDetails, StateStatus}
 
 import java.net.URI
 import java.time.LocalDateTime
@@ -19,7 +20,7 @@ object PeriodicStateStatus {
   }
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
-    case _: RunningStateStatus => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
+    case s: StateStatus if s.name == SimpleStateStatus.Running.name => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
     case _: ScheduledStatus => List(ProcessActionType.Cancel, ProcessActionType.Deploy)
     case WaitingForScheduleStatus => List(ProcessActionType.Cancel) //or maybe should it be empty??
     case _: ProblemStateStatus => List(ProcessActionType.Cancel) //redeploy is not allowed
@@ -48,7 +49,8 @@ object PeriodicStateStatus {
     ),
   )
 
-  case class ScheduledStatus(nextRunAt: LocalDateTime) extends CustomStateStatus(ScheduledStatus.name) {
+  case class ScheduledStatus(nextRunAt: LocalDateTime) extends StateStatus {
+    override def name: StatusName = ScheduledStatus.name
     override def isRunning: Boolean = true
   }
 
@@ -56,7 +58,8 @@ object PeriodicStateStatus {
     val name = "SCHEDULED"
   }
 
-  case object WaitingForScheduleStatus extends CustomStateStatus("WAITING_FOR_SCHEDULE") {
+  case object WaitingForScheduleStatus extends StateStatus {
+    override def name: StatusName = "WAITING_FOR_SCHEDULE"
     override def isRunning: Boolean = true
   }
 }

@@ -34,7 +34,8 @@ class StateStatusCodingSpec extends AnyFunSuite with Matchers with EitherValuesD
     decodedStatus should not equal givenStatus
   }
 
-  case class MyCustomStateStatus(someField: String) extends CustomStateStatus("CUSTOM") {
+  case class MyCustomStateStatus(someField: String) extends StateStatus {
+    override def name: StatusName = "CUSTOM"
     override def isRunning: Boolean = true
   }
 
