@@ -4,6 +4,7 @@ import cats.data._
 import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.listener.Comment
-
 import slick.dbio.DBIOAction
 
 import java.sql.Timestamp
@@ -28,20 +28,18 @@ import scala.language.higherKinds
 
 object ProcessRepository {
 
-  private def forwardedNameWrapper(name: String) = s"Remote[$name]"
+  @JsonCodec case class RemoteUserName(name: String) extends AnyVal {
+    def display: String = s"Remote[$name]"
+  }
 
   def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
     new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
 
   case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: Option[Comment],
-                                 increaseVersionWhenJsonNotChanged: Boolean, private val forwardedUserName: Option[String] = None) {
-    val createdBy: Option[String] = forwardedUserName.map(forwardedNameWrapper)
-  }
+                                 increaseVersionWhenJsonNotChanged: Boolean, forwardedUserName: Option[RemoteUserName])
 
   case class CreateProcessAction(processName: ProcessName, category: String, canonicalProcess: CanonicalProcess,
-                                 processingType: ProcessingType, isSubprocess: Boolean, private val forwardedUserName: Option[String] = None) {
-    val createdBy: Option[String] = forwardedUserName.map(forwardedNameWrapper)
-  }
+                                 processingType: ProcessingType, isSubprocess: Boolean, forwardedUserName: Option[RemoteUserName])
 
   case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
@@ -75,7 +73,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     * These action should be done on transaction - move it to ProcessService.createProcess
     */
   def saveNewProcess(action: CreateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[Option[ProcessCreated]]] = {
-    val userName = action.createdBy.getOrElse(loggedUser.username)
+    val userName = action.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
     val processToSave = ProcessEntityData(
       id = ProcessId(-1L), name = action.processName, processCategory = action.category, description = None,
       processingType = action.processingType, isSubprocess = action.isSubprocess, isArchived = false,
@@ -100,7 +98,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
   }
 
   def updateProcess(updateProcessAction: UpdateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
-    val userName = updateProcessAction.createdBy.getOrElse(loggedUser.username)
+    val userName = updateProcessAction.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
 
     def addNewCommentToVersion(processId: ProcessId, versionId: VersionId) = {
       newCommentAction(processId, versionId, updateProcessAction.comment)

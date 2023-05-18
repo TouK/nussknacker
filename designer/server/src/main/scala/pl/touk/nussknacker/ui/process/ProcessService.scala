@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessVa
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, RemoteUserName, UpdateProcessAction}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -36,9 +36,9 @@ import scala.language.higherKinds
 object ProcessService {
   type EmptyResponse = XError[Unit]
 
-  @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isSubprocess: Boolean, forwardedUserName: Option[String] = None)
+  @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isSubprocess: Boolean, forwardedUserName: Option[RemoteUserName] )
 
-  @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment, forwardedUserName: Option[String] = None)
+  @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment, forwardedUserName: Option[RemoteUserName])
 }
 
 trait ProcessService {

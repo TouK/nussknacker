@@ -53,7 +53,7 @@ class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest wit
   }
 
   private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
-    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess)
+    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess, None)
 
     dbioRunner
       .runInTransaction(writeRepository.saveNewProcess(action))

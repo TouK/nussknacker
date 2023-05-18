@@ -146,14 +146,16 @@ class ProcessesResources(
               }
             } ~ (put & canWrite(processId)) {
               entity(as[UpdateProcessCommand]) { updateCommand =>
-                complete {
-                  processService
-                    .updateProcess(processId, updateCommand)
-                    .withSideEffect(response => sideEffectAction(response.toOption.flatMap(_.processResponse)) { resp =>
-                      OnSaved(resp.id, resp.versionId)
-                    })
-                    .map(_.map(_.validationResult))
-                    .map(toResponseEither[ValidationResult])
+                canOverrideUsername(processId.id, updateCommand.forwardedUserName)(ec, user) {
+                  complete {
+                    processService
+                      .updateProcess(processId, updateCommand)
+                      .withSideEffect(response => sideEffectAction(response.toOption.flatMap(_.processResponse)) { resp =>
+                        OnSaved(resp.id, resp.versionId)
+                      })
+                      .map(_.map(_.validationResult))
+                      .map(toResponseEither[ValidationResult])
+                  }
                 }
               }
             } ~ (get & skipValidateAndResolveParameter) { skipValidateAndResolve =>
@@ -197,7 +199,7 @@ class ProcessesResources(
               post {
                 complete {
                   processService
-                    .createProcess(CreateProcessCommand(ProcessName(processName), category, isSubprocess))
+                    .createProcess(CreateProcessCommand(ProcessName(processName), category, isSubprocess, None))
                     .withSideEffect(response => sideEffectAction(response) { process =>
                       OnSaved(process.id, process.versionId)
                     })
@@ -209,14 +211,16 @@ class ProcessesResources(
         } ~ path("migrateScenario") {
           entity(as[CreateProcessCommand]) { command =>
             authorize(user.can(command.category, Permission.Write)) {
-              post {
-                complete {
-                  processService
-                    .createProcess(command)
-                    .withSideEffect(response => sideEffectAction(response) { process =>
-                      OnSaved(process.id, process.versionId)
-                    })
-                    .map(toResponseEither[ProcessResponse](_, StatusCodes.Created))
+              canOverrideUsername(command.category, command.forwardedUserName)(user) {
+                post {
+                  complete {
+                    processService
+                      .createProcess(command)
+                      .withSideEffect(response => sideEffectAction(response) { process =>
+                        OnSaved(process.id, process.versionId)
+                      })
+                      .map(toResponseEither[ProcessResponse](_, StatusCodes.Created))
+                  }
                 }
               }
             }
