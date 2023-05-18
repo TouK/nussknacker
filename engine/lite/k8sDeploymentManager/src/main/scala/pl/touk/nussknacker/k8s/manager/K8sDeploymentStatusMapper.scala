@@ -41,7 +41,7 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
     }
   }
 
-  private def status(deployment: Deployment, pods: List[Pod]): StatusDetails = {
+  private[manager] def status(deployment: Deployment, pods: List[Pod]): StatusDetails = {
     val (status, attrs, errors) = deployment.status match {
       case None => (SimpleStateStatus.DuringDeploy, None, Nil)
       case Some(status) => mapStatusWithPods(status, pods)

@@ -41,7 +41,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     }
 
     eventually {
-      manager.getProcessState(name).futureValue.value.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
     }
 
     val input = obj("productId" -> fromInt(10))
@@ -51,7 +51,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     wrapInFailingLoader {
       manager.cancel(name, User("a", "b")).futureValue
     }
-    manager.getProcessState(name).futureValue.value shouldBe None
+    manager.getProcessStates(name).futureValue.value shouldBe List.empty
   }
 
   test("Run persisted scenario deployments") {
@@ -68,7 +68,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
     eventually {
-      manager.getProcessState(name).futureValue.value.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
     }
 
     val input = obj("productId" -> fromInt(10))
@@ -77,7 +77,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
 
     manager.cancel(name, User("a", "b")).futureValue
 
-    manager.getProcessState(name).futureValue.value shouldBe None
+    manager.getProcessStates(name).futureValue.value shouldBe List.empty
   }
 
   test("Run persisted scenario deployment with scenario json incompatible with current component API") {
@@ -94,8 +94,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val deployedScenarioData = DeployedScenarioData(ProcessVersion.empty.copy(processName = name), DeploymentData.empty, scenarioWithIncompatibleParameters)
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
-    manager.getProcessState(name).futureValue.value.map(_.status) should matchPattern {
-      case Some(ProblemStateStatus("Scenario compilation errors", _)) =>
+    manager.getProcessStates(name).futureValue.value.map(_.status) should matchPattern {
+      case ProblemStateStatus("Scenario compilation errors", _) :: Nil =>
     }
   }
 
@@ -154,7 +154,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     fixture.deployScenario(scenarioForOutput("next"))
 
     eventually {
-      manager.getProcessState(name).futureValue.value.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
     }
 
     kafkaClient.sendMessage(inputTopic, message("2")).futureValue
@@ -166,7 +166,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
 
     manager.cancel(name, User("a", "b")).futureValue
 
-    manager.getProcessState(name).futureValue.value shouldBe None
+    manager.getProcessStates(name).futureValue.value shouldBe List.empty
   }
 
   test("Performs test from file") {

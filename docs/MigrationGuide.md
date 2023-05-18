@@ -3,11 +3,15 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.11.0
+## In version 1.11.0 (Not released yet)
 
 ### Code API changes
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility).
   * `isSubprocess` query parameter is renamed to `isFragment`. `isSubprocess` will be removed in 1.12.0
+* [#4295](https://github.com/TouK/nussknacker/pull/4295) `DeploymentManager.getProcessState(ProcessName)` 
+  method now returns `List[StatusDetails]` instead of `Option[StatusDetails]`. If you are a consumer of this API and want
+  to have the same behavior as previously, you can use `InconsistentStateDetector.extractAtMostOneStatus` method for that.
+  Notice, that in the future visibility of this method may be changed into private. 
 
 ## In version 1.10.0
 
