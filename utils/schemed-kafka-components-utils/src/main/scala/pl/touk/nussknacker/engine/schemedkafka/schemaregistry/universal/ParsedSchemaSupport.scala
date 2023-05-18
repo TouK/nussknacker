@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{Validated, ValidatedNel}
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
@@ -26,7 +26,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serializ
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
 import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.util.output.{OutputValidatorError, OutputValidatorErrorsConverter}
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkSingleValueParameter, SinkValueParameter}
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
