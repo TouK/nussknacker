@@ -16,11 +16,11 @@ import scala.jdk.CollectionConverters._
 
 object BestEffortJsonEncoder {
 
-  val defaultForTests: BestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+  val defaultForTests: BestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
 
 }
 
-case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader, highPriority: PartialFunction[Any, Json] = Map()) {
+case class BestEffortJsonEncoder(failOnUnknown: Boolean, classLoader: ClassLoader, highPriority: PartialFunction[Any, Json] = Map()) {
 
   private val safeString = safeJson[String](fromString)
   private val safeLong = safeJson[Long](fromLong)
@@ -63,10 +63,11 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
       case a: DisplayJson => a.asJson
       case a: scala.collection.Map[String@unchecked, _] => encodeMap(a.toMap)
       case a: java.util.Map[String@unchecked, _] => encodeMap(a.asScala.toMap)
-      case a: Iterable[_] => fromValues(a.map(encode).toList)
+      case a: Iterable[_] => fromValues(a.map(encode))
       case a: Enum[_] => safeString(a.toString)
-      case a: java.util.Collection[_] => fromValues(a.asScala.map(encode).toList)
-      case _ if !failOnUnkown => safeString(any.toString)
+      case a: java.util.Collection[_] => fromValues(a.asScala.map(encode))
+      case a: Array[_] => fromValues(a.map(encode))
+      case _ if !failOnUnknown => safeString(any.toString)
       case a => throw new IllegalArgumentException(s"Invalid type: ${a.getClass}")
     })
 

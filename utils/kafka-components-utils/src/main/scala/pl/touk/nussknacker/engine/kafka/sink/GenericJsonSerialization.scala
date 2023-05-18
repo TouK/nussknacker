@@ -15,6 +15,6 @@ case class GenericJsonSerialization(topic: String) extends SimpleSerializationSc
 
 object GenericJsonSerialization {
 
-  private val encoder = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader)
+  private val encoder = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
 
 }

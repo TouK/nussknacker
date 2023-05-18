@@ -20,6 +20,7 @@
   * `java.util.Optional`: `isEmpty`
   * `scala.Option`, `scala.collection.Iterable`: `head`, `nonEmpty`, `orNull`, `tail`
   * `io.circe.*` (deserialized raw JSON objects): `noSpacesSortKeys`, `spaces2SortKeys`, `spaces4SortKeys`
+* [#4298](https://github.com/TouK/nussknacker/pull/4298) Support arrays in `BestEffortJsonEncoder`
 
 1.9.1 (24 Apr 2023)
 ------------------------

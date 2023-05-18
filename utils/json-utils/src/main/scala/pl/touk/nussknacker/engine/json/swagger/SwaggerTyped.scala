@@ -56,7 +56,7 @@ case class SwaggerUnion(types: List[SwaggerTyped]) extends SwaggerTyped
 @JsonCodec case class SwaggerEnum private (values: List[Any]) extends SwaggerTyped
 
 object SwaggerEnum {
-  private val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+  private val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
   private implicit val decoder: Decoder[List[Any]] = Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
   private implicit val encoder: Encoder[List[Any]] = Encoder.instance[List[Any]](bestEffortJsonEncoder.encode)
   private lazy val om = new ObjectMapper()

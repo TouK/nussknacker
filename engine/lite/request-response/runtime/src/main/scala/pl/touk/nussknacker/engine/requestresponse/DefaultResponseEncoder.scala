@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 object DefaultResponseEncoder extends ResponseEncoder[Any] {
 
-  private val bestEffortEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+  private val bestEffortEncoder = BestEffortJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
 
   override def toJsonResponse(input: Any, result: List[Any]): Json = bestEffortEncoder.encode(result)
 
