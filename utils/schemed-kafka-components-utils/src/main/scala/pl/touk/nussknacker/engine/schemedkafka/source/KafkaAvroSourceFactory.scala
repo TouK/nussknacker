@@ -137,7 +137,7 @@ class KafkaAvroSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothing](v
     val formatterSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
     val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
 
-    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema, recordFormatter, kafkaContextInitializer)
+    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema, recordFormatter, kafkaContextInitializer, Nil)
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],
