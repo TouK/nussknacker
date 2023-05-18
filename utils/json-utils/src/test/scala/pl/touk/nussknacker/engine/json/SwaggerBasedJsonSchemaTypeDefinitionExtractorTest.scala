@@ -112,8 +112,8 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     val results = List(
       "rectangle" -> TypedObjectTypingResult.apply(
         List(
-          "a" -> Typed.apply[java.lang.Number],
-          "b" -> Typed.apply[java.lang.Number],
+          "a" -> Typed.apply[java.math.BigDecimal],
+          "b" -> Typed.apply[java.math.BigDecimal],
           "c" -> Typed.apply[String]
         )
       ),
@@ -181,11 +181,11 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
       "intArrayField" -> Typed.genericTypeClass(classOf[java.util.List[Long]], List(Typed[Long])),
       "intField" -> Typed.apply[Long],
       "nestedObject" -> TypedObjectTypingResult(List(
-        "numFieldObj" -> Typed.apply[java.lang.Number],
+        "numFieldObj" -> Typed.apply[java.math.BigDecimal],
         "strFieldObj" -> Typed.apply[String]
       )),
       "strField" -> Typed.apply[String],
-      "numField" -> Typed.apply[java.lang.Number]
+      "numField" -> Typed.apply[java.math.BigDecimal]
     )
     result shouldBe TypedObjectTypingResult.apply(results)
   }

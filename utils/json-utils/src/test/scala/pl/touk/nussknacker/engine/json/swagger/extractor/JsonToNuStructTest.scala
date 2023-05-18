@@ -37,7 +37,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
         "field5" -> SwaggerDateTime,
         "field6" -> SwaggerTime,
         "field7" -> SwaggerDate,
-        "decimalField" -> SwaggerNumber,
+        "decimalField" -> SwaggerBigDecimal,
         "doubleField" -> SwaggerDouble,
         "nullField" -> SwaggerNull,
         "mapField" -> SwaggerObject(Map.empty),

@@ -46,6 +46,8 @@ object JsonSchemaOutputValidator {
       t.klass == classOf[java.util.Map[_, _]] && t.params.size == 2 && t.params.head == Typed.typedClass[String]
     }
   }
+
+  private val BigDecimalClass = classOf[java.math.BigDecimal]
 }
 
 // root schema is a container for eventual ref schemas - in particular it can be the same schema as outputSchema
@@ -74,7 +76,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (typingResult: TypedObjectTypingResult, s: ObjectSchema) => validateRecordInputType(typingResult, s, rootSchema, path)
       case (typed: TypedObjectWithValue, s: NumberSchema)
         if ClassUtils.isAssignable(typed.underlying.objType.primitiveClass, classOf[Number], true) => validateValueAgainstNumberSchema(s, typed, path)
-      case (_, _) => canBeSubclassOf(typingResult, schema, rootSchema, path)
+      case (_, _) => canBeAssignedTo(typingResult, schema, rootSchema, path)
     }
   }
 
@@ -228,16 +230,22 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
    * * Unknown.canBeSubclassOf(Any) => true
    * Should we use strict verification at json?
    */
-  private def canBeSubclassOf(typingResult: TypingResult, schema: Schema, rootSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
+  private def canBeAssignedTo(typingResult: TypingResult, schema: Schema, rootSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     val schemaAsTypedResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(rootSchema)).typingResult
 
     (schemaAsTypedResult, typingResult) match {
-      case (schema@TypedClass(_, Nil), typing@TypedClass(_, Nil)) if ClassUtils.isAssignable(typing.primitiveClass, schema.primitiveClass, true) => valid
+      case (schema@TypedClass(_, Nil), typing@TypedClass(_, Nil)) if ClassUtils.isAssignable(typing.primitiveClass, withBigDecimalasNumber(schema.primitiveClass), true) => valid
       case (TypedClass(_, Nil), TypedClass(_, Nil)) => invalid(typingResult, schema, rootSchema, path)
       case _ => condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
         OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema)))
     }
   }
+
+  private def withBigDecimalasNumber(clazz: Class[_]) =
+    clazz match {
+      case `BigDecimalClass` => classOf[java.lang.Number]
+      case _ => clazz
+    }
 
   private def invalid(typingResult: TypingResult, schema: Schema, rootSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorTypeError, Nothing] =
     Validated.invalidNel(typeError(typingResult, schema, rootSchema, path))

@@ -79,7 +79,7 @@ object JsonToNuStruct {
           extract(_.asString, parseDate)
         case SwaggerDouble =>
           extract[JsonNumber](_.asNumber, n => double2Double(n.toDouble))
-        case SwaggerNumber =>
+        case SwaggerBigDecimal =>
           extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
         case SwaggerArray(elementType) =>
           extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
