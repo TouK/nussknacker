@@ -23,7 +23,6 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
   class ProcessVersionEntity(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
-    // TODO components-usages: remove Option.
     def json: Rep[Option[String]] = column[Option[String]]("json", O.Length(100 * 1000))
 
     def componentsUsages: Rep[Option[String]] = column[Option[String]]("components_usages", NotNull)
