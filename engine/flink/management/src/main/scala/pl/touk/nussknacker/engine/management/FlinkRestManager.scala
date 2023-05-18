@@ -59,9 +59,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     }
   )
 
-  // FIXME
-  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] = ???
-
   private def withJobOverview[T](name: ProcessName)(whenNone: => Future[T], whenDuplicates: List[JobOverview] => Future[T], whenSingle: JobOverview => Future[T]): Future[T] = {
     val preparedName = modelData.objectNaming.prepareName(name.value, modelData.processConfig, new NamingContext(FlinkUsageKey))
     client.findJobsByName(preparedName).flatMap {

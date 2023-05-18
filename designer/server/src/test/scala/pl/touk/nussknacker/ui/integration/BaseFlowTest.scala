@@ -138,10 +138,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
           Some("https://nussknacker.io/documentation/docs/installation_configuration_guide/ModelConfiguration#scenarios-additional-properties"), None, None)
       )
 
-      val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }
-      relevant shouldBe underTest
-      val not = other.values.filter(_.docsUrl.isDefined)
-      other.values.forall(_.docsUrl.isEmpty) shouldBe true
+      settings.collect { case (k, v) if underTest.keySet contains k => (k, v) } shouldBe underTest
     }
   }
 

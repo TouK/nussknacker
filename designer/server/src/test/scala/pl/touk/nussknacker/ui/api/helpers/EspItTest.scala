@@ -383,9 +383,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     } yield id).futureValue
   }
 
-  protected def parseResponseToListJsonProcess(response: String): List[ProcessJson] = {
+  protected def parseResponseToListJsonProcess(response: String): List[ProcessJson] =
     parser.decode[List[Json]](response).toOption.get.map(j => ProcessJson(j))
-  }
 
   private def decodeJsonProcess(response: String): ProcessJson =
     ProcessJson(parser.decode[Json](response).toOption.get)

@@ -238,7 +238,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                              (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     dispatcher.deploymentManager(processDetails.processingType).map { manager =>
       if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
-        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy))
       } else if (inProgressActionTypes.contains(ProcessActionType.Cancel)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
@@ -274,21 +274,21 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         Option(SimpleProcessStateDefinitionManager.errorFailedToGet),
         cached = false)
 
-    val stateFromEngineFuture = deploymentManager.getProcessState(processIdWithName.name, lastAction).recover {
+    val resolvedState = deploymentManager.getProcessState(processIdWithName.name, lastAction).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
         failedToGetResult
     }
 
     scenarioStateTimeout.map { timeout =>
-      stateFromEngineFuture.withTimeout(timeout, timeoutResult = failedToGetResult).map {
+      resolvedState.withTimeout(timeout, timeoutResult = failedToGetResult).map {
         case CompletedNormally(value) =>
           value
         case CompletedByTimeout(value) =>
           logger.warn(s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name}")
           value
       }
-    }.getOrElse(stateFromEngineFuture)
+    }.getOrElse(resolvedState)
   }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history

@@ -45,8 +45,10 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     }
   }
 
-  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] =
+  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] = {
     getFreshProcessState(name)
+      .map(processStateOpt => Option(FlinkDeploymentManager.resolveStatusAndActionInconsistency(processStateOpt, lastAction)))
+  }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
@@ -135,8 +137,9 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     withProcessState(processName, prepareProcessState(status, version))(action)
   }
 
+  // TODO: empty process state indicates problems with fetching from db or engine, should not happen
   def withEmptyProcessState[T](processName: ProcessName)(action: => T): T = {
-    withProcessState(processName, None)(action)
+    withProcessStateStatus(processName, SimpleStateStatus.NotDeployed)(action)
   }
 
   def withProcessState[T](processName: ProcessName, status: Option[ProcessState])(action: => T): T = {

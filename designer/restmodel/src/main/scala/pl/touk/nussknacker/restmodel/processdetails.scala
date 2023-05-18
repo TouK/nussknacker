@@ -17,8 +17,6 @@ object processdetails {
 
   sealed trait Process {
     val lastAction: Option[ProcessAction]
-    def isDeployed: Boolean = lastAction.exists(_.isDeployed)
-    def isCanceled: Boolean = lastAction.exists(_.isCanceled)
   }
 
   object BasicProcess {

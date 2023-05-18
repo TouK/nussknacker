@@ -12,8 +12,4 @@ import java.time.Instant
                                     action: ProcessActionType,
                                     commentId: Option[Long],
                                     comment: Option[String],
-                                    buildInfo: Map[String, String]) {
-  def isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
-
-  def isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
-}
+                                    buildInfo: Map[String, String])

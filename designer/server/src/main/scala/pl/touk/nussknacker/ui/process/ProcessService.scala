@@ -291,7 +291,7 @@ class DBProcessService(deploymentService: DeploymentService,
     }
 
   private def withNotRunningState[T](process: BaseProcessDetails[_], errorMessage: String)(callback: ProcessState => Future[XError[T]])(implicit user: LoggedUser) = {
-    if (process.isDeployed) {
+    if (process.state.exists(_.status.isDeployed)) {
       Future(Left(ProcessIllegalAction(errorMessage)))
     } else {
       implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh

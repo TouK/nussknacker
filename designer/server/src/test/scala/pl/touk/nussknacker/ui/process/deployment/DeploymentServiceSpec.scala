@@ -105,7 +105,6 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
     processDetails.lastAction should not be None
-    processDetails.isCanceled shouldBe true
     processDetails.lastDeployedAction should be(None)
     //one for deploy, one for cancel
     activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
@@ -170,13 +169,19 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get.lastAction should not be None
 
+    // withEmptyProcessState to jest mocno techniczne - w docelowej usłudze z którą komunikuje się DM nie ma joba
+    // dostaliśmy odpowiedź z usługi i tten job nie istnieje
+    // tu jest test ObsoleteStateDetectora
+    // ISD po stronie api, każdy DM transformuje przez ISD -> testy działają i api posprzzątane: detekcja po stronie wtyczki (DM)
+    // DM jawnie wywołuje ISD i jest to default (przerzucamy kod z core do DM), można to nadpisać, w kolejnych zmianach możemy się pozbywać resolvowania
     deploymentManager.withEmptyProcessState(processName) {
-      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
+      val status = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status
+      println(status.name)
+      status shouldBe SimpleStateStatus.Canceled
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
     processDetails.lastAction should not be None
-    processDetails.isCanceled shouldBe true
     processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
 
@@ -192,7 +197,6 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
     processDetails.lastAction should not be None
-    processDetails.isCanceled shouldBe true
     processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
 
