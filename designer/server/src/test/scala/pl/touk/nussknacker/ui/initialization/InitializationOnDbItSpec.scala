@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.initialization
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
@@ -14,12 +13,13 @@ import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 
-import scala.concurrent.ExecutionContextExecutor
+class InitializationOnHsqlItSpec extends InitializationOnDbItSpec with WithHsqlDbTesting
 
 @Slow
+class InitializationOnPostgresItSpec extends InitializationOnDbItSpec with WithPostgresDbTesting
+
 abstract class InitializationOnDbItSpec
   extends AnyFlatSpec
-    with ScalatestRouteTest
     with Matchers
     with PatientScalaFutures
     with BeforeAndAfterEach
@@ -28,7 +28,7 @@ abstract class InitializationOnDbItSpec
 
   import Initialization.nussknackerUser
 
-  private implicit val ds: ExecutionContextExecutor = system.dispatcher
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   private val processId = "proc1"
 
@@ -40,7 +40,7 @@ abstract class InitializationOnDbItSpec
 
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
-  private def sampleDeploymentData(processId: String) = ProcessTestData.validProcessWithId(processId)
+  private def sampleCanonicalProcess(processId: String) = ProcessTestData.validProcessWithId(processId)
 
   it should "migrate processes" in {
     saveSampleProcess()
@@ -76,7 +76,7 @@ abstract class InitializationOnDbItSpec
   }
 
   private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
-    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess, ScenarioComponentsUsages.Empty)
+    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleCanonicalProcess(processId), TestProcessingTypes.Streaming, subprocess, ScenarioComponentsUsages.Empty)
 
     dbioRunner
       .runInTransaction(writeRepository.saveNewProcess(action))

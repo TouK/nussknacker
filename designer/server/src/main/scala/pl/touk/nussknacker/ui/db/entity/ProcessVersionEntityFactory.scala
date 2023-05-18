@@ -117,9 +117,9 @@ case class ProcessVersionEntityData(id: VersionId,
                                    )
 
 @JsonCodec
-private[entity] case class ComponentUsages(componentName: Option[String], componentType: ComponentType, nodeIds: List[NodeId])
+case class ComponentUsages(componentName: Option[String], componentType: ComponentType, nodeIds: List[NodeId])
 
-private object ScenarioComponentsUsagesJsonCodec {
+object ScenarioComponentsUsagesJsonCodec {
 
   implicit val decoder: Decoder[ScenarioComponentsUsages] = implicitly[Decoder[List[ComponentUsages]]].map { componentUsagesList =>
     val componentUsagesMap = componentUsagesList.map { componentUsages =>

@@ -53,7 +53,7 @@ import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 
-trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers with ScalaFutures =>
+trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions with BeforeAndAfterEach { self: ScalatestRouteTest with Suite with Matchers with ScalaFutures =>
 
   import ProcessesQueryEnrichments.RichProcessesQuery
   import TestCategories._
