@@ -1,12 +1,7 @@
 package pl.touk.nussknacker.ui.db.migration
 
-import java.io.PrintWriter
-import java.lang.reflect.{InvocationHandler, Method, Proxy}
-import java.sql.Connection
-import java.util.logging.Logger
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-
-import javax.sql.DataSource
 import org.flywaydb.core.api.migration.{BaseJavaMigration, Context}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
@@ -22,7 +17,7 @@ trait SlickMigration extends BaseJavaMigration {
 
   import profile.api._
 
-  def migrateActions: DBIOAction[Any, NoStream, _ <: Effect]
+  protected def migrateActions: DBIOAction[Any, NoStream, _ <: Effect]
 
   override def migrate(context: Context): Unit = {
     val conn = context.getConnection
@@ -31,20 +26,34 @@ trait SlickMigration extends BaseJavaMigration {
   }
 }
 
-trait ProcessJsonMigration extends SlickMigration with EspTables {
+trait ProcessJsonMigration extends SlickMigration with EspTables with LazyLogging {
+
+  import profile.api._
+  import slick.dbio.DBIOAction
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  import slick.dbio.DBIOAction
-  import profile.api._
 
-  final override def migrateActions = for {
-    processes <- processVersionsTableWithScenarioJson.map(pe => (pe.id, pe.processId, pe.json)).filter(_._3.isDefined).result
-    seqed <- DBIOAction.sequence(processes.map((updateOne _).tupled))
-  } yield seqed
+  override protected def migrateActions: DBIOAction[Seq[Int], NoStream, Effect.Read with Effect.Read with Effect.Write] = {
+    for {
+      allVersionIds <- processVersionsTableWithUnit.map(pve => (pve.id, pve.processId)).result
+      updated <- DBIOAction.sequence(allVersionIds.zipWithIndex.map { case ((id, processId), scenarioIndex) =>
+        updateOne(id, processId, scenarioIndex + 1, scenariosCount = allVersionIds.size)
+      })
+    } yield updated
+  }
 
-  private def updateOne(id: VersionId, processId: ProcessId, json: Option[String]) = processVersionsTableWithScenarioJson
-    .filter(v => v.id === id && v.processId === processId)
-    .map(_.json).update(json.map(prepareAndUpdateJson))
+  private def updateOne(id: VersionId, processId: ProcessId,
+                        scenarioNo: Int, scenariosCount: Int): DBIOAction[Int, NoStream, Effect.Read with Effect.Write] = {
+    for {
+      processJson <- processVersionsTable.filter(v => v.id === id && v.processId === processId).map(_.json).result.head
+      updatedJson <- processVersionsTable.filter(v => v.id === id && v.processId === processId)
+        .map(_.json)
+        .update {
+          logger.trace("Migrate scenario ({}/{}), id: {}, version id: {}", scenarioNo, scenariosCount, processId, id)
+          processJson.map(prepareAndUpdateJson)
+        }
+    } yield updatedJson
+  }
 
   private def prepareAndUpdateJson(json: String): String = {
     val jsonProcess = CirceUtil.decodeJsonUnsafe[Json](json, "invalid scenario")
@@ -53,33 +62,5 @@ trait ProcessJsonMigration extends SlickMigration with EspTables {
   }
 
   def updateProcessJson(json: Json): Option[Json]
-}
 
-class AlwaysUsingSameConnectionDataSource(conn: Connection) extends DataSource {
-  private val notClosingConnection = Proxy.newProxyInstance(
-    ClassLoader.getSystemClassLoader,
-    Array[Class[_]](classOf[Connection]),
-    SuppressCloseHandler
-  ).asInstanceOf[Connection]
-
-  object SuppressCloseHandler extends InvocationHandler {
-    override def invoke(proxy: AnyRef, method: Method, args: Array[AnyRef]): AnyRef = {
-      if (method.getName != "close") {
-        method.invoke(conn, args: _*)
-      } else {
-        null
-      }
-    }
-  }
-
-  override def getConnection: Connection = notClosingConnection
-  override def getConnection(username: String, password: String): Connection = notClosingConnection
-  override def unwrap[T](iface: Class[T]): T = conn.unwrap(iface)
-  override def isWrapperFor(iface: Class[_]): Boolean = conn.isWrapperFor(iface)
-
-  override def setLogWriter(out: PrintWriter): Unit = ???
-  override def getLoginTimeout: Int = ???
-  override def setLoginTimeout(seconds: Int): Unit = ???
-  override def getParentLogger: Logger = ???
-  override def getLogWriter: PrintWriter = ???
 }
