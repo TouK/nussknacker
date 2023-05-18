@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
@@ -195,31 +196,18 @@ class ProcessesResources(
           }
         } ~ path("processes" / Segment / Segment) { (processName, category) =>
           authorize(user.can(category, Permission.Write)) {
-            parameter(Symbol("isSubprocess") ? false) { isSubprocess =>
-              post {
-                complete {
-                  processService
-                    .createProcess(CreateProcessCommand(ProcessName(processName), category, isSubprocess, None))
-                    .withSideEffect(response => sideEffectAction(response) { process =>
-                      OnSaved(process.id, process.versionId)
-                    })
-                    .map(toResponseEither[ProcessResponse](_, StatusCodes.Created))
-                }
-              }
-            }
-          }
-        } ~ path("migrateScenario") {
-          entity(as[CreateProcessCommand]) { command =>
-            authorize(user.can(command.category, Permission.Write)) {
-              canOverrideUsername(command.category, command.forwardedUserName)(user) {
-                post {
-                  complete {
-                    processService
-                      .createProcess(command)
-                      .withSideEffect(response => sideEffectAction(response) { process =>
-                        OnSaved(process.id, process.versionId)
-                      })
-                      .map(toResponseEither[ProcessResponse](_, StatusCodes.Created))
+            optionalHeaderValue(RemoteUserName.extractFromHeader) { remoteUserName =>
+              canOverrideUsername(category, remoteUserName)(user) {
+                parameter(Symbol("isSubprocess") ? false) { isSubprocess =>
+                  post {
+                    complete {
+                      processService
+                        .createProcess(CreateProcessCommand(ProcessName(processName), category, isSubprocess, remoteUserName))
+                        .withSideEffect(response => sideEffectAction(response) { process =>
+                          OnSaved(process.id, process.versionId)
+                        })
+                        .map(toResponseEither[ProcessResponse](_, StatusCodes.Created))
+                    }
                   }
                 }
               }

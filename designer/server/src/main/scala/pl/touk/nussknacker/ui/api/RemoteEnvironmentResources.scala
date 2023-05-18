@@ -55,8 +55,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
           path(Segment / VersionIdSegment / "migrate") { (processName, version) =>
             (post & processId(processName)) { processId =>
               complete {
-                withProcess(processId.id, version, (displayableProcess, category) =>
-                  remoteEnvironment.migrate(displayableProcess, category, remoteEnvironment.passUsernameInMigration))
+                withProcess(processId.id, version, remoteEnvironment.migrate)
               }
             }
           } ~

@@ -145,7 +145,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
     var migrateInvocations = List[DisplayableProcess]()
     var compareInvocations = List[DisplayableProcess]()
 
-    override def migrate(localProcess: DisplayableProcess, category: String, passUsername: Boolean)(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[EspError, Unit]] = {
+    override def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[EspError, Unit]] = {
       migrateInvocations = localProcess :: migrateInvocations
       Future.successful(Right(()))
     }

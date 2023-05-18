@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
+import akka.http.scaladsl.model.HttpHeader
 import cats.data._
 import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
@@ -30,6 +31,14 @@ object ProcessRepository {
 
   @JsonCodec case class RemoteUserName(name: String) extends AnyVal {
     def display: String = s"Remote[$name]"
+  }
+
+  object RemoteUserName {
+    val headerName = "Remote-User-Name".toLowerCase
+    def extractFromHeader: HttpHeader => Option[RemoteUserName] = {
+      case HttpHeader(`headerName`, value) => Some(RemoteUserName(value))
+      case _ => None
+    }
   }
 
   def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
