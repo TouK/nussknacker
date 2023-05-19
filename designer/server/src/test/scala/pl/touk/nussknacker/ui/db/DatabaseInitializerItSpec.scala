@@ -7,7 +7,7 @@ import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OneInstancePerTest, OptionValues}
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.restmodel.component.{ComponentUsages, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, ScenarioComponentsUsages}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.initialization.Initialization
@@ -49,12 +49,12 @@ abstract class DatabaseInitializerItSpec extends AnyFlatSpec
     val p1V2ComponentsUsages = fetchComponentsUsages(p1Id, p1Version2Id)
     val p2V1ComponentsUsages = fetchComponentsUsages(p2Id, p2Version1Id)
     Set(p1V1ComponentsUsages, p1V2ComponentsUsages, p2V1ComponentsUsages) should have size 1
-    p1V1ComponentsUsages.value.toSet shouldBe Set(
-      ComponentUsages(Some("barSource"), ComponentType.Source, List("source")),
-      ComponentUsages(Some("barService"), ComponentType.Processor, List("processor")),
-      ComponentUsages(Some("transformer"), ComponentType.CustomNode, List("custom")),
-      ComponentUsages(Some("barSink"), ComponentType.Sink, List("sink")),
-    )
+    p1V1ComponentsUsages shouldBe ScenarioComponentsUsages(Map(
+      ComponentIdParts(Some("barSource"), ComponentType.Source) -> List("source"),
+      ComponentIdParts(Some("barService"), ComponentType.Processor) -> List("processor"),
+      ComponentIdParts(Some("transformer"), ComponentType.CustomNode) -> List("custom"),
+      ComponentIdParts(Some("barSink"), ComponentType.Sink) -> List("sink"),
+    ))
   }
 
   private def initializeDbUpToMigrationVersion(targetVersion: String) = {

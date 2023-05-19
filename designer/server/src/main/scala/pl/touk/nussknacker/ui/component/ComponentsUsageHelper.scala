@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.component.ComponentUtil
-import pl.touk.nussknacker.restmodel.component.{NodeId, ScenarioComponentsUsages, ComponentUsages}
+import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 
 object ComponentsUsageHelper {
@@ -18,13 +18,11 @@ object ComponentsUsageHelper {
     } yield {
       (componentName, componentType, node.id)
     }
-    val componentUsagesList = usagesList
+    val usagesMap = usagesList
       // Can be replaced with .groupMap from Scala 2.13.
-      .groupBy { case (componentName, componentType, _) => (componentName, componentType) }
+      .groupBy { case (componentName, componentType, _) => ComponentIdParts(componentName, componentType) }
       .transform { (_, usages) => usages.map { case (_, _, nodeId) => nodeId } }
-      .map { case ((componentName, componentType), nodeIds) => ComponentUsages(componentName, componentType, nodeIds) }
-      .toList
-    ScenarioComponentsUsages(componentUsagesList)
+    ScenarioComponentsUsages(usagesMap)
   }
 
   def computeComponentsUsageCount(componentIdProvider: ComponentIdProvider,
@@ -37,8 +35,8 @@ object ComponentsUsageHelper {
                              processesDetails: List[BaseProcessDetails[ScenarioComponentsUsages]]): Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeId])]] = {
 
     def toComponentIdUsages(processDetails: BaseProcessDetails[ScenarioComponentsUsages]): List[(ComponentId, (BaseProcessDetails[Unit], List[NodeId]))] = {
-      val componentsUsages = processDetails.json.value
-      componentsUsages.map { case ComponentUsages(componentName, componentType, nodeIds) =>
+      val componentsUsages: Map[ComponentIdParts, List[NodeId]] = processDetails.json.value
+      componentsUsages.toList.map { case (ComponentIdParts(componentName, componentType), nodeIds) =>
         val componentId = componentIdProvider.createComponentId(processDetails.processingType, componentName, componentType)
         componentId -> (processDetails.mapProcess(_ => ()), nodeIds)
       }

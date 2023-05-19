@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
-import pl.touk.nussknacker.restmodel.component.{NodeId, ComponentUsages, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessDetails}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
@@ -95,30 +95,30 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   test("should compute usages for a single scenario") {
     val table = Table(
       ("scenario", "expectedData"),
-      (process1, List(
-        ComponentUsages(Some(existingSourceFactory), Source, List("source")),
-        ComponentUsages(Some(existingStreamTransformer), ComponentType.CustomNode, List("custom")),
-        ComponentUsages(Some(otherExistingStreamTransformer), ComponentType.CustomNode, List("custom2")),
-        ComponentUsages(Some(existingSinkFactory), Sink, List("sink")),
+      (process1, Map(
+        ComponentIdParts(Some(existingSourceFactory), Source) -> List("source"),
+        ComponentIdParts(Some(existingStreamTransformer), ComponentType.CustomNode) -> List("custom"),
+        ComponentIdParts(Some(otherExistingStreamTransformer), ComponentType.CustomNode) -> List("custom2"),
+        ComponentIdParts(Some(existingSinkFactory), Sink) -> List("sink"),
       )),
-      (processWithSomeBasesStreaming, List(
-        ComponentUsages(Some(existingSourceFactory), Source, List("source")),
-        ComponentUsages(None, ComponentType.Filter, List("checkId", "checkId2")),
-        ComponentUsages(None, ComponentType.Switch, List("switchStreaming")),
-        ComponentUsages(Some(existingSinkFactory), Sink, List("out1")),
-        ComponentUsages(Some(existingSinkFactory2), Sink, List("out2")),
+      (processWithSomeBasesStreaming, Map(
+        ComponentIdParts(Some(existingSourceFactory), Source) -> List("source"),
+        ComponentIdParts(None, ComponentType.Filter) -> List("checkId", "checkId2"),
+        ComponentIdParts(None, ComponentType.Switch) -> List("switchStreaming"),
+        ComponentIdParts(Some(existingSinkFactory), Sink) -> List("out1"),
+        ComponentIdParts(Some(existingSinkFactory2), Sink) -> List("out2"),
       )),
-      (processWithSubprocess, List(
-        ComponentUsages(Some(existingSourceFactory), Source, List("source")),
-        ComponentUsages(Some(otherExistingStreamTransformer2), ComponentType.CustomNode, List("custom")),
-        ComponentUsages(Some(subprocess.metaData.id), Fragments, List(subprocess.metaData.id)),
-        ComponentUsages(Some(existingSinkFactory), Sink, List("sink")),
+      (processWithSubprocess, Map(
+        ComponentIdParts(Some(existingSourceFactory), Source) -> List("source"),
+        ComponentIdParts(Some(otherExistingStreamTransformer2), ComponentType.CustomNode) -> List("custom"),
+        ComponentIdParts(Some(subprocess.metaData.id), Fragments) -> List(subprocess.metaData.id),
+        ComponentIdParts(Some(existingSinkFactory), Sink) -> List("sink"),
       )),
     )
 
     forAll(table) { (scenario, expectedData) =>
       val result = ComponentsUsageHelper.computeUsagesForScenario(scenario).value
-      result.toSet shouldBe expectedData.toSet
+      result shouldBe expectedData
     }
   }
 
