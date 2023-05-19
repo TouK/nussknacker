@@ -4,6 +4,7 @@
 
 1.10.0 (not released yet)
 -------------------------
+* [#4294](https://github.com/TouK/nussknacker/pull/4294) Allow to pass username while migrating scenario to secondary environment.
 * [#4230](https://github.com/TouK/nussknacker/pull/4230) Extend TestInfoProvider with getTestParameters to test scenarios based on window with generated fields. 
   * Endpoint to test scenario based on parameters 
   * New generic dialog to display scenario input parameters
