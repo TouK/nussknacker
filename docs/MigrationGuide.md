@@ -52,8 +52,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * There is additional validation when all processing types are reloaded from configuration: check if all processing types state definitions configuration is correct.
     (see comment in `ProcessStateDefinitionService`)
 * [#3997](https://github.com/TouK/nussknacker/pull/3997) Due to removal of deprecated field `subprocessVersions` migration of scenarios from and to remote environment, for 
-  Nussknacker version 1.9.0+ and older will not be possible. Use export and import as a workaround while working between older and newer version.  
-
+  Nussknacker version 1.9.0+ and older will not be possible. Use export and import as a workaround while working between older and newer version.
+* [#4305](https://github.com/TouK/nussknacker/pull/4305) `scala-compiler` and `scala-reflect` are now included in `flink-scala`,
+  so you can simplify your deployment by removing them and updating to new
+  ([`flink-scala` JAR](https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.1.0/flink-scala-2-13_2.13-1.1.0-assembly.jar))
+  (this doesn't introduce any functional changes)
 
 ### Other changes
 * [#3675](https://github.com/TouK/nussknacker/pull/3675) Improvements: Normalize kafka components params name

@@ -4,7 +4,6 @@ import com.dimafeng.testcontainers._
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.typesafe.scalalogging.Logger
-import org.apache.commons.io.IOUtils
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import org.slf4j
 import org.slf4j.LoggerFactory
@@ -54,15 +53,10 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
       val flinkLibTweakCommand = ScalaMajorVersionConfig.scalaMajorVersion match {
         case "2.12" => ""
         case "2.13" =>
-          val scalaV = util.Properties.versionNumberString
           s"""
             |RUN rm $$FLINK_HOME/lib/flink-scala*.jar
-            |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-library/$scalaV/scala-library-$scalaV.jar -O $$FLINK_HOME/lib/scala-library-$scalaV.jar
-            |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-reflect/$scalaV/scala-reflect-$scalaV.jar -O $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
-            |RUN wget https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.0.0/flink-scala-2-13_2.13-1.0.0-assembly.jar -O $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.0.0-assembly.jar
-            |RUN chown flink $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.0.0-assembly.jar
-            |RUN chown flink $$FLINK_HOME/lib/scala-library-$scalaV.jar
-            |RUN chown flink $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
+            |RUN wget https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.1.0/flink-scala-2-13_2.13-1.1.0-assembly.jar -O $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.1.0-assembly.jar
+            |RUN chown flink $$FLINK_HOME/lib/flink-scala-2-13_2.13-1.1.0-assembly.jar
             |""".stripMargin
         case v => throw new IllegalStateException(s"unsupported scala version: $v")
       }
