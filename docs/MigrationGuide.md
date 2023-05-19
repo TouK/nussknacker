@@ -16,6 +16,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ClassMemberPatternPredicate` renamed to `MemberNamePatternPredicate`
   * `AllMethodNamesPredicate` renamed to AllMembersPredicate
 
+### Configuration changes
+* [#4283](https://github.com/TouK/nussknacker/pull/4283) For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
+  Please mind, that previous Nussknacker versions assumed its value is true if `authentication.audience` was defined.
+
 ### Other changes
 * [#4305](https://github.com/TouK/nussknacker/pull/4305) `scala-compiler` and `scala-reflect` are now included in `flink-scala`,
   so you can simplify your deployment by removing them and updating to new

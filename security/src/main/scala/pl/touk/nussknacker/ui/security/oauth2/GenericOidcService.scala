@@ -31,10 +31,20 @@ class GenericOidcService[
 
   override protected def obtainUserInfo(authorization: AuthorizationData): Future[UserData] = {
     if (useIdToken) {
-      introspectJwtToken[UserData](authorization.idToken.get)
+      val idToken = authorization.idToken.get
+      introspectJwtToken[UserData](idToken)
         .filter(_.audienceAsList == List(configuration.clientId))
     } else {
       super.obtainUserInfo(authorization)
+    }
+  }
+
+  override protected def obtainUserInfo(accessToken: String): Future[UserData] = {
+    if (accessTokenIsJwt) {
+      introspectJwtToken[UserData](accessToken)
+        .filter(verifyAccessTokenAudience)
+    } else {
+      super.obtainUserInfo(accessToken)
     }
   }
 }

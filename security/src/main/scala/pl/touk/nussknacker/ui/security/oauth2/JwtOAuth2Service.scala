@@ -51,7 +51,7 @@ class JwtOAuth2Service[
       Future(accessToken)
         .flatMap(accessToken => introspectJwtToken[AccessTokenClaims](accessToken))
         .flatMap(claims =>
-          if (requiredAccessTokenAudience.isEmpty || claims.audienceAsList.exists(requiredAccessTokenAudience.contains)) {
+          if (verifyAccessTokenAudience(claims)) {
             Future.successful(claims.expirationTime)
           }
           else
@@ -60,6 +60,10 @@ class JwtOAuth2Service[
     } else {
       super.introspectAccessToken(accessToken)
     }
+  }
+
+  protected def verifyAccessTokenAudience(claims: JwtStandardClaims): Boolean = {
+    requiredAccessTokenAudience.isEmpty || claims.audienceAsList.exists(requiredAccessTokenAudience.contains)
   }
 
   override protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
