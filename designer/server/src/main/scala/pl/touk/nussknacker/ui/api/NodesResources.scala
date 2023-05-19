@@ -116,8 +116,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
         } ~ path("suggestions") {
           val modelData = typeToConfig.forTypeUnsafe(process.processingType)
           implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
-          @JsonCodec(decodeOnly = true)
-          case class ExpressionSuggestionRequest(expression: Expression, caretPosition2d: CaretPosition2d, variables: Map[String, TypingResult])
+          implicit val expressionSuggestionRequestDecoder: Decoder[ExpressionSuggestionRequest] = ExpressionSuggestionRequest.decoder(typeDecoder)
 
           entity(as[ExpressionSuggestionRequest]) { expressionSuggestionRequest =>
             complete {
@@ -262,3 +261,10 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
 
 @JsonCodec(encodeOnly = true) case class PropertiesValidationRequest(processProperties: ProcessProperties)
 
+case class ExpressionSuggestionRequest(expression: Expression, caretPosition2d: CaretPosition2d, variables: Map[String, TypingResult])
+
+object ExpressionSuggestionRequest {
+  implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[ExpressionSuggestionRequest] = {
+    deriveConfiguredDecoder[ExpressionSuggestionRequest]
+  }
+}

@@ -9,7 +9,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -22,7 +21,6 @@ Array [
       "display": "C",
       "refClazzName": "org.C",
     },
-    "refClazzDisplay": "C",
   },
 ]
 `;
@@ -35,7 +33,6 @@ Array [
       "display": "A",
       "refClazzName": "org.A",
     },
-    "refClazzDisplay": "A",
   },
 ]
 `;
@@ -53,7 +50,6 @@ Array [
       "display": "B",
       "refClazzName": "org.B",
     },
-    "refClazzDisplay": "B",
   },
 ]
 `;
@@ -67,7 +63,6 @@ Array [
       "display": "C",
       "refClazzName": "org.C",
     },
-    "refClazzDisplay": "C",
   },
 ]
 `;
@@ -81,7 +76,6 @@ Array [
       "display": "B",
       "refClazzName": "org.B",
     },
-    "refClazzDisplay": "B",
   },
 ]
 `;
@@ -95,7 +89,6 @@ Array [
       "display": "C",
       "refClazzName": "org.C",
     },
-    "refClazzDisplay": "C",
   },
 ]
 `;
@@ -109,7 +102,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -123,7 +115,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -137,7 +128,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -151,7 +141,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -164,7 +153,6 @@ Array [
       "display": "A",
       "refClazzName": "org.A",
     },
-    "refClazzDisplay": "A",
   },
   Object {
     "methodName": "#other",
@@ -172,7 +160,6 @@ Array [
       "display": "C",
       "refClazzName": "org.C",
     },
-    "refClazzDisplay": "C",
   },
   Object {
     "methodName": "#ANOTHER",
@@ -180,7 +167,6 @@ Array [
       "display": "A",
       "refClazzName": "org.A",
     },
-    "refClazzDisplay": "A",
   },
   Object {
     "methodName": "#dynamicMap",
@@ -198,7 +184,6 @@ Array [
       },
       "refClazzName": "java.util.Map",
     },
-    "refClazzDisplay": "Map",
   },
   Object {
     "methodName": "#listVar",
@@ -206,7 +191,6 @@ Array [
       "display": "WithList",
       "refClazzName": "org.WithList",
     },
-    "refClazzDisplay": "WithList",
   },
   Object {
     "methodName": "#util",
@@ -214,7 +198,6 @@ Array [
       "display": "Util",
       "refClazzName": "org.Util",
     },
-    "refClazzDisplay": "Util",
   },
   Object {
     "methodName": "#union",
@@ -234,7 +217,6 @@ Array [
         },
       ],
     },
-    "refClazzDisplay": undefined,
   },
   Object {
     "methodName": "#unionOfLists",
@@ -260,7 +242,6 @@ Array [
         },
       ],
     },
-    "refClazzDisplay": undefined,
   },
   Object {
     "methodName": "#dict",
@@ -273,7 +254,6 @@ Array [
         },
       },
     },
-    "refClazzDisplay": undefined,
   },
 ]
 `;
@@ -286,7 +266,6 @@ Array [
       "display": "A",
       "refClazzName": "org.A",
     },
-    "refClazzDisplay": "A",
   },
   Object {
     "methodName": "#other",
@@ -294,7 +273,6 @@ Array [
       "display": "C",
       "refClazzName": "org.C",
     },
-    "refClazzDisplay": "C",
   },
   Object {
     "methodName": "#ANOTHER",
@@ -302,7 +280,6 @@ Array [
       "display": "A",
       "refClazzName": "org.A",
     },
-    "refClazzDisplay": "A",
   },
   Object {
     "methodName": "#dynamicMap",
@@ -320,7 +297,6 @@ Array [
       },
       "refClazzName": "java.util.Map",
     },
-    "refClazzDisplay": "Map",
   },
   Object {
     "methodName": "#listVar",
@@ -328,7 +304,6 @@ Array [
       "display": "WithList",
       "refClazzName": "org.WithList",
     },
-    "refClazzDisplay": "WithList",
   },
   Object {
     "methodName": "#util",
@@ -336,7 +311,6 @@ Array [
       "display": "Util",
       "refClazzName": "org.Util",
     },
-    "refClazzDisplay": "Util",
   },
   Object {
     "methodName": "#union",
@@ -356,7 +330,6 @@ Array [
         },
       ],
     },
-    "refClazzDisplay": undefined,
   },
   Object {
     "methodName": "#unionOfLists",
@@ -382,7 +355,6 @@ Array [
         },
       ],
     },
-    "refClazzDisplay": undefined,
   },
   Object {
     "methodName": "#dict",
@@ -395,7 +367,6 @@ Array [
         },
       },
     },
-    "refClazzDisplay": undefined,
   },
 ]
 `;
@@ -405,12 +376,18 @@ Array [
   Object {
     "fromClass": false,
     "methodName": "One",
-    "refClazzDisplay": "A",
+    "refClazz": Object {
+      "display": "A",
+      "refClazzName": "org.A",
+    },
   },
   Object {
     "fromClass": false,
     "methodName": "Two",
-    "refClazzDisplay": "A",
+    "refClazz": Object {
+      "display": "A",
+      "refClazzName": "org.A",
+    },
   },
 ]
 `;
@@ -420,7 +397,10 @@ Array [
   Object {
     "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
-    "refClazzDisplay": "A",
+    "refClazz": Object {
+      "display": "A",
+      "refClazzName": "org.A",
+    },
   },
 ]
 `;
@@ -430,7 +410,10 @@ Array [
   Object {
     "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
-    "refClazzDisplay": "A",
+    "refClazz": Object {
+      "display": "A",
+      "refClazzName": "org.A",
+    },
   },
 ]
 `;
@@ -440,7 +423,10 @@ Array [
   Object {
     "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
-    "refClazzDisplay": "A",
+    "refClazz": Object {
+      "display": "A",
+      "refClazzName": "org.A",
+    },
   },
 ]
 `;
@@ -450,7 +436,10 @@ Array [
   Object {
     "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
-    "refClazzDisplay": "A",
+    "refClazz": Object {
+      "display": "A",
+      "refClazzName": "org.A",
+    },
   },
 ]
 `;
@@ -464,7 +453,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -477,7 +465,6 @@ Array [
       "display": "Integer",
       "refClazzName": "java.lang.Integer",
     },
-    "refClazzDisplay": "Integer",
   },
 ]
 `;
@@ -491,7 +478,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -505,7 +491,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -519,7 +504,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -533,7 +517,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -547,7 +530,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -561,7 +543,6 @@ Array [
       "display": "C",
       "refClazzName": "org.C",
     },
-    "refClazzDisplay": "C",
   },
 ]
 `;
@@ -575,7 +556,6 @@ Array [
       "display": "B",
       "refClazzName": "org.B",
     },
-    "refClazzDisplay": "B",
   },
 ]
 `;
@@ -588,7 +568,6 @@ Array [
       "display": "A",
       "refClazzName": "org.A",
     },
-    "refClazzDisplay": "A",
   },
 ]
 `;
@@ -602,7 +581,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
   Object {
     "fromClass": false,
@@ -611,7 +589,6 @@ Array [
       "display": "B",
       "refClazzName": "org.B",
     },
-    "refClazzDisplay": "B",
   },
 ]
 `;
@@ -625,7 +602,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -639,7 +615,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -653,7 +628,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -667,7 +641,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -681,7 +654,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -695,7 +667,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
   Object {
     "fromClass": false,
@@ -704,7 +675,6 @@ Array [
       "display": "B",
       "refClazzName": "org.B",
     },
-    "refClazzDisplay": "B",
   },
   Object {
     "fromClass": false,
@@ -713,7 +683,6 @@ Array [
       "display": "C",
       "refClazzName": "org.C",
     },
-    "refClazzDisplay": "C",
   },
   Object {
     "fromClass": false,
@@ -722,7 +691,6 @@ Array [
       "display": "C",
       "refClazzName": "org.C",
     },
-    "refClazzDisplay": "C",
   },
 ]
 `;
@@ -736,7 +704,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;
@@ -750,7 +717,6 @@ Array [
       "display": "String",
       "refClazzName": "java.lang.String",
     },
-    "refClazzDisplay": "String",
   },
 ]
 `;

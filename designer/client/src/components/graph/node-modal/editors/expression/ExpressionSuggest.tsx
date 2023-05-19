@@ -119,7 +119,7 @@ class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: TypingR
       try {
         callback(null, map(suggestions, (s) => {
           const methodName = s.methodName
-          const returnType = s.refClazzDisplay
+          const returnType = ProcessUtils.humanReadableType(s.refClazz)
           return {
             name: methodName,
             value: methodName,
