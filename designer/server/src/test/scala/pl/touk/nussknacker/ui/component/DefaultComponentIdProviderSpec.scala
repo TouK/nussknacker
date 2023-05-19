@@ -47,7 +47,7 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
     )
 
     forAll(testingData) { (componentsType: List[ComponentType], name: String, expected: List[ComponentId]) =>
-      val result = componentsType.map(componentIdProvider.createComponentId(processingType, name, _))
+      val result = componentsType.map(componentIdProvider.createComponentId(processingType, Some(name), _))
       result shouldBe expected
     }
   }
@@ -62,7 +62,7 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
     badComponentsType.foreach(componentType => {
       val name = componentType.toString
       intercept[IllegalArgumentException]{
-        provider.createComponentId(processingType, name, componentType)
+        provider.createComponentId(processingType, Some(name), componentType)
       }.getMessage shouldBe s"Component id can't be overridden for: '$name' with component type: '$componentType'."
     })
   }
