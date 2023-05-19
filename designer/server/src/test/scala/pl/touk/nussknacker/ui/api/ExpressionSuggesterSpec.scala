@@ -5,8 +5,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, StaticMethodInfo}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 import java.time.LocalDateTime
@@ -61,37 +62,26 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
     EspTypeUtils.clazzDefinition(classOf[Util]),
   ))
 
-  private val variables: Map[String, RefClazz] = Map(
-    "input" -> toRefClazz(classOf[A]),
-    "other" -> toRefClazz(classOf[C]),
-    "ANOTHER" -> toRefClazz(classOf[A]),
-    "dynamicMap" -> RefClazz(
-      refClazzName = Some("java.util.Map"),
-      display = Some("Map"),
-      fields = Some(Map(
-        "intField" -> toRefClazz(classOf[Integer]),
-        "aField" -> toRefClazz(classOf[A])
-      ))
-    ),
-    "listVar" -> toRefClazz(classOf[WithList]),
-    "util" -> toRefClazz(classOf[Util]),
-    "union" -> RefClazz(
-      Some("union"),
-      union = Some(List(
-        toRefClazz(classOf[A]),
-        toRefClazz(classOf[B]),
-        toRefClazz(classOf[AA])
-      ))
+  private val variables: Map[String, TypingResult] = Map(
+    "input" -> Typed[A],
+    "other" -> Typed[C],
+    "ANOTHER" -> Typed[A],
+    "dynamicMap" -> Typed.fromInstance(Map("intField" -> 1, "aField" -> new A)),
+    "listVar" -> Typed[WithList],
+    "util" -> Typed[Util],
+    "union" -> Typed(
+      Typed[A],
+      Typed[B],
+      Typed[AA]
     )
   )
 
-  private def toRefClazz(clazz: Class[_]): RefClazz = RefClazz(refClazzName = Some(clazz.getName), display = Some(clazz.getSimpleName))
   private def suggestionsFor(input: String, row: Int = 0, column: Int = -1): List[ExpressionSuggestion] = {
-    expressionSuggester.expressionSuggestions(input, CaretPosition2d(row, if (column == -1) input.length else column), variables, clazzDefinitions)
+    expressionSuggester.expressionSuggestions(Expression.spel(input), CaretPosition2d(row, if (column == -1) input.length else column), variables, clazzDefinitions)
   }
 
-  private def suggestion(methodName: String, display: String = null): ExpressionSuggestion = {
-    ExpressionSuggestion(methodName = methodName, Option(display), fromClass = false)
+  private def suggestion(methodName: String, refClazz: TypingResult): ExpressionSuggestion = {
+    ExpressionSuggestion(methodName = methodName, refClazz, fromClass = false)
   }
 
   test("should not suggest anything for empty input") {
@@ -109,34 +99,34 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
   // TODO: add some score to each suggestion or sort them from most to least relevant
   test("should filter global variables suggestions") {
     suggestionsFor("#ot") shouldBe List(
-      suggestion("#ANOTHER", classOf[A].getSimpleName),
-      suggestion("#other", classOf[C].getSimpleName),
+      suggestion("#ANOTHER", Typed[A]),
+      suggestion("#other", Typed[C]),
     )
   }
 
   test("should filter uppercase global variables suggestions") {
-    suggestionsFor("#ANO") shouldBe List(suggestion("#ANOTHER", "A"))
+    suggestionsFor("#ANO") shouldBe List(suggestion("#ANOTHER", Typed[A]))
   }
 
   test("should suggest filtered global variable based not on beginning of the method") {
-    suggestionsFor("#map") shouldBe List(suggestion("#dynamicMap", "Map"))
+    suggestionsFor("#map") shouldBe List(suggestion("#dynamicMap", variables("dynamicMap")))
   }
 
   test("should suggest global variable") {
-    suggestionsFor("#inpu") shouldBe List(suggestion("#input", classOf[A].getSimpleName))
+    suggestionsFor("#inpu") shouldBe List(suggestion("#input", Typed[A]))
   }
 
   test("should suggest global variable methods") {
     suggestionsFor("#input.") shouldBe List(
-      suggestion("barB", "B"),
-      suggestion("toString", "String"),
-      suggestion("fooString", "String"),
+      suggestion("barB", Typed[B]),
+      suggestion("toString", Typed[String]),
+      suggestion("fooString", Typed[String]),
     )
   }
 
-  ignore("should suggest methods for string literal") {
+  test("should suggest methods for string literal") {
     suggestionsFor("\"abc\".") shouldBe List(
-      ExpressionSuggestion("toUpperCase", Some("String"), fromClass = false),
+      ExpressionSuggestion("toUpperCase", Typed[String], fromClass = false),
     )
   }
 
@@ -164,14 +154,14 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
 
   test("should suggest filtered global variable methods") {
     suggestionsFor("#input.fo") shouldBe List(
-      suggestion("fooString", "String"),
+      suggestion("fooString", Typed[String]),
     )
   }
 
   test("should suggest filtered global variable methods based not on beginning of the method") {
     suggestionsFor("#input.string") shouldBe List(
-      suggestion("toString", "String"),
-      suggestion("fooString", "String"),
+      suggestion("toString", Typed[String]),
+      suggestion("fooString", Typed[String]),
     )
   }
 
@@ -189,7 +179,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
 
   test("should suggest in complex expression #1") {
     suggestionsFor("#input.foo + #input.barB.bazC.quax", 0, "#input.foo".length) shouldBe List(
-      suggestion("fooString", "String"),
+      suggestion("fooString", Typed[String]),
     )
   }
 
@@ -214,7 +204,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
   }
 
   test("should suggest for multiline code #1") {
-    suggestionsFor("#input\n.fo", 1, ".fo".length) shouldBe List(suggestion("fooString", "String"))
+    suggestionsFor("#input\n.fo", 1, ".fo".length) shouldBe List(suggestion("fooString", Typed[String]))
   }
 
   ignore("should suggest for multiline code #2") {
@@ -222,11 +212,11 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
   }
 
   test("should suggest for multiline code #3") {
-    suggestionsFor("#input\n.ba\n.barC", 1, ".ba".length) shouldBe List(suggestion("barB", "B"))
+    suggestionsFor("#input\n.ba\n.barC", 1, ".ba".length) shouldBe List(suggestion("barB", Typed[B]))
   }
 
   test("should omit whitespace formatting in suggest for multiline code #1") {
-    suggestionsFor("#input\n  .ba", 1, "  .ba".length) shouldBe List(suggestion("barB", "B"))
+    suggestionsFor("#input\n  .ba", 1, "  .ba".length) shouldBe List(suggestion("barB", Typed[B]))
   }
 
   ignore("should omit whitespace formatting in suggest for multiline code #2") {
@@ -234,11 +224,11 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
   }
 
   test("should omit whitespace formatting in suggest for multiline code #3") {
-    suggestionsFor("#input\n  .ba\n  .bazC", 1, "  .ba".length) shouldBe List(suggestion("barB", "B"))
+    suggestionsFor("#input\n  .ba\n  .bazC", 1, "  .ba".length) shouldBe List(suggestion("barB", Typed[B]))
   }
 
   ignore("should omit whitespace formatting in suggest for multiline code #4") {
-    suggestionsFor("#input\n  .barB.ba", 1, "  .barB.ba".length) shouldBe List(suggestion("barB","B"))
+    suggestionsFor("#input\n  .barB.ba", 1, "  .barB.ba".length) shouldBe List(suggestion("barB",Typed[B]))
   }
 
   ignore("should omit whitespace formatting in suggest for multiline code #5") {
@@ -246,7 +236,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
   }
 
   test("should suggest field in typed map") {
-    suggestionsFor("#dynamicMap.int") shouldBe List(suggestion("intField", "Integer"))
+    suggestionsFor("#dynamicMap.int") shouldBe List(suggestion("intField", Typed.fromInstance(1)))
   }
 
   ignore("should suggest embedded field in typed map") {

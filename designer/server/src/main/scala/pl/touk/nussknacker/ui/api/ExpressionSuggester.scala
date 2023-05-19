@@ -2,9 +2,12 @@ package pl.touk.nussknacker.ui.api
 
 import io.circe.generic.JsonCodec
 import org.springframework.expression.spel.SpelNode
-import org.springframework.expression.spel.ast.{PropertyOrFieldReference, VariableReference}
+import org.springframework.expression.spel.ast.{PropertyOrFieldReference, StringLiteral, VariableReference}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 
 import scala.collection.Map
 
@@ -12,17 +15,22 @@ class ExpressionSuggester {
 
   private lazy val parser = new org.springframework.expression.spel.standard.SpelExpressionParser
 
-  def expressionSuggestions(inputValue: String, caretPosition2d: CaretPosition2d, variables: Map[String, RefClazz], typeDefinitions: TypeDefinitionSet): List[ExpressionSuggestion] = {
-    val normalizedCaret = normalizedCaretPosition(inputValue, caretPosition2d)
+  def expressionSuggestions(expression: Expression, caretPosition2d: CaretPosition2d, variables: Map[String, TypingResult], typeDefinitions: TypeDefinitionSet): List[ExpressionSuggestion] = {
+    // currently we only support Spel expressions
+    if(expression.language != Language.Spel) {
+      return Nil
+    }
+    val spelExpression = expression.expression
+    val normalizedCaret = normalizedCaretPosition(spelExpression, caretPosition2d)
     if (normalizedCaret == 0) {
       return Nil
     }
-    val previousChar = inputValue.substring(normalizedCaret - 1, normalizedCaret)
-    val shouldInsertDummyVariable = (previousChar == "#" || previousChar == ".") && (normalizedCaret == inputValue.length || !inputValue.charAt(normalizedCaret).isLetter)
+    val previousChar = spelExpression.substring(normalizedCaret - 1, normalizedCaret)
+    val shouldInsertDummyVariable = (previousChar == "#" || previousChar == ".") && (normalizedCaret == spelExpression.length || !spelExpression.charAt(normalizedCaret).isLetter)
     val input = if (shouldInsertDummyVariable) {
-      insertDummyVariable(inputValue, normalizedCaret)
+      insertDummyVariable(spelExpression, normalizedCaret)
     } else {
-      inputValue
+      spelExpression
     }
     val ast = parser.parseRaw(input).getAST
     val nodeInPosition = findNodeInPosition(ast, normalizedCaret)
@@ -39,7 +47,7 @@ class ExpressionSuggester {
       case Some(node) => node match {
         case v: VariableReference =>
           val filteredVariables = filterMapByName(variables, v.toStringAST.stripPrefix("#"))
-          filteredVariables.toList.map { case (variable, clazzRef) => ExpressionSuggestion(s"#$variable", clazzRef.display, fromClass = false) }
+          filteredVariables.toList.map { case (variable, clazzRef) => ExpressionSuggestion(s"#$variable", clazzRef, fromClass = false) }
         case p: PropertyOrFieldReference =>
           //TODO: this solution only looks for first previous node, so it works for single nested expression, like #var.field
           val prevNode = findPrevNodeInPosition(ast, p.getStartPosition)
@@ -48,16 +56,20 @@ class ExpressionSuggester {
             val methods = filterMapByName(classDefinition.methods, p.getName)
 
             methods.values.flatten
-              .map(m => ExpressionSuggestion(m.name, Some(m.signatures.head.result.display), fromClass = false))
+              .map(m => ExpressionSuggestion(m.name, m.signatures.head.result, fromClass = false))
               .toList
           }
 
-          val prevNodeVariable = prevNode.map(n => n.toStringAST.stripPrefix("#"))
-            .flatMap(v => variables.get(v))
-          prevNodeVariable.flatMap(c => c.refClazzName)
-            .flatMap(c => typeDefinitions.all.find(t => t.getClazz.getName == c)) // TODO: use get(Class[_])
-            .map(filterClassMethods).getOrElse(Nil) ++
-            prevNodeVariable.flatMap(_.fields).map(filterMapByName(_, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef.display, fromClass = false) }).getOrElse(Nil)
+          val prevNodeTypingResult = prevNode.flatMap {
+            case _: StringLiteral => Some(Typed[String])
+            case n => variables.get(n.toStringAST.stripPrefix("#"))
+          }
+
+          prevNodeTypingResult.map {
+            case tc: TypedClass => typeDefinitions.get(tc.klass).map(filterClassMethods).getOrElse(Nil)
+            case to: TypedObjectTypingResult => filterMapByName(to.fields, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false) }
+            case _ => Nil
+          }.getOrElse(Nil)
         case _ => Nil
       }
       case _ => Nil
@@ -89,13 +101,7 @@ class ExpressionSuggester {
 @JsonCodec(decodeOnly = true)
 case class CaretPosition2d(row: Int, column: Int)
 
-@JsonCodec(decodeOnly = true)
-case class ExpressionSuggestionRequest(expression: String, caretPosition2d: CaretPosition2d, variables: Map[String, RefClazz])
-
 // TODO: fromClass is used to calculate suggestion score - to show fields first, then class methods. Maybe we should
 //  return score from BE?
 @JsonCodec(encodeOnly = true)
-case class ExpressionSuggestion(methodName: String, refClazzDisplay: Option[String], fromClass: Boolean)
-
-@JsonCodec
-case class RefClazz(refClazzName: Option[String], display: Option[String] = None, union: Option[List[RefClazz]] = None, fields: Option[Map[String, RefClazz]] = None, params: Option[List[RefClazz]] = None)
+case class ExpressionSuggestion(methodName: String, refClazz: TypingResult, fromClass: Boolean)

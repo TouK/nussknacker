@@ -33,7 +33,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
-import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareValidationContext}
+import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareTypingResultDecoder, prepareValidationContext}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
@@ -115,6 +115,10 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
           }
         } ~ path("suggestions") {
           val modelData = typeToConfig.forTypeUnsafe(process.processingType)
+          implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+          @JsonCodec(decodeOnly = true)
+          case class ExpressionSuggestionRequest(expression: Expression, caretPosition2d: CaretPosition2d, variables: Map[String, TypingResult])
+
           entity(as[ExpressionSuggestionRequest]) { expressionSuggestionRequest =>
             complete {
               expressionSuggester.expressionSuggestions(
