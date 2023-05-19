@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.Decoder
+import io.circe.{Decoder, HCursor}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -95,7 +95,15 @@ package object definition {
                                                    label: Option[String])
 
   object UIParameter {
-    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
+    @JsonCodec(decodeOnly = true) case class Expr(language: String, expression: String)
+    implicit val defaultValueDecoder: Decoder[Expression] = (cursor: HCursor) => cursor.as[Expr] match {
+      case Left(_) => cursor.as[String].map(Expression.spel)
+      case Right(expr) => Right(Expression(expr.language, expr.expression))
+    }
+
+    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = {
+      deriveConfiguredDecoder[UIParameter]
+    }
   }
 
   object UICustomAction {
