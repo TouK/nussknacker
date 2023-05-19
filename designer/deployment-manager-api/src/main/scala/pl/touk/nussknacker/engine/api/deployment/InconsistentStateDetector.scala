@@ -1,6 +1,5 @@
-package pl.touk.nussknacker.ui.process.deployment
+package pl.touk.nussknacker.engine.api.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 
@@ -8,7 +7,7 @@ object InconsistentStateDetector {
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   //TODO: In future we should move this functionality to DeploymentManager.
-  def handleStatus(processState: Option[ProcessState], lastStateAction: Option[ProcessAction]): ProcessState =
+  def resolve(processState: Option[ProcessState], lastStateAction: Option[ProcessAction]): ProcessState =
     (processState, lastStateAction) match {
       case (Some(state), _) if state.status.isFailed => state
       case (Some(state), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastStateAction)

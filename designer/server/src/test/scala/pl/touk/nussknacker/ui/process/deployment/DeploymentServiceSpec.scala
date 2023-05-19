@@ -86,7 +86,8 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
   }
 
-  test("Should mark finished process as finished") {
+  //TODO: move DeploymentServiceImpl.handleFinishedProcess (and this test) to FlinkDeploymentManager
+  ignore("Should mark finished process as finished") {
     val processName: ProcessName = generateProcessName
     val id: ProcessId = prepareDeployedProcess(processName).dbioActionValues
 

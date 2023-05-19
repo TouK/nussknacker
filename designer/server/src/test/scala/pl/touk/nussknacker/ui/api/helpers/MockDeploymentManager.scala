@@ -45,6 +45,11 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     }
   }
 
+  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] = {
+    getFreshProcessState(name)
+      .map(processStateOpt => Option(InconsistentStateDetector.resolve(processStateOpt, lastAction)))
+  }
+
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Adding deploy for ${processVersion.processName}")

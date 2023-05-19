@@ -244,7 +244,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       } else if (processDetails.isArchived) {
         getArchivedProcessState(processDetails)(manager)
       } else if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
-        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy))
       } else if (inProgressActionTypes.contains(ProcessActionType.Cancel)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
@@ -279,12 +279,10 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   private def checkStateInDeploymentManager(deploymentManager: DeploymentManager, processDetails: BaseProcessDetails[_])
                                            (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     for {
-      state <- DBIOAction.from(getStateFromEngine(deploymentManager, processDetails.idWithName))
-      cancelActionOpt <- handleFinishedProcess(processDetails, state.value)
+      state <- DBIOAction.from(getStateWithResolvedInconsistency(deploymentManager, processDetails.idWithName, processDetails.lastStateAction))
     } yield {
-      val lastStateAction = cancelActionOpt.orElse(processDetails.lastStateAction)
-      val finalState = InconsistentStateDetector.handleStatus(state.value, lastStateAction)
-      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${lastStateAction.map(_.action)})")
+      val finalState = state.value.getOrElse(SimpleProcessStateDefinitionManager.errorFailedToGet)
+      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${processDetails.lastAction.map(_.action)})")
       finalState
     }
   }
@@ -296,28 +294,24 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }
   }
 
-  private def getStateFromEngine(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName)
-                                (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
-    lazy val failedToGetResult =
-      WithDataFreshnessStatus(
-        Option(SimpleProcessStateDefinitionManager.errorFailedToGet),
-        cached = false)
+  private def getStateWithResolvedInconsistency(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastAction: Option[ProcessAction])
+                                               (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
 
-    val stateFromEngineFuture = deploymentManager.getProcessState(processIdWithName.name).recover {
+    val resolvedState = deploymentManager.getProcessState(processIdWithName.name, lastAction).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
-        failedToGetResult
+        failedToGetProcessState
     }
 
     scenarioStateTimeout.map { timeout =>
-      stateFromEngineFuture.withTimeout(timeout, timeoutResult = failedToGetResult).map {
+      resolvedState.withTimeout(timeout, timeoutResult = failedToGetProcessState).map {
         case CompletedNormally(value) =>
           value
         case CompletedByTimeout(value) =>
           logger.warn(s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name}")
           value
       }
-    }.getOrElse(stateFromEngineFuture)
+    }.getOrElse(resolvedState)
   }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
@@ -336,6 +330,11 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       }
     }.getOrElse(DBIOAction.successful(None))
   }
+
+  private lazy val failedToGetProcessState =
+    WithDataFreshnessStatus(
+      Option(SimpleProcessStateDefinitionManager.errorFailedToGet),
+      cached = false)
 
   // It is very naive implementation for situation when designer was restarted after spawning some long running action
   // like deploy but before marking it as finished. Without this, user will always see "during deploy" status - even

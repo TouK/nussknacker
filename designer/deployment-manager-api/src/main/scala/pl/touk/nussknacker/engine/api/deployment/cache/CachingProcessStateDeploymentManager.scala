@@ -40,6 +40,23 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
     }
   }
 
+  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+    freshnessPolicy match {
+      case DataFreshnessPolicy.Fresh =>
+        val resultFuture = delegate.getProcessState(name, lastAction)
+        cache.put(name, resultFuture.map(_.value).toJava.toCompletableFuture)
+        resultFuture
+      case DataFreshnessPolicy.CanBeCached =>
+        Option(cache.getIfPresent(name))
+          .map(_.toScala.map(WithDataFreshnessStatus(_, cached = true)))
+          .getOrElse {
+            cache.get(name, (_, _) =>
+              delegate.getProcessState(name, lastAction).map(_.value).toJava.toCompletableFuture
+            ).toScala.map(WithDataFreshnessStatus(_, cached = false))
+          }
+    }
+  }
+
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] =
     delegate.validate(processVersion, deploymentData, canonicalProcess)
 

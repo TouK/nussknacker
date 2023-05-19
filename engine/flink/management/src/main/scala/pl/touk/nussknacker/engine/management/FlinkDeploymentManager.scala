@@ -131,6 +131,11 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
+
+  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] = {
+    getFreshProcessState(name)
+      .map(processStateOpt => Option(InconsistentStateDetector.resolve(processStateOpt, lastAction)))
+  }
 }
 
 object FlinkDeploymentManager {
