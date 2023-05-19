@@ -330,6 +330,12 @@ jobs:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         shell: bash
         run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
+      - name: docker logs
+        if: success() || failure()
+        run: |
+          docker logs k3d-k3s-default-server-0
+          docker logs k3d-k3s-default-agent-0
+          docker logs k3d-k3s-default-serverlb
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v3

@@ -4,6 +4,7 @@
 
 1.10.0 (not released yet)
 -------------------------
+* [#4261](https://github.com/TouK/nussknacker/pull/4261) Add TestWithParametersSupport support for flink engine
 * [#4294](https://github.com/TouK/nussknacker/pull/4294) Allow to pass username while migrating scenario to secondary environment.
 * [#4230](https://github.com/TouK/nussknacker/pull/4230) Extend TestInfoProvider with getTestParameters to test scenarios based on window with generated fields. 
   * Endpoint to test scenario based on parameters 
@@ -22,6 +23,9 @@
   * `scala.Option`, `scala.collection.Iterable`: `head`, `nonEmpty`, `orNull`, `tail`
   * `io.circe.*` (deserialized raw JSON objects): `noSpacesSortKeys`, `spaces2SortKeys`, `spaces4SortKeys`
 * [#4298](https://github.com/TouK/nussknacker/pull/4298) Support arrays in `BestEffortJsonEncoder`
+* [#4283](https://github.com/TouK/nussknacker/pull/4283) Fix for OIDC provider access token verification. For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
+  This change also introduced a possibility to override username incoming from OIDC provider. 
+  For more see `usersFile` configuration. This might be helpful when other systems authenticate in Nussknacker in `machine to machine` manner. 
 * [#4246](https://github.com/TouK/nussknacker/pull/4246) Store components usages along with scenario json.
   Components usages by a scenario are stored in the processes version table. It allows to speed up fetching components usages across all scenarios,
   especially for a big number of scenarios and each with a lot of nodes.

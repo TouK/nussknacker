@@ -61,6 +61,7 @@ object ScenarioInterpreterFactory {
 
     val compilerData = ProcessCompilerData.prepare(process,
       modelData.modelDefinitionWithTypes,
+      modelData.engineDictRegistry,
       SubprocessComponentDefinitionExtractor(modelData),
       listeners,
       modelData.modelClassLoader.classLoader, resultCollector,

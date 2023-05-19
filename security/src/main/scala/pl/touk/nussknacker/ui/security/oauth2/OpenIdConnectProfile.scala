@@ -1,14 +1,12 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
+import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
+import io.circe.{Decoder, Json}
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, getUserUsername}
 
 import java.time.{Instant, LocalDate}
-import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
-import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
-
-import scala.concurrent.duration.Deadline
 
 @ConfiguredJsonCodec(decodeOnly = true) case class OpenIdConnectUserInfo
 (
@@ -70,10 +68,14 @@ object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
   def getAuthenticatedUser(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration): AuthenticatedUser = {
-    val userRoles =
-      profile.roles ++
-      getUserRoles(profile.subject.get, configuration)
-    val username = profile.preferredUsername.orElse(profile.nickname).orElse(profile.subject).get
-    AuthenticatedUser(id = profile.subject.get, username = username, userRoles)
+    val userIdentity = profile.subject.getOrElse(throw new IllegalStateException("Missing user identity"))
+    val userRoles = profile.roles ++ getUserRoles(userIdentity ,configuration)
+    val username =
+      getUserUsername(userIdentity, configuration)
+        .orElse(profile.preferredUsername)
+        .orElse(profile.nickname)
+        .getOrElse(userIdentity)
+
+    AuthenticatedUser(id = userIdentity, username = username, userRoles)
   }
 }
