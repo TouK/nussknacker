@@ -57,7 +57,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
                                   onMigrate: Future[UpdateProcessCommand] => Unit) = new MockRemoteEnvironment with TriedToAddProcess {
     private var remoteProcessList = initialRemoteProcessList
 
-    override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
+    override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]) : Future[HttpResponse] = {
       import HttpMethods._
       import StatusCodes._
 
@@ -145,7 +145,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     private def basicProcesses: List[BasicProcess] = (processes ++ subProcesses).map(BasicProcess.apply(_))
     private def allProcesses: List[ValidatedProcessDetails] = processes ++ subProcesses
 
-    override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
+    override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]): Future[HttpResponse] = {
       object GetBasicProcesses {
         def unapply(arg: (Uri, HttpMethod)): Boolean = {
           arg._1.toString() == s"$baseUri/processes?isArchived=false" && arg._2 == HttpMethods.GET
@@ -177,7 +177,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
   it should "not migrate not validating scenario" in {
 
     val remoteEnvironment = new MockRemoteEnvironment {
-      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
+      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]) : Future[HttpResponse] = {
         if (path.toString.contains("processValidation") && method == HttpMethods.POST) {
           Marshal(ValidationResult.errors(Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed))), List(), List())).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
@@ -216,7 +216,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
     val remoteEnvironment = new MockRemoteEnvironment {
 
-      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
+      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]) : Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/a") && method == HttpMethods.GET) {
           Marshal(displayableToProcess(process)).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
@@ -239,7 +239,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
     val remoteEnvironment = new MockRemoteEnvironment {
 
-      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
+      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity, headers: Seq[HttpHeader]) : Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
           Marshal(displayableToProcess(process)).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
 import cats.instances.either._
 import cats.instances.list._
