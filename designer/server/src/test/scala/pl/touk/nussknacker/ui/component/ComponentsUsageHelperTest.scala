@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
-import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
-import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.{NodeId, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction, ProcessDetails}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
@@ -21,6 +21,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsagesHelper
 
 import java.time.Instant
 
@@ -91,36 +92,6 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
       otherExistingStreamTransformer -> SingleComponentConfig.zero.copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer)))
     )
   ))
-
-  test("should compute usages for a single scenario") {
-    val table = Table(
-      ("scenario", "expectedData"),
-      (process1, Map(
-        ComponentIdParts(Some(existingSourceFactory), Source) -> List("source"),
-        ComponentIdParts(Some(existingStreamTransformer), ComponentType.CustomNode) -> List("custom"),
-        ComponentIdParts(Some(otherExistingStreamTransformer), ComponentType.CustomNode) -> List("custom2"),
-        ComponentIdParts(Some(existingSinkFactory), Sink) -> List("sink"),
-      )),
-      (processWithSomeBasesStreaming, Map(
-        ComponentIdParts(Some(existingSourceFactory), Source) -> List("source"),
-        ComponentIdParts(None, ComponentType.Filter) -> List("checkId", "checkId2"),
-        ComponentIdParts(None, ComponentType.Switch) -> List("switchStreaming"),
-        ComponentIdParts(Some(existingSinkFactory), Sink) -> List("out1"),
-        ComponentIdParts(Some(existingSinkFactory2), Sink) -> List("out2"),
-      )),
-      (processWithSubprocess, Map(
-        ComponentIdParts(Some(existingSourceFactory), Source) -> List("source"),
-        ComponentIdParts(Some(otherExistingStreamTransformer2), ComponentType.CustomNode) -> List("custom"),
-        ComponentIdParts(Some(subprocess.metaData.id), Fragments) -> List(subprocess.metaData.id),
-        ComponentIdParts(Some(existingSinkFactory), Sink) -> List("sink"),
-      )),
-    )
-
-    forAll(table) { (scenario, expectedData) =>
-      val result = ComponentsUsageHelper.computeUsagesForScenario(scenario).value
-      result shouldBe expectedData
-    }
-  }
 
   test("should compute components usage count") {
     val table = Table(
@@ -216,7 +187,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   private def withComponentsUsages(processesDetails: List[ProcessDetails]): List[BaseProcessDetails[ScenarioComponentsUsages]] = {
     processesDetails.map { details =>
-      details.mapProcess(p => ComponentsUsageHelper.computeUsagesForScenario(toCanonical(p)))
+      details.mapProcess(p => ScenarioComponentsUsagesHelper.compute(toCanonical(p)))
     }
   }
 

@@ -3,9 +3,9 @@ package db.migration
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.migration.SlickMigration
+import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsagesHelper
 
 trait V1_039__FillComponentsUsagesDefinition extends SlickMigration with EspTables with LazyLogging {
 
@@ -41,7 +41,7 @@ trait V1_039__FillComponentsUsagesDefinition extends SlickMigration with EspTabl
     import pl.touk.nussknacker.ui.db.entity.ScenarioComponentsUsagesJsonCodec._
 
     val scenario = ProcessMarshaller.fromJsonUnsafe(scenarioJson)
-    val componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(scenario)
+    val componentsUsages = ScenarioComponentsUsagesHelper.compute(scenario)
     componentsUsages.asJson.noSpaces
   }
 

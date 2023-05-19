@@ -9,12 +9,10 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
-import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -142,7 +140,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       createDate = Timestamp.from(now),
       user = userName,
       modelVersion = modelVersion.forType(processingType),
-      componentsUsages = Some(ComponentsUsageHelper.computeUsagesForScenario(canonicalProcess)),
+      componentsUsages = Some(ScenarioComponentsUsagesHelper.compute(canonicalProcess)),
     )
 
     def isLastVersionContainsSameProcess(lastVersion: ProcessVersionEntityData): Boolean =

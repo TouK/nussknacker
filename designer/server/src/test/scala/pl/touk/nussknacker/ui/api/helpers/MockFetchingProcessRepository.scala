@@ -8,12 +8,11 @@ import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy.{FetchCanonical, FetchComponentsUsages, FetchDisplayable, NotFetch}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.process.repository.{BasicRepository, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{BasicRepository, FetchingProcessRepository, ScenarioComponentsUsagesHelper}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.jdbc.{HsqldbProfile, JdbcBackend}
 
@@ -77,7 +76,7 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[Canonical
       case NotFetch => process.copy(json = ().asInstanceOf[PS])
       case FetchCanonical => process.asInstanceOf[BaseProcessDetails[PS]]
       case FetchDisplayable => process.mapProcess(canonical => ProcessConverter.toDisplayableOrDie(canonical, process.processingType, process.processCategory)).asInstanceOf[BaseProcessDetails[PS]]
-      case FetchComponentsUsages => process.mapProcess(canonical => ComponentsUsageHelper.computeUsagesForScenario(canonical)).asInstanceOf[BaseProcessDetails[PS]]
+      case FetchComponentsUsages => process.mapProcess(canonical => ScenarioComponentsUsagesHelper.compute(canonical)).asInstanceOf[BaseProcessDetails[PS]]
     }
   }
 
