@@ -1,12 +1,19 @@
 package pl.touk.nussknacker.restmodel.component
 
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 
-// TODO components-usages: discuss changing type to: List[ComponentUsages] where ComponentUsages is ComponentIdParts, List[NodeId].
-case class ScenarioComponentsUsages(value: Map[ComponentIdParts, List[NodeId]])
+case class ScenarioComponentsUsages(value: List[ComponentUsages]) extends AnyVal
+
+@JsonCodec
+case class ComponentUsages(componentName: Option[String], componentType: ComponentType, nodeIds: List[NodeId])
 
 object ScenarioComponentsUsages {
-  val Empty: ScenarioComponentsUsages = ScenarioComponentsUsages(Map.empty)
-}
 
-case class ComponentIdParts(componentName: Option[String], componentType: ComponentType)
+  val Empty: ScenarioComponentsUsages = ScenarioComponentsUsages(Nil)
+
+  implicit val decoder: Decoder[ScenarioComponentsUsages] = Decoder.decodeList[ComponentUsages].map(ScenarioComponentsUsages(_))
+  implicit val encoder: Encoder[ScenarioComponentsUsages] = Encoder.encodeList[ComponentUsages].contramap[ScenarioComponentsUsages](_.value)
+
+}

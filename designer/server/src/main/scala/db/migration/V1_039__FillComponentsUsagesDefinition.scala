@@ -38,7 +38,6 @@ trait V1_039__FillComponentsUsagesDefinition extends SlickMigration with EspTabl
 
   private def updateComponentsUsages(scenarioJsonOpt: Option[String]): Option[String] = {
     import io.circe.syntax._
-    import pl.touk.nussknacker.ui.db.entity.ScenarioComponentsUsagesJsonCodec._
 
     scenarioJsonOpt
       .map(ProcessMarshaller.fromJsonUnsafe)

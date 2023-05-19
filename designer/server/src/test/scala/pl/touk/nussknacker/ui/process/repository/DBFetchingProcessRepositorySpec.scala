@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.{ComponentUsages, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails
@@ -219,9 +219,9 @@ class DBFetchingProcessRepositorySpec
     saveProcess(newScenario, componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(newScenario))
 
     val latestDetails = fetchLatestProcessDetails[ScenarioComponentsUsages](processName)
-    latestDetails.json shouldBe ScenarioComponentsUsages(Map(
-      ComponentIdParts(Some("source"), ComponentType.Source) -> List("source1"),
-      ComponentIdParts(Some("sink"), ComponentType.Sink) -> List("sink1"),
+    latestDetails.json shouldBe ScenarioComponentsUsages(List(
+      ComponentUsages(Some("source"), ComponentType.Source, List("source1")),
+      ComponentUsages(Some("sink"), ComponentType.Sink, List("sink1")),
     ))
 
     val updatedScenario = ScenarioBuilder.streaming(processName.value)
@@ -230,9 +230,9 @@ class DBFetchingProcessRepositorySpec
 
     updateProcess(latestDetails.processId, updatedScenario, componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(updatedScenario))
 
-    fetchLatestProcessDetails[ScenarioComponentsUsages](processName).json shouldBe ScenarioComponentsUsages(Map(
-      ComponentIdParts(Some("source"), ComponentType.Source) -> List("source1"),
-      ComponentIdParts(Some("otherSink"), ComponentType.Sink) -> List("sink1"),
+    fetchLatestProcessDetails[ScenarioComponentsUsages](processName).json shouldBe ScenarioComponentsUsages(List(
+      ComponentUsages(Some("source"), ComponentType.Source, List("source1")),
+      ComponentUsages(Some("otherSink"), ComponentType.Sink, List("sink1")),
     ))
   }
 
