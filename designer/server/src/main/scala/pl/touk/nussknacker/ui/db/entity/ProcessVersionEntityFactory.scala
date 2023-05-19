@@ -116,7 +116,7 @@ case class ProcessVersionEntityData(id: VersionId,
                                    )
 
 @JsonCodec
-case class ComponentUsages(componentName: Option[String], componentType: ComponentType, nodeIds: List[NodeId])
+private[entity] case class ComponentUsages(componentName: Option[String], componentType: ComponentType, nodeIds: List[NodeId])
 
 object ScenarioComponentsUsagesJsonCodec {
 
