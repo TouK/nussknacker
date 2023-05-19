@@ -166,8 +166,8 @@ users: [
     roles: ["Admin"]
   },
   {
-    identity: "234a9sa98234@clientId",
-    username: "M2M tech account",
+    identity: "userId",
+    username: "overrided username",
     roles: ["Admin"]
   },
   {
