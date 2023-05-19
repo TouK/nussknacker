@@ -2,19 +2,18 @@ package pl.touk.nussknacker.engine.variables
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.process.WithCategories
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, typing}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, StandardObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.objectDefinition
+import pl.touk.nussknacker.engine.definition.GlobalVariableDefinitionExtractor
 
 class GlobalVariablesPreparerTest extends AnyFunSuite with Matchers {
 
   test("should resolve real value and return type for typed variable") {
     val metaData = MetaData("test", StreamMetaData())
-    val unusedMethodDef = MethodDefinition(name = "test", invocation = (_, _) => ???, orderedDependencies = new OrderedDependencies(Nil), returnType = Unknown, runtimeClass = classOf[Any], annotations = Nil)
-    val varsWithMethodDef = Map("typedVar" -> StandardObjectWithMethodDef(TestTypedGlobalVariable, methodDef = unusedMethodDef, objectDefinition = objectDefinition(List.empty, Some(Unknown))))
+    val varsWithMethodDef = Map("typedVar" ->
+      GlobalVariableDefinitionExtractor.extractDefinition(WithCategories.anyCategory(TestTypedGlobalVariable)))
 
     val varsWithType = new GlobalVariablesPreparer(varsWithMethodDef, hideMetaVariable = true).prepareGlobalVariables(metaData)
 

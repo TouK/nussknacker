@@ -5,6 +5,7 @@
 1.10.0 (not released yet)
 -------------------------
 * [#4261](https://github.com/TouK/nussknacker/pull/4261) Add TestWithParametersSupport support for flink engine
+* [#4294](https://github.com/TouK/nussknacker/pull/4294) Allow to pass username while migrating scenario to secondary environment.
 * [#4230](https://github.com/TouK/nussknacker/pull/4230) Extend TestInfoProvider with getTestParameters to test scenarios based on window with generated fields. 
   * Endpoint to test scenario based on parameters 
   * New generic dialog to display scenario input parameters
@@ -14,6 +15,17 @@
 * [#4264](https://github.com/TouK/nussknacker/pull/4264) Add Unknown type as valid fragment input
 * [#4278](https://github.com/TouK/nussknacker/pull/4278) Expression compilation speedup: reusage of type definitions extracted for code suggestions purpose + 
   added completions for some missing types like `TimestampType` (`#inputMeta.timestampType`) 
+* [#4290](https://github.com/TouK/nussknacker/pull/4290) Expression compilation speedup: replace most regular expression matching with plain string matching
+* [#4292](https://github.com/TouK/nussknacker/pull/4292) Expose more methods for use in expressions:
+  * `java.lang.CharSequence`: `replace`
+  * `java.util.Collection`: `lastIndexOf`
+  * `java.util.Optional`: `isEmpty`
+  * `scala.Option`, `scala.collection.Iterable`: `head`, `nonEmpty`, `orNull`, `tail`
+  * `io.circe.*` (deserialized raw JSON objects): `noSpacesSortKeys`, `spaces2SortKeys`, `spaces4SortKeys`
+* [#4298](https://github.com/TouK/nussknacker/pull/4298) Support arrays in `BestEffortJsonEncoder`
+* [#4283](https://github.com/TouK/nussknacker/pull/4283) Fix for OIDC provider access token verification. For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
+  This change also introduced a possibility to override username incoming from OIDC provider. 
+  For more see `usersFile` configuration. This might be helpful when other systems authenticate in Nussknacker in `machine to machine` manner. 
 
 1.9.1 (24 Apr 2023)
 ------------------------

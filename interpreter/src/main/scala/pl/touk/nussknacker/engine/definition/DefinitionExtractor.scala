@@ -7,12 +7,11 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.MethodDefinition
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor
 
-import java.lang.reflect.{InvocationTargetException, Method}
+import java.lang.reflect.Method
 import scala.runtime.BoxedUnit
 
 class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtractor[T]) {
@@ -24,11 +23,12 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
       // TODO: Use ContextTransformation API to check if custom node is adding some output variable
       def notReturnAnything(typ: TypingResult) = Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(typ)
       val objectDefinition = ObjectDefinition(
-        methodDef.orderedDependencies.definedParameters,
+        methodDef.definedParameters,
         Option(methodDef.returnType).filterNot(notReturnAnything),
         objWithCategories.categories,
         mergedComponentConfig)
-      StandardObjectWithMethodDef(obj, methodDef, objectDefinition)
+      val implementationInvoker = new MethodBasedComponentImplementationInvoker(obj, methodDef)
+      StandardObjectWithMethodDef(implementationInvoker, obj, objectDefinition, methodDef.runtimeClass)
     }
 
     (obj match {
@@ -63,6 +63,7 @@ object DefinitionExtractor {
   // TODO: rename to ComponentDefinitionWithImplementation
   sealed trait ObjectWithMethodDef {
 
+    // TODO: It should be exposed only for components - not for global variables
     def implementationInvoker: ComponentImplementationInvoker
 
     // For purpose of transforming (e.g.) stubbing of the implementation
@@ -81,13 +82,24 @@ object DefinitionExtractor {
 
   }
 
-  trait ComponentImplementationInvoker {
+  trait ComponentImplementationInvoker extends Serializable {
 
     def invokeMethod(params: Map[String, Any],
                      outputVariableNameOpt: Option[String],
                      additional: Seq[AnyRef]): Any
 
   }
+
+  object ComponentImplementationInvoker {
+
+    val nullImplementationInvoker: ComponentImplementationInvoker = new ComponentImplementationInvoker {
+      override def invokeMethod(params: Map[String, Any],
+                                outputVariableNameOpt: Option[String],
+                                additional: Seq[AnyRef]): Any = null
+    }
+
+  }
+
 
   case class GenericNodeTransformationMethodDef(override val implementationInvoker: ComponentImplementationInvoker,
                                                 obj: GenericNodeTransformation[_],
@@ -129,15 +141,14 @@ object DefinitionExtractor {
 
   case class FinalStateValue(value: Option[Any])
 
-  // TOOD: rename to StaticComponentWithImplementation
+  // TOOD: rename to MethodBasedComponentWithImplementation
   case class StandardObjectWithMethodDef(implementationInvoker: ComponentImplementationInvoker,
                                          obj: Any,
-                                         methodDef: MethodDefinition,
-                                         objectDefinition: ObjectDefinition) extends ObjectWithMethodDef {
+                                         objectDefinition: ObjectDefinition,
+                                         // TODO: it should be removed - instead implementationInvoker should be transformed
+                                         runtimeClass: Class[_]) extends ObjectWithMethodDef {
     override def withImplementationInvoker(implementationInvoker: ComponentImplementationInvoker): ObjectWithMethodDef =
       copy(implementationInvoker = implementationInvoker)
-
-    def runtimeClass: Class[_] = methodDef.runtimeClass
 
     def parameters: List[Parameter] = objectDefinition.parameters
 
@@ -149,35 +160,12 @@ object DefinitionExtractor {
 
   }
 
-  object StandardObjectWithMethodDef extends LazyLogging {
+  private[definition] class MethodBasedComponentImplementationInvoker(obj: Any, private[definition] val methodDef: MethodDefinition)
+    extends ComponentImplementationInvoker with LazyLogging {
 
-    def apply(obj: Any,
-              methodDef: MethodDefinition,
-              objectDefinition: ObjectDefinition): StandardObjectWithMethodDef = {
-      val implementationInvoker = new ComponentImplementationInvoker {
-        override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
-          val values = methodDef.orderedDependencies.prepareValues(params, outputVariableNameOpt, additional)
-          try {
-            methodDef.invocation(obj, values)
-          } catch {
-            case ex: IllegalArgumentException =>
-              //this usually indicates that parameters do not match or argument list is incorrect
-              logger.debug(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
-
-              def className(obj: Any) = Option(obj).map(o => ReflectUtils.simpleNameWithoutSuffix(o.getClass)).getOrElse("null")
-
-              val parameterValues = methodDef.orderedDependencies.definedParameters.map(_.name).map(params)
-              throw new IllegalArgumentException(
-                s"""Failed to invoke "${methodDef.name}" on ${className(obj)} with parameter types: ${parameterValues.map(className)}: ${ex.getMessage}""", ex)
-            //this is somehow an edge case - normally service returns failed future for exceptions
-            case ex: InvocationTargetException =>
-              throw ex.getTargetException
-          }
-        }
-      }
-      new StandardObjectWithMethodDef(implementationInvoker, obj, methodDef, objectDefinition)
+    override def invokeMethod(params: Map[String, Any], outputVariableNameOpt: Option[String], additional: Seq[AnyRef]): Any = {
+      methodDef.invoke(obj, params, outputVariableNameOpt, additional)
     }
-
   }
 
   // TODO: rename to ComponentStaticDefinition

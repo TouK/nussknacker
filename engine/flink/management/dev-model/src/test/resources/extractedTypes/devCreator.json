@@ -447,6 +447,15 @@
           }
         }
       ],
+      "noSpacesSortKeys": [
+        {
+          "name": "noSpacesSortKeys",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
       "spaces2": [
         {
           "name": "spaces2",
@@ -456,9 +465,27 @@
           }
         }
       ],
+      "spaces2SortKeys": [
+        {
+          "name": "spaces2SortKeys",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
       "spaces4": [
         {
           "name": "spaces4",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "spaces4SortKeys": [
+        {
+          "name": "spaces4SortKeys",
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.String"}
@@ -3346,6 +3373,28 @@
               {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
             ],
             "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "replace": [
+        {
+          "name": "replace",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Character"}},
+              {"name": "arg1", "refClazz": {"refClazzName": "java.lang.Character"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        },
+        {
+          "name": "replace",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"refClazzName": "java.lang.CharSequence"}},
+              {"name": "arg1", "refClazz": {"refClazzName": "java.lang.CharSequence"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
           }
         }
       ],
@@ -11297,6 +11346,17 @@
           "signature": {
             "noVarArgs": [],
             "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "lastIndexOf": [
+        {
+          "name": "lastIndexOf",
+          "signature": {
+            "noVarArgs": [
+              {"name": "arg0", "refClazz": {"type": "Unknown"}}
+            ],
+            "result": {"refClazzName": "java.lang.Integer"}
           }
         }
       ],

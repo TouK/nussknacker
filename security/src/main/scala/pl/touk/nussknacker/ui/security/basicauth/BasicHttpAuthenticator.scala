@@ -27,7 +27,7 @@ class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration) ex
     users
       .get(prov.identifier)
       .filter(us => prov.verify(us.password.value, hash(us)))
-      .map(user => AuthenticatedUser(user.identity, user.identity, user.roles))
+      .map(user => AuthenticatedUser(user.identity, user.username, user.roles))
   }
 
   private def hash(u: UserWithPassword)(receivedSecret: String): String = {
@@ -58,7 +58,7 @@ class BasicHttpAuthenticator(configuration: BasicAuthenticationConfiguration) ex
         case (Some(_), Some(_)) => throw new IllegalStateException("Specified both password and encrypted password for user: " + u.identity)
         case (None, None) => throw new IllegalStateException("Neither specified password nor encrypted password for user: " + u.identity)
       }
-      u.identity -> UserWithPassword(u.identity, password, u.roles)
+      u.identity -> UserWithPassword(u.identity, u.username.getOrElse(u.identity), password, u.roles)
     }.toMap
   }
 }
@@ -72,5 +72,5 @@ object BasicHttpAuthenticator {
 
   private case class PlainPassword(value: String) extends Password
   private case class EncryptedPassword(value: String) extends Password
-  private case class UserWithPassword(identity: String, password: Password, roles: Set[String])
+  private case class UserWithPassword(identity: String, username: String, password: Password, roles: Set[String])
 }

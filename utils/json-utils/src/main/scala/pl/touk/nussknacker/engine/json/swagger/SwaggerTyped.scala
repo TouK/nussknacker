@@ -56,7 +56,7 @@ case class SwaggerUnion(types: List[SwaggerTyped]) extends SwaggerTyped
 @JsonCodec case class SwaggerEnum private (values: List[Any]) extends SwaggerTyped
 
 object SwaggerEnum {
-  private val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+  private val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnknown = true, getClass.getClassLoader)
   private implicit val decoder: Decoder[List[Any]] = Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
   private implicit val encoder: Encoder[List[Any]] = Encoder.instance[List[Any]](bestEffortJsonEncoder.encode)
   private lazy val om = new ObjectMapper()
@@ -232,6 +232,8 @@ object SwaggerObject {
       case null => AdditionalPropertiesEnabled(SwaggerAny)
       case schema: Schema[_] if schema.getBooleanSchemaValue == false => AdditionalPropertiesDisabled
       case schema: Schema[_] => AdditionalPropertiesEnabled(SwaggerTyped(schema, swaggerRefSchemas, usedRefs))
+      case additionalPropertyEnabled if additionalPropertyEnabled == true => AdditionalPropertiesEnabled(SwaggerAny)
+      case additionalPropertyEnabled if additionalPropertyEnabled == false => AdditionalPropertiesDisabled
     }
     SwaggerObject(properties, additionalProperties, patternProperties)
   }

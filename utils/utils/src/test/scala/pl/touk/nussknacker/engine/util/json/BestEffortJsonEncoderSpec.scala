@@ -73,11 +73,17 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
     encoder.encode(map) shouldEqual obj("key1" -> fromLong(1), "key2" -> fromString("value"))
   }
 
+  it("should encode arrays as a json") {
+    encoder.encode(Array(1, 2, 3)) shouldEqual arr(fromLong(1), fromLong(2), fromLong(3))
+    encoder.encode(Seq(Array(1, 2, 3))) shouldEqual arr(arr(fromLong(1), fromLong(2), fromLong(3)))
+    encoder.encode(Array(1, "value")) shouldEqual arr(fromLong(1), fromString("value"))
+  }
+
   it("should use custom encoders from classloader") {
 
     ClassLoaderWithServices.withCustomServices(List(classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder1],
       classOf[ToJsonEncoder] -> classOf[CustomJsonEncoder2])) { classLoader =>
-      val encoder = BestEffortJsonEncoder(failOnUnkown = true, classLoader)
+      val encoder = BestEffortJsonEncoder(failOnUnknown = true, classLoader)
 
       encoder.encode(Map("custom1" ->
         CustomClassToEncode(Map("custom2" -> new NestedClassToEncode)))) shouldBe obj("custom1" ->

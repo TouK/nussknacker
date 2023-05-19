@@ -17,7 +17,8 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
     id = processId,
     canonicalProcess = process,
     comment = Option(migrationsApplied).filter(_.nonEmpty).map(MigrationComment),
-    increaseVersionWhenJsonNotChanged = true
+    increaseVersionWhenJsonNotChanged = true,
+    forwardedUserName = None
   )
 
 }

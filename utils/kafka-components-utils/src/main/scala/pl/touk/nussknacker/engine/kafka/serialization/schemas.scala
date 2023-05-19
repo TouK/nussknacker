@@ -75,7 +75,7 @@ object schemas {
 
   import scala.jdk.CollectionConverters._
 
-  private implicit val mapEncoder: Encoder[java.util.Map[_, _]] = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader).circeEncoder.contramap(identity)
+  private implicit val mapEncoder: Encoder[java.util.Map[_, _]] = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader).circeEncoder.contramap(identity)
 
   private implicit val mapDecoder: Decoder[java.util.Map[_, _]] = Decoder[Json].map(deserializeToMap)
 

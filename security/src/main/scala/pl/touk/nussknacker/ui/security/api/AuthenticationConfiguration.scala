@@ -33,6 +33,7 @@ object AuthenticationConfiguration {
   def getRules(config: Config): List[ConfigRule] = getRules(config.as[URI](usersConfigPath))
 
   case class ConfigUser(identity: String,
+                        username: Option[String],
                         password: Option[String],
                         encryptedPassword: Option[String],
                         roles: Set[String])

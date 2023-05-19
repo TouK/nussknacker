@@ -6,10 +6,25 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ## In version 1.10.0
 
 ### Code API changes
+* [#4294](https://github.com/TouK/nussknacker/pull/4294) `HttpRemoteEnvironmentConfig` allows you to pass flag `passUsernameInMigration` - (default true).
+  When set to true, migration attaches username in the form of `Remote[userName]` while migrating to secondary environment. To use the old migration endpoint, set to false.
 * [#4278](https://github.com/TouK/nussknacker/pull/4278) Now expression compiler and code suggestions mechanism are reusing the same
   types extracted based on model. Before the change types in compiler were lazily extracted. Because of this change, some expressions
   can stop to compile. You may need to add `WithExplicitTypesToExtract` to some of yours `SourceFactory` implementations.
   See extending classes for examples on how to implement it.
+* [#4290](https://github.com/TouK/nussknacker/pull/4290) Renamed predicates used in `ClassExtractionSettings`:
+  * `ClassMemberPatternPredicate` renamed to `MemberNamePatternPredicate`
+  * `AllMethodNamesPredicate` renamed to AllMembersPredicate
+
+### Configuration changes
+* [#4283](https://github.com/TouK/nussknacker/pull/4283) For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
+  Please mind, that previous Nussknacker versions assumed its value is true if `authentication.audience` was defined.
+
+### Other changes
+* [#4305](https://github.com/TouK/nussknacker/pull/4305) `scala-compiler` and `scala-reflect` are now included in `flink-scala`,
+  so you can simplify your deployment by removing them and updating to new
+  ([`flink-scala` JAR](https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.1.0/flink-scala-2-13_2.13-1.1.0-assembly.jar))
+  (this doesn't introduce any functional changes)
 
 ## In version 1.9.0
 

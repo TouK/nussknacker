@@ -18,7 +18,7 @@ object BestEffortJsonSchemaEncoder {
   import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
   private val classLoader = this.getClass.getClassLoader
-  private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = false, this.getClass.getClassLoader)
+  private val jsonEncoder = BestEffortJsonEncoder(failOnUnknown = false, this.getClass.getClassLoader)
 
   private val optionalEncoders = ServiceLoader.load(classOf[ToJsonBasedOnSchemaEncoder], classLoader).asScala.map(_.encoder(this.encodeBasedOnSchema))
   private val highPriority: PartialFunction[EncodeInput, EncodeOutput] = Map()
