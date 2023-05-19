@@ -5,57 +5,57 @@ import {ClassDefinition} from "../src/types";
 
 const typesInformation: ClassDefinition[] = [
   {
-    "clazzName": {"refClazzName": "org.A", type:"", display: "", fields: {}, params: []},
-    "methods": {"fooString": {"refClazz": {"refClazzName": "java.lang.String"} }, "barB": {"refClazz": {"refClazzName": "org.B"} } }
+    "clazzName": {"refClazzName": "org.A", type:"", display: "A", fields: {}, params: []},
+    "methods": {"fooString": {"refClazz": {"refClazzName": "java.lang.String", display: "String"} }, "barB": {"refClazz": {"refClazzName": "org.B", display: "B"} } }
   },
   {
-    "clazzName": {"refClazzName": "org.B", type:"", display: "", fields: {}, params: []},
-    "methods": {"bazC": {"refClazz": {"refClazzName": "org.C"} } }
+    "clazzName": {"refClazzName": "org.B", type:"", display: "B", fields: {}, params: []},
+    "methods": {"bazC": {"refClazz": {"refClazzName": "org.C", display: "C"} } }
   },
   {
-    "clazzName": {"refClazzName": "org.C", type:"", display: "", fields: {}, params: []},
-    "methods": {"quaxString": {"refClazz": {"refClazzName": "java.lang.String"} }}
+    "clazzName": {"refClazzName": "org.C", type:"", display: "C", fields: {}, params: []},
+    "methods": {"quaxString": {"refClazz": {"refClazzName": "java.lang.String", display: "String"} }}
   },
   {
-    "clazzName": {"refClazzName": "org.AA", type:"", display: "", fields: {}, params: []},
-    "methods": {"fooString": {"refClazz": {"refClazzName": "java.lang.String"} }, "barB": {"refClazz": {"refClazzName": "org.C"} } }
+    "clazzName": {"refClazzName": "org.AA", type:"", display: "AA", fields: {}, params: []},
+    "methods": {"fooString": {"refClazz": {"refClazzName": "java.lang.String", display: "String"} }, "barB": {"refClazz": {"refClazzName": "org.C", display: "C"} } }
   },
   {
-    "clazzName": {"refClazzName": "org.WithList", type:"", display: "", fields: {}, params: []},
-    "methods": {"listField": {"refClazz": {"refClazzName": "java.util.List", params: [{refClazzName: "org.A"}]} }}
+    "clazzName": {"refClazzName": "org.WithList", type:"", display: "WithList", fields: {}, params: []},
+    "methods": {"listField": {"refClazz": {"refClazzName": "java.util.List", display: "List", params: [{refClazzName: "org.A", display: "A"}]} }}
   },
   {
-    "clazzName": {"refClazzName": "java.lang.String", type:"", display: "", fields: {}, params: []},
-    "methods": {"toUpperCase": {"refClazz": {"refClazzName": "java.lang.String"} }}
+    "clazzName": {"refClazzName": "java.lang.String", type:"", display: "String", fields: {}, params: []},
+    "methods": {"toUpperCase": {"refClazz": {"refClazzName": "java.lang.String", display: "String"} }}
   },
   {
-    "clazzName": {"refClazzName": "java.util.LocalDateTime", type:"", display: "", fields: {}, params: []},
-    "methods": {"isBefore": {"refClazz": {"refClazzName": "java.lang.Boolean"}, "params": {"name": "arg0", "refClazz": "java.util.LocalDateTime"}}}
+    "clazzName": {"refClazzName": "java.util.LocalDateTime", type:"", display: "LocalDateTime", fields: {}, params: []},
+    "methods": {"isBefore": {"refClazz": {"refClazzName": "java.lang.Boolean", display: "Boolean"}, "params": {"name": "arg0", "refClazz": "java.util.LocalDateTime"}}}
   },
   {
-    "clazzName": {"refClazzName": "org.Util", type:"", display: "", fields: {}, params: []},
-    "methods": {"now": {"refClazz": {"refClazzName": "java.util.LocalDateTime"}}}
+    "clazzName": {"refClazzName": "org.Util", type:"", display: "Util", fields: {}, params: []},
+    "methods": {"now": {"refClazz": {"refClazzName": "java.util.LocalDateTime", display: "LocalDateTime"}}}
   }
 ];
 
 const variables = {
-  "input": {refClazzName: "org.A"},
-  "other": {refClazzName: "org.C"},
-  "ANOTHER": {refClazzName: "org.A"},
-  "dynamicMap": {refClazzName: "java.util.Map", fields: {'intField': {refClazzName: 'java.lang.Integer'}, 'aField': {refClazzName: "org.A"}} },
-  "listVar": {refClazzName: "org.WithList" },
-  "util": {refClazzName: "org.Util"},
+  "input": {refClazzName: "org.A", display: "A"},
+  "other": {refClazzName: "org.C", display: "C"},
+  "ANOTHER": {refClazzName: "org.A", display: "A"},
+  "dynamicMap": {refClazzName: "java.util.Map", display: "Map", fields: {'intField': {refClazzName: 'java.lang.Integer', display: "Integer"}, 'aField': {refClazzName: "org.A", display: "A"}} },
+  "listVar": {refClazzName: "org.WithList", display: "WithList" },
+  "util": {refClazzName: "org.Util", display: "Util"},
   "union": {union: [
-      {refClazzName: "org.A"},
-      {refClazzName: "org.B"},
-      {refClazzName: "org.AA"}]},
+      {refClazzName: "org.A", display: "A"},
+      {refClazzName: "org.B", display: "B"},
+      {refClazzName: "org.AA", display: "AA"}]},
   "unionOfLists": {union: [
-      {"refClazz": "java.util.List", params: [{refClazzName: "org.A"}]},
-      {"refClazz": "java.util.List", params: [{refClazzName: "org.B"}]}
+      {"refClazz": "java.util.List", params: [{refClazzName: "org.A", display: "A"}]},
+      {"refClazz": "java.util.List", params: [{refClazzName: "org.B", display: "B"}]}
     ]},
   "dict": {dict: {
     id: "fooDict",
-    valueType: {refClazzName: "org.A"}
+    valueType: {refClazzName: "org.A", display: "A"}
   }}
 };
 

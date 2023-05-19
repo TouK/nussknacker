@@ -94,7 +94,7 @@ interface AceEditorCompleter<P = unknown> extends Ace.Completer {
 
 class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: TypingResult, name: string }> {
   private isTokenAllowed = overSome([isSqlTokenAllowed, isSpelTokenAllowed])
-  // We adds hash to identifier pattern to start suggestions just after hash is typed
+  // We add hash to identifier pattern to start suggestions just after hash is typed
   private identifierRegexps = identifierRegexpsIncludingDot
 
   constructor(private expressionSuggester: ExpressionSuggester) {
@@ -119,7 +119,7 @@ class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: TypingR
       try {
         callback(null, map(suggestions, (s) => {
           const methodName = s.methodName
-          const returnType = ProcessUtils.humanReadableType(s.refClazz)
+          const returnType = s.refClazzDisplay
           return {
             name: methodName,
             value: methodName,

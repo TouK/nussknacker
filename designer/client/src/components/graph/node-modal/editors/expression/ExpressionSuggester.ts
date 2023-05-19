@@ -8,10 +8,10 @@ const INDEXER_REGEX = /^(.*)\['([^\[]*)$/
 export type CaretPosition2d = {row: number, column: number};
 export type ExpressionSuggestion = {
   methodName: string;
-  refClazz: any;
+  refClazzDisplay: string;
   fromClass: boolean;
-  description: string;
-  parameters: any;
+  description?: string;
+  parameters?: any;
 }
 export interface ExpressionSuggester {
   suggestionsFor(inputValue: string, caretPosition2d: CaretPosition2d): Promise<ExpressionSuggestion[]>;
@@ -56,7 +56,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
     }
   }
 
-  _getSuggestions = (value: string, focusedClazz, variables: Record<string, any>): Promise<any[]> => {
+  _getSuggestions = (value: string, focusedClazz, variables: Record<string, any>): Promise<ExpressionSuggestion[]> => {
     const variableNames = _.keys(variables)
     const variableAlreadySelected = _.some(variableNames, (variable) => { return _.includes(value, `${variable}.`) || _.includes(value, `${variable}['`) })
     const variableNotSelected = _.some(variableNames, (variable) => { return _.startsWith(variable.toLowerCase(), value.toLowerCase()) })
@@ -72,7 +72,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
       }
     } else if (variableNotSelected && !_.isEmpty(value)) {
       const allVariablesWithClazzRefs = _.map(variables, (val, key) => {
-        return {methodName: key, refClazz: val}
+        return {methodName: key, refClazz: val, refClazzDisplay: val.display}
       })
       const result = this._filterSuggestionsForInput(allVariablesWithClazzRefs, value)
       return new Promise(resolve => resolve(result))
@@ -93,7 +93,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
 
   _getAllowedMethodsForClass(currentType) {
     return _.map(currentType.methods, (val, key) => {
-      return {...val, methodName: key}
+      return {...val, methodName: key, refClazzDisplay: val.refClazz?.display}
     })
   }
 
@@ -142,8 +142,8 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
   }
 
   _getTypeInfoFromClass = (clazz) => {
-    const methodsFromClass = _.mapValues(this._getMethodsFromGlobalTypeInfo(clazz), (m => ({...m, fromClass: !!clazz.fields})))
-    const methodsFromFields = _.mapValues(clazz.fields || [], (field) => ({refClazz: field}))
+    const methodsFromClass = _.mapValues(this._getMethodsFromGlobalTypeInfo(clazz), (m => ({...m, fromClass: !!clazz.fields, refClazzDisplay: m.display})))
+    const methodsFromFields = _.mapValues(clazz.fields || [], (field) => ({refClazz: field, refClazzDisplay: field.display}))
     const allMethods = _.merge(methodsFromFields, methodsFromClass)
 
     return {
@@ -272,11 +272,12 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
 
   }
 
-  _getSuggestionsForDict = (typ, typedProperty) => {
+  _getSuggestionsForDict = (typ, typedProperty): Promise<ExpressionSuggestion[]> => {
     return this._fetchDictLabelSuggestions(typ.id, typedProperty).then(result => _.map(result.data, entry => {
       return {
         methodName: entry.label,
-        refClazz: typ.valueType,
+        refClazzDisplay: typ.valueType.display,
+        fromClass: false
       }
     }))
   }

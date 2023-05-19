@@ -4,8 +4,6 @@ import io.circe.generic.JsonCodec
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast.{PropertyOrFieldReference, VariableReference}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
-import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 
 import scala.collection.Map
@@ -41,7 +39,7 @@ class ExpressionSuggester {
       case Some(node) => node match {
         case v: VariableReference =>
           val filteredVariables = filterMapByName(variables, v.toStringAST.stripPrefix("#"))
-          filteredVariables.toList.map { case (variable, clazzRef) => ExpressionSuggestion(s"#$variable", clazzRef, fromClass = false) }
+          filteredVariables.toList.map { case (variable, clazzRef) => ExpressionSuggestion(s"#$variable", clazzRef.display, fromClass = false) }
         case p: PropertyOrFieldReference =>
           //TODO: this solution only looks for first previous node, so it works for single nested expression, like #var.field
           val prevNode = findPrevNodeInPosition(ast, p.getStartPosition)
@@ -49,15 +47,8 @@ class ExpressionSuggester {
           def filterClassMethods(classDefinition: ClazzDefinition): List[ExpressionSuggestion] = {
             val methods = filterMapByName(classDefinition.methods, p.getName)
 
-            def extractClass(result: TypingResult): Option[String] = {
-              result match {
-                case r: TypedClass => Some(r.klass.getName)
-                case _ => None
-              }
-            }
-
             methods.values.flatten
-              .map(m => ExpressionSuggestion(m.name, RefClazz(extractClass(m.signatures.head.result), display = Some(m.signatures.head.result.display)), false))
+              .map(m => ExpressionSuggestion(m.name, Some(m.signatures.head.result.display), fromClass = false))
               .toList
           }
 
@@ -66,7 +57,7 @@ class ExpressionSuggester {
           prevNodeVariable.flatMap(c => c.refClazzName)
             .flatMap(c => typeDefinitions.all.find(t => t.getClazz.getName == c)) // TODO: use get(Class[_])
             .map(filterClassMethods).getOrElse(Nil) ++
-            prevNodeVariable.flatMap(_.fields).map(filterMapByName(_, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false) }).getOrElse(Nil)
+            prevNodeVariable.flatMap(_.fields).map(filterMapByName(_, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef.display, fromClass = false) }).getOrElse(Nil)
         case _ => Nil
       }
       case _ => Nil
@@ -101,8 +92,10 @@ case class CaretPosition2d(row: Int, column: Int)
 @JsonCodec(decodeOnly = true)
 case class ExpressionSuggestionRequest(expression: String, caretPosition2d: CaretPosition2d, variables: Map[String, RefClazz])
 
-@JsonCodec(encodeOnly = true) //TODO: maybe replace refClazz with just `display` field? Looks like FE doesn't need more than that
-case class ExpressionSuggestion(methodName: String, refClazz: RefClazz, fromClass: Boolean)
+// TODO: fromClass is used to calculate suggestion score - to show fields first, then class methods. Maybe we should
+//  return score from BE?
+@JsonCodec(encodeOnly = true)
+case class ExpressionSuggestion(methodName: String, refClazzDisplay: Option[String], fromClass: Boolean)
 
 @JsonCodec
 case class RefClazz(refClazzName: Option[String], display: Option[String] = None, union: Option[List[RefClazz]] = None, fields: Option[Map[String, RefClazz]] = None, params: Option[List[RefClazz]] = None)
