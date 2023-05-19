@@ -16,6 +16,10 @@ import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
 import {AdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
 import {withoutHackOfEmptyEdges} from "../components/graph/GraphPartialsInTS/EdgeUtils"
+import {
+  CaretPosition2d,
+  ExpressionSuggestion
+} from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import {UIValueParameter} from "../actions/nk/genericAction";
 import {testProcessWithParameters} from "../actions/nk/displayTestResults";
 
@@ -372,12 +376,22 @@ class HttpService {
     return promise
   }
 
-  validateGenericActionParameters(processId, validationRequest): Promise<AxiosResponse<ValidationData>> {
+  validateGenericActionParameters(processId: string, validationRequest): Promise<AxiosResponse<ValidationData>> {
     const promise = api.post(`/parameters/${encodeURIComponent(processId)}/validate`, validationRequest)
     promise.catch(error => this.#addError(
       i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"),
       error,
       true
+    ))
+    return promise
+  }
+
+  getExpressionSuggestions(processId: string, expression: Expression, caretPosition2d: CaretPosition2d, variables: Record<string, any>): Promise<AxiosResponse<ExpressionSuggestion[]>> {
+    const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processId)}/suggestions`, {expression, caretPosition2d, variables})
+    promise.catch(error => this.#addError(
+        i18next.t("notification.error.failedToFetchExpressionSuggestions", "Failed to get expression suggestions"),
+        error,
+        true
     ))
     return promise
   }

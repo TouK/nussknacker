@@ -6,6 +6,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -17,6 +18,7 @@ Array [
   Object {
     "methodName": "#other",
     "refClazz": Object {
+      "display": "C",
       "refClazzName": "org.C",
     },
   },
@@ -28,6 +30,7 @@ Array [
   Object {
     "methodName": "#ANOTHER",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
@@ -44,6 +47,7 @@ Array [
     "fromClass": false,
     "methodName": "barB",
     "refClazz": Object {
+      "display": "B",
       "refClazzName": "org.B",
     },
   },
@@ -56,6 +60,7 @@ Array [
     "fromClass": false,
     "methodName": "bazC",
     "refClazz": Object {
+      "display": "C",
       "refClazzName": "org.C",
     },
   },
@@ -68,6 +73,7 @@ Array [
     "fromClass": false,
     "methodName": "barB",
     "refClazz": Object {
+      "display": "B",
       "refClazzName": "org.B",
     },
   },
@@ -80,6 +86,7 @@ Array [
     "fromClass": false,
     "methodName": "bazC",
     "refClazz": Object {
+      "display": "C",
       "refClazzName": "org.C",
     },
   },
@@ -92,6 +99,7 @@ Array [
     "fromClass": false,
     "methodName": "toUpperCase",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -104,6 +112,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -116,6 +125,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -128,6 +138,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -139,29 +150,35 @@ Array [
   Object {
     "methodName": "#input",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
   Object {
     "methodName": "#other",
     "refClazz": Object {
+      "display": "C",
       "refClazzName": "org.C",
     },
   },
   Object {
     "methodName": "#ANOTHER",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
   Object {
     "methodName": "#dynamicMap",
     "refClazz": Object {
+      "display": "Map",
       "fields": Object {
         "aField": Object {
+          "display": "A",
           "refClazzName": "org.A",
         },
         "intField": Object {
+          "display": "Integer",
           "refClazzName": "java.lang.Integer",
         },
       },
@@ -171,12 +188,14 @@ Array [
   Object {
     "methodName": "#listVar",
     "refClazz": Object {
+      "display": "WithList",
       "refClazzName": "org.WithList",
     },
   },
   Object {
     "methodName": "#util",
     "refClazz": Object {
+      "display": "Util",
       "refClazzName": "org.Util",
     },
   },
@@ -185,12 +204,15 @@ Array [
     "refClazz": Object {
       "union": Array [
         Object {
+          "display": "A",
           "refClazzName": "org.A",
         },
         Object {
+          "display": "B",
           "refClazzName": "org.B",
         },
         Object {
+          "display": "AA",
           "refClazzName": "org.AA",
         },
       ],
@@ -203,6 +225,7 @@ Array [
         Object {
           "params": Array [
             Object {
+              "display": "A",
               "refClazzName": "org.A",
             },
           ],
@@ -211,6 +234,7 @@ Array [
         Object {
           "params": Array [
             Object {
+              "display": "B",
               "refClazzName": "org.B",
             },
           ],
@@ -225,6 +249,7 @@ Array [
       "dict": Object {
         "id": "fooDict",
         "valueType": Object {
+          "display": "A",
           "refClazzName": "org.A",
         },
       },
@@ -238,29 +263,35 @@ Array [
   Object {
     "methodName": "#input",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
   Object {
     "methodName": "#other",
     "refClazz": Object {
+      "display": "C",
       "refClazzName": "org.C",
     },
   },
   Object {
     "methodName": "#ANOTHER",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
   Object {
     "methodName": "#dynamicMap",
     "refClazz": Object {
+      "display": "Map",
       "fields": Object {
         "aField": Object {
+          "display": "A",
           "refClazzName": "org.A",
         },
         "intField": Object {
+          "display": "Integer",
           "refClazzName": "java.lang.Integer",
         },
       },
@@ -270,12 +301,14 @@ Array [
   Object {
     "methodName": "#listVar",
     "refClazz": Object {
+      "display": "WithList",
       "refClazzName": "org.WithList",
     },
   },
   Object {
     "methodName": "#util",
     "refClazz": Object {
+      "display": "Util",
       "refClazzName": "org.Util",
     },
   },
@@ -284,12 +317,15 @@ Array [
     "refClazz": Object {
       "union": Array [
         Object {
+          "display": "A",
           "refClazzName": "org.A",
         },
         Object {
+          "display": "B",
           "refClazzName": "org.B",
         },
         Object {
+          "display": "AA",
           "refClazzName": "org.AA",
         },
       ],
@@ -302,6 +338,7 @@ Array [
         Object {
           "params": Array [
             Object {
+              "display": "A",
               "refClazzName": "org.A",
             },
           ],
@@ -310,6 +347,7 @@ Array [
         Object {
           "params": Array [
             Object {
+              "display": "B",
               "refClazzName": "org.B",
             },
           ],
@@ -324,6 +362,7 @@ Array [
       "dict": Object {
         "id": "fooDict",
         "valueType": Object {
+          "display": "A",
           "refClazzName": "org.A",
         },
       },
@@ -335,14 +374,18 @@ Array [
 exports[`expression suggester should suggest dict variable methods 1`] = `
 Array [
   Object {
+    "fromClass": false,
     "methodName": "One",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
   Object {
+    "fromClass": false,
     "methodName": "Two",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
@@ -352,8 +395,10 @@ Array [
 exports[`expression suggester should suggest dict variable methods using indexer syntax 1`] = `
 Array [
   Object {
+    "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
@@ -363,8 +408,10 @@ Array [
 exports[`expression suggester should suggest dict variable methods using indexer syntax 2`] = `
 Array [
   Object {
+    "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
@@ -374,8 +421,10 @@ Array [
 exports[`expression suggester should suggest dict variable methods using indexer syntax 3`] = `
 Array [
   Object {
+    "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
@@ -385,8 +434,10 @@ Array [
 exports[`expression suggester should suggest dict variable methods using indexer syntax 4`] = `
 Array [
   Object {
+    "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
@@ -399,6 +450,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -410,6 +462,7 @@ Array [
   Object {
     "methodName": "intField",
     "refClazz": Object {
+      "display": "Integer",
       "refClazzName": "java.lang.Integer",
     },
   },
@@ -422,6 +475,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -434,6 +488,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -446,6 +501,7 @@ Array [
     "fromClass": false,
     "methodName": "quaxString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -458,6 +514,7 @@ Array [
     "fromClass": false,
     "methodName": "quaxString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -470,6 +527,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -482,6 +540,7 @@ Array [
     "fromClass": false,
     "methodName": "bazC",
     "refClazz": Object {
+      "display": "C",
       "refClazzName": "org.C",
     },
   },
@@ -494,6 +553,7 @@ Array [
     "fromClass": false,
     "methodName": "barB",
     "refClazz": Object {
+      "display": "B",
       "refClazzName": "org.B",
     },
   },
@@ -505,6 +565,7 @@ Array [
   Object {
     "methodName": "#input",
     "refClazz": Object {
+      "display": "A",
       "refClazzName": "org.A",
     },
   },
@@ -517,6 +578,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -524,6 +586,7 @@ Array [
     "fromClass": false,
     "methodName": "barB",
     "refClazz": Object {
+      "display": "B",
       "refClazzName": "org.B",
     },
   },
@@ -536,6 +599,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -548,6 +612,7 @@ Array [
     "fromClass": false,
     "methodName": "quaxString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -560,6 +625,7 @@ Array [
     "fromClass": false,
     "methodName": "toUpperCase",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -572,6 +638,7 @@ Array [
     "fromClass": false,
     "methodName": "quaxString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -584,6 +651,7 @@ Array [
     "fromClass": false,
     "methodName": "quaxString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -596,6 +664,7 @@ Array [
     "fromClass": false,
     "methodName": "fooString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -603,6 +672,7 @@ Array [
     "fromClass": false,
     "methodName": "barB",
     "refClazz": Object {
+      "display": "B",
       "refClazzName": "org.B",
     },
   },
@@ -610,6 +680,7 @@ Array [
     "fromClass": false,
     "methodName": "bazC",
     "refClazz": Object {
+      "display": "C",
       "refClazzName": "org.C",
     },
   },
@@ -617,6 +688,7 @@ Array [
     "fromClass": false,
     "methodName": "barB",
     "refClazz": Object {
+      "display": "C",
       "refClazzName": "org.C",
     },
   },
@@ -629,6 +701,7 @@ Array [
     "fromClass": false,
     "methodName": "toUpperCase",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
@@ -641,6 +714,7 @@ Array [
     "fromClass": false,
     "methodName": "quaxString",
     "refClazz": Object {
+      "display": "String",
       "refClazzName": "java.lang.String",
     },
   },

@@ -33,7 +33,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
-import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareValidationContext}
+import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareTypingResultDecoder, prepareValidationContext}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
@@ -50,6 +50,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
                      subprocessRepository: SubprocessRepository,
                      typeToConfig: ProcessingTypeDataProvider[ModelData, _],
                      processValidation: ProcessValidation,
+                     expressionSuggester: ExpressionSuggester,
                     )(implicit val ec: ExecutionContext)
   extends ProcessDirectives with FailFastCirceSupport with RouteWithUser {
 
@@ -106,10 +107,25 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
         path("validate") {
           val modelData = typeToConfig.forTypeUnsafe(process.processingType)
           implicit val requestDecoder: Decoder[ParametersValidationRequest] = NodesResources.prepareParametersValidationDecoder(modelData)
-          (post & entity(as[ParametersValidationRequest])) { parametersToValidate =>
+          entity(as[ParametersValidationRequest]) { parametersToValidate =>
             complete {
               val validationResults = NodesResources.validate(modelData, parametersToValidate, processName)
               ParametersValidationResult(validationErrors = validationResults, validationPerformed = true)
+            }
+          }
+        } ~ path("suggestions") {
+          val modelData = typeToConfig.forTypeUnsafe(process.processingType)
+          implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+          implicit val expressionSuggestionRequestDecoder: Decoder[ExpressionSuggestionRequest] = ExpressionSuggestionRequest.decoder(typeDecoder)
+
+          entity(as[ExpressionSuggestionRequest]) { expressionSuggestionRequest =>
+            complete {
+              expressionSuggester.expressionSuggestions(
+                expressionSuggestionRequest.expression,
+                expressionSuggestionRequest.caretPosition2d,
+                expressionSuggestionRequest.variables,
+                modelData.modelDefinitionWithTypes.typeDefinitions
+              )
             }
           }
         }
@@ -245,3 +261,10 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
 
 @JsonCodec(encodeOnly = true) case class PropertiesValidationRequest(processProperties: ProcessProperties)
 
+case class ExpressionSuggestionRequest(expression: Expression, caretPosition2d: CaretPosition2d, variables: Map[String, TypingResult])
+
+object ExpressionSuggestionRequest {
+  implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[ExpressionSuggestionRequest] = {
+    deriveConfiguredDecoder[ExpressionSuggestionRequest]
+  }
+}
