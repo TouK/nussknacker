@@ -21,11 +21,11 @@ class UIParameterSpec extends AnyFunSuite with Matchers {
 
   private val expected = UIParameter("Topic", typing.Unknown, StringParameterEditor, Nil, Expression.spel(""), Map.empty, Set.empty, false)
 
-  test("deserialize new json") {
+  test("deserialize json with expression in default value") {
     verify(expected.asJson.spaces2)
   }
 
-  test("deserialize old json") {
+  test("deserialize json with string expression (without language) in default value") {
     val json =
       """
         |{
