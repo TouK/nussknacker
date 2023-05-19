@@ -50,8 +50,8 @@ class FlinkTestMain(val modelData: ModelData,
       modelData.processConfig,
       collectingListener,
       process,
-      scenarioTestData,
-      modelData.objectNaming),
+      modelData.objectNaming,
+      scenarioTestData),
       ExecutionConfigPreparer.defaultChain(modelData))
   }
 }
