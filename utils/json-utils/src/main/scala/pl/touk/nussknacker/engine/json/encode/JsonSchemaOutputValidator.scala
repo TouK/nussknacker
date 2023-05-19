@@ -48,6 +48,7 @@ object JsonSchemaOutputValidator {
   }
 
   private val BigDecimalClass = classOf[java.math.BigDecimal]
+  private val NumberClass = classOf[java.lang.Number]
 }
 
 // root schema is a container for eventual ref schemas - in particular it can be the same schema as outputSchema
@@ -234,16 +235,23 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     val schemaAsTypedResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(rootSchema)).typingResult
 
     (schemaAsTypedResult, typingResult) match {
-      case (schema@TypedClass(_, Nil), typing@TypedClass(_, Nil)) if ClassUtils.isAssignable(typing.primitiveClass, withBigDecimalasNumber(schema.primitiveClass), true) => valid
+      case (schema@TypedClass(_, Nil), typing@TypedClass(_, Nil)) if canBeAssignedToWithBigDecimalFallback(typing.primitiveClass, schema.primitiveClass) => valid
       case (TypedClass(_, Nil), TypedClass(_, Nil)) => invalid(typingResult, schema, rootSchema, path)
       case _ => condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
         OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema, rootSchema)))
     }
   }
 
-  private def withBigDecimalasNumber(clazz: Class[_]) =
+  /**
+   * we are mapping json schema types to java strict class hierarchy and due to dual definition of `number` type (as integer | double) in json schema we treat BigDecimal class
+   * as a fallback type, which can accommodate all other numeric type.
+   */
+  private def canBeAssignedToWithBigDecimalFallback(typingClass: Class[_], schemaClass: Class[_]): Boolean =
+    ClassUtils.isAssignable(typingClass, withBigDecimalAsNumber(schemaClass), true)
+
+  private def withBigDecimalAsNumber(clazz: Class[_]): Class[_] =
     clazz match {
-      case `BigDecimalClass` => classOf[java.lang.Number]
+      case `BigDecimalClass` => NumberClass
       case _ => clazz
     }
 

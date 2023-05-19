@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.components
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
-import io.circe.Json.{Null, fromBigDecimal, fromInt, fromLong, fromString, obj}
+import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.everit.json.schema.{Schema => EveritSchema}
 import org.scalatest.Inside
@@ -78,10 +78,10 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
 
       //Number conversion
       (config(sampleJInt, schemaInt, schemaLong), valid(sampleJLongFromInt)),
-      (config(sampleJStr, schemaString, schemaLong, sampleJInt), valid(sampleJLongFromInt)),
+      (config(sampleJStr, schemaString, schemaLong, sampleInt), valid(sampleJLongFromInt)),
 
       (config(sampleJInt, schemaInt, schemaBigDecimal), valid(sampleJBigDecimalFromInt)),
-      (config(sampleJStr, schemaString, schemaBigDecimal, sampleJInt), valid(sampleJBigDecimalFromInt)),
+      (config(sampleJStr, schemaString, schemaBigDecimal, sampleInt), valid(sampleJBigDecimalFromInt)),
 
       (config(sampleJInt, schemaLong, schemaBigDecimal), valid(sampleJBigDecimalFromInt)),
       (config(sampleJStr, schemaString, schemaBigDecimal, sampleLong), valid(sampleJBigDecimalFromLong)),
