@@ -23,41 +23,41 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
   class ProcessVersionEntity(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
-    def json: Rep[Option[String]] = column[Option[String]]("json", O.Length(100 * 1000))
+    def json: Rep[String] = column[String]("json", NotNull)
 
-    def componentsUsages: Rep[Option[String]] = column[Option[String]]("components_usages", NotNull)
+    def componentsUsages: Rep[String] = column[String]("components_usages", NotNull)
 
     def * : ProvenShape[ProcessVersionEntityData] = (id, processId, json, createDate, user, modelVersion, componentsUsages) <> ( {
-      case (versionId: VersionId, processId: ProcessId, jsonStringOpt: Option[String], createDate: Timestamp, user: String, modelVersion: Option[Int], componentsUsagesOpt: Option[String]) =>
-        ProcessVersionEntityData(versionId, processId, jsonStringOpt.map(ProcessMarshaller.fromJsonUnsafe), createDate, user, modelVersion, componentsUsagesOpt.map(CirceUtil.decodeJsonUnsafe[ScenarioComponentsUsages](_)))
+      case (versionId: VersionId, processId: ProcessId, jsonString: String, createDate: Timestamp, user: String, modelVersion: Option[Int], componentsUsages: String) =>
+        ProcessVersionEntityData(versionId, processId, Some(ProcessMarshaller.fromJsonUnsafe(jsonString)), createDate, user, modelVersion, Some(CirceUtil.decodeJsonUnsafe[ScenarioComponentsUsages](componentsUsages)))
     },
-      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3.map(_.asJson.noSpaces), t._4, t._5, t._6, t._7.map(_.asJson.noSpaces)) }
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3.get.asJson.noSpaces, t._4, t._5, t._6, t._7.get.asJson.noSpaces) }
     )
 
   }
 
   class ProcessVersionEntityWithScenarioJson(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
-    def json: Rep[Option[String]] = column[Option[String]]("json", O.Length(100 * 1000))
+    def json: Rep[String] = column[String]("json", NotNull)
 
     def * : ProvenShape[ProcessVersionEntityData] = (id, processId, json, createDate, user, modelVersion) <> ( {
-      case (versionId: VersionId, processId: ProcessId, jsonStringOpt: Option[String], createDate: Timestamp, user: String, modelVersion: Option[Int]) =>
-        ProcessVersionEntityData(versionId, processId, jsonStringOpt.map(ProcessMarshaller.fromJsonUnsafe), createDate, user, modelVersion, None)
+      case (versionId: VersionId, processId: ProcessId, jsonString: String, createDate: Timestamp, user: String, modelVersion: Option[Int]) =>
+        ProcessVersionEntityData(versionId, processId, Some(ProcessMarshaller.fromJsonUnsafe(jsonString)), createDate, user, modelVersion, None)
     },
-      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3.map(_.asJson.noSpaces), t._4, t._5, t._6) }
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3.get.asJson.noSpaces, t._4, t._5, t._6) }
     )
 
   }
 
   class ProcessVersionEntityWithComponentsUsages(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
-    def componentsUsages: Rep[Option[String]] = column[Option[String]]("components_usages", NotNull)
+    def componentsUsages: Rep[String] = column[String]("components_usages", NotNull)
 
     def * : ProvenShape[ProcessVersionEntityData] = (id, processId, createDate, user, modelVersion, componentsUsages) <> ( {
-      case (versionId: VersionId, processId: ProcessId, createDate: Timestamp, user: String, modelVersion: Option[Int], componentsUsagesOpt: Option[String]) =>
-        ProcessVersionEntityData(versionId, processId, None, createDate, user, modelVersion, componentsUsagesOpt.map(CirceUtil.decodeJsonUnsafe[ScenarioComponentsUsages](_)))
+      case (versionId: VersionId, processId: ProcessId, createDate: Timestamp, user: String, modelVersion: Option[Int], componentsUsages: String) =>
+        ProcessVersionEntityData(versionId, processId, None, createDate, user, modelVersion, Some(CirceUtil.decodeJsonUnsafe[ScenarioComponentsUsages](componentsUsages)))
     },
-      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._4, t._5, t._6, t._7.map(_.asJson.noSpaces)) }
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._4, t._5, t._6, t._7.get.asJson.noSpaces) }
     )
 
   }

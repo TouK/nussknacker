@@ -36,14 +36,13 @@ trait V1_039__FillComponentsUsagesDefinition extends SlickMigration with EspTabl
     } yield updatedComponentsUsages
   }
 
-  private def updateComponentsUsages(scenarioJsonOpt: Option[String]): Option[String] = {
+  private def updateComponentsUsages(scenarioJson: String): String = {
     import io.circe.syntax._
     import pl.touk.nussknacker.ui.db.entity.ScenarioComponentsUsagesJsonCodec._
 
-    scenarioJsonOpt
-      .map(ProcessMarshaller.fromJsonUnsafe)
-      .map(ComponentsUsageHelper.computeUsagesForScenario)
-      .map(_.asJson.noSpaces)
+    val scenario = ProcessMarshaller.fromJsonUnsafe(scenarioJson)
+    val componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(scenario)
+    componentsUsages.asJson.noSpaces
   }
 
 }

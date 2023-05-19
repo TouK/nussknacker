@@ -50,7 +50,7 @@ trait ProcessJsonMigration extends SlickMigration with EspTables with LazyLoggin
         .map(_.json)
         .update {
           logger.trace("Migrate scenario ({}/{}), id: {}, version id: {}", scenarioNo, scenariosCount, processId, id)
-          processJson.map(prepareAndUpdateJson)
+          prepareAndUpdateJson(processJson)
         }
     } yield updatedJson
   }
