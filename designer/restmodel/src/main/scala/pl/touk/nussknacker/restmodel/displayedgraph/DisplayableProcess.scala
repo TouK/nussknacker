@@ -4,7 +4,15 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, LiteStreamMetaData, MetaData, ProcessAdditionalFields, RequestResponseMetaData, StreamMetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.{
+  FragmentSpecificData,
+  LiteStreamMetaData,
+  MetaData,
+  ProcessAdditionalFields,
+  RequestResponseMetaData,
+  StreamMetaData,
+  TypeSpecificData
+}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
@@ -85,18 +93,19 @@ object ProcessProperties extends LazyLogging {
   private def merge(properties: Option[ProcessAdditionalFields],
                     typeSpecificData: TypeSpecificData): ProcessAdditionalFields = {
     val fields = properties.getOrElse(ProcessAdditionalFields.empty)
-    // When merging we overwrite generic properties with TypeSpecificData. This would only happen if someone had
-    // a property with the same name was written as a generic property and in type specific properties. This shouldn't
-    // happen, but if it does, the data will heal on next save:
-    //  - if the value has a type that can be stored in TypeSpecificData it will be stored there and removed from
-    //    generic properties
-    //  - if the value has different type than in TypeSpecificData it will be stored in generic properties and in
-    //    TypeSpecificData it will be set as null
-    // This is a temporary solution until we get rid of TypeSpecificData completely.
+    // For ease of transitioning into generic properties, we write duplicate TypeSpecificData into the generic
+    // properties. Only when we have a non-null value in TypeSpecificData and a different corresponding generic property
+    // we throw an exception since they need to be synchronized - in this case you have to synchronize these values manually
     typeSpecificData.toProperties
-      .filter(p => fields.properties.contains(p._1))
-      .foreach(p => logger.warn(s"Duplicate properties with the same name '${p._1}'. Overwriting additional property " +
-        s"with value '${fields.properties(p._1)}' with type specific property with value '${p._2}'."))
+      .filter(prop => fields.properties.contains(prop._1))
+      .filter(duplicate => fields.properties(duplicate._1) != duplicate._2)
+      .foreach(
+        incompatible =>
+          throw new IllegalStateException(
+            s"Duplicate incompatible properties with the same name '${incompatible._1}'. " +
+              s"The properties have different values: '${incompatible._2}' and '${fields.properties(incompatible._1)}'.'"
+        )
+      )
 
     val mergedProps = fields.properties ++ typeSpecificData.toProperties
     ProcessAdditionalFields(fields.description, mergedProps)

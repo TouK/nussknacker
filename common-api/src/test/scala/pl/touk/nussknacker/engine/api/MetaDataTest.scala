@@ -14,7 +14,7 @@ class MetaDataTest extends AnyFunSuite with Matchers {
         val metaData = MetaData("Id", ProcessAdditionalFields(None, properties), metaDataName)
 
         metaData.typeSpecificData shouldBe typeSpecificData
-        metaData.additionalFields shouldBe None
+        metaData.additionalFields shouldBe Some(ProcessAdditionalFields(None, typeSpecificData.toProperties))
     }
   }
 
@@ -25,7 +25,7 @@ class MetaDataTest extends AnyFunSuite with Matchers {
         val metaData = MetaData("Id", ProcessAdditionalFields(None, mergedProperties), metaDataName)
 
         metaData.typeSpecificData shouldBe typeSpecificData
-        metaData.additionalFields shouldBe Option(ProcessAdditionalFields(None, genericProperties))
+        metaData.additionalFields shouldBe Some(ProcessAdditionalFields(None, typeSpecificData.toProperties ++ genericProperties))
     }
   }
 

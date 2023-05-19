@@ -27,10 +27,8 @@ case class ProcessAdditionalFields(description: Option[String] = None,
 
   def extractTypeSpecificData(propertiesType: String): (TypeSpecificData, Option[ProcessAdditionalFields]) = {
     val typeSpecificData = TypeSpecificData(properties, propertiesType)
-    val typeSpecificPropNamesList = typeSpecificData.toProperties.keySet
 
-    val otherProps = properties.filterNot(p => typeSpecificPropNamesList.contains(p._1))
-    val fields = otherProps match {
+    val fields = properties match {
       case p if p.isEmpty && description.isEmpty => None
       case p => Some(ProcessAdditionalFields(description, p))
     }
