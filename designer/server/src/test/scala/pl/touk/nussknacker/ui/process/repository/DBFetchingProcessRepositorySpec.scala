@@ -216,7 +216,7 @@ class DBFetchingProcessRepositorySpec
       .source("source1", "source")
       .emptySink("sink1", "sink")
 
-    saveProcess(newScenario, componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(newScenario))
+    saveProcess(newScenario)
 
     val latestDetails = fetchLatestProcessDetails[ScenarioComponentsUsages](processName)
     latestDetails.json shouldBe ScenarioComponentsUsages(Map(
@@ -228,7 +228,7 @@ class DBFetchingProcessRepositorySpec
       .source("source1", "source")
       .emptySink("sink1", "otherSink")
 
-    updateProcess(latestDetails.processId, updatedScenario, componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(updatedScenario))
+    updateProcess(latestDetails.processId, updatedScenario)
 
     fetchLatestProcessDetails[ScenarioComponentsUsages](processName).json shouldBe ScenarioComponentsUsages(Map(
       ComponentIdParts(Some("source"), ComponentType.Source) -> List("source1"),
@@ -240,12 +240,10 @@ class DBFetchingProcessRepositorySpec
     fetching.fetchProcessId(processName).futureValue.nonEmpty
 
   private def updateProcess(processId: ProcessId, canonicalProcess: CanonicalProcess,
-                            componentsUsages: ScenarioComponentsUsages = ScenarioComponentsUsages.Empty,
                             increaseVersionWhenJsonNotChanged: Boolean = false): ProcessUpdated = {
     val action = UpdateProcessAction(
       processId,
       canonicalProcess,
-      componentsUsages,
       comment = None,
       increaseVersionWhenJsonNotChanged,
       forwardedUserName = None)
@@ -255,7 +253,7 @@ class DBFetchingProcessRepositorySpec
     processUpdated.toOption.get
   }
 
-  private def saveProcess(espProcess: CanonicalProcess, now: Instant = Instant.now(), category: String = "", componentsUsages: ScenarioComponentsUsages = ScenarioComponentsUsages.Empty) = {
+  private def saveProcess(espProcess: CanonicalProcess, now: Instant = Instant.now(), category: String = "") = {
     currentTime = now
     val action = CreateProcessAction(
       ProcessName(espProcess.id),
@@ -263,7 +261,6 @@ class DBFetchingProcessRepositorySpec
       espProcess,
       TestProcessingTypes.Streaming,
       isSubprocess = false,
-      componentsUsages,
       forwardedUserName = None)
 
     dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe Symbol("right")

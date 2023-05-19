@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkProcessStateDefinitionManager
-import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
@@ -539,7 +538,6 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       canonicalProcess,
       Streaming,
       isSubprocess = false,
-      ScenarioComponentsUsages.Empty,
       forwardedUserName = None)
     writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
   }

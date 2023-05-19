@@ -14,6 +14,7 @@ import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
+import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -50,13 +51,11 @@ object ProcessRepository {
                                  canonicalProcess: CanonicalProcess,
                                  processingType: ProcessingType,
                                  isSubprocess: Boolean,
-                                 componentsUsages: ScenarioComponentsUsages,
                                  forwardedUserName: Option[RemoteUserName],
                                 )
 
   case class UpdateProcessAction(id: ProcessId,
                                  canonicalProcess: CanonicalProcess,
-                                 componentsUsages: ScenarioComponentsUsages,
                                  comment: Option[Comment],
                                  increaseVersionWhenJsonNotChanged: Boolean,
                                  forwardedUserName: Option[RemoteUserName],
@@ -109,7 +108,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case None => processesTable.filter(_.name === action.processName).result.headOption.flatMap {
           case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
           case None => (insertNew += processToSave)
-            .flatMap(entity => updateProcessInternal(entity.id, action.canonicalProcess, action.componentsUsages, increaseVersionWhenJsonNotChanged = false, userName = userName))
+            .flatMap(entity => updateProcessInternal(entity.id, action.canonicalProcess, increaseVersionWhenJsonNotChanged = false, userName = userName))
             .map(_.map(res => res.newVersion.map(ProcessCreated(res.processId, _))))
         }
       }
@@ -125,7 +124,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       newCommentAction(processId, versionId, updateProcessAction.comment)
     }
 
-    updateProcessInternal(updateProcessAction.id, updateProcessAction.canonicalProcess, updateProcessAction.componentsUsages, updateProcessAction.increaseVersionWhenJsonNotChanged, userName).flatMap {
+    updateProcessInternal(updateProcessAction.id, updateProcessAction.canonicalProcess, updateProcessAction.increaseVersionWhenJsonNotChanged, userName).flatMap {
       // Comment should be added via ProcessService not to mix this repository responsibility.
       case updateProcessRes@Right(ProcessUpdated(processId, _, Some(newVersion))) =>
         addNewCommentToVersion(processId, newVersion).map(_ => updateProcessRes)
@@ -135,7 +134,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     }
   }
 
-  private def updateProcessInternal(processId: ProcessId, canonicalProcess: CanonicalProcess, componentsUsages: ScenarioComponentsUsages, increaseVersionWhenJsonNotChanged: Boolean, userName: String)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
+  private def updateProcessInternal(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean, userName: String)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     def createProcessVersionEntityData(version: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
       id = version,
       processId = processId,
@@ -143,7 +142,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       createDate = Timestamp.from(now),
       user = userName,
       modelVersion = modelVersion.forType(processingType),
-      componentsUsages = Some(componentsUsages),
+      componentsUsages = Some(ComponentsUsageHelper.computeUsagesForScenario(canonicalProcess)),
     )
 
     def isLastVersionContainsSameProcess(lastVersion: ProcessVersionEntityData): Boolean =

@@ -4,7 +4,7 @@ import com.dimafeng.testcontainers.ForAllTestContainer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OneInstancePerTest, OptionValues}
+import org.scalatest.{OneInstancePerTest, OptionValues}
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, ScenarioComponentsUsages}
@@ -12,6 +12,8 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, ProcessUpdated, UpdateProcessAction}
+
+import scala.util.Using
 
 class DatabaseInitializerOnHsqlItSpec extends DatabaseInitializerItSpec with WithPostgresDbConfig
 
@@ -70,24 +72,32 @@ abstract class DatabaseInitializerItSpec extends AnyFlatSpec
       ProcessTestData.validProcessWithId(processName),
       TestProcessingTypes.Streaming,
       isSubprocess = false,
-      ScenarioComponentsUsages.Empty,
       forwardedUserName = None)
-    dbioRunner.runInTransaction(writeRepository.saveNewProcess(action)).futureValue.rightValue.value
+    val processCreated = dbioRunner.runInTransaction(writeRepository.saveNewProcess(action)).futureValue.rightValue.value
+    clearComponentsUsages()
+    processCreated
   }
 
   private def updateSampleProcess(processId: ProcessId, processName: String): ProcessUpdated = {
     val action = UpdateProcessAction(
       processId,
       ProcessTestData.validProcessWithId(processName),
-      ScenarioComponentsUsages.Empty,
       comment = None,
       increaseVersionWhenJsonNotChanged = true,
       forwardedUserName = None)
-    dbioRunner.runInTransaction(writeRepository.updateProcess(action)).futureValue.rightValue
+    val processUpdated = dbioRunner.runInTransaction(writeRepository.updateProcess(action)).futureValue.rightValue
+    clearComponentsUsages()
+    processUpdated
   }
 
   private def fetchComponentsUsages(p1Id: ProcessId, p1Version1Id: VersionId) = {
     repository.fetchProcessDetailsForId[ScenarioComponentsUsages](p1Id, p1Version1Id).futureValue.value.json
+  }
+
+  private def clearComponentsUsages(): Unit = {
+    Using(db.db.createSession()) { session =>
+      session.prepareStatement("""UPDATE "process_versions" SET "components_usages" = '[]'""").execute()
+    }.get
   }
 
 }

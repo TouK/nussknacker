@@ -47,8 +47,6 @@ import slick.dbio.DBIOAction
 import _root_.sttp.client3.SttpBackend
 import _root_.sttp.client3.akkahttp.AkkaHttpBackend
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
-import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
-import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
@@ -338,7 +336,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       process,
       processingType,
       isSubprocess,
-      ComponentsUsageHelper.computeUsagesForScenario(process),
       forwardedUserName = None)
     for {
       _ <- dbioRunner.runInTransaction(writeProcessRepository.saveNewProcess(action))

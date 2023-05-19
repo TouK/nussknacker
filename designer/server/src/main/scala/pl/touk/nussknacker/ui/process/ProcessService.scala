@@ -9,14 +9,12 @@ import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAc
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
-import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
@@ -153,14 +151,12 @@ class DBProcessService(deploymentService: DeploymentService,
   override def createProcess(command: CreateProcessCommand)(implicit user: LoggedUser): Future[XError[ProcessResponse]] =
     withProcessingType(command.category) { processingType =>
       val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isSubprocess)
-      val emptyComponentsUsages = ScenarioComponentsUsages.Empty
       val action = CreateProcessAction(
         command.processName,
         command.category,
         emptyCanonicalProcess,
         processingType,
         command.isSubprocess,
-        emptyComponentsUsages,
         command.forwardedUserName)
 
       val propertiesErrors = validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.category)
@@ -191,11 +187,9 @@ class DBProcessService(deploymentService: DeploymentService,
         substituted = {
           processResolving.resolveExpressions(action.process, validation.typingInfo)
         }
-        componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(substituted)
         updateProcessAction = UpdateProcessAction(
           processIdWithName.id,
           substituted,
-          componentsUsages,
           Option(action.comment),
           increaseVersionWhenJsonNotChanged = false,
           forwardedUserName = action.forwardedUserName)

@@ -8,13 +8,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeployedScenarioData, DeploymentManager, ProcessState, WithDataFreshnessStatus}
+import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
-import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
@@ -106,7 +105,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
       .streaming(processName.value)
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
-    val action = CreateProcessAction(processName, TestCat, sampleScenario, Streaming, isSubprocess = false, componentsUsages = ScenarioComponentsUsages.Empty, forwardedUserName = None)
+    val action = CreateProcessAction(processName, TestCat, sampleScenario, Streaming, isSubprocess = false, forwardedUserName = None)
     writeProcessRepository.saveNewProcess(action)(TestFactory.adminUser()).map(_.rightValue.value.processId).dbioActionValues
   }
 

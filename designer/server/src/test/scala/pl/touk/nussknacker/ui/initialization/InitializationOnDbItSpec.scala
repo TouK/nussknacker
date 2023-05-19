@@ -5,7 +5,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
@@ -82,7 +81,6 @@ abstract class InitializationOnDbItSpec
       sampleCanonicalProcess(processId),
       TestProcessingTypes.Streaming,
       subprocess,
-      ScenarioComponentsUsages.Empty,
       forwardedUserName = None)
 
     dbioRunner
