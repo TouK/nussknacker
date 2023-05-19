@@ -332,7 +332,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   private def saveAndGetId(process: CanonicalProcess, category: String, isSubprocess: Boolean, processingType: ProcessingType = Streaming): Future[ProcessId] = {
     val processName = ProcessName(process.id)
-    val action = CreateProcessAction(processName, category, process, processingType, isSubprocess, ComponentsUsageHelper.computeUsagesForScenario(process))
+    val action = CreateProcessAction(
+      processName,
+      category,
+      process,
+      processingType,
+      isSubprocess,
+      ComponentsUsageHelper.computeUsagesForScenario(process),
+      forwardedUserName = None)
     for {
       _ <- dbioRunner.runInTransaction(writeProcessRepository.saveNewProcess(action))
       id <- futureFetchingProcessRepository.fetchProcessId(processName).map(_.get)

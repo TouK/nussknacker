@@ -76,7 +76,14 @@ abstract class InitializationOnDbItSpec
   }
 
   private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
-    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleCanonicalProcess(processId), TestProcessingTypes.Streaming, subprocess, ScenarioComponentsUsages.Empty)
+    val action = CreateProcessAction(
+      ProcessName(processName),
+      "RTM",
+      sampleCanonicalProcess(processId),
+      TestProcessingTypes.Streaming,
+      subprocess,
+      ScenarioComponentsUsages.Empty,
+      forwardedUserName = None)
 
     dbioRunner
       .runInTransaction(writeRepository.saveNewProcess(action))

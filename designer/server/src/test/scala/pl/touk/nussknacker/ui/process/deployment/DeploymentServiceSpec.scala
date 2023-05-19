@@ -533,7 +533,14 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val canonicalProcess = parallelism.map(baseBuilder.parallelism).getOrElse(baseBuilder)
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
-    val action = CreateProcessAction(processName, TestCat, canonicalProcess, Streaming, isSubprocess = false, ScenarioComponentsUsages.Empty)
+    val action = CreateProcessAction(
+      processName,
+      TestCat,
+      canonicalProcess,
+      Streaming,
+      isSubprocess = false,
+      ScenarioComponentsUsages.Empty,
+      forwardedUserName = None)
     writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
   }
 

@@ -106,7 +106,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
       .streaming(processName.value)
       .source("source", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
-    val action = CreateProcessAction(processName, TestCat, sampleScenario, Streaming, isSubprocess = false, ScenarioComponentsUsages.Empty)
+    val action = CreateProcessAction(processName, TestCat, sampleScenario, Streaming, isSubprocess = false, componentsUsages = ScenarioComponentsUsages.Empty, forwardedUserName = None)
     writeProcessRepository.saveNewProcess(action)(TestFactory.adminUser()).map(_.rightValue.value.processId).dbioActionValues
   }
 

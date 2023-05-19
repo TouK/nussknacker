@@ -4,6 +4,8 @@
 To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.10.0
+* [#4294](https://github.com/TouK/nussknacker/pull/4294) `HttpRemoteEnvironmentConfig` allows you to pass flag `passUsernameInMigration` - (default true).
+  When set to true, migration attaches username in the form of `Remote[userName]` while migrating to secondary environment. To use the old migration endpoint, set to false.
 
 ### Code API changes
 * [#4278](https://github.com/TouK/nussknacker/pull/4278) Now expression compiler and code suggestions mechanism are reusing the same

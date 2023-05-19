@@ -23,7 +23,7 @@ class ProcessPosting {
 
   def toEntityAsProcessToSave(process: CanonicalProcess, comment: String = ""): RequestEntity = {
     val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCategories.Category1)
-    toRequest(UpdateProcessCommand(displayable, UpdateProcessComment(comment)))
+    toRequest(UpdateProcessCommand(displayable, UpdateProcessComment(comment), None))
   }
 
   def toEntity(properties: ProcessProperties): RequestEntity = {
@@ -39,7 +39,7 @@ class ProcessPosting {
   }
 
   def toEntityAsProcessToSave(process: DisplayableProcess): RequestEntity = {
-    toRequest(UpdateProcessCommand(process, UpdateProcessComment("")))
+    toRequest(UpdateProcessCommand(process, UpdateProcessComment(""), None))
   }
 
 }

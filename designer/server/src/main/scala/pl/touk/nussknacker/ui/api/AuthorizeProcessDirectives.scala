@@ -5,8 +5,10 @@ import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import scala.concurrent.ExecutionContext
 import scala.language.implicitConversions
 
 trait AuthorizeProcessDirectives {
@@ -24,8 +26,16 @@ trait AuthorizeProcessDirectives {
     hasUserPermissionInProcess(processIdAndUser, Permission.Write)
   }
 
-  private def canInProcess(processId: ProcessId, permission: Permission, user:LoggedUser) :Directive0 = {
-    Directives.authorizeAsync(_ => processAuthorizer.check(processId, permission,user))
+  def canOverrideUsername(category: String, remoteUserName: Option[RemoteUserName])(implicit loggedUser: LoggedUser): Directive0 = {
+    Directives.authorize(remoteUserName.isEmpty || loggedUser.can(category, Permission.OverrideUsername))
+  }
+
+  def canOverrideUsername(processId: ProcessId, remoteUserName: Option[RemoteUserName])(implicit executionContext: ExecutionContext, loggedUser: LoggedUser): Directive0 = {
+    Directives.authorizeAsync(processAuthorizer.check(processId, Permission.OverrideUsername, loggedUser).map(_ || remoteUserName.isEmpty))
+  }
+
+  private def canInProcess(processId: ProcessId, permission: Permission, user:LoggedUser): Directive0 = {
+    Directives.authorizeAsync(_ => processAuthorizer.check(processId, permission, user))
   }
 
   def hasAdminPermission(loggedUser: LoggedUser): Directive0 = {

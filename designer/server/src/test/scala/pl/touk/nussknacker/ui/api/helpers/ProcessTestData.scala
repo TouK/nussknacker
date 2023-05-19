@@ -275,7 +275,7 @@ object ProcessTestData {
       TestCategories.Category1
     )
 
-    UpdateProcessCommand(displayableProcess, comment.getOrElse(UpdateProcessComment("")))
+    UpdateProcessCommand(displayableProcess, comment.getOrElse(UpdateProcessComment("")), None)
   }
 
   def validProcessWithSubprocess(processName: ProcessName, subprocess: CanonicalProcess = sampleSubprocessOneOut): ProcessUsingSubprocess = {

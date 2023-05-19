@@ -20,7 +20,8 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
     canonicalProcess = process,
     componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(process),
     comment = Option(migrationsApplied).filter(_.nonEmpty).map(MigrationComment),
-    increaseVersionWhenJsonNotChanged = true
+    increaseVersionWhenJsonNotChanged = true,
+    forwardedUserName = None
   )
 
 }

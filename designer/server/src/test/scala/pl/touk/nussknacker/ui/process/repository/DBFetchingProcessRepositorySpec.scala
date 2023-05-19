@@ -242,7 +242,13 @@ class DBFetchingProcessRepositorySpec
   private def updateProcess(processId: ProcessId, canonicalProcess: CanonicalProcess,
                             componentsUsages: ScenarioComponentsUsages = ScenarioComponentsUsages.Empty,
                             increaseVersionWhenJsonNotChanged: Boolean = false): ProcessUpdated = {
-    val action = UpdateProcessAction(processId, canonicalProcess, componentsUsages, None, increaseVersionWhenJsonNotChanged)
+    val action = UpdateProcessAction(
+      processId,
+      canonicalProcess,
+      componentsUsages,
+      comment = None,
+      increaseVersionWhenJsonNotChanged,
+      forwardedUserName = None)
 
     val processUpdated = dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe Symbol("right")
@@ -251,7 +257,14 @@ class DBFetchingProcessRepositorySpec
 
   private def saveProcess(espProcess: CanonicalProcess, now: Instant = Instant.now(), category: String = "", componentsUsages: ScenarioComponentsUsages = ScenarioComponentsUsages.Empty) = {
     currentTime = now
-    val action = CreateProcessAction(ProcessName(espProcess.id), category, espProcess, TestProcessingTypes.Streaming, false, componentsUsages)
+    val action = CreateProcessAction(
+      ProcessName(espProcess.id),
+      category,
+      espProcess,
+      TestProcessingTypes.Streaming,
+      isSubprocess = false,
+      componentsUsages,
+      forwardedUserName = None)
 
     dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe Symbol("right")
   }

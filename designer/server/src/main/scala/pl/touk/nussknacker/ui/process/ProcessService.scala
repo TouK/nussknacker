@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessVa
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
+import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, RemoteUserName, UpdateProcessAction}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -38,9 +38,9 @@ import scala.language.higherKinds
 object ProcessService {
   type EmptyResponse = XError[Unit]
 
-  @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isSubprocess: Boolean)
+  @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isSubprocess: Boolean, forwardedUserName: Option[RemoteUserName] )
 
-  @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment)
+  @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment, forwardedUserName: Option[RemoteUserName])
 }
 
 trait ProcessService {
@@ -154,7 +154,14 @@ class DBProcessService(deploymentService: DeploymentService,
     withProcessingType(command.category) { processingType =>
       val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isSubprocess)
       val emptyComponentsUsages = ScenarioComponentsUsages.Empty
-      val action = CreateProcessAction(command.processName, command.category, emptyCanonicalProcess, processingType, command.isSubprocess, emptyComponentsUsages)
+      val action = CreateProcessAction(
+        command.processName,
+        command.category,
+        emptyCanonicalProcess,
+        processingType,
+        command.isSubprocess,
+        emptyComponentsUsages,
+        command.forwardedUserName)
 
       val propertiesErrors = validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.category)
 
@@ -185,10 +192,14 @@ class DBProcessService(deploymentService: DeploymentService,
           processResolving.resolveExpressions(action.process, validation.typingInfo)
         }
         componentsUsages = ComponentsUsageHelper.computeUsagesForScenario(substituted)
-        processUpdated <- EitherT(dbioRunner
-          .runInTransaction(processRepository
-            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, componentsUsages, Option(action.comment), increaseVersionWhenJsonNotChanged = false))
-          ))
+        updateProcessAction = UpdateProcessAction(
+          processIdWithName.id,
+          substituted,
+          componentsUsages,
+          Option(action.comment),
+          increaseVersionWhenJsonNotChanged = false,
+          forwardedUserName = action.forwardedUserName)
+        processUpdated <- EitherT(dbioRunner.runInTransaction(processRepository.updateProcess(updateProcessAction)))
       } yield UpdateProcessResponse(
         processUpdated
           .newVersion

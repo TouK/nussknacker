@@ -64,12 +64,25 @@ abstract class DatabaseInitializerItSpec extends AnyFlatSpec
   }
 
   private def saveSampleProcess(processName: String): ProcessCreated = {
-    val action = CreateProcessAction(ProcessName(processName), TestCategories.TestCat, ProcessTestData.validProcessWithId(processName), TestProcessingTypes.Streaming, isSubprocess = false, ScenarioComponentsUsages.Empty)
+    val action = CreateProcessAction(
+      ProcessName(processName),
+      TestCategories.TestCat,
+      ProcessTestData.validProcessWithId(processName),
+      TestProcessingTypes.Streaming,
+      isSubprocess = false,
+      ScenarioComponentsUsages.Empty,
+      forwardedUserName = None)
     dbioRunner.runInTransaction(writeRepository.saveNewProcess(action)).futureValue.rightValue.value
   }
 
   private def updateSampleProcess(processId: ProcessId, processName: String): ProcessUpdated = {
-    val action = UpdateProcessAction(processId, ProcessTestData.validProcessWithId(processName), ScenarioComponentsUsages.Empty, comment = None, increaseVersionWhenJsonNotChanged = true)
+    val action = UpdateProcessAction(
+      processId,
+      ProcessTestData.validProcessWithId(processName),
+      ScenarioComponentsUsages.Empty,
+      comment = None,
+      increaseVersionWhenJsonNotChanged = true,
+      forwardedUserName = None)
     dbioRunner.runInTransaction(writeRepository.updateProcess(action)).futureValue.rightValue
   }
 
