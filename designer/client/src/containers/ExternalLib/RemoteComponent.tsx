@@ -25,11 +25,11 @@ export function RemoteComponent<P>({ url, ...props }: { url: ModuleUrl; scope: M
 export const loadExternalReactModule = (url, props) => {
     const rootContainer = document.createElement(`div`);
     document.body.appendChild(rootContainer);
-    const [urlValue, scopeValue] = splitUrl(url);
+    const [urlValue, scopeValue, scriptValue] = splitUrl(url);
     ReactDOM.render(
         <NkThemeProvider>
             <MuiThemeProvider>
-                <RemoteComponent url={urlValue} scope={scopeValue} {...props} />
+                <RemoteComponent url={urlValue} scope={scopeValue} script={scriptValue} {...props} />
             </MuiThemeProvider>
         </NkThemeProvider>,
         rootContainer
