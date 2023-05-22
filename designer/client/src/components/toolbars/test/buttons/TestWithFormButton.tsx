@@ -17,7 +17,7 @@ import {GenericActionParameters} from "../../../modals/GenericActionDialog";
 import {Expression} from "../../../../types";
 import {SourceWithParametersTest} from "../../../../http/HttpService";
 import {getFindAvailableVariables} from "../../../graph/node-modal/NodeDetailsContent/selectors";
-import {fetchTestFormParameters} from "../../../../actions/nk";
+import {displayTestCapabilities, fetchTestFormParameters} from "../../../../actions/nk";
 
 type Props = ToolbarButtonProps
 
@@ -33,8 +33,9 @@ function TestWithFormButton(props: Props) {
   const findAvailableVariables = useSelector(getFindAvailableVariables)
   const dispatch = useDispatch()
 
-  const available = !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canTestWithForm
+  const isAvailable = () => !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canTestWithForm
 
+  const [available, setAvailable] = useState(isAvailable)
   const [action, setAction] = useState(null)
   const [selectedSource, setSelectedSource] = useState(_.head(testFormParameters)?.sourceId)
   const [sourceParameters, setSourceParameters] = useState(updateParametersFromTestForm())
@@ -78,7 +79,15 @@ function TestWithFormButton(props: Props) {
 
   useEffect(() => {
     if(available) dispatch(fetchTestFormParameters(processToDisplay))
-  }, [processToDisplay, testCapabilities, processIsLatestVersion])
+  }, [available])
+
+  useEffect(() => {
+    setAvailable(isAvailable)
+  }, [testCapabilities])
+
+  useEffect(() => {
+    dispatch(displayTestCapabilities(processToDisplay))
+  }, [processToDisplay, processIsLatestVersion])
 
   //For now, we select first source and don't provide way to change it
   //Add support for multiple sources in next iteration (?)
