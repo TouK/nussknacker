@@ -135,26 +135,14 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
     val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
 
     implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema,
-      recordFormatter, kafkaContextInitializer, getParameters(preparedTopic, versionOption))
+      recordFormatter, kafkaContextInitializer, getParameters(valueSchemaUsedInRuntime))
   }
 
-  private def getParameters(topic: PreparedKafkaTopic, version: SchemaVersionOption)(implicit nodeId: NodeId): KafkaTestParametersInfo = {
-    getSchema(topic, version)
+  private def getParameters(runtimeSchema: Option[RuntimeSchemaData[ParsedSchema]])
+                           (implicit nodeId: NodeId): KafkaTestParametersInfo = {
+    Validated.fromOption(runtimeSchema, NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None)))
       .andThen(handleSchemaType)
       .valueOr(e => throw new RuntimeException(e.toList.mkString("")))
-  }
-
-  private def getSchema(topic: PreparedKafkaTopic, version: SchemaVersionOption)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, RuntimeSchemaData[ParsedSchema]] = {
-    val schemaDeterminer = prepareUniversalValueSchemaDeterminer(topic, version)
-    schemaDeterminer
-      .determineSchemaUsedInTyping
-      .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
-      .leftMap(NonEmptyList.one)
-      .andThen { runtimeSchema =>
-        schemaBasedMessagesSerdeProvider.schemaValidator.validateSchema(runtimeSchema.schema)
-          .map(_ => runtimeSchema)
-          .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
-      }
   }
 
   private def handleSchemaType(determinedSchema: RuntimeSchemaData[ParsedSchema])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, KafkaTestParametersInfo] = {
@@ -163,7 +151,11 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
       case s: JsonSchema => JsonSinkValueParameter(s.rawSchema(), SinkValueParamName, ValidationMode.lax)(nodeId).map(_.toParameters)
       case s => Validated.invalidNel(FatalUnknownError(s"Avro or Json schema is required, but got ${s.schemaType()}"))
     }).map { params =>
-      KafkaTestParametersInfo(params, determinedSchema.schemaIdOpt.map(_.asInt), prepareMessageFormatter(determinedSchema.schema))
+      val schemaIdAsString = determinedSchema.schemaIdOpt.map {
+        case IntSchemaId(value) => value.toString
+        case StringSchemaId(value) => value
+      }
+      KafkaTestParametersInfo(params, schemaIdAsString, prepareMessageFormatter(determinedSchema.schema))
     }
   }
 
