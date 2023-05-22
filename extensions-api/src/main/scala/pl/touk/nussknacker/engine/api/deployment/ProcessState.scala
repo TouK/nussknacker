@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 import io.circe._
 import io.circe.generic.JsonCodec
-import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
@@ -63,30 +62,6 @@ object ProcessState {
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 }
 
-object ProcessActionType extends Enumeration {
-  implicit val typeEncoder: Encoder[ProcessActionType.Value] = Encoder.encodeEnumeration(ProcessActionType)
-  implicit val typeDecoder: Decoder[ProcessActionType.Value] = Decoder.decodeEnumeration(ProcessActionType)
-
-  type ProcessActionType = Value
-  val Deploy: Value = Value("DEPLOY")
-  val Cancel: Value = Value("CANCEL")
-  val Archive: Value = Value("ARCHIVE")
-  val UnArchive: Value = Value("UNARCHIVE")
-  val Pause: Value = Value("PAUSE") //TODO: To implement in future..
-
-  val defaultActions: List[ProcessActionType] = Nil
-}
-
-object ProcessActionState extends Enumeration {
-  implicit val typeEncoder: Encoder[ProcessActionState.Value] = Encoder.encodeEnumeration(ProcessActionState)
-  implicit val typeDecoder: Decoder[ProcessActionState.Value] = Decoder.decodeEnumeration(ProcessActionState)
-
-  type ProcessActionState = Value
-  val InProgress: Value = Value("IN_PROGRESS")
-  val Finished: Value = Value("FINISHED")
-  val Failed: Value = Value("FAILED")
-}
-
 object StateStatus {
   type StatusName = String
 
@@ -130,27 +105,6 @@ trait StateStatus {
   // Status identifier, should be unique among all states registered within all processing types.
   def name: StatusName
 
-}
-
-/**
-  * It is used to specify:
-  * <ul>
-  *   <li>fixed default properties of a status: icon, tooltip, descripition
-  *   <li>fixed set of properties of filtering options: displayableName, icon tooltip
-  * </ul>
-  * When a status has dynamic properties use ProcessStateDefinitionManager to handle them.
-  *
-  * @see default values of a status in [[ProcessStateDefinitionManager]]
-  * @see filtering options in [[UIStateDefinition]]
-  * @see overriding state definitions in [[OverridingProcessStateDefinitionManager]]
-  */
-case class StateDefinitionDetails(displayableName: String,
-                                  icon: URI,
-                                  tooltip: String,
-                                  description: String)
-
-object StateDefinitionDetails {
-  val UnknownIcon: URI = URI.create("/assets/states/status-unknown.svg")
 }
 
 case class StatusDetails(status: StateStatus,
