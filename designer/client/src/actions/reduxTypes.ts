@@ -19,6 +19,7 @@ import {UndoRedoActions} from "./undoRedoActions"
 import {NodeDetailsActions} from "./nk/nodeDetails"
 import {NotificationActions} from "./nk/notifications"
 import {DisplayTestResultsDetailsAction} from "./nk/displayTestResults"
+import {LoadProcessVersionsAction} from "./nk/loadProcessVersions";
 
 type TypedAction =
   | HandleHTTPErrorAction
@@ -35,6 +36,7 @@ type TypedAction =
   | NotificationActions
   | DisplayTestResultsDetailsAction
   | DisplayProcessCountsAction
+  | LoadProcessVersionsAction
 
 interface UntypedAction extends AnyAction {
   type: Exclude<ActionTypes, TypedAction["type"]>,
