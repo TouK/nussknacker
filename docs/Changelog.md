@@ -26,6 +26,9 @@
 * [#4283](https://github.com/TouK/nussknacker/pull/4283) Fix for OIDC provider access token verification. For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
   This change also introduced a possibility to override username incoming from OIDC provider. 
   For more see `usersFile` configuration. This might be helpful when other systems authenticate in Nussknacker in `machine to machine` manner. 
+* [#4246](https://github.com/TouK/nussknacker/pull/4246) Store components usages along with scenario json.
+  Components usages by a scenario are stored in the processes version table. It allows to speed up fetching components usages across all scenarios,
+  especially for a big number of scenarios and each with a lot of nodes.
 
 1.9.1 (24 Apr 2023)
 ------------------------

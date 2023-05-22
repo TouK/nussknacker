@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process
 
-import akka.util.Timeout
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
@@ -8,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.EspError
@@ -22,7 +21,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 
 class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
 
@@ -42,7 +40,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   private val testSubProcess = createSubProcess("testSubProcess", category = TestCat)
   private val reqRespArchivedSubProcess = createBasicProcess("reqRespArchivedSubProcess", isArchived = true, category = ReqRes)
 
-  private val processes: List[ProcessWithJson] = List(
+  private val processes: List[ProcessDetails] = List(
     category1Process, category2ArchivedProcess, testSubProcess, reqRespArchivedSubProcess
   )
 
@@ -68,8 +66,10 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (testReqRespUser, List(testSubProcess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithJson]) =>
-      val result = dBProcessService.getProcesses[DisplayableProcess](user).futureValue
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
+      implicit val loggedUser: LoggedUser = user
+
+      val result = dBProcessService.getProcesses[DisplayableProcess].futureValue
       result shouldBe expected
     }
   }
@@ -85,14 +85,16 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (testReqRespUser, List(reqRespArchivedSubProcess)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: List[ProcessWithJson]) =>
-      val result = dBProcessService.getArchivedProcesses[DisplayableProcess](user).futureValue
+    forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
+      implicit val loggedUser: LoggedUser = user
+
+      val result = dBProcessService.getArchivedProcesses[DisplayableProcess].futureValue
       result shouldBe expected
     }
   }
 
   it should "return user subprocesses" in {
-    val dBProcessService = createDbProcessService[DisplayableProcess](subprocesses.toList)
+    val dBProcessService = createDbProcessService(subprocesses.toList)
 
     val testingData = Table(
       ("user", "subprocesses"),
@@ -102,7 +104,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (testReqRespUser, Set(subprocessTest, subprocessReqResp)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: Set[ProcessWithJson] ) =>
+    forAll(testingData) { (user: LoggedUser, expected: Set[ProcessDetails] ) =>
       val result = dBProcessService.getSubProcesses(None)(user).futureValue
       val subprocessDetails = expected.map(convertBasicProcessToSubprocessDetails)
       result shouldBe subprocessDetails
@@ -131,7 +133,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     }
   }
 
-  private def convertBasicProcessToSubprocessDetails(process: ProcessWithJson) =
+  private def convertBasicProcessToSubprocessDetails(process: ProcessDetails) =
     SubprocessDetails(ProcessConverter.fromDisplayable(process.json), process.processCategory)
 
   private def importSuccess(displayableProcess: DisplayableProcess): Right[EspError, ValidatedDisplayableProcess] = {
@@ -145,14 +147,14 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     Right(new ValidatedDisplayableProcess(displayableProcess, ValidationResult.success.copy(nodeResults = nodeResults)))
   }
 
-  private def createDbProcessService[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]] = Nil): DBProcessService =
+  private def createDbProcessService(processes: List[ProcessDetails] = Nil): DBProcessService =
     new DBProcessService(
       deploymentService = TestFactory.deploymentService(),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,
       dbioRunner = TestFactory.newDummyDBIOActionRunner(),
-      fetchingProcessRepository = new MockFetchingProcessRepository(processes),
+      fetchingProcessRepository = MockFetchingProcessRepository.withProcessesDetails(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
       processRepository = TestFactory.newDummyWriteProcessRepository(),
       processValidation = TestFactory.processValidation

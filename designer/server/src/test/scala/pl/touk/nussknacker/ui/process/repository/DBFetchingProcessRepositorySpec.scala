@@ -3,9 +3,11 @@ package pl.touk.nussknacker.ui.process.repository
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails
@@ -14,6 +16,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
@@ -32,6 +35,7 @@ class DBFetchingProcessRepositorySpec
     with WithHsqlDbTesting
     with PatientScalaFutures
     with TestPermissions {
+
   import cats.syntax.either._
 
   private val dbioRunner = DBIOActionRunner(db)
@@ -40,7 +44,7 @@ class DBFetchingProcessRepositorySpec
     override protected def now: Instant = currentTime
   }
 
-  private var currentTime : Instant = Instant.now()
+  private var currentTime: Instant = Instant.now()
 
   private val fetching = DBFetchingProcessRepository.createFutureRespository(db)
 
@@ -50,7 +54,7 @@ class DBFetchingProcessRepositorySpec
 
   test("fetch processes for category") {
 
-    def saveProcessForCategory(cat :String) = {
+    def saveProcessForCategory(cat: String) = {
       saveProcess(ScenarioBuilder
         .streaming(s"categorized-$cat")
         .source("s", "")
@@ -59,13 +63,14 @@ class DBFetchingProcessRepositorySpec
         category = cat
       )
     }
-    val c1Reader = TestFactory.user(permissions = "c1"->Permission.Read)
+
+    val c1Reader = TestFactory.user(permissions = "c1" -> Permission.Read)
 
     saveProcessForCategory("c1")
     saveProcessForCategory("c2")
-    val processes= fetching.fetchProcessesDetails(FetchProcessesDetailsQuery(isArchived = Some(false)))(ProcessShapeFetchStrategy.NotFetch, c1Reader, implicitly[ExecutionContext]).futureValue
+    val processes = fetching.fetchProcessesDetails(FetchProcessesDetailsQuery(isArchived = Some(false)))(ProcessShapeFetchStrategy.NotFetch, c1Reader, implicitly[ExecutionContext]).futureValue
 
-    processes.map(_.name) shouldEqual "categorized-c1"::Nil
+    processes.map(_.name) shouldEqual "categorized-c1" :: Nil
   }
 
   test("should rename process") {
@@ -173,10 +178,10 @@ class DBFetchingProcessRepositorySpec
       writingRepo.changeVersionId(details.processId, details.processVersionId, latestVersionId)
     )
 
-    val latestDetails = fetchLatestProcessDetails(processName)
+    val latestDetails = fetchLatestProcessDetails[CanonicalProcess](processName)
     latestDetails.processVersionId shouldBe latestVersionId
 
-    val ProcessUpdated(processId, oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestDetails.processId, ProcessTestData.validProcess, false)
+    val ProcessUpdated(_, oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestDetails.processId, ProcessTestData.validProcess)
     oldVersionInfoOpt shouldBe Symbol("defined")
     oldVersionInfoOpt.get shouldBe latestVersionId
     newVersionInfoOpt shouldBe Symbol("defined")
@@ -194,31 +199,69 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(espProcess, now)
 
-    val latestDetails = fetchLatestProcessDetails(processName)
+    val latestDetails = fetchLatestProcessDetails[CanonicalProcess](processName)
     latestDetails.processVersionId shouldBe VersionId.initialVersionId
 
-    updateProcess(latestDetails.processId, ProcessTestData.validProcess, false).newVersion.get shouldBe VersionId(2)
+    updateProcess(latestDetails.processId, ProcessTestData.validProcess, increaseVersionWhenJsonNotChanged = false).newVersion.get shouldBe VersionId(2)
     //without force
-    updateProcess(latestDetails.processId, ProcessTestData.validProcess, false).newVersion shouldBe empty
+    updateProcess(latestDetails.processId, ProcessTestData.validProcess, increaseVersionWhenJsonNotChanged = false).newVersion shouldBe empty
     //now with force
-    updateProcess(latestDetails.processId, ProcessTestData.validProcess, true).newVersion.get shouldBe VersionId(3)
+    updateProcess(latestDetails.processId, ProcessTestData.validProcess, increaseVersionWhenJsonNotChanged = true).newVersion.get shouldBe VersionId(3)
 
+  }
+
+  test("should store components usages") {
+    val processName = ProcessName("proc1")
+    val newScenario = ScenarioBuilder.streaming(processName.value)
+      .source("source1", "source")
+      .emptySink("sink1", "sink")
+
+    saveProcess(newScenario)
+
+    val latestDetails = fetchLatestProcessDetails[ScenarioComponentsUsages](processName)
+    latestDetails.json shouldBe ScenarioComponentsUsages(Map(
+      ComponentIdParts(Some("source"), ComponentType.Source) -> List("source1"),
+      ComponentIdParts(Some("sink"), ComponentType.Sink) -> List("sink1"),
+    ))
+
+    val updatedScenario = ScenarioBuilder.streaming(processName.value)
+      .source("source1", "source")
+      .emptySink("sink1", "otherSink")
+
+    updateProcess(latestDetails.processId, updatedScenario)
+
+    fetchLatestProcessDetails[ScenarioComponentsUsages](processName).json shouldBe ScenarioComponentsUsages(Map(
+      ComponentIdParts(Some("source"), ComponentType.Source) -> List("source1"),
+      ComponentIdParts(Some("otherSink"), ComponentType.Sink) -> List("sink1"),
+    ))
   }
 
   private def processExists(processName: ProcessName): Boolean =
     fetching.fetchProcessId(processName).futureValue.nonEmpty
 
-  private def updateProcess(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
-    val action = UpdateProcessAction(processId, canonicalProcess, None, increaseVersionWhenJsonNotChanged, None)
+  private def updateProcess(processId: ProcessId, canonicalProcess: CanonicalProcess,
+                            increaseVersionWhenJsonNotChanged: Boolean = false): ProcessUpdated = {
+    val action = UpdateProcessAction(
+      processId,
+      canonicalProcess,
+      comment = None,
+      increaseVersionWhenJsonNotChanged,
+      forwardedUserName = None)
 
     val processUpdated = dbioRunner.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe Symbol("right")
     processUpdated.toOption.get
   }
 
-  private def saveProcess(espProcess: CanonicalProcess, now: Instant, category: String = "") = {
+  private def saveProcess(espProcess: CanonicalProcess, now: Instant = Instant.now(), category: String = "") = {
     currentTime = now
-    val action = CreateProcessAction(ProcessName(espProcess.id), category, espProcess, TestProcessingTypes.Streaming, false, None)
+    val action = CreateProcessAction(
+      ProcessName(espProcess.id),
+      category,
+      espProcess,
+      TestProcessingTypes.Streaming,
+      isSubprocess = false,
+      forwardedUserName = None)
 
     dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe Symbol("right")
   }
@@ -237,9 +280,9 @@ class DBFetchingProcessRepositorySpec
     }
   }
 
-  private def fetchLatestProcessDetails(name: ProcessName): processdetails.BaseProcessDetails[CanonicalProcess] = {
+  private def fetchLatestProcessDetails[PS: ProcessShapeFetchStrategy](name: ProcessName): processdetails.BaseProcessDetails[PS] = {
     val fetchedProcess = fetching.fetchProcessId(name).futureValue.flatMap(
-      fetching.fetchLatestProcessDetailsForProcessId[CanonicalProcess](_).futureValue
+      fetching.fetchLatestProcessDetailsForProcessId(_).futureValue
     )
 
     fetchedProcess shouldBe Symbol("defined")

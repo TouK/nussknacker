@@ -3,9 +3,8 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
-import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
+import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
@@ -71,9 +70,9 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
   override def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
-      .getProcesses[DisplayableProcess](user)
-      .map(processes => {
-        val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processes)
+      .getProcesses[ScenarioComponentsUsages]
+      .map(processDetailsList => {
+        val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processDetailsList)
 
         componentsUsage
           .get(componentId)
@@ -99,7 +98,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
   private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] = {
     processService
-      .getProcesses[DisplayableProcess](loggedUser)
+      .getProcesses[ScenarioComponentsUsages]
       .map(_.filter(p => categories.contains(p.processCategory))) //TODO: move it to service?
       .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }
@@ -124,7 +123,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
     componentObjects
       .templates
       .map { case (groupName, com) =>
-        val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
+        val componentId = componentIdProvider.createComponentId(processingType, Some(com.label), com.`type`)
         val icon = getComponentIcon(componentObjects.config, com)
         val links = createComponentLinks(componentId, com, componentObjects.config)
         val usageCount = componentUsages.getOrElse(componentId, 0L)

@@ -51,7 +51,7 @@ import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, Te
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 
-trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers with ScalaFutures =>
+trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions with BeforeAndAfterEach { self: ScalatestRouteTest with Suite with Matchers with ScalaFutures =>
 
   import ProcessesQueryEnrichments.RichProcessesQuery
   import TestCategories._
@@ -330,7 +330,13 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   private def saveAndGetId(process: CanonicalProcess, category: String, isSubprocess: Boolean, processingType: ProcessingType = Streaming): Future[ProcessId] = {
     val processName = ProcessName(process.id)
-    val action = CreateProcessAction(processName, category, process, processingType, isSubprocess, None)
+    val action = CreateProcessAction(
+      processName,
+      category,
+      process,
+      processingType,
+      isSubprocess,
+      forwardedUserName = None)
     for {
       _ <- dbioRunner.runInTransaction(writeProcessRepository.saveNewProcess(action))
       id <- futureFetchingProcessRepository.fetchProcessId(processName).map(_.get)

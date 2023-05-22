@@ -1,38 +1,71 @@
 package pl.touk.nussknacker.ui.db.entity
 
+import io.circe.generic.JsonCodec
+import io.circe.syntax._
+import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import slick.lifted.{ForeignKeyQuery, TableQuery => LTableQuery}
-import slick.sql.SqlProfile.ColumnOption.NotNull
-import io.circe.syntax._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, ScenarioComponentsUsages}
+import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
+import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
 
 trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
+  import ScenarioComponentsUsagesJsonCodec._
   import profile.api._
 
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity]
 
   class ProcessVersionEntity(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
-    def json = column[Option[String]]("json", O.Length(100 * 1000))
+    def json: Rep[String] = column[String]("json", NotNull)
 
-    def * = (id, processId, json, createDate, user, modelVersion) <> (
-      {
-        case (versionId: VersionId, processId: ProcessId, jsonStringOpt: Option[String], createDate: Timestamp, user: String, modelVersion: Option[Int]) =>
-          ProcessVersionEntityData(versionId, processId, jsonStringOpt.map(ProcessMarshaller.fromJsonUnsafe), createDate, user, modelVersion)
-      },
-      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3.map(_.asJson.noSpaces), t._4, t._5, t._6) }
+    def componentsUsages: Rep[String] = column[String]("components_usages", NotNull)
+
+    def * : ProvenShape[ProcessVersionEntityData] = (id, processId, json, createDate, user, modelVersion, componentsUsages) <> ( {
+      case (versionId: VersionId, processId: ProcessId, jsonString: String, createDate: Timestamp, user: String, modelVersion: Option[Int], componentsUsages: String) =>
+        ProcessVersionEntityData(versionId, processId, Some(ProcessMarshaller.fromJsonUnsafe(jsonString)), createDate, user, modelVersion, Some(CirceUtil.decodeJsonUnsafe[ScenarioComponentsUsages](componentsUsages)))
+    },
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3.get.asJson.noSpaces, t._4, t._5, t._6, t._7.get.asJson.noSpaces) }
     )
 
   }
 
-  class ProcessVersionEntityNoJson(tag: Tag) extends BaseProcessVersionEntity(tag) {
+  class ProcessVersionEntityWithScenarioJson(tag: Tag) extends BaseProcessVersionEntity(tag) {
 
-    override def * =  (id, processId, createDate, user, modelVersion) <> (
-      (ProcessVersionEntityData.apply(_: VersionId, _: ProcessId, None, _: Timestamp, _: String, _: Option[Int])).tupled,
+    def json: Rep[String] = column[String]("json", NotNull)
+
+    def * : ProvenShape[ProcessVersionEntityData] = (id, processId, json, createDate, user, modelVersion) <> ( {
+      case (versionId: VersionId, processId: ProcessId, jsonString: String, createDate: Timestamp, user: String, modelVersion: Option[Int]) =>
+        ProcessVersionEntityData(versionId, processId, Some(ProcessMarshaller.fromJsonUnsafe(jsonString)), createDate, user, modelVersion, None)
+    },
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3.get.asJson.noSpaces, t._4, t._5, t._6) }
+    )
+
+  }
+
+  class ProcessVersionEntityWithComponentsUsages(tag: Tag) extends BaseProcessVersionEntity(tag) {
+
+    def componentsUsages: Rep[String] = column[String]("components_usages", NotNull)
+
+    def * : ProvenShape[ProcessVersionEntityData] = (id, processId, createDate, user, modelVersion, componentsUsages) <> ( {
+      case (versionId: VersionId, processId: ProcessId, createDate: Timestamp, user: String, modelVersion: Option[Int], componentsUsages: String) =>
+        ProcessVersionEntityData(versionId, processId, None, createDate, user, modelVersion, Some(CirceUtil.decodeJsonUnsafe[ScenarioComponentsUsages](componentsUsages)))
+    },
+      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._4, t._5, t._6, t._7.get.asJson.noSpaces) }
+    )
+
+  }
+
+  class ProcessVersionEntityWithUnit(tag: Tag) extends BaseProcessVersionEntity(tag) {
+
+    override def * : ProvenShape[ProcessVersionEntityData] = (id, processId, createDate, user, modelVersion) <> (
+      (ProcessVersionEntityData.apply(_: VersionId, _: ProcessId, None, _: Timestamp, _: String, _: Option[Int], None)).tupled,
       (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._4, t._5, t._6) }
     )
 
@@ -62,8 +95,15 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
   val processVersionsTable: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntity] =
     LTableQuery(new ProcessVersionEntity(_))
 
-  val processVersionsTableNoJson: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityNoJson] =
-    LTableQuery(new ProcessVersionEntityNoJson(_))
+  val processVersionsTableWithScenarioJson: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityWithScenarioJson] =
+    LTableQuery(new ProcessVersionEntityWithScenarioJson(_))
+
+  val processVersionsTableWithComponentsUsages: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityWithComponentsUsages] =
+    LTableQuery(new ProcessVersionEntityWithComponentsUsages(_))
+
+  val processVersionsTableWithUnit: TableQuery[ProcessVersionEntityFactory#ProcessVersionEntityWithUnit] =
+    LTableQuery(new ProcessVersionEntityWithUnit(_))
+
 }
 
 case class ProcessVersionEntityData(id: VersionId,
@@ -71,4 +111,25 @@ case class ProcessVersionEntityData(id: VersionId,
                                     json: Option[CanonicalProcess],
                                     createDate: Timestamp,
                                     user: String,
-                                    modelVersion: Option[Int])
+                                    modelVersion: Option[Int],
+                                    componentsUsages: Option[ScenarioComponentsUsages],
+                                   )
+
+@JsonCodec
+private[entity] case class ComponentUsages(componentName: Option[String], componentType: ComponentType, nodeIds: List[NodeId])
+
+object ScenarioComponentsUsagesJsonCodec {
+
+  implicit val decoder: Decoder[ScenarioComponentsUsages] = implicitly[Decoder[List[ComponentUsages]]].map { componentUsagesList =>
+    val componentUsagesMap = componentUsagesList.map { componentUsages =>
+      val componentIdParts = ComponentIdParts(componentUsages.componentName, componentUsages.componentType)
+      componentIdParts -> componentUsages.nodeIds
+    }.toMap
+    ScenarioComponentsUsages(componentUsagesMap)
+  }
+
+  implicit val encoder: Encoder[ScenarioComponentsUsages] = implicitly[Encoder[List[ComponentUsages]]].contramap[ScenarioComponentsUsages](_.value.toList.map {
+    case (ComponentIdParts(componentName, componentType), nodeIds) => ComponentUsages(componentName, componentType, nodeIds)
+  })
+
+}

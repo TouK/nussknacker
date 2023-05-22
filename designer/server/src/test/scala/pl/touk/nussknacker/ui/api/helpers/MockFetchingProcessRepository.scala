@@ -4,23 +4,31 @@ import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy.{FetchCanonical, FetchDisplayable, NotFetch}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.restmodel.processdetails
+import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy.{FetchCanonical, FetchComponentsUsages, FetchDisplayable, NotFetch}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.process.repository.{BasicRepository, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.repository.{BasicRepository, FetchingProcessRepository, ScenarioComponentsUsagesHelper}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.jdbc.{HsqldbProfile, JdbcBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
-class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(implicit ec: ExecutionContext) extends FetchingProcessRepository[Future] with BasicRepository {
+object MockFetchingProcessRepository {
+
+  def withProcessesDetails(processes: List[ProcessDetails])(implicit ec: ExecutionContext): MockFetchingProcessRepository = {
+    val canonicals = processes.map { p => p.mapProcess(ProcessConverter.fromDisplayable) }
+    new MockFetchingProcessRepository(canonicals)
+  }
+
+}
+
+class MockFetchingProcessRepository(processes: List[BaseProcessDetails[CanonicalProcess]])(implicit ec: ExecutionContext) extends FetchingProcessRepository[Future] with BasicRepository {
 
   //It's only for BasicRepository implementation, we don't use it
   private val config: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
@@ -61,20 +69,14 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
     Future(processes.map(p => convertProcess(p)(shapeStrategy)))
   }
 
-  private def convertProcess[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[_]): BaseProcessDetails[PS] = {
+  private def convertProcess[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[CanonicalProcess]): BaseProcessDetails[PS] = {
     val shapeStrategy: ProcessShapeFetchStrategy[PS] = implicitly[ProcessShapeFetchStrategy[PS]]
 
     shapeStrategy match {
       case NotFetch => process.copy(json = ().asInstanceOf[PS])
-      case FetchDisplayable => process.json match {
-        case j: CanonicalProcess => process.copy(json = ProcessConverter.toDisplayable(j, process.processingType, process.processCategory))
-        case _ => process.asInstanceOf[BaseProcessDetails[PS]]
-      }
-      case FetchCanonical => process.json match {
-        case j: DisplayableProcess => process.copy(json = ProcessConverter.fromDisplayable(j))
-        case _ => process.asInstanceOf[BaseProcessDetails[PS]]
-      }
-      case _ => process.asInstanceOf[BaseProcessDetails[PS]]
+      case FetchCanonical => process.asInstanceOf[BaseProcessDetails[PS]]
+      case FetchDisplayable => process.mapProcess(canonical => ProcessConverter.toDisplayableOrDie(canonical, process.processingType, process.processCategory)).asInstanceOf[BaseProcessDetails[PS]]
+      case FetchComponentsUsages => process.mapProcess(canonical => ScenarioComponentsUsagesHelper.compute(canonical)).asInstanceOf[BaseProcessDetails[PS]]
     }
   }
 
