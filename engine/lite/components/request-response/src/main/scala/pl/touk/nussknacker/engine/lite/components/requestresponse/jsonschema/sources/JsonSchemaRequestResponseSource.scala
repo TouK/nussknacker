@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefin
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.nio.charset.StandardCharsets
 
@@ -59,7 +60,7 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
 
   override def parametersToTestData(params: Map[String, AnyRef]): Any = {
     val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
-    val json = BestEffortJsonEncoder.defaultForTests.encode(JsonSinkValueParameter.unflattenParameters(params))
+    val json = BestEffortJsonEncoder.defaultForTests.encode(TestingParametersSupport.unflattenParameters(params))
     JsonToNuStruct(json, swaggerTyped)
   }
 

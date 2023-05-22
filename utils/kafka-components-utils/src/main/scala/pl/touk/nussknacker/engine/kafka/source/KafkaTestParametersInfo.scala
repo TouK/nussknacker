@@ -5,17 +5,17 @@ import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
-case class KafkaTestParametersInfo(uiParameters: List[Parameter], schemaIntId: Option[Int], formatMessage: Any => Json)
+case class KafkaTestParametersInfo(uiParameters: List[Parameter], schemaId: Option[String], formatMessage: Any => Json)
 
 object KafkaTestParametersInfo {
 
   def empty: KafkaTestParametersInfo = KafkaTestParametersInfo(Nil, None, _ => Json.Null)
 
-  def wrapWithConsumerData(testData: Json, schemaIntId: Option[Int], topic: String): Json = {
+  def wrapWithConsumerData(testData: Json, schemaId: Option[String], topic: String): Json = {
     BestEffortJsonEncoder.defaultForTests.encode(
       Map(
       "keySchemaId" -> null,
-      "valueSchemaId" -> schemaIntId,
+      "valueSchemaId" -> schemaId,
       "consumerRecord" -> Map(
         "key" -> null,
         "value" -> testData,

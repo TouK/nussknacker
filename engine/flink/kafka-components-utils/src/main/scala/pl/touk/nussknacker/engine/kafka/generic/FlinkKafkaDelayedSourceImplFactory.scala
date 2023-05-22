@@ -46,7 +46,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](timestampAssigner: Option[Timesta
           ).orElse(timestampAssigner)
         createDelayedKafkaSourceWithFixedDelay(preparedTopics, kafkaConfig, deserializationSchema, timestampAssignerWithExtract, formatter, contextInitializer, millis)
       case _ =>
-        super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, formatter, contextInitializer, KafkaTestParametersInfo.empty)
+        super.createSource(params, dependencies, finalState, preparedTopics, kafkaConfig, deserializationSchema, formatter, contextInitializer, testParametersInfo)
     }
   }
 
@@ -68,7 +68,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](timestampAssigner: Option[Timesta
                                          formatter: RecordFormatter,
                                          contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
                                          delayCalculator: DelayCalculator): FlinkKafkaSource[ConsumerRecord[K, V]] = {
-    new FlinkConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer) {
+    new FlinkConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer, KafkaTestParametersInfo.empty) {
 
       override protected def createFlinkSource(consumerGroupId: String, flinkNodeContext: FlinkCustomNodeContext): SourceFunction[ConsumerRecord[K, V]] =
         DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, delayCalculator, timestampAssigner, flinkNodeContext)
