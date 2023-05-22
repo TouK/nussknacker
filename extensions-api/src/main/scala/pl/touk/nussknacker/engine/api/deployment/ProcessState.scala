@@ -90,7 +90,9 @@ object ProcessActionState extends Enumeration {
 object StateStatus {
   type StatusName = String
 
-  // Temporary encoder/decoder
+  // StateStatus has to have Decoder defined because it is decoded along with ProcessState in the migration process
+  // (see StandardRemoteEnvironment class).
+  // In all cases (this one and for FE purposes) only info about the status name is essential.
   implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeString.contramap(_.name)
   implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.map(statusName => new StateStatus {
     override def name: StatusName = statusName

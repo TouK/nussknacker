@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
+import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
@@ -15,17 +16,18 @@ object SimpleStateStatus {
     override def name: StatusName = ProblemStateStatus.name
     override def isFailed: Boolean = true
   }
-  case object ProblemStateStatus {
+
+  object ProblemStateStatus {
     val name: String = "PROBLEM"
     val icon: URI = URI.create("/assets/states/error.svg")
     val defaultDescription = "There are some problems with scenario."
-    val defaultActions = List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+    val defaultActions: List[deployment.ProcessActionType.Value] = List(ProcessActionType.Deploy, ProcessActionType.Cancel)
 
     // Problem factory methods
 
-    def failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
+    val failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
 
-    def failedToGet: ProblemStateStatus =
+    val failedToGet: ProblemStateStatus =
       ProblemStateStatus(s"Failed to get a state of the scenario.")
 
     def shouldBeRunning(deployedVersionId: VersionId, user: String): ProblemStateStatus =
@@ -43,10 +45,10 @@ object SimpleStateStatus {
     def missingDeployedVersion(exceptedVersionId: VersionId, user: String): ProblemStateStatus =
       ProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
 
-    def processWithoutAction: ProblemStateStatus =
+    val processWithoutAction: ProblemStateStatus =
       ProblemStateStatus("Scenario state error - no actions found.")
 
-    def multipleJobsRunning: ProblemStateStatus =
+    val multipleJobsRunning: ProblemStateStatus =
       ProblemStateStatus("More than one deployment is running.", List(ProcessActionType.Cancel))
 
   }
