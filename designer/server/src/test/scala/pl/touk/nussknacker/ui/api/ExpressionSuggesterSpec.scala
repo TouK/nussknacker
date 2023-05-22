@@ -119,8 +119,8 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
   test("should suggest global variable methods") {
     suggestionsFor("#input.") shouldBe List(
       suggestion("barB", Typed[B]),
-      suggestion("toString", Typed[String]),
       suggestion("fooString", Typed[String]),
+      suggestion("toString", Typed[String]),
     )
   }
 
@@ -160,8 +160,8 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
 
   test("should suggest filtered global variable methods based not on beginning of the method") {
     suggestionsFor("#input.string") shouldBe List(
-      suggestion("toString", Typed[String]),
       suggestion("fooString", Typed[String]),
+      suggestion("toString", Typed[String]),
     )
   }
 

@@ -29,6 +29,7 @@
 * [#4246](https://github.com/TouK/nussknacker/pull/4246) Store components usages along with scenario json.
   Components usages by a scenario are stored in the processes version table. It allows to speed up fetching components usages across all scenarios,
   especially for a big number of scenarios and each with a lot of nodes.
+* [#4254](https://github.com/TouK/nussknacker/pull/4254) Add simple spel expression suggestions endpoint to BE
 
 1.9.1 (24 Apr 2023)
 ------------------------

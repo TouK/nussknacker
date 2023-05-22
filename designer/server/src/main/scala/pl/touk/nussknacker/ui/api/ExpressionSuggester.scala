@@ -43,7 +43,7 @@ class ExpressionSuggester {
       }
     }
 
-    nodeInPosition match {
+    val suggestions = nodeInPosition match {
       case Some(node) => node match {
         case v: VariableReference =>
           val filteredVariables = filterMapByName(variables, v.toStringAST.stripPrefix("#"))
@@ -74,6 +74,7 @@ class ExpressionSuggester {
       }
       case _ => Nil
     }
+    suggestions.sortBy(_.methodName)
   }
 
   private def insertDummyVariable(s: String, index: Int): String = {
