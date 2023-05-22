@@ -62,30 +62,6 @@ object ProcessState {
   implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
 }
 
-object ProcessActionType extends Enumeration {
-  implicit val typeEncoder: Encoder[ProcessActionType.Value] = Encoder.encodeEnumeration(ProcessActionType)
-  implicit val typeDecoder: Decoder[ProcessActionType.Value] = Decoder.decodeEnumeration(ProcessActionType)
-
-  type ProcessActionType = Value
-  val Deploy: Value = Value("DEPLOY")
-  val Cancel: Value = Value("CANCEL")
-  val Archive: Value = Value("ARCHIVE")
-  val UnArchive: Value = Value("UNARCHIVE")
-  val Pause: Value = Value("PAUSE") //TODO: To implement in future..
-
-  val defaultActions: List[ProcessActionType] = Nil
-}
-
-object ProcessActionState extends Enumeration {
-  implicit val typeEncoder: Encoder[ProcessActionState.Value] = Encoder.encodeEnumeration(ProcessActionState)
-  implicit val typeDecoder: Decoder[ProcessActionState.Value] = Decoder.decodeEnumeration(ProcessActionState)
-
-  type ProcessActionState = Value
-  val InProgress: Value = Value("IN_PROGRESS")
-  val Finished: Value = Value("FINISHED")
-  val Failed: Value = Value("FAILED")
-}
-
 object StateStatus {
   type StatusName = String
 
