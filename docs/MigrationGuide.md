@@ -15,9 +15,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4290](https://github.com/TouK/nussknacker/pull/4290) Renamed predicates used in `ClassExtractionSettings`:
   * `ClassMemberPatternPredicate` renamed to `MemberNamePatternPredicate`
   * `AllMethodNamesPredicate` renamed to AllMembersPredicate
-* [#4299](https://github.com/TouK/nussknacker/pull/4299) `StateStatus` is identified by its name. `ProcessState` serialization uses this name as serialized state value.  
+* [#4299](https://github.com/TouK/nussknacker/pull/4299), [#4300](https://github.com/TouK/nussknacker/pull/4300)
+  `StateStatus` is identified by its name. `ProcessState` serialization uses this name as serialized state value.  
   Sealed trait `StateStatus` is unsealed, all members are replaced by corresponding `SimpleStateStatus` state definitions,
   custom statuses are defined within each `ProcessStateDefinitionManager`.
+  `ProcessAction` is moved from restmodel to extensions-api, package engine.api.deployment.
 
 ### Configuration changes
 * [#4283](https://github.com/TouK/nussknacker/pull/4283) For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
