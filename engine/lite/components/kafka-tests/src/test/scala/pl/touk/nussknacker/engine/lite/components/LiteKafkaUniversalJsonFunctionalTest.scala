@@ -67,12 +67,24 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     val testData = Table(
       ("config", "result"),
       //Primitive integer validations
-      (config(fromLong(Integer.MAX_VALUE.toLong + 1), schemaInteger, schemaIntegerRange), invalidTypes("actual: 'Long' expected: 'Integer'")),
-      (config(sampleJInt, schemaInteger, schemaIntegerRange0to100, fromInt(200)), invalidRanges("actual value: '200' should be between 0 and 100")),
-      (config(sampleJInt, schemaInteger, schemaIntegerRangeTo100, fromInt(200)), invalidRanges("actual value: '200' should be less than or equal to 100")),
-      (config(sampleJInt, schemaInteger, schemaIntegerRange0to100, fromInt(100)), valid(fromInt(100))),
-      (config(sampleJInt, schemaIntegerRange, schemaInteger), valid(sampleJInt)),
-      (config(fromLong(Integer.MAX_VALUE), schemaIntegerRange, schemaIntegerRange), valid(fromInt(Integer.MAX_VALUE))),
+      (config(sampleJLong, schemaLong, schemaInt), invalidTypes("actual: 'Long' expected: 'Integer'")),
+      (config(sampleJBigDecimalFromInt, schemaBigDecimal, schemaInt), invalidTypes("actual: 'BigDecimal' expected: 'Integer'")),
+      (config(sampleJBigDecimalFromInt, schemaBigDecimal, schemaLong), invalidTypes("actual: 'BigDecimal' expected: 'Long'")),
+      (config(sampleJInt, schemaLong, schemaIntRange0to100, fromInt(200)), invalidRanges("actual value: '200' should be between 0 and 100")),
+      (config(sampleJInt, schemaLong, schemaIntRangeTo100, fromInt(200)), invalidRanges("actual value: '200' should be less than or equal to 100")),
+      (config(sampleJInt, schemaLong, schemaIntRange0to100, fromInt(100)), valid(fromInt(100))),
+      (config(sampleJInt, schemaInt, schemaLong), valid(sampleJInt)),
+      (config(fromLong(Integer.MAX_VALUE), schemaInt, schemaInt), valid(fromInt(Integer.MAX_VALUE))),
+
+      //Number conversion
+      (config(sampleJInt, schemaInt, schemaLong), valid(sampleJLongFromInt)),
+      (config(sampleJStr, schemaString, schemaLong, sampleInt), valid(sampleJLongFromInt)),
+
+      (config(sampleJInt, schemaInt, schemaBigDecimal), valid(sampleJBigDecimalFromInt)),
+      (config(sampleJStr, schemaString, schemaBigDecimal, sampleInt), valid(sampleJBigDecimalFromInt)),
+
+      (config(sampleJInt, schemaLong, schemaBigDecimal), valid(sampleJBigDecimalFromInt)),
+      (config(sampleJStr, schemaString, schemaBigDecimal, sampleLong), valid(sampleJBigDecimalFromLong)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -93,19 +105,19 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (conf(schemaObjMapAny, sampleObjMapAnyOutput), valid(sampleObjMapAny)),
       (config(sampleObjMapPerson, schemaObjMapObjPerson, schemaObjMapAny), valid(sampleObjMapPerson)),
       (conf(schemaObjMapAny, sampleObjMapPersonOutput), valid(sampleObjMapPerson)),
-      (config(sampleObjMapInt, schemaObjMapInt, schemaObjMapAny), valid(sampleObjMapInt)),
+      (config(sampleObjMapInt, schemaObjMapLong, schemaObjMapAny), valid(sampleObjMapInt)),
 
-      (config(sampleObjMapInt, schemaObjMapInt, schemaObjMapInt), valid(sampleObjMapInt)),
-      (conf(schemaObjMapInt, sampleObjMapIntOutput), valid(sampleObjMapInt)),
+      (config(sampleObjMapInt, schemaObjMapLong, schemaObjMapLong), valid(sampleObjMapInt)),
+      (conf(schemaObjMapLong, sampleObjMapIntOutput), valid(sampleObjMapInt)),
 
       (config(samplePerson, schemaPerson, schemaObjStr), invalid(Nil, List("field"), List("age", "first", "last"), Nil)),
       (conf(schemaObjStr, samplePersonOutput), invalid(Nil, List("field"), List("first", "last", "age"), Nil)),
 
-      (config(sampleObjMapAny, schemaObjMapAny, schemaObjMapInt), invalidTypes("path 'field.value' actual: 'Unknown' expected: 'Long'")),
+      (config(sampleObjMapAny, schemaObjMapAny, schemaObjMapLong), invalidTypes("path 'field.value' actual: 'Unknown' expected: 'Long'")),
 
       (config(samplePerson, nameAndLastNameSchema, nameAndLastNameSchema), valid(samplePerson)),
       (config(samplePerson, schemaPerson, nameAndLastNameSchema), valid(samplePerson)),
-      (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaInteger)), valid(samplePerson)),
+      (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaLong)), valid(samplePerson)),
       (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaString)), invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
       (config(samplePerson, schemaPersonWithLimits, nameAndLastNameSchema(schemaString)), invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
     )
@@ -123,29 +135,29 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (sampleMapAny,      schemaMapAny,                  schemaMapAny,                         strictAndLax,       valid(sampleMapAny)),
       (sampleMapStr,      schemaMapStr,                  schemaMapAny,                         strictAndLax,       valid(sampleMapStr)),
       (sampleMapPerson,   schemaMapObjPerson,            schemaMapAny,                         strictAndLax,       valid(sampleMapPerson)),
-      (sampleArrayInt,    schemaArrayInt,                schemaMapAny,                         strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, Any]'")),
+      (sampleArrayInt,    schemaArrayLong,                schemaMapAny,                         strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, Any]'")),
       (samplePerson,      schemaPerson,                  schemaMapAny,                         strictAndLax,       valid(samplePerson)),
       (sampleMapAny,      schemaMapAny,                  schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'String'")),
       (sampleMapStr,      schemaMapAny,                  schemaMapStr,                         lax,                valid(sampleMapStr)),
       (sampleMapStr,      schemaMapStr,                  schemaMapStr,                         strictAndLax,       valid(sampleMapStr)),
-      (sampleMapStr,      schemaMapStringOrInt,          schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'String | Long' expected: 'String'")),
-      (sampleMapStr,      schemaMapStringOrInt,          schemaMapStr,                         lax,                valid(sampleMapStr)),
+      (sampleMapStr,      schemaMapStringOrLong,          schemaMapStr,                         strict,             invalidTypes("path 'value' actual: 'String | Long' expected: 'String'")),
+      (sampleMapStr,      schemaMapStringOrLong,          schemaMapStr,                         lax,                valid(sampleMapStr)),
       (sampleMapPerson,   schemaMapObjPerson,            schemaMapStr,                         strictAndLax,       invalidTypes("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String'")),
       (sampleMapPerson,   schemaMapObjPersonWithLimits,  schemaMapStr,                         strictAndLax,       invalidTypes("path 'value' actual: '{age: Integer, first: String, last: String}' expected: 'String'")),
-      (sampleArrayInt,    schemaArrayInt,                schemaMapStr,                         strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String]'")),
+      (sampleArrayInt,    schemaArrayLong,                schemaMapStr,                         strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String]'")),
       (samplePerson,      schemaPerson,                  schemaMapStr,                         strictAndLax,       invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
       (samplePerson,      schemaPersonWithLimits,        schemaMapStr,                         strictAndLax,       invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
-      (sampleMapAny,      schemaMapAny,                  schemaMapStringOrInt,                 strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'String | Long'")),
-      (sampleMapInt,      schemaMapAny,                  schemaMapStringOrInt,                 lax,                valid(sampleMapInt)),
-      (sampleMapStr,      schemaMapStr,                  schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapStr)),
-      (sampleMapStr,      schemaMapStringOrInt,          schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapStr)),
-      (sampleMapInt,      schemaMapStringOrInt,          schemaMapStringOrInt,                 strictAndLax,       valid(sampleMapInt)),
-      (samplePerson,      schemaMapObjPerson,            schemaMapStringOrInt,                 strictAndLax,       invalidTypes("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String | Long'")),
-      (samplePerson,      schemaMapObjPersonWithLimits,  schemaMapStringOrInt,                 strictAndLax,       invalidTypes("path 'value' actual: '{age: Integer, first: String, last: String}' expected: 'String | Long'")),
-      (sampleArrayInt,    schemaArrayInt,                schemaMapStringOrInt,                 strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
-      (samplePerson,      schemaPerson,                  schemaMapStringOrInt,                 strictAndLax,       valid(samplePerson)),
+      (sampleMapAny,      schemaMapAny,                  schemaMapStringOrLong,                 strict,             invalidTypes("path 'value' actual: 'Unknown' expected: 'String | Long'")),
+      (sampleMapInt,      schemaMapAny,                  schemaMapStringOrLong,                 lax,                valid(sampleMapInt)),
+      (sampleMapStr,      schemaMapStr,                  schemaMapStringOrLong,                 strictAndLax,       valid(sampleMapStr)),
+      (sampleMapStr,      schemaMapStringOrLong,          schemaMapStringOrLong,                 strictAndLax,       valid(sampleMapStr)),
+      (sampleMapInt,      schemaMapStringOrLong,          schemaMapStringOrLong,                 strictAndLax,       valid(sampleMapInt)),
+      (samplePerson,      schemaMapObjPerson,            schemaMapStringOrLong,                 strictAndLax,       invalidTypes("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String | Long'")),
+      (samplePerson,      schemaMapObjPersonWithLimits,  schemaMapStringOrLong,                 strictAndLax,       invalidTypes("path 'value' actual: '{age: Integer, first: String, last: String}' expected: 'String | Long'")),
+      (sampleArrayInt,    schemaArrayLong,                schemaMapStringOrLong,                 strictAndLax,       invalidTypes("actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
+      (samplePerson,      schemaPerson,                  schemaMapStringOrLong,                 strictAndLax,       valid(samplePerson)),
       (samplePerson,      schemaPerson,                  nameAndLastNameSchema,                strictAndLax,       valid(samplePerson)),
-      (samplePerson,      schemaPerson,                  nameAndLastNameSchema(schemaInteger), strictAndLax,       valid(samplePerson)),
+      (samplePerson,      schemaPerson,                  nameAndLastNameSchema(schemaLong), strictAndLax,       valid(samplePerson)),
       (samplePerson,      schemaPerson,                  nameAndLastNameSchema(schemaString),  strictAndLax,       invalidTypes("path 'age' actual: 'Long' expected: 'String'")),
       (samplePerson,      schemaPersonWithLimits,        nameAndLastNameSchema(schemaString),  strictAndLax,       invalidTypes("path 'age' actual: 'Integer' expected: 'String'")),
     )
@@ -229,9 +241,9 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   }
 
   test("patternProperties handling") {
-    val objWithIntPatternPropsAndOpenAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger))
-    val objWithPatternPropsAndStringAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger), Some(schemaString))
-    val objWithDefinedPropsPatternPropsAndAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger), Some(schemaString), Map("definedProp" -> schemaString))
+    val objWithIntPatternPropsAndOpenAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong))
+    val objWithPatternPropsAndStringAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong), Some(schemaString))
+    val objWithDefinedPropsPatternPropsAndAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong), Some(schemaString), Map("definedProp" -> schemaString))
 
     val inputObjectIntPropValue = fromInt(1)
     val inputObjectDefinedPropValue = fromString("someString")
@@ -250,9 +262,9 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        lax,                  valid(inputObject)),
       (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithPatternPropsAndStringAdditionalSchema,   Input,                                        strict,               invalidTypes("actual: 'Map[String,Long | String]' expected: 'Map[String, String]'")),
-      (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
-      (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
-      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  Invalid(NonEmptyList(ExpressionParserCompilationError("Dynamic property access is not allowed", "my-sink", Some("Value"), "#input['foo_int']"), Nil))),
+      (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
+      (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaLong,                                  SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
+      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaLong,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  Invalid(NonEmptyList(ExpressionParserCompilationError("Dynamic property access is not allowed", "my-sink", Some("Value"), "#input['foo_int']"), Nil))),
       (inputObjectWithDefinedProp,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaString,                                   SpecialSpELElement("#input.definedProp"),     strict,               valid(inputObjectDefinedPropValue)),
     )
     //@formatter:on
@@ -290,7 +302,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
     }
 
-    val objWithNestedPatternPropertiesMapSchema = createObjSchema(true, false, createObjectSchemaWithPatternProperties(Map("_int$" -> schemaInteger)))
+    val objWithNestedPatternPropertiesMapSchema = createObjSchema(true, false, createObjectSchemaWithPatternProperties(Map("_int$" -> schemaLong)))
     val objectWithNettedPatternPropertiesMapAsRefSchema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
@@ -334,13 +346,13 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   test("should catch runtime errors at deserialization - source") {
     val testData = Table(
       ("input", "sourceSchema", "expected"),
-      (sampleObjStr, schemaObjInt, s"#/$ObjectFieldName: expected type: Integer, found: String"),
-      (JsonObj(Null), schemaObjInt, s"#/$ObjectFieldName: expected type: Integer, found: Null"),
-      (JsonObj(obj("t1" -> fromString("1"))), schemaObjMapInt, s"#/$ObjectFieldName/t1: expected type: Integer, found: String"),
-      (obj("first" -> sampleJStr), createObjSchema(true, true, schemaInteger), s"#: required key [$ObjectFieldName] not found"),
+      (sampleObjStr, schemaObjLong, s"#/$ObjectFieldName: expected type: Integer, found: String"),
+      (JsonObj(Null), schemaObjLong, s"#/$ObjectFieldName: expected type: Integer, found: Null"),
+      (JsonObj(obj("t1" -> fromString("1"))), schemaObjMapLong, s"#/$ObjectFieldName/t1: expected type: Integer, found: String"),
+      (obj("first" -> sampleJStr), createObjSchema(true, true, schemaLong), s"#: required key [$ObjectFieldName] not found"),
       (obj("t1" -> fromString("1"), ObjectFieldName -> fromString("1")), schemaObjStr, "#: extraneous key [t1] is not permitted"),
       (Json.fromString("X"), schemaEnumAB, "#: X is not a valid enum value"),
-      (obj("foo_int" -> fromString("foo")), createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger)), "#/foo_int: expected type: Integer, found: String")
+      (obj("foo_int" -> fromString("foo")), createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong)), "#/foo_int: expected type: Integer, found: String")
     )
 
     forAll(testData) { (input: Json, sourceSchema: EveritSchema, expected: String) =>
@@ -365,9 +377,9 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (config(
         obj("foo_int" -> fromString("foo")),
         schemaMapAny,
-        createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger)),
+        createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaLong)),
         validationMode = Some(ValidationMode.lax)
-      ), s"Not expected type: String for field: 'foo_int' with schema: $schemaInteger."),
+      ), s"Not expected type: String for field: 'foo_int' with schema: $schemaLong."),
     )
 
     forAll(testData) { (cfg: ScenarioConfig, expected: String) =>
@@ -387,7 +399,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     )
 
     forAll(testData) { (input: Json, expected: Validated[_, RunResult[_]]) =>
-      List(trueSchema, emptySchema).foreach { schema =>
+      List(schemaTrue, schemaEmpty).foreach { schema =>
         val results = runWithValueResults(config(input, schema, schema))
         results shouldBe expected
       }

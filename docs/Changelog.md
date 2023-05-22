@@ -2,6 +2,10 @@
 
 # Changelog
 
+1.9.3 (not released yet)
+------------------------
+* [#4313](https://github.com/TouK/nussknacker/pull/4313) Fix: sink json schema int / long to BigDecimal
+
 1.9.1 (24 Apr 2023)
 ------------------------
 * [#4243](https://github.com/TouK/nussknacker/pull/4243) Fix for: Scenario status remain "in-progress" after attempt of deploy of not validating scenario 
