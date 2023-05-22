@@ -31,6 +31,7 @@
   especially for a big number of scenarios and each with a lot of nodes.
 * [#4254](https://github.com/TouK/nussknacker/pull/4254) Add simple spel expression suggestions endpoint to BE
 * [#4299](https://github.com/TouK/nussknacker/pull/4299) `StateStatus` is identified by its name. `ProcessState` serialization uses this name as serialized state value.
+* [#4312](https://github.com/TouK/nussknacker/pull/4312) Fix for losing unsaved changes in designer after cancel/deploy
 
 1.9.1 (24 Apr 2023)
 ------------------------
