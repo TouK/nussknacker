@@ -1,3 +1,5 @@
+src/brace/
+
 .DS_Store
 
 .idea/
@@ -5,6 +7,7 @@
 
 .vscode
 
+package-lock.json
 node_modules/
 npm-debug.log
 
