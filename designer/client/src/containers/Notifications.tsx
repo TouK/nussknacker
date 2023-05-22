@@ -11,7 +11,7 @@ import {ReactComponent as TipsSuccess} from "../assets/img/icons/tipsSuccess.svg
 import {ReactComponent as TipsError} from "../assets/img/icons/tipsError.svg"
 import {v4 as uuid4} from "uuid"
 import {markBackendNotificationRead, updateBackendNotifications} from "../actions/nk/notifications"
-import {displayCurrentProcessVersion, displayProcessActivity, loadProcessState} from "../actions/nk"
+import {loadProcessVersions, displayProcessActivity, loadProcessState} from "../actions/nk"
 import {getProcessId} from "../reducers/selectors/graph"
 
 function prepareNotification(backendNotification: BackendNotification, dispatch: Dispatch<any>) {
@@ -35,7 +35,7 @@ function handleRefresh(beNotification: BackendNotification, currentScenarioName,
     beNotification.toRefresh.forEach(data => {
       switch (data) {
         case "versions":
-          dispatch(displayCurrentProcessVersion(beNotification.scenarioName))
+          dispatch(loadProcessVersions(beNotification.scenarioName))
           break
         case "activity":
           dispatch(displayProcessActivity(beNotification.scenarioName))

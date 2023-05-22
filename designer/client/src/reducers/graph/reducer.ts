@@ -90,6 +90,18 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         layout: LayoutUtils.fromMeta(processToDisplay),
       }
     }
+    case "PROCESS_VERSIONS_LOADED" : {
+      const {history, lastDeployedAction, lastAction} = action
+      return {
+        ...state,
+        fetchedProcessDetails: {
+          ...state.fetchedProcessDetails,
+          history: history,
+          lastDeployedAction: lastDeployedAction,
+          lastAction: lastAction
+        }
+      }
+    }
     case "LOADING_FAILED": {
       return {
         ...state,

@@ -28,6 +28,18 @@ export function loadProcessState(processId: ProcessId): ThunkAction {
   }))
 }
 
+export function loadProcessVersions(processId: ProcessId): ThunkAction {
+  return (dispatch) => HttpService.fetchProcessDetails(processId).then(response => {
+    console.log(response.data)
+    dispatch({
+      type: "PROCESS_VERSIONS_LOADED",
+      history: response.data.history,
+      lastDeployedAction: response.data.lastDeployedAction,
+      lastAction: response.data.lastAction
+    })
+  })
+}
+
 export function fetchTestFormParameters(processDetails: Process) {
   return (dispatch) => HttpService.getTestFormParameters(processDetails).then(
       ({data}) => {
