@@ -19,6 +19,17 @@ object PeriodicStateStatus {
     def pretty: String = ldt.format(Format)
   }
 
+  case class ScheduledStatus(nextRunAt: LocalDateTime) extends StateStatus {
+    override def name: StatusName = ScheduledStatus.name
+    override def isRunning: Boolean = true
+  }
+
+  case object ScheduledStatus {
+    val name = "SCHEDULED"
+  }
+
+  val WaitingForScheduleStatus: StateStatus = StateStatus.running("WAITING_FOR_SCHEDULE")
+
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case s: StateStatus if s.name == SimpleStateStatus.Running.name => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
     case _: ScheduledStatus => List(ProcessActionType.Cancel, ProcessActionType.Deploy)
@@ -49,17 +60,4 @@ object PeriodicStateStatus {
     ),
   )
 
-  case class ScheduledStatus(nextRunAt: LocalDateTime) extends StateStatus {
-    override def name: StatusName = ScheduledStatus.name
-    override def isRunning: Boolean = true
-  }
-
-  case object ScheduledStatus {
-    val name = "SCHEDULED"
-  }
-
-  case object WaitingForScheduleStatus extends StateStatus {
-    override def name: StatusName = "WAITING_FOR_SCHEDULE"
-    override def isRunning: Boolean = true
-  }
 }

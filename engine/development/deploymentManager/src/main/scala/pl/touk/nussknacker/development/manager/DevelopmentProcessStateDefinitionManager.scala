@@ -13,6 +13,10 @@ class DevelopmentProcessStateDefinitionManager(delegate: ProcessStateDefinitionM
 
 object DevelopmentStateStatus {
 
+  val AfterRunningStatus: StateStatus = StateStatus.running("AFTER")
+  val PreparingResourcesStatus: StateStatus = StateStatus("PREPARING")
+  val TestStatus: StateStatus = StateStatus("TEST")
+
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case DevelopmentStateStatus.AfterRunningStatus => List(ProcessActionType.Cancel)
     case DevelopmentStateStatus.PreparingResourcesStatus => List(ProcessActionType.Deploy)
@@ -39,18 +43,5 @@ object DevelopmentStateStatus {
       description = "Preparing external resources."
     ),
   )
-
-  case object AfterRunningStatus extends StateStatus {
-    override def name: StatusName = "AFTER"
-    override def isRunning: Boolean = true
-  }
-
-  case object PreparingResourcesStatus extends StateStatus {
-    override def name: StatusName = "PREPARING"
-  }
-
-  case object TestStatus extends StateStatus {
-    override def name: StatusName = "TEST"
-  }
 
 }
