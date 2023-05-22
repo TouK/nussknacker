@@ -53,7 +53,7 @@ class ComponentResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fai
       .emptySink("sink", "kafka")
 
     val processId = createProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
-    val componentId = defaultComponentIdProvider.createComponentId(TestProcessingTypes.Streaming, sourceComponentName, ComponentType.Source)
+    val componentId = defaultComponentIdProvider.createComponentId(TestProcessingTypes.Streaming, Some(sourceComponentName), ComponentType.Source)
 
     getComponentUsages(componentId, isAdmin = true) ~> check {
       status shouldBe StatusCodes.OK

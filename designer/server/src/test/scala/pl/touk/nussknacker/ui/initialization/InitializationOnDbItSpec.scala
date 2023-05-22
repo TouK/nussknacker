@@ -1,20 +1,33 @@
 package pl.touk.nussknacker.ui.initialization
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import org.scalatest.BeforeAndAfterEach
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.tags.Slow
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting}
+import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 
-class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with WithHsqlDbTesting {
+class InitializationOnHsqlItSpec extends InitializationOnDbItSpec with WithHsqlDbTesting
+
+@Slow
+class InitializationOnPostgresItSpec extends InitializationOnDbItSpec with WithPostgresDbTesting
+
+abstract class InitializationOnDbItSpec
+  extends AnyFlatSpec
+    with Matchers
+    with PatientScalaFutures
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with DbTesting {
 
   import Initialization.nussknackerUser
+
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   private val processId = "proc1"
 
@@ -26,10 +39,9 @@ class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest wit
 
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
-  private def sampleDeploymentData(processId: String) = ProcessTestData.validProcessWithId(processId)
+  private def sampleCanonicalProcess(processId: String) = ProcessTestData.validProcessWithId(processId)
 
   it should "migrate processes" in {
-
     saveSampleProcess()
 
     Initialization.init(migrations, db, "env1")
@@ -49,15 +61,6 @@ class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest wit
     Initialization.init(migrations, db, "env1")
 
     repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses).futureValue.map(d => (d.name, d.modelVersion)).toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
-
-  }
-
-  private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
-    val action = CreateProcessAction(ProcessName(processName), "RTM", sampleDeploymentData(processId), TestProcessingTypes.Streaming, subprocess, None)
-
-    dbioRunner
-      .runInTransaction(writeRepository.saveNewProcess(action))
-      .futureValue
   }
 
   it should "run initialization transactionally" in {
@@ -69,6 +72,20 @@ class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest wit
     exception.getMessage shouldBe "made to fail.."
 
     repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses).futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
+  }
+
+  private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
+    val action = CreateProcessAction(
+      ProcessName(processName),
+      "RTM",
+      sampleCanonicalProcess(processId),
+      TestProcessingTypes.Streaming,
+      subprocess,
+      forwardedUserName = None)
+
+    dbioRunner
+      .runInTransaction(writeRepository.saveNewProcess(action))
+      .futureValue
   }
 
 }

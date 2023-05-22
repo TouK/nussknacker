@@ -13,16 +13,48 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import scala.util.{Try, Using}
 import scala.jdk.CollectionConverters._
 
-trait DbTesting
-  extends BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with LazyLogging {
-  self: Suite =>
-
+trait WithDbConfig {
   val dbProfile: JdbcProfile
   val config: Config
 
   lazy val db: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", config), dbProfile)
+}
+
+trait WithHsqlDbConfig extends WithDbConfig {
+
+  override val dbProfile = HsqldbProfile
+  override lazy val config: Config = ConfigFactory.parseMap(Map(
+    "db" -> Map(
+      "user" -> "SA",
+      "password" -> "",
+      "url" -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
+      "driver" -> "org.hsqldb.jdbc.JDBCDriver"
+    ).asJava).asJava)
+}
+
+trait WithPostgresDbConfig extends WithDbConfig { self: ForAllTestContainer =>
+
+  override lazy val config: Config = ConfigFactory.parseMap(Map(
+    "db" -> Map(
+      "user" -> container.username,
+      "password" -> container.password,
+      "url" -> container.jdbcUrl,
+      "driver" -> "org.postgresql.Driver",
+      "schema" -> "testschema"
+    ).asJava).asJava)
+
+  override val dbProfile = PostgresProfile
+
+  override val container: PostgreSQLContainer = PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
+
+}
+
+trait DbTesting
+  extends WithDbConfig
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with LazyLogging {
+  self: Suite =>
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -47,38 +79,18 @@ trait DbTesting
 }
 
 trait WithHsqlDbTesting
-  extends DbTesting {
+  extends DbTesting
+    with WithHsqlDbConfig {
   self: Suite =>
-
-  override val dbProfile = HsqldbProfile
-  override lazy val config: Config = ConfigFactory.parseMap(Map(
-    "db" -> Map(
-      "user" -> "SA",
-      "password" -> "",
-      "url" -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
-      "driver" -> "org.hsqldb.jdbc.JDBCDriver"
-    ).asJava).asJava)
 }
 
 trait WithPostgresDbTesting
-  extends PatientScalaFutures
+  extends DbTesting
+    with PatientScalaFutures
     with ForAllTestContainer
-    with DbTesting {
+    with WithPostgresDbConfig {
   self: Suite =>
 
-  override lazy val config: Config = ConfigFactory.parseMap(Map(
-    "db" -> Map(
-      "user" -> container.username,
-      "password" -> container.password,
-      "url" -> container.jdbcUrl,
-      "driver" -> "org.postgresql.Driver",
-      "schema" -> "testschema"
-    ).asJava).asJava)
-  override val dbProfile = PostgresProfile
-
   implicit val pc: PatienceConfig = PatienceConfig(Span(20, Seconds), Span(1, Second))
-
-  override val container: PostgreSQLContainer = PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
-
 
 }

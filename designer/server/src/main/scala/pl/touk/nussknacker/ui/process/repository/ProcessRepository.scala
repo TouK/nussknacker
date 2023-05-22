@@ -44,11 +44,20 @@ object ProcessRepository {
   def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
     new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
 
-  case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: Option[Comment],
-                                 increaseVersionWhenJsonNotChanged: Boolean, forwardedUserName: Option[RemoteUserName])
+  case class CreateProcessAction(processName: ProcessName,
+                                 category: String,
+                                 canonicalProcess: CanonicalProcess,
+                                 processingType: ProcessingType,
+                                 isSubprocess: Boolean,
+                                 forwardedUserName: Option[RemoteUserName],
+                                )
 
-  case class CreateProcessAction(processName: ProcessName, category: String, canonicalProcess: CanonicalProcess,
-                                 processingType: ProcessingType, isSubprocess: Boolean, forwardedUserName: Option[RemoteUserName])
+  case class UpdateProcessAction(id: ProcessId,
+                                 canonicalProcess: CanonicalProcess,
+                                 comment: Option[Comment],
+                                 increaseVersionWhenJsonNotChanged: Boolean,
+                                 forwardedUserName: Option[RemoteUserName],
+                                )
 
   case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
@@ -125,8 +134,13 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
   private def updateProcessInternal(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean, userName: String)(implicit loggedUser: LoggedUser): DB[XError[ProcessUpdated]] = {
     def createProcessVersionEntityData(version: VersionId, processingType: ProcessingType) = ProcessVersionEntityData(
-      id = version, processId = processId, json = Some(canonicalProcess), createDate = Timestamp.from(now),
-      user = userName, modelVersion = modelVersion.forType(processingType)
+      id = version,
+      processId = processId,
+      json = Some(canonicalProcess),
+      createDate = Timestamp.from(now),
+      user = userName,
+      modelVersion = modelVersion.forType(processingType),
+      componentsUsages = Some(ScenarioComponentsUsagesHelper.compute(canonicalProcess)),
     )
 
     def isLastVersionContainsSameProcess(lastVersion: ProcessVersionEntityData): Boolean =
@@ -185,14 +199,14 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case Some(json) =>
           val updatedProcess = json.copy(metaData = json.metaData.copy(id = newName.value))
           val updatedProcessVersion = processVersion.copy(json = Some(updatedProcess))
-          processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
+          processVersionsTableWithScenarioJson.filter(version => version.id === processVersion.id && version.processId === process.id)
             .update(updatedProcessVersion)
         case None => DBIO.successful(())
       }
     }
 
     val updateNameInProcessJson =
-      processVersionsTable.filter(_.processId === process.id)
+      processVersionsTableWithScenarioJson.filter(_.processId === process.id)
         .join(processesTable)
         .on { case (version, process) => version.processId === process.id }
         .result.flatMap { processVersions =>
@@ -205,7 +219,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     // Comment relates to specific version (in this case last version). Last version could be extracted in one of the
     // above queries, but for sake of readability we perform separate query for this matter
     // todo: remove this comment in favour of process-audit-log
-    val addCommentAction = processVersionsTable
+    val addCommentAction = processVersionsTableWithUnit
       .filter(_.processId === process.id)
       .sortBy(_.id.desc)
       .result.headOption.flatMap {
@@ -231,7 +245,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
 
   //We use it only on tests..
   def changeVersionId(processId: ProcessId, versionId: VersionId, versionIdToUpdate: VersionId) =
-    processVersionsTableNoJson
+    processVersionsTableWithUnit
       .filter(v => v.id === versionId && v.processId === processId)
       .map(_.id)
       .update(versionIdToUpdate)

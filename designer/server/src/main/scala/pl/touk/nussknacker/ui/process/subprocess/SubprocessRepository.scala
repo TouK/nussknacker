@@ -70,8 +70,8 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
 
   private def listLatestSubprocesses(category: Option[String]) : Future[Set[SubprocessDetails]] = {
     val action = for {
-      latestProcesses <- processVersionsTableNoJson.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
-        .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
+      latestProcesses <- processVersionsTableWithUnit.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
+        .join(processVersionsTableWithScenarioJson).on { case (((processId, latestVersionDate)), processVersion) =>
         processVersion.processId === processId && processVersion.createDate === latestVersionDate
       }.join(subprocessesQuery(category))
         .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
@@ -85,7 +85,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
 
   private def fetchSubprocess(subprocessName: ProcessName, version: VersionId, category: Option[String]) : Future[SubprocessDetails] = {
     val action = for {
-      subprocessVersion <- processVersionsTable.filter(p => p.id === version)
+      subprocessVersion <- processVersionsTableWithScenarioJson.filter(p => p.id === version)
         .join(subprocessesQueryByName(subprocessName, category))
         .on { case (latestVersion, process) => latestVersion.processId === process.id }
         .result.headOption

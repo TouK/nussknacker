@@ -111,7 +111,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   }
 
   private def fetchProcessDetailsForVersion[PS: ProcessShapeFetchStrategy](processVersion: ProcessVersionEntityData, isLatestVersion: Boolean)
-                                                                          (implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
+                                                                          (implicit loggedUser: LoggedUser, ec: ExecutionContext): OptionT[DB, BaseProcessDetails[PS]] = {
     val id = processVersion.processId
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
@@ -137,7 +137,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
                                                                lastDeployedActionData: Option[(ProcessActionEntityData, Option[CommentEntityData])],
                                                                isLatestVersion: Boolean,
                                                                tags: Seq[TagsEntityData] = List.empty,
-                                                               history: Seq[ProcessVersion] = List.empty)(implicit loggedUser: LoggedUser): BaseProcessDetails[PS] = {
+                                                               history: Seq[ProcessVersion] = List.empty): BaseProcessDetails[PS] = {
     BaseProcessDetails[PS](
       id = process.name.value, //TODO: replace by Long / ProcessId
       processId = process.id, //TODO: Remove it weh we will support Long / ProcessId
@@ -157,21 +157,23 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       modifiedBy = processVersion.user,
       createdAt = process.createdAt.toInstant,
       createdBy = process.createdBy,
-      json = convertToTargetShape(processVersion.json, process),
+      json = convertToTargetShape(processVersion, process),
       history = history.toList,
       modelVersion = processVersion.modelVersion
     )
   }
 
-  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](maybeCanonical: Option[CanonicalProcess], process: ProcessEntityData): PS = {
-    (maybeCanonical, implicitly[ProcessShapeFetchStrategy[PS]]) match {
-      case (Some(canonical), ProcessShapeFetchStrategy.FetchCanonical) =>
+  private def convertToTargetShape[PS: ProcessShapeFetchStrategy](processVersion: ProcessVersionEntityData, process: ProcessEntityData): PS = {
+    (processVersion.json, processVersion.componentsUsages, implicitly[ProcessShapeFetchStrategy[PS]]) match {
+      case (Some(canonical), _, ProcessShapeFetchStrategy.FetchCanonical) =>
         canonical.asInstanceOf[PS]
-      case (Some(canonical), ProcessShapeFetchStrategy.FetchDisplayable) =>
+      case (Some(canonical), _, ProcessShapeFetchStrategy.FetchDisplayable) =>
         val displayableProcess = ProcessConverter.toDisplayableOrDie(canonical, process.processingType, process.processCategory)
         displayableProcess.asInstanceOf[PS]
-      case (_, ProcessShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
-      case (None, strategy) => throw new IllegalArgumentException(s"Missing scenario json data, it's required to convert for strategy: $strategy.")
+      case (_, _, ProcessShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
+      case (_, Some(componentsUsages), ProcessShapeFetchStrategy.FetchComponentsUsages) =>
+        componentsUsages.asInstanceOf[PS]
+      case (_, _, strategy) => throw new IllegalArgumentException(s"Missing scenario json data, it's required to convert for strategy: $strategy.")
     }
   }
 }

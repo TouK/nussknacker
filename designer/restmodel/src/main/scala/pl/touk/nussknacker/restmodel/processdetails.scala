@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessStat
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId, ProcessId => ApiProcessId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 
@@ -119,6 +120,7 @@ object processdetails {
     implicit case object FetchCanonical extends ProcessShapeFetchStrategy[CanonicalProcess]
     // In fact Unit won't be returned inside shape and Nothing would be more verbose but it won't help in compilation because Nothing <: DisplayableProcess
     implicit case object NotFetch extends ProcessShapeFetchStrategy[Unit]
+    implicit case object FetchComponentsUsages extends ProcessShapeFetchStrategy[ScenarioComponentsUsages]
   }
 
   type ProcessDetails = BaseProcessDetails[DisplayableProcess]

@@ -25,7 +25,7 @@ private[component] object ComponentsValidator {
     componentObjects
       .templates
       .map { case (groupName, com) =>
-        val componentId = componentIdProvider.createComponentId(processingType, com.label, com.`type`)
+        val componentId = componentIdProvider.createComponentId(processingType, Some(com.label), com.`type`)
         val icon = getComponentIcon(componentObjects.config, com)
 
         ComponentValidationData(

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService
 
 //TODO: It is work around for components duplication across multiple scenario types, until we figure how to do deduplication.
 trait ComponentIdProvider {
-  def createComponentId(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId
+  def createComponentId(processingType: ProcessingType, name: Option[String], componentType: ComponentType): ComponentId
   def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId]
 }
 
@@ -34,7 +34,23 @@ object DefaultComponentIdProvider extends LazyLogging {
 }
 
 class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig]) extends ComponentIdProvider {
-  override def createComponentId(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId = {
+
+  override def createComponentId(processingType: ProcessingType, name: Option[ProcessingType], componentType: ComponentType): ComponentId = {
+    name match {
+      case Some(value) => createComponentId(processingType, value, componentType)
+      case None => ComponentId.forBaseComponent(componentType)
+    }
+  }
+
+  override def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId] =
+    ComponentUtil
+      .extractComponentType(node)
+      .map(componentType => node match {
+        case n: WithComponent => createComponentId(processingType, n.componentId, componentType)
+        case _ => ComponentId.forBaseComponent(componentType)
+      })
+
+  private def createComponentId(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId = {
     val defaultComponentId = ComponentId.default(processingType, name, componentType)
     val overriddenComponentId = getOverriddenComponentId(processingType, name, defaultComponentId)
 
@@ -45,14 +61,6 @@ class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig
 
     overriddenComponentId
   }
-
-  override def nodeToComponentId(processingType: ProcessingType, node: NodeData): Option[ComponentId] =
-    ComponentUtil
-      .fromNodeData(node)
-      .map(componentType => node match {
-        case n: WithComponent => createComponentId(processingType, n.componentId, componentType)
-        case _ => ComponentId.forBaseComponent(componentType)
-      })
 
   private def getOverriddenComponentId(processingType: ProcessingType, componentName: String, defaultComponentId: ComponentId): ComponentId = {
     def getComponentId(name: String): Option[ComponentId] = configs.get(processingType).flatMap(_.get(name)).flatMap(_.componentId)

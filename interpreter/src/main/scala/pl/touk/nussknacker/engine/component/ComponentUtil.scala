@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.graph.node._
 
 object ComponentUtil {
 
-  def fromNodeData(nodeData: NodeData): Option[component.ComponentType.Value] = nodeData match {
+  def extractComponentType(nodeData: NodeData): Option[component.ComponentType.Value] = nodeData match {
     case _: Source => Some(ComponentType.Source)
     case _: Sink => Some(ComponentType.Sink)
     case _: Filter => Some(ComponentType.Filter)
@@ -21,6 +21,13 @@ object ComponentUtil {
     case _: SubprocessInputDefinition => Some(ComponentType.FragmentInput)
     case _: SubprocessOutputDefinition => Some(ComponentType.FragmentOutput)
     case _ => None
+  }
+
+  def extractComponentName(nodeData: NodeData): Option[String] = {
+    nodeData match {
+      case withComponent: WithComponent => Some(withComponent.componentId)
+      case _ => None
+    }
   }
 
 }

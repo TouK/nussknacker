@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npm run commit --if-present --prefix designer/client
+npm run commit --if-present --prefix designer/submodules
