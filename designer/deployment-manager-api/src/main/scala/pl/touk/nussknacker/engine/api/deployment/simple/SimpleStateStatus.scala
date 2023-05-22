@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
+import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus.defaultActions
-import pl.touk.nussknacker.engine.api.deployment.{AllowDeployStateStatus, CustomStateStatus, DuringDeployStateStatus, FinishedStateStatus, NotEstablishedStateStatus, ProcessActionType, RunningStateStatus, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, StateDefinitionDetails, StateStatus}
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.net.URI
@@ -11,20 +12,22 @@ import java.net.URI
 object SimpleStateStatus {
 
   // Represents general problem.
-  case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions) extends CustomStateStatus(ProblemStateStatus.name) {
+  case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions) extends StateStatus {
+    override def name: StatusName = ProblemStateStatus.name
     override def isFailed: Boolean = true
   }
-  case object ProblemStateStatus {
+
+  object ProblemStateStatus {
     val name: String = "PROBLEM"
     val icon: URI = URI.create("/assets/states/error.svg")
     val defaultDescription = "There are some problems with scenario."
-    val defaultActions = List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+    val defaultActions: List[deployment.ProcessActionType.Value] = List(ProcessActionType.Deploy, ProcessActionType.Cancel)
 
     // Problem factory methods
 
-    def failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
+    val failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
 
-    def failedToGet: ProblemStateStatus =
+    val failedToGet: ProblemStateStatus =
       ProblemStateStatus(s"Failed to get a state of the scenario.")
 
     def shouldBeRunning(deployedVersionId: VersionId, user: String): ProblemStateStatus =
@@ -42,21 +45,21 @@ object SimpleStateStatus {
     def missingDeployedVersion(exceptedVersionId: VersionId, user: String): ProblemStateStatus =
       ProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
 
-    def processWithoutAction: ProblemStateStatus =
+    val processWithoutAction: ProblemStateStatus =
       ProblemStateStatus("Scenario state error - no actions found.")
 
-    def multipleJobsRunning: ProblemStateStatus =
+    val multipleJobsRunning: ProblemStateStatus =
       ProblemStateStatus("More than one deployment is running.", List(ProcessActionType.Cancel))
 
   }
 
-  val NotDeployed: StateStatus = AllowDeployStateStatus("NOT_DEPLOYED")
-  val DuringDeploy: StateStatus = DuringDeployStateStatus("DURING_DEPLOY")
-  val Running: StateStatus = RunningStateStatus("RUNNING")
-  val Finished: StateStatus = FinishedStateStatus("FINISHED")
-  val Restarting: StateStatus = NotEstablishedStateStatus("RESTARTING")
-  val DuringCancel: StateStatus = NotEstablishedStateStatus("DURING_CANCEL")
-  val Canceled: StateStatus = AllowDeployStateStatus("CANCELED")
+  val NotDeployed: StateStatus = StateStatus("NOT_DEPLOYED")
+  val DuringDeploy: StateStatus = StateStatus.duringDeploy("DURING_DEPLOY")
+  val Running: StateStatus = StateStatus.running("RUNNING")
+  val Finished: StateStatus = StateStatus.finished("FINISHED")
+  val Restarting: StateStatus = StateStatus("RESTARTING")
+  val DuringCancel: StateStatus = StateStatus("DURING_CANCEL")
+  val Canceled: StateStatus = StateStatus("CANCELED")
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Archive)
@@ -65,6 +68,7 @@ object SimpleStateStatus {
     case SimpleStateStatus.Canceled => List(ProcessActionType.Deploy, ProcessActionType.Archive)
     case SimpleStateStatus.Restarting => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     case SimpleStateStatus.Finished => List(ProcessActionType.Deploy, ProcessActionType.Archive)
+    case SimpleStateStatus.DuringCancel => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available
     case SimpleStateStatus.ProblemStateStatus(_, allowedActions) => allowedActions

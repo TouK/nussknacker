@@ -89,13 +89,36 @@ object ProcessActionState extends Enumeration {
 
 object StateStatus {
   type StatusName = String
-  implicit val configuration: Configuration = Configuration
-    .default
-    .withDefaults
-    .withDiscriminator("type")
+
+  // StateStatus has to have Decoder defined because it is decoded along with ProcessState in the migration process
+  // (see StandardRemoteEnvironment class).
+  // In all cases (this one and for FE purposes) only info about the status name is essential.
+  implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeString.contramap(_.name)
+  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.map(statusName => new StateStatus {
+    override def name: StatusName = statusName
+  })
+
+  // Temporary methods to simplify status creation
+  def apply(statusName: StatusName): StateStatus = new StateStatus {
+    override def name: StatusName = statusName
+  }
+  def duringDeploy(statusName: StatusName): StateStatus = new StateStatus {
+    override def name: StatusName = statusName
+    override def isDuringDeploy: Boolean = true
+  }
+
+  def running(statusName: StatusName): StateStatus = new StateStatus {
+    override def name: StatusName = statusName
+    override def isRunning: Boolean = true
+  }
+
+  def finished(statusName: StatusName): StateStatus = new StateStatus {
+    override def name: StatusName = statusName
+    override def isFinished: Boolean = true
+  }
 }
 
-@ConfiguredJsonCodec sealed trait StateStatus {
+trait StateStatus {
   //used for filtering processes (e.g. shouldBeRunning)
   def isDuringDeploy: Boolean = false
   //used for handling finished
@@ -108,27 +131,6 @@ object StateStatus {
   def name: StatusName
 
 }
-
-final case class AllowDeployStateStatus(name: StatusName) extends StateStatus
-
-final case class NotEstablishedStateStatus(name: StatusName) extends StateStatus
-
-final case class DuringDeployStateStatus(name: StatusName) extends StateStatus {
-  override def isDuringDeploy: Boolean = true
-}
-
-final case class FinishedStateStatus(name: StatusName) extends StateStatus {
-  override def isFinished: Boolean = true
-}
-
-final case class RunningStateStatus(name: StatusName) extends StateStatus {
-  override def isRunning: Boolean = true
-}
-
-// This status class is a walk around for fact that StateStatus is encoded and decoded. It causes that there is no easy option
-// to add own status with some specific fields without passing Encoders and Decoders to many places in application.
-// TODO: we should find places where StateStatuses are encoded and decoded and replace them with some DTOs for this purpose
-class CustomStateStatus(val name: StatusName) extends StateStatus
 
 /**
   * It is used to specify:

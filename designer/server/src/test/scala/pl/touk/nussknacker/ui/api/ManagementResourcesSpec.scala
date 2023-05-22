@@ -242,7 +242,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
         status shouldBe StatusCodes.Conflict
       }
       getProcess(ProcessName(invalidScenario.id)) ~> check {
-        decodeDetails.state.value.status shouldEqual SimpleStateStatus.NotDeployed
+        decodeDetails.state.value.status.name shouldEqual SimpleStateStatus.NotDeployed.name
       }
     }
   }

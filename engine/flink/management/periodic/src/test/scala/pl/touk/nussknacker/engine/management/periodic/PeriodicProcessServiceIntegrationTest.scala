@@ -10,8 +10,8 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{FinishedStateStatus, RunningStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -113,7 +113,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
     processDeployed.state shouldBe PeriodicProcessDeploymentState(Some(LocalDateTime.now(fixedClock(timeToTriggerCheck))), None, PeriodicProcessDeploymentStatus.Deployed)
     processDeployed.runAt shouldBe localTime(expectedScheduleTime)
 
-    f.delegateDeploymentManagerStub.setStateStatus(FinishedStateStatus("finished"))
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
     service.handleFinished.futureValue
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
@@ -207,12 +207,12 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
     toDeploy should have length 2
 
     service.deploy(toDeploy.head)
-    f.delegateDeploymentManagerStub.setStateStatus(RunningStateStatus("running"))
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running)
 
     val toDeployAfterDeploy = service.findToBeDeployed.futureValue
     toDeployAfterDeploy should have length 0
 
-    f.delegateDeploymentManagerStub.setStateStatus(FinishedStateStatus("finished"))
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
     service.handleFinished.futureValue
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
@@ -291,7 +291,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
     val toDeploy = service.findToBeDeployed.futureValue
     toDeploy should have length 1
     service.deploy(toDeploy.head).futureValue
-    f.delegateDeploymentManagerStub.setStateStatus(FinishedStateStatus("running"))
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
 
     tryWithFailedListener {
       () => service.deactivate(processName)
