@@ -51,30 +51,13 @@ object SimpleStateStatus {
 
   }
 
-  val NotDeployed: StateStatus = new StateStatus {
-    override def name: StatusName = "NOT_DEPLOYED"
-  }
-  val DuringDeploy: StateStatus = new StateStatus {
-    override def name: StatusName = "DURING_DEPLOY"
-    override def isDuringDeploy: Boolean = true
-  }
-  val Running: StateStatus = new StateStatus {
-    override def name: StatusName = "RUNNING"
-    override def isRunning: Boolean = true
-  }
-  val Finished: StateStatus = new StateStatus {
-    override def name: StatusName = "FINISHED"
-    override def isFinished: Boolean = true
-  }
-  val Restarting: StateStatus = new StateStatus {
-    override def name: StatusName = "RESTARTING"
-  }
-  val DuringCancel: StateStatus = new StateStatus {
-    override def name: StatusName = "DURING_CANCEL"
-  }
-  val Canceled: StateStatus = new StateStatus {
-    override def name: StatusName = "CANCELED"
-  }
+  val NotDeployed: StateStatus = StateStatus("NOT_DEPLOYED")
+  val DuringDeploy: StateStatus = StateStatus.duringDeploy("DURING_DEPLOY")
+  val Running: StateStatus = StateStatus.running("RUNNING")
+  val Finished: StateStatus = StateStatus.finished("FINISHED")
+  val Restarting: StateStatus = StateStatus("RESTARTING")
+  val DuringCancel: StateStatus = StateStatus("DURING_CANCEL")
+  val Canceled: StateStatus = StateStatus("CANCELED")
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Archive)

@@ -95,6 +95,25 @@ object StateStatus {
   implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.map(statusName => new StateStatus {
     override def name: StatusName = statusName
   })
+
+  // Temporary methods to simplify status creation
+  def apply(statusName: StatusName): StateStatus = new StateStatus {
+    override def name: StatusName = statusName
+  }
+  def duringDeploy(statusName: StatusName): StateStatus = new StateStatus {
+    override def name: StatusName = statusName
+    override def isDuringDeploy: Boolean = true
+  }
+
+  def running(statusName: StatusName): StateStatus = new StateStatus {
+    override def name: StatusName = statusName
+    override def isRunning: Boolean = true
+  }
+
+  def finished(statusName: StatusName): StateStatus = new StateStatus {
+    override def name: StatusName = statusName
+    override def isFinished: Boolean = true
+  }
 }
 
 trait StateStatus {
