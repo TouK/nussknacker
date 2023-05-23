@@ -3,13 +3,13 @@ package pl.touk.nussknacker.engine.util.functions
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
-import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.text.ParseException
@@ -30,18 +30,11 @@ trait BaseSpelSpec {
 
   private val parser = SpelExpressionParser.default(
     getClass.getClassLoader,
+    ProcessDefinitionBuilder.empty.expressionConfig,
     new SimpleDictRegistry(Map.empty),
     enableSpelForceCompile = false,
-    strictTypeChecking = true,
-    List.empty,
     SpelExpressionParser.Standard,
-    strictMethodsChecking = true,
-    staticMethodInvocationsChecking = true,
     typeDefinitions,
-    methodExecutionForUnknownAllowed = false,
-    dynamicPropertyAccessAllowed = false,
-    SpelExpressionExcludeList.default,
-    DefaultSpelConversionsProvider.getConversionService
   )
 
   private lazy val typeDefinitions = TypeDefinitionSet.forClasses(
