@@ -4,6 +4,7 @@
 
 1.10.0 (not released yet)
 -------------------------
+* [#4315](https://github.com/TouK/nussknacker/pull/4315) Add support for test with parameters for kafka sources - FlinkKafkaSource / LiteKafkaSource.
 * [#4261](https://github.com/TouK/nussknacker/pull/4261) Add TestWithParametersSupport support for flink engine
 * [#4294](https://github.com/TouK/nussknacker/pull/4294) Allow to pass username while migrating scenario to secondary environment.
 * [#4230](https://github.com/TouK/nussknacker/pull/4230) Extend TestInfoProvider with getTestParameters to test scenarios based on window with generated fields. 
