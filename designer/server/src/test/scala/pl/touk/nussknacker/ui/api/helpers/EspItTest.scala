@@ -415,7 +415,7 @@ object ProcessJson extends OptionValues {
       process.hcursor.downField("processId").as[Long].toOption.value,
       lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
       lastAction.map(_.hcursor.downField("action").as[String].toOption.value),
-      process.hcursor.downField("state").downField("status").as[String].toOption.value,  // StateStatus is temporarily serialized as string
+      process.hcursor.downField("state").downField("status").downField("name").as[String].toOption.value,
       process.hcursor.downField("state").downField("icon").as[String].toOption.map(URI.create).value,
       process.hcursor.downField("state").downField("tooltip").as[String].toOption.value,
       process.hcursor.downField("state").downField("description").as[String].toOption.value,
