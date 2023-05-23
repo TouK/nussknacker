@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import ModelData._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -33,8 +33,7 @@ trait DeploymentManager extends AutoCloseable {
   def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]]
 
   /**
-    * Gets status from engine and resolves inconsistency with lastAction.
-    * ObsoleteStateDetector.handleObsoleteStatus
+    * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
   def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]]
 

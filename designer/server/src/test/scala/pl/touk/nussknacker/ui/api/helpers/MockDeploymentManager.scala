@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import com.google.common.collect.LinkedHashMultimap
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
@@ -47,7 +48,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
 
   override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] = {
     getFreshProcessState(name)
-      .map(processStateOpt => Option(InconsistentStateDetector.resolve(processStateOpt, lastAction)))
+      .map(processStateOpt => Some(InconsistentStateDetector.resolve(processStateOpt, lastAction)))
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,

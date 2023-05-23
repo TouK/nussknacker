@@ -1,12 +1,12 @@
-package pl.touk.nussknacker.engine.api.deployment
+package pl.touk.nussknacker.engine.api.deployment.inconsistency
 
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 
 object InconsistentStateDetector {
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
-  //TODO: In future we should move this functionality to DeploymentManager.
   def resolve(processState: Option[ProcessState], lastStateAction: Option[ProcessAction]): ProcessState =
     (processState, lastStateAction) match {
       case (Some(state), _) if state.status.isFailed => state
@@ -19,7 +19,6 @@ object InconsistentStateDetector {
       case (None, None) => SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
     }
 
-  //TODO: In future we should move this functionality to DeploymentManager.
   private def handleState(state: ProcessState, lastStateAction: Option[ProcessAction]): ProcessState =
     state.status match {
       case SimpleStateStatus.NotDeployed if lastStateAction.isEmpty =>
@@ -30,7 +29,6 @@ object InconsistentStateDetector {
     }
 
   //Thise method handles some corner cases for canceled process -> with last action = Canceled
-  //TODO: In future we should move this functionality to DeploymentManager.
   private def handleCanceledState(processState: Option[ProcessState]): ProcessState =
     processState match {
       case Some(state) => state.status match {
@@ -46,7 +44,6 @@ object InconsistentStateDetector {
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
-  //TODO: In future we should move this functionality to DeploymentManager.
   private def handleFollowingDeployState(state: ProcessState, lastStateAction: Option[ProcessAction]): ProcessState =
     lastStateAction match {
       case Some(action) if !action.isDeployed =>
@@ -58,7 +55,6 @@ object InconsistentStateDetector {
     }
 
   //This method handles some corner cases for deployed action mismatch state version
-  //TODO: In future we should move this functionality to DeploymentManager.
   private def handleMismatchDeployedStateLastAction(processState: Option[ProcessState], action: ProcessAction): ProcessState =
     processState match {
       case Some(state) =>

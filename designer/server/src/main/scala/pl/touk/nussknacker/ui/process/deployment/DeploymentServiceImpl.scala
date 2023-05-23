@@ -279,7 +279,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   private def checkStateInDeploymentManager(deploymentManager: DeploymentManager, processDetails: BaseProcessDetails[_])
                                            (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     for {
-      state <- DBIOAction.from(getStateWithResolvedInconsistency(deploymentManager, processDetails.idWithName, processDetails.lastStateAction))
+      state <- DBIOAction.from(getStateFromDeploymentManager(deploymentManager, processDetails.idWithName, processDetails.lastStateAction))
     } yield {
       val finalState = state.value.getOrElse(SimpleProcessStateDefinitionManager.errorFailedToGet)
       logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${processDetails.lastAction.map(_.action)})")
@@ -294,24 +294,24 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }
   }
 
-  private def getStateWithResolvedInconsistency(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastAction: Option[ProcessAction])
-                                               (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+  private def getStateFromDeploymentManager(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastAction: Option[ProcessAction])
+                                           (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
 
-    val resolvedState = deploymentManager.getProcessState(processIdWithName.name, lastAction).recover {
+    val state = deploymentManager.getProcessState(processIdWithName.name, lastAction).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
         failedToGetProcessState
     }
 
     scenarioStateTimeout.map { timeout =>
-      resolvedState.withTimeout(timeout, timeoutResult = failedToGetProcessState).map {
+      state.withTimeout(timeout, timeoutResult = failedToGetProcessState).map {
         case CompletedNormally(value) =>
           value
         case CompletedByTimeout(value) =>
           logger.warn(s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name}")
           value
       }
-    }.getOrElse(resolvedState)
+    }.getOrElse(state)
   }
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
