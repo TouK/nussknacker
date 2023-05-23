@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.graph.node.{Enricher, NodeData}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -39,10 +38,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
 
   private val validation = ProcessValidation(typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators), new SubprocessResolver(subprocessRepository))
   private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), validation)
-
-  private implicit val typingResultDecoder: Decoder[TypingResult]
-  = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
-  private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
+  private implicit val typingResultDecoder: Decoder[TypingResult] = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
   private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
   private val processProperties = ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "2", "environment" -> "test"))))
 

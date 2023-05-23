@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.restmodel
 
-import io.circe.Decoder
+import io.circe.Decoder.Result
+import io.circe.{Decoder, HCursor}
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator, SimpleParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
+import pl.touk.nussknacker.engine.api.typed.{TypingType, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.graph.node.NodeData
@@ -86,7 +88,22 @@ package object definition {
                                                    label: Option[String])
 
   object UIParameter {
-    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
+    @JsonCodec(decodeOnly = true) case class Expr(language: String, expression: String)
+
+    implicit def decoder(implicit typing: Decoder[TypingResult]): Decoder[UIParameter] = (c: HCursor) => for {
+      name <- c.downField("name").as[String]
+      typ <- c.downField("typ").as[TypingResult]
+      editor <- c.downField("editor").as[ParameterEditor]
+      validators <- c.downField("validators").as[List[ParameterValidator]]
+      defaultValue <- c.downField("defaultValue").as[Expr] match {
+        case Left(_) => c.downField("defaultValue").as[String]
+        case Right(expr) => Right(expr.expression)
+      }
+      additionalVariables <- c.downField("additionalVariables").as[Map[String, TypingResult]]
+      variablesToHide <- c.downField("variablesToHide").as[Set[String]]
+      branchParam <- c.downField("branchParam").as[Boolean]
+    } yield UIParameter(name, typ, editor, validators, defaultValue, additionalVariables, variablesToHide, branchParam)
+
   }
 
   object UICustomAction {
