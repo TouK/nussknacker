@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.source
 
+import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
@@ -7,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka._
@@ -159,6 +161,12 @@ object KafkaSourceFactory {
 
   case class KafkaSourceFactoryState[K, V](contextInitializer: ContextInitializer[ConsumerRecord[K, V]])
 
+  case class KafkaTestParametersInfo(uiParameters: List[Parameter], createTestRecord: Any => TestRecord)
+
+  object KafkaTestParametersInfo {
+    def empty: KafkaTestParametersInfo = KafkaTestParametersInfo(Nil, _ => TestRecord(Json.Null))
+  }
+
   trait KafkaSourceImplFactory[K, V] {
 
     def createSource(params: Map[String, Any],
@@ -170,7 +178,6 @@ object KafkaSourceFactory {
                      formatter: RecordFormatter,
                      contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
                      testParametersInfo: KafkaTestParametersInfo): Source
-
   }
 
 }

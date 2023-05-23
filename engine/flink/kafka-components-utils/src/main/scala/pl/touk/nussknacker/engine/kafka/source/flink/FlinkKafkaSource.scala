@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestamp
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.{FlinkDeserializationSchemaWrapper, wrapToFlinkDeserializationSchema}
-import pl.touk.nussknacker.engine.kafka.source.KafkaTestParametersInfo
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
@@ -91,9 +91,7 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
     override def parametersToTestData(params: Map[String, AnyRef]): T = {
       val flatParams = TestingParametersSupport.unflattenParameters(params)
-      val formattedJson = testParametersInfo.formatMessage(flatParams)
-      val jsonTestData = KafkaTestParametersInfo.wrapWithConsumerData(formattedJson, testParametersInfo.schemaId, topics.head)
-      deserializeTestData(formatter.parseRecord(topics.head, TestRecord(jsonTestData)))
+      deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams)))
     }
 
 }

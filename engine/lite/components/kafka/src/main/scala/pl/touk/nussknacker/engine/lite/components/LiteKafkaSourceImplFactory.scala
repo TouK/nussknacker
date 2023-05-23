@@ -8,8 +8,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.source._
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter, RecordFormatterBaseTestDataGenerator}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
@@ -64,9 +63,7 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
 
   override def parametersToTestData(params: Map[String, AnyRef]): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val flatParams = TestingParametersSupport.unflattenParameters(params)
-    val formattedJson = testParametersInfo.formatMessage(flatParams)
-    val jsonTestData = KafkaTestParametersInfo.wrapWithConsumerData(formattedJson, testParametersInfo.schemaId, topics.head)
-    formatter.parseRecord(topics.head, TestRecord(jsonTestData))
+    formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams))
   }
 
 }

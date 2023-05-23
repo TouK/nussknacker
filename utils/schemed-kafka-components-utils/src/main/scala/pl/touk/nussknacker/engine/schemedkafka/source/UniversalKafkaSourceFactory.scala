@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.source
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.Valid
 import io.circe.Json
+import io.circe.syntax._
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.json.JsonSchema
@@ -13,6 +14,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -20,15 +22,17 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.json.JsonSinkValueParameter
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.SinkValueParamName
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
+import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.source._
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{AvroSchemaSupport, JsonPayloadRecordFormatterSupport, UnsupportedSchemaType}
 import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
-import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
+import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 
 import scala.reflect.ClassTag
 
@@ -133,30 +137,31 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
     // prepare KafkaDeserializationSchema based on given key and value schema (without schema evolution - we want format test-data exactly the same way, it was sent to kafka)
     val formatterSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
     val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
-
     implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema,
-      recordFormatter, kafkaContextInitializer, getParameters(valueSchemaUsedInRuntime))
+      recordFormatter, kafkaContextInitializer, getParameters(valueSchemaUsedInRuntime, preparedTopic.original))
   }
 
-  private def getParameters(runtimeSchema: Option[RuntimeSchemaData[ParsedSchema]])
+  private def getParameters(runtimeSchema: Option[RuntimeSchemaData[ParsedSchema]], topic: String)
                            (implicit nodeId: NodeId): KafkaTestParametersInfo = {
     Validated.fromOption(runtimeSchema, NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None)))
-      .andThen(handleSchemaType)
+      .andThen(handleSchemaType(_, topic))
       .valueOr(e => throw new RuntimeException(e.toList.mkString("")))
   }
 
-  private def handleSchemaType(determinedSchema: RuntimeSchemaData[ParsedSchema])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, KafkaTestParametersInfo] = {
+  private def handleSchemaType(determinedSchema: RuntimeSchemaData[ParsedSchema], topic: String)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, KafkaTestParametersInfo] = {
     (determinedSchema.schema match {
       case s: AvroSchema => AvroSinkValueParameter(s.rawSchema()).map(_.toParameters)
       case s: JsonSchema => JsonSinkValueParameter(s.rawSchema(), SinkValueParamName, ValidationMode.lax)(nodeId).map(_.toParameters)
       case s => Validated.invalidNel(FatalUnknownError(s"Avro or Json schema is required, but got ${s.schemaType()}"))
-    }).map { params =>
-      val schemaIdAsString = determinedSchema.schemaIdOpt.map {
-        case IntSchemaId(value) => value.toString
-        case StringSchemaId(value) => value
-      }
-      KafkaTestParametersInfo(params, schemaIdAsString, prepareMessageFormatter(determinedSchema.schema))
-    }
+    }).map { params => KafkaTestParametersInfo(params, prepareTestRecord(determinedSchema, topic)) }
+  }
+
+  private def prepareTestRecord(schema: RuntimeSchemaData[ParsedSchema], topic: String): Any => TestRecord = any => {
+    val json = prepareMessageFormatter(schema.schema)(any)
+    val serializedConsumerRecord = SerializableConsumerRecord[Json, Json](None, json, Some(topic), None, None, None, None, None, None)
+    TestRecord(
+      SchemaBasedSerializableConsumerRecord[Json, Json](None, schema.schemaIdOpt, serializedConsumerRecord).asJson
+    )
   }
 
   private def prepareMessageFormatter(schema: ParsedSchema): Any => Json = {
