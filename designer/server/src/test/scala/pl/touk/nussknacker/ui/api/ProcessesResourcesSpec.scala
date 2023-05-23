@@ -692,7 +692,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
 
     val modifiedParallelism = 123
-    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)), subprocessVersions = Map.empty)
+    val props = ProcessProperties(StreamMetaData(Some(modifiedParallelism)))
     Put(s"/processes/$TestCat/${processName.value}", posting.toEntity(props)) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }

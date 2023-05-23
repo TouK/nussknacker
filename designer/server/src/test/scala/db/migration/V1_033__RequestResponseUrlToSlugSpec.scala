@@ -18,7 +18,7 @@ class V1_033__RequestResponseUrlToSlugSpec extends AnyFunSuite with Matchers {
       |    "id": "$id",
       |    "typeSpecificData": $typeSpecificData,
       |    "additionalFields" : null,
-      |    "subprocessVersions": {}
+      |    "subprocessVersions": null
       |  },
       |  "nodes": [],
       |  "additionalBranches": []

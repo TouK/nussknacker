@@ -71,7 +71,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   }
 
   test("be able to handle different node order") {
-    val process = DisplayableProcess("t1", ProcessProperties(metaData, subprocessVersions = Map.empty),
+    val process = DisplayableProcess("t1", ProcessProperties(metaData),
       List(
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
@@ -92,7 +92,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     )) { unexpectedEnd =>
       val process = ValidatedDisplayableProcess(
         "t1",
-        ProcessProperties(metaData, subprocessVersions = Map.empty),
+        ProcessProperties(metaData),
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
         List(Edge("s", "e", None)),
         TestProcessingTypes.Streaming,
@@ -116,7 +116,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     val meta = MetaData("process", metaData, additionalFields = Some(ProcessAdditionalFields(None, Map.empty)))
     val process = ValidatedDisplayableProcess(
       meta.id,
-      ProcessProperties(meta.typeSpecificData, subprocessVersions = Map.empty),
+      ProcessProperties(meta.typeSpecificData),
       List(Source("s", SourceRef("sourceRef", List())), Variable("v", "test", Expression("spel", "''")), Filter("e", Expression("spel", "''"))),
       List(Edge("s", "v", None), Edge("v", "e", None)),
       TestProcessingTypes.Streaming,
@@ -143,7 +143,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   test("convert process with branches") {
 
-    val process = DisplayableProcess("t1", ProcessProperties(metaData, subprocessVersions = Map.empty),
+    val process = DisplayableProcess("t1", ProcessProperties(metaData),
       List(
         Processor("e", ServiceRef("ref", List.empty)),
         Join("j1", Some("out1"), "joinRef", List.empty, List(BranchParameters("s1", List()))),

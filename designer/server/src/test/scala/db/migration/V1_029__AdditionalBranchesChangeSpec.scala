@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
 
   private lazy val expectedJson = {
-    val rawJsonString = """{"metaData":{"id":"empty-2","isSubprocess":false,"subprocessVersions":{}},"additionalBranches":[]}"""
+    val rawJsonString = """{"metaData":{"id":"empty-2","isSubprocess":false,"subprocessVersions":null},"additionalBranches":[]}"""
     Some(CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string."))
   }
 
@@ -19,7 +19,7 @@ class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
         |  "metaData": {
         |    "id": "empty-2",
         |    "isSubprocess": false,
-        |    "subprocessVersions": {}
+        |    "subprocessVersions": null
         |  },
         |  "additionalBranches": null
         |}
@@ -38,7 +38,7 @@ class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
         |  "metaData": {
         |    "id": "empty-2",
         |    "isSubprocess": false,
-        |    "subprocessVersions": {}
+        |    "subprocessVersions": null
         |  }
         |}
         |""".stripMargin
@@ -56,7 +56,7 @@ class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
         |  "metaData": {
         |    "id": "empty-2",
         |    "isSubprocess": false,
-        |    "subprocessVersions": {}
+        |    "subprocessVersions": null
         |  },
         |  "additionalBranches": ["test"]
         |}

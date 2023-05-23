@@ -51,7 +51,7 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 @JsonCodec(decodeOnly = true)
 case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
                              additionalFields: Option[ProcessAdditionalFields] = None,
-                             subprocessVersions: Map[String, Long] = Map.empty) { //TODO: field subprocessVersions is deprecate - to remove
+                             subprocessVersions: Option[Map[String, Long]] = None) { //TODO: field subprocessVersions is deprecate - to remove
 
   def toMetaData(id: String): MetaData = MetaData(
     id = id,

@@ -164,7 +164,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
   private def newDisplayableProcess(id: String, nodes: List[NodeData], edges: List[Edge]): DisplayableProcess = {
     DisplayableProcess(
       id = id,
-      properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), None, subprocessVersions = Map.empty),
+      properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), None),
       nodes = nodes,
       edges = edges,
       processingType = TestProcessingTypes.Streaming,

@@ -10,8 +10,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 class SubprocessResolver(subprocessRepository: SubprocessRepository) {
 
   def resolveSubprocesses(process: CanonicalProcess, category: Category): ValidatedNel[ProcessCompilationError, CanonicalProcess] = {
-    val versions = process.metaData.subprocessVersions.mapValuesNow(VersionId(_))
-    val subprocesses = subprocessRepository.loadSubprocesses(versions, category).map(_.canonical)
+    val subprocesses = subprocessRepository.loadSubprocesses(Map.empty, category).map(_.canonical)
     pl.touk.nussknacker.engine.compile.SubprocessResolver(subprocesses).resolve(process)
   }
 

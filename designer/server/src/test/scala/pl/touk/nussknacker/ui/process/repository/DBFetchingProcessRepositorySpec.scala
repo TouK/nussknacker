@@ -75,14 +75,12 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(ScenarioBuilder
       .streaming(oldName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
     saveProcess(ScenarioBuilder
       .streaming(oldName2.value)
-      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -115,7 +113,6 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(ScenarioBuilder
       .streaming(oldName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
@@ -139,14 +136,12 @@ class DBFetchingProcessRepositorySpec
 
     saveProcess(ScenarioBuilder
       .streaming(oldName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
     )
     saveProcess(ScenarioBuilder
       .streaming(existingName.value)
-      .subprocessVersions(Map("sub1" -> 3L))
       .source("s", "")
       .emptySink("s2", ""),
       Instant.now()
