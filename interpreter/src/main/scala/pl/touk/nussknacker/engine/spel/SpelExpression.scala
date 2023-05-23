@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, Su
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
@@ -208,35 +209,18 @@ object SpelExpressionParser extends LazyLogging {
 
   //caching?
   def default(classLoader: ClassLoader,
+              expressionConfig: ExpressionDefinition[_],
               dictRegistry: DictRegistry,
               enableSpelForceCompile: Boolean,
-              strictTypeChecking: Boolean,
-              imports: List[String],
               flavour: Flavour,
-              strictMethodsChecking: Boolean,
-              staticMethodInvocationsChecking: Boolean,
-              typeDefinitionSet: TypeDefinitionSet,
-              methodExecutionForUnknownAllowed: Boolean,
-              dynamicPropertyAccessAllowed: Boolean,
-              spelExpressionExcludeList: SpelExpressionExcludeList,
-              conversionService: ConversionService): SpelExpressionParser = {
-    val functions = Map(
-      "today" -> classOf[LocalDate].getDeclaredMethod("now"),
-      "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
-      "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[util.Collection[_]]),
-      "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[util.Collection[_]])
-    )
+              typeDefinitionSet: TypeDefinitionSet): SpelExpressionParser = {
+
     val parser = new org.springframework.expression.spel.standard.SpelExpressionParser(
       //we have to pass classloader, because default contextClassLoader can be sth different than we expect...
       new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
     )
-    val propertyAccessors = internal.propertyAccessors.configured()
-
-    val classResolutionStrategy = if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union
-    val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
-    val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, imports, propertyAccessors, conversionService, functions, spelExpressionExcludeList)
-    val validator = new SpelExpressionValidator(new Typer(commonSupertypeFinder, new KeysDictTyper(dictRegistry),
-      strictMethodsChecking, staticMethodInvocationsChecking, typeDefinitionSet, evaluationContextPreparer, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed))
+    val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
+    val validator = new SpelExpressionValidator(Typer.default(classLoader, expressionConfig, dictRegistry, typeDefinitionSet))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour, evaluationContextPreparer)
   }
 

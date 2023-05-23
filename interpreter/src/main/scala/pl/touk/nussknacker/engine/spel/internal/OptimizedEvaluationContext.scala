@@ -3,10 +3,14 @@ package pl.touk.nussknacker.engine.spel.internal
 import org.springframework.core.convert.{ConversionService, TypeDescriptor}
 import org.springframework.expression.spel.support._
 import org.springframework.expression.{EvaluationContext, MethodExecutor, MethodResolver, PropertyAccessor}
+import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.spel.OmitAnnotationsMethodExecutor
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
+import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
+import pl.touk.nussknacker.engine.spel.{OmitAnnotationsMethodExecutor, internal}
 
 import java.lang.reflect.Method
+import java.time.{LocalDate, LocalDateTime}
 import java.util
 import java.util.Collections
 import scala.jdk.CollectionConverters._
@@ -64,4 +68,29 @@ class OptimizedEvaluationContext(ctx: Context, globals: Map[String, Any],
 
   override def setVariable(name: String, value: AnyRef): Unit = throw new IllegalArgumentException(s"Cannot set variable: $name")
 
+}
+
+object EvaluationContextPreparer {
+  def default(classLoader: ClassLoader, expressionConfig: ExpressionDefinition[_]): EvaluationContextPreparer = {
+    val functions = Map(
+      "today" -> classOf[LocalDate].getDeclaredMethod("now"),
+      "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
+      "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[util.Collection[_]]),
+      "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[util.Collection[_]])
+    )
+    val conversionService = determineConversionService(expressionConfig)
+    val propertyAccessors = internal.propertyAccessors.configured()
+    new EvaluationContextPreparer(classLoader, expressionConfig.globalImports, propertyAccessors, conversionService, functions, expressionConfig.spelExpressionExcludeList)
+  }
+
+  private def determineConversionService(expressionConfig: ExpressionDefinition[_]) = {
+    val spelConversionServices = expressionConfig.customConversionsProviders.collect {
+      case spelProvider: SpelConversionsProvider => spelProvider.getConversionService
+    }
+    spelConversionServices match {
+      case Nil => DefaultSpelConversionsProvider.getConversionService
+      case head :: Nil => head
+      case moreThanOne => throw new IllegalArgumentException(s"More than one SpelConversionsProvider configured: ${moreThanOne.mkString(", ")}")
+    }
+  }
 }

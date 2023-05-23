@@ -50,7 +50,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
                      subprocessRepository: SubprocessRepository,
                      typeToConfig: ProcessingTypeDataProvider[ModelData, _],
                      processValidation: ProcessValidation,
-                     expressionSuggester: ExpressionSuggester,
+                     typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
                     )(implicit val ec: ExecutionContext)
   extends ProcessDirectives with FailFastCirceSupport with RouteWithUser {
 
@@ -115,6 +115,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
           }
         } ~ path("suggestions") {
           val modelData = typeToConfig.forTypeUnsafe(process.processingType)
+          val expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(process.processingType)
           implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
           implicit val expressionSuggestionRequestDecoder: Decoder[ExpressionSuggestionRequest] = ExpressionSuggestionRequest.decoder(typeDecoder)
 
@@ -124,7 +125,6 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
                 expressionSuggestionRequest.expression,
                 expressionSuggestionRequest.caretPosition2d,
                 expressionSuggestionRequest.variables,
-                modelData.modelDefinitionWithTypes.typeDefinitions
               )
             }
           }

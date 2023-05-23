@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Standard
-import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 
 import java.time.{Instant, LocalDate, LocalTime}
 import scala.reflect.ClassTag
@@ -208,9 +208,8 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
   }
 
   private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))), enableSpelForceCompile = true,
-      strictTypeChecking = true, Nil, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = false, TypeDefinitionSet.forClasses(classOf[EnumSymbol]), methodExecutionForUnknownAllowed = false,
-      dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default, DefaultSpelConversionsProvider.getConversionService
+    SpelExpressionParser.default(getClass.getClassLoader, ProcessDefinitionBuilder.empty.expressionConfig, new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))), enableSpelForceCompile = true,
+      Standard, TypeDefinitionSet.forClasses(classOf[EnumSymbol])
     ).parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
