@@ -9,10 +9,12 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, StaticMethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.types.EspTypeUtils
+import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 
 import java.time.LocalDateTime
 
 class A {
+  def foo(): A = this
   def fooString(): String = ""
 
   def barB(): B = new B
@@ -119,6 +121,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
   test("should suggest global variable methods") {
     suggestionsFor("#input.") shouldBe List(
       suggestion("barB", Typed[B]),
+      suggestion("foo", Typed[A]),
       suggestion("fooString", Typed[String]),
       suggestion("toString", Typed[String]),
     )
@@ -154,6 +157,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
 
   test("should suggest filtered global variable methods") {
     suggestionsFor("#input.fo") shouldBe List(
+      suggestion("foo", Typed[A]),
       suggestion("fooString", Typed[String]),
     )
   }
@@ -165,50 +169,80 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  ignore("should suggest methods for object returned from method") {
-    suggestionsFor("#input.barB.bazC.")
+  test("should suggest methods for object returned from method") {
+    suggestionsFor("#input.barB.bazC.") shouldBe List(
+      suggestion("quaxString", Typed[String]),
+      suggestion("toString", Typed[String]),
+    )
   }
 
-  ignore("should suggest methods for union objects") {
-    suggestionsFor("#union.")
+  test("should suggest methods for union objects") {
+    suggestionsFor("#union.") shouldBe List(
+      suggestion("barB", Typed[B]),
+      suggestion("bazC", Typed[C]),
+      suggestion("foo", Typed[A]),
+      suggestion("fooString", Typed[String]),
+      suggestion("toString", Typed[String]),
+    )
   }
 
-  ignore("should suggest methods for object returned from method from union objects") {
-    suggestionsFor("#union.bazC.")
+  test("should suggest methods for object returned from method from union objects") {
+    suggestionsFor("#union.bazC.") shouldBe List(
+      suggestion("quaxString", Typed[String]),
+      suggestion("toString", Typed[String]),
+    )
   }
 
   test("should suggest in complex expression #1") {
     suggestionsFor("#input.foo + #input.barB.bazC.quax", 0, "#input.foo".length) shouldBe List(
+      suggestion("foo", Typed[A]),
       suggestion("fooString", Typed[String]),
     )
   }
 
-  ignore("should suggest in complex expression #2") {
-    suggestionsFor("#input.foo + #input.barB.bazC.quax")
+  test("should suggest in complex expression #2") {
+    suggestionsFor("#input.foo + #input.barB.bazC.quax") shouldBe List(
+      suggestion("quaxString", Typed[String]),
+      suggestion("toString", Typed[String]),
+    )
   }
 
-  ignore("should suggest in complex expression #3") {
-    suggestionsFor("#input.barB.bazC.quaxString.toUp")
+  test("should suggest in complex expression #3") {
+    suggestionsFor("#input.barB.bazC.quaxString.toUp") shouldBe List(
+      suggestion("toUpperCase", Typed[String]),
+    )
   }
 
   test("should not suggest anything if suggestion already applied with space at the end") {
     suggestionsFor("#input.fooString ") shouldBe Nil
   }
 
-  ignore("should suggest for invocations with method parameters #1") {
-    suggestionsFor("#input.foo + #input.barB.bazC('1').quax")
+  test("should suggest for invocations with method parameters #1") {
+    suggestionsFor("#input.foo + #input.barB.bazC('1').quax") shouldBe List(
+      suggestion("quaxString", Typed[String]),
+      suggestion("toString", Typed[String]),
+    )
   }
 
-  ignore("should suggest for invocations with method parameters #2") {
-    suggestionsFor("#input.foo + #input.barB.bazC('1', #input.foo, 2).quax")
+  test("should suggest for invocations with method parameters #2") {
+    suggestionsFor("#input.foo + #input.barB.bazC('1', #input.foo, 2).quax") shouldBe List(
+      suggestion("quaxString", Typed[String]),
+      suggestion("toString", Typed[String]),
+    )
   }
 
   test("should suggest for multiline code #1") {
-    suggestionsFor("#input\n.fo", 1, ".fo".length) shouldBe List(suggestion("fooString", Typed[String]))
+    suggestionsFor("#input\n.fo", 1, ".fo".length) shouldBe List(
+      suggestion("foo", Typed[A]),
+      suggestion("fooString", Typed[String]),
+    )
   }
 
-  ignore("should suggest for multiline code #2") {
-    suggestionsFor("#input\n.barB\n.", 2, ".".length)
+  test("should suggest for multiline code #2") {
+    suggestionsFor("#input\n.barB\n.", 2, ".".length) shouldBe List(
+      suggestion("bazC", Typed[C]),
+      suggestion("toString", Typed[String]),
+    )
   }
 
   test("should suggest for multiline code #3") {
@@ -216,11 +250,15 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
   }
 
   test("should omit whitespace formatting in suggest for multiline code #1") {
-    suggestionsFor("#input\n  .ba", 1, "  .ba".length) shouldBe List(suggestion("barB", Typed[B]))
+    suggestionsFor("#input\n  .ba", 1, "  .ba".length) shouldBe List(
+      suggestion("barB", Typed[B]),
+    )
   }
 
-  ignore("should omit whitespace formatting in suggest for multiline code #2") {
-    suggestionsFor("#input\n  .barB\n  .ba", 2, "  .ba".length)
+  test("should omit whitespace formatting in suggest for multiline code #2") {
+    suggestionsFor("#input\n  .barB\n  .ba", 2, "  .ba".length) shouldBe List(
+      suggestion("bazC", Typed[C]),
+    )
   }
 
   test("should omit whitespace formatting in suggest for multiline code #3") {
@@ -231,16 +269,23 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
     suggestionsFor("#input\n  .barB.ba", 1, "  .barB.ba".length) shouldBe List(suggestion("barB",Typed[B]))
   }
 
-  ignore("should omit whitespace formatting in suggest for multiline code #5") {
-    suggestionsFor("#input\n  .barB.bazC\n  .quaxString.", 2, "  .quaxString.".length)
+  test("should omit whitespace formatting in suggest for multiline code #5") {
+    suggestionsFor("#input\n  .barB.bazC\n  .quaxString.", 2, "  .quaxString.".length) shouldBe List(
+      suggestion("toUpperCase", Typed[String]),
+    )
   }
 
   test("should suggest field in typed map") {
-    suggestionsFor("#dynamicMap.int") shouldBe List(suggestion("intField", Typed.fromInstance(1)))
+    suggestionsFor("#dynamicMap.int") shouldBe List(
+      suggestion("intField", Typed[Int]),
+    )
   }
 
-  ignore("should suggest embedded field in typed map") {
-    suggestionsFor("#dynamicMap.aField.f")
+  test("should suggest embedded field in typed map") {
+    suggestionsFor("#dynamicMap.aField.f") shouldBe List(
+      suggestion("foo", Typed[A]),
+      suggestion("fooString", Typed[String]),
+    )
   }
 
   ignore("should suggest #this fields in simple projection") {
@@ -259,12 +304,16 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
     suggestionsFor("!#listVar.listField.?[#this == 'value'].![#this.f]", 0, "!#listVar.listField.?[#this == 'value'].![#this.f".length)
   }
 
-  ignore("should support nested method invocations") {
-    suggestionsFor("#util.now(#other.quaxString.toUpperCase().)", 0, "#util.now(#other.quaxString.toUpperCase().".length
+  test("should support nested method invocations") {
+    suggestionsFor("#util.now(#other.quaxString.toUpperCase().)", 0, "#util.now(#other.quaxString.toUpperCase().".length) shouldBe List(
+      suggestion("toUpperCase", Typed[String]),
     )
   }
 
-  ignore("should support safe navigation") {
-    suggestionsFor("#input?.barB.bazC?.")
+  test("should support safe navigation") {
+    suggestionsFor("#input?.barB.bazC?.") shouldBe List(
+      suggestion("quaxString", Typed[String]),
+      suggestion("toString", Typed[String]),
+    )
   }
 }
