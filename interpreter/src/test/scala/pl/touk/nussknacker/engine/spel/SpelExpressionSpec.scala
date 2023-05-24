@@ -202,14 +202,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("evaluate static method call on unvalidated class") {
     inside(parse[Any]("T(java.lang.System).exit()")) {
-      case Invalid(NonEmptyList(error: TypeReferenceError, _ :: Nil)) =>
+      case Invalid(NonEmptyList(error: TypeReferenceError, _)) =>
         error.message shouldBe "class java.lang.System is not allowed to be passed as TypeReference"
     }
   }
 
   test("evaluate static method call on non-existing class") {
     inside(parse[Any]("T(java.lang.NonExistingClass).method()")) {
-      case Invalid(NonEmptyList(error: UnknownClassError, _ :: Nil)) =>
+      case Invalid(NonEmptyList(error: UnknownClassError, _)) =>
         error.message shouldBe "Class T(java.lang.NonExistingClass) does not exist"
     }
   }

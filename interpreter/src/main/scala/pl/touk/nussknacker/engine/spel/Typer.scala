@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated._
 import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import cats.implicits.catsSyntaxValidatedId
 import cats.instances.list._
@@ -68,7 +67,7 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
       case e: standard.SpelExpression =>
         typeExpression(e, ctx)
       case e: CompositeStringExpression =>
-        val (errors, results) = e.getExpressions.toList.map(doTypeExpression(_, ctx)).sequence
+        val (errors, _) = e.getExpressions.toList.map(doTypeExpression(_, ctx)).sequence
         // We drop intermediate results here:
         // * It's tricky to combine it as each of the subexpressions has it's own abstract tree with positions relative to the subexpression's starting position
         // * CompositeStringExpression is dedicated to template SpEL expressions. It cannot be nested (as templates cannot be nested)
