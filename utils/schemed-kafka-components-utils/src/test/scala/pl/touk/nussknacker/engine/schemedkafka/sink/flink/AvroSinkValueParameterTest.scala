@@ -13,8 +13,9 @@ import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SinkKeyParamName, SinkValueParamName}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaBasedParameter
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedRecordParameter, SingleSchemaBasedParameter}
 
 class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
@@ -54,13 +55,14 @@ class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {
   }
 
   test("typed object with restricted field names") {
+    val restrictedNames: Set[ParameterName] = Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
     val recordSchema = SchemaBuilder
       .record("A")
       .fields()
         .name(SinkKeyParamName).`type`().stringType().noDefault()
         .name("b").`type`().longType().noDefault()
       .endRecord()
-    val result = AvroSchemaBasedParameter(recordSchema, Set.empty)
+    val result = AvroSchemaBasedParameter(recordSchema, restrictedNames)
     result shouldBe Invalid(NonEmptyList.one(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are Schema version, Key, Value validation mode, Topic""", None)))
   }
 
