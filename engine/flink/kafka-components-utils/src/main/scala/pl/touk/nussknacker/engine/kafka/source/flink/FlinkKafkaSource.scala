@@ -87,12 +87,12 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     deserializationSchema.deserialize(record)
   }
 
-    override def testParametersDefinition: List[Parameter] = testParametersInfo.uiParameters
+  override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 
-    override def parametersToTestData(params: Map[String, AnyRef]): T = {
-      val flatParams = TestingParametersSupport.unflattenParameters(params)
-      deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams)))
-    }
+  override def parametersToTestData(params: Map[String, AnyRef]): T = {
+    val flatParams = TestingParametersSupport.unflattenParameters(params)
+    deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams)))
+  }
 
 }
 

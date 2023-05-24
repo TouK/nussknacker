@@ -161,7 +161,7 @@ object KafkaSourceFactory {
 
   case class KafkaSourceFactoryState[K, V](contextInitializer: ContextInitializer[ConsumerRecord[K, V]])
 
-  case class KafkaTestParametersInfo(uiParameters: List[Parameter], createTestRecord: Any => TestRecord)
+  case class KafkaTestParametersInfo(parametersDefinition: List[Parameter], createTestRecord: Any => TestRecord)
 
   object KafkaTestParametersInfo {
     def empty: KafkaTestParametersInfo = KafkaTestParametersInfo(Nil, _ => TestRecord(Json.Null))

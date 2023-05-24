@@ -59,7 +59,7 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
   override def testRecordParser: TestRecordParser[ConsumerRecord[Array[Byte], Array[Byte]]] = (testRecord: TestRecord) =>
     formatter.parseRecord(topics.head, testRecord)
 
-  override def testParametersDefinition: List[Parameter] = testParametersInfo.uiParameters
+  override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
 
   override def parametersToTestData(params: Map[String, AnyRef]): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val flatParams = TestingParametersSupport.unflattenParameters(params)

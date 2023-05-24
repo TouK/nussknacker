@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, TopicParamName}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.TopicParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
@@ -96,9 +96,6 @@ trait KafkaUniversalComponentTransformer[T] extends SingleInputGenericNodeTransf
 
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
     KafkaComponentsUtils.prepareKafkaTopic(topic, processObjectDependencies)
-
-  protected def parseVersionOption(params: Map[String, Any]): SchemaVersionOption =
-    SchemaVersionOption.byName(params(SchemaVersionParamName).asInstanceOf[String])
 
   protected def parseVersionOption(versionOptionName: String): SchemaVersionOption =
     SchemaVersionOption.byName(versionOptionName)

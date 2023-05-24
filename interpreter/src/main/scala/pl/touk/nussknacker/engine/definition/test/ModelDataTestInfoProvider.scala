@@ -30,7 +30,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       case s => s.reduce((tc1, tc2) => TestingCapabilities (
           canBeTested = tc1.canBeTested || tc2.canBeTested,
           canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
-          canTestWithForm = tc1.canTestWithForm && tc2.canTestWithForm,
+          canTestWithForm = tc1.canTestWithForm && tc2.canTestWithForm, //TODO change to "or" after adding support for multiple sources
         ))
     }
   }

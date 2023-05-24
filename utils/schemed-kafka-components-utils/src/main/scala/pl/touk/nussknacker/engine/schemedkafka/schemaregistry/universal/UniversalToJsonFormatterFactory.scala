@@ -16,7 +16,6 @@ class UniversalToJsonFormatterFactory(schemaRegistryClientFactory: SchemaRegistr
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
     val formatterSupportDispatcher = new RecordFormatterSupportDispatcher(kafkaConfig, schemaRegistryClient)
-
     val schemaIdFromMessageExtractor = createSchemaIdFromMessageExtractor(schemaRegistryClient)
     new UniversalToJsonFormatter(kafkaConfig, schemaRegistryClient, formatterSupportDispatcher, kafkaSourceDeserializationSchema, schemaIdFromMessageExtractor)
   }
