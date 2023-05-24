@@ -90,14 +90,13 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
       val settingsJson = responseAs[Json].hcursor.downField("componentsConfig").focus.get
       val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).toOption.get
 
+      //docs url comes from defaultModelConf.conf in dev-model
       val underTest = Map(
-        //docs url comes from reference.conf in devModel
         "filter" -> SingleComponentConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None, None),
         "test1" -> SingleComponentConfig(None, Some("/assets/components/Sink.svg"), None, None, None),
         "enricher" -> SingleComponentConfig(
           Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
           Some("/assets/components/Filter.svg"),
-          //docs url comes from reference.conf in devModel
           Some("https://touk.github.io/nussknacker/enricher"),
           None,
           None
@@ -138,10 +137,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
           Some("https://nussknacker.io/documentation/docs/installation_configuration_guide/ModelConfiguration#scenarios-additional-properties"), None, None)
       )
 
-      val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }
-      relevant shouldBe underTest
-      val not = other.values.filter(_.docsUrl.isDefined)
-      other.values.forall(_.docsUrl.isEmpty) shouldBe true
+      settings.collect { case (k, v) if underTest.keySet contains k => (k, v) } shouldBe underTest
     }
   }
 

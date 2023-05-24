@@ -22,7 +22,7 @@ import scala.language.higherKinds
 
 object DBFetchingProcessRepository {
   def create(dbConfig: DbConfig)(implicit ec: ExecutionContext) =
-    new DBFetchingProcessRepository[DB](dbConfig) with DbioRepistory
+    new DBFetchingProcessRepository[DB](dbConfig) with DbioRepository
 
   def createFutureRespository(dbConfig: DbConfig)(implicit ec: ExecutionContext) =
     new DBFetchingProcessRepository[Future](dbConfig) with BasicRepository
