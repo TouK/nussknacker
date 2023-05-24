@@ -124,12 +124,6 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
     }
   }
 
-  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
-    getProcessState(name).map(_.map(statusDetailsOpt => {
-      val engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusDetailsOpt, lastAction)
-      Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
-    }))
-
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = Future.successful {
     deployments.get(name).map { interpreterData =>
       StatusDetails(

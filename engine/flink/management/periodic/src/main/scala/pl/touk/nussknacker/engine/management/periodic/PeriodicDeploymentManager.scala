@@ -145,12 +145,6 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     } yield WithDataFreshnessStatus(mergedStatus, delegateState.cached)
   }
 
-  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
-    getProcessState(name).map(_.map(statusDetailsOpt => {
-      val engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusDetailsOpt, lastAction)
-      Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
-    }))
-
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     new PeriodicProcessStateDefinitionManager(delegate.processStateDefinitionManager)
 

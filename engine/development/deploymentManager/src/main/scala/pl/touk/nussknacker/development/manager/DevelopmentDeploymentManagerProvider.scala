@@ -107,11 +107,6 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  /**
-    * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
-    */
-  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = ???
-
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] =
     Future.successful(memory.get(name))
 

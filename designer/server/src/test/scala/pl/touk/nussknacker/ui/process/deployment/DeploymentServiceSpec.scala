@@ -121,10 +121,9 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       deploymentService.getProcessState(processIdName).futureValue.status shouldBe expectedStatus
     }
 
-    val statusFromDeploymentManager = SimpleStateStatus.NotDeployed
     deploymentManager.withEmptyProcessState(processName) {
 
-      checkStatusAction(statusFromDeploymentManager, None)
+      checkStatusAction(SimpleStateStatus.NotDeployed, None)
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService.deployProcessAsync(processIdName, None, None).futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)

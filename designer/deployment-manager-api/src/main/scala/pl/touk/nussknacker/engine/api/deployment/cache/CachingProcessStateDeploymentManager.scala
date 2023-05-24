@@ -40,8 +40,6 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
     }
   }
 
-  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = ???
-
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] =
     delegate.validate(processVersion, deploymentData, canonicalProcess)
 

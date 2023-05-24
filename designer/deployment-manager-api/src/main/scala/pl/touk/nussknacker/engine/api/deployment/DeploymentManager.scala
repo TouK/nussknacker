@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -20,7 +21,7 @@ trait DeploymentManager extends AutoCloseable {
   //TODO: savepointPath is very flink specific, we should handle this mode via custom action
   /**
     * We assume that validate was already called and was successful
-    *  */
+    */
   def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
   def cancel(name: ProcessName, user: User): Future[Unit]
@@ -34,9 +35,12 @@ trait DeploymentManager extends AutoCloseable {
 
   /**
     * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
-    * to pod spodem woła tego drugiego
     */
-  def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]]
+  def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
+    getProcessState(name).map(_.map(statusDetailsOpt => {
+      val engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusDetailsOpt, lastAction)
+      Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
+    }))
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 

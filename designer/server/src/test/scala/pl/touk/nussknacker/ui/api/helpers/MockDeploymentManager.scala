@@ -39,8 +39,6 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
   private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[StatusDetails] =
     Some(StatusDetails(status, Some(ExternalDeploymentId("1")), version))
 
-  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = ???
-
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)

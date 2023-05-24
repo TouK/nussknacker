@@ -7,8 +7,8 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeploymentManager, ProcessState, StateStatus, WithDataFreshnessStatus}
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeploymentManager, StatusDetails, WithDataFreshnessStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -67,10 +67,10 @@ class CachingProcessStateDeploymentManagerSpec extends AnyFunSuite with MockitoS
   private def prepareDMReturningRandomStates = {
     val delegate = mock[DeploymentManager]
     when(delegate.getProcessState(any[ProcessName])(any[DataFreshnessPolicy])).thenAnswer { _: InvocationOnMock =>
-      val randomState = SimpleProcessStateDefinitionManager.processState(
+      val randomState = StatusDetails(
         SimpleStateStatus.Running,
         deploymentId = Some(ExternalDeploymentId(UUID.randomUUID().toString)))
-      Future.successful(WithDataFreshnessStatus[Option[ProcessState]](Some(randomState), cached = false))
+      Future.successful(WithDataFreshnessStatus[Option[StatusDetails]](Some(randomState), cached = false))
     }
     delegate
   }
