@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.KafkaAvroSinkFactoryWithEdit
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SchemaBasedParameter
 

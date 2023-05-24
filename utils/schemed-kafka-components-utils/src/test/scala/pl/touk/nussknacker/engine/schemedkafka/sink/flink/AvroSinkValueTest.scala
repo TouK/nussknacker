@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
-import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSchemaBasedParameter
+import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordValue, SinkSingleValue, SinkValue}
 

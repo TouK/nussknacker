@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SinkKeyParamName, SinkValueParamName}
-import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSchemaBasedParameter
+import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SchemaBasedRecordParameter, SingleSchemaBasedParameter}
 
 class AvroSchemaBasedParameterTest extends AnyFunSuite with Matchers {

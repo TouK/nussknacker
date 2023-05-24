@@ -1,21 +1,22 @@
-package pl.touk.nussknacker.engine.schemedkafka.sink
+package pl.touk.nussknacker.engine.schemedkafka.schema
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import org.apache.avro.Schema
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
-import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{TypingResultValidator, SchemaBasedRecordParameter, SingleSchemaBasedParameter, SchemaBasedParameter}
+import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
+import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SchemaBasedParameter, SchemaBasedRecordParameter, SingleSchemaBasedParameter, TypingResultValidator}
 
 import scala.collection.immutable.ListMap
 
 object AvroSchemaBasedParameter {
+
   import scala.jdk.CollectionConverters._
 
   type FieldName = String
@@ -30,7 +31,7 @@ object AvroSchemaBasedParameter {
     toSchemaBasedParameter(schema, paramName = None, defaultValue = None)
 
   private def toSchemaBasedParameter(schema: Schema, paramName: Option[String], defaultValue: Option[Expression])
-                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+                                    (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     import cats.implicits.{catsStdInstancesForList, toTraverseOps}
 
     if (schema.getType == Schema.Type.RECORD) {
