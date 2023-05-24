@@ -29,7 +29,7 @@ export const loadExternalReactModule = (url, props) => {
     ReactDOM.render(
         <NkThemeProvider>
             <MuiThemeProvider>
-                <RemoteComponent url={urlValue} scope={scopeValue} script={scriptValue} {...props} />
+                <RemoteComponent url={urlValue} scope={scopeValue} scriptOrigin={scriptValue} {...props} />
             </MuiThemeProvider>
         </NkThemeProvider>,
         rootContainer
