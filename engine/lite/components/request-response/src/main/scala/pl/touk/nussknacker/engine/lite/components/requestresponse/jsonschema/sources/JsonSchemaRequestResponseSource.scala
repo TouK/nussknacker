@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
-import pl.touk.nussknacker.engine.json.{JsonSinkValueParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
+import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefin
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.nio.charset.StandardCharsets
 
@@ -53,13 +54,13 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
   override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new SchemaResponseEncoder(outputSchema))
 
   override def testParametersDefinition: List[Parameter] = {
-    JsonSinkValueParameter(inputSchema, SinkRawValueParamName, ValidationMode.lax)(nodeId).map(_.toParameters)
+    JsonSchemaBasedParameter(inputSchema, SinkRawValueParamName, ValidationMode.lax)(nodeId).map(_.toParameters)
       .valueOr(errors => throw new IllegalArgumentException(s"Cannot provide test parameters definition: ${errors.toList.mkString(" ")}"))
   }
 
   override def parametersToTestData(params: Map[String, AnyRef]): Any = {
     val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
-    val json = BestEffortJsonEncoder.defaultForTests.encode(JsonSinkValueParameter.unflattenParameters(params))
+    val json = BestEffortJsonEncoder.defaultForTests.encode(TestingParametersSupport.unflattenParameters(params))
     JsonToNuStruct(json, swaggerTyped)
   }
 

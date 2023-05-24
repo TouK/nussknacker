@@ -27,9 +27,11 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.KafkaConfigProperties
 import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
+import pl.touk.nussknacker.engine.graph.expression.Expression
+
 import java.util.Collections
 
-class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
+class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
     override protected def schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
@@ -65,6 +67,26 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     val testResultVars = results.nodeResults("end").head.context.variables
     testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
     testResultVars.get("inputMeta") shouldBe Some(inputMeta)
+  }
+
+  test("Should pass parameters correctly and use them in scenario test") {
+
+    val topic = "simple"
+    val process = ScenarioBuilder.streaming("test")
+      .source(
+        "start", "kafka", TopicParamName -> s"'$topic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+      ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#input.city + '-' + #input.street")
+
+    val parameterExpressions: Map[String, Expression] = Map(
+      "city" -> Expression("spel", "'Lublin'"),
+      "street" -> Expression("spel", "'Lipowa'"),
+    )
+    val scenarioTestData = ScenarioTestData("start", parameterExpressions)
+
+    val results = run(process, scenarioTestData)
+    results.invocationResults("end").head.value shouldBe "Lublin-Lipowa"
+
   }
 
   private def registerSchema(topic: String) = {

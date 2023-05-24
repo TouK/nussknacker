@@ -10,7 +10,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.process.ContextInitializer
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.process.{ContextInitializer, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
@@ -21,7 +22,9 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestamp
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.{FlinkDeserializationSchemaWrapper, wrapToFlinkDeserializationSchema}
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaTestParametersInfo
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
+import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
 import java.time.Duration
 import java.util.Properties
@@ -32,13 +35,15 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                           deserializationSchema: serialization.KafkaDeserializationSchema[T],
                           passedAssigner: Option[TimestampWatermarkHandler[T]],
                           val formatter: RecordFormatter,
+                          testParametersInfo: KafkaTestParametersInfo,
                           overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource
     with FlinkIntermediateRawSource[T]
     with Serializable
     with FlinkSourceTestSupport[T]
     with RecordFormatterBaseTestDataGenerator
-    with ExplicitUidInOperatorsSupport {
+    with ExplicitUidInOperatorsSupport
+    with TestWithParametersSupport[T] {
 
   protected lazy val topics: List[String] = preparedTopics.map(_.prepared)
 
@@ -82,6 +87,13 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     deserializationSchema.deserialize(record)
   }
 
+  override def testParametersDefinition: List[Parameter] = testParametersInfo.parametersDefinition
+
+  override def parametersToTestData(params: Map[String, AnyRef]): T = {
+    val flatParams = TestingParametersSupport.unflattenParameters(params)
+    deserializeTestData(formatter.parseRecord(topics.head, testParametersInfo.createTestRecord(flatParams)))
+  }
+
 }
 
 // TODO: Tricks like deserializationSchema.setExceptionHandlingData and FlinkKafkaConsumer overriding could be replaced by
@@ -121,7 +133,9 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKaf
                                                 deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
                                                 timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
                                                 formatter: RecordFormatter,
-                                                override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]]) extends FlinkKafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
+                                                override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
+                                                testParametersInfo: KafkaTestParametersInfo)
+  extends FlinkKafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, testParametersInfo)  {
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = timestampAssigner.orElse(Some(
     StandardTimestampWatermarkHandler.afterEachEvent[ConsumerRecord[K, V]]((_.timestamp()): SimpleSerializableTimestampAssigner[ConsumerRecord[K, V]])

@@ -10,10 +10,10 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
-import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSinkValueParameter}
+import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSchemaBasedParameter}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkSingleValueParameter, SinkValueParameter}
+import pl.touk.nussknacker.engine.util.parameters.{SingleSchemaBasedParameter, SchemaBasedParameter}
 
 object JsonRequestResponseSink {
 
@@ -55,7 +55,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
     ) =>
       jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
-          val valueParam = SinkSingleValueParameter(
+          val valueParam = SingleSchemaBasedParameter(
             rawValueParam.parameter,
             new JsonSchemaOutputValidator(ValidationMode.fromString(mode, SinkValidationModeParameterName)).validate(_, schema)
           )
@@ -70,7 +70,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
       jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
           //in editor mode we use lax validation mode, to be backward compatible
-          JsonSinkValueParameter(schema, SinkRawValueParamName, ValidationMode.lax).map { valueParam =>
+          JsonSchemaBasedParameter(schema, SinkRawValueParamName, ValidationMode.lax).map { valueParam =>
             val state = EditorTransformationState(schema, valueParam)
             //shouldn't happen except for empty schema, but it can lead to infinite loop...
             if (valueParam.toParameters.isEmpty) {
@@ -81,13 +81,13 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
           }
         }.valueOr(e => FinalResults(context, e.toList))
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, Some(state)) =>
-      val errors = state.sinkValueParameter.validateParams(valueParams.toMap).swap.map(_.toList).getOrElse(Nil)
+      val errors = state.schemaBasedParameter.validateParams(valueParams.toMap).swap.map(_.toList).getOrElse(Nil)
       FinalResults(context, errors, Some(state))
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalStateOpt: Option[State]): Sink = {
     val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
-    val sinkValue = SinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
+    val sinkValue = SinkValue.applyUnsafe(finalState.schemaBasedParameter, parameterValues = params)
     val valueLazyParam = sinkValue.toLazyParameter
 
     implProvider.createSink(valueLazyParam, finalState.schema)
@@ -95,6 +95,6 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])
 
-  case class EditorTransformationState(schema: Schema, sinkValueParameter: SinkValueParameter)
+  case class EditorTransformationState(schema: Schema, schemaBasedParameter: SchemaBasedParameter)
 
 }

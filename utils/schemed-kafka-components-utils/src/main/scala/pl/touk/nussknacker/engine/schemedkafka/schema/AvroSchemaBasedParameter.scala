@@ -1,41 +1,38 @@
-package pl.touk.nussknacker.engine.schemedkafka.sink
+package pl.touk.nussknacker.engine.schemedkafka.schema
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import org.apache.avro.Schema
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
-import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{TypingResultValidator, SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
+import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
+import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
+import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SchemaBasedRecordParameter, SingleSchemaBasedParameter, TypingResultValidator}
 
 import scala.collection.immutable.ListMap
 
-object AvroSinkValueParameter {
+object AvroSchemaBasedParameter {
+
   import scala.jdk.CollectionConverters._
-
-  type FieldName = String
-
-  val restrictedParamNames: Set[FieldName] =
-    Set(SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, TopicParamName)
 
   /*
     We extract editor form from Avro schema
    */
-  def apply(schema: Schema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
-    toSinkValueParameter(schema, paramName = None, defaultValue = None)
+  def apply(schema: Schema, restrictedParamNames: Set[ParameterName])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] =
+    toSchemaBasedParameter(schema, paramName = None, defaultValue = None, restrictedParamNames = restrictedParamNames)
 
-  private def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultValue: Option[Expression])
-                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
+  private def toSchemaBasedParameter(schema: Schema, paramName: Option[String], defaultValue: Option[Expression], restrictedParamNames: Set[ParameterName])
+                                    (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     import cats.implicits.{catsStdInstancesForList, toTraverseOps}
 
     if (schema.getType == Schema.Type.RECORD) {
       val recordFields = schema.getFields.asScala.toList
-      if (containsRestrictedNames(recordFields)) {
+      if (containsRestrictedNames(recordFields, restrictedParamNames)) {
         /* TODO: Since GenericNodeTransformation#implementation passes all parameters in a single Map we need to restrict value parameter names,
          so they do not collide with other parameters like Topic or Key. */
         Invalid(NonEmptyList.one(
@@ -46,11 +43,11 @@ object AvroSinkValueParameter {
           // Fields of nested records are flatten, e.g. { a -> { b -> _ } } => { a.b -> _ }
           val concatName = paramName.map(pn => s"$pn.$fieldName").getOrElse(fieldName)
           val sinkValueValidated = getDefaultValue(recordField, paramName).andThen { defaultValue =>
-            toSinkValueParameter(schema = recordField.schema(), paramName = Some(concatName), defaultValue)
+            toSchemaBasedParameter(schema = recordField.schema(), paramName = Some(concatName), defaultValue, restrictedParamNames)
           }
           sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
         }
-        listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SinkRecordParameter)
+        listOfValidatedParams.sequence.map(l => ListMap(l: _*)).map(SchemaBasedRecordParameter)
       }
     } else {
       Valid(AvroSinkSingleValueParameter(paramName, schema, defaultValue))
@@ -61,7 +58,7 @@ object AvroSinkValueParameter {
     new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(fieldSchema)
       .leftMap(_.map(err => CustomNodeError(err.getMessage, paramName)))
 
-  private def containsRestrictedNames(fields: List[Schema.Field]): Boolean = {
+  private def containsRestrictedNames(fields: List[Schema.Field], restrictedParamNames: Set[ParameterName]): Boolean = {
     val fieldNames = fields.map(_.name()).toSet
     fieldNames.nonEmpty & (fieldNames & restrictedParamNames).nonEmpty
   }
@@ -70,7 +67,7 @@ object AvroSinkValueParameter {
 
 object AvroSinkSingleValueParameter {
 
-  def apply(paramName: Option[String], schema: Schema, defaultValue: Option[Expression]): SinkSingleValueParameter = {
+  def apply(paramName: Option[String], schema: Schema, defaultValue: Option[Expression]): SingleSchemaBasedParameter = {
     val typing = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     val name = paramName.getOrElse(SinkValueParamName)
     val parameter = (
@@ -81,6 +78,6 @@ object AvroSinkSingleValueParameter {
     )
     //todo: for now we don't use SchemaOutputValidator for avro in editor mode,
     // but we can add it in the future in combination with accepting unknown/any in enums fields to allow passing enums in editor mode
-    SinkSingleValueParameter(parameter, TypingResultValidator.emptyValidator)
+    SingleSchemaBasedParameter(parameter, TypingResultValidator.emptyValidator)
   }
 }
