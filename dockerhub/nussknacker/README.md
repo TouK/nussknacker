@@ -13,7 +13,7 @@ Docker in version 20.10.14+
 
 # How to use
 
-Follow steps described in [Quickstart](https://nussknacker.io/documentation/quickstart/docker)
+Follow steps described in [Quickstart](https://nussknacker.io/documentation/quickstart/lite-streaming/)
 
 Repository with docker-compose presenting typical usage: [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart)
 
@@ -44,7 +44,7 @@ REST endpoints of deployed scenarios will be exposed at `http://localhost:8181/s
 
 # Configuration
 
-Description about available environment variables and volumes is available on [Installation documentation](https://nussknacker.io/documentation/docs/installation_configuration_guide/Installation)
+Description about available environment variables and volumes is available on [Installation documentation](https://nussknacker.io/documentation/docs/installation/)
 
 # License
 
