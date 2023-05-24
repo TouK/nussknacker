@@ -9,6 +9,8 @@ import io.circe.syntax._
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -194,16 +196,19 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
     }
   }
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = {
+  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
+    getProcessState(name).map(_.map(statusDetailsOpt => {
+      val engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusDetailsOpt, lastAction)
+      Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
+    }))
+
+  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
       deployments <- scenarioStateK8sClient.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
       pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
     } yield mapper.findStatusForDeploymentsAndPods(deployments, pods)
   }
-
-  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] =
-    getFreshProcessState(name)
 
   private def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, nussknackerInstanceName: Option[String])
                               (data: Map[String, String], additionalLabels: Map[String, String] = Map.empty, overrideName: Option[String] = None): ConfigMap = {

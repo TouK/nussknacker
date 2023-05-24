@@ -29,9 +29,9 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = Future.successful(None)
+  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = Future.successful(WithDataFreshnessStatus(None, cached = false))
 
-  override def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] = Future.successful(None)
+  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = Future.successful(None)
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(""))
 

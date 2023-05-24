@@ -30,10 +30,11 @@ trait DeploymentManager extends AutoCloseable {
   /**
     * Gets status from the engine
     */
-  def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]]
+  def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]]
 
   /**
     * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
+    * to pod spodem woła tego drugiego
     */
   def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]]
 
@@ -54,16 +55,9 @@ trait DeploymentManager extends AutoCloseable {
 trait AlwaysFreshProcessState { self: DeploymentManager =>
 
   final override def getProcessState(name: ProcessName)
-                                    (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
+                                    (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]] =
     getFreshProcessState(name).map(WithDataFreshnessStatus(_, cached = false))
 
-  final override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])
-                                    (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
-    getFreshProcessState(name, lastAction).map(WithDataFreshnessStatus(_, cached = false))
-  }
-
-  protected def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]]
-
-  protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]]
+  protected def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]]
 
 }

@@ -13,17 +13,13 @@ import scala.concurrent.Future
 
 class DeploymentManagerStub extends BaseDeploymentManager {
 
-  var jobStatus: Option[ProcessState] = None
+  var jobStatus: Option[StatusDetails] = None
 
   def setStateStatus(status: StateStatus): Unit = {
-    jobStatus = Some(ProcessState(
+    jobStatus = Some(StatusDetails(
       deploymentId = Some(ExternalDeploymentId("1")),
       status = status,
       version = None,
-      allowedActions = Nil,
-      icon = UnknownIcon,
-      tooltip = "dummy",
-      description = "dummy",
       startTime = None,
       attributes = None,
       errors = Nil
@@ -37,9 +33,10 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = Future.successful(jobStatus)
+  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
+    Future.successful(WithDataFreshnessStatus(jobStatus.map(processStateDefinitionManager.processState), cached = false))
 
-  override def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] = Future.successful(jobStatus)
+  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = Future.successful(jobStatus)
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
 }

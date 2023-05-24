@@ -34,7 +34,6 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     state shouldBe Some(
       K8sProcessStateDefinitionManager.processState(SimpleStateStatus.Running, None, Some(version), Some(timestamp), None, Nil)
     )
-    state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Deploy, ProcessActionType.Pause, ProcessActionType.Cancel)
   }
 
   test("detects scenario in deployment") {
@@ -42,7 +41,6 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     state shouldBe Some(
       K8sProcessStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy, None, Some(version), Some(timestamp), None, Nil)
     )
-    state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   }
 
 
@@ -54,7 +52,6 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
           "ReplicaSet \"scenario-7-processname-aaaaa-x-5c799f64b8\" has timed out progressing.")
       )
     )
-    state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   }
 
   test("detects restarting (crashing) scenario") {
@@ -63,7 +60,6 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     state shouldBe Some(
       K8sProcessStateDefinitionManager.processState(SimpleStateStatus.Restarting, None, Some(version), Some(timestamp), None, Nil)
     )
-    state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   }
 
   test("detects multiple deployments") {
@@ -75,7 +71,6 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
       K8sProcessStateDefinitionManager.processState(ProblemStateStatus.multipleJobsRunning, None, None, None, None,
         "Expected one deployment, instead: scenario-7-processname-aaaaa-x, otherName" :: Nil)
     )
-    state.toList.flatMap(_.allowedActions) should contain theSameElementsAs List(ProcessActionType.Cancel)
   }
 
   //TODO: some test for ongoing termination??

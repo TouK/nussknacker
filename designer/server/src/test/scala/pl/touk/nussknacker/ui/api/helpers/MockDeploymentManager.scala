@@ -33,22 +33,19 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     this(SimpleStateStatus.Running)
   }
 
-  private def prepareProcessState(status: StateStatus): Option[ProcessState] =
+  private def prepareProcessState(status: StateStatus): Option[StatusDetails] =
     prepareProcessState(status, Some(ProcessVersion.empty))
 
-  private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[ProcessState] =
-    Some(SimpleProcessStateDefinitionManager.processState(status, Some(ExternalDeploymentId("1")), version))
+  private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[StatusDetails] =
+    Some(StatusDetails(status, Some(ExternalDeploymentId("1")), version))
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = {
+  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = ???
+
+  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)
       managerProcessState.getOrDefault(name, prepareProcessState(defaultProcessStateStatus))
     }
-  }
-
-  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] = {
-    getFreshProcessState(name)
-      .map(processStateOpt => Some(InconsistentStateDetector.resolve(processStateOpt, lastAction)))
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
@@ -69,7 +66,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
 
   private var cancelResult: Future[Unit] = Future.successful(())
 
-  private val managerProcessState = new ConcurrentHashMap[ProcessName, Option[ProcessState]]
+  private val managerProcessState = new ConcurrentHashMap[ProcessName, Option[StatusDetails]]
 
   @volatile
   private var delayBeforeStateReturn: FiniteDuration = 0 seconds
@@ -142,7 +139,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     withProcessState(processName, None)(action)
   }
 
-  def withProcessState[T](processName: ProcessName, status: Option[ProcessState])(action: => T): T = {
+  def withProcessState[T](processName: ProcessName, status: Option[StatusDetails])(action: => T): T = {
     try {
       managerProcessState.put(processName, status)
       action

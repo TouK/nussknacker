@@ -32,7 +32,6 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     eventually {
       val jobStatus = manager.getProcessState(name).futureValue.value
       jobStatus.map(_.status) shouldBe Some(SimpleStateStatus.Restarting)
-      jobStatus.map(_.allowedActions).get should contain only (ProcessActionType.Cancel)
     }
 
     kafkaServer.kafkaServer.startup()

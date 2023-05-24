@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Archive, Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionType, ProcessState, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionType, ProcessState, StateStatus, StatusDetails}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
@@ -233,11 +233,41 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
   }
 
+  test("Should return state with error when state is finished and process hasn't action") {
+    val processName: ProcessName = generateProcessName
+    val id = prepareProcess(processName).dbioActionValues
+
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Finished) {
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      val expectedStatus = ProblemStateStatus.processWithoutAction
+      state.status shouldBe expectedStatus
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe expectedStatus.description
+    }
+  }
+
+  test("Should return state with warning when state is restarting and process hasn't had action (couldn't be even deployed)") {
+    val processName: ProcessName = generateProcessName
+    val id = prepareProcess(processName).dbioActionValues
+
+    val state = StatusDetails(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+
+    deploymentManager.withProcessState(processName, Some(state)) {
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      val expectedStatus = ProblemStateStatus.processWithoutAction
+      state.status shouldBe expectedStatus
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe expectedStatus.description
+    }
+  }
+
   test("Should return state with status Restarting when process has been deployed and is restarting") {
     val processName: ProcessName = generateProcessName
     val id = prepareDeployedProcess(processName).dbioActionValues
 
-    val state = FlinkProcessStateDefinitionManager.processState(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+    val state = StatusDetails(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessState(processName, Some(state)) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue

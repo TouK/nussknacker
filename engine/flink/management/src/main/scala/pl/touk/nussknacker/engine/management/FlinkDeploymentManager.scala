@@ -41,7 +41,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
       oldJob <- OptionT(checkOldJobStatus(processVersion))
       deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
       //when it's failed we don't need savepoint...
-      if oldJob.isDeployed
+      if oldJob.status.isRunning || oldJob.status.isDuringDeploy
       maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, deploymentId, canonicalProcess))
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")
@@ -64,13 +64,8 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit]
 
-  private def checkOldJobStatus(processVersion: ProcessVersion): Future[Option[ProcessState]] = {
-    val processName = processVersion.processName
-    for {
-      oldJob <- getFreshProcessState(processName)
-      _ <- if (oldJob.exists(!_.allowedActions.contains(ProcessActionType.Deploy)))
-        Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.map(_.status.name).getOrElse("")}")) else Future.successful(Some(()))
-    } yield oldJob
+  private def checkOldJobStatus(processVersion: ProcessVersion): Future[Option[StatusDetails]] = {
+    getFreshProcessState(processVersion.processName)
   }
 
   protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit]
@@ -99,7 +94,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   private def requireRunningProcess[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value
     getFreshProcessState(processName).flatMap {
-      case Some(ProcessState(Some(deploymentId), status, _, _, _, _, _, _, _, _)) if status.isRunning =>
+      case Some(StatusDetails(status, Some(deploymentId), _, _, _, _)) if status.isRunning =>
         action(deploymentId)
       case Some(state) =>
         Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status.name}"))
@@ -133,10 +128,6 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
 
-  override protected def getFreshProcessState(name: ProcessName, lastAction: Option[ProcessAction]): Future[Option[ProcessState]] = {
-    getFreshProcessState(name)
-      .map(processStateOpt => Option(InconsistentStateDetector.resolve(processStateOpt, lastAction)))
-  }
 }
 
 object FlinkDeploymentManager {

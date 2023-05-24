@@ -33,18 +33,4 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   def errorFailedToGet: ProcessState =
     processState(failedToGet)
 
-  def errorShouldBeRunningState(deployedVersionId: VersionId, user: String): ProcessState =
-    processState(ProblemStateStatus.shouldBeRunning(deployedVersionId, user))
-
-  def errorMismatchDeployedVersionState(deployedVersionId: VersionId, exceptedVersionId: VersionId, user: String): ProcessState =
-    processState(ProblemStateStatus.mismatchDeployedVersion(deployedVersionId, exceptedVersionId, user))
-
-  def warningShouldNotBeRunningState(deployed: Boolean): ProcessState =
-    processState(ProblemStateStatus.shouldNotBeRunning(deployed))
-
-  def warningMissingDeployedVersionState(exceptedVersionId: VersionId, user: String): ProcessState =
-    processState(ProblemStateStatus.missingDeployedVersion(exceptedVersionId, user))
-
-  def warningProcessWithoutActionState: ProcessState =
-    processState(ProblemStateStatus.processWithoutAction)
 }
