@@ -1,17 +1,14 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.Validated
-import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import org.springframework.expression.spel.SpelNode
-import org.springframework.expression.spel.ast.{PropertyOrFieldReference, StringLiteral, VariableReference}
+import org.springframework.expression.spel.ast.{PropertyOrFieldReference, VariableReference}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedObjectTypingResult, TypedUnion, TypingResult}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
+import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.expression.Expression.Language
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 
 class SpelExpressionSuggesterWithTyper {
@@ -62,11 +59,8 @@ class SpelExpressionSuggesterWithTyper {
           val typedPrevNode = prevNodeInPosition match {
             case Some(prevNode) => val spelExpressionWithoutNodeInPosition = input.substring(0, prevNode.getEndPosition) + input.substring(p.getEndPosition)
               val parsedSpelExpressionWithoutNodeInPosition = parser.parseRaw(spelExpressionWithoutNodeInPosition)
-              val typedExpression = typer.typeExpression(parsedSpelExpressionWithoutNodeInPosition, ValidationContext(variables))
-              typedExpression match {
-                case Validated.Valid(collectedTypingResult) => collectedTypingResult.intermediateResults.get(SpelNodeId(prevNode))
-                case _ => None
-              }
+              val collectedTypingResult = typer.doTypeExpression(parsedSpelExpressionWithoutNodeInPosition, ValidationContext(variables))._2
+              collectedTypingResult.intermediateResults.get(SpelNodeId(prevNode))
             case _ => None
           }
 

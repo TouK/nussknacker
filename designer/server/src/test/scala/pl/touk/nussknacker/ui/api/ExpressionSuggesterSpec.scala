@@ -202,8 +202,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
 
   test("should suggest in complex expression #2") {
     suggestionsFor("#input.foo + #input.barB.bazC.quax") shouldBe List(
-      suggestion("quaxString", Typed[String]),
-      suggestion("toString", Typed[String]),
+      suggestion("quaxString", Typed[String])
     )
   }
 
@@ -265,7 +264,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
     suggestionsFor("#input\n  .ba\n  .bazC", 1, "  .ba".length) shouldBe List(suggestion("barB", Typed[B]))
   }
 
-  ignore("should omit whitespace formatting in suggest for multiline code #4") {
+  test("should omit whitespace formatting in suggest for multiline code #4") {
     suggestionsFor("#input\n  .barB.ba", 1, "  .barB.ba".length) shouldBe List(suggestion("barB",Typed[B]))
   }
 
@@ -288,19 +287,19 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  ignore("should suggest #this fields in simple projection") {
+  test("should suggest #this fields in simple projection") {
     suggestionsFor("#listVar.listField.![#this.f]", 0, "#listVar.listField.![#this.f".length)
   }
 
-  ignore("should suggest #this fields in projection on union of lists") {
+  test("should suggest #this fields in projection on union of lists") {
     suggestionsFor("#unionOfLists.![#this.f]", 0, "#unionOfLists.![#this.f".length)
   }
 
-  ignore("should suggest #this fields in projection after selection") {
+  test("should suggest #this fields in projection after selection") {
     suggestionsFor("#listVar.listField.?[#this == 'value'].![#this.f]", 0, "#listVar.listField.?[#this == 'value'].![#this.f".length)
   }
 
-  ignore("handles negated parameters with projections and selections") {
+  test("handles negated parameters with projections and selections") {
     suggestionsFor("!#listVar.listField.?[#this == 'value'].![#this.f]", 0, "!#listVar.listField.?[#this == 'value'].![#this.f".length)
   }
 
