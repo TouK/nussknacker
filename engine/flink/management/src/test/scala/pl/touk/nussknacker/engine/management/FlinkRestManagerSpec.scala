@@ -344,6 +344,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
               .withFixedDelay(delay.toMillis.toInt)))
       }
       implicit val backend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend()
+      implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
       val manager = new FlinkRestManager(
         config = config.copy(
           restUrl = wireMockServer.baseUrl(),
@@ -367,6 +368,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
   private def createManagerWithBackend(backend: SttpBackend[Future, Any]): FlinkRestManager = {
     implicit val b: SttpBackend[Future, Any] = backend
+    implicit val deploymentService: ProcessingTypeDeploymentService = new ProcessingTypeDeploymentServiceStub(List.empty)
     new FlinkRestManager(
       config = config,
       modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"

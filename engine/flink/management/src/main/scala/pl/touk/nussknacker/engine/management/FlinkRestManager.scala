@@ -22,7 +22,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)
-                      (implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
+                      (implicit ec: ExecutionContext, backend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService)
     extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName) with LazyLogging {
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)
@@ -37,6 +37,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
     getProcessState(name).map(_.map(statusDetailsOpt => {
       val engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusDetailsOpt, lastAction)
+      //FIXME: deploymentService.markProcessFinishedIfLastActionDeploy(...)
       Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
     }))
 

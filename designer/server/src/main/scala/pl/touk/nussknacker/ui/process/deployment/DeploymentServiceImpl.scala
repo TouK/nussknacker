@@ -316,19 +316,23 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.
-  private def handleFinishedProcess(processDetails: BaseProcessDetails[_], processState: Option[ProcessState])
-                                   (implicit ec: ExecutionContext): DB[Option[ProcessAction]] = {
+  def markProcessFinishedIfLastActionDeploy(processId: ProcessId)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
-    processState.filter(_.status.isFinished).flatMap { _ =>
-      processDetails.lastDeployedAction.map { lastDeployedAction =>
-        val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)
-        processChangeListener.handle(OnFinished(processDetails.processId, lastDeployedAction.processVersionId))
-        actionRepository
-          .addInstantAction(processDetails.processId, lastDeployedAction.processVersionId, ProcessActionType.Cancel, Some(finishedComment), None)
-          .map(a => Some(ProcessDBQueryRepository.toProcessAction((a, None))))
+    dbioRunner.run(for {
+      processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
+      processDetails <- processDataExistOrFail(processDetailsOpt, processId)
+      cancelActionOpt <- {
+        processDetails.lastDeployedAction.map { lastDeployedAction =>
+          val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)
+          processChangeListener.handle(OnFinished(processDetails.processId, lastDeployedAction.processVersionId))
+          actionRepository
+            .addInstantAction(processDetails.processId, lastDeployedAction.processVersionId, ProcessActionType.Cancel, Some(finishedComment), None)
+            .map(a => Some(ProcessDBQueryRepository.toProcessAction((a, None))))
+
+        }.getOrElse(DBIOAction.successful(None))
       }
-    }.getOrElse(DBIOAction.successful(None))
+    } yield cancelActionOpt)
   }
 
   private lazy val failedToGetProcessState =
