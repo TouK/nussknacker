@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
 import pl.touk.nussknacker.engine.json.swagger.implicits.RichSwaggerTyped
-import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SchemaBasedRecordParameter, SingleSchemaBasedParameter, SchemaBasedParameter}
+import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SchemaBasedRecordParameter, SingleSchemaBasedParameter, TestingParametersSupport}
 
 import scala.collection.immutable.ListMap
 

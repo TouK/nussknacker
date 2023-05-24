@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.util.sinkvalue
 
 import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData._
+import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedRecordParameter, SingleSchemaBasedParameter}
 
 object SinkValue {
   case class InvalidSinkValue(parameterName: String)

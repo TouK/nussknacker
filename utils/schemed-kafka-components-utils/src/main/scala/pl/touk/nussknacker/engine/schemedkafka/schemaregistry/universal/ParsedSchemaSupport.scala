@@ -25,7 +25,8 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serializ
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SingleSchemaBasedParameter, SchemaBasedParameter}
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
+import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
   protected implicit class RichParsedSchema(p: ParsedSchema){
@@ -59,12 +60,12 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
-  override def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)
+  override def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter, restrictedParamNames: Set[ParameterName])
                                (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     if (rawMode) {
       Validated.Valid(SingleSchemaBasedParameter(rawParameter, new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())))
     } else {
-      AvroSchemaBasedParameter(schema.cast().rawSchema())
+      AvroSchemaBasedParameter(schema.cast().rawSchema(), restrictedParamNames)
     }
   }
 
@@ -99,7 +100,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = schema.cast().returnType
 
-  override def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
+  override def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter, restrictedParamNames: Set[ParameterName])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     if (rawMode) {
       Validated.Valid(
         SingleSchemaBasedParameter(rawParameter, new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema()))

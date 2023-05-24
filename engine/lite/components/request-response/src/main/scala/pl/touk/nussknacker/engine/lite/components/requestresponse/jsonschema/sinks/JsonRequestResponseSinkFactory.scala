@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
 import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSchemaBasedParameter}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SingleSchemaBasedParameter, SchemaBasedParameter}
+import pl.touk.nussknacker.engine.util.parameters.{SingleSchemaBasedParameter, SchemaBasedParameter}
 
 object JsonRequestResponseSink {
 

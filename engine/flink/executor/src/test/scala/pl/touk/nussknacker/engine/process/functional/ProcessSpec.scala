@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SingleSchemaBasedParameter
+import pl.touk.nussknacker.engine.util.parameters.SingleSchemaBasedParameter
 
 import java.util.{Date, UUID}
 

@@ -8,15 +8,16 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.KafkaAvroSinkFactoryWithEditor.TransformationState
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaBasedParameter
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SchemaBasedParameter
 
 object KafkaAvroSinkFactoryWithEditor {
 
@@ -38,6 +39,8 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryClientFactory: SchemaRegi
 
   override def paramsDeterminedAfterSchema: List[Parameter] = KafkaAvroSinkFactoryWithEditor.paramsDeterminedAfterSchema
 
+  private val restrictedParamNames: Set[ParameterName] = Set(SchemaVersionParamName, SinkKeyParamName, topicParamName, SinkValidationModeParameterName)
+
   private def valueParamStep(context: ValidationContext)(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep
       (
@@ -58,7 +61,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryClientFactory: SchemaRegi
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
         }
       validatedSchema.andThen { schemaData =>
-        AvroSchemaBasedParameter(schemaData.schema.rawSchema()).map { valueParam =>
+        AvroSchemaBasedParameter(schemaData.schema.rawSchema(), restrictedParamNames).map { valueParam =>
           val state = TransformationState(schemaData, schemaDeterminer.toRuntimeSchema(schemaData), valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }

@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.JsonSchemaSupport.extractParameter
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SchemaBasedParameter
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 
 class UniversalSchemaSupportDispatcher private(kafkaConfig: KafkaConfig) {
 
@@ -38,10 +38,11 @@ trait UniversalSchemaSupport {
   def typeDefinition(schema: ParsedSchema): TypingResult
   def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
   def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
-  def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter]
+  def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter, restrictedParamNames: Set[ParameterName])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter]
 
   final def extractParameters(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] = {
-    extractParameter(schema, rawMode = false, validationMode = ValidationMode.lax, rawParameter = Parameter[AnyRef](SinkValueParamName)).map(_.toParameters)
+    extractParameter(schema, rawMode = false, validationMode = ValidationMode.lax,
+      rawParameter = Parameter[AnyRef](SinkValueParamName), restrictedParamNames = Set.empty).map(_.toParameters)
   }
 
   final def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
