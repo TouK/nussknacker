@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransform
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SchemaBasedParameter
 
 object KafkaAvroSinkFactoryWithEditor {
 
@@ -23,7 +23,7 @@ object KafkaAvroSinkFactoryWithEditor {
     Parameter.optional[CharSequence](KafkaUniversalComponentTransformer.SinkKeyParamName).copy(isLazyParameter = true)
   )
 
-  case class TransformationState(schema: RuntimeSchemaData[AvroSchema], runtimeSchema: Option[RuntimeSchemaData[AvroSchema]], sinkValueParameter: SinkValueParameter)
+  case class TransformationState(schema: RuntimeSchemaData[AvroSchema], runtimeSchema: Option[RuntimeSchemaData[AvroSchema]], schemaBasedParameter: SchemaBasedParameter)
 
 }
 
@@ -57,7 +57,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryClientFactory: SchemaRegi
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
         }
       validatedSchema.andThen { schemaData =>
-        AvroSinkValueParameter(schemaData.schema.rawSchema()).map { valueParam =>
+        AvroSchemaBasedParameter(schemaData.schema.rawSchema()).map { valueParam =>
           val state = TransformationState(schemaData, schemaDeterminer.toRuntimeSchema(schemaData), valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }
@@ -87,7 +87,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryClientFactory: SchemaRegi
     val preparedTopic = extractPreparedTopic(params)
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
     val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
-    val sinkValue = SinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
+    val sinkValue = SinkValue.applyUnsafe(finalState.schemaBasedParameter, parameterValues = params)
     val valueLazyParam = sinkValue.toLazyParameter
 
     val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(preparedTopic.prepared, finalState.runtimeSchema.map(_.toParsedSchemaData), kafkaConfig)

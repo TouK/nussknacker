@@ -7,13 +7,13 @@ object SinkValue {
   case class InvalidSinkValue(parameterName: String)
     extends Exception(s"Parameter: $parameterName must be a LazyParameter[AnyRef] instance.")
 
-  def applyUnsafe(sinkParameter: SinkValueParameter, parameterValues: Map[String, Any]): SinkValue =
+  def applyUnsafe(sinkParameter: SchemaBasedParameter, parameterValues: Map[String, Any]): SinkValue =
     sinkParameter match {
-      case SinkSingleValueParameter(param, _) =>
+      case SingleSchemaBasedParameter(param, _) =>
         val value = parameterValues(param.name)
         SinkSingleValue(toLazyParameter(value, param.name))
 
-      case SinkRecordParameter(paramFields) =>
+      case SchemaBasedRecordParameter(paramFields) =>
         val fields = paramFields.map { case (fieldName, sinkParam) =>
           (fieldName, applyUnsafe(sinkParam, parameterValues))
         }

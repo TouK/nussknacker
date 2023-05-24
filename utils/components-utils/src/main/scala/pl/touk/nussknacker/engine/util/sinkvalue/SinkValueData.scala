@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import scala.collection.immutable.ListMap
 
 /*
-  Intermediate object which helps with mapping Avro/JsonSchema sink editor structure to Avro/JsonSchema message (see SinkValueParameter)
+  Intermediate object which helps with mapping Avro/JsonSchema sink editor structure to Avro/JsonSchema message (see SchemaBasedParameter)
  */
 object SinkValueData {
 
@@ -33,21 +33,21 @@ object SinkValueData {
 
   case class SinkRecordValue(fields: ListMap[String, SinkValue]) extends SinkValue
 
-  // ParameterName can be created by concatenating names of records/object fields (RecordFieldName) - see AvroSinkValueParameter/JsonSinkValueParameter
+  // ParameterName can be created by concatenating names of records/object fields (RecordFieldName) - see AvroSchemaBasedParameter/JsonSchemaBasedParameter
   type RecordFieldName = String
   type ParameterName = String
 
-  sealed trait SinkValueParameter {
+  sealed trait SchemaBasedParameter {
     def toParameters: List[Parameter] = flatten.map(_.value)
 
-    def flatten: List[SinkSingleValueParameter] = this match {
-      case single: SinkSingleValueParameter => single :: Nil
-      case SinkRecordParameter(fields) => fields.values.toList.flatMap(_.flatten)
+    def flatten: List[SingleSchemaBasedParameter] = this match {
+      case single: SingleSchemaBasedParameter => single :: Nil
+      case SchemaBasedRecordParameter(fields) => fields.values.toList.flatMap(_.flatten)
     }
     def validateParams(resultType: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
   }
 
-  case class SinkSingleValueParameter(value: Parameter, validator: TypingResultValidator) extends SinkValueParameter {
+  case class SingleSchemaBasedParameter(value: Parameter, validator: TypingResultValidator) extends SchemaBasedParameter {
     override def validateParams(resultTypes: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       val paramName = value.name
       val paramResultType = resultTypes(paramName)
@@ -60,7 +60,7 @@ object SinkValueData {
     }
   }
 
-  case class SinkRecordParameter(fields: ListMap[RecordFieldName, SinkValueParameter]) extends SinkValueParameter {
+  case class SchemaBasedRecordParameter(fields: ListMap[RecordFieldName, SchemaBasedParameter]) extends SchemaBasedParameter {
     override def validateParams(actualResultTypes: Map[ParameterName, BaseDefinedParameter])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       flatten.map(_.validateParams(actualResultTypes)).sequence.map(_ => ())
     }

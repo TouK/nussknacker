@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.Tr
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SchemaBasedParameter
 
 /**
  * This is universal kafka sink - it will handle both avro and json
@@ -30,7 +30,7 @@ object UniversalKafkaSinkFactory {
     Parameter[Boolean](SinkRawEditorParamName).copy(defaultValue = Some(Expression.spel("false")), editor = Some(BoolParameterEditor), validators = List(MandatoryParameterValidator))
   )
 
-  case class TransformationState(schema: RuntimeSchemaData[ParsedSchema], sinkValueParameter: SinkValueParameter)
+  case class TransformationState(schema: RuntimeSchemaData[ParsedSchema], schemaBasedParameter: SchemaBasedParameter)
 }
 
 class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClientFactory,
@@ -66,7 +66,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
         }
         .andThen { runtimeSchemaData =>
           schemaSupportDispatcher.forSchemaType(runtimeSchemaData.schema.schemaType())
-            .extractSinkValueParameter(runtimeSchemaData.schema, rawMode = true, validationMode = extractValidationMode(mode), rawParameter = rawValueParam)
+            .extractParameter(runtimeSchemaData.schema, rawMode = true, validationMode = extractValidationMode(mode), rawParameter = rawValueParam)
             .map { extractedSinkParameter =>
               val validationAgainstSchemaErrors = extractedSinkParameter.validateParams(Map(SinkValueParamName -> value))
                 .swap
@@ -96,7 +96,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
       }
       validatedSchema.andThen { schemaData =>
         schemaSupportDispatcher.forSchemaType(schemaData.schema.schemaType())
-          .extractSinkValueParameter(schemaData.schema, rawMode = false, validationMode = ValidationMode.lax, rawValueParam)
+          .extractParameter(schemaData.schema, rawMode = false, validationMode = ValidationMode.lax, rawValueParam)
           .map { valueParam =>
             val state = TransformationState(schemaData, valueParam)
             //shouldn't happen except for empty schema, but it can lead to infinite loop...
@@ -108,7 +108,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
           }
       }.valueOr(e => FinalResults(context, e.toList))
     case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, Some(state)) =>
-      val errors = state.sinkValueParameter.validateParams(valueParams.toMap).swap.map(_.toList).getOrElse(Nil)
+      val errors = state.schemaBasedParameter.validateParams(valueParams.toMap).swap.map(_.toList).getOrElse(Nil)
       FinalResults(context, errors, Some(state))
   }
 
@@ -134,7 +134,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
     val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
 
-    val sinkValue = SinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
+    val sinkValue = SinkValue.applyUnsafe(finalState.schemaBasedParameter, parameterValues = params)
     val valueLazyParam = sinkValue.toLazyParameter
 
     val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(preparedTopic.prepared, Option(finalState.schema), kafkaConfig)

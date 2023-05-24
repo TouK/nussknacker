@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.json.JsonSinkValueParameter
+import pl.touk.nussknacker.engine.json.JsonSchemaBasedParameter
 import pl.touk.nussknacker.engine.json.encode.{BestEffortJsonSchemaEncoder, JsonSchemaOutputValidator}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
@@ -24,9 +24,9 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
-import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSinkValueParameter
+import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSchemaBasedParameter
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkSingleValueParameter, SinkValueParameter}
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SingleSchemaBasedParameter, SchemaBasedParameter}
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
   protected implicit class RichParsedSchema(p: ParsedSchema){
@@ -60,25 +60,16 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
-  def extractParameters(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] = {
-    AvroSinkValueParameter(schema.cast().rawSchema()).map(_.toParameters)
-  }
-
-  def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
-    val encoder = BestEffortAvroEncoder(ValidationMode.lax)
-    (data: Any) => recordFormatterSupport(schemaRegistryClient).formatMessage(encoder.encodeOrError(data, schema.cast().rawSchema()))
-  }
-
-  override def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)
-                                        (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
+  override def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)
+                               (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     if (rawMode) {
-      Validated.Valid(SinkSingleValueParameter(rawParameter, new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())))
+      Validated.Valid(SingleSchemaBasedParameter(rawParameter, new AvroSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema())))
     } else {
-      AvroSinkValueParameter(schema.cast().rawSchema())
+      AvroSchemaBasedParameter(schema.cast().rawSchema())
     }
   }
 
-  override def sinkValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef = {
+  override def formValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef = {
     val encoder = BestEffortAvroEncoder(validationMode)
     (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
   }
@@ -109,26 +100,18 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = schema.cast().returnType
 
-  def extractParameters(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] = {
-    JsonSinkValueParameter(schema.cast().rawSchema(), SinkValueParamName, ValidationMode.lax)(nodeId).map(_.toParameters)
-  }
-
-  def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
-    recordFormatterSupport(schemaRegistryClient).formatMessage
-  }
-
-  override def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
+  override def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter] = {
     if (rawMode) {
       Validated.Valid(
-        SinkSingleValueParameter(rawParameter, new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema()))
+        SingleSchemaBasedParameter(rawParameter, new JsonSchemaOutputValidator(validationMode).validate(_, schema.cast().rawSchema()))
       )
     } else {
       //in editor mode we use lax validation mode, to be backward compatible
-      JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName, ValidationMode.lax)
+      JsonSchemaBasedParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName, ValidationMode.lax)
     }
   }
 
-  override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
+  override def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
     (value: Any) => BestEffortJsonSchemaEncoder.encodeOrError(value, schema.cast().rawSchema())
   }
 
