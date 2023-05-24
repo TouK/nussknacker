@@ -60,6 +60,15 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
+  def extractParameters(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] = {
+    AvroSinkValueParameter(schema.cast().rawSchema()).map(_.toParameters)
+  }
+
+  def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
+    val encoder = BestEffortAvroEncoder(ValidationMode.lax)
+    (data: Any) => recordFormatterSupport(schemaRegistryClient).formatMessage(encoder.encodeOrError(data, schema.cast().rawSchema()))
+  }
+
   override def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)
                                         (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     if (rawMode) {
@@ -99,6 +108,14 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     }
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = schema.cast().returnType
+
+  def extractParameters(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] = {
+    JsonSinkValueParameter(schema.cast().rawSchema(), SinkValueParamName, ValidationMode.lax)(nodeId).map(_.toParameters)
+  }
+
+  def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
+    recordFormatterSupport(schemaRegistryClient).formatMessage
+  }
 
   override def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     if (rawMode) {

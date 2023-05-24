@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceIm
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 
@@ -132,20 +133,22 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
       recordFormatter, kafkaContextInitializer, prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original))
   }
 
-  private def prepareKafkaTestParametersInfo(runtimeSchema: Option[RuntimeSchemaData[ParsedSchema]], topic: String)
-                           (implicit nodeId: NodeId): KafkaTestParametersInfo = {
-    Validated.fromOption(runtimeSchema, NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None)))
-      .andThen { schema => schemaSupportDispatcher
-        .parametersFromRuntimeParsedSchema(schema)
-        .map { params => KafkaTestParametersInfo(params, prepareTestRecord(schema, topic)) }
+  private def prepareKafkaTestParametersInfo(runtimeSchemaOpt: Option[RuntimeSchemaData[ParsedSchema]], topic: String)
+                                            (implicit nodeId: NodeId): KafkaTestParametersInfo = {
+    Validated.fromOption(runtimeSchemaOpt, NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None)))
+      .andThen { runtimeSchema =>
+        val universalSchemaSupport: UniversalSchemaSupport = schemaSupportDispatcher.forSchemaType(runtimeSchema.schema.schemaType())
+        universalSchemaSupport
+          .extractParameters(runtimeSchema.schema)
+          .map { params => KafkaTestParametersInfo(params, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic)) }
       }.valueOr(e => throw new RuntimeException(e.toList.mkString("")))
   }
 
-  private def prepareTestRecord(schema: RuntimeSchemaData[ParsedSchema], topic: String): Any => TestRecord = any => {
-    val json = schemaSupportDispatcher.messageFormatterFromParsedSchema(schema.schema, schemaRegistryClient)(any)
+  private def prepareTestRecord(runtimeSchema: RuntimeSchemaData[ParsedSchema], universalSchemaSupport: UniversalSchemaSupport, topic: String): Any => TestRecord = any => {
+    val json = universalSchemaSupport.prepareMessageFormatter(runtimeSchema.schema, schemaRegistryClient)(any)
     val serializedConsumerRecord = SerializableConsumerRecord[Json, Json](None, json, Some(topic), None, None, None, None, None, None)
     TestRecord(
-      SchemaBasedSerializableConsumerRecord[Json, Json](None, schema.schemaIdOpt, serializedConsumerRecord).asJson
+      SchemaBasedSerializableConsumerRecord[Json, Json](None, runtimeSchema.schemaIdOpt, serializedConsumerRecord).asJson
     )
   }
 
