@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.NonEmptyList._
 import cats.data.Validated._
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel, Writer}
 import cats.implicits.catsSyntaxValidatedId
 import cats.instances.list._
 import cats.instances.map._
@@ -56,46 +55,47 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
 
   private lazy val typeReferenceTyper = new TypeReferenceTyper(evaluationContext, typeDefinitionSet)
 
-  type NodeTypingResult = ValidatedNel[ExpressionParseError, CollectedTypingResult]
+  type TypingR[T] = Writer[List[ExpressionParseError], T]
+  type NodeTypingResult = TypingR[CollectedTypingResult]
 
   def typeExpression(expr: Expression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+    val (errors, result) = doTypeExpression(expr, ctx)
+    NonEmptyList.fromList(errors).map(_.invalid).getOrElse(result.valid)
+  }
+
+  def doTypeExpression(expr: Expression, ctx: ValidationContext): (List[ExpressionParseError], CollectedTypingResult) = {
     expr match {
       case e: standard.SpelExpression =>
         typeExpression(e, ctx)
       case e: CompositeStringExpression =>
-        val validatedParts = e.getExpressions.toList.map(typeExpression(_, ctx)).sequence
+        val (errors, results) = e.getExpressions.toList.map(doTypeExpression(_, ctx)).sequence
         // We drop intermediate results here:
         // * It's tricky to combine it as each of the subexpressions has it's own abstract tree with positions relative to the subexpression's starting position
         // * CompositeStringExpression is dedicated to template SpEL expressions. It cannot be nested (as templates cannot be nested)
         // * Currently we don't use intermediate typing results outside of Typer
-        validatedParts.map(_ => CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
-      case e: LiteralExpression =>
-        Valid(CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
-      case e: NullExpression =>
-        Valid(CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
+        (errors, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
+      case _: LiteralExpression =>
+        (Nil, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
+      case _: NullExpression =>
+        (Nil, CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Typed[String])))
     }
   }
 
-  private def typeExpression(spelExpression: standard.SpelExpression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  private def typeExpression(spelExpression: standard.SpelExpression, ctx: ValidationContext): (List[ExpressionParseError], CollectedTypingResult) = {
     val ast = spelExpression.getAST
-    val result = typeNode(ctx, ast, TypingContext(List.empty, Map.empty))
+    val (errors, collectedResult) = typeNode(ctx, ast, TypingContext(List.empty, Map.empty)).run
     logger.whenTraceEnabled {
-      result match {
-        case Valid(collectedResult) =>
-          val printer = new SpelNodePrettyPrinter(n => collectedResult.intermediateResults.get(SpelNodeId(n)).map(_.display).getOrElse("NOT_TYPED"))
-          logger.trace("typed valid expression: " + printer.print(ast))
-        case Invalid(errors) =>
-          logger.trace(s"typed invalid expression: ${spelExpression.getExpressionString}, errors: ${errors.toList.mkString(", ")}")
-      }
+      val printer = new SpelNodePrettyPrinter(n => collectedResult.intermediateResults.get(SpelNodeId(n)).map(_.display).getOrElse("NOT_TYPED"))
+      logger.trace(s"typed nodes: ${printer.print(ast)}, errors: ${errors.mkString(", ")}")
     }
-    result
+    (errors, collectedResult)
   }
 
   private def typeNode(validationContext: ValidationContext, node: SpelNode, current: TypingContext): NodeTypingResult = {
 
     def toResult(typ: TypingResult) = current.toResult(TypedNode(node, TypingResultWithContext(typ)))
 
-    def valid(typ: TypingResult) = Valid(toResult(typ))
+    def valid(typ: TypingResult) = Writer(List.empty[ExpressionParseError], toResult(typ))
 
     val withTypedChildren = typeChildren(validationContext, node, current) _
 
@@ -103,9 +103,12 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
 
     val fixed = fixedWithNewCurrent(current)
 
-    def withChildrenOfType[Parts: universe.TypeTag](result: TypingResultWithContext) = withTypedChildren {
-      case list if list.forall(_.typingResult.canBeSubclassOf(Typed.fromDetailedType[Parts])) => Valid(result)
-      case _ => PartTypeError.invalidNel
+    def withChildrenOfType[Parts: universe.TypeTag](result: TypingResultWithContext) = {
+      val w = Writer(List.empty[ExpressionParseError], result)
+      withTypedChildren {
+        case list if list.forall(_.typingResult.canBeSubclassOf(Typed.fromDetailedType[Parts])) => w
+        case _ => w.tell(List(PartTypeError))
+      }
     }
 
     def withTwoChildrenOfType[A: universe.TypeTag, R: universe.TypeTag](op: (A, A) => R) = {
@@ -119,8 +122,8 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
               rightValue <- right.valueOpt
               res = op(leftValue, rightValue)
             } yield Typed.fromInstance(res)
-            TypingResultWithContext(typeFromOp.getOrElse(resultType)).validNel
-          case _ => PartTypeError.invalidNel
+            Writer(List.empty, TypingResultWithContext(typeFromOp.getOrElse(resultType)))
+          case _ => Writer(List(PartTypeError), TypingResultWithContext(resultType))
         }
       }
     }
@@ -147,19 +150,23 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
         case d: TypedDict => dictTyper.typeDictValue(d, e).map(toResult)
         case TypedUnion(possibleTypes) => typeUnion(e, possibleTypes)
         case TypedTaggedValue(underlying, _) => typeIndexer(e, underlying)
-        case _ => if (dynamicPropertyAccessAllowed) valid(Unknown) else DynamicPropertyAccessError.invalidNel
+        case _ =>
+          val w = valid(Unknown)
+          if (dynamicPropertyAccessAllowed) w else w.tell(List(DynamicPropertyAccessError))
       }
     }
 
     catchUnexpectedErrors(node match {
 
-      case e: Assign => ModificationError.invalidNel
-      case e: BeanReference => BeanReferenceError.invalidNel
+      case e: Assign => Writer(List(ModificationError), CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Unknown)))
+      case e: BeanReference => Writer(List(BeanReferenceError), CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Unknown)))
       case e: CompoundExpression => e.children match {
         case first :: rest =>
           val validatedLastType = rest.foldLeft(typeNode(validationContext, first, current)) {
-            case (Valid(prevResult), next) => typeNode(validationContext, next, current.pushOnStack(prevResult))
-            case (invalid, _) => invalid
+            case (prevW, next) =>
+              prevW.flatMap { prevResult =>
+                typeNode(validationContext, next, current.pushOnStack(prevResult))
+              }
           }
           validatedLastType.map { lastType =>
             CollectedTypingResult(lastType.intermediateResults + (SpelNodeId(e) -> lastType.finalResult), lastType.finalResult)
@@ -174,12 +181,12 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
         //TODO: validate constructor parameters...
         val clazz = classToUse.flatMap(kl => typeDefinitionSet.get(kl).map(_.clazzName))
         clazz match {
-          case Some(typedClass) => Valid(TypingResultWithContext(typedClass))
-          case None => ConstructionOfUnknown(classToUse).invalidNel
+          case Some(typedClass) => Writer(List.empty, TypingResultWithContext(typedClass))
+          case None => Writer(List(ConstructionOfUnknown(classToUse)), TypingResultWithContext(Unknown))
         }
       }
 
-      case e: Elvis => withTypedChildren(l => Valid(TypingResultWithContext(Typed(l.map(_.typingResult).toSet))))
+      case e: Elvis => withTypedChildren(l => Writer(List.empty, TypingResultWithContext(Typed(l.map(_.typingResult).toSet))))
       //TODO: what should be here?
       case e: FunctionReference => valid(Unknown)
 
@@ -187,8 +194,10 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
       case e: Identifier => valid(Unknown)
       //TODO: what should be here?
       case e: Indexer => current.stack.headOption match {
-        case None => IllegalIndexingOperation.invalidNel
-        case Some(result) => typeIndexer(e, result.typingResult)
+        case None =>
+          Writer(List(IllegalIndexingOperation), CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Unknown)))
+        case Some(result) =>
+          typeIndexer(e, result.typingResult)
       }
 
       case e: Literal => valid(Typed.fromInstance(e.getLiteralValue.getValue))
@@ -201,7 +210,7 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
         //We don't want Typed.empty here, as currently it means it won't validate for any signature
         val elementType = if (children.isEmpty) TypingResultWithContext(Unknown)
           else TypingResultWithContext(children.map(typ => typ.typingResult).reduce(getSupertype))
-        Valid(TypingResultWithContext(Typed.genericTypeClass[java.util.List[_]](List(elementType.typingResult))))
+        Writer(List.empty, TypingResultWithContext(Typed.genericTypeClass[java.util.List[_]](List(elementType.typingResult))))
       }
 
       case e: InlineMap =>
@@ -214,13 +223,13 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
             case b: StringLiteral => b.getLiteralValue.getValue.toString
           }
 
-        if (literalKeys.size != keys.size) {
-          MapWithExpressionKeysError.invalidNel
-        } else {
-          values.map(typeNode(validationContext, _, current.withoutIntermediateResults)).sequence.andThen { typedValues =>
-            withCombinedIntermediate(typedValues, current) { typedValues =>
+        values.map(typeNode(validationContext, _, current.withoutIntermediateResults)).sequence.flatMap { typedValues =>
+          withCombinedIntermediate(typedValues, current) { typedValues =>
+            if (literalKeys.size != keys.size) {
+              Writer(List(MapWithExpressionKeysError), TypedNode(node, TypingResultWithContext(Unknown)))
+            } else {
               val typ = TypedObjectTypingResult(literalKeys.zip(typedValues.map(_.typingResult)))
-              Valid(TypedNode(node, TypingResultWithContext(typ)))
+              Writer(List.empty, TypedNode(node, TypingResultWithContext(typ)))
             }
           }
         }
@@ -238,41 +247,41 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
       case e: OpLE => withTwoChildrenOfType(MathUtils.lesserOrEqual)
       case e: OpLT => withTwoChildrenOfType(MathUtils.lesser)
 
-      case e: OpDec => checkSingleOperandArithmeticOperation(validationContext, e, current)(Some(MathUtils.minus(_, 1).validNel))
-      case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)(Some(MathUtils.plus(_, 1).validNel))
+      case e: OpDec => checkSingleOperandArithmeticOperation(validationContext, e, current)(MathUtils.minus(_, 1))
+      case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)(MathUtils.plus(_, 1))
 
       case e: OpDivide =>
-        val op = Some((x: Number, y: Number) =>
+        val op = (x: Number, y: Number) =>
           if (y.doubleValue() == 0) DivisionByZeroError(e.toStringAST).invalidNel
-          else MathUtils.divide(x, y).validNel)
-        checkTwoOperandsArithmeticOperation(validationContext, e, current)(op)(NumberTypesPromotionStrategy.ForMathOperation)
+          else MathUtils.divide(x, y).validNel
+        checkTwoOperandsArithmeticOperation(validationContext, e, current)(Some(op))(NumberTypesPromotionStrategy.ForMathOperation)
 
       case e: OpMinus => withTypedChildren {
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil
           if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
           val supertype = commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation).withoutValue
-          val result = operationOnTypesValue[Number, Number, Number](left, right)(MathUtils.minus(_, _).validNel).getOrElse(supertype.validNel)
+          val result = operationOnTypesValue[Number, Number, Number](left, right, supertype)(MathUtils.minus(_, _).validNel)
           result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil
           if left == right =>
-          OperatorNonNumericError(e.getOperatorName, left).invalidNel
+          Writer(List(OperatorNonNumericError(e.getOperatorName, left)), TypingResultWithContext(Unknown))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
-          OperatorMismatchTypeError(e.getOperatorName, left, right).invalidNel
+          Writer(List(OperatorMismatchTypeError(e.getOperatorName, left, right)), TypingResultWithContext(Unknown))
         case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
           val resultType = left.withoutValue
-          val result = operationOnTypesValue[Number, Number](left)(MathUtils.negate(_).validNel).getOrElse(resultType.validNel)
-          result.map(TypingResultWithContext(_))
+          val result = operationOnTypesValue[Number, Number](left)(MathUtils.negate).getOrElse(resultType)
+          Writer(List.empty, TypingResultWithContext(result))
         case TypingResultWithContext(left, _) :: Nil =>
-          OperatorNonNumericError(e.getOperatorName, left).invalidNel
+          Writer(List(OperatorNonNumericError(e.getOperatorName, left)), TypingResultWithContext(Unknown))
         case Nil =>
-          EmptyOperatorError(e.getOperatorName).invalidNel
+          Writer(List(EmptyOperatorError(e.getOperatorName)), TypingResultWithContext(Unknown))
         case _ => throw new IllegalStateException("should not happen")
       }
       case e: OpModulus =>
-        val op = Some((x: Number, y: Number) =>
+        val op = (x: Number, y: Number) =>
           if (y.doubleValue() == 0) ModuloZeroError(e.toStringAST).invalidNel
-          else MathUtils.remainder(x, y).validNel)
-        checkTwoOperandsArithmeticOperation(validationContext, e, current)(op)(NumberTypesPromotionStrategy.ForMathOperation)
+          else MathUtils.remainder(x, y).validNel
+        checkTwoOperandsArithmeticOperation(validationContext, e, current)(Some(op))(NumberTypesPromotionStrategy.ForMathOperation)
       case e: OpMultiply =>
         checkTwoOperandsArithmeticOperation(validationContext, e, current)(Some(MathUtils.multiply(_, _).validNel))(NumberTypesPromotionStrategy.ForMathOperation)
       case e: OperatorPower =>
@@ -280,21 +289,22 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
 
       case e: OpPlus => withTypedChildren {
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left == Unknown || right == Unknown =>
-          Valid(TypingResultWithContext(Unknown))
+          Writer(List.empty, TypingResultWithContext(Unknown))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) =>
-          val result = operationOnTypesValue[Any, Any, String](left, right)((l, r) => (l.toString + r.toString).validNel).getOrElse(Typed[String].validNel)
+          val result = operationOnTypesValue[Any, Any, String](left, right, Typed[String])((l, r) => (l.toString + r.toString).validNel)
           result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
           val supertype = commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation).withoutValue
-          val result = operationOnTypesValue[Number, Number, Number](left, right)(MathUtils.plus(_, _).validNel).getOrElse(supertype.validNel)
+          val result = operationOnTypesValue[Number, Number, Number](left, right, supertype)(MathUtils.plus(_, _).validNel)
           result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
-          OperatorMismatchTypeError(e.getOperatorName, left, right).invalidNel
+          Writer(List(OperatorMismatchTypeError(e.getOperatorName, left, right)), TypingResultWithContext(Unknown))
         case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
-          Valid(TypingResultWithContext(left))
+          Writer(List.empty, TypingResultWithContext(left))
         case TypingResultWithContext(left, _) :: Nil =>
-          OperatorNonNumericError(e.getOperatorName, left).invalidNel
-        case Nil => EmptyOperatorError(e.getOperatorName).invalidNel
+          Writer(List(OperatorNonNumericError(e.getOperatorName, left)), TypingResultWithContext(Unknown))
+        case Nil =>
+          Writer(List(EmptyOperatorError(e.getOperatorName)), TypingResultWithContext(Unknown))
         case _ => throw new IllegalStateException("should not happen")
       }
       case e: OperatorBetween => fixed(TypingResultWithContext(Typed[Boolean]))
@@ -303,46 +313,52 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
       case e: OperatorNot => withChildrenOfType[Boolean](TypingResultWithContext(Typed[Boolean]))
 
       case e: Projection => current.stackHead match {
-        case None => IllegalProjectionError.invalidNel
+        case None =>
+          Writer(List(IllegalProjectionError), CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Unknown)))
         //index, check if can project?
         case Some(iterateType) =>
-          extractIterativeType(iterateType.typingResult).andThen { listType =>
+          extractIterativeType(iterateType.typingResult).flatMap { listType =>
             typeChildren(validationContext, node, current.pushOnStack(listType)) {
-              case TypingResultWithContext(result, _) :: Nil => Valid(TypingResultWithContext(Typed.genericTypeClass[java.util.List[_]](List(result))))
-              case other => IllegalSelectionTypeError(other.map(_.typingResult)).invalidNel
+              case TypingResultWithContext(result, _) :: Nil =>
+                Writer(List.empty, TypingResultWithContext(Typed.genericTypeClass[java.util.List[_]](List(result))))
+              case other =>
+                Writer(List(IllegalSelectionTypeError(other.map(_.typingResult))), TypingResultWithContext(Unknown))
             }
           }
       }
 
       case e: PropertyOrFieldReference =>
         current.stackHead.map(head => extractProperty(e, head.typingResult).map(toResult)).getOrElse {
-          NonReferenceError(e.toStringAST).invalidNel
+          Writer(List(NonReferenceError(e.toStringAST)), CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Unknown)))
         }
       //TODO: what should be here?
       case e: QualifiedIdentifier => fixed(TypingResultWithContext(Unknown))
 
       case e: Selection => current.stackHead match {
-        case None => IllegalSelectionError.invalidNel
+        case None => Writer(List(IllegalSelectionError), CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Unknown)))
         case Some(iterateType) =>
-          extractIterativeType(iterateType.typingResult).andThen { elementType =>
+          extractIterativeType(iterateType.typingResult).flatMap { elementType =>
             typeChildren(validationContext, node, current.pushOnStack(elementType)) {
-              case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) => Valid(resolveSelectionTypingResult(e, iterateType, elementType))
-              case other => IllegalSelectionTypeError(other.map(_.typingResult)).invalidNel
+              case TypingResultWithContext(result, _) :: Nil if result.canBeSubclassOf(Typed[Boolean]) =>
+                Writer(List.empty, resolveSelectionTypingResult(e, iterateType, elementType))
+              case other =>
+                Writer(List(IllegalSelectionTypeError(other.map(_.typingResult))), TypingResultWithContext(Unknown))
             }
           }
       }
 
       case e: Ternary => withTypedChildren {
         case TypingResultWithContext(condition, _) :: TypingResultWithContext(onTrue, _) :: TypingResultWithContext(onFalse, _) :: Nil =>
-          lazy val superType = commonSupertypeFinder.commonSupertype(onTrue, onFalse)(NumberTypesPromotionStrategy.ToSupertype)
+          val superType = commonSupertypeFinder.commonSupertype(onTrue, onFalse)(NumberTypesPromotionStrategy.ToSupertype)
+          val w = Writer(List.empty[ExpressionParseError], TypingResultWithContext(superType))
           if (!condition.canBeSubclassOf(Typed[Boolean])) {
-            TernaryOperatorNotBooleanError(condition).invalidNel
+            w.tell(List(TernaryOperatorNotBooleanError(condition)))
           } else if (superType == Typed.empty) {
-            TernaryOperatorMismatchTypesError(onTrue, onFalse).invalidNel
+            w.tell(List(TernaryOperatorMismatchTypesError(onTrue, onFalse)))
           } else {
-            Valid(TypingResultWithContext(superType))
+            w
           }
-        case _ => InvalidTernaryOperator.invalidNel // shouldn't happen
+        case _ => Writer(List(InvalidTernaryOperator), TypingResultWithContext(Unknown)) // shouldn't happen
       }
 
       case e: TypeReference =>
@@ -358,22 +374,26 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
         val name = e.toStringAST.substring(1)
         validationContext.get(name).orElse(current.stackHead.map(_.typingResult).filter(_ => name == "this")) match {
           case Some(result) => valid(result)
-          case None => UnresolvedReferenceError(name).invalidNel
+          case None => Writer(List(UnresolvedReferenceError(name)), CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Unknown)))
         }
     })
   }
 
   private def operationOnTypesValue[A, R](typ: TypingResult)
-                                         (op: A => ValidatedNel[ExpressionParseError, R]): Option[ValidatedNel[ExpressionParseError, TypingResult]] =
-    typ.valueOpt.map(v => op(v.asInstanceOf[A]).map(Typed.fromInstance))
+                                         (op: A => R): Option[TypingResult] =
+    typ.valueOpt.map(v => Typed.fromInstance(op(v.asInstanceOf[A])))
 
-  private def operationOnTypesValue[A, B, R](left: TypingResult, right: TypingResult)
-                                            (op: (A, B) => ValidatedNel[ExpressionParseError, R]): Option[ValidatedNel[ExpressionParseError, TypingResult]] =
-    for {
+  private def operationOnTypesValue[A, B, R](left: TypingResult, right: TypingResult, fallbackType: TypingResult)
+                                            (op: (A, B) => ValidatedNel[ExpressionParseError, R]): TypingR[TypingResult] =
+    (for {
       leftValue <- left.valueOpt
       rightValue <- right.valueOpt
       res = op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[B])
-    } yield res.map(Typed.fromInstance)
+    } yield {
+      res.map(Typed.fromInstance)
+        .map(Writer(List.empty[ExpressionParseError], _))
+        .valueOr(err => Writer(err.toList, fallbackType))
+    }).getOrElse(Writer(List.empty[ExpressionParseError], fallbackType))
 
   //currently there is no better way than to check ast string starting with $ or ^
   private def resolveSelectionTypingResult(node: Selection, parentType: TypingResultWithContext, childElementType: TypingResult) = {
@@ -384,7 +404,7 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
   private def checkEqualityLikeOperation(validationContext: ValidationContext,
                                          node: Operator,
                                          current: TypingContext,
-                                         isEquality: Boolean): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                                         isEquality: Boolean): TypingR[CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case TypingResultWithContext(TypedObjectWithValue(leftVariable, leftValue), _) ::
         TypingResultWithContext(TypedObjectWithValue(rightVariable, rightValue), _) :: Nil =>
@@ -394,66 +414,75 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
       case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
         checkEqualityComparableTypes(left, right, node).map(TypingResultWithContext(_))
       case _ =>
-        BadOperatorConstructionError(node.getOperatorName).invalidNel // shouldn't happen
+        Writer(List(BadOperatorConstructionError(node.getOperatorName)), TypingResultWithContext(Typed[Boolean])) // shouldn't happen
     }
   }
 
-  private def checkEqualityComparableTypes(left: TypingResult, right: TypingResult, node: Operator): ValidatedNel[ExpressionParseError, TypingResult] = {
+  private def checkEqualityComparableTypes(left: TypingResult, right: TypingResult, node: Operator): TypingR[TypingResult] = {
+    val w = Writer(List.empty[ExpressionParseError], Typed[Boolean])
     if (commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype) != Typed.empty) {
-      Valid(Typed[Boolean])
+      w
     } else
-      OperatorNotComparableError(node.getOperatorName, left, right).invalidNel
+      w.tell(List(OperatorNotComparableError(node.getOperatorName, left, right)))
   }
 
   private def checkTwoOperandsArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext)
                                                  (op: Option[(Number, Number) => ValidatedNel[ExpressionParseError, Any]])
-                                                 (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                                                 (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): TypingR[CollectedTypingResult] = {
       typeChildren(validationContext, node, current) {
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
           val supertype = commonSupertypeFinder.commonSupertype(left, right).withoutValue
-          val validatedType = op.flatMap(operationOnTypesValue[Number, Number, Any](left, right)(_)).getOrElse(supertype.validNel)
+          val validatedType = op
+            .map(operationOnTypesValue[Number, Number, Any](left, right, supertype)(_))
+            .getOrElse(Writer(List.empty[ExpressionParseError], supertype))
           validatedType.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
-          OperatorMismatchTypeError(node.getOperatorName, left, right).invalidNel
-        case _ => BadOperatorConstructionError(node.getOperatorName).invalidNel // shouldn't happen
+          val supertype = commonSupertypeFinder.commonSupertype(left, right).withoutValue
+          Writer(List(OperatorMismatchTypeError(node.getOperatorName, left, right)), TypingResultWithContext(supertype))
+        case _ =>
+          Writer(List(BadOperatorConstructionError(node.getOperatorName)), TypingResultWithContext(Unknown)) // shouldn't happen
       }
     }
 
   private def checkSingleOperandArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext)
-                                                   (op: Option[Number => ValidatedNel[ExpressionParseError, Any]]):
-    ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                                                   (op: Number => Any):
+    TypingR[CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
-        val validatedResult = op.flatMap(operationOnTypesValue[Number, Any](left)(_)).getOrElse(left.withoutValue.validNel)
-        validatedResult.map(TypingResultWithContext(_))
+        val result = operationOnTypesValue[Number, Any](left)(op).getOrElse(left.withoutValue)
+        Writer(List.empty, TypingResultWithContext(result))
       case TypingResultWithContext(left, _) :: Nil =>
-        OperatorNonNumericError(node.getOperatorName, left).invalidNel
-      case _ => BadOperatorConstructionError(node.getOperatorName).invalidNel // shouldn't happen
+        Writer(List(OperatorNonNumericError(node.getOperatorName, left)), TypingResultWithContext(left))
+      case _ =>
+        Writer(List(BadOperatorConstructionError(node.getOperatorName)), TypingResultWithContext(Unknown)) // shouldn't happen
     }
   }
 
-  private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): ValidatedNel[ExpressionParseError, TypingResult] = t match {
+  private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): TypingR[TypingResult] = t match {
     case Unknown =>
+      val w = Writer.value[List[ExpressionParseError], TypingResult](Unknown)
       if (methodExecutionForUnknownAllowed)
-        Valid(Unknown)
+        w
       else
-        IllegalPropertyAccessError(Unknown).invalidNel
+        w.tell(List(IllegalPropertyAccessError(Unknown)))
     case TypedNull =>
-      IllegalPropertyAccessError(TypedNull).invalidNel
+      Writer(List(IllegalPropertyAccessError(TypedNull)), TypedNull)
     case s: SingleTypingResult =>
       extractSingleProperty(e)(s)
     case TypedUnion(possible) =>
-      val l = possible.toList.flatMap(single => extractSingleProperty(e)(single).toOption)
-      if (l.isEmpty)
-        NoPropertyError(t, e.getName).invalidNel
-      else
-        Valid(Typed(l.toSet))
+      val l = possible.toList.map(single => extractSingleProperty(e)(single))
+        .filter(_.written.isEmpty)
+        .map(_.value)
+      if (l.isEmpty) {
+        Writer(List(NoPropertyError(t, e.getName)), Unknown)
+      } else
+        Writer(List.empty, Typed(l.toSet))
   }
 
   private def extractMethodReference(reference: MethodReference,
                                      validationContext: ValidationContext,
                                      node: SpelNode,
-                                     context: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                                     context: TypingContext): TypingR[CollectedTypingResult] = {
     context.stack match {
       case head :: tail =>
         val isStatic = head.staticContext
@@ -464,32 +493,32 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
             reference.getName,
             typedParams.map(_.typingResult))
           ).map(TypingResultWithContext(_)) match {
-            case Right(x) => x.validNel
-            case Left(x) if strictMethodsChecking => x.invalidNel
-            case Left(_) => TypingResultWithContext(Unknown).validNel
+            case Right(x) => Writer(List.empty, x)
+            case Left(x) if strictMethodsChecking => Writer(List(x), TypingResultWithContext(Unknown))
+            case Left(_) => Writer(List.empty, TypingResultWithContext(Unknown))
           }
         }
       case Nil =>
-        InvalidMethodReference(reference.toStringAST).invalidNel
+        Writer(List(InvalidMethodReference(reference.toStringAST)), CollectedTypingResult.withEmptyIntermediateResults(TypingResultWithContext(Unknown)))
     }
   }
 
   @tailrec
   private def extractSingleProperty(e: PropertyOrFieldReference)
-                                   (t: SingleTypingResult): ValidatedNel[ExpressionParseError, TypingResult] = {
+                                   (t: SingleTypingResult): TypingR[TypingResult] = {
     t match {
       case typedObjectWithData: TypedObjectWithData =>
         extractSingleProperty(e)(typedObjectWithData.objType)
       case typedClass: TypedClass =>
         propertyTypeBasedOnMethod(typedClass, e)
           .orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
-          .map(Valid(_))
-          .getOrElse(NoPropertyError(t, e.getName).invalidNel)
+          .map(Writer(List.empty[ExpressionParseError], _))
+          .getOrElse(Writer(List(NoPropertyError(t, e.getName)), Unknown))
       case TypedObjectTypingResult(fields, objType, _) =>
         val typeBasedOnFields = fields.get(e.getName)
         typeBasedOnFields.orElse(propertyTypeBasedOnMethod(objType, e))
-          .map(Valid(_))
-          .getOrElse(NoPropertyError(t, e.getName).invalidNel)
+          .map(Writer(List.empty[ExpressionParseError], _))
+          .getOrElse(Writer(List(NoPropertyError(t, e.getName)), Unknown))
       case dict: TypedDict =>
         dictTyper.typeDictValue(dict, e)
     }
@@ -499,30 +528,31 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
     typeDefinitionSet.get(typedClass.klass).flatMap(_.getPropertyOrFieldType(e.getName))
   }
 
-  private def extractIterativeType(parent: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
+  private def extractIterativeType(parent: TypingResult): TypingR[TypingResult] = parent match {
     case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
-      Valid(tc.objType.params.headOption.getOrElse(Unknown))
+      Writer(List.empty, tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
-      Valid(TypedObjectTypingResult(List(
+      Writer(List.empty, TypedObjectTypingResult(List(
         ("key", tc.objType.params.headOption.getOrElse(Unknown)),
         ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
     case tc: SingleTypingResult if tc.objType.klass.isArray =>
-      Valid(tc.objType.params.headOption.getOrElse(Unknown))
-    case tc: SingleTypingResult => Validated.invalidNel(IllegalProjectionSelectionError(tc))
+      Writer(List.empty, tc.objType.params.headOption.getOrElse(Unknown))
+    case tc: SingleTypingResult =>
+      Writer(List(IllegalProjectionSelectionError(tc)), Unknown)
     //FIXME: what if more results are present?
-    case _ => Valid(Unknown)
+    case _ => Writer(List.empty, Unknown)
   }
 
   private def typeChildrenAndReturnFixed(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(result: TypingResultWithContext)
-  : Validated[NonEmptyList[ExpressionParseError], CollectedTypingResult] = {
-    typeChildren(validationContext, node, current)(_ => Valid(result))
+  : TypingR[CollectedTypingResult] = {
+    typeChildren(validationContext, node, current)(_ => Writer(List.empty, result))
   }
 
   private def typeChildren(validationContext: ValidationContext, node: SpelNode, current: TypingContext)
-                          (result: List[TypingResultWithContext] => ValidatedNel[ExpressionParseError, TypingResultWithContext])
-  : ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                          (result: List[TypingResultWithContext] => TypingR[TypingResultWithContext])
+  : TypingR[CollectedTypingResult] = {
     val data = node.children.map(child => typeNode(validationContext, child, current.withoutIntermediateResults)).sequence
-    data.andThen { collectedChildrenResults =>
+    data.flatMap { collectedChildrenResults =>
       withCombinedIntermediate(collectedChildrenResults, current) { childrenResults =>
         result(childrenResults).map(TypedNode(node, _))
       }
@@ -530,8 +560,8 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
   }
 
   private def withCombinedIntermediate(intermediate: List[CollectedTypingResult], current: TypingContext)
-                                      (result: List[TypingResultWithContext] => ValidatedNel[ExpressionParseError, TypedNode])
-  : ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                                      (result: List[TypingResultWithContext] => TypingR[TypedNode])
+  : TypingR[CollectedTypingResult] = {
     val intermediateResultsCombination = Monoid.combineAll(current.intermediateResults :: intermediate.map(_.intermediateResults))
     val intermediateTypes = intermediate.map(_.finalResult)
     result(intermediateTypes).map(CollectedTypingResult.withIntermediateAndFinal(intermediateResultsCombination, _))
@@ -597,6 +627,7 @@ private[spel] object TypedNode {
 
 }
 
+// TODO: move intermediateResults into Writer's L
 private[spel] case class CollectedTypingResult(intermediateResults: Map[SpelNodeId, TypingResultWithContext], finalResult: TypingResultWithContext) {
   def typingInfo: SpelExpressionTypingInfo = SpelExpressionTypingInfo(intermediateResults.map(intermediateResult => (intermediateResult._1 -> intermediateResult._2.typingResult)), finalResult.typingResult)
 }
