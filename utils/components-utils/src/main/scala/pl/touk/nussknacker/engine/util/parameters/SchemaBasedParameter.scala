@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.{ParameterName, RecordFieldName}
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.TypingResultValidator
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
 import scala.collection.immutable.ListMap

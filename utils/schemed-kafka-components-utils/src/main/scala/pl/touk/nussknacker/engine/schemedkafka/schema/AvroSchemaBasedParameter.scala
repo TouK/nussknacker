@@ -12,8 +12,7 @@ import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.TypingResultValidator
-import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SchemaBasedRecordParameter, SingleSchemaBasedParameter}
+import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SchemaBasedRecordParameter, SingleSchemaBasedParameter, TypingResultValidator}
 
 import scala.collection.immutable.ListMap
 

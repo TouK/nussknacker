@@ -1,10 +1,7 @@
 package pl.touk.nussknacker.engine.util.sinkvalue
 
-import cats.data.{Validated, ValidatedNel}
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.util.definition.LazyParameterUtils
-import pl.touk.nussknacker.engine.util.output.OutputValidatorError
 
 import scala.collection.immutable.ListMap
 
@@ -29,13 +26,5 @@ object SinkValueData {
   case class SinkSingleValue(value: LazyParameter[AnyRef]) extends SinkValue
 
   case class SinkRecordValue(fields: ListMap[String, SinkValue]) extends SinkValue
-
-  trait TypingResultValidator {
-    def validate(typingResult: TypingResult): ValidatedNel[OutputValidatorError, Unit]
-  }
-
-  object TypingResultValidator {
-    val emptyValidator: TypingResultValidator = (_: TypingResult) => Validated.Valid((): Unit)
-  }
 
 }

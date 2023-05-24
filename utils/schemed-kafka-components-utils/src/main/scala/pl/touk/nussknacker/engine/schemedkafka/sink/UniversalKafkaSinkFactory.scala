@@ -45,7 +45,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
 
   private val rawValueParam: Parameter = Parameter[AnyRef](SinkValueParamName).copy(isLazyParameter = true)
   private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))))
-  private val restrictedParamNames: Set[ParameterName] = Set(topicParamName, SchemaVersionParamName, SinkKeyParamName, SinkRawEditorParamName, SinkValidationModeParameterName, SinkValueParamName)
+  private val restrictedParamNames: Set[ParameterName] = Set(topicParamName, SchemaVersionParamName, SinkKeyParamName, SinkRawEditorParamName, SinkValidationModeParameterName)
 
   protected def rawEditorParameterStep(context: ValidationContext)
                                       (implicit nodeId: NodeId): NodeTransformationDefinition = {
