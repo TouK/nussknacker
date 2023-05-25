@@ -108,7 +108,6 @@ class DBProcessService(deploymentService: DeploymentService,
       }
     }
 
-
   // FIXME: How should look flow? Process -> archive -> delete?
   override def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withProcess(processIdWithName) { process =>

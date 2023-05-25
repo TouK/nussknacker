@@ -37,17 +37,27 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import scala.concurrent.Future
 import scala.language.higherKinds
 
-/**
-  * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb.
+/** TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested
+  * at ProcessServiceDb.
   */
-class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
-  with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+class ProcessesResourcesSpec
+    extends AnyFunSuite
+    with ScalatestRouteTest
+    with Matchers
+    with Inside
+    with FailFastCirceSupport
+    with PatientScalaFutures
+    with OptionValues
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with EspItTest {
 
   import io.circe._, io.circe.parser._
   import TestCategories._
   import ProcessesQueryEnrichments.RichProcessesQuery
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+  private implicit final val string: FromEntityUnmarshaller[String] =
+    Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testCategory)
 
@@ -59,16 +69,48 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   private val processName: ProcessName = ProcessName(SampleProcess.process.id)
 
-  override protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)
+  override protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(
+    SimpleStateStatus.NotDeployed
+  )
 
-  test("return list of process") {
-    val processId = createEmptyProcess(processName)
-
-    forScenariosReturned(ProcessesQuery.empty) { processes =>
-      processes.exists(_.processId == processId.value) shouldBe true
+  test("should return list of process with state") {
+    val processId = createDeployedProcess(processName)
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+      forScenariosReturned(ProcessesQuery.empty) { processes =>
+        val process = processes.find(_.processId == processId.value).value
+        process.state.map(_.name) shouldBe Some(SimpleStateStatus.Running.name)
+      }
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
-      processes.exists(_.processId.value == processId.value) shouldBe true
+  }
+
+  test("should return list of subprocess with no state") {
+    val processId = createEmptyProcess(processName, isSubprocess = true)
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+      forScenariosReturned(ProcessesQuery.empty) { processes =>
+        val process = processes.find(_.processId == processId.value).value
+        process.state.map(_.name) shouldBe None
+      }
+    }
+  }
+
+  test("should return list of archived process with no state") {
+    val processId = createArchivedProcess(processName)
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+      forScenariosReturned(ProcessesQuery.empty) { processes =>
+        val process = processes.find(_.processId == processId.value).value
+        process.state.map(_.name) shouldBe None
+      }
+    }
+  }
+
+  test("return list of detailed process with no state") {
+    val processId = createDeployedProcess(processName)
+
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+      forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
+        val process = processes.find(_.processId == processId).value
+        process.state.map(_.status.name) shouldBe None
+      }
     }
   }
 
@@ -79,13 +121,28 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       forScenarioReturned(processName) { process =>
         process.processId shouldBe processId.value
         process.name shouldBe processName.value
-        process.stateStatus shouldBe SimpleStateStatus.Running.name
-        process.stateTooltip shouldBe SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running)
-        process.stateDescription shouldBe SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running)
-        process.stateIcon shouldBe SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running)
+        process.state.map(_.name) shouldBe Some(SimpleStateStatus.Running.name)
+        process.state.map(_.tooltip) shouldBe Some(
+          SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running)
+        )
+        process.state.map(_.description) shouldBe Some(
+          SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running)
+        )
+        process.state.map(_.icon) shouldBe Some(
+          SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running)
+        )
       }
     }
   }
+
+  test("return single subprocess") {
+    val processId = createEmptyProcess(processName, isSubprocess = true)
+
+    forScenarioReturned(processName) { process =>
+      process.processId shouldBe processId.value
+      process.state.map(_.name) shouldBe None
+    }
+}
 
   test("return validated and non-validated process") {
     createDeployedProcess(processName)
@@ -103,10 +160,11 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  //FIXME: Implement subprocess valiation
+  // FIXME: Implement subprocess valiation
   ignore("not allow to archive still used fragment") {
     val processWithSubprocess = ProcessTestData.validProcessWithSubprocess(processName)
-    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming, TestCat)
+    val displayableSubprocess =
+      ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming, TestCat)
     saveSubProcess(displayableSubprocess)(succeed)
     saveProcess(processName, processWithSubprocess.process, TestCat)(succeed)
 
@@ -127,7 +185,8 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("allow to archive fragment used in archived process") {
     val processWithSubprocess = ProcessTestData.validProcessWithSubprocess(processName)
-    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming, TestCat)
+    val displayableSubprocess =
+      ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming, TestCat)
     saveSubProcess(displayableSubprocess)(succeed)
     saveProcess(processName, processWithSubprocess.process, TestCat)(succeed)
 
@@ -192,9 +251,8 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  /**
-    * FIXME: We don't support situation when process is running on flink but action is not deployed - warning state (isRunning = false).
-    * In that case we can change process name.. We should block rename process in that situation.
+  /** FIXME: We don't support situation when process is running on flink but action is not deployed - warning state
+    * (isRunning = false). In that case we can change process name.. We should block rename process in that situation.
     */
   ignore("should not allow rename process with running state") {
     createEmptyProcess(processName)
@@ -248,7 +306,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createArchivedProcess(processName)
     val process = ProcessTestData.validProcess
 
-    updateProcess(processName, process)  {
+    updateProcess(processName, process) {
       status shouldEqual StatusCodes.Conflict
     }
   }
@@ -292,10 +350,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createArchivedProcess(ProcessName("archived"))
 
     forScenariosReturned(ProcessesQuery.empty) { processes =>
-      processes.map(_.name) should contain only("unarchived", "archived")
+      processes.map(_.name) should contain only ("unarchived", "archived")
     }
     forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
-      processes.map(_.name) should contain only("unarchived", "archived")
+      processes.map(_.name) should contain only ("unarchived", "archived")
     }
   }
 
@@ -334,7 +392,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("return 403 on update process category for normal user") {
     createArchivedProcess(processName)
-    //Verification of rejection is done on changeProcessCategory
+    // Verification of rejection is done on changeProcessCategory
     changeProcessCategory(processName, TestCat2) { _ => }
   }
 
@@ -456,16 +514,40 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createEmptyProcess(ProcessName("proc2"), TestCat2)
     createArchivedProcess(ProcessName("proc3"))
 
-    forScenariosReturned(ProcessesQuery.empty.names(List("proc1", "proc3", "procNotExisting")).categories(List(TestCat)).processingTypes(List(Streaming)).unarchived()) { processes =>
+    forScenariosReturned(
+      ProcessesQuery.empty
+        .names(List("proc1", "proc3", "procNotExisting"))
+        .categories(List(TestCat))
+        .processingTypes(List(Streaming))
+        .unarchived()
+    ) { processes =>
       processes.loneElement.name shouldBe "proc1"
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.names(List("proc1", "proc3", "procNotExisting")).categories(List(TestCat)).processingTypes(List(Streaming)).unarchived()) { processes =>
+    forScenariosDetailsReturned(
+      ProcessesQuery.empty
+        .names(List("proc1", "proc3", "procNotExisting"))
+        .categories(List(TestCat))
+        .processingTypes(List(Streaming))
+        .unarchived()
+    ) { processes =>
       processes.loneElement.name shouldBe "proc1"
     }
-    forScenariosReturned(ProcessesQuery.empty.names(List("proc1", "proc3", "procNotExisting")).categories(List(TestCat)).processingTypes(List(Streaming)).archived()) { processes =>
+    forScenariosReturned(
+      ProcessesQuery.empty
+        .names(List("proc1", "proc3", "procNotExisting"))
+        .categories(List(TestCat))
+        .processingTypes(List(Streaming))
+        .archived()
+    ) { processes =>
       processes.loneElement.name shouldBe "proc3"
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.names(List("proc1", "proc3", "procNotExisting")).categories(List(TestCat)).processingTypes(List(Streaming)).archived()) { processes =>
+    forScenariosDetailsReturned(
+      ProcessesQuery.empty
+        .names(List("proc1", "proc3", "procNotExisting"))
+        .categories(List(TestCat))
+        .processingTypes(List(Streaming))
+        .archived()
+    ) { processes =>
       processes.loneElement.name shouldBe "proc3"
     }
     forScenariosReturned(ProcessesQuery.empty.names(List("proc1")).categories(List("unknown"))) { processes =>
@@ -489,7 +571,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       deploymentManager.withProcessStateStatus(thirdProcessor, SimpleStateStatus.Running) {
         forScenariosReturned(ProcessesQuery.empty) { processes =>
           processes.size shouldBe 3
-          val status = processes.find(_.name == firstProcessor.value).map(_.stateStatus)
+          val status = processes.find(_.name == firstProcessor.value).flatMap(_.state.map(_.name))
           status shouldBe Some(SimpleStateStatus.NotDeployed.name)
         }
         forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
@@ -498,7 +580,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
         forScenariosReturned(ProcessesQuery.empty.deployed()) { processes =>
           processes.size shouldBe 1
-          val status = processes.find(_.name == thirdProcessor.value).map(_.stateStatus)
+          val status = processes.find(_.name == thirdProcessor.value).flatMap(_.state.map(_.name))
           status shouldBe Some(SimpleStateStatus.Running.name)
         }
         forScenariosDetailsReturned(ProcessesQuery.empty.deployed()) { processes =>
@@ -508,10 +590,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
         forScenariosReturned(ProcessesQuery.empty.notDeployed()) { processes =>
           processes.size shouldBe 2
 
-          val status = processes.find(_.name == thirdProcessor.value).map(_.stateStatus)
+          val status = processes.find(_.name == thirdProcessor.value).flatMap(_.state.map(_.name))
           status shouldBe None
 
-          val canceledProcess = processes.find(_.name == secondProcessor.value).map(_.stateStatus)
+          val canceledProcess = processes.find(_.name == secondProcessor.value).flatMap(_.state.map(_.name))
           canceledProcess shouldBe Some(SimpleStateStatus.Canceled.name)
         }
         forScenariosDetailsReturned(ProcessesQuery.empty.notDeployed()) { processes =>
@@ -616,7 +698,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       }
     }
     forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
-      processes.find(_.name == SampleProcess.process.id).isDefined shouldBe true
+      processes.exists(_.name == SampleProcess.process.id) shouldBe true
     }
   }
 
@@ -626,7 +708,8 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
 
     val meta = ProcessTestData.validProcess.metaData
-    val changedMeta = meta.copy(additionalFields = Some(ProcessAdditionalFields(Some("changed descritption..."), Map.empty)))
+    val changedMeta =
+      meta.copy(additionalFields = Some(ProcessAdditionalFields(Some("changed descritption..."), Map.empty)))
     updateProcess(processName, ProcessTestData.validProcess.copy(metaData = changedMeta)) {
       status shouldEqual StatusCodes.OK
     }
@@ -635,7 +718,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       val processDetails = responseAs[ProcessDetails]
       processDetails.name shouldBe SampleProcess.process.id
       processDetails.history.length shouldBe 3
-      //processDetails.history.forall(_.processId == processDetails.id) shouldBe true //TODO: uncomment this when we will support id as Long / ProcessId
+      // processDetails.history.forall(_.processId == processDetails.id) shouldBe true //TODO: uncomment this when we will support id as Long / ProcessId
     }
   }
 
@@ -693,7 +776,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("not authorize user with read permissions to modify node") {
-    Put(s"/processes/$TestCat/${processName.value}", posting.toEntityAsProcessToSave(ProcessTestData.validProcess)) ~> routeWithRead ~> check {
+    Put(
+      s"/processes/$TestCat/${processName.value}",
+      posting.toEntityAsProcessToSave(ProcessTestData.validProcess)
+    ) ~> routeWithRead ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
 
@@ -712,8 +798,8 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
       forScenarioReturned(processName) { process =>
         process.lastActionType shouldBe Some(ProcessActionType.Archive.toString)
-        process.stateStatus shouldBe SimpleStateStatus.NotDeployed.name
         process.isArchived shouldBe true
+        process.state shouldBe None
       }
     }
   }
@@ -726,7 +812,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
       forScenarioReturned(processName) { process =>
         process.lastActionType shouldBe Some(ProcessActionType.UnArchive.toString)
-        process.stateStatus shouldBe SimpleStateStatus.NotDeployed.name
+        process.state.map(_.name) shouldBe Some(SimpleStateStatus.NotDeployed.name)
         process.isArchived shouldBe false
       }
     }
@@ -783,7 +869,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("save new process with empty json") {
     val newProcessId = "tst1"
-    Post(s"/processes/$newProcessId/$TestCat?isSubprocess=false") ~> withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead) ~> check {
+    Post(s"/processes/$newProcessId/$TestCat?isSubprocess=false") ~> withPermissions(
+      processesRoute,
+      testPermissionWrite |+| testPermissionRead
+    ) ~> check {
       status shouldEqual StatusCodes.Created
 
       Get(s"/processes/$newProcessId") ~> routeWithRead ~> check {
@@ -807,8 +896,8 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("not allow to save process with category not allowed for user") {
     Post(s"/processes/p11/abcd/${TestProcessingTypes.Streaming}") ~> routeWithWrite ~> check {
-      //this one below does not work, but I cannot compose path and authorize directives in a right way
-      //rejection shouldBe server.AuthorizationFailedRejection
+      // this one below does not work, but I cannot compose path and authorize directives in a right way
+      // rejection shouldBe server.AuthorizationFailedRejection
       handled shouldBe false
     }
   }
@@ -823,7 +912,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
           status shouldEqual StatusCodes.OK
           val processes = responseAs[List[ProcessDetails]]
           processes should have size 2
-          processes.map(_.name) should contain only(firstProcessName.value, secondProcessName.value)
+          processes.map(_.name) should contain only (firstProcessName.value, secondProcessName.value)
           responseAs[String] should not include "validationResult"
           Unmarshal(response).to[List[ValidatedProcessDetails]].failed.futureValue shouldBe a[DecodingFailure]
         }
@@ -857,16 +946,29 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     withProcessToolbars(processName) { toolbar =>
       toolbar shouldBe ProcessToolbarSettings(
         id = s"${toolbarConfig.uuidCode}-not-archived-scenario",
-        List(
-          ToolbarPanel(TipsPanel, None, None, None),
-          ToolbarPanel(CreatorPanel, None, None, None)
-        ),
+        List(ToolbarPanel(TipsPanel, None, None, None), ToolbarPanel(CreatorPanel, None, None, None)),
         List(),
-        List(ToolbarPanel(ProcessInfoPanel, None, None, Some(List(
-          ToolbarButton(ProcessSave, None, None, None, None, disabled = true),
-          ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
-          ToolbarButton(CustomLink, Some("custom"), Some(s"Custom link for ${processName.value}"), None, Some(s"/test/${id.value}"), disabled = false)
-        )))),
+        List(
+          ToolbarPanel(
+            ProcessInfoPanel,
+            None,
+            None,
+            Some(
+              List(
+                ToolbarButton(ProcessSave, None, None, None, None, disabled = true),
+                ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false),
+                ToolbarButton(
+                  CustomLink,
+                  Some("custom"),
+                  Some(s"Custom link for ${processName.value}"),
+                  None,
+                  Some(s"/test/${id.value}"),
+                  disabled = false
+                )
+              )
+            )
+          )
+        ),
         List()
       )
     }
@@ -884,12 +986,16 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     val name = stateResponse.hcursor
       .downField("status")
       .downField("name")
-      .as[String].toOption.get
+      .as[String]
+      .toOption
+      .get
 
     val statusType = stateResponse.hcursor
       .downField("status")
       .downField("type")
-      .as[String].toOption.get
+      .as[String]
+      .toOption
+      .get
 
     StateStatusResponse(name, statusType)
   }
@@ -915,7 +1021,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       callback(status)
     }
 
-  protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessToolbarSettings => Unit): Unit =
+  protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(
+    callback: ProcessToolbarSettings => Unit
+  ): Unit =
     getProcessToolbars(processName, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
       val toolbar = decode[ProcessToolbarSettings](responseAs[String]).toOption.get
@@ -925,8 +1033,13 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   private def getProcessToolbars(processName: ProcessName, isAdmin: Boolean = false): RouteTestResult =
     Get(s"/processes/${processName.value}/toolbars") ~> routeWithPermissions(processesRoute, isAdmin)
 
-  private def changeProcessCategory(processName: ProcessName, category: String, isAdmin: Boolean = false)(callback: StatusCode => Any): Any =
-    Post(s"/processes/category/${processName.value}/$category") ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
+  private def changeProcessCategory(processName: ProcessName, category: String, isAdmin: Boolean = false)(
+    callback: StatusCode => Any
+  ): Any =
+    Post(s"/processes/category/${processName.value}/$category") ~> routeWithPermissions(
+      processesRoute,
+      isAdmin
+    ) ~> check {
       if (isAdmin) {
         callback(status)
       } else {
@@ -935,17 +1048,26 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
 
   private def archiveProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
-    Post(s"/archive/${processName.value}") ~> withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead) ~> check {
+    Post(s"/archive/${processName.value}") ~> withPermissions(
+      processesRoute,
+      testPermissionWrite |+| testPermissionRead
+    ) ~> check {
       callback(status)
     }
 
   private def unArchiveProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
-    Post(s"/unarchive/${processName.value}") ~> withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead) ~> check {
+    Post(s"/unarchive/${processName.value}") ~> withPermissions(
+      processesRoute,
+      testPermissionWrite |+| testPermissionRead
+    ) ~> check {
       callback(status)
     }
 
   private def deleteProcess(processName: ProcessName)(callback: StatusCode => Any): Any =
-    Delete(s"/processes/${processName.value}") ~> withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead) ~> check {
+    Delete(s"/processes/${processName.value}") ~> withPermissions(
+      processesRoute,
+      testPermissionWrite |+| testPermissionRead
+    ) ~> check {
       callback(status)
     }
 

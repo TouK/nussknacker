@@ -274,7 +274,12 @@ class ProcessesResources(
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS])
                                                                           (implicit user: LoggedUser,
                                                                            freshnessPolicy: DataFreshnessPolicy): Future[BaseProcessDetails[PS]] = {
-    deploymentService.getProcessState(process).map(state => process.copy(state = Some(state)))
+    if (process.isArchived || process.isSubprocess) {
+      Future.successful(process)
+    } else {
+      deploymentService.getProcessState(process).map(state => process.copy(state = Some(state)))
+    }
+
   }
 
   private def withJson(processId: ProcessId, version: VersionId)
