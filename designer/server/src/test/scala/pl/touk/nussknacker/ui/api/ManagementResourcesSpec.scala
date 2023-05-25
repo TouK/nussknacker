@@ -24,9 +24,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
-import pl.touk.nussknacker.ui.util.MultipartUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.kafka.KafkaFactory

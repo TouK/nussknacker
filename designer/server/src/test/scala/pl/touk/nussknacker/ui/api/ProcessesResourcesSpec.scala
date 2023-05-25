@@ -882,6 +882,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   private def parseStateResponse(stateResponse: Json): StateStatusResponse = {
     val name = stateResponse.hcursor
       .downField("status")
+      .downField("name")
       .as[String].toOption.get
 
     StateStatusResponse(name)
