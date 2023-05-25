@@ -61,14 +61,44 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   override protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)
 
-  test("return list of process") {
-    val processId = createEmptyProcess(processName)
-
-    forScenariosReturned(ProcessesQuery.empty) { processes =>
-      processes.exists(_.processId == processId.value) shouldBe true
+  test("should return list of process with state") {
+    val processId = createDeployedProcess(processName)
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+      forScenariosReturned(ProcessesQuery.empty) { processes =>
+        val process = processes.find(_.processId == processId.value).value
+        process.state.map(_.name) shouldBe Some(SimpleStateStatus.Running.name)
+      }
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
-      processes.exists(_.processId.value == processId.value) shouldBe true
+  }
+
+  test("should return list of subprocess with no state") {
+    val processId = createEmptyProcess(processName, isSubprocess = true)
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+      forScenariosReturned(ProcessesQuery.empty) { processes =>
+        val process = processes.find(_.processId == processId.value).value
+        process.state.map(_.name) shouldBe None
+      }
+    }
+  }
+
+  test("should return list of archived process with no state") {
+    val processId = createArchivedProcess(processName)
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+      forScenariosReturned(ProcessesQuery.empty) { processes =>
+        val process = processes.find(_.processId == processId.value).value
+        process.state.map(_.name) shouldBe None
+      }
+    }
+  }
+
+  test("return list of detailed process with no state") {
+    val processId = createDeployedProcess(processName)
+
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+      forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
+        val process = processes.find(_.processId == processId).value
+        process.state.map(_.status.name) shouldBe None
+      }
     }
   }
 
@@ -78,12 +108,20 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       forScenarioReturned(processName) { process =>
         process.processId shouldBe processId.value
-        process.name shouldBe processName.value
-        process.stateStatus shouldBe SimpleStateStatus.Running.name
-        process.stateTooltip shouldBe SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running)
-        process.stateDescription shouldBe SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running)
-        process.stateIcon shouldBe SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running)
+        process.state.map(_.name) shouldBe Some(SimpleStateStatus.Running.name)
+        process.state.map(_.tooltip) shouldBe Some(SimpleProcessStateDefinitionManager.statusTooltip(SimpleStateStatus.Running))
+        process.state.map(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running))
+        process.state.map(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running))
       }
+    }
+  }
+
+  test("return single subprocess") {
+    val processId = createEmptyProcess(processName, isSubprocess = true)
+
+    forScenarioReturned(processName) { process =>
+      process.processId shouldBe processId.value
+      process.state.map(_.name) shouldBe None
     }
   }
 
@@ -489,7 +527,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       deploymentManager.withProcessStateStatus(thirdProcessor, SimpleStateStatus.Running) {
         forScenariosReturned(ProcessesQuery.empty) { processes =>
           processes.size shouldBe 3
-          val status = processes.find(_.name == firstProcessor.value).map(_.stateStatus)
+          val status = processes.find(_.name == firstProcessor.value).flatMap(_.state.map(_.name))
           status shouldBe Some(SimpleStateStatus.NotDeployed.name)
         }
         forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
@@ -498,7 +536,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
         forScenariosReturned(ProcessesQuery.empty.deployed()) { processes =>
           processes.size shouldBe 1
-          val status = processes.find(_.name == thirdProcessor.value).map(_.stateStatus)
+          val status = processes.find(_.name == thirdProcessor.value).flatMap(_.state.map(_.name))
           status shouldBe Some(SimpleStateStatus.Running.name)
         }
         forScenariosDetailsReturned(ProcessesQuery.empty.deployed()) { processes =>
@@ -508,10 +546,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
         forScenariosReturned(ProcessesQuery.empty.notDeployed()) { processes =>
           processes.size shouldBe 2
 
-          val status = processes.find(_.name == thirdProcessor.value).map(_.stateStatus)
+          val status = processes.find(_.name == thirdProcessor.value).flatMap(_.state.map(_.name))
           status shouldBe None
 
-          val canceledProcess = processes.find(_.name == secondProcessor.value).map(_.stateStatus)
+          val canceledProcess = processes.find(_.name == secondProcessor.value).flatMap(_.state.map(_.name))
           canceledProcess shouldBe Some(SimpleStateStatus.Canceled.name)
         }
         forScenariosDetailsReturned(ProcessesQuery.empty.notDeployed()) { processes =>
@@ -712,7 +750,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
       forScenarioReturned(processName) { process =>
         process.lastActionType shouldBe Some(ProcessActionType.Archive.toString)
-        process.stateStatus shouldBe SimpleStateStatus.NotDeployed.name
+        process.state.map(_.name) shouldBe None
         process.isArchived shouldBe true
       }
     }
@@ -726,7 +764,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
       forScenarioReturned(processName) { process =>
         process.lastActionType shouldBe Some(ProcessActionType.UnArchive.toString)
-        process.stateStatus shouldBe SimpleStateStatus.NotDeployed.name
+        process.state.map(_.name) shouldBe Some(SimpleStateStatus.NotDeployed.name)
         process.isArchived shouldBe false
       }
     }

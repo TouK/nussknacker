@@ -50,7 +50,10 @@ export const isMigrationPossible = createSelector(
   (saveDisabled, error, state) => saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 )
 export const isCancelPossible = createSelector(getProcessState, state => ProcessStateUtils.canCancel(state))
-export const isArchivePossible = createSelector(getProcessState, state => ProcessStateUtils.canArchive(state))
+export const isArchivePossible = createSelector(
+    [getProcessState, isSubprocess],
+    (state, isSubprocess) => isSubprocess || ProcessStateUtils.canArchive(state)
+)
 export const getTestCapabilities = createSelector(getGraph, g => g.testCapabilities)
 export const getTestParameters = createSelector(getGraph, g => g.testFormParameters)
 export const getTestResults = createSelector(getGraph, g => g.testResults)

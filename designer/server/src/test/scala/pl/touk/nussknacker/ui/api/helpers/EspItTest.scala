@@ -408,6 +408,7 @@ object ProcessVersionJson {
 object ProcessJson extends OptionValues {
   def apply(process: Json): ProcessJson = {
     val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].toOption.value
+    val state = process.hcursor.downField("state").as[Option[Json]].toOption.value
 
     new ProcessJson(
       process.hcursor.downField("id").as[String].toOption.value,
@@ -415,10 +416,7 @@ object ProcessJson extends OptionValues {
       process.hcursor.downField("processId").as[Long].toOption.value,
       lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
       lastAction.map(_.hcursor.downField("action").as[String].toOption.value),
-      process.hcursor.downField("state").downField("status").downField("name").as[String].toOption.value,
-      process.hcursor.downField("state").downField("icon").as[String].toOption.map(URI.create).value,
-      process.hcursor.downField("state").downField("tooltip").as[String].toOption.value,
-      process.hcursor.downField("state").downField("description").as[String].toOption.value,
+      state.map(StateJson(_)),
       process.hcursor.downField("processCategory").as[String].toOption.value,
       process.hcursor.downField("isArchived").as[Boolean].toOption.value,
       process.hcursor.downField("history").as[Option[List[Json]]].toOption.value.map(_.map(v => ProcessVersionJson(v)))
@@ -431,10 +429,7 @@ final case class ProcessJson(id: String,
                              processId: Long,
                              lastActionVersionId: Option[Long],
                              lastActionType: Option[String],
-                             stateStatus: String,
-                             stateIcon: URI,
-                             stateTooltip: String,
-                             stateDescription: String,
+                             state: Option[StateJson],
                              processCategory: String,
                              isArchived: Boolean,
                              //Process on list doesn't contain history
@@ -450,6 +445,17 @@ object CreateProcessResponse {
     data.hcursor.downField("id").as[Long].map(ProcessId(_)).toOption.get,
     data.hcursor.downField("versionId").as[Long].map(VersionId(_)).toOption.get,
     data.hcursor.downField("processName").as[String].map(ProcessName(_)).toOption.get
+  )
+}
+
+final case class StateJson(name: String, icon: URI, tooltip: String, description: String)
+
+object StateJson extends OptionValues {
+  def apply(json: Json): StateJson = new StateJson(
+    json.hcursor.downField("status").downField("name").as[String].toOption.value,
+    json.hcursor.downField("icon").as[String].toOption.map(URI.create)value,
+    json.hcursor.downField("tooltip").as[String].toOption.value,
+    json.hcursor.downField("description").as[String].toOption.value,
   )
 }
 
