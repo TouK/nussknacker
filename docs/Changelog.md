@@ -17,9 +17,13 @@
     - introduce the `CaseClassTypeInfoFactory`, a generic factory for creating `CaseClassTypeInfo`
     - allow passing classLoader at `ResourceLoader.load`
 * [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
+<<<<<<< HEAD
 * [#4640](https://github.com/TouK/nussknacker/pull/4640) Expand timestamp support to handle more types/formats
 * [#4685](https://github.com/TouK/nussknacker/pull/4685) App API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#4707](https://github.com/TouK/nussknacker/pull/4707) Support for `overrideFrontendAuthenticationStrategy` configuration parameter in OIDC security model - works the same as in OAuth2 case.
+=======
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvements: bump cats effect
+>>>>>>> 34841267d2 (Add docs)
 
 1.11.3 (11 Sep 2023)
 -------------------------
