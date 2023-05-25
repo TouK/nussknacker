@@ -50,12 +50,12 @@ export const RemoteModuleTab = <CP extends RemoteComponentProps>({
     );
 };
 
-export const IframeTab = ({tab}: { tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url"> }) => {
-  const {addAccessTokenInQueryParam, url} = tab
-  const accessToken = addAccessTokenInQueryParam && SystemUtils.getAccessToken()
+export const IframeTab = ({ tab }: { tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url"> }) => {
+    const { addAccessTokenInQueryParam, url } = tab;
+    const accessToken = addAccessTokenInQueryParam && SystemUtils.getAccessToken();
     return (
         <iframe
-      src={queryString.stringifyUrl({url, query: {iframe: true, accessToken}})}
+            src={queryString.stringifyUrl({ url, query: { iframe: true, accessToken } })}
             width="100%"
             height="100%"
             frameBorder="0"
@@ -76,12 +76,11 @@ function useExtednedComponentProps<P extends Record<string, any>>(props: P) {
     );
 }
 
-export const DynamicTab = memo(function DynamicComponent<P extends {
-  tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url" | "type">
-}>({
-    tab,
-    ...props
-}: P): JSX.Element {
+export const DynamicTab = memo(function DynamicComponent<
+    P extends {
+        tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url" | "type">;
+    }
+>({ tab, ...props }: P): JSX.Element {
     const componentProps = useExtednedComponentProps(props);
     switch (tab.type) {
         case "Remote":

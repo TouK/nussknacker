@@ -69,8 +69,8 @@
     },
     "license": "ISC",
     "lint-staged": {
-        "**/*": "prettier --write --ignore-unknown",
-        "*.{j|t}sx?": "eslint --cache --fix"
+        "*.{js,jsx,ts,tsx}": "eslint --cache --fix",
+        "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
     },
     "main": "index.js",
     "private": true,
