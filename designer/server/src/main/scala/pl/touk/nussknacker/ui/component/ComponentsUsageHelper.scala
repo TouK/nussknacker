@@ -33,16 +33,18 @@ object ComponentsUsageHelper {
       fragmentsProcessesDetails match {
         case Nil => acc
         case fragmentProcessesDetails :: t => {
-          val componentIdUsages = toComponentIdUsages(fragmentProcessesDetails)
-          val additionalElems = componentIdUsages.map {
-            case (componentId, (baseProcessDetails, fragmentLevelNodeIds)) =>
-              (componentId, (baseProcessDetails, fragmentLevelNodeIds.map(nodeId => "<<fragment>> " ++ nodeId)))
-          }.groupBy(_._1).toList.map {
-            case (componentId, l) => (componentId, l.map(_._2))
-          }
+          val componentIdUsages = toComponentIdUsages(fragmentProcessesDetails).toMap
 
-          //TODO correct newAcc to be proper transformation
-          val newAcc = (acc.toList ++ additionalElems).groupBy(_._1).mapValuesNow(_.flatMap(_._2).toList).toMap
+          val newAcc = acc.toList.map {
+            case (componentId, componentNodeIds) =>
+              componentIdUsages.get(componentId) match {
+                case None => (componentId, componentNodeIds)
+                case Some((_, fragmentNodeIds)) => (componentId, componentNodeIds.map {
+                  case (baseProcessDetails, scenarioNodeIds) => (baseProcessDetails, scenarioNodeIds ++ fragmentNodeIds)
+                })
+              }
+          }.toMap
+
 
           mergeFragments(t, newAcc)
         }
