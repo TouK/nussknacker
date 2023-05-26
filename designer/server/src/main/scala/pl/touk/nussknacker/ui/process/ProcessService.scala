@@ -61,9 +61,11 @@ trait ProcessService {
 
   def getProcesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
 
-  def getArchivedProcesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
+  def getProcessesAndSubprocesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
 
-  def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]]
+  def getArchivedProcessesAndSubprocesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
+
+  def getSubprocessesDetails(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]]
 
   def importProcess(processId: ProcessIdWithName, processData: String)(implicit user: LoggedUser): Future[XError[ValidatedDisplayableProcess]]
 }
@@ -214,13 +216,16 @@ class DBProcessService(deploymentService: DeploymentService,
     }
 
   override def getProcesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
-    getProcesses(user, isArchived = false)
+    getProcesses(user, isSubprocess = Some(false), isArchived = Some(false))
 
-  override def getArchivedProcesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
-    getProcesses(user, isArchived = true)
+  override def getProcessesAndSubprocesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
+    getProcesses(user, isSubprocess = None, isArchived = Some(false))
+
+  override def getArchivedProcessesAndSubprocesses[PS: ProcessShapeFetchStrategy](implicit user: LoggedUser): Future[List[BaseProcessDetails[PS]]] =
+    getProcesses(user, isSubprocess = None, isArchived = Some(true))
 
   //TODO: It's temporary solution to return Set[SubprocessDetails], in future we should replace it by Set[BaseProcessDetails[PS]]
-  override def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]] = {
+  override def getSubprocessesDetails(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]] = {
     fetchingProcessRepository
       .fetchProcessesDetails[CanonicalProcess](FetchProcessesDetailsQuery(isSubprocess = Some(true), isArchived = Some(false), processingTypes = processingTypes))
       .map(processes => processes.map(sub => {
@@ -321,10 +326,10 @@ class DBProcessService(deploymentService: DeploymentService,
         Future(Left(ProcessValidationError("Scenario category not found.")))
     }
 
-  private def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser, isArchived: Boolean): Future[List[BaseProcessDetails[PS]]] = {
+  private def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser, isSubprocess: Option[Boolean], isArchived: Option[Boolean]): Future[List[BaseProcessDetails[PS]]] = {
     val userCategories = processCategoryService.getUserCategories(user)
     val shapeStrategy = implicitly[ProcessShapeFetchStrategy[PS]]
-    fetchingProcessRepository.fetchProcessesDetails(FetchProcessesDetailsQuery(isArchived = Some(isArchived), categories = Some(userCategories)))(shapeStrategy, user, ec)
+    fetchingProcessRepository.fetchProcessesDetails(FetchProcessesDetailsQuery(isSubprocess = isSubprocess, isArchived = isArchived, categories = Some(userCategories)))(shapeStrategy, user, ec)
   }
 
 }
