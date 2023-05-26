@@ -210,7 +210,7 @@
         "http-proxy-middleware": "2.0.2",
         "husky": "8.0.3",
         "i18next-intervalplural-postprocessor": "3.0.0",
-        "i18next-parser": "5.4.0",
+        "i18next-parser": "8.0.0",
         "jasmine-core": "3.9.0",
         "jest": "27.4.7",
         "jest-css-modules": "2.1.0",
