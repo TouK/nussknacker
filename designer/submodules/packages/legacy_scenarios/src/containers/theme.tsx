@@ -88,8 +88,12 @@ declare module "@emotion/react" {
     interface Theme extends NkTheme {}
 }
 
-export function NkThemeProvider({ theme = defaultAppTheme, ...props }: Partial<ThemeProviderProps>): JSX.Element {
-    return <ThemeProvider theme={theme} {...props} />;
+export function NkThemeProvider({ theme = defaultAppTheme, children, ...props }: Partial<ThemeProviderProps>): JSX.Element {
+    return (
+        <ThemeProvider theme={theme} {...props}>
+            {children}
+        </ThemeProvider>
+    );
 }
 
 export const useNkTheme: () => { withFocus: string; theme: NkTheme } = () => {

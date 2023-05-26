@@ -4,3 +4,4 @@ test/
 dist/
 coverage/
 types/@remote/
+package-lock.json
