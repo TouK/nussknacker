@@ -4,7 +4,7 @@ import {CustomTabPage} from "./CustomTabPage"
 
 const ProcessesTab = () => (
   <CustomTabPage
-    id="legacy_scenarios"
+    id="processes"
     addScenario={useAddProcessButtonProps().action}
     addFragment={useAddProcessButtonProps(true).action}
   />
