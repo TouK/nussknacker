@@ -7,7 +7,6 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 
 class MetaDataTest extends AnyFunSuite with Matchers {
 
-
   test("convert properties of only type specific data to metadata") {
     forAll(fullMetaDataCases) {
       (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
@@ -21,11 +20,11 @@ class MetaDataTest extends AnyFunSuite with Matchers {
   test("convert properties of type specific data with additional ones to metadata") {
     forAll(fullMetaDataCases) {
       (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
-        val mergedProperties = genericProperties ++ properties
+        val mergedProperties = nonTypeSpecificProperties ++ properties
         val metaData = MetaData("Id", ProcessAdditionalFields(None, mergedProperties), metaDataName)
 
         metaData.typeSpecificData shouldBe typeSpecificData
-        metaData.additionalFields shouldBe Some(ProcessAdditionalFields(None, typeSpecificData.toProperties ++ genericProperties))
+        metaData.additionalFields shouldBe Some(ProcessAdditionalFields(None, typeSpecificData.toProperties ++ nonTypeSpecificProperties))
     }
   }
 

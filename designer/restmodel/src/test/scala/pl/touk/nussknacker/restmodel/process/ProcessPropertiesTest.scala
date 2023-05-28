@@ -55,34 +55,15 @@ class ProcessPropertiesTest extends AnyFunSuite with Matchers {
         // meta data => process properties
         val processProperties = ProcessProperties(
           typeSpecificProperties = typeSpecificData,
-          additionalFields = Some(ProcessAdditionalFields(None, genericProperties)))
+          additionalFields = Some(ProcessAdditionalFields(None, nonTypeSpecificProperties)))
 
         processProperties.propertiesType shouldBe metaDataName
-        processProperties.additionalFields.properties shouldBe properties ++ genericProperties
+        processProperties.additionalFields.properties shouldBe properties ++ nonTypeSpecificProperties
 
         // process properties => meta data
         val metaData = processProperties.toMetaData(id)
         metaData.typeSpecificData shouldBe typeSpecificData
-        metaData.additionalFields shouldBe Some(ProcessAdditionalFields(None, properties ++ genericProperties))
-      }
-    }
-  }
-
-  test("convert empty type specific data with invalid overwriting properties to process properties and back") {
-    forAll(invalidMetaDataCases) {
-      (overwritingInvalidProperties: Map[String, String], metaDataName: String, emptyTypeSpecificData: TypeSpecificData) => {
-        // meta data => process properties
-        val processProperties = ProcessProperties(
-          typeSpecificProperties = emptyTypeSpecificData,
-          additionalFields = Some(ProcessAdditionalFields(None, overwritingInvalidProperties)))
-
-        processProperties.propertiesType shouldBe metaDataName
-        processProperties.additionalFields.properties shouldBe overwritingInvalidProperties
-
-        // process properties => meta data
-        val metaData = processProperties.toMetaData(id)
-        metaData.typeSpecificData shouldBe emptyTypeSpecificData
-        metaData.additionalFields shouldBe Some(ProcessAdditionalFields(None, overwritingInvalidProperties))
+        metaData.additionalFields shouldBe Some(ProcessAdditionalFields(None, properties ++ nonTypeSpecificProperties))
       }
     }
   }

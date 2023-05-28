@@ -14,6 +14,12 @@ object MetaDataTestData {
     useAsyncInterpretation = Some(true),
     checkpointIntervalInSeconds = Some(1000L)
   )
+  val flinkEmptyProperties: Map[String, String] = Map(
+    "parallelism" -> "",
+    "spillStateToDisk" -> "",
+    "useAsyncInterpretation" -> "",
+    "checkpointIntervalInSeconds" -> ""
+  )
   val flinkFullProperties: Map[String, String] = Map(
     "parallelism" -> "5",
     "spillStateToDisk" -> "false",
@@ -30,15 +36,20 @@ object MetaDataTestData {
   // lite stream
   val liteStreamEmptyTypeData: LiteStreamMetaData = LiteStreamMetaData(None)
   val liteStreamFullTypeData: LiteStreamMetaData = LiteStreamMetaData(parallelism = Some(5))
+  val liteStreamEmptyProperties: Map[String, String] = Map("parallelism" -> "")
   val liteStreamFullProperties: Map[String, String] = Map("parallelism" -> "5")
   val liteStreamInvalidProperties: Map[String, String] = Map("parallelism" -> "non-int")
 
   // request-response
+  val requestResponseEmptyTypeData: RequestResponseMetaData = RequestResponseMetaData(None)
   val requestResponseFullTypeData: RequestResponseMetaData = RequestResponseMetaData(slug = Some("exampleSlug"))
+  val requestResponseEmptyProperties: Map[String, String] = Map("slug" -> "")
   val requestResponseFullProperties: Map[String, String] = Map("slug" -> "exampleSlug")
 
   // fragment
+  val fragmentEmptyTypeData: FragmentSpecificData = FragmentSpecificData(None)
   val fragmentFullTypeData: FragmentSpecificData = FragmentSpecificData(docsUrl = Some("exampleUrl"))
+  val fragmentEmptyProperties: Map[String, String] = Map("docsUrl" -> "")
   val fragmentFullProperties: Map[String, String] = Map("docsUrl" -> "exampleUrl")
 
 
@@ -47,9 +58,17 @@ object MetaDataTestData {
   val requestResponseMetaDataName = "RequestResponseMetaData"
   val fragmentMetaDataName = "FragmentSpecificData"
 
-  val genericProperties: Map[String, String] = Map(
+  val nonTypeSpecificProperties: Map[String, String] = Map(
     "aProperty" -> "aValue",
     "emptyProperty" -> ""
+  )
+
+  val emptyMetaDataCases: TableFor3[Map[String, String], String, TypeSpecificData] = Table(
+    ("properties", "metaDataName", "typeSpecificData"),
+    (flinkEmptyProperties, flinkMetaDataName, flinkEmptyTypeData),
+    (liteStreamEmptyProperties, liteStreamMetaDataName, liteStreamEmptyTypeData),
+    (requestResponseEmptyProperties, requestResponseMetaDataName, requestResponseEmptyTypeData),
+    (fragmentEmptyProperties, fragmentMetaDataName, fragmentEmptyTypeData)
   )
 
   val fullMetaDataCases: TableFor3[Map[String, String], String, TypeSpecificData] = Table(

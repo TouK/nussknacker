@@ -97,13 +97,14 @@ object ProcessProperties extends LazyLogging {
     // properties. Only when we have a non-null value in TypeSpecificData and a different corresponding generic property
     // we throw an exception since they need to be synchronized - in this case you have to synchronize these values manually
     typeSpecificData.toProperties
+      .filterNot(prop => prop._2.isEmpty)
       .filter(prop => fields.properties.contains(prop._1))
       .filter(duplicate => fields.properties(duplicate._1) != duplicate._2)
       .foreach(
         incompatible =>
           throw new IllegalStateException(
             s"Duplicate incompatible properties with the same name '${incompatible._1}'. " +
-              s"The properties have different values: '${incompatible._2}' and '${fields.properties(incompatible._1)}'.'"
+              s"The properties have different values: '${incompatible._2}' and '${fields.properties(incompatible._1)}'."
         )
       )
 
