@@ -20,7 +20,7 @@ trait Repository [F[_]] {
 
 }
 
-trait DbioRepistory extends Repository[DB] {
+trait DbioRepository extends Repository[DB] {
 
   override def run[R]: (DB[R]) => DB[R] = identity
 

@@ -74,7 +74,7 @@ object TestFactory extends TestPermissions{
     new DBFetchingProcessRepository[Future](dbs) with BasicRepository
 
   def newFetchingProcessRepository(dbs: DbConfig) =
-    new DBFetchingProcessRepository[DB](dbs) with DbioRepistory
+    new DBFetchingProcessRepository[DB](dbs) with DbioRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBProcessRepository(dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
@@ -86,7 +86,7 @@ object TestFactory extends TestPermissions{
     new DbSubprocessRepository(db, implicitly[ExecutionContext])
 
   def newActionProcessRepository(db: DbConfig) = new DbProcessActionRepository[DB](db,
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo)) with DbioRepistory
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo)) with DbioRepository
 
   def newDummyActionRepository(): DbProcessActionRepository[DB] =
     newActionProcessRepository(dummyDb)
