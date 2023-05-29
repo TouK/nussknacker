@@ -5,15 +5,36 @@ on:
     types:
       - completed
 jobs:
-  report:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      scala_version_matrix: ${{ steps.variables.outputs.scala_version_matrix }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 100
+      - name: Define variables
+        id: variables
+        shell: bash
+        run: |
+          if [[ $CROSS_BUILD == 'true' ]]; then
+            echo "scala_version_matrix=[\"2.12\",\"2.13\"]" >> $GITHUB_OUTPUT
+          else
+            echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
+          fi
+  report-be:
+    runs-on: ubuntu-latest
+    needs: [ setup ]
+    strategy:
+      matrix:
+        scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
     steps:
       - name: BackendTests Report
         continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
-          name: BackendTests
-          artifact: BackendTests-results
+          name: BackendTests - scala ${{ matrix.scalaVersion }}
+          artifact: BackendTests-results-${{ matrix.scalaVersion }}
           path: '**/*.xml'
           reporter: java-junit
           # Limited because of GH actions maximum report size of 65535 bytes
@@ -22,18 +43,21 @@ jobs:
         continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
-          name: IntegrationTests
-          artifact: IntegrationTests-results
+          name: IntegrationTests-${{ matrix.scalaVersion }}
+          artifact: IntegrationTests-results-${{ matrix.scalaVersion }}
           path: '**/*.xml'
           reporter: java-junit
       - name: SlowTests Report
         continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
-          name: SlowTests
-          artifact: SlowTests-results
+          name: SlowTests-${{ matrix.scalaVersion }}
+          artifact: SlowTests-results-${{ matrix.scalaVersion }}
           path: '**/*.xml'
           reporter: java-junit
+  report-fe:
+    runs-on: ubuntu-latest
+    steps:
       - name: FrontendTests Report
         continue-on-error: true
         uses: dorny/test-reporter@v1

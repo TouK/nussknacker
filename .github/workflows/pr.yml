@@ -38,6 +38,7 @@ jobs:
       all_changes_count: ${{ steps.filter.outputs.all_changes_count }}
       git_source_branch: ${{ steps.variables.outputs.git_source_branch }}
       nk_snapshot_version: ${{ steps.variables.outputs.nk_snapshot_version }}
+      scala_version_matrix: ${{ steps.variables.outputs.scala_version_matrix }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -62,6 +63,11 @@ jobs:
           NK_SNAPSHOT_VERSION=`cat version.sbt | sed -e 's/.*:= *"//' -e 's/" *//' | sed "s/-SNAPSHOT/${VERSION_SUFFIX}-SNAPSHOT/"`
           echo "git_source_branch=$GIT_SOURCE_BRANCH" >> $GITHUB_OUTPUT
           echo "nk_snapshot_version=$NK_SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
+          if [[ $CROSS_BUILD == 'true' ]]; then
+            echo "scala_version_matrix=[\"2.12\",\"2.13\"]" >> $GITHUB_OUTPUT
+          else
+            echo "scala_version_matrix=[\"2.13\"]" >> $GITHUB_OUTPUT
+          fi
 
   build:
     name: Build
@@ -161,6 +167,11 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     needs: [ build, setup ]
+    strategy:
+      matrix:
+        scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
+    env:
+      FORCE_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
@@ -199,7 +210,7 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
-          name: BackendTests-results
+          name: BackendTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
       - name: Upload Coverage data to Coveralls
         shell: bash
@@ -244,6 +255,11 @@ jobs:
   integrationTests:
     name: IntegrationTests
     needs: [ build, setup ]
+    strategy:
+      matrix:
+        scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
+    env:
+      FORCE_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     runs-on: ubuntu-latest
     steps:
@@ -280,13 +296,18 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
-          name: IntegrationTests-results
+          name: IntegrationTests-results-${{ matrix.scalaVersion }}
           path: '**/it-reports/*.xml'
 
   slowTests:
     name: Slow and K8s tests
     runs-on: ubuntu-latest
     needs: [ build, setup ]
+    strategy:
+      matrix:
+        scalaVersion: ${{fromJson(needs.setup.outputs.scala_version_matrix)}}
+    env:
+      FORCE_SCALA_VERSION: ${{ matrix.scalaVersion }}
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
       - name: Cancel previous runs
@@ -340,7 +361,7 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
-          name: SlowTests-results
+          name: SlowTests-results-${{ matrix.scalaVersion }}
           path: '**/test-reports/*.xml'
 
   frontendTests:
