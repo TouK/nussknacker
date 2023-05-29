@@ -831,6 +831,19 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
+  test("should return statuses only for not archived scenarios (excluding fragments)") {
+    createDeployedProcess(processName)
+    createArchivedProcess(ProcessName("archived"))
+    createEmptyProcess(ProcessName("fragment"), isSubprocess = true)
+
+    Get(s"/processes/status") ~> routeWithAllPermissions ~> check {
+      status shouldEqual StatusCodes.OK
+      val response = responseAs[Map[String, Json]]
+      response.toList.size shouldBe 1
+      response.keys.head shouldBe processName.value
+    }
+  }
+
   test("fetching status for non exists process should return 404 ") {
     Get(s"/processes/non-exists-process/status") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.NotFound

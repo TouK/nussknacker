@@ -62,7 +62,7 @@ class ProcessesResources(
         path("archive") {
           get {
             complete {
-              processService.getArchivedProcesses[Unit].toBasicProcess
+              processService.getArchivedProcessesAndSubprocesses[Unit].toBasicProcess
             }
           }
         } ~ path("unarchive" / Segment) { processName =>
