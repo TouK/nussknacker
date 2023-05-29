@@ -7,13 +7,13 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState, S
 object InconsistentStateDetector {
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
-  def resolve(processState: Option[StatusDetails], lastStateAction: Option[ProcessAction]): StatusDetails =
-    (processState, lastStateAction) match {
+  def resolve(statusDetails: Option[StatusDetails], lastStateAction: Option[ProcessAction]): StatusDetails =
+    (statusDetails, lastStateAction) match {
       case (Some(state), _) if state.status.isFailed => state
       case (Some(state), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastStateAction)
-      case (_, Some(action)) if action.isDeployed => handleMismatchDeployedStateLastAction(processState, action)
+      case (_, Some(action)) if action.isDeployed => handleMismatchDeployedStateLastAction(statusDetails, action)
       case (Some(state), _) if state.status.isRunning || state.status.isDuringDeploy => handleFollowingDeployState(state, lastStateAction)
-      case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
+      case (_, Some(action)) if action.isCanceled => handleCanceledState(statusDetails)
       case (Some(state), _) => handleState(state, lastStateAction)
       case (None, Some(_)) => StatusDetails(SimpleStateStatus.NotDeployed)
       case (None, None) => StatusDetails(SimpleStateStatus.NotDeployed)

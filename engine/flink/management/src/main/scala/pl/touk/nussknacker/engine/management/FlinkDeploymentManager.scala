@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import ModelData._
-import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -65,7 +64,13 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit]
 
   private def checkOldJobStatus(processVersion: ProcessVersion): Future[Option[StatusDetails]] = {
-    getFreshProcessState(processVersion.processName)
+    val processName = processVersion.processName
+    for {
+      oldJob <- getFreshProcessState(processName)
+      oldProcessStatus = oldJob.map(processStateDefinitionManager.processState)
+      _ <- if (oldProcessStatus.exists(!_.allowedActions.contains(ProcessActionType.Deploy)))
+        Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.map(_.status.name).getOrElse("")}")) else Future.successful(Some(()))
+    } yield oldJob
   }
 
   protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit]

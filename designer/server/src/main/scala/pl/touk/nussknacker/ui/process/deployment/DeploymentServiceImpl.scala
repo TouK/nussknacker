@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Depl
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
@@ -288,9 +288,13 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   }
 
   private def processDataExistOrFail[T](maybeProcess: Option[T], processId: ProcessId): DB[T] = {
-    maybeProcess match {
-      case Some(processData) => DBIOAction.successful(processData)
-      case None => DBIOAction.failed(ProcessNotFoundError(processId.value.toString))
+    existsOrFail(maybeProcess, ProcessNotFoundError(processId.value.toString))
+  }
+
+  private def existsOrFail[T](maybeSth: Option[T], failWith: Exception): DB[T] = {
+    maybeSth match {
+      case Some(sth) => DBIOAction.successful(sth)
+      case None => DBIOAction.failed(failWith)
     }
   }
 
@@ -316,12 +320,14 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
   //- then it's gone, not finished.
-  def markProcessFinishedIfLastActionDeploy(processId: ProcessId)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
+  def markProcessFinishedIfLastActionDeploy(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     dbioRunner.run(for {
+      processIdOpt <- processRepository.fetchProcessId(processName)
+      processId <- existsOrFail(processIdOpt, ProcessNotFoundError(processName.value))
       processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
-      processDetails <- processDataExistOrFail(processDetailsOpt, processId)
+      processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.value.toString))
       cancelActionOpt <- {
         processDetails.lastDeployedAction.map { lastDeployedAction =>
           val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)

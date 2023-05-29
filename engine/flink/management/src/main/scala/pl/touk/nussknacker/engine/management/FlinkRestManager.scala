@@ -34,12 +34,13 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   /**
     * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
-  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
-    getProcessState(name).map(_.map(statusDetailsOpt => {
-      val engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusDetailsOpt, lastAction)
-      //FIXME: deploymentService.markProcessFinishedIfLastActionDeploy(processId)
-      Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
-    }))
+  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+    for {
+      statusWithFreshness <- getProcessState(name)
+      cancelActionOpt <- deploymentService.markProcessFinishedIfLastActionDeploy(name)
+      engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, cancelActionOpt.orElse(lastAction))
+    } yield statusWithFreshness.copy(value = Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction)))
+  }
 
   /*
     It's ok to have many jobs with same name, however:
