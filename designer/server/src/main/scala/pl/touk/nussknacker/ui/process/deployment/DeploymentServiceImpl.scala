@@ -19,10 +19,10 @@ import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUse
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository, DeploymentComment, FetchingProcessRepository, ProcessDBQueryRepository}
+import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.util.FutureUtils._
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.dbio.DBIOAction
 
 import java.time.Clock
@@ -148,9 +148,11 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     dbioRunner.runInTransaction(for {
       _ <- actionRepository.lockActionsTable
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
+      stateLastActionEntity <- actionRepository.getLastStateActionType(processDetails.processId)
+      stateLastAction = stateLastActionEntity.map(ProcessDBQueryRepository.toProcessAction(_, None))
       processState <- {
         implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-        getProcessState(processDetails, inProgressActionTypes)
+        getProcessState(processDetails, inProgressActionTypes, stateLastAction)
       }
       _ = checkIfCanPerformActionInState(actionType, processDetails, processState)
       actionId <- actionRepository.addInProgressAction(processDetails.processId, actionType, versionOnWhichActionIsDone, buildInfoProcessIngType)
@@ -222,7 +224,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       processDetails <- processDataExistOrFail(processDetailsOpt, processIdWithName.id)
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      result <- getProcessState(processDetails, inProgressActionTypes)
+      stateLastActionEntity <- actionRepository.getLastStateActionType(processDetails.processId)
+      stateLastAction = stateLastActionEntity.map(ProcessDBQueryRepository.toProcessAction(_, None))
+      result <- getProcessState(processDetails, inProgressActionTypes, stateLastAction)
     } yield result)
   }
 
@@ -230,23 +234,49 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                               (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      result <- getProcessState(processDetails, inProgressActionTypes)
+      stateLastActionEntity <- actionRepository.getLastStateActionType(processDetails.processId)
+      stateLastAction = stateLastActionEntity.map(ProcessDBQueryRepository.toProcessAction(_, None))
+      result <- getProcessState(processDetails, inProgressActionTypes, stateLastAction)
     } yield result)
   }
 
-  private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType])
+  private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType], stateLastAction: Option[ProcessAction])
                              (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     dispatcher.deploymentManager(processDetails.processingType).map { manager =>
-      if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
+      if (processDetails.isArchived) {
+        getProcessStateForArchiveActions(processDetails, stateLastAction)(manager)
+      } else if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy))
       } else if (inProgressActionTypes.contains(ProcessActionType.Cancel)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringCancel))
       } else {
-        checkStateInDeploymentManager(manager, processDetails)
+        processDetails.lastAction match {
+          case Some(action) if action.isUnArchived =>
+            getProcessStateForArchiveActions(processDetails, stateLastAction)(manager)
+          case Some(_) =>
+            checkStateInDeploymentManager(manager, processDetails)
+          case _ => //We assume scenario without deployment history shouldn't have state at the engine
+            logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
+            DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
+        }
       }
     }.getOrElse(DBIOAction.successful(SimpleProcessStateDefinitionManager.errorFailedToGet))
+  }
+
+  /**
+    * We assume checking state for archived / unarchived process doesn't make sens and we compute state based on last state action (without archive / unarchived)
+    */
+  private def getProcessStateForArchiveActions(processDetails: BaseProcessDetails[_], stateLastAction: Option[ProcessAction])(implicit manager: DeploymentManager) = {
+    stateLastAction.map(_.action) match {
+      case Some(_) => //We assume before archive / unarchived status was canceled
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.Canceled))
+      case _ =>
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
+    }
   }
 
   private def checkStateInDeploymentManager(deploymentManager: DeploymentManager, processDetails: BaseProcessDetails[_])
