@@ -4,6 +4,8 @@ on:
     workflows: ['CI']
     types:
       - completed
+env:
+  CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -33,7 +35,7 @@ jobs:
         continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
-          name: BackendTests - scala ${{ matrix.scalaVersion }}
+          name: [REPORT] BackendTests-${{ matrix.scalaVersion }}
           artifact: BackendTests-results-${{ matrix.scalaVersion }}
           path: '**/*.xml'
           reporter: java-junit
@@ -43,7 +45,7 @@ jobs:
         continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
-          name: IntegrationTests-${{ matrix.scalaVersion }}
+          name: [REPORT] IntegrationTests-${{ matrix.scalaVersion }}
           artifact: IntegrationTests-results-${{ matrix.scalaVersion }}
           path: '**/*.xml'
           reporter: java-junit
@@ -51,7 +53,7 @@ jobs:
         continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
-          name: SlowTests-${{ matrix.scalaVersion }}
+          name: [REPORT] SlowTests-${{ matrix.scalaVersion }}
           artifact: SlowTests-results-${{ matrix.scalaVersion }}
           path: '**/*.xml'
           reporter: java-junit
@@ -62,7 +64,7 @@ jobs:
         continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
-          name: FrontendTests
+          name: [REPORT] FrontendTests
           artifact: FrontendTests-results
           path: '**/*.xml'
           reporter: jest-junit
@@ -70,7 +72,7 @@ jobs:
         continue-on-error: true
         uses: dorny/test-reporter@v1
         with:
-          name: CypressTests
+          name: [REPORT] CypressTests
           artifact: CypressTests-results
           path: '**/*.xml'
           reporter: java-junit
