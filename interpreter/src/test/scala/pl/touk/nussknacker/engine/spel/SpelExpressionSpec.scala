@@ -245,7 +245,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("use not existing method reference") {
     inside(parse[Any]("notExistingMethod(1)", ctxWithGlobal)) {
-      case Invalid(NonEmptyList(error: InvalidMethodReference, Nil)) =>
+      case Invalid(NonEmptyList(error: InvalidMethodReference, _)) =>
         error.message shouldBe "Invalid method reference: notExistingMethod(1)."
     }
   }
