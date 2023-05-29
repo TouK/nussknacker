@@ -146,7 +146,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     run(query.result.map(_.toSet))
   }
 
-  def getLastStateActionType(processId: ProcessId): F[Option[ProcessActionEntityData]] = {
+  def getLastStateActionType(processId: ProcessId): F[Option[ProcessActionType]] = {
     val query = processActionsTable
       .filter(action =>
         action.processId === processId &&
@@ -154,6 +154,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
         action.state === ProcessActionState.Finished
       )
       .sortBy(_.performedAt.desc)
+      .map(_.action)
 
     run(query.result.headOption)
   }
