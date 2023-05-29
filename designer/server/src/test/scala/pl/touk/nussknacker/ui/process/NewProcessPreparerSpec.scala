@@ -22,4 +22,11 @@ class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
     emptyProcess.metaData.id shouldBe "processId1"
     emptyProcess.nodes shouldBe List.empty
   }
+
+  // TODO: test for correctly setting defaults for a type specific property
+  // TODO: test for missing configuration for a type specific property
+  // TODO: test for exception when there are different initial data for type specific and defaults for additional property
+  // TODO: test for setting default from initial type specific data when additional property config hash None default
+  // TODO: test for handling of fragments
+
 }
