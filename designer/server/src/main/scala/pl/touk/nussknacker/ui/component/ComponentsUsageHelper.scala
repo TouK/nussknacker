@@ -32,7 +32,7 @@ object ComponentsUsageHelper {
                        acc: Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeId])]]): Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeId])]] =
       fragmentsProcessesDetails match {
         case Nil => acc
-        case fragmentProcessesDetails :: t => {
+        case fragmentProcessesDetails :: restOfProcesses =>
           val componentIdUsages = toComponentIdUsages(fragmentProcessesDetails).toMap
 
           val newAcc = acc.toList.map {
@@ -40,14 +40,12 @@ object ComponentsUsageHelper {
               componentIdUsages.get(componentId) match {
                 case None => (componentId, componentNodeIds)
                 case Some((_, fragmentNodeIds)) => (componentId, componentNodeIds.map {
-                  case (baseProcessDetails, scenarioNodeIds) => (baseProcessDetails, scenarioNodeIds ++ fragmentNodeIds)
+                  case (baseProcessDetails, scenarioNodeIds) => (baseProcessDetails, scenarioNodeIds ++ fragmentNodeIds.map(nodeId => s"<<fragment>> $nodeId"))
                 })
               }
           }.toMap
 
-
-          mergeFragments(t, newAcc)
-        }
+          mergeFragments(restOfProcesses, newAcc)
       }
 
     val scenariosProcessesDetails = processesDetails.filter(_.isSubprocess == false)
@@ -61,9 +59,4 @@ object ComponentsUsageHelper {
 
     mergeFragments(fragmentsProcessesDetails, scenarioComponentsUsages)
   }
-
-
-
-
-
 }
