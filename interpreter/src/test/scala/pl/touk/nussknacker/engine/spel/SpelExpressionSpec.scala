@@ -22,8 +22,8 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeLis
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, ModuloZeroError, OperatorMismatchTypeError, OperatorNonNumericError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{NoPropertyError, UnknownClassError, UnknownMethodError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, ModuloZeroError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
@@ -393,6 +393,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("(#obj.children.?[id == '5' || id == '3'].![value]).contains(4L)").validExpression
       .evaluateSync[Boolean](ctx) should equal(true)
 
+  }
+
+  test("accumulate errors") {
+    parse[Any]("#obj.children.^[id == 123].foo").invalidValue.toList should matchPattern {
+      case OperatorNotComparableError("==", _, _) :: NoPropertyError(childrenType, "foo") :: Nil if childrenType == Typed[Test] =>
+    }
   }
 
   test("evaluate map") {
