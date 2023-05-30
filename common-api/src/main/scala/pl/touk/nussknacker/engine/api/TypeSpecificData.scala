@@ -10,13 +10,8 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.FragmentSpecificData.docsUrlName
 import pl.touk.nussknacker.engine.api.LiteStreamMetaData.parallelismName
 import pl.touk.nussknacker.engine.api.RequestResponseMetaData.slugName
-import pl.touk.nussknacker.engine.api.StreamMetaData.{
-  checkpointIntervalInSecondsName,
-  parallelismName,
-  spillStateToDiskName,
-  useAsyncInterpretationName
-}
-import pl.touk.nussknacker.engine.api.TypeSpecificUtils.{convertPropertyWithLog, toStringWithEmptyDefault}
+import pl.touk.nussknacker.engine.api.StreamMetaData.{checkpointIntervalInSecondsName, parallelismName, spillStateToDiskName, useAsyncInterpretationName}
+import pl.touk.nussknacker.engine.api.TypeSpecificUtils.{convertPropertyWithLog, mapEmptyStringToNone, toStringWithEmptyDefault}
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {
   val isSubprocess = this match {
@@ -24,6 +19,26 @@ import pl.touk.nussknacker.engine.api.TypeSpecificUtils.{convertPropertyWithLog,
     case _: FragmentSpecificData => true
   }
   val toProperties: Map[String, String]
+
+  def validateOrDie(processAdditionalFields: ProcessAdditionalFields): Unit = {
+    val setProperties =  this.toProperties.filter(_._2.nonEmpty)
+
+    if (!this.toProperties.keySet.subsetOf(processAdditionalFields.properties.keySet)) {
+      throw new IllegalStateException(
+        s"Scenario or fragment properties are desynchronized. All properties (also those with null values) in " +
+          s"TypeSpecificData should also be present within ProcessAdditionalFields. \n" +
+          s"The state of properties in TypeSpecificData is: ${this.toProperties}\n" +
+          s"The state of properties in ProcessAdditionalFields is: ${processAdditionalFields.properties}")
+    }
+
+    if (!setProperties.toSet.subsetOf(processAdditionalFields.properties.toSet)) {
+      throw new IllegalStateException(
+        s"Scenario or fragment properties are desynchronized. Properties with set values in TypeSpecificData should " +
+          s"be a subset of properties within ProcessAdditionalFields.\n" +
+          s"The state of properties in TypeSpecificData is: ${this.toProperties}\n" +
+          s"The state of properties in ProcessAdditionalFields is: ${processAdditionalFields.properties}")
+    }
+  }
 }
 
 object TypeSpecificData {
@@ -46,7 +61,7 @@ object FragmentSpecificData {
   private val docsUrlName = "docsUrl"
 
   def apply(properties: Map[String, String]): FragmentSpecificData = {
-    FragmentSpecificData(docsUrl = properties.get(docsUrlName))
+    FragmentSpecificData(docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)))
   }
 }
 
@@ -119,6 +134,11 @@ object TypeSpecificUtils extends LazyLogging {
 
   def toStringWithEmptyDefault(option: Option[Any]): String = {
     option.fold("")(_.toString)
+  }
+
+  def mapEmptyStringToNone(option: Option[String]): Option[String] = option match {
+    case Some(s) if s.isEmpty => None
+    case other => other
   }
 
   def convertPropertyWithLog[T](value: String, converter: String => T, propertyName: String): Option[T] = {

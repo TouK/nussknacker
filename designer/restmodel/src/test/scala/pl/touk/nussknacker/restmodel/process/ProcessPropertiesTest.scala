@@ -11,59 +11,65 @@ class ProcessPropertiesTest extends AnyFunSuite with Matchers {
 
   private val id = "Id"
 
-  test("convert type specific data without duplicated fields to process properties and back") {
+  test("throw exception when creating ProcessProperties with non-matching TypeSpecificData and AdditionalFields") {
     forAll(fullMetaDataCases) {
-      (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) => {
-        // meta data => process properties
-        val processProperties = ProcessProperties(
-          typeSpecificProperties = typeSpecificData,
-          additionalFields = None)
-
-        processProperties.propertiesType shouldBe metaDataName
-        processProperties.additionalFields.properties shouldBe properties
-
-        // process properties => meta data
-        val metaData = processProperties.toMetaData(id)
-        metaData.typeSpecificData shouldBe typeSpecificData
-        metaData.additionalFields shouldBe Option(ProcessAdditionalFields(None, properties))
+      (_, _, typeSpecificData: TypeSpecificData) => {
+        assertThrows[IllegalStateException](
+          ProcessProperties(typeSpecificProperties = typeSpecificData, additionalFields = None))
       }
     }
   }
 
-  test("convert type specific data with duplicated fields to process properties and back") {
+  test ("construct ProcessProperties from only TypeSpecificData and convert to MetaData") {
     forAll(fullMetaDataCases) {
-      (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) => {
+      (fullProperties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) => {
+        val processProperties = ProcessProperties(typeSpecificProperties = typeSpecificData)
+
+        processProperties.propertiesType shouldBe metaDataName
+        processProperties.additionalFields.properties shouldBe fullProperties
+
+        val metaData = processProperties.toMetaData(id)
+
+        metaData.typeSpecificData shouldBe typeSpecificData
+        metaData.additionalFields.get shouldBe ProcessAdditionalFields(None, fullProperties)
+      }
+    }
+  }
+
+  test("construct TypeSpecificData from correctly duplicated TypeSpecificData and AdditionalFields to ProcessProperties and back") {
+    forAll(fullMetaDataCases) {
+      (fullProperties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) => {
         // meta data => process properties
         val processProperties = ProcessProperties(
           typeSpecificProperties = typeSpecificData,
           additionalFields = Some(ProcessAdditionalFields(None, typeSpecificData.toProperties)))
 
         processProperties.propertiesType shouldBe metaDataName
-        processProperties.additionalFields.properties shouldBe properties
+        processProperties.additionalFields.properties shouldBe fullProperties
 
         // process properties => meta data
         val metaData = processProperties.toMetaData(id)
         metaData.typeSpecificData shouldBe typeSpecificData
-        metaData.additionalFields shouldBe Option(ProcessAdditionalFields(None, properties))
+        metaData.additionalFields shouldBe Option(ProcessAdditionalFields(None, fullProperties))
       }
     }
   }
 
-  test("convert type specific data with other properties by joining to process properties and back") {
+  test("construct TypeSpecificData with other properties by and convert to MetaData") {
     forAll(fullMetaDataCases) {
-      (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) => {
+      (fullProperties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) => {
         // meta data => process properties
         val processProperties = ProcessProperties(
           typeSpecificProperties = typeSpecificData,
-          additionalFields = Some(ProcessAdditionalFields(None, nonTypeSpecificProperties)))
+          additionalFields = Some(ProcessAdditionalFields(None, fullProperties ++ nonTypeSpecificProperties)))
 
         processProperties.propertiesType shouldBe metaDataName
-        processProperties.additionalFields.properties shouldBe properties ++ nonTypeSpecificProperties
+        processProperties.additionalFields.properties shouldBe fullProperties ++ nonTypeSpecificProperties
 
         // process properties => meta data
         val metaData = processProperties.toMetaData(id)
         metaData.typeSpecificData shouldBe typeSpecificData
-        metaData.additionalFields shouldBe Some(ProcessAdditionalFields(None, properties ++ nonTypeSpecificProperties))
+        metaData.additionalFields shouldBe Some(ProcessAdditionalFields(None, fullProperties ++ nonTypeSpecificProperties))
       }
     }
   }
@@ -72,12 +78,12 @@ class ProcessPropertiesTest extends AnyFunSuite with Matchers {
 
     val fullTypeSpecificDataWithInvalidPropertiesCases = Table(
       ("invalidProperties", "metaDataName", "typeSpecificData"),
-      (flinkInvalidProperties, flinkMetaDataName, flinkFullTypeData),
-      (liteStreamInvalidProperties, liteStreamMetaDataName, liteStreamFullTypeData)
+      (flinkInvalidTypeProperties, flinkMetaDataName, flinkFullTypeData),
+      (liteStreamInvalidTypeProperties, liteStreamMetaDataName, liteStreamFullTypeData)
     )
 
     forAll(fullTypeSpecificDataWithInvalidPropertiesCases) {
-      (invalidProperties: Map[String, String], metaDataName: String, fullTypeSpecificData: TypeSpecificData) => {
+      (invalidProperties: Map[String, String], _, fullTypeSpecificData: TypeSpecificData) => {
         assertThrows[IllegalStateException] {
           ProcessProperties(
             typeSpecificProperties = fullTypeSpecificData,

@@ -7,7 +7,10 @@ object MetaDataTestData {
 
   // flink
   val flinkEmptyTypeData: StreamMetaData = StreamMetaData(None, None, None, None)
-  val flinkDefaultTypeData: StreamMetaData = StreamMetaData()
+  val flinkDefaultTypeData: StreamMetaData = StreamMetaData(
+    parallelism = Some(1),
+    spillStateToDisk = Some(true)
+  )
   val flinkFullTypeData: StreamMetaData = StreamMetaData(
     parallelism = Some(5),
     spillStateToDisk = Some(false),
@@ -26,7 +29,13 @@ object MetaDataTestData {
     "useAsyncInterpretation" -> "true",
     "checkpointIntervalInSeconds" -> "1000"
   )
-  val flinkInvalidProperties: Map[String, String] = Map(
+  val flinkFullPropertiesDifferent: Map[String, String] = Map(
+    "parallelism" -> "6",
+    "spillStateToDisk" -> "true",
+    "useAsyncInterpretation" -> "false",
+    "checkpointIntervalInSeconds" -> "2000"
+  )
+  val flinkInvalidTypeProperties: Map[String, String] = Map(
     "parallelism" -> "non-int",
     "spillStateToDisk" -> "non-boolean",
     "useAsyncInterpretation" -> "non-boolean",
@@ -38,7 +47,8 @@ object MetaDataTestData {
   val liteStreamFullTypeData: LiteStreamMetaData = LiteStreamMetaData(parallelism = Some(5))
   val liteStreamEmptyProperties: Map[String, String] = Map("parallelism" -> "")
   val liteStreamFullProperties: Map[String, String] = Map("parallelism" -> "5")
-  val liteStreamInvalidProperties: Map[String, String] = Map("parallelism" -> "non-int")
+  val liteStreamFullPropertiesDifferent: Map[String, String] = Map("parallelism" -> "6")
+  val liteStreamInvalidTypeProperties: Map[String, String] = Map("parallelism" -> "non-int")
 
   // request-response
   val requestResponseEmptyTypeData: RequestResponseMetaData = RequestResponseMetaData(None)
@@ -79,10 +89,16 @@ object MetaDataTestData {
     (fragmentFullProperties, fragmentMetaDataName, fragmentFullTypeData)
   )
 
-  val invalidMetaDataCases: TableFor3[Map[String, String], String, TypeSpecificData] = Table(
+  val invalidTypeAndEmptyMetaDataCases: TableFor3[Map[String, String], String, TypeSpecificData] = Table(
     ("properties", "metaDataName", "typeSpecificData"),
-    (flinkInvalidProperties, flinkMetaDataName, flinkEmptyTypeData),
-    (liteStreamInvalidProperties, liteStreamMetaDataName, liteStreamEmptyTypeData)
+    (flinkInvalidTypeProperties, flinkMetaDataName, flinkEmptyTypeData),
+    (liteStreamInvalidTypeProperties, liteStreamMetaDataName, liteStreamEmptyTypeData)
+  )
+
+  val invalidValuesMetaDataCases: TableFor3[Map[String, String], String, TypeSpecificData] = Table(
+    ("properties", "metaDataName", "typeSpecificData"),
+    (flinkFullPropertiesDifferent, flinkMetaDataName, flinkFullTypeData),
+    (liteStreamFullPropertiesDifferent, liteStreamMetaDataName, liteStreamFullTypeData)
   )
 
 }

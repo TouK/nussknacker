@@ -7,26 +7,22 @@ import pl.touk.nussknacker.engine.api.MetaDataTestData._
 
 class TypeSpecificDataTest extends AnyFunSuite with Matchers {
 
-  test("convert full type specific data to properties") {
-    forAll(fullMetaDataCases) { (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
+  test("create properties from full TypeSpecificData") {
+    forAll(fullMetaDataCases) { (properties: Map[String, String], _, typeSpecificData: TypeSpecificData) =>
       typeSpecificData.toProperties shouldBe properties
     }
   }
 
-  test("convert full properties to type specific data") {
+  test("create TypeSpecificData from full properties") {
     forAll(fullMetaDataCases) { (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
       TypeSpecificData(properties, metaDataName) shouldBe typeSpecificData
     }
   }
 
-  test("convert empty type specific data to corresponding map with empty values") {
-    forAll(emptyMetaDataCases) { (properties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) =>
+  test("create empty properties from empty TypeSpecificData") {
+    forAll(emptyMetaDataCases) { (properties: Map[String, String], _, typeSpecificData: TypeSpecificData) =>
       typeSpecificData.toProperties shouldBe properties
     }
-  }
-
-  test("convert empty properties to empty type specific data with defaults") {
-    TypeSpecificData(Map.empty, flinkMetaDataName) shouldBe flinkDefaultTypeData
   }
 
   test("throw exception for unrecognized type specific name") {
@@ -35,8 +31,8 @@ class TypeSpecificDataTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("convert invalid properties to type specific data") {
-    StreamMetaData(flinkInvalidProperties) shouldBe flinkEmptyTypeData
+  test("create empty TypeSpecificData from invalid properties") {
+    StreamMetaData(flinkInvalidTypeProperties) shouldBe flinkEmptyTypeData
   }
 
 }

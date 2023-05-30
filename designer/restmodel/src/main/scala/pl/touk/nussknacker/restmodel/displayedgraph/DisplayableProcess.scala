@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
-import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -68,17 +67,22 @@ case class ProcessProperties(additionalFields: ProcessAdditionalFields, properti
 
 }
 
-object ProcessProperties extends LazyLogging {
+object ProcessProperties {
 
-  def apply(metaData: MetaData): ProcessProperties = {
-    ProcessProperties(metaData.typeSpecificData, metaData.additionalFields)
+  def apply(typeSpecificProperties: TypeSpecificData): ProcessProperties = {
+    ProcessProperties(typeSpecificProperties, Some(ProcessAdditionalFields(None, typeSpecificProperties.toProperties)))
   }
 
   def apply(
     typeSpecificProperties: TypeSpecificData,
-    additionalFields: Option[ProcessAdditionalFields] = None
+    additionalFields: Option[ProcessAdditionalFields]
   ): ProcessProperties = {
-    val mergedProps = merge(additionalFields, typeSpecificProperties)
+
+    val additionalFieldsDetermined = additionalFields.getOrElse(ProcessAdditionalFields.empty)
+
+    // We prevent instantiation of ProcessProperties with invalid properties
+    typeSpecificProperties.validateOrDie(additionalFieldsDetermined)
+
     // We set the classname to make converting back from generic to typed easier
     val typeSpecificClassName = typeSpecificProperties match {
       case _: StreamMetaData          => "StreamMetaData"
@@ -87,29 +91,7 @@ object ProcessProperties extends LazyLogging {
       case _: FragmentSpecificData    => "FragmentSpecificData"
       case _                          => throw new IllegalStateException("Type specific properties name not recognized.")
     }
-    ProcessProperties(mergedProps, typeSpecificClassName)
-  }
-
-  private def merge(properties: Option[ProcessAdditionalFields],
-                    typeSpecificData: TypeSpecificData): ProcessAdditionalFields = {
-    val fields = properties.getOrElse(ProcessAdditionalFields.empty)
-    // For ease of transitioning into generic properties, we write duplicate TypeSpecificData into the generic
-    // properties. Only when we have a non-null value in TypeSpecificData and a different corresponding generic property
-    // we throw an exception since they need to be synchronized - in this case you have to synchronize these values manually
-    typeSpecificData.toProperties
-      .filterNot(prop => prop._2.isEmpty)
-      .filter(prop => fields.properties.contains(prop._1))
-      .filter(duplicate => fields.properties(duplicate._1) != duplicate._2)
-      .foreach(
-        incompatible =>
-          throw new IllegalStateException(
-            s"Duplicate incompatible properties with the same name '${incompatible._1}'. " +
-              s"The properties have different values: '${incompatible._2}' and '${fields.properties(incompatible._1)}'."
-        )
-      )
-
-    val mergedProps = fields.properties ++ typeSpecificData.toProperties
-    ProcessAdditionalFields(fields.description, mergedProps)
+    ProcessProperties(additionalFieldsDetermined, typeSpecificClassName)
   }
 
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =

@@ -72,7 +72,7 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpec
       case (key, _) if !propertyConfig.contains(key) =>
         throw new IllegalStateException(
           s"""Configuration for property with name: $key is not present. Type specific properties have to have explicit
-             | configuration (AdditionalPropertyConfig)"""
+             | configuration (AdditionalPropertyConfig)""".stripMargin
         )
     }
   }

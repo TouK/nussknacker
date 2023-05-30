@@ -1460,10 +1460,7 @@ lazy val copyClientDist = taskKey[Unit]("copy designer client")
 lazy val restmodel = (project in file("designer/restmodel"))
   .settings(commonSettings)
   .settings(
-    name := "nussknacker-restmodel",
-    libraryDependencies ++= {Seq(
-      "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-    )}
+    name := "nussknacker-restmodel"
   )
   .dependsOn(extensionsApi, commonApi % "test->test", testUtils % "test")
 

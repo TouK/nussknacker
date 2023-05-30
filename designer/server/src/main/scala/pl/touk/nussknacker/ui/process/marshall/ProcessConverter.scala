@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.process.marshall
 
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, LiteStreamMetaData, ProcessAdditionalFields, RequestResponseMetaData, StreamMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.EdgeType
@@ -25,7 +24,7 @@ object ProcessConverter {
           case ((n1, e1), (n2, e2)) => (n1 ++ n2, e1 ++ e2)
         }
     }
-    val props = ProcessProperties(process.metaData)
+    val props = ProcessProperties(process.metaData.typeSpecificData, process.metaData.additionalFields)
     DisplayableProcess(process.metaData.id, props, nodes, edges, processingType, category)
   }
 

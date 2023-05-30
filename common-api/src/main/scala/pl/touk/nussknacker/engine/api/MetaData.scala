@@ -16,9 +16,22 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 }
 
 object MetaData {
+
   def apply(id: String, properties: ProcessAdditionalFields, propertiesType: String): MetaData = {
     val (typeSpecificProperties, fields) = properties.extractTypeSpecificData(propertiesType)
     MetaData(id, typeSpecificProperties, fields)
+  }
+
+  def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
+    MetaData(id, typeSpecificData, Some(ProcessAdditionalFields(None, typeSpecificData.toProperties)))
+  }
+
+  def apply(id: String,
+            typeSpecificData: TypeSpecificData,
+            additionalFields: Option[ProcessAdditionalFields]): MetaData = {
+    // We prevent instantiation of MetaData with invalid properties
+    typeSpecificData.validateOrDie(additionalFields.getOrElse(ProcessAdditionalFields.empty))
+    new MetaData(id, typeSpecificData, additionalFields)
   }
 }
 
