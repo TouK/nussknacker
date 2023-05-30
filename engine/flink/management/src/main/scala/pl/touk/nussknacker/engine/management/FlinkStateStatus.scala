@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 object FlinkStateStatus {
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
-    case SimpleStateStatus.DuringDeploy => List(ProcessActionType.Cancel)
     case SimpleStateStatus.Restarting => List(ProcessActionType.Cancel)
   }
 

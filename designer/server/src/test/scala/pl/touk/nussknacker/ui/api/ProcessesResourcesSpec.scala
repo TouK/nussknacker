@@ -65,9 +65,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   private val archivedFragmentName = ProcessName("archived-fragment")
 
-  override protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)
+  override protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)(new ProcessingTypeDeploymentServiceStub(Nil))
 
-  test("should return list of process with state") {
+  test("should return list of process with state") {ansible/roles/nussknacker/templates/application.conf
     createDeployedProcess(processName)
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running))
   }

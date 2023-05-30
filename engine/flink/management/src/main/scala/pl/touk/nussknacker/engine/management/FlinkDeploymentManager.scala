@@ -14,15 +14,30 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import ModelData._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
+abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
+                                     (implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
   extends DeploymentManager with AlwaysFreshProcessState with LazyLogging {
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
 
   private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
+
+  /**
+    * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
+    */
+  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+    val stefan: Future[WithDataFreshnessStatus[Option[ProcessState]]] = for {
+      statusWithFreshness <- getProcessState(name)
+      finishedStatusOpt = statusWithFreshness.value.filter(_.status.isFinished)
+      cancelActionOpt <- Future.successful(finishedStatusOpt).flatMap(_ => deploymentService.markProcessFinishedIfLastActionDeploy(name))
+      engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, cancelActionOpt.orElse(lastAction))
+    } yield statusWithFreshness.copy(value = Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction)))
+    stefan
+  }
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     for {

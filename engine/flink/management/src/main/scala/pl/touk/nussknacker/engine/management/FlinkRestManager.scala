@@ -31,17 +31,6 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
 
   private val slotsChecker = new FlinkSlotsChecker(client)
 
-  /**
-    * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
-    */
-  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
-    for {
-      statusWithFreshness <- getProcessState(name)
-      cancelActionOpt <- deploymentService.markProcessFinishedIfLastActionDeploy(name)
-      engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, cancelActionOpt.orElse(lastAction))
-    } yield statusWithFreshness.copy(value = Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction)))
-  }
-
   /*
     It's ok to have many jobs with same name, however:
     - there MUST be at most 1 job in *non-terminal* state with given name

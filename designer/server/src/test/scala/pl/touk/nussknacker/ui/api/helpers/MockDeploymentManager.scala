@@ -25,12 +25,13 @@ object MockDeploymentManager {
   val maxParallelism = 10
 }
 
-class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends FlinkDeploymentManager(ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED") {
+class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(implicit deploymentService: ProcessingTypeDeploymentService)
+  extends FlinkDeploymentManager(ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED") {
 
   import MockDeploymentManager._
 
   def this() = {
-    this(SimpleStateStatus.Running)
+    this(SimpleStateStatus.Running)(new ProcessingTypeDeploymentServiceStub(Nil))
   }
 
   private def prepareProcessState(status: StateStatus): Option[StatusDetails] =
