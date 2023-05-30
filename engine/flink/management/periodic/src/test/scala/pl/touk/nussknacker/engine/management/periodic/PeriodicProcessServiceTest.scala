@@ -187,7 +187,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
   test("handleFinished - should mark as failed for failed Flink job") {
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed)
 
     f.periodicProcessService.handleFinished.futureValue
 

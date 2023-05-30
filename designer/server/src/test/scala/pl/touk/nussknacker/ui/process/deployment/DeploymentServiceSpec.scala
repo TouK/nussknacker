@@ -227,7 +227,27 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
-      state.status shouldBe SimpleStateStatus.NotDeployed
+
+      val expectedStatus = ProblemStateStatus.shouldNotBeRunning(false)
+      state.status shouldBe expectedStatus
+      state.icon shouldBe ProblemStateStatus.icon
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe expectedStatus.description
+    }
+  }
+
+  test("Should return state with warning when state is during canceled and process hasn't action") {
+    val processName: ProcessName = generateProcessName
+    val id = prepareProcess(processName).dbioActionValues
+
+    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringCancel) {
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+
+      val expectedStatus = ProblemStateStatus.ProcessWithoutAction
+      state.status shouldBe expectedStatus
+      state.icon shouldBe ProblemStateStatus.icon
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe expectedStatus.description
     }
   }
 
@@ -249,7 +269,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Finished) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      val expectedStatus = ProblemStateStatus.processWithoutAction
+      val expectedStatus = ProblemStateStatus.ProcessWithoutAction
       state.status shouldBe expectedStatus
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe expectedStatus.description
@@ -265,7 +285,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     deploymentManager.withProcessState(processName, Some(state)) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      val expectedStatus = ProblemStateStatus.processWithoutAction
+      val expectedStatus = ProblemStateStatus.ProcessWithoutAction
       state.status shouldBe expectedStatus
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
       state.description shouldBe expectedStatus.description
@@ -339,10 +359,10 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
     // FIXME: doesnt check recover from failed verifications ???
-    deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.failed, version) {
+    deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.Failed, version) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe ProblemStateStatus.failed
+      state.status shouldBe ProblemStateStatus.Failed
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     }
   }
@@ -367,10 +387,10 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id =  prepareDeployedProcess(processName).dbioActionValues
 
     // FIXME: doesnt check recover from failed future of findJobStatus ???
-    deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.failedToGet, Option.empty) {
+    deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.FailedToGet, Option.empty) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      val expectedStatus = ProblemStateStatus.failedToGet
+      val expectedStatus = ProblemStateStatus.FailedToGet
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
@@ -479,7 +499,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareArchivedProcess(processName, Some(Deploy)).dbioActionValues
 
     val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
-    state.status shouldBe ProblemStateStatus.archivedShouldBeCanceled
+    state.status shouldBe ProblemStateStatus.ArchivedShouldBeCanceled
   }
 
   test("Should return canceled status for unarchived process") {

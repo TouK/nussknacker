@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.StateDefinitionDetails.UnknownIcon
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -33,8 +33,8 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
-    Future.successful(WithDataFreshnessStatus(jobStatus.map(processStateDefinitionManager.processState), cached = false))
+  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
+    Future.successful(WithDataFreshnessStatus(processStateDefinitionManager.processState(jobStatus.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed))), cached = false))
 
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = Future.successful(jobStatus)
 

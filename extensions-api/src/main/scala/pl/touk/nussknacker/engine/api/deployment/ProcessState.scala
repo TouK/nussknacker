@@ -35,26 +35,6 @@ import java.net.URI
 
   def isDeployed: Boolean = status.isRunning || status.isDuringDeploy
 
-  // TODO: those methods shouldn't be needed after refactors in DeploymentManager: split getProcessState into
-  //       fetching only details, and enriching details with presentation properties like icon, tooltip etc.
-  def toStatusDetails: StatusDetails = StatusDetails(
-    status = status,
-    deploymentId = deploymentId,
-    version = version,
-    startTime = startTime,
-    attributes = attributes,
-    errors = errors
-  )
-
-  def withStatusDetails(stateWithStatusDetails: ProcessState): ProcessState = {
-    copy(
-      status = stateWithStatusDetails.status,
-      allowedActions = stateWithStatusDetails.allowedActions,
-      icon = stateWithStatusDetails.icon,
-      tooltip = stateWithStatusDetails.tooltip,
-      description = stateWithStatusDetails.description)
-  }
-
 }
 
 object ProcessState {

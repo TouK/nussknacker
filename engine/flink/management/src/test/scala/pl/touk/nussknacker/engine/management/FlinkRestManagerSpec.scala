@@ -252,7 +252,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val manager = createManager(statuses)
     manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(StatusDetails(
-      ProblemStateStatus.multipleJobsRunning, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
+      ProblemStateStatus.MultipleJobsRunning, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
     ))
   }
 
@@ -261,7 +261,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val manager = createManager(statuses)
     manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(StatusDetails(
-      ProblemStateStatus.multipleJobsRunning, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
+      ProblemStateStatus.MultipleJobsRunning, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
     ))
   }
 

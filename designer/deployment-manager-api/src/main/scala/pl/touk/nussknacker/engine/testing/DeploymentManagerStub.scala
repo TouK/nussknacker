@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.testing
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
@@ -29,8 +29,8 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
-    Future.successful(WithDataFreshnessStatus(None, cached = false))
+  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = ???
+    Future.successful(WithDataFreshnessStatus(processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed), cached = false))
 
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] =
     Future.successful(None)

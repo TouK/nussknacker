@@ -24,7 +24,7 @@ object InconsistentStateDetector {
       case SimpleStateStatus.NotDeployed if lastStateAction.isEmpty =>
         state.copy(status = SimpleStateStatus.NotDeployed)
       case SimpleStateStatus.Restarting | SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastStateAction.isEmpty =>
-        state.copy(status = ProblemStateStatus.processWithoutAction)
+        state.copy(status = ProblemStateStatus.ProcessWithoutAction)
       case _ => state
     }
 
@@ -68,7 +68,7 @@ object InconsistentStateDetector {
           case None => //TODO: we should remove Option from ProcessVersion?
             state.copy(status = ProblemStateStatus.missingDeployedVersion(action.processVersionId, action.user))
           case _ =>
-            state.copy(status = ProblemStateStatus.failed) //Generic error in other cases
+            state.copy(status = ProblemStateStatus.Failed) //Generic error in other cases
         }
       case None =>
         StatusDetails(ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user))

@@ -30,6 +30,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
     SimpleStateStatus.definitions
 
   def errorFailedToGet: ProcessState =
-    processState(failedToGet)
+    processState(FailedToGet)
 
 }

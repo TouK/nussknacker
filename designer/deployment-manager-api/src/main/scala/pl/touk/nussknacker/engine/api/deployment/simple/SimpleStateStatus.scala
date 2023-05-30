@@ -25,11 +25,11 @@ object SimpleStateStatus {
 
     // Problem factory methods
 
-    val failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
+    val Failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
 
-    val archivedShouldBeCanceled: ProblemStateStatus = ProblemStateStatus("Archived scenario should be canceled.", List(ProcessActionType.Cancel))
+    val ArchivedShouldBeCanceled: ProblemStateStatus = ProblemStateStatus("Archived scenario should be canceled.", List(ProcessActionType.Cancel))
 
-    val failedToGet: ProblemStateStatus =
+    val FailedToGet: ProblemStateStatus =
       ProblemStateStatus(s"Failed to get a state of the scenario.")
 
     def shouldBeRunning(deployedVersionId: VersionId, user: String): ProblemStateStatus =
@@ -47,10 +47,10 @@ object SimpleStateStatus {
     def missingDeployedVersion(exceptedVersionId: VersionId, user: String): ProblemStateStatus =
       ProblemStateStatus(s"Scenario deployed without version by $user, expected version $exceptedVersionId.")
 
-    val processWithoutAction: ProblemStateStatus =
+    val ProcessWithoutAction: ProblemStateStatus =
       ProblemStateStatus("Scenario state error - no actions found.")
 
-    val multipleJobsRunning: ProblemStateStatus =
+    val MultipleJobsRunning: ProblemStateStatus =
       ProblemStateStatus("More than one deployment is running.", List(ProcessActionType.Cancel))
 
   }

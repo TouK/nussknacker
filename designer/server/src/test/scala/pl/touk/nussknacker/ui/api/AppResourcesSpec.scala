@@ -47,7 +47,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
     createDeployedProcess(ProcessName("id2"))
     createDeployedProcess(ProcessName("id3"))
     val statuses = Map(
-      ProcessName("id1") -> ProblemStateStatus.failedToGet,
+      ProcessName("id1") -> ProblemStateStatus.FailedToGet,
       ProcessName("id2") -> SimpleStateStatus.Running,
       ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
     )

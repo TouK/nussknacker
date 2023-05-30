@@ -306,7 +306,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
 
     def createFailedProcessState(processDeployment: PeriodicProcessDeployment): StatusDetails =
       StatusDetails(
-        status = ProblemStateStatus.failed,
+        status = ProblemStateStatus.Failed,
         Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
         startTime = Option.empty,

@@ -46,7 +46,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
   test("detects scenario without progress") {
     val state = mapper.findStatusForDeploymentsAndPods(parseResource[Deployment]("progressFailed.json") :: Nil, Nil)
     state shouldBe Some(
-      StatusDetails(ProblemStateStatus.failed, None, Some(version), Some(timestamp), None,
+      StatusDetails(ProblemStateStatus.Failed, None, Some(version), Some(timestamp), None,
         List("Deployment does not have minimum availability.",
           "ReplicaSet \"scenario-7-processname-aaaaa-x-5c799f64b8\" has timed out progressing.")
       )
@@ -67,7 +67,7 @@ class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
     val state = mapper.findStatusForDeploymentsAndPods(deployment :: deployment2 :: Nil, Nil)
 
     state shouldBe Some(
-      StatusDetails(ProblemStateStatus.multipleJobsRunning, None, None, None, None,
+      StatusDetails(ProblemStateStatus.MultipleJobsRunning, None, None, None, None,
         "Expected one deployment, instead: scenario-7-processname-aaaaa-x, otherName" :: Nil)
     )
   }

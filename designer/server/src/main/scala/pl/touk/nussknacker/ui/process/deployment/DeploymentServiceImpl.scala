@@ -268,8 +268,8 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.Canceled))
       case Some(_) =>
-        logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.archivedShouldBeCanceled}")
-        DBIOAction.successful(manager.processStateDefinitionManager.processState(ProblemStateStatus.archivedShouldBeCanceled))
+        logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.ArchivedShouldBeCanceled}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(ProblemStateStatus.ArchivedShouldBeCanceled))
       case _ =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
@@ -281,9 +281,8 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     for {
       state <- DBIOAction.from(getStateFromDeploymentManager(deploymentManager, processDetails.idWithName, processDetails.lastStateAction))
     } yield {
-      val finalState = state.value.getOrElse(SimpleProcessStateDefinitionManager.errorFailedToGet)
-      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${processDetails.lastAction.map(_.action)})")
-      finalState
+      logger.debug(s"Status for: '${processDetails.name}' is: ${state.value.status} (from engine: ${state.value.status}, cached: ${state.cached}, last action: ${processDetails.lastAction.map(_.action)})")
+      state.value
     }
   }
 
@@ -295,7 +294,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   }
 
   private def getStateFromDeploymentManager(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastAction: Option[ProcessAction])
-                                           (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+                                           (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
 
     val state = deploymentManager.getProcessState(processIdWithName.name, lastAction).recover {
       case NonFatal(e) =>
@@ -314,8 +313,6 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }.getOrElse(state)
   }
 
-  //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
-  //- then it's gone, not finished.
   def markProcessFinishedIfLastActionDeploy(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
@@ -339,7 +336,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   private lazy val failedToGetProcessState =
     WithDataFreshnessStatus(
-      Option(SimpleProcessStateDefinitionManager.errorFailedToGet),
+      SimpleProcessStateDefinitionManager.errorFailedToGet,
       cached = false)
 
   // It is very naive implementation for situation when designer was restarted after spawning some long running action

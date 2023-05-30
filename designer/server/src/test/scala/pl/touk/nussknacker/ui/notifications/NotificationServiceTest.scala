@@ -33,6 +33,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DBIOActionValues
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
+import java.net.URI
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.duration.DurationInt
@@ -86,11 +87,13 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     notificationsFor(userForFail).map(_.toRefresh) shouldBe Symbol("empty")
   }
 
+  private val notDeployed = SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
+
   private def createServices(deploymentManager: DeploymentManager, processName: ProcessName) = {
     when(deploymentManager.getProcessState(any[ProcessName])(any[DataFreshnessPolicy]))
       .thenReturn(Future.successful(WithDataFreshnessStatus(Option.empty[StatusDetails], cached = false)))
     when(deploymentManager.getProcessState(any[ProcessName], any[Option[ProcessAction]])(any[DataFreshnessPolicy]))
-      .thenReturn(Future.successful(WithDataFreshnessStatus(Option.empty[ProcessState], cached = false)))
+      .thenReturn(Future.successful(WithDataFreshnessStatus(notDeployed, cached = false)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])).thenReturn(Some(deploymentManager))
     when(managerDispatcher.deploymentManagerUnsafe(any[String])).thenReturn(deploymentManager)

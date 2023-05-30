@@ -61,7 +61,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
 
   private def errorMultipleJobsRunning(duplicates: List[JobOverview]): StatusDetails = {
     StatusDetails(
-      ProblemStateStatus.multipleJobsRunning,
+      ProblemStateStatus.MultipleJobsRunning,
       deploymentId = Some(ExternalDeploymentId(duplicates.head.jid)),
       startTime = Some(duplicates.head.`start-time`),
       errors = List(s"Expected one job, instead: ${duplicates.map(job => s"${job.jid} - ${job.state}").mkString(", ")}"))
@@ -99,8 +99,8 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
       case JobStatus.CANCELLING => SimpleStateStatus.DuringCancel
       //The job is not technically running, but should be in a moment
       case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => SimpleStateStatus.Running
-      case JobStatus.FAILING => ProblemStateStatus.failed // redeploy allowed, handle with restartStrategy
-      case JobStatus.FAILED => ProblemStateStatus.failed // redeploy allowed, handle with restartStrategy
+      case JobStatus.FAILING => ProblemStateStatus.Failed // redeploy allowed, handle with restartStrategy
+      case JobStatus.FAILED => ProblemStateStatus.Failed // redeploy allowed, handle with restartStrategy
       case _ => throw new IllegalStateException() // todo: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
     }
 
