@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.ui.component
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 
 import scala.annotation.tailrec
+case class ComponentMetadata(baseProcessDetails: BaseProcessDetails[ScenarioComponentsUsages], nodeIds: List[NodeId])
 
 object ComponentsUsageHelper {
 
@@ -13,50 +15,59 @@ object ComponentsUsageHelper {
   def computeComponentsUsageCount(componentIdProvider: ComponentIdProvider,
                                   processesDetails: List[BaseProcessDetails[ScenarioComponentsUsages]]): Map[ComponentId, Long] = {
     computeComponentsUsage(componentIdProvider, processesDetails)
-      .mapValuesNow(usages => usages.map { case (_, nodeIds) => nodeIds.size }.sum)
+      .mapValuesNow(usages => usages.map { case ComponentMetadata(processDetails, nodeIds) => nodeIds.size }.sum)
   }
 
   def computeComponentsUsage(componentIdProvider: ComponentIdProvider,
-                             processesDetails: List[BaseProcessDetails[ScenarioComponentsUsages]]): Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeId])]] = {
+                                processesDetails: List[BaseProcessDetails[ScenarioComponentsUsages]]): Map[ComponentId, List[ComponentMetadata]] = {
+    def toComponentIdUsages(processDetails: BaseProcessDetails[ScenarioComponentsUsages]): List[(ComponentId, ComponentMetadata)] = {
+      val componentUsages = processDetails.json.value
 
-    def toComponentIdUsages(processDetails: BaseProcessDetails[ScenarioComponentsUsages]): List[(ComponentId, (BaseProcessDetails[Unit], List[NodeId]))] = {
-      val componentsUsages: Map[ComponentIdParts, List[NodeId]] = processDetails.json.value
-      componentsUsages.toList.map { case (ComponentIdParts(componentName, componentType), nodeIds) =>
-        val componentId = componentIdProvider.createComponentId(processDetails.processingType, componentName, componentType)
-        componentId -> (processDetails.mapProcess(_ => ()), nodeIds)
+      componentUsages.toList.map {
+        case (ComponentIdParts(componentName, componentType), nodeIds) =>
+          val componentId = componentIdProvider.createComponentId(processDetails.processingType, componentName, componentType)
+          componentId -> ComponentMetadata(processDetails, nodeIds)
       }
     }
 
-    @tailrec
-    def mergeFragments(fragmentsProcessesDetails: List[BaseProcessDetails[ScenarioComponentsUsages]],
-                       acc: Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeId])]]): Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeId])]] =
-      fragmentsProcessesDetails match {
-        case Nil => acc
-        case fragmentProcessesDetails :: restOfProcesses =>
-          val componentIdUsages = toComponentIdUsages(fragmentProcessesDetails).toMap
+    def mergeFragmentIntoScenarios(componentId: ComponentId,
+                                   fragmentComponentsMetadata: List[ComponentMetadata],
+                                   acc: List[(ComponentId, List[ComponentMetadata])]): List[(ComponentId, List[ComponentMetadata])] =
+      acc.map {
+        case (scenarioComponentId, componentMetadataList) if scenarioComponentId.value == componentId.value =>
+          val updatedComponentsMetadata = fragmentComponentsMetadata.foldLeft(componentMetadataList) {
+            case (currentComponentMetadata, currentFragment) =>
+              currentComponentMetadata.map(componentMetadata => {
+                val scenarioNodeIds = toComponentIdUsages(componentMetadata.baseProcessDetails).map(_._2).flatMap(_.nodeIds)
+                if (scenarioNodeIds.contains(currentFragment.baseProcessDetails.name))
+                  componentMetadata.copy(nodeIds = componentMetadata.nodeIds ++ currentFragment.nodeIds.map(n => s"<<fragment>> $n"))
+                else
+                  componentMetadata
+              })
+          }
 
-          val newAcc = acc.toList.map {
-            case (componentId, componentNodeIds) =>
-              componentIdUsages.get(componentId) match {
-                case None => (componentId, componentNodeIds)
-                case Some((_, fragmentNodeIds)) => (componentId, componentNodeIds.map {
-                  case (baseProcessDetails, scenarioNodeIds) => (baseProcessDetails, scenarioNodeIds ++ fragmentNodeIds.map(nodeId => s"<<fragment>> $nodeId"))
-                })
-              }
-          }.toMap
-
-          mergeFragments(restOfProcesses, newAcc)
+          (componentId, updatedComponentsMetadata)
+        case (componentId, componentMetadataList) => (componentId, componentMetadataList)
       }
 
     val scenariosProcessesDetails = processesDetails.filter(_.isSubprocess == false)
     val fragmentsProcessesDetails = processesDetails.filter(_.isSubprocess == true)
 
-    val scenarioComponentsUsages = scenariosProcessesDetails
+    val scenariosComponentsUsages = scenariosProcessesDetails
       .flatMap(toComponentIdUsages)
-      // Can be replaced with .groupMap from Scala 2.13.
       .groupBy { case (componentId, _) => componentId }
       .transform { case (_, usages) => usages.map { case (_, processDetails) => processDetails } }
 
-    mergeFragments(fragmentsProcessesDetails, scenarioComponentsUsages)
+    val fragmentsComponentsUsages = fragmentsProcessesDetails
+      .flatMap(toComponentIdUsages)
+      .groupBy { case (componentId, _) => componentId }
+      .transform { case (_, usages) => usages.map { case (_, processDetails) => processDetails } }
+
+    val merged =
+      fragmentsComponentsUsages.toList.foldLeft(scenariosComponentsUsages.toList) {
+        case (acc, (fragmentComponentId, fragmentComponentsMetadata)) => mergeFragmentIntoScenarios(fragmentComponentId, fragmentComponentsMetadata, acc)
+      }.toMap
+
+    merged
   }
 }
