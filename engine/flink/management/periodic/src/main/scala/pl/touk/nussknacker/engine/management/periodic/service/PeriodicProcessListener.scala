@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic.service
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.StatusDetails
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 

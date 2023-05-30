@@ -133,7 +133,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                                                                                         (implicit user: LoggedUser, ec: ExecutionContext): Future[(BaseProcessDetails[PS], ProcessActionId, Option[VersionId], Option[ProcessingType])] = {
     for {
       processDetailsOpt <- dbioRunner.run(processRepository.fetchLatestProcessDetailsForProcessId[PS](processId))
-      processDetails <- dbioRunner.run(processDataExistOrFail(processDetailsOpt, processId))
+      processDetails <- dbioRunner.run(existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.value.toString)))
       _ = checkIfCanPerformActionOnProcess(actionType, processDetails)
       versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
       buildInfoProcessIngType = getBuildInfoProcessingType(processDetails)
@@ -222,7 +222,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                               (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
-      processDetails <- processDataExistOrFail(processDetailsOpt, processIdWithName.id)
+      processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.id.value.toString))
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
       result <- getProcessState(processDetails, inProgressActionTypes)
     } yield result)
@@ -287,13 +287,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }
   }
 
-  private def processDataExistOrFail[T](maybeProcess: Option[T], processId: ProcessId): DB[T] = {
-    existsOrFail(maybeProcess, ProcessNotFoundError(processId.value.toString))
-  }
-
-  private def existsOrFail[T](maybeSth: Option[T], failWith: Exception): DB[T] = {
-    maybeSth match {
-      case Some(sth) => DBIOAction.successful(sth)
+  private def existsOrFail[T](checkThisOpt: Option[T], failWith: Exception): DB[T] = {
+    checkThisOpt match {
+      case Some(checked) => DBIOAction.successful(checked)
       case None => DBIOAction.failed(failWith)
     }
   }

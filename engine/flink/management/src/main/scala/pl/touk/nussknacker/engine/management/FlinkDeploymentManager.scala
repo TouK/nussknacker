@@ -30,13 +30,12 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
   override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
-    val stefan: Future[WithDataFreshnessStatus[Option[ProcessState]]] = for {
+    for {
       statusWithFreshness <- getProcessState(name)
       finishedStatusOpt = statusWithFreshness.value.filter(_.status.isFinished)
       cancelActionOpt <- finishedStatusOpt.map(_ => deploymentService.markProcessFinishedIfLastActionDeploy(name)).sequence.map(_.flatten)
       engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, cancelActionOpt.orElse(lastAction))
     } yield statusWithFreshness.copy(value = Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction)))
-    stefan
   }
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
@@ -147,7 +146,6 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   protected def runProgram(processName: ProcessName, mainClass: String, args: List[String], savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = FlinkProcessStateDefinitionManager
-
 }
 
 object FlinkDeploymentManager {

@@ -5,7 +5,6 @@ import org.apache.flink.api.common.JobStatus
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
@@ -34,7 +33,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   /*
     It's ok to have many jobs with same name, however:
     - there MUST be at most 1 job in *non-terminal* state with given name
-    - deployment is possible IFF there is NO job in *non-terminal* state with given name
+    - deployment is possible IF there is NO job in *non-terminal* state with given name
    */
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = withJobOverview(name)(
     whenNone = Future.successful(None),
