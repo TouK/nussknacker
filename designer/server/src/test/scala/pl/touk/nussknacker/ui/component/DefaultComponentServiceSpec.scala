@@ -505,7 +505,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
     forAll(testingData) { (user: LoggedUser, componentId: ComponentId, expected: List[(BaseProcessDetails[_], List[String])] ) =>
       val result = defaultComponentService.getComponentUsages(componentId)(user).futureValue
-      val componentProcesses = expected.map{ case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }
+      val componentProcesses = expected.map { case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }
       result shouldBe Right(componentProcesses)
     }
   }
