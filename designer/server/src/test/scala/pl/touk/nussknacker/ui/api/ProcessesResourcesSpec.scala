@@ -67,7 +67,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   override protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)(new ProcessingTypeDeploymentServiceStub(Nil))
 
-  test("should return list of process with state") {ansible/roles/nussknacker/templates/application.conf
+  test("should return list of process with state") {
     createDeployedProcess(processName)
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running))
   }

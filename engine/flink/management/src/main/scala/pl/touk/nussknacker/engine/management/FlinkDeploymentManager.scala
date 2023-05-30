@@ -33,7 +33,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     val stefan: Future[WithDataFreshnessStatus[Option[ProcessState]]] = for {
       statusWithFreshness <- getProcessState(name)
       finishedStatusOpt = statusWithFreshness.value.filter(_.status.isFinished)
-      cancelActionOpt <- Future.successful(finishedStatusOpt).flatMap(_ => deploymentService.markProcessFinishedIfLastActionDeploy(name))
+      cancelActionOpt <- finishedStatusOpt.map(_ => deploymentService.markProcessFinishedIfLastActionDeploy(name)).sequence.map(_.flatten)
       engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, cancelActionOpt.orElse(lastAction))
     } yield statusWithFreshness.copy(value = Some(processStateDefinitionManager.processState(engineStateResolvedWithLastAction)))
     stefan

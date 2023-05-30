@@ -108,6 +108,7 @@ trait StateStatus {
   // Status identifier, should be unique among all states registered within all processing types.
   def name: StatusName
 
+  override def toString: StatusName = name
 }
 
 case class StatusDetails(status: StateStatus,
