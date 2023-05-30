@@ -3,8 +3,9 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -259,10 +260,15 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   //We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
   private def getArchivedProcessState(processDetails: BaseProcessDetails[_])(implicit manager: DeploymentManager) = {
-    processDetails.lastStateAction match {
-      case Some(_) => //We assume that cancellation is required before the archiving process
+    processDetails.lastStateAction.map(_.action) match {
+      case Some(Cancel) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.Canceled))
+      case Some(Deploy) =>
+        logger.debug(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.archivedDeployed}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(ProblemStateStatus.archivedDeployed))
+      case Some(action) =>
+        throw new IllegalArgumentException(s"Not supported last state action: $action.")
       case _ =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))

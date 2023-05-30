@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Archive, Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionType, ProcessState, StateStatus}
@@ -382,7 +382,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return not deployed state for archived never deployed process") {
     val processName: ProcessName = generateProcessName
-    val id = prepareNotDeployedArchivedProcess(processName).dbioActionValues
+    val id = prepareArchivedProcess(processName, None).dbioActionValues
 
     val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
     state.status shouldBe SimpleStateStatus.NotDeployed
@@ -390,7 +390,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return not deployed state for archived never deployed process with running state (it should never happen)") {
     val processName: ProcessName = generateProcessName
-    val id = prepareNotDeployedArchivedProcess(processName).dbioActionValues
+    val id = prepareArchivedProcess(processName, None).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -400,7 +400,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return canceled status for archived canceled process") {
     val processName: ProcessName = generateProcessName
-    val id = prepareCanceledArchivedProcess(processName).dbioActionValues
+    val id = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
     val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
     state.status shouldBe SimpleStateStatus.Canceled
@@ -408,7 +408,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return canceled status for archived canceled process with running state (it should never happen)") {
     val processName: ProcessName = generateProcessName
-    val id = prepareCanceledArchivedProcess(processName).dbioActionValues
+    val id = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -418,7 +418,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return not deployed state for unarchived never deployed process") {
     val processName: ProcessName = generateProcessName
-    val id = prepareNotDeployedUnArchivedProcess(processName).dbioActionValues
+    val id = preparedUnArchivedProcess(processName, None).dbioActionValues
 
     val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
     state.status shouldBe SimpleStateStatus.NotDeployed
@@ -426,7 +426,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return not deployed status for archived never deployed process with running state (it should never happen)") {
     val processName: ProcessName = generateProcessName
-    val id = prepareNotDeployedArchivedProcess(processName).dbioActionValues
+    val id = prepareArchivedProcess(processName, None).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -434,9 +434,17 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
   }
 
+  test("Should return problem status for archived deployed process (last action deployed instead of cancel)") {
+    val processName: ProcessName = generateProcessName
+    val id = prepareArchivedProcess(processName, Some(Deploy)).dbioActionValues
+
+    val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+    state.status shouldBe ProblemStateStatus.archivedDeployed
+  }
+
   test("Should return canceled status for unarchived process") {
     val processName: ProcessName = generateProcessName
-    val id = prepareCanceledUnArchivedProcess(processName).dbioActionValues
+    val id = prepareArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
     deploymentManager.withEmptyProcessState(processName) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -446,7 +454,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return problem status for unarchived process with running state (it should never happen)") {
     val processName: ProcessName = generateProcessName
-    val id = prepareCanceledUnArchivedProcess(processName).dbioActionValues
+    val id = preparedUnArchivedProcess(processName, Some(Cancel)).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -519,6 +527,27 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       _ <- actionRepository.addInstantAction(id, initialVersionId, actionType, Some(comment), None)
     } yield id
 
+  private def prepareArchivedProcess(processName: ProcessName, actionType: Option[ProcessActionType]): DB[ProcessId] =
+    prepareProcess(processName, isArchived = true, actionType)
+
+  private def preparedUnArchivedProcess(processName: ProcessName, actionType: Option[ProcessActionType]): DB[ProcessId] = {
+    for {
+      id <- prepareProcess(processName, isArchived = false, actionType)
+      _ <- actionRepository.markProcessAsUnArchived(processId = id, initialVersionId)
+    } yield id
+  }
+
+  private def prepareProcess(processName: ProcessName, isArchived: Boolean, actionType: Option[ProcessActionType]): DB[ProcessId] = {
+    for {
+      id <- prepareProcess(processName)
+      _ <- DBIOAction.sequenceOption(actionType.map { action =>
+        val comment = Some(DeploymentComment.unsafe(action.toString.capitalize).toComment(action))
+        actionRepository.addInstantAction(id, initialVersionId, action, comment, None)
+      })
+      _ <- writeProcessRepository.archive(processId = id, isArchived = isArchived)
+    } yield id
+  }
+
   private def prepareProcess(processName: ProcessName, parallelism: Option[Int] = None): DB[ProcessId] = {
     val baseBuilder = ScenarioBuilder
       .streaming(processName.value)
@@ -533,56 +562,6 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       isSubprocess = false,
       forwardedUserName = None)
     writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
-  }
-
-  //New scenario without any deployment action which was archived
-  private def prepareNotDeployedArchivedProcess(processName: ProcessName): DB[ProcessId] = {
-      for {
-        id <- prepareProcess(processName)
-        _ <- DBIOAction.seq(
-          writeProcessRepository.archive(processId = id, isArchived = true),
-          actionRepository.markProcessAsArchived(processId = id, initialVersionId)
-        )
-      } yield id
-  }
-
-  //New scenario without any deployment action which was archived and unarchived
-  private def prepareNotDeployedUnArchivedProcess(processName: ProcessName): DB[ProcessId] = {
-    for {
-      id <- prepareProcess(processName)
-      _ <- DBIOAction.seq(
-        actionRepository.markProcessAsArchived(processId = id, initialVersionId),
-        actionRepository.markProcessAsUnArchived(processId = id, initialVersionId)
-      )
-    } yield id
-  }
-
-  //Scenario with deployment history which was archived
-  private def prepareCanceledArchivedProcess(processName: ProcessName): DB[ProcessId] = {
-    for {
-      id <- prepareProcess(processName)
-      actionType = ProcessActionType.Cancel
-      comment = DeploymentComment.unsafe("Canceled").toComment(actionType)
-      _ <- DBIOAction.seq(
-        actionRepository.addInstantAction(id, initialVersionId, actionType, Some(comment), None),
-        writeProcessRepository.archive(processId = id, isArchived = true),
-        actionRepository.markProcessAsArchived(processId = id, initialVersionId)
-      )
-    } yield id
-  }
-
-  //Scenario with deployment history which was archived and unarchived
-  private def prepareCanceledUnArchivedProcess(processName: ProcessName): DB[ProcessId] = {
-    for {
-      id <- prepareProcess(processName)
-      actionType = ProcessActionType.Cancel
-      comment = DeploymentComment.unsafe("Canceled").toComment(actionType)
-      _ <- DBIOAction.seq(
-        actionRepository.addInstantAction(id, initialVersionId, actionType, Some(comment), None),
-        actionRepository.markProcessAsArchived(processId = id, initialVersionId),
-        actionRepository.markProcessAsUnArchived(processId = id, initialVersionId)
-      )
-    } yield id
   }
 
   private def generateProcessName = {
