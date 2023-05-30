@@ -16,8 +16,6 @@ import java.time.Instant
                                     buildInfo: Map[String, String]) {
   def isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
   def isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
-  def isArchived: Boolean = action.equals(ProcessActionType.Archive)
-  def isUnArchived: Boolean = action.equals(ProcessActionType.UnArchive)
 }
 
 object ProcessActionType extends Enumeration {
@@ -32,7 +30,7 @@ object ProcessActionType extends Enumeration {
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
 
   val DefaultActions: List[ProcessActionType] = Nil
-  val StateActions = List(Cancel, Deploy)
+  val StateActions: List[ProcessActionType] = List(Cancel, Deploy, Pause)
 }
 
 object ProcessActionState extends Enumeration {

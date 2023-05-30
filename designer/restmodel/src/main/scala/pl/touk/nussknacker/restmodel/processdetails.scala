@@ -39,6 +39,7 @@ object processdetails {
       createdAt = baseProcessDetails.createdAt,
       createdBy = baseProcessDetails.createdBy,
       lastAction = baseProcessDetails.lastAction,
+      lastStateAction = baseProcessDetails.lastStateAction,
       lastDeployedAction = baseProcessDetails.lastDeployedAction,
       state = baseProcessDetails.state
     )
@@ -58,6 +59,7 @@ object processdetails {
                                      createdAt: Instant,
                                      createdBy: String,
                                      lastAction: Option[ProcessAction],
+                                     lastStateAction: Option[ProcessAction],
                                      lastDeployedAction: Option[ProcessAction],
                                      // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
                                      // After that it remains always defined.
@@ -87,7 +89,8 @@ object processdetails {
                                               createdBy: String,
                                               tags: List[String],
                                               lastDeployedAction: Option[ProcessAction],
-                                              lastAction: Option[ProcessAction],
+                                              lastStateAction: Option[ProcessAction],
+                                              lastAction: Option[ProcessAction], //TODO: Consider replacing it by lastStateAction, check were on FE we use lastAction, eg. archive date at the archive list
                                               json: ProcessShape,
                                               history: List[ProcessVersion],
                                               modelVersion: Option[Int],

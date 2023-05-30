@@ -54,11 +54,11 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
-        decodeDetails.lastAction shouldBe deployedWithVersions(2)
+        decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
         deployProcess(SampleProcess.process.id) ~> checkThatEventually {
           getProcess(processName) ~> check {
-            decodeDetails.lastAction shouldBe deployedWithVersions(2)
+            decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
           }
         }
       }
@@ -162,7 +162,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
         val processDetails = responseAs[ProcessDetails]
-        processDetails.lastAction shouldBe deployedWithVersions(1)
+        processDetails.lastStateAction shouldBe deployedWithVersions(1)
         processDetails.isDeployed shouldBe true
       }
     }
@@ -173,10 +173,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
       getProcess(processName) ~> check {
-        decodeDetails.lastAction shouldBe deployedWithVersions(2)
+        decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcess(processName) ~> check {
-            decodeDetails.lastAction should not be None
+            decodeDetails.lastStateAction should not be None
             decodeDetails.isCanceled shouldBe  true
           }
         }
@@ -396,7 +396,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     customAction(SampleProcess.process.id, CustomActionRequest("invalid-status")) ~> check {
       status shouldBe StatusCodes.Forbidden
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Scenario status: PROBLEM is not allowed for action invalid-status")
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Scenario status: NOT_DEPLOYED is not allowed for action invalid-status")
     }
   }
 

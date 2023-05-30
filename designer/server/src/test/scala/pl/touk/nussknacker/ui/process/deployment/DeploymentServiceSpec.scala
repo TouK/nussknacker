@@ -91,7 +91,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id: ProcessId = prepareDeployedProcess(processName).dbioActionValues
 
     checkIsFollowingDeploy(deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue, expected = true)
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get.lastAction should not be None
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value.lastStateAction should not be None
 
     deploymentManager.withProcessFinished(processName) {
       //we simulate what happens when retrieveStatus is called multiple times to check only one comment is added
@@ -103,8 +103,8 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       finishedStatus.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive)
     }
 
-    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
-    processDetails.lastAction should not be None
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
+    processDetails.lastStateAction should not be None
     processDetails.isCanceled shouldBe true
     processDetails.lastDeployedAction should be(None)
     //one for deploy, one for cancel
@@ -117,7 +117,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processIdName = ProcessIdWithName(id, processName)
 
     def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ProcessActionType]) = {
-      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.flatMap(_.lastAction).map(_.action) shouldBe expectedAction
+      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.flatMap(_.lastStateAction).map(_.action) shouldBe expectedAction
       deploymentService.getProcessState(processIdName).futureValue.status shouldBe expectedStatus
     }
 
@@ -146,7 +146,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       val result = deploymentService.deployProcessAsync(processIdName, None, None).failed.futureValue
       result.getMessage shouldBe "Parallelism too large"
       deploymentManager.deploys should not contain processName
-      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.flatMap(_.lastAction) shouldBe None
+      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.flatMap(_.lastStateAction) shouldBe None
       listener.events shouldBe Symbol("empty")
       // during short period of time, status will be during deploy - because parallelism validation are done in the same critical section as deployment
       eventually {
@@ -168,14 +168,14 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id = prepareCanceledProcess(processName).dbioActionValues
 
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get.lastAction should not be None
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value.lastStateAction should not be None
 
     deploymentManager.withEmptyProcessState(processName) {
       deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
     }
 
-    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
-    processDetails.lastAction should not be None
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
+    processDetails.lastStateAction should not be None
     processDetails.isCanceled shouldBe true
     processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
@@ -184,14 +184,14 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id = prepareCanceledProcess(processName).dbioActionValues
 
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get.lastAction should not be None
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value.lastStateAction should not be None
 
     deploymentManager.withEmptyProcessState(processName) {
       deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
     }
 
-    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
-    processDetails.lastAction should not be None
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
+    processDetails.lastStateAction should not be None
     processDetails.isCanceled shouldBe true
     processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
@@ -341,42 +341,42 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   test("Should return not deployed status for process with empty state - not deployed state") {
     val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).dbioActionValues
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get.lastAction shouldBe None
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value.lastStateAction shouldBe None
 
     deploymentManager.withEmptyProcessState(processName) {
       deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.NotDeployed
     }
 
-    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
-    processDetails.lastAction shouldBe None
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
+    processDetails.lastStateAction shouldBe None
     processDetails.isNotDeployed shouldBe true
   }
 
   test("Should return not deployed status for process with not found state - not deployed state") {
     val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).dbioActionValues
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get.lastAction shouldBe None
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value.lastStateAction shouldBe None
 
     deploymentManager.withEmptyProcessState(processName) {
       deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.NotDeployed
     }
 
-    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
-    processDetails.lastAction shouldBe None
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
+    processDetails.lastStateAction shouldBe None
     processDetails.isNotDeployed shouldBe true
   }
 
   test("Should return not deployed status for process without actions and with state (it should never happen) ") {
     val processName: ProcessName = generateProcessName
     val id = prepareProcess(processName).dbioActionValues
-    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get.lastAction shouldBe None
+    fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value.lastStateAction shouldBe None
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.NotDeployed
     }
 
-    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.get
-    processDetails.lastAction shouldBe None
+    val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
+    processDetails.lastStateAction shouldBe None
     processDetails.isNotDeployed shouldBe true
   }
 
@@ -434,21 +434,27 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
   }
 
-  test("Should return canceled status for unarchived canceled process") {
+  test("Should return canceled status for unarchived process") {
     val processName: ProcessName = generateProcessName
     val id = prepareCanceledUnArchivedProcess(processName).dbioActionValues
 
-    val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
-    state.status shouldBe SimpleStateStatus.Canceled
+    deploymentManager.withEmptyProcessState(processName) {
+      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+      state.status shouldBe SimpleStateStatus.Canceled
+    }
   }
 
-  test("Should return canceled status for unarchived canceled process with running state (it should never happen)") {
+  test("Should return problem status for unarchived process with running state (it should never happen)") {
     val processName: ProcessName = generateProcessName
     val id = prepareCanceledUnArchivedProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
-      state.status shouldBe SimpleStateStatus.Canceled
+      val expectedStatus = ProblemStateStatus.shouldNotBeRunning(true)
+      state.status shouldBe expectedStatus
+      state.icon shouldBe ProblemStateStatus.icon
+      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
+      state.description shouldBe expectedStatus.description
     }
   }
 

@@ -146,19 +146,6 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     run(query.result.map(_.toSet))
   }
 
-  def getLastStateActionType(processId: ProcessId): F[Option[ProcessActionType]] = {
-    val query = processActionsTable
-      .filter(action =>
-        action.processId === processId &&
-        action.action.inSet(ProcessActionType.StateActions) &&
-        action.state === ProcessActionState.Finished
-      )
-      .sortBy(_.performedAt.desc)
-      .map(_.action)
-
-    run(query.result.headOption)
-  }
-
   def getUserActionsAfter(user: LoggedUser, possibleActionTypes: Set[ProcessActionType], possibleStates: Set[ProcessActionState], limit: Instant): F[Seq[(ProcessActionEntityData, ProcessName)]] = {
     run(
       processActionsTable

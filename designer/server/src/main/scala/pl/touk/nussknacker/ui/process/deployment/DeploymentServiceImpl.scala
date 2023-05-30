@@ -148,10 +148,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     dbioRunner.runInTransaction(for {
       _ <- actionRepository.lockActionsTable
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      stateLastActionType <- actionRepository.getLastStateActionType(processDetails.processId)
       processState <- {
         implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-        getProcessState(processDetails, inProgressActionTypes, stateLastActionType)
+        getProcessState(processDetails, inProgressActionTypes)
       }
       _ = checkIfCanPerformActionInState(actionType, processDetails, processState)
       actionId <- actionRepository.addInProgressAction(processDetails.processId, actionType, versionOnWhichActionIsDone, buildInfoProcessIngType)
@@ -223,8 +222,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
       processDetails <- processDataExistOrFail(processDetailsOpt, processIdWithName.id)
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      stateLastActionType <- actionRepository.getLastStateActionType(processDetails.processId)
-      result <- getProcessState(processDetails, inProgressActionTypes, stateLastActionType)
+      result <- getProcessState(processDetails, inProgressActionTypes)
     } yield result)
   }
 
@@ -232,16 +230,15 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                               (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
-      stateLastActionType <- actionRepository.getLastStateActionType(processDetails.processId)
-      result <- getProcessState(processDetails, inProgressActionTypes, stateLastActionType)
+      result <- getProcessState(processDetails, inProgressActionTypes)
     } yield result)
   }
 
-  private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType], stateLastActionType: Option[ProcessActionType])
+  private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType])
                              (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     dispatcher.deploymentManager(processDetails.processingType).map { manager =>
       if (processDetails.isArchived) {
-        getProcessStateForArchiveActions(processDetails, stateLastActionType)(manager)
+        getArchivedProcessState(processDetails)(manager)
       } else if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy))
@@ -249,12 +246,10 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringCancel))
       } else {
-        processDetails.lastAction match {
-          case Some(action) if action.isUnArchived =>
-            getProcessStateForArchiveActions(processDetails, stateLastActionType)(manager)
+        processDetails.lastStateAction match {
           case Some(_) =>
             checkStateInDeploymentManager(manager, processDetails)
-          case _ => //We assume scenario without deployment history shouldn't have state at the engine
+          case _ => //We assume that the process never deployed should have no state at the engine
             logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
             DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
         }
@@ -262,12 +257,10 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }.getOrElse(DBIOAction.successful(SimpleProcessStateDefinitionManager.errorFailedToGet))
   }
 
-  /**
-    * We assume checking state for archived / unarchived process doesn't make sens and we compute state based on last state action (without archive / unarchived)
-    */
-  private def getProcessStateForArchiveActions(processDetails: BaseProcessDetails[_], stateLastActionType: Option[ProcessActionType])(implicit manager: DeploymentManager) = {
-    stateLastActionType match {
-      case Some(_) => //We assume before archive / unarchived status was canceled
+  //We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
+  private def getArchivedProcessState(processDetails: BaseProcessDetails[_])(implicit manager: DeploymentManager) = {
+    processDetails.lastStateAction match {
+      case Some(_) => //We assume that cancellation is required before the archiving process
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.Canceled))
       case _ =>
@@ -282,9 +275,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       state <- DBIOAction.from(getStateFromEngine(deploymentManager, processDetails.idWithName))
       cancelActionOpt <- handleFinishedProcess(processDetails, state.value)
     } yield {
-      val lastAction = cancelActionOpt.orElse(processDetails.lastAction)
-      val finalState = InconsistentStateDetector.handleStatus(state.value, lastAction)
-      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${lastAction.map(_.action)})")
+      val lastStateAction = cancelActionOpt.orElse(processDetails.lastStateAction)
+      val finalState = InconsistentStateDetector.handleStatus(state.value, lastStateAction)
+      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${lastStateAction.map(_.action)})")
       finalState
     }
   }
