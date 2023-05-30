@@ -15,6 +15,8 @@ package object component {
   import pl.touk.nussknacker.restmodel.codecs.URICodecs._
 
   type NodeId = String
+  case class ComponentMetadata(baseProcessDetails: BaseProcessDetails[ScenarioComponentsUsages], nodeIds: List[NodeId])
+
 
   object ComponentLink {
     val DocumentationId = "documentation"
