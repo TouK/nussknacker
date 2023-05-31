@@ -37,8 +37,8 @@ object ComponentsUsageHelper {
     }
     scenarioUsagesWithResolvedFragments
       .groupBy(_.componentId)
-      .mapValuesNow(_.groupMap(_.processDetails) { usage =>
-        usage.nodeId
+      .mapValuesNow(_.groupBy(_.processDetails).mapValuesNow { usages =>
+        usages.map(_.nodeId)
       }.toList)
   }
 
