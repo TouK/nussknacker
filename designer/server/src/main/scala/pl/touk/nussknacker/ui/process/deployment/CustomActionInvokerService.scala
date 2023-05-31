@@ -29,7 +29,7 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
                                  (implicit user: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]] = {
     val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)
     maybeProcess.flatMap {
-      case Some(process) =>
+      case Some(process) if !process.isArchived && !process.isSubprocess =>
         val actionReq = engine.api.deployment.CustomActionRequest(
           name = actionName,
           processVersion = process.toEngineProcessVersion,
@@ -48,7 +48,7 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
           case None =>
             Future.successful(Left(CustomActionNonExisting(actionReq)))
         }
-      case None =>
+      case _ =>
         Future.failed(ProcessNotFoundError(id.id.value.toString))
     }
   }

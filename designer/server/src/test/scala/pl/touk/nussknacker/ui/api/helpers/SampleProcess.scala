@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SubsequentNode
@@ -10,9 +11,11 @@ object SampleProcess {
 
   import spel.Implicits._
 
+  val processName: ProcessName = ProcessName(this.getClass.getName)
+
   val process: CanonicalProcess = {
     ScenarioBuilder
-      .streaming("sampleProcess")
+      .streaming(processName.value)
       .parallelism(1)
       .source("startProcess", "csv-source")
       .filter("input", "#input != null")

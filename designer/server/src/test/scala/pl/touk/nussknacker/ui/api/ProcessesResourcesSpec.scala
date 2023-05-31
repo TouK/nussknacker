@@ -57,7 +57,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   private val routeWithAllPermissions: Route = withAllPermissions(processesRoute)
 
-  private val processName: ProcessName = ProcessName(SampleProcess.process.id)
+  private val processName: ProcessName = SampleProcess.processName
 
   override protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)
 
