@@ -225,12 +225,8 @@ lazy val commonSettings =
         //currently Flink (1.11 -> https://github.com/apache/flink/blob/master/pom.xml#L128) uses 1.8.2 Avro version
         "org.apache.avro" % "avro" % avroV,
         "com.typesafe" % "config" % configV,
-        //we stick to version in Flink to avoid nasty bugs in process runtime...
-        //NOTE: xmlgraphics used in Designer comes with v. old version...
-        "commons-io" % "commons-io" % commonsIOV,
-        //we stick to version in Flink to avoid nasty bugs in process runtime...
-        //NOTE: commons-text (in api) uses 3.9...
-        "org.apache.commons" % "commons-lang3" % commonsLang3V,
+        "commons-io" % "commons-io" % flinkCommonsIOV,
+        "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
 
         "io.circe" %% "circe-core" % circeV,
         "io.circe" %% "circe-parser" % circeV,
@@ -281,13 +277,19 @@ lazy val commonSettings =
       )
     )
 
+// Note: when updating check versions in 'flink*V' below, because some libraries must be fixed at versions provided
+// by Flink, or jobs may fail in runtime when Flink is run with 'classloader.resolve-order: parent-first'.
+// You can find versions provided by Flink in it's lib/flink-dist-*.jar/META-INF/DEPENDENCIES file.
 val flinkV = "1.16.2"
+val flinkCommonsLang3V = "3.12.0"
+val flinkCommonsTextV = "1.10.0"
+val flinkCommonsIOV = "2.11.0"
 val avroV = "1.11.1"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 val kafkaV = "3.3.2"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
-val springV = "5.2.23.RELEASE"
-val scalaTestV = "3.2.15"
+val springV = "5.2.24.RELEASE"
+val scalaTestV = "3.2.16"
 val scalaCheckV = "1.17.0"
 val scalaCheckVshort = scalaCheckV.take(4).replace(".","-")
 val scalaTestPlusV = "3.2.15.0" //has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
@@ -295,8 +297,8 @@ val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
 val circeV = "0.14.5"
 val circeGenericExtrasV = "0.14.3"
-val jwtCirceV = "9.2.0"
-val jacksonV = "2.14.2"
+val jwtCirceV = "9.3.0"
+val jacksonV = "2.14.3"
 val catsV = "2.9.0"
 val everitSchemaV = "1.14.2"
 val slf4jV = "1.7.36"
@@ -304,16 +306,13 @@ val scalaLoggingV = "3.9.5"
 val scalaCompatV = "1.0.2"
 val ficusV = "1.4.7"
 val configV = "1.4.2"
-val commonsLang3V = "3.12.0"
-val commonsTextV = "1.10.0"
-val commonsIOV = "2.11.0"
 //we want to use 5.x for lite metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 // rc16+ depend on slf4j 2.x
 val dropWizardV = "5.0.0-rc15"
-val scalaCollectionsCompatV = "2.9.0"
-val testcontainersScalaV = "0.40.14"
-val nettyV = "4.1.90.Final"
+val scalaCollectionsCompatV = "2.10.0"
+val testcontainersScalaV = "0.40.16"
+val nettyV = "4.1.93.Final"
 val nettyReactiveStreamsV = "2.0.8"
 
 val akkaV = "2.6.20"
@@ -322,18 +321,18 @@ val akkaManagementV = "1.1.4"
 val akkaHttpCirceV = "1.39.2"
 val slickV = "3.4.1"
 val hikariCpV = "5.0.1"
-val hsqldbV = "2.7.1"
+val hsqldbV = "2.7.2"
 val postgresV = "42.6.0"
-val flywayV = "9.16.1"
+val flywayV = "9.19.1"
 val confluentV = "7.3.2"
 val azureKafkaSchemaRegistryV = "1.1.0-beta.1"
-val azureSchemaRegistryV = "1.3.4"
-val azureIdentityV = "1.8.1"
+val azureSchemaRegistryV = "1.3.6"
+val azureIdentityV = "1.9.0"
 val bcryptV = "0.10.2"
 val cronParserV = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV = "2.0.1.Final"
-val caffeineCacheV = "3.1.5"
-val sttpV = "3.8.13"
+val caffeineCacheV = "3.1.6"
+val sttpV = "3.8.15"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.18.0"
@@ -792,7 +791,7 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
         ),
         // we use azure-core-http-okhttp instead of azure-core-http-netty to avoid netty version collisions
         //TODO: switch to jdk implementation after releasing it: https://github.com/Azure/azure-sdk-for-java/issues/27065
-        "com.azure" % "azure-core-http-okhttp" % "1.11.5",
+        "com.azure" % "azure-core-http-okhttp" % "1.11.9",
         // it is workaround for missing VerifiableProperties class - see https://github.com/confluentinc/schema-registry/issues/553
         "org.apache.kafka" %% "kafka" % kafkaV % "provided" excludeAll(
           ExclusionRule("log4j", "log4j"),
@@ -903,7 +902,7 @@ lazy val commonUtils = (project in utils("utils")).
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-        "commons-io" % "commons-io" % commonsIOV,
+        "commons-io" % "commons-io" % flinkCommonsIOV,
         "org.slf4j" % "jul-to-slf4j" % slf4jV,
         "com.iheart" %% "ficus" % ficusV,
       )
@@ -943,7 +942,7 @@ lazy val testUtils = (project in utils("test-utils")).
         "com.typesafe" % "config" % configV,
         "org.typelevel" %% "cats-core" % catsV,
         "ch.qos.logback" % "logback-classic" % logbackV,
-        "commons-io" % "commons-io" % commonsIOV,
+        "commons-io" % "commons-io" % flinkCommonsIOV,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
       )
     }
@@ -1165,7 +1164,7 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app")).
     ),
     javaAgents += JavaAgent("io.prometheus.jmx" % "jmx_prometheus_javaagent" % jmxPrometheusJavaagentV % "dist"),
     libraryDependencies ++= Seq(
-      "commons-io" % "commons-io" % commonsIOV,
+      "commons-io" % "commons-io" % flinkCommonsIOV,
       "com.lightbend.akka.management" %% "akka-management" % akkaManagementV,
       // spray-json module is used by akka-management - must be explicit, same version as rest of akka-http because otherwise ManifestInfo.checkSameVersion reports error
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV,
@@ -1216,7 +1215,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     name := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
       Seq(
-        "io.github.hagay3" %% "skuber" % "3.0.5",
+        "io.github.hagay3" %% "skuber" % "3.0.6",
         "com.github.julien-truffaut" %% "monocle-core" % monocleV,
         "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
         "com.typesafe.akka" %% "akka-slf4j" % akkaV % "test",
@@ -1249,7 +1248,7 @@ lazy val componentsApi = (project in file("components-api")).
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
-        "org.apache.commons" % "commons-text" % commonsTextV,
+        "org.apache.commons" % "commons-text" % flinkCommonsTextV,
         "org.typelevel" %% "cats-core" % catsV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
@@ -1300,7 +1299,7 @@ lazy val scenarioApi = (project in file("scenario-api")).
   settings(
     name := "nussknacker-scenario-api",
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-lang3" % commonsLang3V,
+      "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
     )
   ).dependsOn(commonApi, testUtils % "test")
 
@@ -1322,10 +1321,13 @@ lazy val security = (project in file("security")).
       "io.circe" %% "circe-core" % circeV,
       "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-      "com.auth0" % "jwks-rsa" % "0.21.3", // a tool library for reading a remote JWK store, not an Auth0 service dependency
+      "com.auth0" % "jwks-rsa" % "0.22.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-      "com.github.dasniko" % "testcontainers-keycloak" % "2.0.0" % "it,test"
+      "com.github.dasniko" % "testcontainers-keycloak" % "2.5.0" % "it,test" excludeAll(
+        // we're using testcontainers-scala which requires a proper junit4 dependency
+        ExclusionRule("io.quarkus", "quarkus-junit4-mock")
+      )
     )
   )
   .dependsOn(utilsInternal, httpUtils, testUtils % "it,test")
@@ -1383,8 +1385,8 @@ lazy val httpUtils = (project in utils("http-utils")).
     }
   ).dependsOn(componentsApi % Provided, testUtils % "test")
 
-val swaggerParserV = "2.1.12"
-val swaggerIntegrationV = "2.2.9"
+val swaggerParserV = "2.1.15"
+val swaggerIntegrationV = "2.2.10"
 
 lazy val openapiComponents = (project in component("openapi")).
   configs(IntegrationTest).
