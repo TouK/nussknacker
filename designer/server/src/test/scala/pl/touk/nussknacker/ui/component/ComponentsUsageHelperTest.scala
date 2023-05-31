@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.component
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
-import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
+import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, Variable, CustomNode => CustomNodeType}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.VersionId
@@ -168,7 +168,12 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     )
 
     forAll(table) { (processesDetails, expected) =>
+      import pl.touk.nussknacker.engine.util.Implicits._
+
       val result = ComponentsUsageHelper.computeComponentsUsage(defaultComponentIdProvider, withComponentsUsages(processesDetails))
+        .mapValuesNow(_.map {
+          case (baseProcessDetails, nodeIds) => (baseProcessDetails.mapProcess(_ => ()), nodeIds)
+        })
 
       result should have size expected.size
 
