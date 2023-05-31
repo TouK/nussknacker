@@ -67,8 +67,13 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
       val processDetails = ProcessMarshaller.fromJson(response).toOption.get
       assertProcessPrettyPrinted(response, processDetails)
 
-      val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
+      val modifiedProperties = StreamMetaData(parallelism = Some(987), spillStateToDisk = Some(true))
+      val modified = processDetails.copy(metaData = processDetails.metaData.copy(
+        typeSpecificData = modifiedProperties,
+        additionalFields = Some(ProcessAdditionalFields(None, modifiedProperties.toProperties))
+      ))
       val multipartForm = MultipartUtils.prepareMultiPart(modified.asJson.spaces2, "process")
+
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> route ~> check {
         status shouldEqual StatusCodes.OK
         val imported = responseAs[DisplayableProcess]
@@ -82,10 +87,11 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   test("export process in new version") {
     val description = "alamakota"
     val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
-    val processWithDescription = processToSave.copy(properties =
-      ProcessProperties
-      (typeSpecificProperties = processToSave.properties.toMetaData(processToSave.id).typeSpecificData,
-        additionalFields = Some(ProcessAdditionalFields(Some(description), Map.empty))))
+
+    val typeSpecificDataToSave = processToSave.properties.toMetaData(processToSave.id).typeSpecificData
+    val processWithDescription = processToSave.copy(properties = ProcessProperties(
+      typeSpecificProperties = typeSpecificDataToSave,
+      additionalFields = Some(ProcessAdditionalFields(Some(description), typeSpecificDataToSave.toProperties))))
 
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK

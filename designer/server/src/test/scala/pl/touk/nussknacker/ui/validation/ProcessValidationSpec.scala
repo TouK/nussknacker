@@ -267,7 +267,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
 
     val process = validProcessWithFields(Map())
-    val subprocess = process.copy(properties = ProcessProperties(typeSpecificProperties = FragmentSpecificData(), Some(process.properties.additionalFields)))
+    val subprocess = process.copy(properties = ProcessProperties(typeSpecificProperties = FragmentSpecificData()))
 
     processValidation.validate(subprocess) shouldBe withoutErrorsAndWarnings
 
@@ -705,7 +705,11 @@ private object ProcessValidationSpec {
                             `type`: ProcessingType = TestProcessingTypes.Streaming,
                             category: String = Category1,
                             additionalFields: Map[String, String] = Map()): DisplayableProcess = {
-    DisplayableProcess("test", ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`, category)
+    DisplayableProcess("test",
+      ProcessProperties(
+        StreamMetaData(),
+        additionalFields = Some(ProcessAdditionalFields(None, additionalFields ++ StreamMetaData().toProperties))),
+      nodes, edges, `type`, category)
   }
 
   private def createFragmentDefinition(fragmentDefinitionId: String, fragmentInputParams: List[SubprocessParameter]): CanonicalProcess ={

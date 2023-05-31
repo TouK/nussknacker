@@ -30,6 +30,7 @@ object MetaData {
             typeSpecificData: TypeSpecificData,
             additionalFields: Option[ProcessAdditionalFields]): MetaData = {
     // We prevent instantiation of MetaData with invalid properties
+    // TODO: this also prevents us from unmarshalling processes with unspecified AdditionalProperties - check UIProcessMarhsallerSpec
     typeSpecificData.validateOrDie(additionalFields.getOrElse(ProcessAdditionalFields.empty))
     new MetaData(id, typeSpecificData, additionalFields)
   }

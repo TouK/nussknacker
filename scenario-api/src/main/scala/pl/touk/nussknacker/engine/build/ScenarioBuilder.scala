@@ -17,21 +17,42 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
       case l: LiteStreamMetaData => l.copy(parallelism = Some(p))
       case other => throw new IllegalArgumentException(s"Given execution engine: ${other.getClass.getSimpleName} doesn't support parallelism parameter")
     }
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = newTypeSpecificData))
+    new ProcessMetaDataBuilder(metaData.copy(
+      typeSpecificData = newTypeSpecificData,
+      additionalFields = Some(metaData.additionalFields.get.copy(
+        properties = metaData.additionalFields.get.properties ++ newTypeSpecificData.toProperties
+      ))
+    ))
   }
 
   //TODO: exception when non-streaming process?
-  def stateOnDisk(useStateOnDisk: Boolean) =
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(spillStateToDisk = Some(useStateOnDisk))))
+  def stateOnDisk(useStateOnDisk: Boolean) = {
+    new ProcessMetaDataBuilder(metaData.copy(
+      typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(spillStateToDisk = Some(useStateOnDisk)),
+      additionalFields = Some(metaData.additionalFields.get.copy(
+        properties = metaData.additionalFields.get.properties + ("spillStateToDisk" -> useStateOnDisk.toString)
+      ))
+    ))
+  }
 
   //TODO: exception when non-streaming process?
   def useAsyncInterpretation(useAsyncInterpretation: Boolean) =
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(useAsyncInterpretation = Some(useAsyncInterpretation))))
+    new ProcessMetaDataBuilder(metaData.copy(
+      typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(useAsyncInterpretation = Some(useAsyncInterpretation)),
+      additionalFields = Some(metaData.additionalFields.get.copy(
+        properties = metaData.additionalFields.get.properties + ("useAsyncInterpretation" -> useAsyncInterpretation.toString)
+      ))
+    ))
 
 
   //TODO: exception when non-request-response process?
   def slug(p: Option[String]) =
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = RequestResponseMetaData(p)))
+    new ProcessMetaDataBuilder(metaData.copy(
+      typeSpecificData = RequestResponseMetaData(p),
+      additionalFields = Some(metaData.additionalFields.get.copy(
+        properties = metaData.additionalFields.get.properties ++ RequestResponseMetaData(p).toProperties
+      ))
+    ))
 
   def additionalFields(description: Option[String] = None,
                        properties: Map[String, String] = Map.empty) =

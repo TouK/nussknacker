@@ -115,7 +115,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
 
   test("return variable type information for process that cannot be canonized") {
-    val meta = MetaData("process", metaData, additionalFields = Some(ProcessAdditionalFields(None, Map.empty)))
+    val meta = MetaData("process", metaData)
     val process = ValidatedDisplayableProcess(
       meta.id,
       ProcessProperties(meta.typeSpecificData),

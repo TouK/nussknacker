@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.node
@@ -44,9 +44,13 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
 
     override def failOnNewValidationError: Boolean = false
 
-    override def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess =
-      canonicalProcess.copy(metaData = canonicalProcess.metaData.copy(typeSpecificData =
-        StreamMetaData(Some(11))))
+    override def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess = {
+      val newTypeSpecificMetaData = StreamMetaData(parallelism = Some(11))
+      canonicalProcess.copy(metaData = canonicalProcess.metaData.copy(
+        typeSpecificData = newTypeSpecificMetaData,
+        additionalFields = Some(ProcessAdditionalFields(None, newTypeSpecificMetaData.toProperties)))
+      )
+    }
   }
 
   object Migration3 extends NodeMigration {

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -16,6 +17,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
@@ -96,6 +98,14 @@ object ProcessTestData {
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Nil),
     new SubprocessResolver(new StubSubprocessRepository(Set()))
   )
+
+  val flinkInitialMetaData: StreamMetaData = StreamMetaData(
+    parallelism = Some(1),
+    spillStateToDisk = Some(true)
+  )
+
+  val flinkTypeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(flinkInitialMetaData)
+  val flinkPropertiesConfig: Map[String, AdditionalPropertyConfig] = FlinkStreamingPropertiesConfig.properties
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")
 
@@ -195,13 +205,13 @@ object ProcessTestData {
 
   val processWithInvalidAdditionalProperties: DisplayableProcess = DisplayableProcess(
     id = "fooProcess",
-    properties = ProcessProperties(StreamMetaData(
-      Some(2)),
+    properties = ProcessProperties(
+      flinkInitialMetaData,
       Some(ProcessAdditionalFields(Some("scenario description"), Map(
         "maxEvents" -> "text",
         "unknown" -> "x",
         "numberOfThreads" -> "wrong fixed value"
-      )))),
+      ) ++ flinkInitialMetaData.toProperties ))),
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
@@ -211,7 +221,9 @@ object ProcessTestData {
   val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), Some(ProcessAdditionalFields(Some("process description"), Map.empty))),
+      properties = ProcessProperties(
+        flinkInitialMetaData,
+        Some(ProcessAdditionalFields(Some("process description"), flinkInitialMetaData.toProperties))),
       nodes = List(
         node.Source(
           id = "sourceId",
@@ -231,7 +243,7 @@ object ProcessTestData {
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None), List(), List.empty)
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(), List.empty)
   }
 
   val sampleSubprocessOneOut = {
@@ -265,10 +277,7 @@ object ProcessTestData {
   def createEmptyUpdateProcessCommand(processName: ProcessName, comment: Option[UpdateProcessComment]): UpdateProcessCommand = {
     val displayableProcess = DisplayableProcess(
       id = processName.value,
-      properties = ProcessProperties(
-        StreamMetaData(),
-        None
-      ),
+      properties = ProcessProperties(StreamMetaData()),
       nodes = List.empty,
       edges = List.empty,
       processingType = TestProcessingTypes.Streaming,
@@ -290,18 +299,18 @@ object ProcessTestData {
     )
   }
 
-  def displayableWithAdditionalFields(additionalFields: Option[ProcessAdditionalFields]): DisplayableProcess = {
+  def displayableWithAdditionalProperties(properties: Map[String, String]): DisplayableProcess = {
     val process = validDisplayableProcess.toDisplayable
-    val properties = process.properties
-
     process.copy(
-      properties = properties.copy(
-        additionalFields = additionalFields.getOrElse(ProcessAdditionalFields(None, Map()))
-      ))
+      properties = process.properties.copy(
+        additionalFields = process.properties.additionalFields.copy(
+          properties = process.properties.additionalFields.properties ++ properties
+        )
+      )
+    )
   }
 
   case class ProcessUsingSubprocess(process: CanonicalProcess, subprocess: CanonicalProcess)
 
-  val streamingTypeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(None))
 
 }

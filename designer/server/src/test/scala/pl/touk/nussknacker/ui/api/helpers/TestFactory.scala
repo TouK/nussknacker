@@ -101,8 +101,8 @@ object TestFactory extends TestPermissions{
     route.securedRoute(adminUser())
 
   def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.streamingTypeSpecificInitialData),
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map.empty)
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.flinkTypeSpecificInitialData),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.flinkPropertiesConfig)
   )
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =

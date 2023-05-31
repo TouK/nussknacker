@@ -13,8 +13,8 @@ class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
     val processingType = "testProcessingType"
 
     val preparer = new NewProcessPreparer(
-      mapProcessingTypeDataProvider(processingType -> ProcessTestData.streamingTypeSpecificInitialData),
-      mapProcessingTypeDataProvider(processingType -> Map.empty)
+      mapProcessingTypeDataProvider(processingType -> ProcessTestData.flinkTypeSpecificInitialData),
+      mapProcessingTypeDataProvider(processingType -> ProcessTestData.flinkPropertiesConfig)
     )
 
     val emptyProcess = preparer.prepareEmptyProcess("processId1", processingType, isSubprocess = false)
