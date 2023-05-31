@@ -265,7 +265,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.Canceled))
       case Some(_) =>
-        logger.debug(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.archivedShouldBeCanceled}")
+        logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.archivedShouldBeCanceled}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(ProblemStateStatus.archivedShouldBeCanceled))
       case _ =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
