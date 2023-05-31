@@ -313,7 +313,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }.getOrElse(state)
   }
 
-  def markProcessFinishedIfLastActionDeploy(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
+  def markProcessFinishedIfLastActionDeploy(processingType: ProcessingType, processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     dbioRunner.run(for {
@@ -321,6 +321,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       processId <- existsOrFail(processIdOpt, ProcessNotFoundError(processName.value))
       processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
       processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.value.toString))
+      _ = if (!processDetails.processingType.equals(processingType)) {
+        throw new IllegalArgumentException(s"Invalid scenario processingType (expected ${processingType}, got ${processDetails.processingType})")
+      }
       cancelActionOpt <- {
         processDetails.lastDeployedAction.map { lastDeployedAction =>
           val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)

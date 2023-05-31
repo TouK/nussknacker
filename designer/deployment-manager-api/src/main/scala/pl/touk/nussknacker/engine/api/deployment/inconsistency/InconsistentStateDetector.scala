@@ -19,44 +19,44 @@ object InconsistentStateDetector {
       case (None, None) => StatusDetails(SimpleStateStatus.NotDeployed)
     }
 
-  private def handleState(state: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
-    state.status match {
+  private def handleState(statusDetails: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
+    statusDetails.status match {
       case SimpleStateStatus.NotDeployed if lastStateAction.isEmpty =>
-        state.copy(status = SimpleStateStatus.NotDeployed)
+        statusDetails.copy(status = SimpleStateStatus.NotDeployed)
       case SimpleStateStatus.Restarting | SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastStateAction.isEmpty =>
-        state.copy(status = ProblemStateStatus.ProcessWithoutAction)
-      case _ => state
+        statusDetails.copy(status = ProblemStateStatus.ProcessWithoutAction)
+      case _ => statusDetails
     }
 
   //Thise method handles some corner cases for canceled process -> with last action = Canceled
-  private def handleCanceledState(processState: Option[StatusDetails]): StatusDetails =
-    processState match {
+  private def handleCanceledState(statusDetails: Option[StatusDetails]): StatusDetails =
+    statusDetails match {
       case Some(state) => state.status match {
         case _ => state
       }
       case None => StatusDetails(SimpleStateStatus.Canceled)
     }
 
-  private def handleRestartingState(state: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
+  private def handleRestartingState(statusDetails: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
     lastStateAction match {
-      case Some(action) if action.isDeployed => state
-      case _ => handleState(state, lastStateAction)
+      case Some(action) if action.isDeployed => statusDetails
+      case _ => handleState(statusDetails, lastStateAction)
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
-  private def handleFollowingDeployState(state: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
+  private def handleFollowingDeployState(statusDetails: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
     lastStateAction match {
       case Some(action) if !action.isDeployed =>
-        state.copy(status = ProblemStateStatus.shouldNotBeRunning(true))
+        statusDetails.copy(status = ProblemStateStatus.shouldNotBeRunning(true))
       case Some(_) =>
-        state
+        statusDetails
       case None =>
-        state.copy(status = ProblemStateStatus.shouldNotBeRunning(false))
+        statusDetails.copy(status = ProblemStateStatus.shouldNotBeRunning(false))
     }
 
   //This method handles some corner cases for deployed action mismatch state version
-  private def handleMismatchDeployedStateLastAction(processState: Option[StatusDetails], action: ProcessAction): StatusDetails =
-    processState match {
+  private def handleMismatchDeployedStateLastAction(statusDetails: Option[StatusDetails], action: ProcessAction): StatusDetails =
+    statusDetails match {
       case Some(state) =>
         state.version match {
           case _ if !(state.status.isRunning || state.status.isDuringDeploy) =>
@@ -73,6 +73,5 @@ object InconsistentStateDetector {
       case None =>
         StatusDetails(ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user))
     }
-
 
 }

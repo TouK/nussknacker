@@ -26,7 +26,7 @@ trait DeploymentService extends ProcessStateService {
                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Unit]
   def invalidateInProgressActions(): Unit
 
-  def markProcessFinishedIfLastActionDeploy(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]]
+  def markProcessFinishedIfLastActionDeploy(processingType: ProcessingType, processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]]
 }
 
 trait ProcessStateService {
