@@ -281,7 +281,7 @@ lazy val commonSettings =
       )
     )
 
-val flinkV = "1.16.1"
+val flinkV = "1.16.2"
 val avroV = "1.11.1"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 val kafkaV = "3.3.2"
