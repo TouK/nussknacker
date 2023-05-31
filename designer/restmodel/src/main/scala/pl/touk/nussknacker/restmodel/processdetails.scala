@@ -4,6 +4,7 @@ import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId, ProcessId => ApiProcessId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
@@ -15,6 +16,8 @@ import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import java.time.Instant
 
 object processdetails {
+
+  val StateActions: List[ProcessActionType] = List(Cancel, Deploy, Pause)
 
   sealed trait Process {
     val lastAction: Option[ProcessAction]
@@ -89,7 +92,7 @@ object processdetails {
                                               createdBy: String,
                                               tags: List[String],
                                               lastDeployedAction: Option[ProcessAction],
-                                              lastStateAction: Option[ProcessAction],
+                                              lastStateAction: Option[ProcessAction], //State action is an action that can have an influence on the presented state of the scenario. We currently use it to distinguish between cancel / not_deployed and to detect inconsistent states between the designer and engine
                                               lastAction: Option[ProcessAction], //TODO: Consider replacing it by lastStateAction, check were on FE we use lastAction, eg. archive date at the archive list
                                               json: ProcessShape,
                                               history: List[ProcessVersion],

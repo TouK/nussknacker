@@ -27,7 +27,7 @@ object SimpleStateStatus {
 
     val failed: ProblemStateStatus = ProblemStateStatus(defaultDescription)
 
-    val archivedDeployed: ProblemStateStatus = ProblemStateStatus("Archived scenario should be canceled.")
+    val archivedShouldBeCanceled: ProblemStateStatus = ProblemStateStatus("Archived scenario should be canceled.", List(ProcessActionType.Cancel))
 
     val failedToGet: ProblemStateStatus =
       ProblemStateStatus(s"Failed to get a state of the scenario.")

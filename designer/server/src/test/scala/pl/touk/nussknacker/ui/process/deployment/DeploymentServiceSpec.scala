@@ -439,7 +439,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareArchivedProcess(processName, Some(Deploy)).dbioActionValues
 
     val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
-    state.status shouldBe ProblemStateStatus.archivedDeployed
+    state.status shouldBe ProblemStateStatus.archivedShouldBeCanceled
   }
 
   test("Should return canceled status for unarchived process") {
@@ -510,42 +510,39 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
   }
 
-  private def prepareDeployedProcess(processName: ProcessName): DB[ProcessId] = {
-    for {
-      id <- prepareProcess(processName)
-      actionType = ProcessActionType.Deploy
-      comment = DeploymentComment.unsafe("Deployed").toComment(actionType)
-      _ <- actionRepository.addInstantAction(id, initialVersionId, actionType, Some(comment), Some("stream"))
-    }  yield id
-  }
-
   private def prepareCanceledProcess(processName: ProcessName): DB[ProcessId] =
     for {
       id <- prepareDeployedProcess(processName)
-      actionType = ProcessActionType.Cancel
-      comment = DeploymentComment.unsafe("Canceled").toComment(actionType)
-      _ <- actionRepository.addInstantAction(id, initialVersionId, actionType, Some(comment), None)
+      _ <- prepareAction(id, Cancel)
+    } yield id
+
+  private def prepareDeployedProcess(processName: ProcessName): DB[ProcessId] =
+    prepareProcessWithAction(processName, Some(Deploy))
+
+  private def preparedUnArchivedProcess(processName: ProcessName, actionType: Option[ProcessActionType]): DB[ProcessId] =
+    for {
+      id <- prepareArchivedProcess(processName, actionType)
+      _ <- writeProcessRepository.archive(processId = id, isArchived = false)
+      _ <- actionRepository.markProcessAsUnArchived(processId = id, initialVersionId)
     } yield id
 
   private def prepareArchivedProcess(processName: ProcessName, actionType: Option[ProcessActionType]): DB[ProcessId] =
-    prepareProcess(processName, isArchived = true, actionType)
-
-  private def preparedUnArchivedProcess(processName: ProcessName, actionType: Option[ProcessActionType]): DB[ProcessId] = {
     for {
-      id <- prepareProcess(processName, isArchived = false, actionType)
-      _ <- actionRepository.markProcessAsUnArchived(processId = id, initialVersionId)
+      id <- prepareProcessWithAction(processName, actionType)
+      _ <- writeProcessRepository.archive(processId = id, isArchived = true)
+      _ <- actionRepository.markProcessAsArchived(processId = id, initialVersionId)
+    } yield id
+
+  private def prepareProcessWithAction(processName: ProcessName, actionType: Option[ProcessActionType]): DB[ProcessId] = {
+    for {
+      id <- prepareProcess(processName)
+      _ <- DBIOAction.sequenceOption(actionType.map(prepareAction(id, _)))
     } yield id
   }
 
-  private def prepareProcess(processName: ProcessName, isArchived: Boolean, actionType: Option[ProcessActionType]): DB[ProcessId] = {
-    for {
-      id <- prepareProcess(processName)
-      _ <- DBIOAction.sequenceOption(actionType.map { action =>
-        val comment = Some(DeploymentComment.unsafe(action.toString.capitalize).toComment(action))
-        actionRepository.addInstantAction(id, initialVersionId, action, comment, None)
-      })
-      _ <- writeProcessRepository.archive(processId = id, isArchived = isArchived)
-    } yield id
+  private def prepareAction(processId: ProcessId, actionType: ProcessActionType) = {
+    val comment = Some(DeploymentComment.unsafe(actionType.toString.capitalize).toComment(actionType))
+    actionRepository.addInstantAction(processId, initialVersionId, actionType, comment, None)
   }
 
   private def prepareProcess(processName: ProcessName, parallelism: Option[Int] = None): DB[ProcessId] = {

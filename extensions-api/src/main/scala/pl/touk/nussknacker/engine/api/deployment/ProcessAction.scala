@@ -30,7 +30,6 @@ object ProcessActionType extends Enumeration {
   val Pause: Value = Value("PAUSE") //TODO: To implement in future..
 
   val DefaultActions: List[ProcessActionType] = Nil
-  val StateActions: List[ProcessActionType] = List(Cancel, Deploy, Pause)
 }
 
 object ProcessActionState extends Enumeration {

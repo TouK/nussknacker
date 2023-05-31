@@ -5,7 +5,7 @@ import cats.data.OptionT
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.{DB, _}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.ProcessAction
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails._
@@ -51,7 +51,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
                                                                               isDeployed: Option[Boolean])(implicit loggedUser: LoggedUser, ec: ExecutionContext): DBIOAction[List[BaseProcessDetails[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {
       lastActionPerProcess <- fetchLastFinishedActionPerProcessQuery(None).result
-      lastStateActionPerProcess <- fetchLastFinishedActionPerProcessQuery(Some(ProcessActionType.StateActions)).result
+      lastStateActionPerProcess <- fetchLastFinishedActionPerProcessQuery(Some(StateActions)).result
       lastDeployedActionPerProcess <- fetchLastDeployedActionPerProcessQuery.result
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess, isDeployed).result
     } yield
@@ -124,7 +124,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       process = process,
       processVersion = processVersion,
       lastActionData = actions.headOption,
-      lastStateActionData = actions.find{ case (entity, _) => ProcessActionType.StateActions.contains(entity.action) },
+      lastStateActionData = actions.find{ case (entity, _) => StateActions.contains(entity.action) },
       lastDeployedActionData = actions.headOption.find(_._1.isDeployed),
       isLatestVersion = isLatestVersion,
       tags = tags,

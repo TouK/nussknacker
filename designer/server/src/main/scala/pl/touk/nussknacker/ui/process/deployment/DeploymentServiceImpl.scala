@@ -264,11 +264,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       case Some(Cancel) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.Canceled))
-      case Some(Deploy) =>
-        logger.debug(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.archivedDeployed}")
-        DBIOAction.successful(manager.processStateDefinitionManager.processState(ProblemStateStatus.archivedDeployed))
-      case Some(action) =>
-        throw new IllegalArgumentException(s"Not supported last state action: $action.")
+      case Some(_) =>
+        logger.debug(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.archivedShouldBeCanceled}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(ProblemStateStatus.archivedShouldBeCanceled))
       case _ =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
