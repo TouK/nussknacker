@@ -554,7 +554,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val durationLongerThanTimeout = timeout.plus(patienceConfig.timeout)
     deploymentManager.withDelayBeforeStateReturn(durationLongerThanTimeout) {
       val status = serviceWithTimeout.getProcessState(processIdName).futureValueEnsuringInnerException(durationLongerThanTimeout).status
-      status shouldBe ProblemStateStatus.failedToGet
+      status shouldBe ProblemStateStatus.FailedToGet
     }
   }
 
