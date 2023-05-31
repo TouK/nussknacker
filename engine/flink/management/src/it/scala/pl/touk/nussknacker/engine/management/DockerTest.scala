@@ -41,7 +41,7 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
 
   protected val userToAct: User = User("testUser", "Test User")
 
-  private val kafka = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.3.0")).configure { self =>
+  private val kafka = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0")).configure { self =>
     self.setNetwork(network)
     self.setNetworkAliases(asList(kafkaNetworkAlias))
   }
