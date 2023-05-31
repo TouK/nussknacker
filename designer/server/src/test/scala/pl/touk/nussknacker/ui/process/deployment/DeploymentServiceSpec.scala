@@ -227,27 +227,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
-
-      val expectedStatus = ProblemStateStatus.shouldNotBeRunning(false)
-      state.status shouldBe expectedStatus
-      state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe expectedStatus.description
-    }
-  }
-
-  test("Should return state with warning when state is during canceled and process hasn't action") {
-    val processName: ProcessName = generateProcessName
-    val id = prepareProcess(processName).dbioActionValues
-
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringCancel) {
-      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
-
-      val expectedStatus = ProblemStateStatus.ProcessWithoutAction
-      state.status shouldBe expectedStatus
-      state.icon shouldBe ProblemStateStatus.icon
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe expectedStatus.description
+      state.status shouldBe SimpleStateStatus.NotDeployed
     }
   }
 
@@ -259,36 +239,6 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.DuringCancel
-    }
-  }
-
-  test("Should return state with error when state is finished and process hasn't action") {
-    val processName: ProcessName = generateProcessName
-    val id = prepareProcess(processName).dbioActionValues
-
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Finished) {
-      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
-
-      val expectedStatus = ProblemStateStatus.ProcessWithoutAction
-      state.status shouldBe expectedStatus
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe expectedStatus.description
-    }
-  }
-
-  test("Should return state with warning when state is restarting and process hasn't had action (couldn't be even deployed)") {
-    val processName: ProcessName = generateProcessName
-    val id = prepareProcess(processName).dbioActionValues
-
-    val state = StatusDetails(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
-
-    deploymentManager.withProcessState(processName, Some(state)) {
-      val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
-
-      val expectedStatus = ProblemStateStatus.ProcessWithoutAction
-      state.status shouldBe expectedStatus
-      state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-      state.description shouldBe expectedStatus.description
     }
   }
 
