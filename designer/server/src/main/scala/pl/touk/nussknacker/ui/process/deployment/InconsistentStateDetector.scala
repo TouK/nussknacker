@@ -8,24 +8,24 @@ object InconsistentStateDetector {
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   //TODO: In future we should move this functionality to DeploymentManager.
-  def handleStatus(processState: Option[ProcessState], lastAction: Option[ProcessAction]): ProcessState =
-    (processState, lastAction) match {
+  def handleStatus(processState: Option[ProcessState], lastStateAction: Option[ProcessAction]): ProcessState =
+    (processState, lastStateAction) match {
       case (Some(state), _) if state.status.isFailed => state
-      case (Some(state), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastAction)
-      case (_, Some(action)) if action.isDeployed => handleMismatchDeployedLastAction(processState, action)
-      case (Some(state), _) if state.isDeployed => handleFollowingDeployState(state, lastAction)
+      case (Some(state), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastStateAction)
+      case (_, Some(action)) if action.isDeployed => handleMismatchDeployedStateLastAction(processState, action)
+      case (Some(state), _) if state.isDeployed => handleFollowingDeployState(state, lastStateAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(processState)
-      case (Some(state), _) => handleState(state, lastAction)
+      case (Some(state), _) => handleState(state, lastStateAction)
       case (None, Some(_)) => SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
       case (None, None) => SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
     }
 
   //TODO: In future we should move this functionality to DeploymentManager.
-  private def handleState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
+  private def handleState(state: ProcessState, lastStateAction: Option[ProcessAction]): ProcessState =
     state.status match {
-      case SimpleStateStatus.NotDeployed if lastAction.isEmpty =>
+      case SimpleStateStatus.NotDeployed if lastStateAction.isEmpty =>
         SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
-      case SimpleStateStatus.Restarting | SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastAction.isEmpty =>
+      case SimpleStateStatus.Restarting | SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastStateAction.isEmpty =>
         state.withStatusDetails(SimpleProcessStateDefinitionManager.warningProcessWithoutActionState)
       case _ => state
     }
@@ -40,16 +40,16 @@ object InconsistentStateDetector {
       case None => SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.Canceled)
     }
 
-  private def handleRestartingState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
-    lastAction match {
+  private def handleRestartingState(state: ProcessState, lastStateAction: Option[ProcessAction]): ProcessState =
+    lastStateAction match {
       case Some(action) if action.isDeployed => state
-      case _ => handleState(state, lastAction)
+      case _ => handleState(state, lastStateAction)
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
   //TODO: In future we should move this functionality to DeploymentManager.
-  private def handleFollowingDeployState(state: ProcessState, lastAction: Option[ProcessAction]): ProcessState =
-    lastAction match {
+  private def handleFollowingDeployState(state: ProcessState, lastStateAction: Option[ProcessAction]): ProcessState =
+    lastStateAction match {
       case Some(action) if !action.isDeployed =>
         state.withStatusDetails(SimpleProcessStateDefinitionManager.warningShouldNotBeRunningState(true))
       case Some(_) =>
@@ -60,7 +60,7 @@ object InconsistentStateDetector {
 
   //This method handles some corner cases for deployed action mismatch state version
   //TODO: In future we should move this functionality to DeploymentManager.
-  private def handleMismatchDeployedLastAction(processState: Option[ProcessState], action: ProcessAction): ProcessState =
+  private def handleMismatchDeployedStateLastAction(processState: Option[ProcessState], action: ProcessAction): ProcessState =
     processState match {
       case Some(state) =>
         state.version match {

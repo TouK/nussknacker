@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import io.circe.{Encoder, Json}
-import pl.touk.nussknacker.engine.api.deployment.ProcessAction
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -69,6 +69,9 @@ object TestProcessUtil {
       createdBy = "user1",
       tags = List(),
       lastAction = lastAction.map(createProcessAction),
+      lastStateAction = lastAction.collect {
+        case action if StateActions.contains(action) => createProcessAction(action)
+      },
       lastDeployedAction = lastAction.collect {
         case Deploy => createProcessAction(Deploy)
       },

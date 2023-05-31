@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process.repository
 
 import java.sql.Timestamp
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessShapeFetchStrategy, ProcessVersion}
 import pl.touk.nussknacker.security.Permission
@@ -31,11 +32,10 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
       .sortBy(_.id.desc)
 
   protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[ProcessId], (ProcessActionEntityFactory#ProcessActionEntity, api.Rep[Option[CommentEntityFactory#CommentEntity]])), (ProcessId, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
-    fetchLastFinishedActionPerProcessQuery
-      .filter(_._2._1.action === ProcessActionType.Deploy)
+    fetchLastFinishedActionPerProcessQuery(Some(List(ProcessActionType.Deploy)))
 
-  protected def fetchLastFinishedActionPerProcessQuery: Query[(Rep[ProcessId], (ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]])), (ProcessId, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
-    processActionsTable
+  protected def fetchLastFinishedActionPerProcessQuery(actions: Option[List[ProcessActionType]]): Query[(Rep[ProcessId], (ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]])), (ProcessId, (ProcessActionEntityData, Option[CommentEntityData])), Seq] = {
+    val query = processActionsTable
       .filter(_.state === ProcessActionState.Finished)
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
@@ -45,6 +45,11 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
       .joinLeft(commentsTable)
       .on { case ((_, action), comment) => action.commentId === comment.id }
       .map{ case ((processId, action), comment) => processId -> (action, comment) }
+
+    actions
+      .map(actions => query.filter{case (_, (entity, _)) => entity.action.inSet(actions)})
+      .getOrElse(query)
+  }
 
   protected def fetchProcessLatestFinishedActionsQuery(processId: ProcessId): Query[(ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]]), (ProcessActionEntityData, Option[CommentEntityData]), Seq] =
     processActionsTable

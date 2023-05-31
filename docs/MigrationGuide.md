@@ -20,6 +20,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Sealed trait `StateStatus` is unsealed, all members are replaced by corresponding `SimpleStateStatus` state definitions,
   custom statuses are defined within each `ProcessStateDefinitionManager`.
   `ProcessAction` is moved from restmodel to extensions-api, package engine.api.deployment.
+* [#4339](https://github.com/TouK/nussknacker/pull/4339) Improvements: Don't fetch state for archived/unarchived scenario, return computed based on last state action
+  At BaseProcessDetails we provide lastStateAction field which can have an influence on the presented state of the scenario. 
+  We currently use it to distinguish between cancel / not_deployed and to detect inconsistent states between the designer and engine
 
 ### Configuration changes
 * [#4283](https://github.com/TouK/nussknacker/pull/4283) For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
