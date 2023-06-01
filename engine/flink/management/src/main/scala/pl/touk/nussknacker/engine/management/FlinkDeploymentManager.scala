@@ -29,7 +29,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   /**
     * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
-  override def getProcessState(name: ProcessName, lastAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
+  override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
     for {
       statusWithFreshness <- getProcessState(name)
       finishedStatusOpt = statusWithFreshness.value.filter(_.status.isFinished)
@@ -38,7 +38,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
       //TODO: it should be checked periodically instead of checking on each getProcessState invocation
       // (consider moving `markProcessFinishedIfLastActionDeploy` to InconsistentStateDetector as one "detectAndResolveAndFixStatus")
       cancelActionOpt <- finishedStatusOpt.map(_ => deploymentService.markProcessFinishedIfLastActionDeploy(name)).sequence.map(_.flatten)
-      engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, cancelActionOpt.orElse(lastAction))
+      engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, cancelActionOpt.orElse(lastStateAction))
     } yield statusWithFreshness.copy(value = processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
   }
 

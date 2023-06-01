@@ -293,10 +293,10 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }
   }
 
-  private def getStateFromDeploymentManager(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastAction: Option[ProcessAction])
+  private def getStateFromDeploymentManager(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])
                                            (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
 
-    val state = deploymentManager.getProcessState(processIdWithName.name, lastAction).recover {
+    val state = deploymentManager.getProcessState(processIdWithName.name, lastStateAction).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
         failedToGetProcessState
