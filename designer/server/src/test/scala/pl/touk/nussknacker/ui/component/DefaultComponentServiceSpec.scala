@@ -12,6 +12,8 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProv
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{BaseModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
+import pl.touk.nussknacker.restmodel.component.NodeMetadata
+import pl.touk.nussknacker.restmodel.component.NodeMetadata.{FragmentNodeMetadata, ScenarioNodeMetadata}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 import pl.touk.nussknacker.security.Permission
@@ -489,23 +491,25 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
     val testingData = Table(
       ("user", "componentId", "expected"),
-      (admin, subprocessComponentId, List((FraudProcessWithSubprocess, List(FraudSubprocessName)))),
+      (admin, subprocessComponentId, List((FraudProcessWithSubprocess, List(ScenarioNodeMetadata(FraudSubprocessName))))),
       (admin, sharedSourceComponentId, List(
-        (CanceledFraudProcessWith2Enrichers, List(DefaultSourceName)), (DeployedFraudProcessWith2Filters, List(DefaultSourceName)),
-        (FraudProcess, List(DefaultSourceName)), (FraudProcessWithSubprocess, List(SecondSourceName)),
-        (MarketingProcess, List(DefaultSourceName)),
+        (CanceledFraudProcessWith2Enrichers, List(ScenarioNodeMetadata(DefaultSourceName))), (DeployedFraudProcessWith2Filters, List(ScenarioNodeMetadata(DefaultSourceName))),
+        (FraudProcess, List(ScenarioNodeMetadata(DefaultSourceName))), (FraudProcessWithSubprocess, List(ScenarioNodeMetadata(SecondSourceName))),
+        (MarketingProcess, List(ScenarioNodeMetadata(DefaultSourceName))),
       )),
-      (admin, fraudNotSharedSourceComponentId, List((FraudProcessWithNotSharedSource, List(DefaultSourceName)))),
-      (admin, fraudCustomerDataEnricherComponentId, List((CanceledFraudProcessWith2Enrichers, List(DefaultCustomName, SecondCustomName)))),
+      (admin, fraudNotSharedSourceComponentId, List((FraudProcessWithNotSharedSource, List(ScenarioNodeMetadata(DefaultSourceName))))),
+      (admin, fraudCustomerDataEnricherComponentId, List((CanceledFraudProcessWith2Enrichers, List(ScenarioNodeMetadata(DefaultCustomName), ScenarioNodeMetadata(SecondCustomName))))),
       (admin, filterComponentId, List(
-        (DeployedFraudProcessWith2Filters, List(DefaultFilterName, SecondFilterName)),
-        (FraudProcessWithSubprocess, List(SecondFilterName, s"<<fragment>> $SubprocessFilterName"))
+        (DeployedFraudProcessWith2Filters, List(ScenarioNodeMetadata(DefaultFilterName), ScenarioNodeMetadata(SecondFilterName))),
+        (FraudProcessWithSubprocess, List(ScenarioNodeMetadata(SecondFilterName), FragmentNodeMetadata(FraudSubprocess.name, s"<<fragment>> $SubprocessFilterName"))),
       )),
     )
 
-    forAll(testingData) { (user: LoggedUser, componentId: ComponentId, expected: List[(BaseProcessDetails[_], List[String])] ) =>
+    forAll(testingData) { (user: LoggedUser, componentId: ComponentId, expected: List[(BaseProcessDetails[_], List[NodeMetadata])] ) =>
       val result = defaultComponentService.getComponentUsages(componentId)(user).futureValue
-      val componentProcesses = expected.map { case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }
+      val componentProcesses = expected.map {
+        case (process, nodesMetadata) => ComponentUsagesInScenario(process, nodesMetadata)
+      }
       result shouldBe Right(componentProcesses)
     }
   }

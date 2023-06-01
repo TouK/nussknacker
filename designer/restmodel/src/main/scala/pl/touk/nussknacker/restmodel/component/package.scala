@@ -21,11 +21,17 @@ package object component {
 
   type NodeId = String
 
-  @ConfiguredJsonCodec sealed trait NodeMetadata
+  @ConfiguredJsonCodec sealed trait NodeMetadata {
+    def getNodeId: NodeId
+  }
   object NodeMetadata {
-    case class FragmentNodeMetadata(fragmentNodeId: String, nodeId: NodeId) extends NodeMetadata
+    case class FragmentNodeMetadata(fragmentNodeId: String, nodeId: NodeId) extends NodeMetadata {
+      override def getNodeId: NodeId = this.nodeId
+    }
 
-    case class ScenarioNodeMetadata(nodeId: NodeId) extends NodeMetadata
+    case class ScenarioNodeMetadata(nodeId: NodeId) extends NodeMetadata {
+      override def getNodeId: NodeId = this.nodeId
+    }
   }
 
 
@@ -56,11 +62,11 @@ package object component {
                                         usageCount: Long)
 
   object ComponentUsagesInScenario {
-    def apply(process: BaseProcessDetails[_], nodesId: List[NodeMetadata]): ComponentUsagesInScenario = ComponentUsagesInScenario(
+    def apply(process: BaseProcessDetails[_], nodesMetadata: List[NodeMetadata]): ComponentUsagesInScenario = ComponentUsagesInScenario(
       id = process.id, //Right now we assume that scenario id is name..
       name = process.idWithName.name,
       processId = process.processId,
-      nodesId = nodesId,
+      nodesMetadata = nodesMetadata,
       isSubprocess = process.isSubprocess,
       processCategory = process.processCategory,
       modificationDate = process.modificationDate, //TODO: Deprecated, please use modifiedAt
@@ -76,7 +82,7 @@ package object component {
   final case class ComponentUsagesInScenario(id: String,
                                              name: ProcessName,
                                              processId: ProcessId,
-                                             nodesId: List[NodeMetadata],
+                                             nodesMetadata: List[NodeMetadata],
                                              isSubprocess: Boolean,
                                              processCategory: String,
                                              modificationDate: Instant,
