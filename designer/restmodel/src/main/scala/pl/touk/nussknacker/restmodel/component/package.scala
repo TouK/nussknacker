@@ -1,6 +1,11 @@
 package pl.touk.nussknacker.restmodel
 
+import io.circe.Encoder
 import io.circe.generic.JsonCodec
+import io.circe.generic.extras.ConfiguredJsonCodec
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
@@ -16,8 +21,13 @@ package object component {
 
   type NodeId = String
 
-  @JsonCodec
-  case class NodeMetadata(fragmentNodeId: Option[String], nodeId: String)
+  @ConfiguredJsonCodec sealed trait NodeMetadata
+  object NodeMetadata {
+    case class FragmentNodeMetadata(fragmentNodeId: String, nodeId: NodeId) extends NodeMetadata
+
+    case class ScenarioNodeMetadata(nodeId: NodeId) extends NodeMetadata
+  }
+
 
   object ComponentLink {
     val DocumentationId = "documentation"

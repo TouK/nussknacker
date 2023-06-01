@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType}
 import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, NodeId, NodeMetadata, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.restmodel.component.NodeMetadata._
 
 object ComponentsUsageHelper {
 
@@ -23,16 +24,23 @@ object ComponentsUsageHelper {
       (ComponentIdParts(componentName, componentType), nodeIds) = componentIdNodesPair
       componentId = componentIdProvider.createComponentId(processDetails.processingType, componentName, componentType)
       nodeId <- nodeIds
-      nodeMetadata = if (processDetails.isSubprocess) NodeMetadata(Some(processDetails.id), nodeId) else NodeMetadata(None, nodeId)
+      nodeMetadata = if (processDetails.isSubprocess) FragmentNodeMetadata(processDetails.name, nodeId) else ScenarioNodeMetadata(nodeId)
     } yield ScenarioComponentsUsage(componentId, componentType, componentName, processDetails, nodeMetadata)
 
     val scenariosComponentUsagesFlatten = flattenUsages(processesDetails.filter(_.isSubprocess == false))
     val fragmentsComponentUsagesFlattenMap = flattenUsages(processesDetails.filter(_.isSubprocess == true))
-      .groupBy(_.processDetails.name).mapValuesNow(_.map(u => u.copy(nodeMetadata = NodeMetadata(u.nodeMetadata.fragmentNodeId, s"<<fragment>> ${u.nodeMetadata.nodeId}"))))
+      .groupBy(_.processDetails.name).mapValuesNow(_.collect {
+      case u@ScenarioComponentsUsage(componentId, componentType, componentName, processDetails, FragmentNodeMetadata(fragmentNodeId, nodeId)) =>
+        u.copy(nodeMetadata = FragmentNodeMetadata(fragmentNodeId, s"<<fragment>> ${nodeId}"))
+    })
 
     val scenarioUsagesWithResolvedFragments = scenariosComponentUsagesFlatten.flatMap {
-      case fragmentUsage@ScenarioComponentsUsage(_, ComponentType.Fragments, Some(fragmentName), processDetails, nodeMetadata) =>
-        fragmentUsage :: fragmentsComponentUsagesFlattenMap.get(fragmentName).toList.flatten.map(_.copy(processDetails = processDetails))
+      case fragmentUsage@ScenarioComponentsUsage(_, ComponentType.Fragments, Some(fragmentName), processDetails, ScenarioNodeMetadata(fragmentNodeId)) =>
+        //fragmentUsage :: fragmentsComponentUsagesFlattenMap.get(fragmentName).toList.flatten.map(s => s.copy(processDetails = processDetails, nodeMetadata = NodeMetadata(Some(nodeMetadata.nodeId), s.nodeMetadata.nodeId)))
+        fragmentUsage :: fragmentsComponentUsagesFlattenMap.get(fragmentName).toList.flatten.collect {
+          case u@ScenarioComponentsUsage(componentId, componentType, componentName, processDetails, FragmentNodeMetadata(_, nodeId)) =>
+            u.copy(processDetails = processDetails, nodeMetadata = FragmentNodeMetadata(fragmentNodeId, nodeId))
+        }
       case usageOfOtherComponentType =>
         List(usageOfOtherComponentType)
     }
