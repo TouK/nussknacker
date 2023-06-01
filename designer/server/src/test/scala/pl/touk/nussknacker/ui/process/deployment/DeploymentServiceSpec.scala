@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkProcessStateDefinitionManager
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NussknackerAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
@@ -29,7 +29,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 
-class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with DBIOActionValues
+class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with DBIOActionValues with NussknackerAssertions
   with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting with EitherValuesDetailedMessage {
 
   import TestCategories._
@@ -498,6 +498,15 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
   }
 
+  test("should fail when trying to get state for fragment") {
+    val processName: ProcessName = generateProcessName
+    val id = prepareFragment(processName).dbioActionValues
+
+    assertThrowsWithParent[FragmentStateException] {
+      deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
+    }
+  }
+
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     listener.clear()
@@ -558,6 +567,22 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       Streaming,
       isSubprocess = false,
       forwardedUserName = None)
+    writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
+  }
+
+  private def prepareFragment(processName: ProcessName): DB[ProcessId] = {
+    val canonicalProcess = ScenarioBuilder
+      .fragment(processName.value)
+      .emptySink("end", "end")
+
+    val action = CreateProcessAction(
+      processName,
+      TestCat,
+      canonicalProcess,
+      Streaming,
+      isSubprocess = true,
+      forwardedUserName = None)
+
     writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
   }
 
