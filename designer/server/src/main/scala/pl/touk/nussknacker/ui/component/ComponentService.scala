@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
-import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario, ScenarioComponentsUsages, ComponentMetadata}
+import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.EspError.XError
@@ -76,7 +76,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
         componentsUsage
           .get(componentId)
-          .map(data => Right(data.map { case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }.sortBy(_.id)))
+          .map(data => Right(data.map { case (process, nodesMetadata) => ComponentUsagesInScenario(process, nodesMetadata) }.sortBy(_.id)))
           .getOrElse(Left(ComponentNotFoundError(componentId)))
       })
 

@@ -15,8 +15,9 @@ package object component {
   import pl.touk.nussknacker.restmodel.codecs.URICodecs._
 
   type NodeId = String
-  case class ComponentMetadata(baseProcessDetails: BaseProcessDetails[ScenarioComponentsUsages], nodeIds: List[NodeId])
 
+  @JsonCodec
+  case class NodeMetadata(fragmentNodeId: Option[String], nodeId: String)
 
   object ComponentLink {
     val DocumentationId = "documentation"
@@ -45,7 +46,7 @@ package object component {
                                         usageCount: Long)
 
   object ComponentUsagesInScenario {
-    def apply(process: BaseProcessDetails[_], nodesId: List[NodeId]): ComponentUsagesInScenario = ComponentUsagesInScenario(
+    def apply(process: BaseProcessDetails[_], nodesId: List[NodeMetadata]): ComponentUsagesInScenario = ComponentUsagesInScenario(
       id = process.id, //Right now we assume that scenario id is name..
       name = process.idWithName.name,
       processId = process.processId,
@@ -65,7 +66,7 @@ package object component {
   final case class ComponentUsagesInScenario(id: String,
                                              name: ProcessName,
                                              processId: ProcessId,
-                                             nodesId: List[NodeId],
+                                             nodesId: List[NodeMetadata],
                                              isSubprocess: Boolean,
                                              processCategory: String,
                                              modificationDate: Instant,
