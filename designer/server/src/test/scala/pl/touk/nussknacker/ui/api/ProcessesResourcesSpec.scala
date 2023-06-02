@@ -164,7 +164,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  test("should allow rename not deployed process") {
+  test("should allow to rename not deployed process") {
     val processId = createEmptyProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
@@ -174,7 +174,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  test("should allow rename canceled process") {
+  test("should allow to rename canceled process") {
     val processId = createDeployedCanceledProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
@@ -184,7 +184,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  test("should not allow rename deployed process") {
+  test("should not allow to rename deployed process") {
     createDeployedProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
@@ -193,7 +193,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  test("should not allow rename archived process") {
+  test("should not allow to rename archived process") {
     createArchivedProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
@@ -206,7 +206,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     * FIXME: We don't support situation when process is running on flink but action is not deployed - warning state (isRunning = false).
     * In that case we can change process name.. We should block rename process in that situation.
     */
-  ignore("should not allow rename process with running state") {
+  ignore("should not allow to rename process with running state") {
     createEmptyProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
@@ -214,6 +214,16 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       renameProcess(processName, newName) { status =>
         status shouldEqual StatusCodes.Conflict
       }
+    }
+  }
+
+  test("should allow to rename fragment") {
+    val processId = createEmptyProcess(processName, isSubprocess = true)
+    val newName = ProcessName("ProcessChangedName")
+
+    renameProcess(processName, newName) { status =>
+      status shouldEqual StatusCodes.OK
+      getProcessId(newName) shouldBe processId
     }
   }
 
@@ -737,6 +747,18 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
       forScenarioReturned(processName) { process =>
         process.isDeployed shouldBe true
+      }
+    }
+  }
+
+  test("allow to delete subprocess") {
+    createEmptyProcess(processName, isSubprocess = true)
+
+    deleteProcess(processName) { status =>
+      status shouldEqual StatusCodes.OK
+
+      tryForScenarioReturned(processName) { (status, _) =>
+        status shouldEqual StatusCodes.NotFound
       }
     }
   }
