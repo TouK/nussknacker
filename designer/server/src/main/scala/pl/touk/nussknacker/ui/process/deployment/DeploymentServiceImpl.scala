@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionId
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
@@ -238,7 +239,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType])
                              (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     dispatcher.deploymentManager(processDetails.processingType).map { manager =>
-      if (processDetails.isArchived) {
+      if (processDetails.isSubprocess) {
+        throw new FragmentStateException
+      } else if (processDetails.isArchived) {
         getArchivedProcessState(processDetails)(manager)
       } else if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
@@ -345,3 +348,5 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   }
 
 }
+
+private class FragmentStateException extends Exception("Fragment doesn't have state.") with BadRequestError
