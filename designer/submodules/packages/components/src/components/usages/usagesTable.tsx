@@ -16,6 +16,8 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
     const _filterText = useMemo(() => filtersContext.getFilter("TEXT"), [filtersContext]);
     const [filterText] = useDebouncedValue(_filterText, 400);
 
+    console.log(data);
+
     const columns = useMemo(
         (): Columns<ComponentUsageType> => [
             {

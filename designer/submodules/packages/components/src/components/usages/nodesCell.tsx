@@ -19,7 +19,7 @@ export const NodesCell = ({ filterText, ...props }: GridRenderCellParams & { fil
         [filterSegments],
     );
 
-    const sorted = useMemo(() => value.map((node) => [countMatches(node), node]).sort(([a], [b]) => b - a), [countMatches, value]);
+    const sorted = useMemo(() => value.map(n => n.nodesId.nodeId).map((node) => [countMatches(node), node]).sort(([a], [b]) => b - a), [countMatches, value]);
 
     const elements = sorted.map(([match, node]) => (
         <NodeChip key={node} icon={icon} node={node} filterText={filterText} rowId={id} matched={filterText ? match : -1} />
