@@ -369,34 +369,48 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   test("execute valid custom action") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    customAction(SampleProcess.process.id, CustomActionRequest("hello")) ~> check {
+    createEmptyProcess(SampleProcess.processName)
+    customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
       status shouldBe StatusCodes.OK
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = true, msg = "Hi")
     }
   }
 
   test("execute non existing custom action") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    customAction(SampleProcess.process.id, CustomActionRequest("non-existing")) ~> check {
+    createEmptyProcess(SampleProcess.processName)
+    customAction(SampleProcess.processName, CustomActionRequest("non-existing")) ~> check {
       status shouldBe StatusCodes.NotFound
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "non-existing is not existing")
     }
   }
 
   test("execute not implemented custom action") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    customAction(SampleProcess.process.id, CustomActionRequest("not-implemented")) ~> check {
+    createEmptyProcess(SampleProcess.processName)
+    customAction(SampleProcess.processName, CustomActionRequest("not-implemented")) ~> check {
       status shouldBe StatusCodes.NotImplemented
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "not-implemented is not implemented")
     }
   }
 
   test("execute custom action with not allowed process status") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    customAction(SampleProcess.process.id, CustomActionRequest("invalid-status")) ~> check {
+    createEmptyProcess(SampleProcess.processName)
+    customAction(SampleProcess.processName, CustomActionRequest("invalid-status")) ~> check {
       status shouldBe StatusCodes.Forbidden
       responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Scenario status: NOT_DEPLOYED is not allowed for action invalid-status")
+    }
+  }
+
+  test("should return 403 when execute custom action on archived process") {
+    createArchivedProcess(SampleProcess.processName)
+    customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
+      status shouldBe StatusCodes.Forbidden
+    }
+  }
+
+  test("should return 403 when execute custom action on subprocess") {
+    createEmptyProcess(SampleProcess.processName, isSubprocess = true)
+    customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
+      status shouldBe StatusCodes.Forbidden
     }
   }
 

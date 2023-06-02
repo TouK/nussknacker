@@ -40,6 +40,7 @@
 * [#4339](https://github.com/TouK/nussknacker/pull/4339) Improvement: Don't fetch state for archived/unarchived scenario, return computed based on last state action
 * [#4343](https://github.com/TouK/nussknacker/pull/4343) Updated Flink 1.16.1 -> 1.16.2
 * [#4346](https://github.com/TouK/nussknacker/pull/4346) Improvement: Don't fetch process state for fragment
+* [#4342](https://github.com/TouK/nussknacker/pull/4342) Improvement: Don't run custom action on archived scenario and fragment
 
 1.9.1 (24 Apr 2023)
 ------------------------

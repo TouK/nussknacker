@@ -251,6 +251,7 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                       err match {
                         case _: CustomActionFailure => response(StatusCodes.InternalServerError)
                         case _: CustomActionInvalidStatus => response(StatusCodes.Forbidden)
+                        case _: CustomActionForbidden => response(StatusCodes.Forbidden)
                         case _: CustomActionNotImplemented => response(StatusCodes.NotImplemented)
                         case _: CustomActionNonExisting => response(StatusCodes.NotFound)
                       }

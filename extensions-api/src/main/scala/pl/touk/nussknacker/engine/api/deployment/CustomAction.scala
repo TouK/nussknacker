@@ -55,3 +55,5 @@ case class CustomActionNotImplemented(request: CustomActionRequest) extends Cust
 case class CustomActionNonExisting(request: CustomActionRequest) extends CustomActionError {
   override val msg: String = s"${request.name} is not existing"
 }
+
+case class CustomActionForbidden(request: CustomActionRequest, msg: String) extends CustomActionError
