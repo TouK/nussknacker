@@ -400,17 +400,17 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     }
   }
 
-  test("should return 404 when execute custom action on archived process") {
+  test("should return 403 when execute custom action on archived process") {
     createArchivedProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
-      status shouldBe StatusCodes.NotFound
+      status shouldBe StatusCodes.Forbidden
     }
   }
 
-  test("should return 404 when execute custom action on subprocess") {
+  test("should return 403 when execute custom action on subprocess") {
     createEmptyProcess(SampleProcess.processName, isSubprocess = true)
     customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
-      status shouldBe StatusCodes.NotFound
+      status shouldBe StatusCodes.Forbidden
     }
   }
 
