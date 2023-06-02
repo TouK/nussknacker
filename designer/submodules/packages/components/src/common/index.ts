@@ -6,7 +6,7 @@ export { TextFieldWithClear, InputWithClear } from "./forms";
 export { CategoryChip } from "./categoryChip";
 export { useFilterContext, FiltersContextProvider, createFilterRules } from "./filters";
 export { ExternalLink, NavigationProvider } from "./parentNavigationProvider";
-export { nodeHref, scenarioHref, metricsHref } from "./scenarioHref";
+export { nodeHref, fragmentNodeHref, scenarioHref, metricsHref } from "./scenarioHref";
 export { NkView } from "./nkView";
 export type { NkViewProps } from "./nkView";
 export { Highlight } from "./highlight";

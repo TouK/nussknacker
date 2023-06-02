@@ -96,6 +96,7 @@ export type SourceWithParametersTest = {
 export type NodeMetadata = {
     fragmentNodeId?: string;
     nodeId: string;
+    type: string;
 };
 
 export type ComponentUsageType = {

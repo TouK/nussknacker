@@ -16,8 +16,6 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
     const _filterText = useMemo(() => filtersContext.getFilter("TEXT"), [filtersContext]);
     const [filterText] = useDebouncedValue(_filterText, 400);
 
-    console.log(data);
-
     const columns = useMemo(
         (): Columns<ComponentUsageType> => [
             {
@@ -69,8 +67,8 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 sortingOrder: ["desc", "asc", null],
             },
             {
-                field: "nodesId",
-                headerName: t("table.usages.title.NODES_ID", "Nodes"),
+                field: "nodesMetadata",
+                headerName: t("table.usages.title.NODES_METADATA", "Nodes"),
                 minWidth: 250,
                 flex: 4,
                 sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,

@@ -501,7 +501,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       (admin, fraudCustomerDataEnricherComponentId, List((CanceledFraudProcessWith2Enrichers, List(ScenarioNodeMetadata(DefaultCustomName), ScenarioNodeMetadata(SecondCustomName))))),
       (admin, filterComponentId, List(
         (DeployedFraudProcessWith2Filters, List(ScenarioNodeMetadata(DefaultFilterName), ScenarioNodeMetadata(SecondFilterName))),
-        (FraudProcessWithSubprocess, List(ScenarioNodeMetadata(SecondFilterName), FragmentNodeMetadata(FraudSubprocess.name, s"<<fragment>> $SubprocessFilterName"))),
+        (FraudProcessWithSubprocess, List(ScenarioNodeMetadata(SecondFilterName), FragmentNodeMetadata(FraudSubprocess.name, SubprocessFilterName))),
       )),
     )
 

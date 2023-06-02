@@ -31,7 +31,7 @@ object ComponentsUsageHelper {
     val fragmentsComponentUsagesFlattenMap = flattenUsages(processesDetails.filter(_.isSubprocess == true))
       .groupBy(_.processDetails.name).mapValuesNow(_.collect {
       case u@ScenarioComponentsUsage(componentId, componentType, componentName, processDetails, FragmentNodeMetadata(fragmentNodeId, nodeId)) =>
-        u.copy(nodeMetadata = FragmentNodeMetadata(fragmentNodeId, s"<<fragment>> ${nodeId}"))
+        u.copy(nodeMetadata = FragmentNodeMetadata(fragmentNodeId, nodeId))
     })
 
     val scenarioUsagesWithResolvedFragments = scenariosComponentUsagesFlatten.flatMap {
