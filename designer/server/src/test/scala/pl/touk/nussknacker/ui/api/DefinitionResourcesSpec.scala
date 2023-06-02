@@ -183,6 +183,27 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
     }
   }
 
+  it("initial parameters for dynamic components should take into account static component configuration in file") {
+    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
+      status shouldBe StatusCodes.OK
+
+      val responseJson = responseAs[Json]
+      val parameters = responseJson.hcursor
+        .downField("componentGroups")
+        .downAt(_.hcursor.get[String]("name").rightValue == "services")
+        .downField("components")
+        .downAt(_.hcursor.get[String]("label").rightValue == "dynamicMultipleParamsService")
+        .downField("node")
+        .downField("service")
+        .downField("parameters")
+        .focus.value.asArray.value
+
+      val initialParamNames = parameters.map(_.hcursor.downField("name").focus.value.asString.value)
+      initialParamNames shouldEqual List("foo", "bar", "baz")
+      val initialExpressions = parameters.map(_.hcursor.downField("expression").downField("expression").focus.value.asString.value)
+      initialExpressions shouldEqual List("'fooValueFromConfig'", "'barValueFromProviderCode'", "'fooValueFromConfig' + '-' + 'barValueFromProviderCode'")
+    }
+  }
   private def getServices: Option[Iterable[String]] = {
     responseAs[Json].hcursor.downField("streaming").keys
   }
