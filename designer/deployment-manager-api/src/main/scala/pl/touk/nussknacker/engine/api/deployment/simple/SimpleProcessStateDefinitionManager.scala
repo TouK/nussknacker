@@ -29,7 +29,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
     SimpleStateStatus.definitions
 
-  def errorFailedToGet: ProcessState =
-    processState(FailedToGet)
+  val ErrorFailedToGet: ProcessState = processState(FailedToGet)
 
 }

@@ -258,7 +258,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
             DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
         }
       }
-    }.getOrElse(DBIOAction.successful(SimpleProcessStateDefinitionManager.errorFailedToGet))
+    }.getOrElse(DBIOAction.successful(SimpleProcessStateDefinitionManager.ErrorFailedToGet))
   }
 
   //We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
@@ -339,7 +339,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   private lazy val failedToGetProcessState =
     WithDataFreshnessStatus(
-      SimpleProcessStateDefinitionManager.errorFailedToGet,
+      SimpleProcessStateDefinitionManager.ErrorFailedToGet,
       cached = false)
 
   // It is very naive implementation for situation when designer was restarted after spawning some long running action
