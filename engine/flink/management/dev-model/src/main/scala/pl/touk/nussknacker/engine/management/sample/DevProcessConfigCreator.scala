@@ -137,6 +137,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
           "baz" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
         )))
       ),
+    "dynamicMultipleParamsService" -> categories(DynamicMultipleParamsService)
+      .withComponentConfig(SingleComponentConfig.zero.copy(
+        params = Some(Map(
+          "bar" -> ParameterConfig(Some("'barValueFromProviderCode'"), None, None, None)
+        )))),
     "complexReturnObjectService" -> categories(ComplexReturnObjectService),
     "unionReturnObjectService" -> categories(UnionReturnObjectService),
     "listReturnObjectService" -> categories(ListReturnObjectService),
