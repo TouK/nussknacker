@@ -21,17 +21,12 @@ package object component {
 
   type NodeId = String
 
-  @ConfiguredJsonCodec sealed trait NodeMetadata {
-    def getNodeId: NodeId
+  @ConfiguredJsonCodec sealed trait NodeUsageData {
+    def nodeId: NodeId
   }
-  object NodeMetadata {
-    case class FragmentNodeMetadata(fragmentNodeId: String, nodeId: NodeId) extends NodeMetadata {
-      override def getNodeId: NodeId = this.nodeId
-    }
-
-    case class ScenarioNodeMetadata(nodeId: NodeId) extends NodeMetadata {
-      override def getNodeId: NodeId = this.nodeId
-    }
+  object NodeUsageData {
+    case class FragmentUsageData(fragmentNodeId: String, nodeId: NodeId) extends NodeUsageData
+    case class ScenarioUsageData(nodeId: NodeId) extends NodeUsageData
   }
 
 
@@ -62,11 +57,11 @@ package object component {
                                         usageCount: Long)
 
   object ComponentUsagesInScenario {
-    def apply(process: BaseProcessDetails[_], nodesMetadata: List[NodeMetadata]): ComponentUsagesInScenario = ComponentUsagesInScenario(
+    def apply(process: BaseProcessDetails[_], nodesUsagesData: List[NodeUsageData]): ComponentUsagesInScenario = ComponentUsagesInScenario(
       id = process.id, //Right now we assume that scenario id is name..
       name = process.idWithName.name,
       processId = process.processId,
-      nodesMetadata = nodesMetadata,
+      nodesUsagesData = nodesUsagesData,
       isSubprocess = process.isSubprocess,
       processCategory = process.processCategory,
       modificationDate = process.modificationDate, //TODO: Deprecated, please use modifiedAt
@@ -82,7 +77,7 @@ package object component {
   final case class ComponentUsagesInScenario(id: String,
                                              name: ProcessName,
                                              processId: ProcessId,
-                                             nodesMetadata: List[NodeMetadata],
+                                             nodesUsagesData : List[NodeUsageData],
                                              isSubprocess: Boolean,
                                              processCategory: String,
                                              modificationDate: Instant,

@@ -4,7 +4,7 @@ import { OpenInBrowser as LinkIcon } from "@mui/icons-material";
 import { Chip } from "@mui/material";
 import { TruncateWrapper } from "../utils";
 import { GridRenderCellParams } from "@mui/x-data-grid";
-import {NodeMetadata} from "../../../../../../client/src/http/HttpService";
+import {NodeUsageData} from "../../../../../../client/src/http/HttpService";
 
 const icon = <LinkIcon />;
 
@@ -20,7 +20,7 @@ export const NodesCell = ({ filterText, ...props }: GridRenderCellParams & { fil
         [filterSegments],
     );
 
-    const sorted = useMemo(() => value.map((node: NodeMetadata) => [countMatches(node.nodeId), node.nodeId, node.fragmentNodeId, node.type]).sort(([a], [b]) => b - a), [countMatches, value]);
+    const sorted = useMemo(() => value.map((node: NodeUsageData) => [countMatches(node.nodeId), node.nodeId, node.fragmentNodeId, node.type]).sort(([a], [b]) => b - a), [countMatches, value]);
 
     const elements = sorted.map(([match, nodeId, fragmentNodeId, nodeType]) => (
         <NodeChip key={nodeId} icon={icon} nodeId={nodeId} fragmentNodeId={fragmentNodeId} nodeType={nodeType} filterText={filterText} rowId={id} matched={filterText ? match : -1} />
@@ -46,13 +46,13 @@ const NodeChip = memo(function NodeChip({
     icon: React.ReactElement;
 }) {
     return (
-        nodeType === "FragmentNodeMetadata" ?
+        nodeType === "FragmentUsageData" ?
             (<Chip
                 size="small"
                 component={ExternalLink}
                 href={fragmentNodeHref(rowId, fragmentNodeId, nodeId)}
                 tabIndex={0}
-                label={matched > 0 ? <Highlight value={nodeId} filterText={filterText} /> : fragmentNodeId + "/" + nodeId}
+                label={matched > 0 ? <Highlight value={nodeId} filterText={filterText} /> : fragmentNodeId + " / " + nodeId}
                 color={matched !== 0 ? "secondary" : "default"}
                 variant={matched > 0 ? "outlined" : "filled"}
                 icon={icon}

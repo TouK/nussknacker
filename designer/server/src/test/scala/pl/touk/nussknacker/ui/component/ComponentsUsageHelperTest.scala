@@ -172,7 +172,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
       val result = ComponentsUsageHelper.computeComponentsUsage(defaultComponentIdProvider, withComponentsUsages(processesDetails))
         .mapValuesNow(_.map {
-          case (baseProcessDetails, nodeIds) => (baseProcessDetails.mapProcess(_ => ()), nodeIds.map(_.getNodeId))
+          case (baseProcessDetails, nodeIds) => (baseProcessDetails.mapProcess(_ => ()), nodeIds.map(_.nodeId))
         })
 
       result should have size expected.size

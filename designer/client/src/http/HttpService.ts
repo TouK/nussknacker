@@ -93,7 +93,7 @@ export type SourceWithParametersTest = {
     parameterExpressions: { [paramName: string]: Expression };
 };
 
-export type NodeMetadata = {
+export type NodeUsageData = {
     fragmentNodeId?: string;
     nodeId: string;
     type: string;
@@ -103,7 +103,7 @@ export type ComponentUsageType = {
     id: string;
     name: string;
     processId: string;
-    nodesMetadata: NodeMetadata[];
+    nodesMetadata: NodeUsageData[];
     isArchived: boolean;
     isSubprocess: boolean;
     processCategory: string;
