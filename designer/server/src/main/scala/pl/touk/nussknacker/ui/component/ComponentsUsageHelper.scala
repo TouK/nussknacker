@@ -32,23 +32,23 @@ object ComponentsUsageHelper {
 
     val scenarioUsagesWithResolvedFragments: List[ScenarioComponentsUsage[NodeUsageData]] = scenariosComponentUsagesFlatten.flatMap {
       case fragmentUsage@ScenarioComponentsUsage(_, ComponentType.Fragments, Some(fragmentName), processDetails, fragmentNodeId) =>
-        val fragmentUsageRefined: ScenarioComponentsUsage[NodeUsageData] = fragmentUsage.copy(nodeMetadata = ScenarioUsageData(fragmentNodeId))
+        val fragmentUsageRefined: ScenarioComponentsUsage[NodeUsageData] = fragmentUsage.copy(nodeUsageData = ScenarioUsageData(fragmentNodeId))
         val fragmentsUsages: List[ScenarioComponentsUsage[NodeUsageData]] = fragmentsComponentUsagesFlattenMap.get(fragmentName).toList.flatten.map {
           case u@ScenarioComponentsUsage(componentId, componentType, componentName, _, nodeId) =>
-            u.copy(processDetails = processDetails, nodeMetadata = FragmentUsageData(fragmentNodeId, nodeId))
+            u.copy(processDetails = processDetails, nodeUsageData = FragmentUsageData(fragmentNodeId, nodeId))
         }
         fragmentUsageRefined :: fragmentsUsages
-      case usageOfOtherComponentType@ScenarioComponentsUsage(_, _, _, _, nodeMetadata) =>
-        val usageOfOtherComponentTypeRefined: ScenarioComponentsUsage[NodeUsageData] = usageOfOtherComponentType.copy(nodeMetadata = ScenarioUsageData(nodeMetadata))
+      case usageOfOtherComponentType@ScenarioComponentsUsage(_, _, _, _, nodeId) =>
+        val usageOfOtherComponentTypeRefined: ScenarioComponentsUsage[NodeUsageData] = usageOfOtherComponentType.copy(nodeUsageData = ScenarioUsageData(nodeId))
         List(usageOfOtherComponentTypeRefined)
     }
 
     scenarioUsagesWithResolvedFragments
       .groupBy(_.componentId)
       .mapValuesNow(_.groupBy(_.processDetails).mapValuesNow { usages =>
-        usages.map(_.nodeMetadata)
+        usages.map(_.nodeUsageData)
       }.toList)
   }
-  private case class ScenarioComponentsUsage[NodeMetadataShape](componentId: ComponentId, componentType: ComponentType, componentName: Option[String], processDetails: BaseProcessDetails[_], nodeMetadata: NodeMetadataShape)
+  private case class ScenarioComponentsUsage[NodeUsageDataShape](componentId: ComponentId, componentType: ComponentType, componentName: Option[String], processDetails: BaseProcessDetails[_], nodeUsageData: NodeUsageDataShape)
 
 }
