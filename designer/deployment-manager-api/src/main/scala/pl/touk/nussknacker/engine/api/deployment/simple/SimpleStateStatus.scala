@@ -14,11 +14,13 @@ object SimpleStateStatus {
   // Represents general problem.
   case class ProblemStateStatus(description: String, allowedActions: List[ProcessActionType] = defaultActions) extends StateStatus {
     override def name: StatusName = ProblemStateStatus.name
-    override def isFailed: Boolean = true
   }
 
   object ProblemStateStatus {
     val name: String = "PROBLEM"
+
+    def isProblemStatus(status: StateStatus): Boolean = status.name == name
+
     val icon: URI = URI.create("/assets/states/error.svg")
     val defaultDescription = "There are some problems with scenario."
     val defaultActions: List[deployment.ProcessActionType.Value] = List(ProcessActionType.Deploy, ProcessActionType.Cancel)
@@ -56,9 +58,9 @@ object SimpleStateStatus {
   }
 
   val NotDeployed: StateStatus = StateStatus("NOT_DEPLOYED")
-  val DuringDeploy: StateStatus = StateStatus.duringDeploy("DURING_DEPLOY")
+  val DuringDeploy: StateStatus = StateStatus("DURING_DEPLOY")
   val Running: StateStatus = StateStatus.running("RUNNING")
-  val Finished: StateStatus = StateStatus.finished("FINISHED")
+  val Finished: StateStatus = StateStatus("FINISHED")
   val Restarting: StateStatus = StateStatus("RESTARTING")
   val DuringCancel: StateStatus = StateStatus("DURING_CANCEL")
   val Canceled: StateStatus = StateStatus("CANCELED")

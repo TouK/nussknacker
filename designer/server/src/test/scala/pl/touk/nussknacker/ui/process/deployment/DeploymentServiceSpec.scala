@@ -525,7 +525,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   private def checkIsFollowingDeploy(state: ProcessState, expected: Boolean) = {
     withClue(state) {
-      state.isDeployed shouldBe expected
+      Set(SimpleStateStatus.Running, SimpleStateStatus.DuringDeploy).contains(state.status) shouldBe expected
     }
   }
 

@@ -31,7 +31,7 @@ object PeriodicStateStatus {
   val WaitingForScheduleStatus: StateStatus = StateStatus.running("WAITING_FOR_SCHEDULE")
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
-    case s: StateStatus if s.name == SimpleStateStatus.Running.name => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
+    case SimpleStateStatus.Running => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
     case _: ScheduledStatus => List(ProcessActionType.Cancel, ProcessActionType.Deploy)
     case WaitingForScheduleStatus => List(ProcessActionType.Cancel) //or maybe should it be empty??
     case _: ProblemStateStatus => List(ProcessActionType.Cancel) //redeploy is not allowed

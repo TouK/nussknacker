@@ -4,20 +4,23 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState, StatusDetails}
 
-object InconsistentStateDetector {
+object InconsistentStateDetector extends InconsistentStateDetector
+
+class InconsistentStateDetector {
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
   def resolve(statusDetails: Option[StatusDetails], lastStateAction: Option[ProcessAction]): StatusDetails =
     (statusDetails, lastStateAction) match {
-      case (Some(state), _) if state.status.isFailed => state
+      case (Some(state), _) if shouldAlwaysReturnStatus(state) => state
       case (Some(state), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastStateAction)
       case (_, Some(action)) if action.isDeployed => handleMismatchDeployedStateLastAction(statusDetails, action)
-      case (Some(state), _) if state.status.isRunning || state.status.isDuringDeploy => handleFollowingDeployState(state, lastStateAction)
+      case (Some(state), _) if isFollowingDeployStatus(state) => handleFollowingDeployState(state, lastStateAction)
       case (_, Some(action)) if action.isCanceled => handleCanceledState(statusDetails)
       case (Some(state), _) => handleState(state, lastStateAction)
       case (None, Some(_)) => StatusDetails(SimpleStateStatus.NotDeployed)
       case (None, None) => StatusDetails(SimpleStateStatus.NotDeployed)
     }
+
 
   private def handleState(statusDetails: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
     statusDetails.status match {
@@ -59,7 +62,7 @@ object InconsistentStateDetector {
     statusDetails match {
       case Some(state) =>
         state.version match {
-          case _ if !(state.status.isRunning || state.status.isDuringDeploy) =>
+          case _ if !(isFollowingDeployStatus(state)) =>
             state.copy(status = ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user))
           case Some(ver) if ver.versionId != action.processVersionId =>
             state.copy(status = ProblemStateStatus.mismatchDeployedVersion(ver.versionId, action.processVersionId, action.user))
@@ -74,4 +77,12 @@ object InconsistentStateDetector {
         StatusDetails(ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user))
     }
 
+  // Methods below are protected in case of other state machine implementation for a given DeploymentManager
+  protected def shouldAlwaysReturnStatus(state: StatusDetails): Boolean = {
+    ProblemStateStatus.isProblemStatus(state.status)
+  }
+
+  protected def isFollowingDeployStatus(state: StatusDetails): Boolean = {
+    Set(SimpleStateStatus.Running, SimpleStateStatus.DuringDeploy).contains(state.status)
+  }
 }

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.streaming
 import akka.actor.ActorSystem
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, Suite}
+import org.scalatest.{Assertion, OptionValues, Suite}
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
@@ -19,7 +19,7 @@ import sttp.client3.SttpBackend
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 
-trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
+trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { self: Suite =>
 
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
@@ -50,8 +50,7 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
       val jobStatus = deploymentManager.getProcessState(ProcessName(process.id)).futureValue.value
       logger.debug(s"Waiting for deploy: ${process.id}, $jobStatus")
 
-      jobStatus.map(_.status.name) shouldBe Some(SimpleStateStatus.Running.name)
-      jobStatus.map(_.status.isRunning) shouldBe Some(true)
+      jobStatus.map(_.status).value shouldBe SimpleStateStatus.Running
     }
   }
 
@@ -66,7 +65,7 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
         .getProcessState(ProcessName(processId))
         .futureValue.value
       val runningOrDurringCancelJobs = statusOpt
-        .filter(state => state.status.isRunning || state.status == SimpleStateStatus.DuringCancel)
+        .filter(state => Set(SimpleStateStatus.Running, SimpleStateStatus.DuringCancel).contains(state.status))
 
       logger.debug(s"waiting for jobs: $processId, $statusOpt")
       if (runningOrDurringCancelJobs.nonEmpty) {
