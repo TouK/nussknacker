@@ -54,8 +54,8 @@ const NodeChip = memo(function NodeChip({
     matched: number;
     icon: React.ReactElement;
 }) {
-    const nodeLabel: string = fragmentNodeId != null ? fragmentNodeId + " / " + nodeId : nodeId;
-    const nodeLink: string = fragmentNodeId != null ? fragmentNodeHref(rowId, fragmentNodeId, nodeId) : nodeHref(rowId, nodeId);
+    const nodeLabel: string = fragmentNodeId !== undefined ? fragmentNodeId + " / " + nodeId : nodeId;
+    const nodeLink: string = fragmentNodeId !== undefined ? fragmentNodeHref(rowId, fragmentNodeId, nodeId) : nodeHref(rowId, nodeId);
     return (
         <Chip
             size="small"
