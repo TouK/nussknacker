@@ -16,9 +16,11 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
+import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{KnownTypingResult, SingleTypingResult, Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypedUnion, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
@@ -104,10 +106,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
                                methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
                                dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed) = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
-      imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking,
-      typeDefinitionSetWithCustomClasses(globalVariableTypes), methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed,
-      dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionExcludeListWithCustomPatterns, DefaultSpelConversionsProvider.getConversionService)
+    val expressionConfig = ExpressionDefinition(Map.empty, imports, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true,
+      Map.empty, hideMetaVariable = false, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking,
+      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionExcludeList = spelExpressionExcludeListWithCustomPatterns,
+      customConversionsProviders = List.empty)
+    SpelExpressionParser.default(getClass.getClassLoader, expressionConfig, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, flavour, typeDefinitionSetWithCustomClasses(globalVariableTypes))
   }
 
   private def spelExpressionExcludeListWithCustomPatterns: SpelExpressionExcludeList = {

@@ -40,12 +40,8 @@ object ExpressionCompiler {
 
   private def default(classLoader: ClassLoader, dictRegistry: DictRegistry, expressionConfig: ExpressionDefinition[_],
                       optimizeCompilation: Boolean, typeDefinitionSet: TypeDefinitionSet): ExpressionCompiler = {
-    val conversionService = determineConversionService(expressionConfig)
     def spelParser(flavour: Flavour) =
-      SpelExpressionParser.default(classLoader, dictRegistry, optimizeCompilation, expressionConfig.strictTypeChecking, expressionConfig.globalImports,
-        flavour, expressionConfig.strictMethodsChecking, expressionConfig.staticMethodInvocationsChecking,
-        typeDefinitionSet, expressionConfig.methodExecutionForUnknownAllowed, expressionConfig.dynamicPropertyAccessAllowed,
-        expressionConfig.spelExpressionExcludeList, conversionService)
+      SpelExpressionParser.default(classLoader, expressionConfig, dictRegistry, optimizeCompilation, flavour, typeDefinitionSet)
     val defaultParsers = Seq(
       spelParser(SpelExpressionParser.Standard),
       spelParser(SpelExpressionParser.Template))
@@ -53,18 +49,6 @@ object ExpressionCompiler {
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers)
   }
-
-  private def determineConversionService(expressionConfig: ExpressionDefinition[_]) = {
-    val spelConversionServices = expressionConfig.customConversionsProviders.collect {
-      case spelProvider: SpelConversionsProvider => spelProvider.getConversionService
-    }
-    spelConversionServices match {
-      case Nil => DefaultSpelConversionsProvider.getConversionService
-      case head :: Nil => head
-      case moreThanOne => throw new IllegalArgumentException(s"More than one SpelConversionsProvider configured: ${moreThanOne.mkString(", ")}")
-    }
-  }
-
 }
 
 class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
