@@ -11,9 +11,9 @@ import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, SpelExpressionSugg
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ExpressionSuggester(val expressionConfig: ExpressionDefinition[_], val typeDefinitions: TypeDefinitionSet, val dictQueryService: DictQueryService) {
+class ExpressionSuggester(val expressionConfig: ExpressionDefinition[_], val typeDefinitions: TypeDefinitionSet, val dictQueryService: DictQueryService, val classLoader: ClassLoader) {
 
-  private val spelExpressionSuggester = new SpelExpressionSuggester(expressionConfig, typeDefinitions, dictQueryService)
+  private val spelExpressionSuggester = new SpelExpressionSuggester(expressionConfig, typeDefinitions, dictQueryService, classLoader)
 
   def expressionSuggestions(expression: Expression, caretPosition2d: CaretPosition2d, variables: Map[String, TypingResult])
                            (implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {

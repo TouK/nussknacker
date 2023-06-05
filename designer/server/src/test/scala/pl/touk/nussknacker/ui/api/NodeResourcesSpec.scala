@@ -44,7 +44,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
     subprocessRepository,
     typeToConfig.mapValues(_.modelData),
     validation,
-    typeToConfig.mapValues(v => new ExpressionSuggester(v.modelData.modelDefinition.expressionConfig, v.modelData.modelDefinitionWithTypes.typeDefinitions, v.modelData.uiDictServices.dictQueryService))
+    typeToConfig.mapValues(v => new ExpressionSuggester(v.modelData.modelDefinition.expressionConfig, v.modelData.modelDefinitionWithTypes.typeDefinitions, v.modelData.uiDictServices.dictQueryService, v.modelData.modelClassLoader.classLoader))
   )
 
   private implicit val typingResultDecoder: Decoder[TypingResult]

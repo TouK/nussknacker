@@ -1,25 +1,32 @@
 package pl.touk.nussknacker.engine.spel
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast.{Indexer, PropertyOrFieldReference, StringLiteral, VariableReference}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictQueryService
+import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedDict, TypedObjectTypingResult, TypedUnion, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypedDict, TypedObjectTypingResult, TypedObjectWithValue, TypedUnion, TypingResult}
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler.determineConversionService
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
+import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
+import pl.touk.nussknacker.engine.spel.internal.{DefaultSpelConversionsProvider, EvaluationContextPreparer}
 
+import java.time.{LocalDate, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class SpelExpressionSuggester(val expressionConfig: ExpressionDefinition[_], val typeDefinitions: TypeDefinitionSet, val dictQueryService: DictQueryService) {
+class SpelExpressionSuggester(val expressionConfig: ExpressionDefinition[_], val typeDefinitions: TypeDefinitionSet, val dictQueryService: DictQueryService, val classLoader: ClassLoader) {
   private val successfulNil = Future.successful[List[ExpressionSuggestion]](Nil)
-  private val nuSpelNodeParser = new NuSpelNodeParser(expressionConfig, typeDefinitions)
+  private val nuSpelNodeParser = new NuSpelNodeParser(expressionConfig, typeDefinitions, classLoader)
 
   def expressionSuggestions(expression: Expression, normalizedCaretPosition: Int, variables: Map[String, TypingResult])(implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
     val spelExpression = expression.expression
@@ -44,17 +51,18 @@ class SpelExpressionSuggester(val expressionConfig: ExpressionDefinition[_], val
 
     def suggestionsForPropertyOrFieldReference(nodeInPosition: NuSpelNode, p: PropertyOrFieldReference): Future[Iterable[ExpressionSuggestion]] = {
       val typedPrevNode = nodeInPosition.prevNode().flatMap(_.typingResultWithContext)
-      typedPrevNode.map(_.typingResult.withoutValue).collect {
-        case tc: TypedClass => Future.successful(typeDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName)).getOrElse(Nil))
-        case to: TypedObjectTypingResult => Future.successful(filterMapByName(to.fields, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false) })
-        case tu: TypedUnion => Future.successful(tu.possibleTypes.map(_.objType.klass).flatMap(klass => typeDefinitions.get(klass).map(c => filterClassMethods(c, p.getName)).getOrElse(Nil)))
-        case td: TypedDict => dictQueryService.queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
+      typedPrevNode.collect {
+        case TypingResultWithContext(tc: TypedClass, staticContext) => Future.successful(typeDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil))
+        case TypingResultWithContext(to: TypedObjectWithValue, staticContext) => Future.successful(typeDefinitions.get(to.underlying.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil))
+        case TypingResultWithContext(to: TypedObjectTypingResult, _) => Future.successful(filterMapByName(to.fields, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false) })
+        case TypingResultWithContext(tu: TypedUnion, staticContext) => Future.successful(tu.possibleTypes.map(_.objType.klass).flatMap(klass => typeDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)))
+        case TypingResultWithContext(td: TypedDict, _) => dictQueryService.queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
           .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false)))).getOrElse(successfulNil)
       }.getOrElse(successfulNil)
     }
 
-    def filterClassMethods(classDefinition: ClazzDefinition, name: String): List[ExpressionSuggestion] = {
-      val methods = filterMapByName(classDefinition.methods, name)
+    def filterClassMethods(classDefinition: ClazzDefinition, name: String, staticContext: Boolean): List[ExpressionSuggestion] = {
+      val methods = filterMapByName(if(staticContext) classDefinition.staticMethods else classDefinition.methods, name)
 
       methods.values.flatten
         .map(m => ExpressionSuggestion(m.name, m.signatures.head.result, fromClass = false))
@@ -106,9 +114,21 @@ class SpelExpressionSuggester(val expressionConfig: ExpressionDefinition[_], val
   }
 }
 
-private class NuSpelNodeParser(val expressionConfig: ExpressionDefinition[_], val typeDefinitions: TypeDefinitionSet) {
+private class NuSpelNodeParser(val expressionConfig: ExpressionDefinition[_], val typeDefinitions: TypeDefinitionSet, val classLoader: ClassLoader) extends LazyLogging {
   private val classResolutionStrategy = SupertypeClassResolutionStrategy.Union
   private val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, expressionConfig.strictTypeChecking)
+  private val conversionService = determineConversionService(expressionConfig)
+
+  // fixme copy-pasted from SpelExpressionParser, move it to another class and reuse
+  private val functions = Map(
+    "today" -> classOf[LocalDate].getDeclaredMethod("now"),
+    "now" -> classOf[LocalDateTime].getDeclaredMethod("now"),
+    "distinct" -> classOf[CollectionUtils].getDeclaredMethod("distinct", classOf[java.util.Collection[_]]),
+    "sum" -> classOf[CollectionUtils].getDeclaredMethod("sum", classOf[java.util.Collection[_]])
+  )
+  private val propertyAccessors = internal.propertyAccessors.configured()
+
+  private val evaluationContextPreparer = new EvaluationContextPreparer(classLoader, expressionConfig.globalImports, propertyAccessors, conversionService, functions, expressionConfig.spelExpressionExcludeList)
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser()
   private val typer = new Typer(
     commonSupertypeFinder,
@@ -116,7 +136,7 @@ private class NuSpelNodeParser(val expressionConfig: ExpressionDefinition[_], va
     expressionConfig.strictMethodsChecking,
     expressionConfig.staticMethodInvocationsChecking,
     typeDefinitions,
-    evaluationContextPreparer = null,
+    evaluationContextPreparer,
     expressionConfig.methodExecutionForUnknownAllowed,
     expressionConfig.dynamicPropertyAccessAllowed
   )
@@ -127,6 +147,21 @@ private class NuSpelNodeParser(val expressionConfig: ExpressionDefinition[_], va
       val collectedTypingResult = typer.doTypeExpression(parsedSpelExpression, ValidationContext(variables))._2
       val nuAst = new NuSpelNode(parsedSpelExpression.getAST, None, collectedTypingResult)
       nuAst
+    }.recoverWith {
+      case e =>
+        logger.debug(s"Failed to parse spel expression: $input, error: ${e.getMessage}")
+        Failure(e)
+    }
+  }
+  // fixme copy-pasted from SpelExpressionParser, move it to another class and reuse
+  private def determineConversionService(expressionConfig: ExpressionDefinition[_]) = {
+    val spelConversionServices = expressionConfig.customConversionsProviders.collect {
+      case spelProvider: SpelConversionsProvider => spelProvider.getConversionService
+    }
+    spelConversionServices match {
+      case Nil => DefaultSpelConversionsProvider.getConversionService
+      case head :: Nil => head
+      case moreThanOne => throw new IllegalArgumentException(s"More than one SpelConversionsProvider configured: ${moreThanOne.mkString(", ")}")
     }
   }
 }

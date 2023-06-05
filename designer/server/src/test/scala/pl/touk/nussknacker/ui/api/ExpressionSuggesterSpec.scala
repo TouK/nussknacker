@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.time.LocalDateTime
+import java.time.{Duration, LocalDateTime}
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
@@ -76,8 +76,10 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       Map.empty
     ),
     EspTypeUtils.clazzDefinition(classOf[Util]),
+    EspTypeUtils.clazzDefinition(classOf[Duration]),
   ))
-  private val expressionSuggester = new ExpressionSuggester(ProcessDefinitionBuilder.empty.expressionConfig, clazzDefinitions, dictService)
+  private val expressionSuggester = new ExpressionSuggester(
+    ProcessDefinitionBuilder.empty.expressionConfig.copy(staticMethodInvocationsChecking = true), clazzDefinitions, dictService, getClass.getClassLoader)
 
   private val variables: Map[String, TypingResult] = Map(
     "input" -> Typed[A],
@@ -297,7 +299,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
 
   test("should suggest field in typed map") {
     suggestionsFor("#dynamicMap.int") shouldBe List(
-      suggestion("intField", Typed[Int]),
+      suggestion("intField", Typed.fromInstance(1)),
     )
   }
 
@@ -353,6 +355,24 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     suggestionsFor("#input?.barB.bazC?.") shouldBe List(
       suggestion("quaxString", Typed[String]),
       suggestion("toString", Typed[String]),
+    )
+  }
+
+  test("should support type reference and suggest methods") {
+    suggestionsFor("T(java.time.Duration).ZERO.plusD") shouldBe List(
+      suggestion("plusDays", Typed[Duration]),
+    )
+  }
+
+  test("should support type reference and suggest static methods") {
+    suggestionsFor("T(java.time.Duration).p") shouldBe List(
+      suggestion("parse", Typed[Duration]),
+    )
+  }
+
+  test("should support type reference and suggest static fields") {
+    suggestionsFor("T(java.time.Duration).z") shouldBe List(
+      suggestion("ZERO", Typed[Duration]),
     )
   }
 

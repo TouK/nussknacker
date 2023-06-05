@@ -197,7 +197,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           subprocessRepository,
           typeToConfig.mapValues(_.modelData),
           processValidation,
-          typeToConfig.mapValues(v => new ExpressionSuggester(v.modelData.modelDefinition.expressionConfig, v.modelData.modelDefinitionWithTypes.typeDefinitions, v.modelData.uiDictServices.dictQueryService))
+          typeToConfig.mapValues(v => new ExpressionSuggester(v.modelData.modelDefinition.expressionConfig, v.modelData.modelDefinitionWithTypes.typeDefinitions, v.modelData.uiDictServices.dictQueryService, v.modelData.modelClassLoader.classLoader))
         ),
         new ProcessesExportResources(futureProcessRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, futureProcessRepository, processAuthorizer),
