@@ -76,7 +76,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
         componentsUsage
           .get(componentId)
-          .map(data => Right(data.map { case (process, nodesId) => ComponentUsagesInScenario(process, nodesId) }.sortBy(_.id)))
+          .map(data => Right(data.map { case (process, nodesUsagesData) => ComponentUsagesInScenario(process, nodesUsagesData) }.sortBy(_.id)))
           .getOrElse(Left(ComponentNotFoundError(componentId)))
       })
 

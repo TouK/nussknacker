@@ -67,7 +67,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 sortingOrder: ["desc", "asc", null],
             },
             {
-                field: "nodesId",
+                field: "nodesUsagesData",
                 headerName: t("table.usages.title.NODES_ID", "Nodes"),
                 minWidth: 250,
                 flex: 4,

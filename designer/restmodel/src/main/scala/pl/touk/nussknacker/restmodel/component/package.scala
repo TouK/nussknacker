@@ -1,6 +1,11 @@
 package pl.touk.nussknacker.restmodel
 
+import io.circe.Encoder
 import io.circe.generic.JsonCodec
+import io.circe.generic.extras.ConfiguredJsonCodec
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.ProcessAction
@@ -15,6 +20,15 @@ package object component {
   import pl.touk.nussknacker.restmodel.codecs.URICodecs._
 
   type NodeId = String
+
+  @ConfiguredJsonCodec sealed trait NodeUsageData {
+    def nodeId: NodeId
+  }
+  object NodeUsageData {
+    case class FragmentUsageData(fragmentNodeId: String, nodeId: NodeId) extends NodeUsageData
+    case class ScenarioUsageData(nodeId: NodeId) extends NodeUsageData
+  }
+
 
   object ComponentLink {
     val DocumentationId = "documentation"
@@ -43,11 +57,11 @@ package object component {
                                         usageCount: Long)
 
   object ComponentUsagesInScenario {
-    def apply(process: BaseProcessDetails[_], nodesId: List[NodeId]): ComponentUsagesInScenario = ComponentUsagesInScenario(
+    def apply(process: BaseProcessDetails[_], nodesUsagesData: List[NodeUsageData]): ComponentUsagesInScenario = ComponentUsagesInScenario(
       id = process.id, //Right now we assume that scenario id is name..
       name = process.idWithName.name,
       processId = process.processId,
-      nodesId = nodesId,
+      nodesUsagesData = nodesUsagesData,
       isSubprocess = process.isSubprocess,
       processCategory = process.processCategory,
       modificationDate = process.modificationDate, //TODO: Deprecated, please use modifiedAt
@@ -63,7 +77,7 @@ package object component {
   final case class ComponentUsagesInScenario(id: String,
                                              name: ProcessName,
                                              processId: ProcessId,
-                                             nodesId: List[NodeId],
+                                             nodesUsagesData : List[NodeUsageData],
                                              isSubprocess: Boolean,
                                              processCategory: String,
                                              modificationDate: Instant,

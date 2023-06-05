@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.component
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
-import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
+import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, Variable, CustomNode => CustomNodeType}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.VersionId
@@ -13,7 +13,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
-import pl.touk.nussknacker.restmodel.component.{NodeId, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.{NodeId, NodeUsageData, ScenarioComponentsUsages}
+import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
@@ -132,43 +133,48 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   test("should compute components usage") {
-    val table: TableFor2[List[ProcessDetails], Map[ComponentId, List[(BaseProcessDetails[DisplayableProcess], List[NodeId])]]] = Table(
+    val table: TableFor2[List[ProcessDetails], Map[ComponentId, List[(BaseProcessDetails[DisplayableProcess], List[NodeUsageData])]]] = Table(
       ("processesDetails", "expected"),
       (List.empty, Map.empty),
       (List(processDetails1ButDeployed), Map(
-        sid(Source, existingSourceFactory) -> List((processDetails1ButDeployed, List("source"))),
-        sid(CustomNodeType, existingStreamTransformer) -> List((processDetails1ButDeployed, List("custom"))),
-        oid(overriddenOtherExistingStreamTransformer) -> List((processDetails1ButDeployed, List("custom2"))),
-        sid(Sink, existingSinkFactory) -> List((processDetails1ButDeployed, List("sink"))),
+        sid(Source, existingSourceFactory) -> List((processDetails1ButDeployed, List(ScenarioUsageData("source")))),
+        sid(CustomNodeType, existingStreamTransformer) -> List((processDetails1ButDeployed, List(ScenarioUsageData("custom")))),
+        oid(overriddenOtherExistingStreamTransformer) -> List((processDetails1ButDeployed, List(ScenarioUsageData("custom2")))),
+        sid(Sink, existingSinkFactory) -> List((processDetails1ButDeployed, List(ScenarioUsageData("sink")))),
       )),
       (List(processDetails1ButDeployed, processDetails2), Map(
-        sid(Source, existingSourceFactory) -> List((processDetails1ButDeployed, List("source")), (processDetails2, List("source"))),
-        sid(CustomNodeType, existingStreamTransformer) -> List((processDetails1ButDeployed, List("custom"))),
-        oid(overriddenOtherExistingStreamTransformer) -> List((processDetails1ButDeployed, List("custom2")), (processDetails2, List("custom"))),
-        sid(Sink, existingSinkFactory) -> List((processDetails1ButDeployed, List("sink")), (processDetails2, List("sink"))),
+        sid(Source, existingSourceFactory) -> List((processDetails1ButDeployed, List(ScenarioUsageData("source"))), (processDetails2, List(ScenarioUsageData("source")))),
+        sid(CustomNodeType, existingStreamTransformer) -> List((processDetails1ButDeployed, List(ScenarioUsageData("custom")))),
+        oid(overriddenOtherExistingStreamTransformer) -> List((processDetails1ButDeployed, List(ScenarioUsageData("custom2"))), (processDetails2, List(ScenarioUsageData("custom")))),
+        sid(Sink, existingSinkFactory) -> List((processDetails1ButDeployed, List(ScenarioUsageData("sink"))), (processDetails2, List(ScenarioUsageData("sink")))),
       )),
       (List(processDetailsWithSomeBasesStreaming, processDetailsWithSomeBasesFraud), Map(
-        sid(Source, existingSourceFactory) -> List((processDetailsWithSomeBasesStreaming, List("source"))),
-        sid(Sink, existingSinkFactory) -> List((processDetailsWithSomeBasesStreaming, List("out1"))),
-        sid(Sink, existingSinkFactory2) -> List((processDetailsWithSomeBasesStreaming, List("out2"))),
-        bid(Filter) -> List((processDetailsWithSomeBasesFraud, List("checkId")), (processDetailsWithSomeBasesStreaming, List("checkId", "checkId2"))),
-        bid(Switch) -> List((processDetailsWithSomeBasesFraud, List("switchFraud")), (processDetailsWithSomeBasesStreaming, List("switchStreaming"))),
-        fid(Source, existingSourceFactory) -> List((processDetailsWithSomeBasesFraud, List("source"))),
-        fid(Sink, existingSinkFactory) -> List((processDetailsWithSomeBasesFraud, List("out1"))),
-        fid(Sink, existingSinkFactory2) -> List((processDetailsWithSomeBasesFraud, List("out2"))),
+        sid(Source, existingSourceFactory) -> List((processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("source")))),
+        sid(Sink, existingSinkFactory) -> List((processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("out1")))),
+        sid(Sink, existingSinkFactory2) -> List((processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("out2")))),
+        bid(Filter) -> List((processDetailsWithSomeBasesFraud, List(ScenarioUsageData("checkId"))), (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("checkId"), ScenarioUsageData("checkId2")))),
+        bid(Switch) -> List((processDetailsWithSomeBasesFraud, List(ScenarioUsageData("switchFraud"))), (processDetailsWithSomeBasesStreaming, List(ScenarioUsageData("switchStreaming")))),
+        fid(Source, existingSourceFactory) -> List((processDetailsWithSomeBasesFraud, List(ScenarioUsageData("source")))),
+        fid(Sink, existingSinkFactory) -> List((processDetailsWithSomeBasesFraud, List(ScenarioUsageData("out1")))),
+        fid(Sink, existingSinkFactory2) -> List((processDetailsWithSomeBasesFraud, List(ScenarioUsageData("out2")))),
       )),
       (List(processDetailsWithSubprocess, subprocessDetails), Map(
-        sid(Source, existingSourceFactory) -> List((processDetailsWithSubprocess, List("source"))),
-        sid(CustomNodeType, otherExistingStreamTransformer2) -> List((processDetailsWithSubprocess, List("custom")), (subprocessDetails, List("f1"))),
-        sid(Sink, existingSinkFactory) -> List((processDetailsWithSubprocess, List("sink"))),
-        sid(Fragments, subprocess.metaData.id) -> List((processDetailsWithSubprocess, List(subprocess.metaData.id))),
-        bid(FragmentInput) -> List((subprocessDetails, List("start"))),
-        bid(FragmentOutput) -> List((subprocessDetails, List("out1"))),
+        sid(Source, existingSourceFactory) -> List((processDetailsWithSubprocess, List(ScenarioUsageData("source")))),
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> List((processDetailsWithSubprocess, List(ScenarioUsageData("custom"))), (subprocessDetails, List(ScenarioUsageData("f1")))),
+        sid(Sink, existingSinkFactory) -> List((processDetailsWithSubprocess, List(ScenarioUsageData("sink")))),
+        sid(Fragments, subprocess.metaData.id) -> List((processDetailsWithSubprocess, List(ScenarioUsageData(subprocess.metaData.id)))),
+        bid(FragmentInput) -> List((subprocessDetails, List(ScenarioUsageData("start")))),
+        bid(FragmentOutput) -> List((subprocessDetails, List(ScenarioUsageData("out1")))),
       ))
     )
 
     forAll(table) { (processesDetails, expected) =>
+      import pl.touk.nussknacker.engine.util.Implicits._
+
       val result = ComponentsUsageHelper.computeComponentsUsage(defaultComponentIdProvider, withComponentsUsages(processesDetails))
+        .mapValuesNow(_.map {
+          case (baseProcessDetails, nodeIds) => (baseProcessDetails.mapProcess(_ => ()), nodeIds)
+        })
 
       result should have size expected.size
 
@@ -191,7 +197,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     }
   }
 
-  private def withEmptyProcess(usagesMap: Map[ComponentId, List[(BaseProcessDetails[_], List[NodeId])]]): Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeId])]] = {
+  private def withEmptyProcess(usagesMap: Map[ComponentId, List[(BaseProcessDetails[_], List[NodeUsageData])]]): Map[ComponentId, List[(BaseProcessDetails[Unit], List[NodeUsageData])]] = {
     usagesMap.transform { case (_, usages) =>
       usages.map { case (processDetails, nodeIds) => (processDetails.mapProcess(_ => ()), nodeIds) }
     }
