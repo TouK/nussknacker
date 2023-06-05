@@ -64,7 +64,7 @@ object SimpleStateStatus {
   val Canceled: StateStatus = StateStatus("CANCELED")
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
-    case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Archive)
+    case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Cancel, ProcessActionType.Archive)
     case SimpleStateStatus.DuringDeploy => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     case SimpleStateStatus.Running => List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy)
     case SimpleStateStatus.Canceled => List(ProcessActionType.Deploy, ProcessActionType.Archive)
