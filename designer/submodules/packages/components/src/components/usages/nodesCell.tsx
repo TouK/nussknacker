@@ -45,27 +45,17 @@ const NodeChip = memo(function NodeChip({
     matched: number;
     icon: React.ReactElement;
 }) {
+    const nodeLabel: string = nodeType === "FragmentUsageData" ? fragmentNodeId + " / " + nodeId : nodeId
     return (
-        nodeType === "FragmentUsageData" ?
-            (<Chip
-                size="small"
-                component={ExternalLink}
-                href={fragmentNodeHref(rowId, fragmentNodeId, nodeId)}
-                tabIndex={0}
-                label={matched > 0 ? <Highlight value={nodeId} filterText={filterText} /> : fragmentNodeId + " / " + nodeId}
-                color={matched !== 0 ? "secondary" : "default"}
-                variant={matched > 0 ? "outlined" : "filled"}
-                icon={icon}
-        />) :
-            (<Chip
-                size="small"
-                component={ExternalLink}
-                href={nodeHref(rowId, nodeId)}
-                tabIndex={0}
-                label={matched > 0 ? <Highlight value={nodeId} filterText={filterText} /> : nodeId}
-                color={matched !== 0 ? "primary" : "default"}
-                variant={matched > 0 ? "outlined" : "filled"}
-                icon={icon}
-            />)
+        <Chip
+            size="small"
+            component={ExternalLink}
+            href={nodeType === "FragmentUsageData" ? fragmentNodeHref(rowId, fragmentNodeId, nodeId) : nodeHref(rowId, nodeId)}
+            tabIndex={0}
+            label={matched > 0 ? <Highlight value={nodeId} filterText={filterText} /> : nodeLabel}
+            color={matched !==0 ? (nodeType === "FragmentUsageData" ? "secondary" : "primary") : "default"}
+            variant={matched > 0 ? "outlined" : "filled"}
+            icon={icon}
+        />
     );
 });
