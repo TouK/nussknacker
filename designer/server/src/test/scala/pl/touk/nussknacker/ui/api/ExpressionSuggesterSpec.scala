@@ -77,6 +77,11 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     ),
     EspTypeUtils.clazzDefinition(classOf[Util]),
     EspTypeUtils.clazzDefinition(classOf[Duration]),
+    ClazzDefinition(
+      Typed.typedClass[java.util.Map[_, _]],
+      Map("empty" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[Boolean]), "empty", None))),
+      Map.empty
+    ),
   ))
   private val expressionSuggester = new ExpressionSuggester(
     ProcessDefinitionBuilder.empty.expressionConfig.copy(staticMethodInvocationsChecking = true), clazzDefinitions, dictService, getClass.getClassLoader)
@@ -154,6 +159,13 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   test("should suggest methods for string literal") {
     suggestionsFor("\"abc\".") shouldBe List(
       ExpressionSuggestion("toUpperCase", Typed[String], fromClass = false),
+    )
+  }
+
+  test("should suggest fields and class methods for map literal") {
+    suggestionsFor("{\"abc\":1}.") shouldBe List(
+      ExpressionSuggestion("abc", Typed.fromInstance(1), fromClass = false),
+      ExpressionSuggestion("empty", Typed[Boolean], fromClass = true),
     )
   }
 

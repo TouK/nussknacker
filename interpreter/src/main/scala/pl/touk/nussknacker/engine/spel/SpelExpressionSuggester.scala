@@ -49,18 +49,21 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
       typedPrevNode.collect {
         case TypingResultWithContext(tc: TypedClass, staticContext) => Future.successful(typeDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil))
         case TypingResultWithContext(to: TypedObjectWithValue, staticContext) => Future.successful(typeDefinitions.get(to.underlying.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil))
-        case TypingResultWithContext(to: TypedObjectTypingResult, _) => Future.successful(filterMapByName(to.fields, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false) })
+        case TypingResultWithContext(to: TypedObjectTypingResult, _) =>
+          val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false) }
+          val suggestionsFromClass = typeDefinitions.get(to.objType.klass).map(c => filterClassMethods(c, p.getName, staticContext = false, fromClass = suggestionsFromFields.nonEmpty)).getOrElse(Nil)
+          Future.successful(suggestionsFromFields ++ suggestionsFromClass)
         case TypingResultWithContext(tu: TypedUnion, staticContext) => Future.successful(tu.possibleTypes.map(_.objType.klass).flatMap(klass => typeDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)))
         case TypingResultWithContext(td: TypedDict, _) => dictQueryService.queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
           .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false)))).getOrElse(successfulNil)
       }.getOrElse(successfulNil)
     }
 
-    def filterClassMethods(classDefinition: ClazzDefinition, name: String, staticContext: Boolean): List[ExpressionSuggestion] = {
+    def filterClassMethods(classDefinition: ClazzDefinition, name: String, staticContext: Boolean, fromClass: Boolean = false): List[ExpressionSuggestion] = {
       val methods = filterMapByName(if(staticContext) classDefinition.staticMethods else classDefinition.methods, name)
 
       methods.values.flatten
-        .map(m => ExpressionSuggestion(m.name, m.signatures.head.result, fromClass = false))
+        .map(m => ExpressionSuggestion(m.name, m.signatures.head.result, fromClass = fromClass))
         .toList
     }
 
