@@ -246,7 +246,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     val thrown = the [IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, data)
 
-    thrown.getMessage shouldBe "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',proc2,Some(all),#input.id)"
+    thrown.getMessage should startWith ("Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',proc2,Some(all),#input.id)")
   }
 
   test("should validate types in custom node output variable") {

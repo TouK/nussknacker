@@ -62,7 +62,7 @@ class ProcessesResources(
         path("archive") {
           get {
             complete {
-              processService.getArchivedProcesses[Unit].toBasicProcess
+              processService.getArchivedProcessesAndSubprocesses[Unit].toBasicProcess
             }
           }
         } ~ path("unarchive" / Segment) { processName =>
@@ -281,7 +281,10 @@ class ProcessesResources(
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS])
                                                                           (implicit user: LoggedUser,
                                                                            freshnessPolicy: DataFreshnessPolicy): Future[BaseProcessDetails[PS]] = {
-    deploymentService.getProcessState(process).map(state => process.copy(state = Some(state)))
+    if (process.isSubprocess)
+      Future.successful(process)
+    else
+      deploymentService.getProcessState(process).map(state => process.copy(state = Some(state)))
   }
 
   private def withJson(processId: ProcessId, version: VersionId)

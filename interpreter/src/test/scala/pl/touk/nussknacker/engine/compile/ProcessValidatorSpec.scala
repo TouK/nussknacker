@@ -957,7 +957,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("id2", "sink")
 
     validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "custom", Some("par1"), "#input.toString()"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "custom", Some("par1"), "#input.toString()"), _)) =>
     }
   }
 
@@ -1018,7 +1018,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
 
     validate(process, baseDefinition.copy(expressionConfig = baseDefinition.expressionConfig.copy(hideMetaVariable = true))).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'meta'", _, _, _), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'meta'", _, _, _), _)) =>
     }
   }
 
@@ -1171,7 +1171,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     validate(processWithValidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
       ExpressionParserCompilationError("Unresolved reference 'input'", "customNodeId", Some("param"), _),
-      Nil)) =>
+      _)) =>
     }
   }
 

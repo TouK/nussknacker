@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -27,14 +28,23 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
                                      processStateService: ProcessStateService) extends CustomActionInvokerService {
   override def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
                                  (implicit user: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]] = {
+
+    def createCustomAction(process: BaseProcessDetails[_]) =
+      engine.api.deployment.CustomActionRequest(
+        name = actionName,
+        processVersion = process.toEngineProcessVersion,
+        user = user.toManagerUser,
+        params = params
+      )
+
     val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)
     maybeProcess.flatMap {
+      case Some(process) if process.isSubprocess =>
+        actionError(CustomActionForbidden(createCustomAction(process), "Invoke custom action on fragment is forbidden."))
+      case Some(process) if process.isArchived =>
+        actionError(CustomActionForbidden(createCustomAction(process), "Invoke custom action on archived scenario is forbidden."))
       case Some(process) =>
-        val actionReq = engine.api.deployment.CustomActionRequest(
-          name = actionName,
-          processVersion = process.toEngineProcessVersion,
-          user = user.toManagerUser,
-          params = params)
+        val actionReq = createCustomAction(process)
         val manager = dispatcher.deploymentManagerUnsafe(process.processingType)
         manager.customActions.find(_.name == actionName) match {
           case Some(customAction) =>
@@ -43,14 +53,17 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
               if (customAction.allowedStateStatusNames.contains(status.status.name)) {
                 manager.invokeCustomAction(actionReq, process.json)
               } else
-                Future.successful(Left(CustomActionInvalidStatus(actionReq, status.status.name)))
+                actionError(CustomActionInvalidStatus(actionReq, status.status.name))
             }
           case None =>
-            Future.successful(Left(CustomActionNonExisting(actionReq)))
+            actionError(CustomActionNonExisting(actionReq))
         }
-      case None =>
+      case _ =>
         Future.failed(ProcessNotFoundError(id.id.value.toString))
     }
   }
+
+  //FIXME: change returning successful to failed..
+  private def actionError(error: CustomActionError) = Future.successful(Left(error))
 
 }

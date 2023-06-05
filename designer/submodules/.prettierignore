@@ -6,3 +6,4 @@ _env.js
 tsconfig.tsbuildinfo
 .federated-types
 types/@remote
+package-lock.json

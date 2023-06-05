@@ -15,6 +15,7 @@ import scala.reflect.ClassTag
 abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] extends RecordFormatter {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
+  import SchemaBasedSerializableConsumerRecord._
 
   protected def kafkaConfig: KafkaConfig
 
@@ -66,9 +67,6 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
 
   protected def formatMessage(schemaIdOpt: Option[SchemaId], data: Any): Json
 
-  implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
-  protected val consumerRecordDecoder: Decoder[SchemaBasedSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
-
   /**
     * Step 1: Deserialize raw json bytes to SchemaBasedSerializableConsumerRecord[Json, Json] domain without interpreting key and value content.
     * Step 2: Create key and value json-to-record interpreter based on schema id's provided in json.
@@ -107,3 +105,12 @@ abstract class AbstractSchemaBasedRecordFormatter[K: ClassTag, V: ClassTag] exte
 case class SchemaBasedSerializableConsumerRecord[K, V](keySchemaId: Option[SchemaId],
                                                        valueSchemaId: Option[SchemaId],
                                                        consumerRecord: SerializableConsumerRecord[K, V])
+
+object SchemaBasedSerializableConsumerRecord {
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+
+  implicit val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
+  val consumerRecordDecoder: Decoder[SchemaBasedSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
+  implicit val serializableRecordEncoder: Encoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredEncoder
+  implicit val consumerRecordEncoder: Encoder[SchemaBasedSerializableConsumerRecord[Json, Json]] = deriveConfiguredEncoder
+}

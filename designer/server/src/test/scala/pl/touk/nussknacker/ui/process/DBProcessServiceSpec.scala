@@ -69,7 +69,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
       implicit val loggedUser: LoggedUser = user
 
-      val result = dBProcessService.getProcesses[DisplayableProcess].futureValue
+      val result = dBProcessService.getProcessesAndSubprocesses[DisplayableProcess].futureValue
       result shouldBe expected
     }
   }
@@ -88,7 +88,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
       implicit val loggedUser: LoggedUser = user
 
-      val result = dBProcessService.getArchivedProcesses[DisplayableProcess].futureValue
+      val result = dBProcessService.getArchivedProcessesAndSubprocesses[DisplayableProcess].futureValue
       result shouldBe expected
     }
   }
@@ -105,7 +105,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     )
 
     forAll(testingData) { (user: LoggedUser, expected: Set[ProcessDetails] ) =>
-      val result = dBProcessService.getSubProcesses(None)(user).futureValue
+      val result = dBProcessService.getSubprocessesDetails(None)(user).futureValue
       val subprocessDetails = expected.map(convertBasicProcessToSubprocessDetails)
       result shouldBe subprocessDetails
     }

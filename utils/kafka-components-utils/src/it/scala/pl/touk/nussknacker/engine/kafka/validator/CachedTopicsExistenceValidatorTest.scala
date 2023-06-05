@@ -16,7 +16,7 @@ object TopicsExistenceValidationConfigForTest {
     //longer timeout, as container might need some time to make initial assignements etc.
     TopicsExistenceValidationConfig(enabled = true, validatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig.copy(adminClientTimeout = 5 seconds))
   }
-  def kafkaContainer = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.3.0"))
+  def kafkaContainer = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0"))
 }
 
 class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest extends AnyFunSuite with ForAllTestContainer with Matchers {

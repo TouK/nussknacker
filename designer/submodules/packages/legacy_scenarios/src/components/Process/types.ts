@@ -70,5 +70,4 @@ export type ProcessStateType = {
 
 export type StatusType = {
     name: string;
-    type: string;
 };

@@ -4,6 +4,7 @@
 
 1.10.0 (not released yet)
 -------------------------
+* [#4315](https://github.com/TouK/nussknacker/pull/4315) Add support for test with parameters for kafka sources - FlinkKafkaSource / LiteKafkaSource.
 * [#4261](https://github.com/TouK/nussknacker/pull/4261) Add TestWithParametersSupport support for flink engine
 * [#4294](https://github.com/TouK/nussknacker/pull/4294) Allow to pass username while migrating scenario to secondary environment.
 * [#4230](https://github.com/TouK/nussknacker/pull/4230) Extend TestInfoProvider with getTestParameters to test scenarios based on window with generated fields. 
@@ -30,8 +31,16 @@
   Components usages by a scenario are stored in the processes version table. It allows to speed up fetching components usages across all scenarios,
   especially for a big number of scenarios and each with a lot of nodes.
 * [#4254](https://github.com/TouK/nussknacker/pull/4254) Add simple spel expression suggestions endpoint to BE
-* [#4299](https://github.com/TouK/nussknacker/pull/4299) `StateStatus` is identified by its name. `ProcessState` serialization uses this name as serialized state value.
+* [#4299](https://github.com/TouK/nussknacker/pull/4299)[4322](https://github.com/TouK/nussknacker/pull/4322) `StateStatus` is identified by its name. 
+  `ProcessState` serialization uses this name as serialized state value. For compatibility reasons, it is still represented as a nested object with one `name` field.
 * [#4312](https://github.com/TouK/nussknacker/pull/4312) Fix for losing unsaved changes in designer after cancel/deploy
+* [#4332](https://github.com/TouK/nussknacker/pull/4332) Improvements: Don't fetch state for fragments at /api/processes/status
+* [#4326](https://github.com/TouK/nussknacker/pull/4326) Expressions validation mechanism now is accumulating as many errors as possible instead of failing fast - for purpose 
+  of backend code completion and dictionaries substitution
+* [#4339](https://github.com/TouK/nussknacker/pull/4339) Improvement: Don't fetch state for archived/unarchived scenario, return computed based on last state action
+* [#4343](https://github.com/TouK/nussknacker/pull/4343) Updated Flink 1.16.1 -> 1.16.2
+* [#4346](https://github.com/TouK/nussknacker/pull/4346) Improvement: Don't fetch process state for fragment
+* [#4342](https://github.com/TouK/nussknacker/pull/4342) Improvement: Don't run custom action on archived scenario and fragment
 
 1.9.1 (24 Apr 2023)
 ------------------------

@@ -14,9 +14,11 @@ class StateStatusCodingSpec extends AnyFunSuite with Matchers with EitherValuesD
   test("simple status coding") {
     val givenStatus: StateStatus = SimpleStateStatus.Running
     val statusJson = givenStatus.asJson
-    statusJson shouldEqual Json.fromString("RUNNING")
+    statusJson.hcursor.get[String]("name").rightValue shouldEqual "RUNNING"
 
-    val decodedStatus = Json.fromString("RUNNING").as[StateStatus].rightValue
+    val decodedStatus = Json.obj(
+      "name" -> Json.fromString("RUNNING")
+    ).as[StateStatus].rightValue
     decodedStatus.name shouldEqual givenStatus.name
   }
 
@@ -24,10 +26,12 @@ class StateStatusCodingSpec extends AnyFunSuite with Matchers with EitherValuesD
     val givenStatus: StateStatus = MyCustomStateStatus("fooBar")
 
     val statusJson = givenStatus.asJson
-    statusJson shouldEqual Json.fromString("CUSTOM")
+    statusJson.hcursor.get[String]("name").rightValue shouldEqual "CUSTOM"
     // we don't encode custom state statuses fields be design
 
-    val decodedStatus = Json.fromString("CUSTOM").as[StateStatus].rightValue
+    val decodedStatus = Json.obj(
+      "name" -> Json.fromString("CUSTOM")
+    ).as[StateStatus].rightValue
     // we don't decode correctly custom statuses be design - their role is to encapsulate business status of process which will be
     // then presented by ProcessStateDefinitionManager
     decodedStatus.name shouldEqual givenStatus.name

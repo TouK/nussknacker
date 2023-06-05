@@ -248,7 +248,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected def stop(processName: String): RouteTestResult =
     Post(s"/adminProcessManagement/stop/$processName") ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
 
-  protected def customAction(processName: String, reqPayload: CustomActionRequest): RouteTestResult =
+  protected def customAction(processName: ProcessName, reqPayload: CustomActionRequest): RouteTestResult =
     Post(s"/processManagement/customAction/$processName", TestFactory.posting.toRequest(reqPayload)) ~>
       withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead)
 
@@ -395,6 +395,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   private def decodeJsonProcess(response: String): ProcessJson =
     ProcessJson(parser.decode[Json](response).toOption.get)
+
 }
 
 final case class ProcessVersionJson(id: Long)
@@ -408,6 +409,7 @@ object ProcessVersionJson {
 object ProcessJson extends OptionValues {
   def apply(process: Json): ProcessJson = {
     val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].toOption.value
+    val state = process.hcursor.downField("state").as[Option[Json]].toOption.value
 
     new ProcessJson(
       process.hcursor.downField("id").as[String].toOption.value,
@@ -415,10 +417,7 @@ object ProcessJson extends OptionValues {
       process.hcursor.downField("processId").as[Long].toOption.value,
       lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
       lastAction.map(_.hcursor.downField("action").as[String].toOption.value),
-      process.hcursor.downField("state").downField("status").as[String].toOption.value,  // StateStatus is temporarily serialized as string
-      process.hcursor.downField("state").downField("icon").as[String].toOption.map(URI.create).value,
-      process.hcursor.downField("state").downField("tooltip").as[String].toOption.value,
-      process.hcursor.downField("state").downField("description").as[String].toOption.value,
+      state.map(StateJson(_)),
       process.hcursor.downField("processCategory").as[String].toOption.value,
       process.hcursor.downField("isArchived").as[Boolean].toOption.value,
       process.hcursor.downField("history").as[Option[List[Json]]].toOption.value.map(_.map(v => ProcessVersionJson(v)))
@@ -431,10 +430,7 @@ final case class ProcessJson(id: String,
                              processId: Long,
                              lastActionVersionId: Option[Long],
                              lastActionType: Option[String],
-                             stateStatus: String,
-                             stateIcon: URI,
-                             stateTooltip: String,
-                             stateDescription: String,
+                             state: Option[StateJson],
                              processCategory: String,
                              isArchived: Boolean,
                              //Process on list doesn't contain history
@@ -443,6 +439,17 @@ final case class ProcessJson(id: String,
   def isDeployed: Boolean = lastActionType.contains(ProcessActionType.Deploy.toString)
 
   def isCanceled: Boolean = lastActionType.contains(ProcessActionType.Cancel.toString)
+}
+
+final case class StateJson(name: String, icon: URI, tooltip: String, description: String)
+
+object StateJson extends OptionValues {
+  def apply(json: Json): StateJson = new StateJson(
+    json.hcursor.downField("status").downField("name").as[String].toOption.value,
+    json.hcursor.downField("icon").as[String].toOption.map(URI.create)value,
+    json.hcursor.downField("tooltip").as[String].toOption.value,
+    json.hcursor.downField("description").as[String].toOption.value,
+  )
 }
 
 object CreateProcessResponse {
@@ -458,6 +465,9 @@ final case class CreateProcessResponse(id: ProcessId, versionId: VersionId, proc
 object ProcessesQueryEnrichments {
 
   implicit class RichProcessesQuery(query: ProcessesQuery) {
+
+    def process(): ProcessesQuery =
+      query.copy(isSubprocess = Some(false))
 
     def subprocess(): ProcessesQuery =
       query.copy(isSubprocess = Some(true))

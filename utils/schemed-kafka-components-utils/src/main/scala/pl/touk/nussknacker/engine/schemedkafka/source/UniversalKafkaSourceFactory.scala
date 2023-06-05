@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.schemedkafka.source
 
-import cats.data.Validated
+import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.Valid
+import io.circe.Json
+import io.circe.syntax._
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
@@ -10,14 +12,18 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.util.NotNothing
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
-import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
+import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
+import pl.touk.nussknacker.engine.kafka.source._
+import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.{KafkaSourceImplFactory, KafkaTestParametersInfo}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SchemaVersionParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.SchemaBasedSerializableConsumerRecord
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 
@@ -111,6 +117,8 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
   override def paramsDeterminedAfterSchema: List[Parameter] = Nil
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
+    implicit val nodeId: NodeId = TypedNodeDependency[NodeId].extract(dependencies)
+
     val preparedTopic = extractPreparedTopic(params)
     val UniversalKafkaSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
 
@@ -121,8 +129,27 @@ class UniversalKafkaSourceFactory[K: ClassTag: NotNothing, V: ClassTag: NotNothi
     // prepare KafkaDeserializationSchema based on given key and value schema (without schema evolution - we want format test-data exactly the same way, it was sent to kafka)
     val formatterSchema = schemaBasedMessagesSerdeProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
     val recordFormatter = schemaBasedMessagesSerdeProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
+    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema,
+      recordFormatter, kafkaContextInitializer, prepareKafkaTestParametersInfo(valueSchemaUsedInRuntime, preparedTopic.original))
+  }
 
-    implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema, recordFormatter, kafkaContextInitializer)
+  private def prepareKafkaTestParametersInfo(runtimeSchemaOpt: Option[RuntimeSchemaData[ParsedSchema]], topic: String)
+                                            (implicit nodeId: NodeId): KafkaTestParametersInfo = {
+    Validated.fromOption(runtimeSchemaOpt, NonEmptyList.one(CustomNodeError(nodeId.id, "Cannot generate test parameters: no runtime schema found", None)))
+      .andThen { runtimeSchema =>
+        val universalSchemaSupport: UniversalSchemaSupport = schemaSupportDispatcher.forSchemaType(runtimeSchema.schema.schemaType())
+        universalSchemaSupport
+          .extractParameters(runtimeSchema.schema)
+          .map { params => KafkaTestParametersInfo(params, prepareTestRecord(runtimeSchema, universalSchemaSupport, topic)) }
+      }.valueOr(e => throw new RuntimeException(e.toList.mkString("")))
+  }
+
+  private def prepareTestRecord(runtimeSchema: RuntimeSchemaData[ParsedSchema], universalSchemaSupport: UniversalSchemaSupport, topic: String): Any => TestRecord = any => {
+    val json = universalSchemaSupport.prepareMessageFormatter(runtimeSchema.schema, schemaRegistryClient)(any)
+    val serializedConsumerRecord = SerializableConsumerRecord[Json, Json](None, json, Some(topic), None, None, None, None, None, None)
+    TestRecord(
+      SchemaBasedSerializableConsumerRecord[Json, Json](None, runtimeSchema.schemaIdOpt, serializedConsumerRecord).asJson
+    )
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],

@@ -3,14 +3,16 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionId
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
@@ -19,10 +21,10 @@ import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUse
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository, DeploymentComment, FetchingProcessRepository, ProcessDBQueryRepository}
+import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.util.FutureUtils._
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.dbio.DBIOAction
 
 import java.time.Clock
@@ -237,16 +239,41 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType])
                              (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     dispatcher.deploymentManager(processDetails.processingType).map { manager =>
-      if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
+      if (processDetails.isSubprocess) {
+        throw new FragmentStateException
+      } else if (processDetails.isArchived) {
+        getArchivedProcessState(processDetails)(manager)
+      } else if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy))
       } else if (inProgressActionTypes.contains(ProcessActionType.Cancel)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringCancel))
       } else {
-        checkStateInDeploymentManager(manager, processDetails)
+        processDetails.lastStateAction match {
+          case Some(_) =>
+            checkStateInDeploymentManager(manager, processDetails)
+          case _ => //We assume that the process never deployed should have no state at the engine
+            logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
+            DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
+        }
       }
     }.getOrElse(DBIOAction.successful(SimpleProcessStateDefinitionManager.errorFailedToGet))
+  }
+
+  //We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
+  private def getArchivedProcessState(processDetails: BaseProcessDetails[_])(implicit manager: DeploymentManager) = {
+    processDetails.lastStateAction.map(_.action) match {
+      case Some(Cancel) =>
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.Canceled))
+      case Some(_) =>
+        logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.archivedShouldBeCanceled}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(ProblemStateStatus.archivedShouldBeCanceled))
+      case _ =>
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
+    }
   }
 
   private def checkStateInDeploymentManager(deploymentManager: DeploymentManager, processDetails: BaseProcessDetails[_])
@@ -255,9 +282,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       state <- DBIOAction.from(getStateFromEngine(deploymentManager, processDetails.idWithName))
       cancelActionOpt <- handleFinishedProcess(processDetails, state.value)
     } yield {
-      val lastAction = cancelActionOpt.orElse(processDetails.lastAction)
-      val finalState = InconsistentStateDetector.handleStatus(state.value, lastAction)
-      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${lastAction.map(_.action)})")
+      val lastStateAction = cancelActionOpt.orElse(processDetails.lastStateAction)
+      val finalState = InconsistentStateDetector.handleStatus(state.value, lastStateAction)
+      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${lastStateAction.map(_.action)})")
       finalState
     }
   }
@@ -321,3 +348,5 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   }
 
 }
+
+private class FragmentStateException extends Exception("Fragment doesn't have state.") with BadRequestError

@@ -22,8 +22,8 @@ import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeLis
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, ModuloZeroError, OperatorMismatchTypeError, OperatorNonNumericError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{NoPropertyError, UnknownClassError, UnknownMethodError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, ModuloZeroError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
@@ -202,14 +202,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("evaluate static method call on unvalidated class") {
     inside(parse[Any]("T(java.lang.System).exit()")) {
-      case Invalid(NonEmptyList(error: TypeReferenceError, Nil)) =>
+      case Invalid(NonEmptyList(error: TypeReferenceError, _)) =>
         error.message shouldBe "class java.lang.System is not allowed to be passed as TypeReference"
     }
   }
 
   test("evaluate static method call on non-existing class") {
     inside(parse[Any]("T(java.lang.NonExistingClass).method()")) {
-      case Invalid(NonEmptyList(error: UnknownClassError, Nil)) =>
+      case Invalid(NonEmptyList(error: UnknownClassError, _)) =>
         error.message shouldBe "Class T(java.lang.NonExistingClass) does not exist"
     }
   }
@@ -245,7 +245,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("use not existing method reference") {
     inside(parse[Any]("notExistingMethod(1)", ctxWithGlobal)) {
-      case Invalid(NonEmptyList(error: InvalidMethodReference, Nil)) =>
+      case Invalid(NonEmptyList(error: InvalidMethodReference, _)) =>
         error.message shouldBe "Invalid method reference: notExistingMethod(1)."
     }
   }
@@ -393,6 +393,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("(#obj.children.?[id == '5' || id == '3'].![value]).contains(4L)").validExpression
       .evaluateSync[Boolean](ctx) should equal(true)
 
+  }
+
+  test("accumulate errors") {
+    parse[Any]("#obj.children.^[id == 123].foo").invalidValue.toList should matchPattern {
+      case OperatorNotComparableError("==", _, _) :: NoPropertyError(childrenType, "foo") :: Nil if childrenType == Typed[Test] =>
+    }
   }
 
   test("evaluate map") {

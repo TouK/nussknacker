@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
 import cats.data.ValidatedNel
+import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.json.JsonSchema
@@ -11,9 +12,10 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
-import pl.touk.nussknacker.engine.util.output.OutputValidatorError
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter
+import pl.touk.nussknacker.engine.util.parameters.SchemaBasedParameter.ParameterName
 
 class UniversalSchemaSupportDispatcher private(kafkaConfig: KafkaConfig) {
 
@@ -24,7 +26,6 @@ class UniversalSchemaSupportDispatcher private(kafkaConfig: KafkaConfig) {
 
   def forSchemaType(schemaType: String): UniversalSchemaSupport =
     supportBySchemaType.getOrElse(schemaType, throw new UnsupportedSchemaType(schemaType))
-
 }
 
 object UniversalSchemaSupportDispatcher {
@@ -35,9 +36,18 @@ trait UniversalSchemaSupport {
   def payloadDeserializer: UniversalSchemaPayloadDeserializer
   def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any]
   def typeDefinition(schema: ParsedSchema): TypingResult
-  def extractSinkValueParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter]
-  def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
+  def formValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
   def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
+  def extractParameter(schema: ParsedSchema, rawMode: Boolean, validationMode: ValidationMode, rawParameter: Parameter, restrictedParamNames: Set[ParameterName])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SchemaBasedParameter]
+
+  final def extractParameters(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, List[Parameter]] = {
+    extractParameter(schema, rawMode = false, validationMode = ValidationMode.lax,
+      rawParameter = Parameter[AnyRef](SinkValueParamName), restrictedParamNames = Set.empty).map(_.toParameters)
+  }
+
+  final def prepareMessageFormatter(schema: ParsedSchema, schemaRegistryClient: SchemaRegistryClient): Any => Json = {
+    data => recordFormatterSupport(schemaRegistryClient).formatMessage(formValueEncoder(schema, ValidationMode.lax)(data))
+  }
 }
 
 class UnsupportedSchemaType(schemaType: String) extends IllegalArgumentException(s"Unsupported schema type: $schemaType")
