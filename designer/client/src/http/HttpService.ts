@@ -6,13 +6,7 @@ import { Moment } from "moment";
 import { fetchTestFormParameters, SettingsData, ValidationData } from "../actions/nk";
 import api from "../api";
 import { UserData } from "../common/models/User";
-import {
-    ProcessActionType,
-    ProcessStateType,
-    ProcessType,
-    ProcessVersionId,
-    StatusDefinitionType,
-} from "../components/Process/types";
+import { ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
 import { Expression, Process, ProcessDefinitionData, ProcessId, VariableTypes } from "../types";
@@ -22,10 +16,7 @@ import { ProcessCounts } from "../reducers/graph";
 import { TestResults } from "../common/TestResultUtils";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
-import {
-    CaretPosition2d,
-    ExpressionSuggestion,
-} from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
 import { UIValueParameter } from "../actions/nk/genericAction";
 import { testProcessWithParameters } from "../actions/nk/displayTestResults";
 
@@ -103,7 +94,7 @@ export type ComponentUsageType = {
     id: string;
     name: string;
     processId: string;
-    nodesMetadata: NodeUsageData[];
+    nodesUsagesData: NodeUsageData[];
     isArchived: boolean;
     isSubprocess: boolean;
     processCategory: string;
@@ -137,13 +128,7 @@ class HttpService {
             .get<BackendNotification[]>("/notifications")
             .then((d) => d.data)
             .catch((error) => {
-                this.#addError(
-                    i18next.t(
-                        "notification.error.cannotFetchBackendNotifications",
-                        "Cannot fetch backend notification"
-                    ),
-                    error
-                );
+                this.#addError(i18next.t("notification.error.cannotFetchBackendNotifications", "Cannot fetch backend notification"), error);
                 return [];
             });
     }
@@ -205,11 +190,7 @@ class HttpService {
                 return response;
             });
         promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"),
-                error,
-                true
-            )
+            this.#addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true),
         );
         return promise;
     }
@@ -248,9 +229,7 @@ class HttpService {
         return api
             .get<StatusesType>("/processes/status")
             .catch((error) =>
-                Promise.reject(
-                    this.#addError(i18next.t("notification.error.cannotFetchStatuses", "Cannot fetch statuses"), error)
-                )
+                Promise.reject(this.#addError(i18next.t("notification.error.cannotFetchStatuses", "Cannot fetch statuses"), error)),
             );
     }
 
@@ -259,30 +238,22 @@ class HttpService {
             .get<StatusDefinitionType[]>(`/statusDefinitions`)
             .catch((error) =>
                 Promise.reject(
-                    this.#addError(
-                        i18next.t("notification.error.cannotFetchStatusDefinitions", "Cannot fetch status definitions"),
-                        error
-                    )
-                )
+                    this.#addError(i18next.t("notification.error.cannotFetchStatusDefinitions", "Cannot fetch status definitions"), error),
+                ),
             );
     }
 
     fetchProcessToolbarsConfiguration(processId) {
         const promise = api.get<WithId<ToolbarsConfig>>(`/processes/${encodeURIComponent(processId)}/toolbars`);
         promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.cannotFetchToolbarConfiguration", "Cannot fetch toolbars configuration"),
-                error
-            )
+            this.#addError(i18next.t("notification.error.cannotFetchToolbarConfiguration", "Cannot fetch toolbars configuration"), error),
         );
         return promise;
     }
 
     fetchProcessState(processId: ProcessId) {
         const promise = api.get(`/processes/${encodeURIComponent(processId)}/status`);
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error)
-        );
+        promise.catch((error) => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error));
         return promise;
     }
 
@@ -308,7 +279,7 @@ class HttpService {
                     return this.#addError(
                         i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", { processId }),
                         error,
-                        true
+                        true,
                     ).then((error) => {
                         return { isSuccess: false };
                     });
@@ -340,7 +311,7 @@ class HttpService {
                 return this.#addError(
                     i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", { processId }),
                     error,
-                    true
+                    true,
                 ).then((error) => {
                     return { isSuccess: false };
                 });
@@ -358,18 +329,14 @@ class HttpService {
         return api
             .post(`/processes/${encodeURIComponent(processId)}/${versionId}/activity/comments`, data)
             .then(() => this.#addInfo(i18next.t("notification.info.commentAdded", "Comment added")))
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error)
-            );
+            .catch((error) => this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error));
     }
 
     deleteComment(processId, commentId) {
         return api
             .delete(`/processes/${encodeURIComponent(processId)}/activity/comments/${commentId}`)
             .then(() => this.#addInfo(i18next.t("notification.info.commendDeleted", "Comment deleted")))
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error)
-            );
+            .catch((error) => this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error));
     }
 
     addAttachment(processId: ProcessId, versionId: ProcessVersionId, file: File) {
@@ -380,40 +347,25 @@ class HttpService {
             .post(`/processes/${encodeURIComponent(processId)}/${versionId}/activity/attachments`, data)
             .then(() => this.#addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added")))
             .catch((error) =>
-                this.#addError(
-                    i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"),
-                    error,
-                    true
-                )
+                this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true),
             );
     }
 
     downloadAttachment(processId: ProcessId, processVersionId: ProcessVersionId, attachmentId, fileName: string) {
         return api
-            .get(
-                `/processes/${encodeURIComponent(processId)}/${processVersionId}/activity/attachments/${attachmentId}`,
-                { responseType: "blob" }
-            )
+            .get(`/processes/${encodeURIComponent(processId)}/${processVersionId}/activity/attachments/${attachmentId}`, {
+                responseType: "blob",
+            })
             .then((response) => FileSaver.saveAs(response.data, fileName))
             .catch((error) =>
-                this.#addError(
-                    i18next.t("notification.error.failedToDownloadAttachment", "Failed to download attachment"),
-                    error
-                )
+                this.#addError(i18next.t("notification.error.failedToDownloadAttachment", "Failed to download attachment"), error),
             );
     }
 
     changeProcessName(processName, newProcessName): Promise<boolean> {
-        const failedToChangeNameMessage = i18next.t(
-            "notification.error.failedToChangeName",
-            "Failed to change scenario name:"
-        );
+        const failedToChangeNameMessage = i18next.t("notification.error.failedToChangeName", "Failed to change scenario name:");
         if (newProcessName == null || newProcessName === "") {
-            this.#addErrorMessage(
-                failedToChangeNameMessage,
-                i18next.t("notification.error.newNameEmpty", "Name cannot be empty"),
-                true
-            );
+            this.#addErrorMessage(failedToChangeNameMessage, i18next.t("notification.error.newNameEmpty", "Name cannot be empty"), true);
             return Promise.resolve(false);
         }
 
@@ -432,28 +384,20 @@ class HttpService {
         return api
             .post("/processesExport", this.#sanitizeProcess(process), { responseType: "blob" })
             .then((response) => FileSaver.saveAs(response.data, `${process.id}-${versionId}.json`))
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToExport", "Failed to export"), error)
-            );
+            .catch((error) => this.#addError(i18next.t("notification.error.failedToExport", "Failed to export"), error));
     }
 
     exportProcessToPdf(processId, versionId, data) {
         return api
             .post(`/processesExport/pdf/${encodeURIComponent(processId)}/${versionId}`, data, { responseType: "blob" })
             .then((response) => FileSaver.saveAs(response.data, `${processId}-${versionId}.pdf`))
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToExportPdf", "Failed to export PDF"), error)
-            );
+            .catch((error) => this.#addError(i18next.t("notification.error.failedToExportPdf", "Failed to export PDF"), error));
     }
 
     //to prevent closing edit node modal and corrupting graph display
     validateProcess(process: Process) {
         return api.post("/processValidation", this.#sanitizeProcess(process)).catch((error) => {
-            this.#addError(
-                i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"),
-                error,
-                true
-            );
+            this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true);
             return Promise.reject(error);
         });
     }
@@ -461,11 +405,7 @@ class HttpService {
     validateNode(processId, node): Promise<AxiosResponse<ValidationData>> {
         const promise = api.post(`/nodes/${encodeURIComponent(processId)}/validation`, node);
         promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToValidateNode", "Failed to get node validation"),
-                error,
-                true
-            )
+            this.#addError(i18next.t("notification.error.failedToValidateNode", "Failed to get node validation"), error, true),
         );
         return promise;
     }
@@ -473,11 +413,7 @@ class HttpService {
     validateGenericActionParameters(processId: string, validationRequest): Promise<AxiosResponse<ValidationData>> {
         const promise = api.post(`/parameters/${encodeURIComponent(processId)}/validate`, validationRequest);
         promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"),
-                error,
-                true
-            )
+            this.#addError(i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"), error, true),
         );
         return promise;
     }
@@ -486,7 +422,7 @@ class HttpService {
         processId: string,
         expression: Expression,
         caretPosition2d: CaretPosition2d,
-        variables: Record<string, any>
+        variables: Record<string, any>,
     ): Promise<AxiosResponse<ExpressionSuggestion[]>> {
         const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processId)}/suggestions`, {
             expression,
@@ -495,13 +431,10 @@ class HttpService {
         });
         promise.catch((error) =>
             this.#addError(
-                i18next.t(
-                    "notification.error.failedToFetchExpressionSuggestions",
-                    "Failed to get expression suggestions"
-                ),
+                i18next.t("notification.error.failedToFetchExpressionSuggestions", "Failed to get expression suggestions"),
                 error,
-                true
-            )
+                true,
+            ),
         );
         return promise;
     }
@@ -509,11 +442,7 @@ class HttpService {
     validateProperties(processId, processProperties): Promise<AxiosResponse<ValidationData>> {
         const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, { processProperties });
         promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
-                error,
-                true
-            )
+            this.#addError(i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"), error, true),
         );
         return promise;
     }
@@ -524,26 +453,20 @@ class HttpService {
             this.#addError(
                 i18next.t("notification.error.failedToFetchNodeAdditionalInfo", "Failed to get node additional info"),
                 error,
-                true
-            )
+                true,
+            ),
         );
         return promise;
     }
 
     getPropertiesAdditionalInfo(processId, processProperties): Promise<AxiosResponse<AdditionalInfo>> {
-        const promise = api.post<AdditionalInfo>(
-            `/properties/${encodeURIComponent(processId)}/additionalInfo`,
-            processProperties
-        );
+        const promise = api.post<AdditionalInfo>(`/properties/${encodeURIComponent(processId)}/additionalInfo`, processProperties);
         promise.catch((error) =>
             this.#addError(
-                i18next.t(
-                    "notification.error.failedToFetchPropertiesAdditionalInfo",
-                    "Failed to get properties additional info"
-                ),
+                i18next.t("notification.error.failedToFetchPropertiesAdditionalInfo", "Failed to get properties additional info"),
                 error,
-                true
-            )
+                true,
+            ),
         );
         return promise;
     }
@@ -553,11 +476,7 @@ class HttpService {
     getTestCapabilities(process: Process) {
         const promise = api.post("/testInfo/capabilities", this.#sanitizeProcess(process));
         promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"),
-                error,
-                true
-            )
+            this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true),
         );
         return promise;
     }
@@ -566,13 +485,10 @@ class HttpService {
         const promise = api.post("/testInfo/testParameters", this.#sanitizeProcess(process));
         promise.catch((error) =>
             this.#addError(
-                i18next.t(
-                    "notification.error.failedToGetTestParameters",
-                    "Failed to get source test parameters definition"
-                ),
+                i18next.t("notification.error.failedToGetTestParameters", "Failed to get source test parameters definition"),
                 error,
-                true
-            )
+                true,
+            ),
         );
         return promise;
     }
@@ -584,11 +500,7 @@ class HttpService {
         promise
             .then((response) => FileSaver.saveAs(response.data, `${processId}-testData`))
             .catch((error) =>
-                this.#addError(
-                    i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"),
-                    error,
-                    true
-                )
+                this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error, true),
             );
         return promise;
     }
@@ -601,11 +513,7 @@ class HttpService {
         const promise = api.get(`/processCounts/${encodeURIComponent(processId)}`, { params: data });
 
         promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToFetchCounts", "Cannot fetch process counts"),
-                error,
-                true
-            )
+            this.#addError(i18next.t("notification.error.failedToFetchCounts", "Cannot fetch process counts"), error, true),
         );
         return promise;
     }
@@ -622,40 +530,24 @@ class HttpService {
     archiveProcess(processId) {
         return api
             .post(`/archive/${encodeURIComponent(processId)}`)
-            .catch((error) =>
-                this.#addError(
-                    i18next.t("notification.error.failedToArchive", "Failed to archive scenario"),
-                    error,
-                    true
-                )
-            );
+            .catch((error) => this.#addError(i18next.t("notification.error.failedToArchive", "Failed to archive scenario"), error, true));
     }
 
     unArchiveProcess(processId) {
         return api
             .post(`/unarchive/${encodeURIComponent(processId)}`)
             .catch((error) =>
-                this.#addError(
-                    i18next.t("notification.error.failedToUnArchive", "Failed to unarchive scenario"),
-                    error,
-                    true
-                )
+                this.#addError(i18next.t("notification.error.failedToUnArchive", "Failed to unarchive scenario"), error, true),
             );
     }
 
     //This method will return *FAILED* promise if save/validation fails with e.g. 400 (fatal validation error)
 
     createProcess(processId: string, processCategory: string, isSubprocess = false) {
-        const promise = api.post(
-            `/processes/${encodeURIComponent(processId)}/${processCategory}?isSubprocess=${isSubprocess}`
-        );
+        const promise = api.post(`/processes/${encodeURIComponent(processId)}/${processCategory}?isSubprocess=${isSubprocess}`);
         promise.catch((error) => {
             if (error?.response?.status != 400)
-                this.#addError(
-                    i18next.t("notification.error.failedToCreate", "Failed to create scenario:"),
-                    error,
-                    true
-                );
+                this.#addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true);
         });
         return promise;
     }
@@ -679,16 +571,14 @@ class HttpService {
         data.append("processJson", new Blob([JSON.stringify(sanitized)], { type: "application/json" }));
 
         const promise = api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data);
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true)
-        );
+        promise.catch((error) => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true));
         return promise;
     }
 
     testProcessWithParameters(
         processId: ProcessId,
         testData: SourceWithParametersTest,
-        processJson: Process
+        processJson: Process,
     ): Promise<AxiosResponse<TestProcessResponse>> {
         const sanitized = this.#sanitizeProcess(processJson);
         const request = {
@@ -697,27 +587,18 @@ class HttpService {
         };
 
         const promise = api.post(`/processManagement/testWithParameters/${encodeURIComponent(processId)}`, request);
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true)
-        );
+        promise.catch((error) => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true));
         return promise;
     }
 
     testScenarioWithGeneratedData(
         processId: ProcessId,
         testSampleSize: string,
-        processJson: Process
+        processJson: Process,
     ): Promise<AxiosResponse<TestProcessResponse>> {
-        const promise = api.post(
-            `/processManagement/generateAndTest/${testSampleSize}`,
-            this.#sanitizeProcess(processJson)
-        );
+        const promise = api.post(`/processManagement/generateAndTest/${testSampleSize}`, this.#sanitizeProcess(processJson));
         promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test"),
-                error,
-                true
-            )
+            this.#addError(i18next.t("notification.error.failedToGenerateAndTest", "Failed to generate and test"), error, true),
         );
         return promise;
     }
@@ -726,19 +607,14 @@ class HttpService {
         const path = remoteEnv ? "remoteEnvironment" : "processes";
 
         const promise = api.get(`/${path}/${encodeURIComponent(processId)}/${thisVersion}/compare/${otherVersion}`);
-        promise.catch((error) =>
-            this.#addError(i18next.t("notification.error.cannotCompare", "Cannot compare scenarios"), error, true)
-        );
+        promise.catch((error) => this.#addError(i18next.t("notification.error.cannotCompare", "Cannot compare scenarios"), error, true));
         return promise;
     }
 
     fetchRemoteVersions(processId) {
         const promise = api.get(`/remoteEnvironment/${encodeURIComponent(processId)}/versions`);
         promise.catch((error) =>
-            this.#addError(
-                i18next.t("notification.error.failedToGetVersions", "Failed to get versions from second environment"),
-                error
-            )
+            this.#addError(i18next.t("notification.error.failedToGetVersions", "Failed to get versions from second environment"), error),
         );
         return promise;
     }
@@ -750,19 +626,15 @@ class HttpService {
                 this.#addInfo(
                     i18next.t("notification.info.scenarioMigrated", "Scenario {{processId}} was migrated", {
                         processId,
-                    })
-                )
+                    }),
+                ),
             )
-            .catch((error) =>
-                this.#addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true)
-            );
+            .catch((error) => this.#addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true));
     }
 
     fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {
         return api.get<T>(
-            `/authentication/${provider.toLowerCase()}?code=${authorizeCode}${
-                redirectUri ? `&redirect_uri=${redirectUri}` : ""
-            }`
+            `/authentication/${provider.toLowerCase()}?code=${authorizeCode}${redirectUri ? `&redirect_uri=${redirectUri}` : ""}`,
         );
     }
 

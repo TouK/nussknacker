@@ -4,7 +4,7 @@ import { OpenInBrowser as LinkIcon } from "@mui/icons-material";
 import { Chip } from "@mui/material";
 import { TruncateWrapper } from "../utils";
 import { GridRenderCellParams } from "@mui/x-data-grid";
-import {NodeUsageData} from "nussknackerUi/HttpService";
+import { NodeUsageData } from "nussknackerUi/HttpService";
 
 const icon = <LinkIcon />;
 
@@ -20,10 +20,21 @@ export const NodesCell = ({ filterText, ...props }: GridRenderCellParams & { fil
         [filterSegments],
     );
 
-    const sorted = useMemo(() => value.map((node: NodeUsageData) => [countMatches(node.nodeId), node.nodeId, node.fragmentNodeId, node.type]).sort(([a], [b]) => b - a), [countMatches, value]);
+    const sorted = useMemo(
+        () => value.map((node: NodeUsageData) => [countMatches(node.nodeId), node.fragmentNodeId, node.nodeId]).sort(([a], [b]) => b - a),
+        [countMatches, value],
+    );
 
-    const elements = sorted.map(([match, nodeId, fragmentNodeId, nodeType]) => (
-        <NodeChip key={nodeId} icon={icon} nodeId={nodeId} fragmentNodeId={fragmentNodeId} nodeType={nodeType} filterText={filterText} rowId={id} matched={filterText ? match : -1} />
+    const elements = sorted.map(([match, fragmentNodeId, nodeId]) => (
+        <NodeChip
+            key={nodeId}
+            icon={icon}
+            nodeId={nodeId}
+            fragmentNodeId={fragmentNodeId}
+            filterText={filterText}
+            rowId={id}
+            matched={filterText ? match : -1}
+        />
     ));
     return <TruncateWrapper {...props}>{elements}</TruncateWrapper>;
 };
@@ -32,7 +43,6 @@ const NodeChip = memo(function NodeChip({
     rowId,
     nodeId,
     fragmentNodeId,
-    nodeType,
     filterText,
     matched,
     icon,
@@ -40,20 +50,20 @@ const NodeChip = memo(function NodeChip({
     rowId: string;
     nodeId: string;
     fragmentNodeId?: string;
-    nodeType: string;
     filterText: string;
     matched: number;
     icon: React.ReactElement;
 }) {
-    const nodeLabel: string = nodeType === "FragmentUsageData" ? fragmentNodeId + " / " + nodeId : nodeId
+    const nodeLabel: string = fragmentNodeId != null ? fragmentNodeId + " / " + nodeId : nodeId;
+    const nodeLink: string = fragmentNodeId != null ? fragmentNodeHref(rowId, fragmentNodeId, nodeId) : nodeHref(rowId, nodeId);
     return (
         <Chip
             size="small"
             component={ExternalLink}
-            href={nodeType === "FragmentUsageData" ? fragmentNodeHref(rowId, fragmentNodeId, nodeId) : nodeHref(rowId, nodeId)}
+            href={nodeLink}
             tabIndex={0}
             label={matched > 0 ? <Highlight value={nodeId} filterText={filterText} /> : nodeLabel}
-            color={matched !==0 ? (nodeType === "FragmentUsageData" ? "secondary" : "primary") : "default"}
+            color={matched !== 0 ? (fragmentNodeId != null ? "secondary" : "primary") : "default"}
             variant={matched > 0 ? "outlined" : "filled"}
             icon={icon}
         />
