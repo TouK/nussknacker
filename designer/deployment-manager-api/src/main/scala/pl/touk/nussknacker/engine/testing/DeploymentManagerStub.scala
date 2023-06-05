@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.testing
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
@@ -29,7 +29,22 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = Future.successful(None)
+  //We map lastStateAction to state to avoid some corner/blocking cases with the deleting/canceling scenario on tests..
+  override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
+    val lastStateActionStatus = lastStateAction match {
+      case Some(state) if state.isDeployed =>
+        SimpleStateStatus.Running
+      case Some(state) if state.isCanceled =>
+        SimpleStateStatus.Canceled
+      case _ =>
+        SimpleStateStatus.NotDeployed
+    }
+
+    Future.successful(WithDataFreshnessStatus(processStateDefinitionManager.processState(lastStateActionStatus), cached = false))
+  }
+
+  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] =
+    Future.successful(None)
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(""))
 

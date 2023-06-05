@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus, StatusDetails}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper.{availableCondition, crashLoopBackOffReason, newReplicaSetAvailable, progressingCondition, replicaFailureCondition, trueConditionStatus}
 import skuber.{Container, Pod}
@@ -28,21 +28,26 @@ object K8sDeploymentStatusMapper {
 //Based on https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status
 class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager) extends LazyLogging {
 
-  private[manager] def findStatusForDeploymentsAndPods(deployments: List[Deployment], pods: List[Pod]): Option[ProcessState] = {
+  private[manager] def findStatusForDeploymentsAndPods(deployments: List[Deployment], pods: List[Pod]): Option[StatusDetails] = {
     deployments match {
       case Nil => None
       case one :: Nil => Some(status(one, pods))
-      case duplicates => Some(K8sProcessStateDefinitionManager.errorMultipleJobsRunning(duplicates))
+      case duplicates => Some(
+        StatusDetails(
+          ProblemStateStatus.MultipleJobsRunning,
+          errors = List(s"Expected one deployment, instead: ${duplicates.map(_.metadata.name).mkString(", ")}")
+        )
+      )
     }
   }
 
-  private def status(deployment: Deployment, pods: List[Pod]): ProcessState = {
+  private def status(deployment: Deployment, pods: List[Pod]): StatusDetails = {
     val (status, attrs, errors) = deployment.status match {
       case None => (SimpleStateStatus.DuringDeploy, None, Nil)
       case Some(status) => mapStatusWithPods(status, pods)
     }
     val startTime = deployment.metadata.creationTimestamp.map(_.toInstant.toEpochMilli)
-    definitionManager.processState(status, None, parseVersionAnnotation(deployment), startTime, attrs, errors)
+    StatusDetails(status, None, parseVersionAnnotation(deployment), startTime, attrs, errors)
   }
 
   //TODO: should we add responses to status attributes?
@@ -56,8 +61,8 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
         logger.debug(s"Some containers are in waiting state with CrashLoopBackOff reason - returning Restarting status. Pods: $pods")
         (SimpleStateStatus.Restarting, None, Nil)
       case (_, Some(progressing), _) if isTrue(progressing) => (SimpleStateStatus.DuringDeploy, None, Nil)
-      case (_, _, Some(replicaFailure)) if isTrue(replicaFailure) => (ProblemStateStatus.failed, None, replicaFailure.message.toList)
-      case (a, b, _) => (ProblemStateStatus.failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)
+      case (_, _, Some(replicaFailure)) if isTrue(replicaFailure) => (ProblemStateStatus.Failed, None, replicaFailure.message.toList)
+      case (a, b, _) => (ProblemStateStatus.Failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)
     }
   }
 

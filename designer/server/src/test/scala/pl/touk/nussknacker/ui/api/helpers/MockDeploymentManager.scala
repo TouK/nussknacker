@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import com.google.common.collect.LinkedHashMultimap
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
@@ -24,21 +25,22 @@ object MockDeploymentManager {
   val maxParallelism = 10
 }
 
-class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends FlinkDeploymentManager(ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED") {
+class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(implicit deploymentService: ProcessingTypeDeploymentService)
+  extends FlinkDeploymentManager(ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED") {
 
   import MockDeploymentManager._
 
   def this() = {
-    this(SimpleStateStatus.Running)
+    this(SimpleStateStatus.Running)(new ProcessingTypeDeploymentServiceStub(Nil))
   }
 
-  private def prepareProcessState(status: StateStatus): Option[ProcessState] =
+  private def prepareProcessState(status: StateStatus): Option[StatusDetails] =
     prepareProcessState(status, Some(ProcessVersion.empty))
 
-  private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[ProcessState] =
-    Some(SimpleProcessStateDefinitionManager.processState(status, Some(ExternalDeploymentId("1")), version))
+  private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): Option[StatusDetails] =
+    Some(StatusDetails(status, Some(ExternalDeploymentId("1")), version))
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = {
+  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)
       managerProcessState.getOrDefault(name, prepareProcessState(defaultProcessStateStatus))
@@ -63,7 +65,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
 
   private var cancelResult: Future[Unit] = Future.successful(())
 
-  private val managerProcessState = new ConcurrentHashMap[ProcessName, Option[ProcessState]]
+  private val managerProcessState = new ConcurrentHashMap[ProcessName, Option[StatusDetails]]
 
   @volatile
   private var delayBeforeStateReturn: FiniteDuration = 0 seconds
@@ -136,7 +138,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     withProcessState(processName, None)(action)
   }
 
-  def withProcessState[T](processName: ProcessName, status: Option[ProcessState])(action: => T): T = {
+  def withProcessState[T](processName: ProcessName, status: Option[StatusDetails])(action: => T): T = {
     try {
       managerProcessState.put(processName, status)
       action

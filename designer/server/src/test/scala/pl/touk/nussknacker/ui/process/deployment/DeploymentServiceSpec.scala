@@ -9,16 +9,16 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Archive, Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionType, ProcessState, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeploymentManager, ProcessActionType, ProcessState, StateStatus, StatusDetails}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.engine.management.FlinkProcessStateDefinitionManager
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NussknackerAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
+import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DeploymentComment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -43,18 +43,29 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
   private implicit val ds: ExecutionContextExecutor = system.dispatcher
 
-  private val deploymentManager = new MockDeploymentManager
+  private var deploymentManager: MockDeploymentManager = _
   override protected val dbioRunner: DBIOActionRunner = newDBIOActionRunner(db)
   private val fetchingProcessRepository = newFetchingProcessRepository(db)
   private val futureFetchingProcessRepository = newFutureFetchingProcessRepository(db)
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val actionRepository = newActionProcessRepository(db)
   private val activityRepository = newProcessActivityRepository(db)
-  private val dmDispatcher = new DeploymentManagerDispatcher(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager), futureFetchingProcessRepository)
+
+  private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] = new ProcessingTypeDataProvider[DeploymentManager, Nothing] {
+    override def forType(typ: ProcessingType): Option[DeploymentManager] = all.get(typ)
+
+    override def all: Map[ProcessingType, DeploymentManager] = Map(TestProcessingTypes.Streaming -> deploymentManager)
+
+    override def combined: Nothing = ???
+  }
+
+  private val dmDispatcher = new DeploymentManagerDispatcher(processingTypeDataProvider, futureFetchingProcessRepository)
 
   private val listener = new TestProcessChangeListener
 
   private val deploymentService = createDeploymentService(None)
+
+  deploymentManager = new MockDeploymentManager(SimpleStateStatus.Running)(new DefaultProcessingTypeDeploymentService(TestProcessingTypes.Streaming, deploymentService))
 
   private def createDeploymentService(scenarioStateTimeout: Option[FiniteDuration]): DeploymentService = {
     new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, TestFactory.scenarioResolver, listener, scenarioStateTimeout = scenarioStateTimeout)
@@ -121,10 +132,9 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       deploymentService.getProcessState(processIdName).futureValue.status shouldBe expectedStatus
     }
 
-    val statusFromDeploymentManager = SimpleStateStatus.NotDeployed
     deploymentManager.withEmptyProcessState(processName) {
 
-      checkStatusAction(statusFromDeploymentManager, None)
+      checkStatusAction(SimpleStateStatus.NotDeployed, None)
       deploymentManager.withWaitForDeployFinish(processName) {
         deploymentService.deployProcessAsync(processIdName, None, None).futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
@@ -236,7 +246,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processName: ProcessName = generateProcessName
     val id = prepareDeployedProcess(processName).dbioActionValues
 
-    val state = FlinkProcessStateDefinitionManager.processState(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+    val state = StatusDetails(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
     deploymentManager.withProcessState(processName, Some(state)) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -299,10 +309,10 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
     // FIXME: doesnt check recover from failed verifications ???
-    deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.failed, version) {
+    deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.Failed, version) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      state.status shouldBe ProblemStateStatus.failed
+      state.status shouldBe ProblemStateStatus.Failed
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     }
   }
@@ -327,10 +337,10 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id =  prepareDeployedProcess(processName).dbioActionValues
 
     // FIXME: doesnt check recover from failed future of findJobStatus ???
-    deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.failedToGet, Option.empty) {
+    deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.FailedToGet, Option.empty) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
-      val expectedStatus = ProblemStateStatus.failedToGet
+      val expectedStatus = ProblemStateStatus.FailedToGet
       state.status shouldBe expectedStatus
       state.icon shouldBe ProblemStateStatus.icon
       state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
@@ -439,7 +449,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val id = prepareArchivedProcess(processName, Some(Deploy)).dbioActionValues
 
     val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
-    state.status shouldBe ProblemStateStatus.archivedShouldBeCanceled
+    state.status shouldBe ProblemStateStatus.ArchivedShouldBeCanceled
   }
 
   test("Should return canceled status for unarchived process") {
@@ -494,7 +504,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val durationLongerThanTimeout = timeout.plus(patienceConfig.timeout)
     deploymentManager.withDelayBeforeStateReturn(durationLongerThanTimeout) {
       val status = serviceWithTimeout.getProcessState(processIdName).futureValueEnsuringInnerException(durationLongerThanTimeout).status
-      status shouldBe ProblemStateStatus.failedToGet
+      status shouldBe ProblemStateStatus.FailedToGet
     }
   }
 

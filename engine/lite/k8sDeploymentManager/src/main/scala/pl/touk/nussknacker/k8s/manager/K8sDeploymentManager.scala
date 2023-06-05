@@ -9,6 +9,8 @@ import io.circe.syntax._
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -194,7 +196,7 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
     }
   }
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = {
+  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
       deployments <- scenarioStateK8sClient.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)

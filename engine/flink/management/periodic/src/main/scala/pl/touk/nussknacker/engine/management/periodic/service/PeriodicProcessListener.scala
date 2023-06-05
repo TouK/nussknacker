@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.periodic.service
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.api.deployment.StatusDetails
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 
@@ -25,11 +25,11 @@ sealed trait PeriodicProcessEvent {
 
 case class DeployedEvent(deployment: PeriodicProcessDeployment, externalDeploymentId: Option[ExternalDeploymentId]) extends PeriodicProcessEvent
 
-case class FinishedEvent(deployment: PeriodicProcessDeployment, processState: Option[ProcessState]) extends PeriodicProcessEvent
+case class FinishedEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails]) extends PeriodicProcessEvent
 
-case class FailedOnDeployEvent(deployment: PeriodicProcessDeployment, processState: Option[ProcessState]) extends PeriodicProcessEvent
+case class FailedOnDeployEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails]) extends PeriodicProcessEvent
 
-case class FailedOnRunEvent(deployment: PeriodicProcessDeployment, processState: Option[ProcessState]) extends PeriodicProcessEvent
+case class FailedOnRunEvent(deployment: PeriodicProcessDeployment, processState: Option[StatusDetails]) extends PeriodicProcessEvent
 
 case class ScheduledEvent(deployment: PeriodicProcessDeployment, firstSchedule: Boolean) extends PeriodicProcessEvent
 

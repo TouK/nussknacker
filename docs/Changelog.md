@@ -44,6 +44,7 @@
 * [#4343](https://github.com/TouK/nussknacker/pull/4343) Updated Flink 1.16.1 -> 1.16.2
 * [#4346](https://github.com/TouK/nussknacker/pull/4346) Improvement: Don't fetch process state for fragment
 * [#4342](https://github.com/TouK/nussknacker/pull/4342) Improvement: Don't run custom action on archived scenario and fragment
+* [#4302](https://github.com/TouK/nussknacker/pull/4302) State inconsistency detection was moved from designer to DeploymentManager.
 
 1.9.1 (24 Apr 2023)
 ------------------------

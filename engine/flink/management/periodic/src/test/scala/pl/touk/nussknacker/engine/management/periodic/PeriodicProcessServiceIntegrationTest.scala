@@ -312,7 +312,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
 
     service.deploy(toDeploy.head).futureValue
 
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.failed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed)
 
     //this one is cyclically called by RescheduleActor
     service.handleFinished.futureValue

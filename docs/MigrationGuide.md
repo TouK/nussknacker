@@ -23,7 +23,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4339](https://github.com/TouK/nussknacker/pull/4339) Improvements: Don't fetch state for archived/unarchived scenario, return computed based on last state action
   At BaseProcessDetails we provide lastStateAction field which can have an influence on the presented state of the scenario. 
   We currently use it to distinguish between cancel / not_deployed and to detect inconsistent states between the designer and engine
-
+* [#4302](https://github.com/TouK/nussknacker/pull/4302) State inconsistency detection was moved from designer to DeploymentManager.
+  `DeploymentManager.getProcessState` for internal purposes returns `Option[StatusDetails]` which is based on job status from deployment manager (instead of `Option[ProcessState]` which contains UI info).
+  There is separate `getProcessState` that returns `ProcessState` which is a status from engine resolved via `InconsistentStateDetector` and formatted with UI-related details.
+  `PeriodicProcessEvent` uses `StatusDetails` instead of `ProcessState`.
+  Constants defined in `ProblemStateStatus` are renamed to match UpperCamelCase formatting.
+  
 ### Configuration changes
 * [#4283](https://github.com/TouK/nussknacker/pull/4283) For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
   Please mind, that previous Nussknacker versions assumed its value is true if `authentication.audience` was defined.

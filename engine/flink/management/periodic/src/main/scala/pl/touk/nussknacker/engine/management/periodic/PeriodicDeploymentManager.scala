@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -137,12 +138,11 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
-  override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+  override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]] = {
     for {
       delegateState <- delegate.getProcessState(name)
       mergedStatus <- service.mergeStatusWithDeployments(name, delegateState.value)
-      formattedByPeriodicManager = mergedStatus.map(processStateDefinitionManager.processState)
-    } yield WithDataFreshnessStatus(formattedByPeriodicManager, delegateState.cached)
+    } yield WithDataFreshnessStatus(mergedStatus, delegateState.cached)
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
