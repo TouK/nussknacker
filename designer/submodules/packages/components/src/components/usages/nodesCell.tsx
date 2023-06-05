@@ -4,7 +4,7 @@ import { OpenInBrowser as LinkIcon } from "@mui/icons-material";
 import { Chip } from "@mui/material";
 import { TruncateWrapper } from "../utils";
 import { GridRenderCellParams } from "@mui/x-data-grid";
-import {NodeUsageData} from "../../../../../../client/src/http/HttpService";
+import {NodeUsageData} from "nussknackerUi/HttpService";
 
 const icon = <LinkIcon />;
 
