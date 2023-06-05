@@ -63,7 +63,7 @@ const NodeChip = memo(function NodeChip({
             href={nodeLink}
             tabIndex={0}
             label={matched > 0 ? <Highlight value={nodeId} filterText={filterText} /> : nodeLabel}
-            color={matched !== 0 ? (fragmentNodeId != null ? "secondary" : "primary") : "default"}
+            color={matched !== 0 ? (fragmentNodeId ? "secondary" : "primary") : "default"}
             variant={matched > 0 ? "outlined" : "filled"}
             icon={icon}
         />
