@@ -29,8 +29,19 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
-    Future.successful(WithDataFreshnessStatus(processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed), cached = false))
+  //We map lastStateAction to state to avoid some corner/blocking cases with the deleting/canceling scenario on tests..
+  override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
+    val lastStateActionStatus = lastStateAction match {
+      case Some(state) if state.isDeployed =>
+        SimpleStateStatus.Running
+      case Some(state) if state.isCanceled =>
+        SimpleStateStatus.Canceled
+      case _ =>
+        SimpleStateStatus.NotDeployed
+    }
+
+    Future.successful(WithDataFreshnessStatus(processStateDefinitionManager.processState(lastStateActionStatus), cached = false))
+  }
 
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] =
     Future.successful(None)
