@@ -98,22 +98,22 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   test("can't deploy fragment") {
-    val id = createValidProcess(processName, TestCat, isSubprocess = true)
+    val id = createValidProcess(processName, TestCat, isFragment = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.subprocess(ProcessActionType.Deploy, processIdWithName).message
+      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processIdWithName).message
     }
   }
 
   test("can't cancel fragment") {
-    val id = createValidProcess(processName, TestCat, isSubprocess = true)
+    val id = createValidProcess(processName, TestCat, isFragment = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.subprocess(ProcessActionType.Deploy, processIdWithName).message
+      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processIdWithName).message
     }
   }
 
@@ -407,8 +407,8 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     }
   }
 
-  test("should return 403 when execute custom action on subprocess") {
-    createEmptyProcess(SampleProcess.processName, isSubprocess = true)
+  test("should return 403 when execute custom action on fragment") {
+    createEmptyProcess(SampleProcess.processName, isFragment = true)
     customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
       status shouldBe StatusCodes.Forbidden
     }

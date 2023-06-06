@@ -18,9 +18,9 @@ object NewProcessPreparer {
 
 class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpecificInitialData, _],
                          additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]) {
-  def prepareEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean): CanonicalProcess = {
+  def prepareEmptyProcess(processId: String, processingType: ProcessingType, isFragment: Boolean): CanonicalProcess = {
     val creator = emptyProcessCreate.forTypeUnsafe(processingType)
-    val specificMetaData = if(isSubprocess) creator.forFragment _ else creator.forScenario _
+    val specificMetaData = if(isFragment) creator.forFragment _ else creator.forScenario _
     val emptyCanonical = CanonicalProcess(
       metaData = MetaData(
         id = processId,

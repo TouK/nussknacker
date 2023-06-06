@@ -58,13 +58,13 @@ case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
     typeSpecificData = typeSpecificProperties,
     additionalFields = additionalFields
   )
-  val isSubprocess: Boolean = typeSpecificProperties.isSubprocess
+  val isFragment: Boolean = typeSpecificProperties.isFragment
 
 }
 
 object ProcessProperties {
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =
-    Encoder.forProduct3("typeSpecificProperties", "isSubprocess", "additionalFields") { p =>
-    (p.typeSpecificProperties, p.isSubprocess, p.additionalFields)
+    Encoder.forProduct3("typeSpecificProperties", "isFragment", "additionalFields") { p =>
+    (p.typeSpecificProperties, p.isFragment, p.additionalFields)
   }
 }

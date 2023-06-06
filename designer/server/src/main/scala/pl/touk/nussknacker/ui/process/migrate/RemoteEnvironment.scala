@@ -132,7 +132,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     EitherT {
       invokeForSuccess(
         HttpMethods.POST, List("processes", localProcess.id, category),
-        Query(("isSubprocess", localProcess.metaData.isSubprocess.toString)), HttpEntity.Empty, remoteUserNameHeader
+        Query(("isFragment", localProcess.metaData.isFragment.toString)), HttpEntity.Empty, remoteUserNameHeader
       )
     }
   }
@@ -140,11 +140,11 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   override def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
-      basicProcesses = allBasicProcesses.filterNot(_.isSubprocess).filter(processToInclude)
-      basicSubProcesses = allBasicProcesses.filter(_.isSubprocess).filter(processToInclude)
+      basicProcesses = allBasicProcesses.filterNot(_.isFragment).filter(processToInclude)
+      basicFragments = allBasicProcesses.filter(_.isFragment).filter(processToInclude)
       processes <- fetchGroupByGroup(basicProcesses)
-      subProcesses <- fetchGroupByGroup(basicSubProcesses)
-    } yield testModelMigrations.testMigrations(processes, subProcesses)).value
+      fragments <- fetchGroupByGroup(basicFragments)
+    } yield testModelMigrations.testMigrations(processes, fragments)).value
   }
 
   private def fetchGroupByGroup[T](basicProcesses: List[BasicProcess])

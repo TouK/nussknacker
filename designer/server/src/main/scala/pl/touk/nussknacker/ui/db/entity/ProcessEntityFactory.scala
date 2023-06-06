@@ -25,7 +25,7 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 
     def processingType: Rep[ProcessingType] = column[ProcessingType]("processing_type", NotNull)
 
-    def isSubprocess: Rep[Boolean] = column[Boolean]("is_subprocess", NotNull)
+    def isFragment: Rep[Boolean] = column[Boolean]("is_fragment", NotNull)
 
     def isArchived: Rep[Boolean] = column[Boolean]("is_archived", NotNull)
 
@@ -33,7 +33,7 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 
     def createdBy: Rep[String] = column[String]("created_by", NotNull)
 
-    def * : ProvenShape[ProcessEntityData] = (id, name, description, processCategory, processingType, isSubprocess, isArchived, createdAt, createdBy) <> (
+    def * : ProvenShape[ProcessEntityData] = (id, name, description, processCategory, processingType, isFragment, isArchived, createdAt, createdBy) <> (
       ProcessEntityData.apply _ tupled, ProcessEntityData.unapply
     )
   }
@@ -44,7 +44,7 @@ case class ProcessEntityData(id: ProcessId,
                              description: Option[String],
                              processCategory: String,
                              processingType: ProcessingType,
-                             isSubprocess: Boolean,
+                             isFragment: Boolean,
                              isArchived: Boolean,
                              createdAt: Timestamp,
                              createdBy: String)

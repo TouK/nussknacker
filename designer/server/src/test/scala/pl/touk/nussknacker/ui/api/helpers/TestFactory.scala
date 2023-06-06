@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
-import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -45,7 +45,7 @@ object TestFactory extends TestPermissions{
 
   val possibleValues: List[FixedExpressionValue] = List(FixedExpressionValue("a", "a"))
 
-  val processValidation: ProcessValidation = ProcessTestData.processValidation.withSubprocessResolver(sampleResolver)
+  val processValidation: ProcessValidation = ProcessTestData.processValidation.withFragmentResolver(sampleResolver)
 
   val processResolving = new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
 
@@ -54,11 +54,11 @@ object TestFactory extends TestPermissions{
   val posting = new ProcessPosting
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
-  def prepareSampleSubprocessRepository: StubSubprocessRepository = new StubSubprocessRepository(Set(
-    SubprocessDetails(ProcessTestData.sampleSubprocess, TestCategories.TestCat))
+  def prepareSampleFragmentRepository: StubFragmentRepository = new StubFragmentRepository(Set(
+    FragmentDetails(ProcessTestData.sampleFragment, TestCategories.TestCat))
   )
 
-  def sampleResolver = new SubprocessResolver(prepareSampleSubprocessRepository)
+  def sampleResolver = new FragmentResolver(prepareSampleFragmentRepository)
 
   def scenarioResolver = new ScenarioResolver(sampleResolver)
 
@@ -82,8 +82,8 @@ object TestFactory extends TestPermissions{
   def newDummyWriteProcessRepository(): DBProcessRepository =
     newWriteProcessRepository(dummyDb)
 
-  def newSubprocessRepository(db: DbConfig): DbSubprocessRepository =
-    new DbSubprocessRepository(db, implicitly[ExecutionContext])
+  def newFragmentRepository(db: DbConfig): DbFragmentRepository =
+    new DbFragmentRepository(db, implicitly[ExecutionContext])
 
   def newActionProcessRepository(db: DbConfig) = new DbProcessActionRepository[DB](db,
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo)) with DbioRepository
@@ -125,8 +125,8 @@ object TestFactory extends TestPermissions{
   def emptyProcessingTypeDataProvider: ProcessingTypeDataProvider[Nothing, Nothing] = MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty)
 
   def createValidator(processDefinition: ProcessDefinition[ObjectDefinition]): ProcessValidator = {
-    val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
-    ProcessValidator.default(ModelDefinitionWithTypes(ProcessDefinitionBuilder.withEmptyObjects(processDefinition)), subprocessDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator)
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    ProcessValidator.default(ModelDefinitionWithTypes(ProcessDefinitionBuilder.withEmptyObjects(processDefinition)), fragmentDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator)
   }
 
 }

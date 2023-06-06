@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
@@ -193,9 +193,9 @@ object PdfExporter extends LazyLogging {
       case Processor(_, ServiceRef(typ, params), _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case Sink(_, SinkRef(typ, params), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case CustomNode(_, output, typ, params, _) => ("Type", typ) :: ("Output", output.getOrElse("")) :: params.map(p => (p.name, p.expression.expression))
-      case SubprocessInput(_, SubprocessRef(typ, params, _), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
-      case SubprocessInputDefinition(_, parameters, _) => parameters.map(p => p.name -> p.typ.refClazzName)
-      case SubprocessOutputDefinition(_, outputName, fields, _) => ("Output name", outputName) :: fields.map(p => p.name -> p.expression.expression)
+      case FragmentInput(_, FragmentRef(typ, params, _), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
+      case FragmentInputDefinition(_, parameters, _) => parameters.map(p => p.name -> p.typ.refClazzName)
+      case FragmentOutputDefinition(_, outputName, fields, _) => ("Output name", outputName) :: fields.map(p => p.name -> p.expression.expression)
       case Variable(_, name, expr, _) => (name -> expr.expression) :: Nil
       case VariableBuilder(_, name, fields, _) => ("Variable name", name) :: fields.map(p => p.name -> p.expression.expression)
       case Join(_, output, typ, parameters, branch, _) =>
@@ -204,7 +204,7 @@ object PdfExporter extends LazyLogging {
       case Split(_, _) => ("No parameters", "") :: Nil
       //This should not happen in properly resolved scenario...
       case _: BranchEndData => throw new IllegalArgumentException("Should not happen during PDF export")
-      case _: SubprocessUsageOutput => throw new IllegalArgumentException("Should not happen during PDF export")
+      case _: FragmentUsageOutput => throw new IllegalArgumentException("Should not happen during PDF export")
     }
     val data = node.additionalFields
       .flatMap(_.description)

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.restmodel.definition.{ComponentTemplate, UIProcessObj
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 
 private[component] case class ComponentObjects(templates: List[(ComponentGroupName, ComponentTemplate)],
@@ -34,7 +34,7 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
       processingType,
       processingTypeData,
       user = NussknackerInternalUser, // We need admin user to receive all components info
-      subprocesses = Set.empty,
+      fragments = Set.empty,
     )
     ComponentObjects(uiProcessObjects)
   }
@@ -42,22 +42,22 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
   def prepare(processingType: ProcessingType,
               processingTypeData: ProcessingTypeData,
               user: LoggedUser,
-              subprocesses: Set[SubprocessDetails]): ComponentObjects = {
-    val uiProcessObjects = createUIProcessObjects(processingType, processingTypeData, user, subprocesses)
+              fragments: Set[FragmentDetails]): ComponentObjects = {
+    val uiProcessObjects = createUIProcessObjects(processingType, processingTypeData, user, fragments)
     ComponentObjects(uiProcessObjects)
   }
 
   private def createUIProcessObjects(processingType: ProcessingType,
                                      processingTypeData: ProcessingTypeData,
                                      user: LoggedUser,
-                                     subprocesses: Set[SubprocessDetails]): UIProcessObjects = {
+                                     fragments: Set[FragmentDetails]): UIProcessObjects = {
     UIProcessObjectsFactory.prepareUIProcessObjects(
       modelDataForType = processingTypeData.modelData,
       deploymentManager = processingTypeData.deploymentManager,
       typeSpecificInitialData = processingTypeData.typeSpecificInitialData,
       user = user,
-      subprocessesDetails = subprocesses,
-      isSubprocess = false, //It excludes fragment's components: input / output
+      fragmentsDetails = fragments,
+      isFragment = false, //It excludes fragment's components: input / output
       processCategoryService = categoryService,
       additionalPropertiesConfig = processingTypeData.additionalPropertiesConfig,
       processingType = processingType

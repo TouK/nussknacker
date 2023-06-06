@@ -1,1 +1,1 @@
-ALTER TABLE "processes" ADD COLUMN "is_subprocess" BOOLEAN DEFAULT FALSE;
+ALTER TABLE "processes" ADD COLUMN "is_fragment" BOOLEAN DEFAULT FALSE;

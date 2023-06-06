@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
 
   private lazy val expectedJson = {
-    val rawJsonString = """{"metaData":{"id":"empty-2","isSubprocess":false},"additionalBranches":[]}"""
+    val rawJsonString = """{"metaData":{"id":"empty-2","isFragment":false},"additionalBranches":[]}"""
     Some(CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string."))
   }
 
@@ -18,7 +18,7 @@ class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
         |{
         |  "metaData": {
         |    "id": "empty-2",
-        |    "isSubprocess": false
+        |    "isFragment": false
         |  },
         |  "additionalBranches": null
         |}
@@ -36,7 +36,7 @@ class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
         |{
         |  "metaData": {
         |    "id": "empty-2",
-        |    "isSubprocess": false
+        |    "isFragment": false
         |  }
         |}
         |""".stripMargin
@@ -53,7 +53,7 @@ class V1_029__AdditionalBranchesChangeSpec extends AnyFlatSpec with Matchers {
         |{
         |  "metaData": {
         |    "id": "empty-2",
-        |    "isSubprocess": false
+        |    "isFragment": false
         |  },
         |  "additionalBranches": ["test"]
         |}

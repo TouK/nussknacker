@@ -51,7 +51,7 @@ abstract class InitializationOnDbItSpec
 
   it should "migrate processes when fragments present" in {
     (1 to 20).foreach { id =>
-      saveSampleProcess(s"sub$id", subprocess = true)
+      saveSampleProcess(s"sub$id", fragment = true)
     }
 
     (1 to 20).foreach { id =>
@@ -74,13 +74,13 @@ abstract class InitializationOnDbItSpec
     repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses).futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
   }
 
-  private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
+  private def saveSampleProcess(processName: String = processId, fragment: Boolean = false): Unit = {
     val action = CreateProcessAction(
       ProcessName(processName),
       "RTM",
       sampleCanonicalProcess(processId),
       TestProcessingTypes.Streaming,
-      subprocess,
+      fragment,
       forwardedUserName = None)
 
     dbioRunner

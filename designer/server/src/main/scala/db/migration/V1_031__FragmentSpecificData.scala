@@ -18,10 +18,10 @@ object V1_031__FragmentSpecificData {
 
   private[migration] def migrateMetadata(jsonProcess: Json): Option[Json] = {
     jsonProcess.hcursor.downField("metaData")
-      .withFocus { metadata => metadata.hcursor.downField("isSubprocess").focus.flatMap(_.asBoolean) match {
+      .withFocus { metadata => metadata.hcursor.downField("isFragment").focus.flatMap(_.asBoolean) match {
           case Some(true) => metadata.hcursor.withFocus { mj => mj.mapObject(_.+:("typeSpecificData",
-            FragmentSpecificData().asInstanceOf[TypeSpecificData].asJson))}.downField("isSubprocess").delete.focus.get
-          case Some(false) => metadata.hcursor.downField("isSubprocess").delete.focus.get
+            FragmentSpecificData().asInstanceOf[TypeSpecificData].asJson))}.downField("isFragment").delete.focus.get
+          case Some(false) => metadata.hcursor.downField("isFragment").delete.focus.get
           case _ => metadata
         }
       }

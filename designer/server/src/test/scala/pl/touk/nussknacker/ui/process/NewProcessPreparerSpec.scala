@@ -17,7 +17,7 @@ class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
       mapProcessingTypeDataProvider(processingType -> Map.empty)
     )
 
-    val emptyProcess = preparer.prepareEmptyProcess("processId1", processingType, isSubprocess = false)
+    val emptyProcess = preparer.prepareEmptyProcess("processId1", processingType, isFragment = false)
 
     emptyProcess.metaData.id shouldBe "processId1"
     emptyProcess.nodes shouldBe List.empty

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
-import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, FragmentInputDefinition}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
@@ -21,21 +21,21 @@ import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
+import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 
 object ProcessValidation {
   def apply(modelData: ProcessingTypeDataProvider[ModelData, _],
             additionalProperties: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _],
             additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator], _],
-            subprocessResolver: SubprocessResolver): ProcessValidation = {
-    new ProcessValidation(modelData, additionalProperties, additionalValidators, subprocessResolver, None)
+            fragmentResolver: FragmentResolver): ProcessValidation = {
+    new ProcessValidation(modelData, additionalProperties, additionalValidators, fragmentResolver, None)
   }
 }
 
 class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData, _],
                         additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _],
                         additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator], _],
-                        subprocessResolver: SubprocessResolver,
+                        fragmentResolver: FragmentResolver,
                         expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]]) {
 
   /**
@@ -48,16 +48,16 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData, _],
 
   private val additionalPropertiesValidator = new AdditionalPropertiesValidator(additionalPropertiesConfig)
 
-  def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(
-    modelData, additionalPropertiesConfig, additionalValidators, subprocessResolver, None
+  def withFragmentResolver(fragmentResolver: FragmentResolver) = new ProcessValidation(
+    modelData, additionalPropertiesConfig, additionalValidators, fragmentResolver, None
   )
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]) = new ProcessValidation(
-    modelData, additionalPropertiesConfig, additionalValidators, subprocessResolver, Some(modify)
+    modelData, additionalPropertiesConfig, additionalValidators, fragmentResolver, Some(modify)
   )
 
   def withAdditionalPropertiesConfig(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]) =
-    new ProcessValidation(modelData, additionalPropertiesConfig, additionalValidators, subprocessResolver, None)
+    new ProcessValidation(modelData, additionalPropertiesConfig, additionalValidators, fragmentResolver, None)
 
   def validate(displayable: DisplayableProcess): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
@@ -108,15 +108,15 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData, _],
       .map(_.validate(canonical))
       .sequence.fold(formatErrors, _ => ValidationResult.success)
 
-    val resolveResult = subprocessResolver.resolveSubprocesses(canonical, category) match {
+    val resolveResult = fragmentResolver.resolveFragments(canonical, category) match {
       case Invalid(e) => formatErrors(e)
       case _ =>
         /* 1. We remove disabled nodes from canonical to not validate disabled nodes
-           2. TODO: handle types when subprocess resolution fails... */
-        subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes, category) match {
+           2. TODO: handle types when fragment resolution fails... */
+        fragmentResolver.resolveFragments(canonical.withoutDisabledNodes, category) match {
           case Valid(process) =>
             val validated = processValidator.validate(process)
-            //FIXME: Validation errors for subprocess nodes are not properly handled by FE
+            //FIXME: Validation errors for fragment nodes are not properly handled by FE
             validated.result.fold(formatErrors, _ => ValidationResult.success)
               .withNodeResults(validated.typing.mapValuesNow(nodeInfoToResult))
           case Invalid(e) => formatErrors(e)
@@ -150,7 +150,7 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData, _],
   }
 
   private def validateAdditionalProcessProperties(displayable: DisplayableProcess): ValidationResult = {
-    if (displayable.metaData.isSubprocess) {
+    if (displayable.metaData.isFragment) {
       ValidationResult.success
     } else {
       additionalPropertiesValidator.validate(displayable)
@@ -177,8 +177,8 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData, _],
 
   private def validateLooseNodes(displayableProcess: DisplayableProcess): ValidationResult = {
     val looseNodes = displayableProcess.nodes
-      //source & subprocess inputs don't have inputs
-      .filterNot(n => n.isInstanceOf[SubprocessInputDefinition] || n.isInstanceOf[Source])
+      //source & fragment inputs don't have inputs
+      .filterNot(n => n.isInstanceOf[FragmentInputDefinition] || n.isInstanceOf[Source])
       .filterNot(n => displayableProcess.edges.exists(_.to == n.id))
       .map(n => n.id -> List(PrettyValidationErrors.formatErrorMessage(LooseNode(n.id))))
       .toMap

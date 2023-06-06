@@ -1,77 +1,77 @@
-import {ReturnedType} from "./process"
+import { ReturnedType } from "./process";
 
-type Type = "Properties" | "SubprocessInput" | string
+type Type = "Properties" | "FragmentInput" | string;
 
-export type LayoutData = { x: number, y: number }
+export type LayoutData = { x: number; y: number };
 
 export interface BranchParams {
-  branchId: string,
-  parameters: Field[],
+    branchId: string;
+    parameters: Field[];
 }
 
-export type BranchParametersTemplate = $TodoType
+export type BranchParametersTemplate = $TodoType;
 
 //FIXME: something wrong here, process and node mixed?
 export type NodeType<F extends Field = Field> = {
-  id: string,
-  type: Type,
-  isSubprocess?: boolean,
-  isDisabled?: boolean,
-  additionalFields?: {
-    description: string,
-    layoutData?: LayoutData,
-    properties: {
-      layout?: string,
-    },
-  },
-  parameters?: Parameter[],
-  branchParameters?: BranchParams[],
-  branchParametersTemplate?: BranchParametersTemplate,
-  ref?: {
-    id: string,
-    typ: string,
-    parameters: $TodoType[],
-    outputVariableNames: Record<string, string>,
-  },
-  varName?: string,
-  value?: $TodoType,
-  fields?: Array<F>,
-  outputName?: string,
-  service?: {
-    id: string,
-    parameters?: $TodoType[],
-  },
-  typeSpecificProperties?: {
-    type: $TodoType,
-    slug?: string,
-  },
-  nodeType: string,
-  [key: string]: any,
-}
+    id: string;
+    type: Type;
+    isFragment?: boolean;
+    isDisabled?: boolean;
+    additionalFields?: {
+        description: string;
+        layoutData?: LayoutData;
+        properties: {
+            layout?: string;
+        };
+    };
+    parameters?: Parameter[];
+    branchParameters?: BranchParams[];
+    branchParametersTemplate?: BranchParametersTemplate;
+    ref?: {
+        id: string;
+        typ: string;
+        parameters: $TodoType[];
+        outputVariableNames: Record<string, string>;
+    };
+    varName?: string;
+    value?: $TodoType;
+    fields?: Array<F>;
+    outputName?: string;
+    service?: {
+        id: string;
+        parameters?: $TodoType[];
+    };
+    typeSpecificProperties?: {
+        type: $TodoType;
+        slug?: string;
+    };
+    nodeType: string;
+    [key: string]: any;
+};
 
-export type SubprocessNodeType = NodeType
+export type FragmentNodeType = NodeType;
 
 export type Field = {
-  name: string,
-  expression: Expression,
-}
+    name: string;
+    expression: Expression;
+};
 
 export interface Parameter {
-  name: string,
-  expression: Expression,
-  typ?: ReturnedType,
+    name: string;
+    expression: Expression;
+    typ?: ReturnedType;
 }
 
 export interface Expression {
-  language: string,
-  expression: string,
+    language: string;
+    expression: string;
 }
 
 //TODO: Add other process properties...
 export type PropertiesType = NodeType & {
-  type: "Properties",
-}
+    type: "Properties";
+};
 
-export type NodeId = NodeType["id"]
+export type NodeId = NodeType["id"];
 
-export type UINodeType = NodeType
+export type UINodeType = NodeType;

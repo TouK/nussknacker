@@ -46,7 +46,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ProcessingTypeConfig.modelConfig` now contains `ConfigWithUnresolvedVersion` instead of `Config`. Old `Config` value is in `ConfigWithUnresolvedVersion.resolved`
   * `ModelConfigLoader.resolveInputConfigDuringExecution` takes `ConfigWithUnresolvedVersion` instead of `Config`. Use `ConfigWithUnresolvedVersion.apply`
     for easy transition between those classes
-* [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`. It affects `MetaData`, `ProcessMetaDataBuilder` and `DisplayableProcess` properties. 
+* [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `fragmentVersions`. It affects `MetaData`, `ProcessMetaDataBuilder` and `DisplayableProcess` properties. 
 * [#4122](https://github.com/TouK/nussknacker/pull/4122), [#4132](https://github.com/TouK/nussknacker/pull/4132), [#4179](https://github.com/TouK/nussknacker/pull/4179), [#4189](https://github.com/TouK/nussknacker/pull/4189)
   * Use `ProcessStateDefinitionManager.stateDefinitions` to describe states: 1) their default properties 2) how the states are presented in filter-by-status options.  
     (see an example of basic definitions in `SimpleProcessStateDefinitionManager` and `SimpleStateStatus`).
@@ -87,7 +87,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Parameter `delegate` in `OverridingProcessStateDefinitionManager` has no default value, it should be provided explicitly.
   * There is additional validation when all processing types are reloaded from configuration: check if all processing types state definitions configuration is correct.
     (see comment in `ProcessStateDefinitionService`)
-* [#3997](https://github.com/TouK/nussknacker/pull/3997) Due to removal of deprecated field `subprocessVersions` migration of scenarios from and to remote environment, for 
+* [#3997](https://github.com/TouK/nussknacker/pull/3997) Due to removal of deprecated field `fragmentVersions` migration of scenarios from and to remote environment, for 
   Nussknacker version 1.9.0+ and older will not be possible. Use export and import as a workaround while working between older and newer version.  
 
 
@@ -159,7 +159,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
    Remove dependency on `flink-scala`. In particular: 
   * Switched from using `scala.DataStream` to `datastream.DataStream`. Some tools exclusive to scala datastreams are available in `engine.flink.api.datastream`
   * Scala based `TypeInformation` derivation is no longer used, for remaining cases `flink-scala-utils` module is provided (probably will be removed in the future)
-* [#3680](https://github.com/TouK/nussknacker/pull/3680) `SubprocessRef::outputVariableNames` type is changed from `Option[Map[String,String]]` with default None, to `Map[String,String]` with default `Map.empty`
+* [#3680](https://github.com/TouK/nussknacker/pull/3680) `FragmentRef::outputVariableNames` type is changed from `Option[Map[String,String]]` with default None, to `Map[String,String]` with default `Map.empty`
 * [#3692](https://github.com/TouK/nussknacker/pull/3692) Rename `mockedResult` to  `externalInvocation` in test results collectors.
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. As a replacement you can use:
   * nussknacker-request-response-app in version <= 1.6
@@ -217,7 +217,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3471](https://github.com/TouK/nussknacker/pull/3471), [#3553](https://github.com/TouK/nussknacker/pull/3553) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.
   `V1_033__RequestResponseUrlToSlug` migration is ready for that, the change also applies to Scenario DSL.
 * [#3513](https://github.com/TouK/nussknacker/pull/3513) Scenario DSL returns `CanonicalProcess` instead of `EspProcess`. 
-* [#3630](https://github.com/TouK/nussknacker/pull/3630) `SubprocessOutput` changed to `SubprocessUsageOutput`, changes in `OutputVar` definition               
+* [#3630](https://github.com/TouK/nussknacker/pull/3630) `FragmentOutput` changed to `FragmentUsageOutput`, changes in `OutputVar` definition               
 
 ### Configuration changes
 * [#3425](https://github.com/TouK/nussknacker/pull/3425) Deployment Manager for `request-response-embedded` configuration parameters changed:
@@ -511,7 +511,7 @@ Summary:
   * `KafkaAvroBaseTransformer` companion object renamed to `KafkaAvroBaseComponentTransformer` 
   * `KryoGenericRecordSchemaIdSerializationSupport` renamed to `GenericRecordSchemaIdSerializationSupport` 
 * [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
-* [#2296](https://github.com/TouK/nussknacker/pull/2296) Scenarios & Fragments have separate TypeSpecificData implementations. Also, we remove `isSubprocess` field from process JSON, and respectively from MetaData constructor. See corresponding db migration `V1_031__FragmentSpecificData.scala`
+* [#2296](https://github.com/TouK/nussknacker/pull/2296) Scenarios & Fragments have separate TypeSpecificData implementations. Also, we remove `isFragment` field from process JSON, and respectively from MetaData constructor. See corresponding db migration `V1_031__FragmentSpecificData.scala`
 * [#2368](https://github.com/TouK/nussknacker/pull/2368) `WithCategories` now takes categories as an `Option[List[String]]` instead of `List[String]`. 
 You should wrap given list of categories with `Some(...)`. `None` mean that component will be available in all categories.
 * [#2360](https://github.com/TouK/nussknacker/pull/2360) `union`, `union-memo` and `dead-end` components were extracted from `model/genericModel.jar` to `components/baseComponents.jar`

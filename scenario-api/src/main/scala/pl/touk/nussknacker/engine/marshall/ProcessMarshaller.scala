@@ -5,7 +5,7 @@ import io.circe.{Decoder, Encoder, Json, JsonObject}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.graph.node.{Filter, NodeData, Split, SubprocessInput, Switch}
+import pl.touk.nussknacker.engine.graph.node.{Filter, NodeData, Split, FragmentInput, Switch}
 
 object ProcessMarshaller {
 
@@ -64,18 +64,18 @@ object ProcessMarshaller {
       nexts <- Decoder.instance(j => Decoder[List[List[CanonicalNode]]].tryDecode(j downField "nexts"))
     } yield SplitNode(data, nexts)
 
-  private lazy val subprocessEncode: Encoder[Subprocess] =
-    Encoder.instance[Subprocess](subprocess =>
-      Encoder[NodeData].apply(subprocess.data).mapObject(addFields(
-        "outputs" -> Encoder[Map[String, List[CanonicalNode]]].apply(subprocess.outputs)
+  private lazy val fragmentEncode: Encoder[Fragment] =
+    Encoder.instance[Fragment](fragment =>
+      Encoder[NodeData].apply(fragment.data).mapObject(addFields(
+        "outputs" -> Encoder[Map[String, List[CanonicalNode]]].apply(fragment.outputs)
       ))
     )
 
-  private lazy val subprocessDecode: Decoder[CanonicalNode] =
+  private lazy val fragmentDecode: Decoder[CanonicalNode] =
     for {
-      data <- deriveConfiguredDecoder[SubprocessInput]
+      data <- deriveConfiguredDecoder[FragmentInput]
       nexts <- Decoder.instance(j => Decoder[Map[String, List[CanonicalNode]]].tryDecode(j downField "outputs"))
-    } yield Subprocess(data, nexts)
+    } yield Fragment(data, nexts)
 
 
   private implicit lazy val nodeEncode: Encoder[CanonicalNode] =
@@ -84,13 +84,13 @@ object ProcessMarshaller {
       case filter: FilterNode => filterEncode(filter)
       case switch: SwitchNode => switchEncode(switch)
       case split: SplitNode => splitEncode(split)
-      case subprocess: Subprocess => subprocessEncode(subprocess)
+      case fragment: Fragment => fragmentEncode(fragment)
     }
 
   //order is important here! flatNodeDecode has to be the last
-  //TODO: this can lead to difficult to debug errors, when e.g. subprocess is incorrect it'll be parsed as flatNode...
+  //TODO: this can lead to difficult to debug errors, when e.g. fragment is incorrect it'll be parsed as flatNode...
   private implicit lazy val nodeDecode: Decoder[CanonicalNode] =
-  filterDecode or switchDecode or splitDecode or subprocessDecode or flatNodeDecode
+  filterDecode or switchDecode or splitDecode or fragmentDecode or flatNodeDecode
 
   private implicit lazy val caseDecode: Decoder[Case] = deriveConfiguredDecoder
 

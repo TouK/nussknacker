@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, SubprocessInputDefinition, SubprocessUsageOutput, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, FragmentInputDefinition, FragmentUsageOutput, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect._
@@ -43,8 +43,8 @@ trait ProcessNodesRewriter {
         SplitNode(
           rewriteIfMatching(data),
           nodes.map(rewriteNodes))
-      case Subprocess(data, outputs) =>
-        Subprocess(
+      case Fragment(data, outputs) =>
+        Fragment(
           rewriteIfMatching(data),
           outputs.map { case (k, v) => (k, rewriteNodes(v)) })
     }
@@ -116,7 +116,7 @@ trait ExpressionRewriter {
       case n: node.Sink =>
         n.copy(
           ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))
-      case n: node.SubprocessInput =>
+      case n: node.FragmentInput =>
         n.copy(
           ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))
       case n: node.Filter =>
@@ -128,13 +128,13 @@ trait ExpressionRewriter {
       case n: Source =>
         n.copy(
           ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))
-      case n: SubprocessOutputDefinition =>
+      case n: FragmentOutputDefinition =>
         n.copy(
           fields = rewriteFields(n.fields))
-      case n: SubprocessUsageOutput =>
+      case n: FragmentUsageOutput =>
         n.copy(
           outputVar = n.outputVar.map(ov => ov.copy(fields = rewriteFields(ov.fields))))
-      case _: BranchEndData | _: Split | _: SubprocessInputDefinition => data
+      case _: BranchEndData | _: Split | _: FragmentInputDefinition => data
     }
 
   private def rewriteFields(list: List[Field])(implicit metaData: MetaData, nodeId: NodeId): List[Field] =

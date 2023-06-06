@@ -48,7 +48,7 @@ object ProcessRepository {
                                  category: String,
                                  canonicalProcess: CanonicalProcess,
                                  processingType: ProcessingType,
-                                 isSubprocess: Boolean,
+                                 isFragment: Boolean,
                                  forwardedUserName: Option[RemoteUserName],
                                 )
 
@@ -94,7 +94,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     val userName = action.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
     val processToSave = ProcessEntityData(
       id = ProcessId(-1L), name = action.processName, processCategory = action.category, description = None,
-      processingType = action.processingType, isSubprocess = action.isSubprocess, isArchived = false,
+      processingType = action.processingType, isFragment = action.isFragment, isArchived = false,
       createdAt = Timestamp.from(now), createdBy = userName
     )
 

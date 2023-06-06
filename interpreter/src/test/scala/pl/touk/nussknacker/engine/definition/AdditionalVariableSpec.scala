@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableProvidedInRuntime, AdditionalVariableWithFixedValue, NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.compile.SubprocessResolver
+import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.StandardObjectWithMethodDef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
@@ -36,8 +36,8 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
 
   test("doesn't allow LazyParameter with fixed value") {
     val modelData = LocalModelData(ConfigFactory.empty(), new CreatorWithComponent(new IncorrectService2))
-    val subprocessResolver = SubprocessResolver(List.empty)
-    val result = new NodeDataValidator(modelData, subprocessResolver).validate(node.Source("sid", SourceRef("one", evaluatedparam.Parameter("toFail", "''") :: Nil)),
+    val fragmentResolver = FragmentResolver(List.empty)
+    val result = new NodeDataValidator(modelData, fragmentResolver).validate(node.Source("sid", SourceRef("one", evaluatedparam.Parameter("toFail", "''") :: Nil)),
       ValidationContext.empty, Map.empty, Nil)(MetaData("scenario", StreamMetaData()))
     result.asInstanceOf[ValidationPerformed]
       .errors.distinct shouldBe CannotCreateObjectError("AdditionalVariableWithFixedValue should not be used with LazyParameters", "sid") :: Nil

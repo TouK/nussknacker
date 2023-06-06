@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMet
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.compile.SubprocessResolver
+import pl.touk.nussknacker.engine.compile.FragmentResolver
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 
 import java.util.Date
 
-class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
+class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -25,7 +25,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     val process = resolve(ScenarioBuilder.streaming("proc1")
       .source("id", "input")
-      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "param" -> "#input.value2")
+      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "param" -> "#input.value2")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
 
     val data = List(
@@ -42,7 +42,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     val process = resolve(ScenarioBuilder.streaming("proc1")
       .source("id", "input")
-      .subprocessOneOut("sub", "splitSubprocess", "output", "fragmentResult", "param" -> "#input.value2")
+      .fragmentOneOut("sub", "splitFragment", "output", "fragmentResult", "param" -> "#input.value2")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
 
     val data = List(
@@ -58,7 +58,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   test("be possible to use global vars in fragment") {
     val process = resolve(ScenarioBuilder.streaming("proc1")
       .source("id", "input")
-      .subprocessOneOut("sub", "subProcessGlobal", "output", "fragmentResult")
+      .fragmentOneOut("sub", "fragmentGlobal", "output", "fragmentResult")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
 
     val data = List(
@@ -74,7 +74,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   test("be possible to use diamond fragments") {
     val process = resolve(ScenarioBuilder.streaming("proc1")
       .source("id", "input")
-      .subprocessOneOut("sub", "diamondSubprocess", "output33", "fragmentResult", "ala" -> "#input.id")
+      .fragmentOneOut("sub", "diamondFragment", "output33", "fragmentResult", "ala" -> "#input.id")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
 
     val data = List(
@@ -88,32 +88,32 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   }
 
   private def resolve(scenario: CanonicalProcess) = {
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+    val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+        canonicalnode.FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()))))
-      ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
+      ), canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val subprocessWithSplit = CanonicalProcess(MetaData("splitSubprocess", FragmentSpecificData()),
+    val fragmentWithSplit = CanonicalProcess(MetaData("splitFragment", FragmentSpecificData()),
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+        canonicalnode.FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
         canonicalnode.SplitNode(Split("split"), List(
           List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List())))),
-          List(canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty)))
+          List(canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty)))
         ))
       ), List.empty)
 
-    val subprocessWithGlobalVar = CanonicalProcess(MetaData("subProcessGlobal", FragmentSpecificData()),
+    val fragmentWithGlobalVar = CanonicalProcess(MetaData("fragmentGlobal", FragmentSpecificData()),
           List(
-            canonicalnode.FlatNode(SubprocessInputDefinition("start", List())),
+            canonicalnode.FlatNode(FragmentInputDefinition("start", List())),
             canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"),
             List()
-          ), canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
+          ), canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val diamondSubprocess = CanonicalProcess(MetaData("diamondSubprocess", FragmentSpecificData()),
+    val diamondFragment = CanonicalProcess(MetaData("diamondFragment", FragmentSpecificData()),
       List(
-        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
+        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
         canonicalnode.SplitNode(Split("split"),
           List(
             List(canonicalnode.FilterNode(Filter("filter2a", "true"), Nil), FlatNode(BranchEndData(BranchEndDefinition("end1", "join1")))),
@@ -125,11 +125,11 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
           BranchParameters("end1", List(Parameter("value", "#ala"))),
           BranchParameters("end2", List(Parameter("value", "#ala")))
         ), None)),
-        FlatNode(SubprocessOutputDefinition("output22", "output33", Nil, None))
+        FlatNode(FragmentOutputDefinition("output22", "output33", Nil, None))
       ):: Nil
     )
 
-    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess)).resolve(scenario)
+    val resolved = FragmentResolver(Set(fragmentWithSplit, fragment, fragmentWithGlobalVar, diamondFragment)).resolve(scenario)
 
     resolved shouldBe Symbol("valid")
     resolved.toOption.get

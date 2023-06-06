@@ -62,7 +62,7 @@ class ProcessesResources(
         path("archive") {
           get {
             complete {
-              processService.getArchivedProcessesAndSubprocesses[Unit].toBasicProcess
+              processService.getArchivedProcessesAndFragments[Unit].toBasicProcess
             }
           }
         } ~ path("unarchive" / Segment) { processName =>
@@ -198,11 +198,11 @@ class ProcessesResources(
           authorize(user.can(category, Permission.Write)) {
             optionalHeaderValue(RemoteUserName.extractFromHeader) { remoteUserName =>
               canOverrideUsername(category, remoteUserName)(user) {
-                parameter(Symbol("isSubprocess") ? false) { isSubprocess =>
+                parameter(Symbol("isFragment") ? false) { isFragment =>
                   post {
                     complete {
                       processService
-                        .createProcess(CreateProcessCommand(ProcessName(processName), category, isSubprocess, remoteUserName))
+                        .createProcess(CreateProcessCommand(ProcessName(processName), category, isFragment, remoteUserName))
                         .withSideEffect(response => sideEffectAction(response) { process =>
                           OnSaved(process.id, process.versionId)
                         })
@@ -281,7 +281,7 @@ class ProcessesResources(
   private def enrichDetailsWithProcessState[PS: ProcessShapeFetchStrategy](process: BaseProcessDetails[PS])
                                                                           (implicit user: LoggedUser,
                                                                            freshnessPolicy: DataFreshnessPolicy): Future[BaseProcessDetails[PS]] = {
-    if (process.isSubprocess)
+    if (process.isFragment)
       Future.successful(process)
     else
       deploymentService.getProcessState(process).map(state => process.copy(state = Some(state)))
@@ -324,7 +324,7 @@ class ProcessesResources(
 
   private def processesQuery: Directive1[ProcessesQuery] = {
     parameters(
-      Symbol("isSubprocess").as[Boolean].?,
+      Symbol("isFragment").as[Boolean].?,
       Symbol("isArchived").as[Boolean].?,
       Symbol("isDeployed").as[Boolean].?,
       Symbol("categories").as(CsvSeq[String]).?,
@@ -341,7 +341,7 @@ class ProcessesResources(
 object ProcessesResources {
   case class UnmarshallError(message: String) extends Exception(message) with FatalError
 
-  case class ProcessesQuery(isSubprocess: Option[Boolean],
+  case class ProcessesQuery(isFragment: Option[Boolean],
                             isArchived: Option[Boolean],
                             isDeployed: Option[Boolean],
                             categories: Option[Seq[String]],
@@ -349,7 +349,7 @@ object ProcessesResources {
                             names: Option[Seq[String]],
                            ) {
     def toRepositoryQuery: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(
-      isSubprocess = isSubprocess,
+      isFragment = isFragment,
       isArchived = isArchived,
       isDeployed = isDeployed,
       categories = categories,

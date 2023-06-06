@@ -17,5 +17,5 @@ object EdgeType {
     override def mustBeUnique: Boolean = false
   }
   case object SwitchDefault extends SwitchEdge
-  case class SubprocessOutput(name: String) extends EdgeType
+  case class FragmentOutput(name: String) extends EdgeType
 }

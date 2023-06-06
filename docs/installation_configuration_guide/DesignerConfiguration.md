@@ -476,7 +476,7 @@ processToolbarConfig {
       {
         type: "process-info-panel"
         buttons: [
-          { type: "process-save", disabled: { subprocess: false, archived: true, type: "oneof" } }
+          { type: "process-save", disabled: { fragment: false, archived: true, type: "oneof" } }
           { type: "custom-link", title: "Metrics for $processName", url: "/metrics/$processId" }
         ]
       }
@@ -493,7 +493,7 @@ processToolbarConfig {
    "CategoryName" {
         id: "58f1acff-d864-4d66-9f86-0fa7319f7043"
         topLeft: [
-          { type: "creator-panel", hidden: {subprocess: true, archived: false, type: "allof"} }
+          { type: "creator-panel", hidden: {fragment: true, archived: false, type: "allof"} }
         ]
     } 
   }
@@ -509,7 +509,7 @@ Configuration allow us to:
 
 Each of this function can be configured by condition expression where we can use three parameters:
 
-* `subprocess: boolean` - if true then condition match only subprocess, by default ignored
+* `fragment: boolean` - if true then condition match only fragment, by default ignored
 * `archived: boolean` - if true then condition match only archived, by default ignored
 * `type: allof / oneof` - information about that checked will be only one condition or all conditions
 
@@ -551,9 +551,9 @@ processToolbarConfig {
         type: "process-info-panel"
         buttons: [
           { type: "process-save", title: "Save changes", disabled: { archived: true } }
-          { type: "process-deploy", disabled: { subprocess: true, archived: true, type: "oneof" } }
-          { type: "process-cancel", disabled: { subprocess: true, archived: true, type: "oneof" } }
-          { type: "custom-link", name: "metrics", icon: "/assets/buttons/metrics.svg", url: "/metrics/$processName", disabled: { subprocess: true } }
+          { type: "process-deploy", disabled: { fragment: true, archived: true, type: "oneof" } }
+          { type: "process-cancel", disabled: { fragment: true, archived: true, type: "oneof" } }
+          { type: "custom-link", name: "metrics", icon: "/assets/buttons/metrics.svg", url: "/metrics/$processName", disabled: { fragment: true } }
         ]
       }
       {
@@ -586,7 +586,7 @@ processToolbarConfig {
         type: "buttons-panel"
         title: "process"
         buttons: [
-          { type: "process-properties", hidden: { subprocess: true } }
+          { type: "process-properties", hidden: { fragment: true } }
           { type: "process-compare" }
           { type: "process-migrate", disabled: { archived: true } }
           { type: "process-import", disabled: { archived: true } }
@@ -600,7 +600,7 @@ processToolbarConfig {
         id: "test-panel"
         type: "buttons-panel"
         title: "test"
-        hidden: { subprocess: true }
+        hidden: { fragment: true }
         buttons: [
           { type: "test-from-file", disabled: { archived: true } }
           { type: "test-generate", disabled: { archived: true } }

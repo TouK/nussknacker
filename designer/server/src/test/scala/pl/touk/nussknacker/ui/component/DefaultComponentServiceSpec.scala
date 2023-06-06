@@ -280,14 +280,14 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     ComponentListElement(id, name, icon, componentType, componentGroupName, availableCategories, links, usageCount)
   }
 
-  private val subprocessMarketingComponents: List[ComponentListElement] = MarketingAllCategories.map(cat => {
+  private val fragmentMarketingComponents: List[ComponentListElement] = MarketingAllCategories.map(cat => {
     val componentId = cid(Streaming, cat, Fragments)
     val icon = DefaultsComponentIcon.fromComponentType(Fragments)
     val links = createLinks(componentId, cat, Fragments)
     ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0)
   })
 
-  private val subprocessFraudComponents: List[ComponentListElement] = FraudAllCategories.map(cat => {
+  private val fragmentFraudComponents: List[ComponentListElement] = FraudAllCategories.map(cat => {
     val componentId = cid(Fraud, cat, Fragments)
     val icon = if (cat == CategoryFraud) overriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
     val links = createLinks(componentId, cat, Fragments)
@@ -295,10 +295,10 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   })
 
   private def prepareComponents(implicit user: LoggedUser): List[ComponentListElement] =
-    baseComponents ++ prepareSharedComponents ++ prepareMarketingComponents ++ prepareFraudComponents ++ subprocessMarketingComponents ++ subprocessFraudComponents
+    baseComponents ++ prepareSharedComponents ++ prepareMarketingComponents ++ prepareFraudComponents ++ fragmentMarketingComponents ++ fragmentFraudComponents
 
-  private val subprocessFromCategories = AllCategories.flatMap(cat => categoryService.getTypeForCategory(cat).map(processingType =>
-    createSubProcess(cat, category = cat, processingType = processingType)
+  private val fragmentFromCategories = AllCategories.flatMap(cat => categoryService.getTypeForCategory(cat).map(processingType =>
+    createfragment(cat, category = cat, processingType = processingType)
   )).toSet
 
   private def marketingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) =
@@ -378,7 +378,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   it should "return components for each user" in {
     val processes = List(MarketingProcess, FraudProcess, FraudTestProcess, WrongCategoryProcess, ArchivedFraudProcess)
-    val processService = createDbProcessService(categoryService, processes ++ subprocessFromCategories.toList)
+    val processService = createDbProcessService(categoryService, processes ++ fragmentFromCategories.toList)
     val defaultComponentService = DefaultComponentService(componentLinksConfig, processingTypeDataProvider, processService, categoryService)
 
     def filterUserComponents(user: LoggedUser, categories: List[String]): List[ComponentListElement] =
@@ -477,13 +477,13 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   it should "return components usage" in {
     val processes = List(
       MarketingProcess, FraudProcess, FraudProcessWithNotSharedSource, CanceledFraudProcessWith2Enrichers,
-      DeployedFraudProcessWith2Filters, ArchivedFraudProcess, FraudProcessWithSubprocess, FraudSubprocess
+      DeployedFraudProcessWith2Filters, ArchivedFraudProcess, FraudProcessWithFragment, FraudFragment
     )
 
     val fraudNotSharedSourceComponentId = cid(Fraud, NotSharedSourceName, Source)
     val fraudCustomerDataEnricherComponentId = cid(Fraud, CustomerDataEnricherName, Enricher)
     val sharedSourceComponentId = ComponentId(SharedSourceName) //it's shared id - merged at configs file
-    val subprocessComponentId = cid(Fraud, FraudSubprocessName, Fragments)
+    val fragmentComponentId = cid(Fraud, FraudFragmentName, Fragments)
     val filterComponentId = bid(Filter)
 
     val processService = createDbProcessService(categoryService, processes)
@@ -491,17 +491,17 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
     val testingData = Table(
       ("user", "componentId", "expected"),
-      (admin, subprocessComponentId, List((FraudProcessWithSubprocess, List(ScenarioUsageData(FraudSubprocessName))))),
+      (admin, fragmentComponentId, List((FraudProcessWithFragment, List(ScenarioUsageData(FraudFragmentName))))),
       (admin, sharedSourceComponentId, List(
         (CanceledFraudProcessWith2Enrichers, List(ScenarioUsageData(DefaultSourceName))), (DeployedFraudProcessWith2Filters, List(ScenarioUsageData(DefaultSourceName))),
-        (FraudProcess, List(ScenarioUsageData(DefaultSourceName))), (FraudProcessWithSubprocess, List(ScenarioUsageData(SecondSourceName))),
+        (FraudProcess, List(ScenarioUsageData(DefaultSourceName))), (FraudProcessWithFragment, List(ScenarioUsageData(SecondSourceName))),
         (MarketingProcess, List(ScenarioUsageData(DefaultSourceName))),
       )),
       (admin, fraudNotSharedSourceComponentId, List((FraudProcessWithNotSharedSource, List(ScenarioUsageData(DefaultSourceName))))),
       (admin, fraudCustomerDataEnricherComponentId, List((CanceledFraudProcessWith2Enrichers, List(ScenarioUsageData(DefaultCustomName), ScenarioUsageData(SecondCustomName))))),
       (admin, filterComponentId, List(
         (DeployedFraudProcessWith2Filters, List(ScenarioUsageData(DefaultFilterName), ScenarioUsageData(SecondFilterName))),
-        (FraudProcessWithSubprocess, List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudSubprocess.name, SubprocessFilterName))),
+        (FraudProcessWithFragment, List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudFragment.name, FragmentFilterName))),
       )),
     )
 

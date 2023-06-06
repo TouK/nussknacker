@@ -6,12 +6,12 @@ import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
-import pl.touk.nussknacker.engine.graph.node.{BranchEndData, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{BranchEndData, FragmentInputDefinition}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
+import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import shapeless.syntax.typeable._
 
-class ProcessCounter(subprocessRepository: SubprocessRepository) {
+class ProcessCounter(fragmentRepository: FragmentRepository) {
 
 
   def computeCounts(canonicalProcess: CanonicalProcess, counts: String => Option[RawCount]) : Map[String, NodeCount] = {
@@ -24,18 +24,18 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
 
       val computeCountsSamePrefixes = computeCountsForSingle(prefixes) _
 
-      def nodeCount(id: String, subprocessCounts: Map[String, NodeCount] = Map()) : NodeCount =
-        nodeCountOption(Some(id), subprocessCounts)
+      def nodeCount(id: String, fragmentCounts: Map[String, NodeCount] = Map()) : NodeCount =
+        nodeCountOption(Some(id), fragmentCounts)
 
-      def nodeCountOption(id: Option[String], subprocessCounts: Map[String, NodeCount] = Map()) : NodeCount = {
+      def nodeCountOption(id: Option[String], fragmentCounts: Map[String, NodeCount] = Map()) : NodeCount = {
         val countId = (prefixes ++ id).mkString("-")
         val count = counts(countId).getOrElse(RawCount(0L, 0L))
-        NodeCount(count.all, count.errors, subprocessCounts)
+        NodeCount(count.all, count.errors, fragmentCounts)
       }
 
       nodes.flatMap {
-        //TODO: this is a bit of a hack. Metric for subprocess input is counted in node with subprocess occurrence id...
-        case FlatNode(SubprocessInputDefinition(id, _, _)) => Map(id -> nodeCountOption(None))
+        //TODO: this is a bit of a hack. Metric for fragment input is counted in node with fragment occurrence id...
+        case FlatNode(FragmentInputDefinition(id, _, _)) => Map(id -> nodeCountOption(None))
         //BranchEndData is kind of artifical entity
         case FlatNode(BranchEndData(_)) => Map.empty[String, NodeCount]
         case FlatNode(node) => Map(node.id -> nodeCount(node.id))
@@ -43,19 +43,19 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
         case SwitchNode(node, nexts, defaultNext) =>
           computeCountsSamePrefixes(nexts.flatMap(_.nodes)) ++ computeCountsSamePrefixes(defaultNext) + (node.id -> nodeCount(node.id))
         case SplitNode(node, nexts) => computeCountsSamePrefixes(nexts.flatten) + (node.id -> nodeCount(node.id))
-        case Subprocess(node, outputs) =>
+        case Fragment(node, outputs) =>
           //TODO: validate that process exists
-          val subprocess = getSubprocess(node.ref.id).get
+          val fragment = getFragment(node.ref.id).get
           computeCountsSamePrefixes(outputs.values.flatten) + (node.id -> nodeCount(node.id,
-            computeCounts(prefixes :+ node.id)(subprocess.allStartNodes)))
+            computeCounts(prefixes :+ node.id)(fragment.allStartNodes)))
       }.toMap
 
     }
     computeCounts(List())(canonicalProcess.allStartNodes)
   }
 
-  private def getSubprocess(subprocessId: String): Option[CanonicalProcess] = {
-    subprocessRepository.get(subprocessId).map(_.canonical)
+  private def getFragment(fragmentId: String): Option[CanonicalProcess] = {
+    fragmentRepository.get(fragmentId).map(_.canonical)
   }
 
 }
@@ -63,4 +63,4 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
 
 case class RawCount(all: Long, errors: Long)
 
-@JsonCodec case class NodeCount(all: Long, errors: Long, subprocessCounts: Map[String, NodeCount] = Map())
+@JsonCodec case class NodeCount(all: Long, errors: Long, fragmentCounts: Map[String, NodeCount] = Map())

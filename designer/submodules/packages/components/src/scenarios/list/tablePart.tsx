@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Columns, FilterLinkCell, TableWrapper } from "../../components";
-import {ScenariosFiltersModel, ScenariosFiltersModelType} from "../filters/scenariosFiltersModel";
+import { ScenariosFiltersModel, ScenariosFiltersModelType } from "../filters/scenariosFiltersModel";
 import { ListPartProps, RowType } from "./listPart";
 import { useTranslation } from "react-i18next";
 import { createFilterRules, ExternalLink, Highlight, metricsHref, useFilterContext } from "../../common";
@@ -83,7 +83,7 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                 field: "metrics",
                 headerName: t("table.scenarios.title.METRICS", "Metrics"),
                 renderCell: ({ row }) =>
-                    !row.isSubprocess ? (
+                    !row.isFragment ? (
                         <IconButton component={ExternalLink} href={metricsHref(row.id)}>
                             <AssessmentIcon />
                         </IconButton>
@@ -122,8 +122,8 @@ export function TablePart(props: ListPartProps<RowType>): JSX.Element {
                         .concat(value)
                         .some(
                             (f) =>
-                                (f === ScenariosFiltersModelType.SCENARIOS && !row.isSubprocess) ||
-                                (f === ScenariosFiltersModelType.FRAGMENTS && row.isSubprocess),
+                                (f === ScenariosFiltersModelType.SCENARIOS && !row.isFragment) ||
+                                (f === ScenariosFiltersModelType.FRAGMENTS && row.isFragment),
                         ),
                 CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
                 CREATED_BY: (row, value) =>

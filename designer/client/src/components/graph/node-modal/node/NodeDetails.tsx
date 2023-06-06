@@ -46,12 +46,10 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const replaceWindowsQueryParams = useCallback(
         <P extends Record<string, string | string[]>>(add: P, remove?: P): void => {
             const params = parseWindowsQueryParams(add, remove);
-            const search = setAndPreserveLocationParams(
-                mapValues(params, (v) => ensureArray(v).map(encodeURIComponent))
-            );
+            const search = setAndPreserveLocationParams(mapValues(params, (v) => ensureArray(v).map(encodeURIComponent)));
             navigate({ search }, { replace: true });
         },
-        [navigate]
+        [navigate],
     );
 
     useEffect(() => {
@@ -90,12 +88,12 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
                       }),
                   }
                 : null,
-        [editedNode.id?.length, performNodeEdit, readOnly, t, theme.colors.accent]
+        [editedNode.id?.length, performNodeEdit, readOnly, t, theme.colors.accent],
     );
 
-    const openSubprocessButtonData: WindowButtonProps | null = useMemo(
+    const openFragmentButtonData: WindowButtonProps | null = useMemo(
         () =>
-            NodeUtils.nodeIsSubprocess(editedNode)
+            NodeUtils.nodeIsFragment(editedNode)
                 ? {
                       title: t("dialog.button.fragment.edit", "edit fragment"),
                       action: () => {
@@ -103,17 +101,17 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
                       },
                   }
                 : null,
-        [editedNode, t]
+        [editedNode, t],
     );
 
     const cancelButtonData = useMemo(
         () => ({ title: t("dialog.button.cancel", "cancel"), action: () => props.close(), classname: "window-close" }),
-        [props, t]
+        [props, t],
     );
 
     const buttons: WindowButtonProps[] = useMemo(
-        () => [openSubprocessButtonData, cancelButtonData, applyButtonData].filter(Boolean),
-        [applyButtonData, cancelButtonData, openSubprocessButtonData]
+        () => [openFragmentButtonData, cancelButtonData, applyButtonData].filter(Boolean),
+        [applyButtonData, cancelButtonData, openFragmentButtonData],
     );
 
     const components = useMemo(() => {

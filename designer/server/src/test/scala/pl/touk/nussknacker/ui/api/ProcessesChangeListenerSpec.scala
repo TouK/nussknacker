@@ -35,7 +35,7 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
   }
 
   test("listen to process create") {
-    Post(s"/processes/${processName.value}/$TestCat?isSubprocess=false") ~> processesRouteWithAllPermissions ~> checkEventually {
+    Post(s"/processes/${processName.value}/$TestCat?isFragment=false") ~> processesRouteWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
     }
   }

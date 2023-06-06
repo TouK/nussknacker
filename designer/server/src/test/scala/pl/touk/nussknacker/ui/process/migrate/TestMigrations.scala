@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{Processor, Source, SubprocessInput, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{Processor, Source, FragmentInput, FragmentInputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.migration.{NodeMigration, ProcessMigration, ProcessMigrations}
@@ -104,10 +104,10 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
     override def failOnNewValidationError: Boolean = true
 
     override def migrateNode(metadata: MetaData): PartialFunction[node.NodeData, node.NodeData] = {
-      case sub@SubprocessInputDefinition(_, subParams, _) if !subParams.exists(_.name == "param42") && subParams.exists(_.name == "param1") =>
+      case sub@FragmentInputDefinition(_, subParams, _) if !subParams.exists(_.name == "param42") && subParams.exists(_.name == "param1") =>
         sub.copy(parameters = sub.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p))
 
-      case sub@SubprocessInput(_, ref, _,_, _) if !ref.parameters.exists(_.name == "param42") && ref.parameters.exists(_.name == "param1") =>
+      case sub@FragmentInput(_, ref, _,_, _) if !ref.parameters.exists(_.name == "param42") && ref.parameters.exists(_.name == "param1") =>
         sub.copy(ref = sub.ref.copy(parameters = sub.ref.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p)))
     }
   }

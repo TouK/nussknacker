@@ -6,8 +6,8 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, UserDefinedAdditionalNodeFields}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 
@@ -18,7 +18,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers {
     val process = DisplayableProcess("", ProcessProperties(
       StreamMetaData(), Some(ProcessAdditionalFields(Some("a"), Map("field1" -> "value1")))
     ), List(
-      SubprocessInputDefinition("proc1", List(SubprocessParameter("param1", SubprocessClazzRef[String]))),
+      FragmentInputDefinition("proc1", List(FragmentParameter("param1", FragmentClazzRef[String]))),
       CustomNode("id", Some("out1"), "typ1", List(Parameter("name1", Expression.spel("11"))),
         Some(UserDefinedAdditionalNodeFields(Some("desc"), None)))
     ), List(

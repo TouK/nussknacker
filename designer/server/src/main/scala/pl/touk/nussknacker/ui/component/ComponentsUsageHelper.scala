@@ -26,8 +26,8 @@ object ComponentsUsageHelper {
       nodeId <- nodeIds
     } yield ScenarioComponentsUsage[NodeId](componentId, componentType, componentName, processDetails, nodeId)
 
-    val scenariosComponentUsages = flattenUsages(processesDetails.filter(_.isSubprocess == false))
-    val fragmentsComponentUsages = flattenUsages(processesDetails.filter(_.isSubprocess == true))
+    val scenariosComponentUsages = flattenUsages(processesDetails.filter(_.isFragment == false))
+    val fragmentsComponentUsages = flattenUsages(processesDetails.filter(_.isFragment == true))
       .groupBy(_.processDetails.name)
 
     val scenarioUsagesWithResolvedFragments: List[ScenarioComponentsUsage[NodeUsageData]] = scenariosComponentUsages.flatMap {

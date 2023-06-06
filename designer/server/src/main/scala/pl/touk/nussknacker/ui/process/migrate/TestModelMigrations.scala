@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, ValidationErrors, ValidationResult, ValidationWarnings}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
@@ -14,11 +14,11 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 
 class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigrations, _], processValidation: ProcessValidation) {
 
-  def testMigrations(processes: List[ValidatedProcessDetails], subprocesses: List[ValidatedProcessDetails]) : List[TestMigrationResult] = {
-    val migratedSubprocesses = subprocesses.flatMap(migrateProcess)
+  def testMigrations(processes: List[ValidatedProcessDetails], fragments: List[ValidatedProcessDetails]) : List[TestMigrationResult] = {
+    val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
-    val validation = processValidation.withSubprocessResolver(new SubprocessResolver(prepareSubprocessRepository(migratedSubprocesses.map(s => (s.newProcess, s.processCategory)))))
-    (migratedSubprocesses ++ migratedProcesses).map { migrationDetails =>
+    val validation = processValidation.withFragmentResolver(new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory)))))
+    (migratedFragments ++ migratedProcesses).map { migrationDetails =>
       val validationResult = validation.validate(migrationDetails.newProcess)
       val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(new ValidatedDisplayableProcess(migrationDetails.newProcess, validationResult), newErrors, migrationDetails.shouldFail)
@@ -35,17 +35,17 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
     }
   }
 
-  private def prepareSubprocessRepository(subprocesses: List[(DisplayableProcess, String)]) = {
-    val subprocessesDetails = subprocesses.map { case (displayable, category) =>
+  private def prepareFragmentRepository(fragments: List[(DisplayableProcess, String)]) = {
+    val fragmentsDetails = fragments.map { case (displayable, category) =>
       val canonical = ProcessConverter.fromDisplayable(displayable)
-      SubprocessDetails(canonical, category)
+      FragmentDetails(canonical, category)
     }
-    new SubprocessRepository {
-      override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] =
-        subprocessesDetails.toSet
+    new FragmentRepository {
+      override def loadFragments(versions: Map[String, VersionId]): Set[FragmentDetails] =
+        fragmentsDetails.toSet
 
-      override def loadSubprocesses(versions: Map[String, VersionId], category: Category): Set[SubprocessDetails] =
-        loadSubprocesses(versions).filter(_.category == category)
+      override def loadFragments(versions: Map[String, VersionId], category: Category): Set[FragmentDetails] =
+        loadFragments(versions).filter(_.category == category)
     }
   }
 

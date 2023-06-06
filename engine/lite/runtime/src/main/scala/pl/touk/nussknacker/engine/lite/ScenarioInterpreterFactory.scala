@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
@@ -62,7 +62,7 @@ object ScenarioInterpreterFactory {
     val compilerData = ProcessCompilerData.prepare(process,
       modelData.modelDefinitionWithTypes,
       modelData.engineDictRegistry,
-      SubprocessComponentDefinitionExtractor(modelData),
+      FragmentComponentDefinitionExtractor(modelData),
       listeners,
       modelData.modelClassLoader.classLoader, resultCollector,
       componentUseCase,

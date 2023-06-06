@@ -21,8 +21,8 @@ export const filterRules = createFilterRules<RowType, ScenariosFiltersModel>({
             .concat(value)
             .some(
                 (f) =>
-                    (f === ScenariosFiltersModelType.SCENARIOS && !row.isSubprocess) ||
-                    (f === ScenariosFiltersModelType.FRAGMENTS && row.isSubprocess),
+                    (f === ScenariosFiltersModelType.SCENARIOS && !row.isFragment) ||
+                    (f === ScenariosFiltersModelType.FRAGMENTS && row.isFragment),
             ),
     CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
     CREATED_BY: (row, value) =>

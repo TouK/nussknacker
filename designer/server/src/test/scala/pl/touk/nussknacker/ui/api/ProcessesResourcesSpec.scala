@@ -72,8 +72,8 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running))
   }
 
-  test("should return list of subprocess with no state") {
-    createEmptyProcess(processName, isSubprocess = true)
+  test("should return list of fragment with no state") {
+    createEmptyProcess(processName, isFragment = true)
     verifyProcessWithStateOnList(processName, None)
   }
 
@@ -113,14 +113,14 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  //FIXME: Implement subprocess valiation
+  //FIXME: Implement fragment valiation
   ignore("not allow to archive still used fragment") {
-    val processWithSubprocess = ProcessTestData.validProcessWithSubprocess(processName)
-    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming, TestCat)
-    saveSubProcess(displayableSubprocess)(succeed)
-    saveProcess(processName, processWithSubprocess.process, TestCat)(succeed)
+    val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
+    val displayableFragment = ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, TestCat)
+    savefragment(displayableFragment)(succeed)
+    saveProcess(processName, processWithFragment.process, TestCat)(succeed)
 
-    archiveProcess(ProcessName(displayableSubprocess.id)) { status =>
+    archiveProcess(ProcessName(displayableFragment.id)) { status =>
       status shouldEqual StatusCodes.Conflict
     }
   }
@@ -136,16 +136,16 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("allow to archive fragment used in archived process") {
-    val processWithSubprocess = ProcessTestData.validProcessWithSubprocess(processName)
-    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming, TestCat)
-    saveSubProcess(displayableSubprocess)(succeed)
-    saveProcess(processName, processWithSubprocess.process, TestCat)(succeed)
+    val processWithFragment = ProcessTestData.validProcessWithFragment(processName)
+    val displayableFragment = ProcessConverter.toDisplayable(processWithFragment.fragment, TestProcessingTypes.Streaming, TestCat)
+    savefragment(displayableFragment)(succeed)
+    saveProcess(processName, processWithFragment.process, TestCat)(succeed)
 
     archiveProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
     }
 
-    archiveProcess(ProcessName(displayableSubprocess.id)) { status =>
+    archiveProcess(ProcessName(displayableFragment.id)) { status =>
       status shouldEqual StatusCodes.OK
     }
   }
@@ -158,7 +158,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       status shouldEqual StatusCodes.OK
     }
 
-    Post(s"/processes/${processName.value}/$TestCat?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/${processName.value}/$TestCat?isFragment=false") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.BadRequest
       responseAs[String] shouldEqual s"Scenario ${processName.value} already exists"
     }
@@ -218,7 +218,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("should allow to rename fragment") {
-    val processId = createEmptyProcess(processName, isSubprocess = true)
+    val processId = createEmptyProcess(processName, isFragment = true)
     val newName = ProcessName("ProcessChangedName")
 
     renameProcess(processName, newName) { status =>
@@ -238,9 +238,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("should return list of all processes and fragments") {
     createEmptyProcess(processName)
-    createEmptyProcess(fragmentName, isSubprocess = true)
+    createEmptyProcess(fragmentName, isFragment = true)
     createArchivedProcess(archivedProcessName)
-    createArchivedProcess(archivedFragmentName, isSubprocess = true)
+    createArchivedProcess(archivedFragmentName, isFragment = true)
 
     verifyListOfProcesses(ProcessesQuery.empty, List(processName, fragmentName, archivedProcessName, archivedFragmentName))
     verifyListOfProcesses(ProcessesQuery.empty.unarchived(), List(processName, fragmentName))
@@ -249,20 +249,20 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("return list of all fragments") {
     createEmptyProcess(processName)
-    createEmptyProcess(fragmentName, isSubprocess = true)
+    createEmptyProcess(fragmentName, isFragment = true)
     createArchivedProcess(archivedProcessName)
-    createArchivedProcess(archivedFragmentName, isSubprocess = true)
+    createArchivedProcess(archivedFragmentName, isFragment = true)
 
-    verifyListOfProcesses(ProcessesQuery.empty.subprocess(), List(fragmentName, archivedFragmentName))
-    verifyListOfProcesses(ProcessesQuery.empty.subprocess().unarchived(), List(fragmentName))
-    verifyListOfProcesses(ProcessesQuery.empty.subprocess().archived(), List(archivedFragmentName))
+    verifyListOfProcesses(ProcessesQuery.empty.fragment(), List(fragmentName, archivedFragmentName))
+    verifyListOfProcesses(ProcessesQuery.empty.fragment().unarchived(), List(fragmentName))
+    verifyListOfProcesses(ProcessesQuery.empty.fragment().archived(), List(archivedFragmentName))
   }
 
   test("should return list of processes") {
     createEmptyProcess(processName)
-    createEmptyProcess(fragmentName, isSubprocess = true)
+    createEmptyProcess(fragmentName, isFragment = true)
     createArchivedProcess(archivedProcessName)
-    createArchivedProcess(archivedFragmentName, isSubprocess = true)
+    createArchivedProcess(archivedFragmentName, isFragment = true)
 
     verifyListOfProcesses(ProcessesQuery.empty.process(), List(processName, archivedProcessName))
     verifyListOfProcesses(ProcessesQuery.empty.process().unarchived(), List(processName))
@@ -752,7 +752,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("allow to delete fragment") {
-    createEmptyProcess(processName, isSubprocess = true)
+    createEmptyProcess(processName, isFragment = true)
 
     deleteProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
@@ -765,7 +765,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("save new process with empty json") {
     val newProcessId = "tst1"
-    Post(s"/processes/$newProcessId/$TestCat?isSubprocess=false") ~> withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead) ~> check {
+    Post(s"/processes/$newProcessId/$TestCat?isFragment=false") ~> withPermissions(processesRoute, testPermissionWrite |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.Created
 
       Get(s"/processes/$newProcessId") ~> routeWithRead ~> check {
@@ -781,7 +781,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
-      Post(s"/processes/${processToSave.id}/$TestCat?isSubprocess=false") ~> routeWithWrite ~> check {
+      Post(s"/processes/${processToSave.id}/$TestCat?isFragment=false") ~> routeWithWrite ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
     }
@@ -816,7 +816,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("should return statuses only for not archived scenarios (excluding fragments)") {
     createDeployedProcess(processName)
     createArchivedProcess(archivedProcessName)
-    createEmptyProcess(ProcessName("fragment"), isSubprocess = true)
+    createEmptyProcess(ProcessName("fragment"), isFragment = true)
 
     Get(s"/processes/status") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
@@ -853,7 +853,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("should return 400 for single fragment status") {
-    createEmptyProcess(processName, TestCat, isSubprocess = true)
+    createEmptyProcess(processName, TestCat, isFragment = true)
 
     tryForScenarioStatus(processName) { (code, message) =>
       code shouldEqual StatusCodes.BadRequest

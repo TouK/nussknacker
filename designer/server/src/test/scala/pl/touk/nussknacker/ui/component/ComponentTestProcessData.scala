@@ -3,8 +3,8 @@ package pl.touk.nussknacker.ui.component
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition, Filter => FilterNodeData}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition, Filter => FilterNodeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
@@ -25,7 +25,7 @@ object ComponentTestProcessData {
 
   val DefaultFilterName = "someFilter"
   val SecondFilterName = "someFilter2"
-  val SubprocessFilterName = "subProcessFilter"
+  val FragmentFilterName = "fragmentFilter"
 
   val DefaultCustomName = "customEnricher"
   val SecondCustomName = "secondCustomEnricher"
@@ -37,10 +37,10 @@ object ComponentTestProcessData {
 
   val DeployedMarketingProcessName = "deployedMarketingProcess"
 
-  val FraudSubprocessName = "fraudSubprocessName"
+  val FraudFragmentName = "fraudFragmentName"
   val DeployedFraudProcessName = "deployedFraudProcess"
   val CanceledFraudProcessName = "canceledFraudProcessName"
-  val FraudProcessWithSubprocessName = "fraudProcessWithSubprocess"
+  val FraudProcessWithFragmentName = "fraudProcessWithFragment"
 
   private val deployedAction = ProcessAction(initialVersionId, Instant.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)
   private val canceledAction = ProcessAction(initialVersionId, Instant.now(), "user", ProcessActionType.Cancel, Option.empty, Option.empty, Map.empty)
@@ -101,25 +101,25 @@ object ComponentTestProcessData {
     category = CategoryFraud
   ).copy(lastAction = Some(archivedAction))
 
-  val FraudSubprocess: ProcessDetails = displayableToProcess(
+  val FraudFragment: ProcessDetails = displayableToProcess(
     displayable = {
       val scenario = ScenarioBuilder
-        .fragment(FraudSubprocessName, "in" -> classOf[String])
-        .filter(SubprocessFilterName, "#input.id != null")
+        .fragment(FraudFragmentName, "in" -> classOf[String])
+        .filter(FragmentFilterName, "#input.id != null")
         .fragmentOutput("fraudEnd", "output")
       toDisplayable(scenario, processingType = Fraud)
     },
     category = CategoryFraud,
-    isSubprocess = true,
+    isFragment = true,
   )
 
-  val FraudProcessWithSubprocess: ProcessDetails = displayableToProcess(
+  val FraudProcessWithFragment: ProcessDetails = displayableToProcess(
     toDisplayable(
       ScenarioBuilder
-        .streaming(FraudProcessWithSubprocessName)
+        .streaming(FraudProcessWithFragmentName)
         .source(SecondSourceName, SharedSourceName)
         .filter(SecondFilterName, "#input.id != null")
-        .subprocess(FraudSubprocess.id, FraudSubprocess.id, Nil, Map.empty, Map(
+        .fragment(FraudFragment.id, FraudFragment.id, Nil, Map.empty, Map(
           "sink" -> GraphBuilder.emptySink(DefaultSinkName, FraudSinkName)
         ))
       , Fraud), category = CategoryFraud

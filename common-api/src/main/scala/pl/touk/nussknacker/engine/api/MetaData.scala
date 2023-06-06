@@ -15,11 +15,11 @@ import scala.concurrent.duration.Duration
 @ConfiguredJsonCodec case class MetaData(id: String,
                                          typeSpecificData: TypeSpecificData,
                                          additionalFields: Option[ProcessAdditionalFields] = None) {
-  val isSubprocess: Boolean = typeSpecificData.isSubprocess
+  val isFragment: Boolean = typeSpecificData.isFragment
 }
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {
-  val isSubprocess = this match {
+  val isFragment = this match {
     case _: ScenarioSpecificData => false
     case _: FragmentSpecificData => true
   }

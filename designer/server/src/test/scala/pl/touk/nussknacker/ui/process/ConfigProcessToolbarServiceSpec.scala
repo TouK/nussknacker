@@ -22,7 +22,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
       |  processToolbarConfig {
       |    defaultConfig {
       |      topLeft: [
-      |        { type: "tips-panel", hidden: {subprocess: true} }
+      |        { type: "tips-panel", hidden: {fragment: true} }
       |      ]
       |      topRight: [
       |        {
@@ -31,13 +31,13 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
       |          buttons: [
       |            { type: "process-save", icon: "/assets/$processId/buttons/save.svg", title: "save", disabled: {archived: true} }
       |            { type: "custom-link", name: "metrics", title: "metrics for process", url: "/metrics/$processName" }
-      |            { type: "custom-link", name: "analytics", url: "/analytics/$processId", disabled: {archived: true, subprocess: true, type: "allof"} }
+      |            { type: "custom-link", name: "analytics", url: "/analytics/$processId", disabled: {archived: true, fragment: true, type: "allof"} }
       |          ]
       |        }
       |        {
       |           id: "buttons1"
       |           type: "buttons-panel"
-      |           hidden: {subprocess: false}
+      |           hidden: {fragment: false}
       |           buttonsVariant: "small"
       |           buttons: [ { type: "process-deploy" }, { type: "process-pdf", hidden: {archived: true} }]
       |        }
@@ -52,9 +52,9 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
       |    categoryConfig {
       |      "Category1" {
       |        topLeft: [
-      |          { type: "creator-panel", hidden: {subprocess: true, archived: false, type: "allof"} }
-      |          { type: "attachments-panel", hidden: {subprocess: true, archived: true, type: "allof"} }
-      |          { type: "comments-panel", hidden: {subprocess: false, archived: true, type: "allof"} }
+      |          { type: "creator-panel", hidden: {fragment: true, archived: false, type: "allof"} }
+      |          { type: "attachments-panel", hidden: {fragment: true, archived: true, type: "allof"} }
+      |          { type: "comments-panel", hidden: {fragment: false, archived: true, type: "allof"} }
       |        ]
       |        bottomRight: [
       |          { type: "versions-panel" }
@@ -63,9 +63,9 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
       |      "Category3" {
       |        uuid: "68013242-2007-462b-9526-7a9f8684227c"
       |        topLeft: [
-      |          { type: "creator-panel", hidden: {subprocess: true, archived: false} }
-      |          { type: "attachments-panel", hidden: {subprocess: true, archived: true } }
-      |          { type: "comments-panel", hidden: {subprocess: false, archived: true } }
+      |          { type: "creator-panel", hidden: {fragment: true, archived: false} }
+      |          { type: "attachments-panel", hidden: {fragment: true, archived: true } }
+      |          { type: "comments-panel", hidden: {fragment: false, archived: true } }
       |        ]
       |        bottomRight: [
       |          { type: "versions-panel" }
@@ -81,17 +81,17 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
   private val service = new ConfigProcessToolbarService(config, categories)
 
   it should "verify all toolbar condition cases" in {
-    val process = createProcess("process", "Category1", isSubprocess = false, isArchived = false)
-    val archivedProcess = createProcess("archived-process", "Category1", isSubprocess = false, isArchived = true)
-    val subprocess = createProcess("subprocess", "Category1", isSubprocess = true, isArchived = false)
-    val archivedSubprocess = createProcess("archived-subprocess", "Category1", isSubprocess = true, isArchived = true)
+    val process = createProcess("process", "Category1", isFragment = false, isArchived = false)
+    val archivedProcess = createProcess("archived-process", "Category1", isFragment = false, isArchived = true)
+    val fragment = createProcess("fragment", "Category1", isFragment = true, isArchived = false)
+    val archivedFragment = createProcess("archived-fragment", "Category1", isFragment = true, isArchived = true)
 
     val testingData = Table(
       ("process", "condition", "expected"),
       (process, None, false),
       (archivedProcess, None, false),
-      (subprocess, None, false),
-      (archivedSubprocess, None, false),
+      (fragment, None, false),
+      (archivedFragment, None, false),
 
       //All of conditions match
       (process, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.AllOf))), true),
@@ -112,23 +112,23 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
       (archivedProcess, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.AllOf))), false),
       (archivedProcess, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.AllOf))), false),
 
-      (subprocess, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.AllOf))), false),
-      (subprocess, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.AllOf))), true),
-      (subprocess, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.AllOf))), true),
-      (subprocess, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (subprocess, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (subprocess, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (subprocess, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.AllOf))), true),
-      (subprocess, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.AllOf))), false),
+      (fragment, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.AllOf))), false),
+      (fragment, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.AllOf))), true),
+      (fragment, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.AllOf))), true),
+      (fragment, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.AllOf))), false),
+      (fragment, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.AllOf))), false),
+      (fragment, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.AllOf))), false),
+      (fragment, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.AllOf))), true),
+      (fragment, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.AllOf))), false),
 
-      (archivedSubprocess, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.AllOf))), false),
-      (archivedSubprocess, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.AllOf))), true),
-      (archivedSubprocess, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (archivedSubprocess, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.AllOf))), true),
-      (archivedSubprocess, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (archivedSubprocess, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.AllOf))), false),
-      (archivedSubprocess, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.AllOf))), false),
-      (archivedSubprocess, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.AllOf))), true),
+      (archivedFragment, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.AllOf))), false),
+      (archivedFragment, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.AllOf))), true),
+      (archivedFragment, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.AllOf))), false),
+      (archivedFragment, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.AllOf))), true),
+      (archivedFragment, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.AllOf))), false),
+      (archivedFragment, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.AllOf))), false),
+      (archivedFragment, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.AllOf))), false),
+      (archivedFragment, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.AllOf))), true),
 
       //One of conditions match
       (process, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.OneOf))), true),
@@ -149,23 +149,23 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
       (archivedProcess, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.OneOf))), false),
       (archivedProcess, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), true),
 
-      (subprocess, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.OneOf))), false),
-      (subprocess, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.OneOf))), true),
-      (subprocess, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (subprocess, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.OneOf))), false),
-      (subprocess, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (subprocess, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.OneOf))), false),
-      (subprocess, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (subprocess, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), true),
+      (fragment, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.OneOf))), false),
+      (fragment, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.OneOf))), true),
+      (fragment, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.OneOf))), true),
+      (fragment, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.OneOf))), false),
+      (fragment, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.OneOf))), true),
+      (fragment, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.OneOf))), false),
+      (fragment, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.OneOf))), true),
+      (fragment, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), true),
 
-      (archivedSubprocess, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.OneOf))), false),
-      (archivedSubprocess, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.OneOf))), true),
-      (archivedSubprocess, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.OneOf))), false),
-      (archivedSubprocess, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.OneOf))), true),
-      (archivedSubprocess, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.OneOf))), false),
-      (archivedSubprocess, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.OneOf))), true),
-      (archivedSubprocess, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.OneOf))), true),
-      (archivedSubprocess, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), true)
+      (archivedFragment, Some(ToolbarCondition(Some(false), None, Some(ToolbarConditionType.OneOf))), false),
+      (archivedFragment, Some(ToolbarCondition(Some(true), None, Some(ToolbarConditionType.OneOf))), true),
+      (archivedFragment, Some(ToolbarCondition(None, Some(false), Some(ToolbarConditionType.OneOf))), false),
+      (archivedFragment, Some(ToolbarCondition(None, Some(true), Some(ToolbarConditionType.OneOf))), true),
+      (archivedFragment, Some(ToolbarCondition(Some(false), Some(false), Some(ToolbarConditionType.OneOf))), false),
+      (archivedFragment, Some(ToolbarCondition(Some(false), Some(true), Some(ToolbarConditionType.OneOf))), true),
+      (archivedFragment, Some(ToolbarCondition(Some(true), Some(false), Some(ToolbarConditionType.OneOf))), true),
+      (archivedFragment, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), true)
     )
 
     forAll(testingData) { (process: BaseProcessDetails[_], condition:  Option[ToolbarCondition], expected: Boolean) =>
@@ -175,7 +175,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "raise exception when try get get settings for not existing category" in {
-    val process = createProcess("process", "not-existing", isSubprocess = false, isArchived = false)
+    val process = createProcess("process", "not-existing", isFragment = false, isArchived = false)
 
     intercept[IllegalArgumentException] {
       service.getProcessToolbarSettings(process)
@@ -183,19 +183,19 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "properly create process toolbar configuration" in {
-    val process = createProcess("process with space", "Category1", isSubprocess = false, isArchived = false)
-    val archivedProcess = createProcess("archived-process", "Category1", isSubprocess = false, isArchived = true)
-    val subprocess = createProcess("subprocess", "Category1", isSubprocess = true, isArchived = false)
-    val archivedSubprocess = createProcess("archived-subprocess", "Category1", isSubprocess = true, isArchived = true)
-    val processCategory2 = createProcess("process2", "Category2", isSubprocess = false, isArchived = false)
-    val processCategory3 = createProcess("process3", "Category3", isSubprocess = false, isArchived = false)
+    val process = createProcess("process with space", "Category1", isFragment = false, isArchived = false)
+    val archivedProcess = createProcess("archived-process", "Category1", isFragment = false, isArchived = true)
+    val fragment = createProcess("fragment", "Category1", isFragment = true, isArchived = false)
+    val archivedFragment = createProcess("archived-fragment", "Category1", isFragment = true, isArchived = true)
+    val processCategory2 = createProcess("process2", "Category2", isFragment = false, isArchived = false)
+    val processCategory3 = createProcess("process3", "Category3", isFragment = false, isArchived = false)
 
     val testingData = Table(
       "process",
       process,
       archivedProcess,
-      subprocess,
-      archivedSubprocess,
+      fragment,
+      archivedFragment,
       processCategory2,
       processCategory3
     )
@@ -213,7 +213,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
 
     def processName(process: BaseProcessDetails[_]) = UriUtils.encodeURIComponent(process.name)
 
-    (process.isSubprocess, process.isArchived, process.processCategory) match {
+    (process.isFragment, process.isArchived, process.processCategory) match {
       case (false, false, "Category1") => ProcessToolbarSettings(
         id,
         List(
@@ -333,6 +333,6 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  private def createProcess(name: String, category: ProcessingType, isSubprocess: Boolean, isArchived: Boolean) =
-    TestProcessUtil.toDetails(name, category, isSubprocess = isSubprocess, isArchived = isArchived)
+  private def createProcess(name: String, category: ProcessingType, isFragment: Boolean, isArchived: Boolean) =
+    TestProcessUtil.toDetails(name, category, isFragment = isFragment, isArchived = isArchived)
 }

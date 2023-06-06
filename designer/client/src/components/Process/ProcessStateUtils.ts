@@ -1,83 +1,65 @@
-import {ActionType, ProcessStateType, ProcessType} from "./types"
+import { ActionType, ProcessStateType, ProcessType } from "./types";
 import {
-  descriptionProcessArchived,
-  descriptionSubprocess,
-  descriptionSubprocessArchived,
-  unknownDescription,
-  unknownTooltip,
-} from "./messages"
+    descriptionProcessArchived,
+    descriptionFragment,
+    descriptionFragmentArchived,
+    unknownDescription,
+    unknownTooltip,
+} from "./messages";
 
-export const unknownIcon = "/assets/states/status-unknown.svg"
-const subprocessIcon = "/assets/process/subprocess.svg"
-const archivedIcon = "/assets/process/archived.svg"
+export const unknownIcon = "/assets/states/status-unknown.svg";
+const fragmentIcon = "/assets/process/fragment.svg";
+const archivedIcon = "/assets/process/archived.svg";
 
 class ProcessStateUtils {
+    public canDeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Deploy);
 
-  public canDeploy = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Deploy)
+    public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Cancel);
 
-  public canCancel = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Cancel)
+    public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Archive);
 
-  public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Archive)
+    getStateDescription({ isArchived, isFragment }: ProcessType, processState: ProcessStateType): string {
+        if (isArchived) {
+            return isFragment ? descriptionFragmentArchived() : descriptionProcessArchived();
+        }
 
-  getStateDescription(
-    {isArchived, isSubprocess}: ProcessType,
-    processState: ProcessStateType,
-  ): string {
-    if (isArchived) {
-      return isSubprocess ?
-        descriptionSubprocessArchived() :
-        descriptionProcessArchived()
+        if (isFragment) {
+            return descriptionFragment();
+        }
+
+        return processState?.description || unknownDescription();
     }
 
-    if (isSubprocess) {
-      return descriptionSubprocess()
+    getStatusIcon({ isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
+        if (isArchived) {
+            return archivedIcon;
+        }
+
+        if (isFragment) {
+            return fragmentIcon;
+        }
+
+        return processState?.icon || state?.icon || unknownIcon;
     }
 
-    return processState?.description || unknownDescription()
-  }
+    getStatusTooltip({ isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
+        if (isArchived) {
+            return isFragment ? descriptionFragmentArchived() : descriptionProcessArchived();
+        }
 
-  getStatusIcon(
-    {isArchived, isSubprocess, state}: ProcessType,
-    processState: ProcessStateType,
-  ): string {
-    if (isArchived) {
-      return archivedIcon
+        if (isFragment) {
+            return descriptionFragment();
+        }
+
+        return processState?.tooltip || state?.tooltip || unknownTooltip();
     }
 
-    if (isSubprocess) {
-      return subprocessIcon
+    getTransitionKey({ id, isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
+        if (isArchived || isFragment) {
+            return `${id}`;
+        }
+        return `${id}-${processState?.icon || state?.icon || unknownIcon}`;
     }
-
-    return processState?.icon || state?.icon || unknownIcon
-  }
-
-  getStatusTooltip(
-    {isArchived, isSubprocess, state}: ProcessType,
-    processState: ProcessStateType,
-  ): string {
-    if (isArchived) {
-      return isSubprocess ?
-        descriptionSubprocessArchived() :
-        descriptionProcessArchived()
-    }
-
-    if (isSubprocess) {
-      return descriptionSubprocess()
-    }
-
-    return processState?.tooltip || state?.tooltip || unknownTooltip()
-  }
-
-  getTransitionKey(
-    {id, isArchived, isSubprocess, state}: ProcessType,
-    processState: ProcessStateType,
-  ): string {
-    if (isArchived || isSubprocess) {
-      return `${id}`
-    }
-    return `${id}-${processState?.icon || state?.icon || unknownIcon}`
-  }
 }
 
-export default new ProcessStateUtils()
-
+export default new ProcessStateUtils();

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, TypeSpecificInitialData}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Future
@@ -131,12 +131,12 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   test("should override fragment's docsUrl from config with value from 'properties'") {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model : ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
-    val fragment = ProcessTestData.sampleSubprocessOneOut
+    val fragment = ProcessTestData.sampleFragmentOneOut
     val docsUrl = "https://nussknacker.io/documentation/"
     val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.copy(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
 
     val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"),
-        Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
+        Set(FragmentDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
 
     processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
   }
@@ -147,7 +147,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val fragment = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData(), None), List.empty, List.empty)
     val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"),
-      Set(SubprocessDetails(fragment, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
+      Set(FragmentDetails(fragment, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
     processObjects.componentsConfig.get(fragment.id) shouldBe empty
   }
 

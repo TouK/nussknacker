@@ -71,7 +71,7 @@ abstract class DatabaseInitializerItSpec extends AnyFlatSpec
       TestCategories.TestCat,
       ProcessTestData.validProcessWithId(processName),
       TestProcessingTypes.Streaming,
-      isSubprocess = false,
+      isFragment = false,
       forwardedUserName = None)
     val processCreated = dbioRunner.runInTransaction(writeRepository.saveNewProcess(action)).futureValue.rightValue.value
     clearComponentsUsages()

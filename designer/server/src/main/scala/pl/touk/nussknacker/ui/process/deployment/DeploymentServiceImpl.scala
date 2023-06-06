@@ -53,7 +53,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     for {
       deployedProcesses <- {
         implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser
-        dbioRunner.run(processRepository.fetchProcessesDetails[CanonicalProcess](FetchProcessesDetailsQuery(isSubprocess = Some(false), isArchived = Some(false), isDeployed = Some(true), processingTypes = Some(Seq(processingType)))))
+        dbioRunner.run(processRepository.fetchProcessesDetails[CanonicalProcess](FetchProcessesDetailsQuery(isFragment = Some(false), isArchived = Some(false), isDeployed = Some(true), processingTypes = Some(Seq(processingType)))))
       }
       dataList <- Future.sequence(deployedProcesses.flatMap { details =>
         val lastDeployAction = details.lastDeployedAction.get
@@ -162,8 +162,8 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   private def checkIfCanPerformActionOnProcess[PS: ProcessShapeFetchStrategy](actionType: ProcessActionType, processDetails: BaseProcessDetails[PS]): Unit = {
     if (processDetails.isArchived) {
       throw ProcessIllegalAction.archived(actionType, processDetails.idWithName)
-    } else if (processDetails.isSubprocess) {
-      throw ProcessIllegalAction.subprocess(actionType, processDetails.idWithName)
+    } else if (processDetails.isFragment) {
+      throw ProcessIllegalAction.fragment(actionType, processDetails.idWithName)
     }
   }
 
@@ -239,7 +239,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType])
                              (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     dispatcher.deploymentManager(processDetails.processingType).map { manager =>
-      if (processDetails.isSubprocess) {
+      if (processDetails.isFragment) {
         throw new FragmentStateException
       } else if (processDetails.isArchived) {
         getArchivedProcessState(processDetails)(manager)

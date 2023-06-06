@@ -60,7 +60,7 @@
 * [#4039](https://github.com/TouK/nussknacker/pull/4039) Fix for: After clicking cancel, sometimes for a moment appear "during deploy" status instead of "during cancel"
 * [#4041](https://github.com/TouK/nussknacker/pull/4041) Concurrent deploy, cancel and test from file mechanisms are allowed now
 * [#3994](https://github.com/TouK/nussknacker/pull/3994) Unification of editor/raw mode validation for JSON Schema sinks
-* [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `subprocessVersions`.
+* [#3997](https://github.com/TouK/nussknacker/pull/3997) Removal of obsolete `fragmentVersions`.
 * [#4060](https://github.com/TouK/nussknacker/pull/4060) Notifications about pending deployments of other user not appear anymore.
 * [#4071](https://github.com/TouK/nussknacker/pull/4071) Change BCrypt library
 * [#4077](https://github.com/TouK/nussknacker/pull/4077) Fix database query invoker to be async
@@ -108,7 +108,7 @@
 * [#3945](https://github.com/TouK/nussknacker/pull/3945) - Allow to get Map category -> processingType through new categoriesWithProcessingType endpoint.
 * [#3821](https://github.com/TouK/nussknacker/pull/3821) - Exact typing & validation of JsonSchema enums (before only String values were handled). 
 * [#3819](https://github.com/TouK/nussknacker/pull/3819) - Handle JSON Schema refs in sinks
-* [#3654](https://github.com/TouK/nussknacker/pull/3654) Removed `/subprocessDetails` in favor of `/processDetails?isSubprocess=true`.
+* [#3654](https://github.com/TouK/nussknacker/pull/3654) Removed `/fragmentDetails` in favor of `/processDetails?isFragment=true`.
 * [#3823](https://github.com/TouK/nussknacker/pull/3823), [#3836](https://github.com/TouK/nussknacker/pull/3836), [#3843](https://github.com/TouK/nussknacker/pull/3843) - 
   scenarios with multiple sources can be tested from file
 * [#3869](https://github.com/TouK/nussknacker/pull/3869) cross-compile - Scala 2.12 & 2.13
@@ -168,7 +168,7 @@
 * [#3576](https://github.com/TouK/nussknacker/pull/3576) Unified `/processes` and `/processesDetails`. Both endpoints support the same query parameters.
   Added option `skipValidateAndResolve` in `/processesDetails`, `/processes/{name}` and `/processes/{name}/{versionId}`
   to return scenario JSON omitting validation and dictionary resolving.
-* [#3680](https://github.com/TouK/nussknacker/pull/3680) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `SubprocessRef`)
+* [#3680](https://github.com/TouK/nussknacker/pull/3680) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `FragmentRef`)
 * [#3668](https://github.com/TouK/nussknacker/pull/3668) `TestScenarioRunner.requestResponseBased()` api enhancements: returning scenario compilation errors as a `ValidatedNel`
 * [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) `TypedMap` allows access to non-existing keys in SpEL (returning `null`)
@@ -184,7 +184,7 @@
 * [#3657](https://github.com/TouK/nussknacker/pull/3657) Fix for json-schema additionalProperties validation
 * [#3672](https://github.com/TouK/nussknacker/pull/3672) Fix contextId assignment for the output of ForEachTransformer (Flink)
 * [#3671](https://github.com/TouK/nussknacker/pull/3671) Fix: do not show extra scrollbar on scenario screen when panel too large
-* [#3681](https://github.com/TouK/nussknacker/pull/3681) Fix: validate multiple same fragments used in a row in legacy scenario JSON (without `outputVariableNames` field in `SubprocessRef`)
+* [#3681](https://github.com/TouK/nussknacker/pull/3681) Fix: validate multiple same fragments used in a row in legacy scenario JSON (without `outputVariableNames` field in `FragmentRef`)
 * [#3685](https://github.com/TouK/nussknacker/pull/3685) Fix: inconsistent SwaggerDateTime typing (LocalDateTime/ZonedDateTime)
 
 1.6.0 (18 Oct 2022)
@@ -521,7 +521,7 @@ Better handling Flink's job deploying - we report job initialization as a "DURIN
   `RunMode` is also available in `FlinkCustomNodeContext`.
 * Various naming changes:
   * [#1917](https://github.com/TouK/nussknacker/pull/1917) configuration of `engineConfig` to `deploymentConfig`                           
-  * [#1911](https://github.com/TouK/nussknacker/pull/1911) Rename `process` to `scenario`, `subprocess` to `fragment` in messages at backend and some test cases names                                                        
+  * [#1911](https://github.com/TouK/nussknacker/pull/1911) Rename `process` to `scenario`, `fragment` to `fragment` in messages at backend and some test cases names                                                        
   * [#1921](https://github.com/TouK/nussknacker/pull/1921) `ProcessManager` to `DeploymentManager`                           
   * [#1927](https://github.com/TouK/nussknacker/pull/1927) Rename `outer-join` to `single-side-join`
 * Performance fixes:
@@ -569,7 +569,7 @@ ProcessManager implementations are separated from UI to allow easier changes in 
 -----------------------
 * [#1127](https://github.com/TouK/nussknacker/pull/1127) Fix too small count values
 * [#1133](https://github.com/TouK/nussknacker/pull/1133) Improvements: More flexible TestReporter instancies implementation 
-* [#1131](https://github.com/TouK/nussknacker/pull/1131) Fix: Disable "deploy" & "metrics" buttons for subprocess  
+* [#1131](https://github.com/TouK/nussknacker/pull/1131) Fix: Disable "deploy" & "metrics" buttons for fragment  
 * [#1148](https://github.com/TouK/nussknacker/pull/1148) Fix FE regexp for match node id
 
 0.2.0 (07 Aug 2020)
@@ -655,7 +655,7 @@ configuration should be used from now on.
 - method signature and documentation in code suggestions
 - inject new node after dragging on edge
 - Query services tab in UI
-- subprocess disabling
+- fragment disabling
 - display http request-response for query service tab
 - flink kafka 0.11 connector
 - dynamic source return type
@@ -680,7 +680,7 @@ configuration should be used from now on.
 - ProcessConfigCreator Java API support added
 - extendable authentication
 - comparing environments - first part, can compare processes
-- subprocess versions
+- fragment versions
 - process migrations + some refactoring
 - async execution with toggle
 - better exception for errors in service invocations

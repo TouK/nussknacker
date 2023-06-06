@@ -123,7 +123,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
     val expressionUsingDictWithKey = s"#DICT.$Key"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
 
-    Post(s"/api/processes/${process.id}/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+    Post(s"/api/processes/${process.id}/Category1?isFragment=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
     }
 
@@ -175,7 +175,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
   }
 
   private def createEmptyScenario(processRootResource: String) =
-    Post(s"$processRootResource/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+    Post(s"$processRootResource/Category1?isFragment=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
     }
 

@@ -19,7 +19,7 @@ class ProcessToolbarsConfigProviderSpec extends AnyFlatSpec with Matchers {
       |processToolbarConfig {
       |    defaultConfig {
       |      topLeft: [
-      |        { type: "tips-panel", hidden: { subprocess: true } }
+      |        { type: "tips-panel", hidden: { fragment: true } }
       |      ]
       |      topRight: [
       |        {
@@ -90,12 +90,12 @@ class ProcessToolbarsConfigProviderSpec extends AnyFlatSpec with Matchers {
       |      },
       |      "RedundantButtonsError" {
       |        topLeft: [
-      |          { type: "tips-panel", hidden: { subprocess: true }, buttons: [] }
+      |          { type: "tips-panel", hidden: { fragment: true }, buttons: [] }
       |        ]
       |      },
       |      "RedundantButtonsVariantError" {
       |        topLeft: [
-      |          { type: "tips-panel", hidden: { subprocess: true }, buttonsVariant: "small" }
+      |          { type: "tips-panel", hidden: { fragment: true }, buttonsVariant: "small" }
       |        ]
       |      },
       |      "MissingIdError" {
@@ -105,7 +105,7 @@ class ProcessToolbarsConfigProviderSpec extends AnyFlatSpec with Matchers {
       |      },
       |      "RedundantIdError" {
       |        topLeft: [
-      |          { type: "tips-panel", hidden: { subprocess: true }, id: "BadId" }
+      |          { type: "tips-panel", hidden: { fragment: true }, id: "BadId" }
       |        ]
       |      }
       |    }

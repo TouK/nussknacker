@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
@@ -37,20 +37,20 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
   private val category1Process = createBasicProcess("category1Process", category = Category1, lastAction = Some(Deploy))
   private val category2ArchivedProcess = createBasicProcess("category2ArchivedProcess", isArchived = true, category = Category2)
-  private val testSubProcess = createSubProcess("testSubProcess", category = TestCat)
-  private val reqRespArchivedSubProcess = createBasicProcess("reqRespArchivedSubProcess", isArchived = true, category = ReqRes)
+  private val testfragment = createfragment("testfragment", category = TestCat)
+  private val reqRespArchivedfragment = createBasicProcess("reqRespArchivedfragment", isArchived = true, category = ReqRes)
 
   private val processes: List[ProcessDetails] = List(
-    category1Process, category2ArchivedProcess, testSubProcess, reqRespArchivedSubProcess
+    category1Process, category2ArchivedProcess, testfragment, reqRespArchivedfragment
   )
 
-  private val subprocessCategory1 = createSubProcess("subprocessCategory1", category = Category1)
-  private val subprocessCategory2 = createSubProcess("subprocessCategory2", category = Category2)
-  private val subprocessTest = createSubProcess("subprocessTest", category = TestCat)
-  private val subprocessReqResp = createSubProcess("subprocessReqResp", category = ReqRes)
+  private val fragmentCategory1 = createfragment("fragmentCategory1", category = Category1)
+  private val fragmentCategory2 = createfragment("fragmentCategory2", category = Category2)
+  private val fragmentTest = createfragment("fragmentTest", category = TestCat)
+  private val fragmentReqResp = createfragment("fragmentReqResp", category = ReqRes)
 
-  private val subprocesses = Set(
-    subprocessCategory1, subprocessCategory2, subprocessTest, subprocessReqResp
+  private val fragments = Set(
+    fragmentCategory1, fragmentCategory2, fragmentTest, fragmentReqResp
   )
 
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
@@ -62,14 +62,14 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       ("user", "expected"),
       (adminUser, processes.filter(_.isArchived == false)),
       (categoriesUser, List(category1Process)),
-      (testUser, List(testSubProcess)),
-      (testReqRespUser, List(testSubProcess)),
+      (testUser, List(testfragment)),
+      (testReqRespUser, List(testfragment)),
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
       implicit val loggedUser: LoggedUser = user
 
-      val result = dBProcessService.getProcessesAndSubprocesses[DisplayableProcess].futureValue
+      val result = dBProcessService.getProcessesAndFragments[DisplayableProcess].futureValue
       result shouldBe expected
     }
   }
@@ -82,32 +82,32 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (adminUser, processes.filter(_.isArchived == true)),
       (categoriesUser, List(category2ArchivedProcess)),
       (testUser, Nil),
-      (testReqRespUser, List(reqRespArchivedSubProcess)),
+      (testReqRespUser, List(reqRespArchivedfragment)),
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
       implicit val loggedUser: LoggedUser = user
 
-      val result = dBProcessService.getArchivedProcessesAndSubprocesses[DisplayableProcess].futureValue
+      val result = dBProcessService.getArchivedProcessesAndFragments[DisplayableProcess].futureValue
       result shouldBe expected
     }
   }
 
-  it should "return user subprocesses" in {
-    val dBProcessService = createDbProcessService(subprocesses.toList)
+  it should "return user fragments" in {
+    val dBProcessService = createDbProcessService(fragments.toList)
 
     val testingData = Table(
-      ("user", "subprocesses"),
-      (adminUser, subprocesses),
-      (categoriesUser, Set(subprocessCategory1, subprocessCategory2)),
-      (testUser, Set(subprocessTest)),
-      (testReqRespUser, Set(subprocessTest, subprocessReqResp)),
+      ("user", "fragments"),
+      (adminUser, fragments),
+      (categoriesUser, Set(fragmentCategory1, fragmentCategory2)),
+      (testUser, Set(fragmentTest)),
+      (testReqRespUser, Set(fragmentTest, fragmentReqResp)),
     )
 
     forAll(testingData) { (user: LoggedUser, expected: Set[ProcessDetails] ) =>
-      val result = dBProcessService.getSubprocessesDetails(None)(user).futureValue
-      val subprocessDetails = expected.map(convertBasicProcessToSubprocessDetails)
-      result shouldBe subprocessDetails
+      val result = dBProcessService.getFragmentsDetails(None)(user).futureValue
+      val fragmentDetails = expected.map(convertBasicProcessToFragmentDetails)
+      result shouldBe fragmentDetails
     }
   }
 
@@ -133,8 +133,8 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
     }
   }
 
-  private def convertBasicProcessToSubprocessDetails(process: ProcessDetails) =
-    SubprocessDetails(ProcessConverter.fromDisplayable(process.json), process.processCategory)
+  private def convertBasicProcessToFragmentDetails(process: ProcessDetails) =
+    FragmentDetails(ProcessConverter.fromDisplayable(process.json), process.processCategory)
 
   private def importSuccess(displayableProcess: DisplayableProcess): Right[EspError, ValidatedDisplayableProcess] = {
     val meta = MetaVariables.typingResult(displayableProcess.metaData)

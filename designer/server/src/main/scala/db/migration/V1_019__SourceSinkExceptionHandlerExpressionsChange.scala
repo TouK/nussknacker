@@ -38,7 +38,7 @@ object V1_019__SourceSinkExceptionHandlerExpressionsChange {
         updateField(node, "nextFalse", updateCanonicalNodes)
       case "Split" =>
         updateField(node, "nexts", updateNodes(_, updateCanonicalNodes))
-      case "SubprocessInput" =>
+      case "FragmentInput" =>
         updateField(node, "outputs", outputs =>
           outputs.mapObject(obj => obj.mapValues(updateCanonicalNodes))
         )

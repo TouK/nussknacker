@@ -35,7 +35,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](query: FetchProcessesDetailsQuery)
                                                                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
-      query.isSubprocess.map(arg => process => process.isSubprocess === arg),
+      query.isFragment.map(arg => process => process.isFragment === arg),
       query.isArchived.map(arg => process => process.isArchived === arg),
       query.categories.map(arg => process => process.processCategory.inSet(arg)),
       query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
@@ -149,7 +149,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
       isArchived = process.isArchived,
-      isSubprocess = process.isSubprocess,
+      isFragment = process.isFragment,
       description = process.description,
       processingType = process.processingType,
       processCategory = process.processCategory,

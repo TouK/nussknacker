@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, Proce
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
@@ -63,10 +63,10 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
 
     val (definitionWithTypes, dictRegistry) = definitions(processObjectDependencies, userCodeClassLoader)
-    val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(processConfig, userCodeClassLoader)
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(processConfig, userCodeClassLoader)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
-      ProcessCompilerData.prepare(process, definitionWithTypes, dictRegistry, subprocessDefinitionExtractor, listenersToUse,
+      ProcessCompilerData.prepare(process, definitionWithTypes, dictRegistry, fragmentDefinitionExtractor, listenersToUse,
         userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
 
     new FlinkProcessCompilerData(

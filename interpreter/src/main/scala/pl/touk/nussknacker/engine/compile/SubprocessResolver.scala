@@ -8,20 +8,20 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.definition.{SubprocessGraphDefinitionExtractor, SubprocessGraphDefinition}
+import pl.touk.nussknacker.engine.definition.{FragmentGraphDefinitionExtractor, FragmentGraphDefinition}
 import pl.touk.nussknacker.engine.graph.node._
 
-object SubprocessResolver {
+object FragmentResolver {
 
   // For easier testing purpose
-  def apply(subprocesses: Iterable[CanonicalProcess]): SubprocessResolver = {
-    val subprocessMap = subprocesses.map(a => a.metaData.id -> a).toMap
-    SubprocessResolver(subprocessMap.get _)
+  def apply(fragments: Iterable[CanonicalProcess]): FragmentResolver = {
+    val fragmentMap = fragments.map(a => a.metaData.id -> a).toMap
+    FragmentResolver(fragmentMap.get _)
   }
 
 }
 
-case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) {
+case class FragmentResolver(fragments: String => Option[CanonicalProcess]) {
 
   type CompilationValid[A] = ValidatedNel[ProcessCompilationError, A]
 
@@ -55,67 +55,67 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
 
   private def resolveCanonical(idPrefix: List[String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
-      case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.size > 1 =>
-        invalidBranches(DisablingManyOutputsSubprocess(dataId, nextNodes.keySet))
-      case canonicalnode.Subprocess(SubprocessInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.isEmpty =>
-        invalidBranches(DisablingNoOutputsSubprocess(dataId))
-      case canonicalnode.Subprocess(data@SubprocessInput(_, _, _, Some(true), _), nextNodesMap) =>
+      case canonicalnode.Fragment(FragmentInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.size > 1 =>
+        invalidBranches(DisablingManyOutputsFragment(dataId, nextNodes.keySet))
+      case canonicalnode.Fragment(FragmentInput(dataId, _, _, Some(true), _), nextNodes) if nextNodes.values.isEmpty =>
+        invalidBranches(DisablingNoOutputsFragment(dataId))
+      case canonicalnode.Fragment(data@FragmentInput(_, _, _, Some(true), _), nextNodesMap) =>
         //TODO: disabling nodes should be in one place
         val output = nextNodesMap.keys.head
         resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
           val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
-          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(SubprocessUsageOutput(outputId, output, None, None)) :: resolvedNexts
+          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(FragmentUsageOutput(outputId, output, None, None)) :: resolvedNexts
         }
-      //here is the only interesting part - not disabled subprocess
-      case canonicalnode.Subprocess(subprocessInput: SubprocessInput, nextNodes) =>
+      //here is the only interesting part - not disabled fragment
+      case canonicalnode.Fragment(fragmentInput: FragmentInput, nextNodes) =>
 
-        //subprocessNodes contain Input
-        additionalApply(resolveInput(subprocessInput)).andThen { definition =>
-          //we resolve what follows after subprocess, and all its branches
+        //fragmentNodes contain Input
+        additionalApply(resolveInput(fragmentInput)).andThen { definition =>
+          //we resolve what follows after fragment, and all its branches
           val nextResolvedV = nextNodes.map { case (k, v) =>
             resolveCanonical(idPrefix)(v).map((k, _))
           }.toList.sequence[ValidatedWithBranches, (String, List[CanonicalNode])].map(_.toMap)
 
-          val subResolvedV = resolveCanonical(idPrefix :+ subprocessInput.id)(definition.nodes)
-          val additionalResolved = definition.additionalBranches.map(resolveCanonical(idPrefix :+ subprocessInput.id)).sequence
+          val subResolvedV = resolveCanonical(idPrefix :+ fragmentInput.id)(definition.nodes)
+          val additionalResolved = definition.additionalBranches.map(resolveCanonical(idPrefix :+ fragmentInput.id)).sequence
 
-          //we replace subprocess outputs with following nodes from parent process
-          val nexts = (nextResolvedV, subResolvedV, additionalResolved, additionalApply(definition.validOutputs(NodeId(subprocessInput.id))))
-            .mapN { (nodeResolved, nextResolved, additionalResolved, _) => (replaceCanonicalList(nodeResolved, subprocessInput.id, subprocessInput.ref.outputVariableNames), nextResolved, additionalResolved) }
+          //we replace fragment outputs with following nodes from parent process
+          val nexts = (nextResolvedV, subResolvedV, additionalResolved, additionalApply(definition.validOutputs(NodeId(fragmentInput.id))))
+            .mapN { (nodeResolved, nextResolved, additionalResolved, _) => (replaceCanonicalList(nodeResolved, fragmentInput.id, fragmentInput.ref.outputVariableNames), nextResolved, additionalResolved) }
             .andThen { case (replacement, nextResolved, additionalResolved) =>
               additionalResolved.map(replacement).sequence.andThen { resolvedAdditional =>
                 replacement(nextResolved).mapWritten(_ ++ resolvedAdditional)
               }
             }
-          // now, this is a bit dirty trick - we pass subprocess parameter types to subprocessInput node to handle parameter types by interpreter
-          // we can't just change subprocessParams type to List[Parameter] because Parameter is not a serializable, scenario-api accessible class
+          // now, this is a bit dirty trick - we pass fragment parameter types to fragmentInput node to handle parameter types by interpreter
+          // we can't just change fragmentParams type to List[Parameter] because Parameter is not a serializable, scenario-api accessible class
           nexts.map { replaced =>
-            val withParametersForInterpreter = subprocessInput.copy(subprocessParams = Some(definition.subprocessParameters))
+            val withParametersForInterpreter = fragmentInput.copy(fragmentParams = Some(definition.fragmentParameters))
             FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(withParametersForInterpreter)) :: replaced
           }
         }
     }, NodeDataFun.nodeIdPrefix(idPrefix))
   }
 
-  def resolveInput(subprocessInput: SubprocessInput): CompilationValid[SubprocessGraphDefinition] = {
-    implicit val nodeId: NodeId = NodeId(subprocessInput.id)
-    subprocesses.apply(subprocessInput.ref.id)
-      .map(valid).getOrElse(invalidNel(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = nodeId.id)))
-      .andThen { subprocess =>
-        SubprocessGraphDefinitionExtractor.extractSubprocessGraphDefinition(subprocess)
-          .leftMap(_ => InvalidSubprocess(id = subprocessInput.ref.id, nodeId = nodeId.id)).toValidatedNel
+  def resolveInput(fragmentInput: FragmentInput): CompilationValid[FragmentGraphDefinition] = {
+    implicit val nodeId: NodeId = NodeId(fragmentInput.id)
+    fragments.apply(fragmentInput.ref.id)
+      .map(valid).getOrElse(invalidNel(UnknownFragment(id = fragmentInput.ref.id, nodeId = nodeId.id)))
+      .andThen { fragment =>
+        FragmentGraphDefinitionExtractor.extractFragmentGraphDefinition(fragment)
+          .leftMap(_ => InvalidFragment(id = fragmentInput.ref.id, nodeId = nodeId.id)).toValidatedNel
       }
   }
 
-  //we replace outputs in subprocess with part of parent process
+  //we replace outputs in fragment with part of parent process
   private def replaceCanonicalList(replacement: Map[String, CanonicalBranch], parentId: String, outputs: Map[String, String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
-      case FlatNode(SubprocessOutputDefinition(id, name, fields, add)) => {
+      case FlatNode(FragmentOutputDefinition(id, name, fields, add)) => {
         replacement.get(name) match {
-          case Some(nodes) if fields.isEmpty => validBranches(FlatNode(SubprocessUsageOutput(id, name, None, add)) :: nodes)
+          case Some(nodes) if fields.isEmpty => validBranches(FlatNode(FragmentUsageOutput(id, name, None, add)) :: nodes)
           case Some(nodes) =>
             val outputName = outputs.getOrElse(name, default = name) // when no `outputVariableName` defined we use output name from fragment as variable name
-            validBranches(FlatNode(SubprocessUsageOutput(id, name, Some(SubprocessOutputVarDefinition(outputName, fields)), add)) :: nodes)
+            validBranches(FlatNode(FragmentUsageOutput(id, name, Some(FragmentOutputVarDefinition(outputName, fields)), add)) :: nodes)
           case _ => invalidBranches(FragmentOutputNotDefined(name, Set(id, parentId)))
         }
       }
@@ -144,10 +144,10 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
         ).mapN { (resolvedCases, resolvedDefault) =>
           List(canonicalnode.SwitchNode(dataAction(data), resolvedCases, resolvedDefault))
         }
-      case canonicalnode.Subprocess(data, nodes) =>
+      case canonicalnode.Fragment(data, nodes) =>
         nodes.map { case (k, v) =>
           listFun(v).map(k -> _)
-        }.toList.sequence[ValidatedWithBranches, (String, List[CanonicalNode])].map(replaced => List(canonicalnode.Subprocess(dataAction(data), replaced.toMap)))
+        }.toList.sequence[ValidatedWithBranches, (String, List[CanonicalNode])].map(replaced => List(canonicalnode.Fragment(dataAction(data), replaced.toMap)))
     })
   }
 

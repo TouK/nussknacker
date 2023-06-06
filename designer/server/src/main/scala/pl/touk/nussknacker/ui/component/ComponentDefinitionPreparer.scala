@@ -11,14 +11,14 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, node}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.definition.{EvaluatedParameterPreparer, SortedComponentGroup}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -34,7 +34,7 @@ object ComponentDefinitionPreparer {
 
   def prepareComponentsGroupList(user: LoggedUser,
                                  processDefinition: UIProcessDefinition,
-                                 isSubprocess: Boolean,
+                                 isFragment: Boolean,
                                  componentsConfig: ComponentsUiConfig,
                                  componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                                  processCategoryService: ProcessCategoryService,
@@ -109,7 +109,7 @@ object ComponentDefinitionPreparer {
         )
       }.toList)
 
-    val inputs = if (!isSubprocess) {
+    val inputs = if (!isFragment) {
       ComponentGroup(SourcesGroupName,
         processDefinition.sourceFactories.map {
           case (id, objDefinition) => ComponentTemplate(ComponentType.Source, id,
@@ -119,20 +119,20 @@ object ComponentDefinitionPreparer {
         }.toList)
     } else {
       ComponentGroup(FragmentsDefinitionGroupName, List(
-        ComponentTemplate.create(ComponentType.FragmentInput, SubprocessInputDefinition("", List()), userProcessingTypeCategories),
-        ComponentTemplate.create(ComponentType.FragmentOutput, SubprocessOutputDefinition("", "output", List.empty), userProcessingTypeCategories)
+        ComponentTemplate.create(ComponentType.FragmentInput, FragmentInputDefinition("", List()), userProcessingTypeCategories),
+        ComponentTemplate.create(ComponentType.FragmentOutput, FragmentOutputDefinition("", "output", List.empty), userProcessingTypeCategories)
       ))
     }
 
-    //so far we don't allow nested subprocesses...
-    val subprocesses = if (!isSubprocess) {
+    //so far we don't allow nested fragments...
+    val fragments = if (!isFragment) {
       List(
         ComponentGroup(FragmentsGroupName,
-          processDefinition.subprocessInputs.map {
+          processDefinition.fragmentInputs.map {
             case (id, definition) =>
               val nodes = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.parameters)
               val outputs = definition.outputParameters.map(name => (name, name)).toMap
-              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes, outputs)), userProcessingTypeCategories.intersect(definition.categories))
+              ComponentTemplate(ComponentType.Fragments, id, FragmentInput("", FragmentRef(id, nodes, outputs)), userProcessingTypeCategories.intersect(definition.categories))
           }.toList))
     } else {
       List.empty
@@ -147,7 +147,7 @@ object ComponentDefinitionPreparer {
     val virtualComponentGroups = List(
       List(inputs),
       List(base),
-      List(enrichers, customTransformers) ++ subprocesses,
+      List(enrichers, customTransformers) ++ fragments,
       List(services, optionalEndingCustomTransformers, sinks)
     )
 
@@ -182,15 +182,15 @@ object ComponentDefinitionPreparer {
   }
 
   def prepareEdgeTypes(processDefinition: ProcessDefinition[ObjectDefinition],
-                       isSubprocess: Boolean,
-                       subprocessesDetails: Set[SubprocessDetails]): List[NodeEdges] = {
+                       isFragment: Boolean,
+                       fragmentsDetails: Set[FragmentDetails]): List[NodeEdges] = {
 
-    val subprocessOutputs = if (isSubprocess) List() else subprocessesDetails.map(_.canonical).map { process =>
+    val fragmentOutputs = if (isFragment) List() else fragmentsDetails.map(_.canonical).map { process =>
       val outputs = ProcessConverter.findNodes(process).collect {
-        case SubprocessOutputDefinition(_, name, _, _) => name
+        case FragmentOutputDefinition(_, name, _, _) => name
       }
       //TODO: enable choice of output type
-      NodeEdges(NodeTypeId("SubprocessInput", Some(process.metaData.id)), outputs.map(EdgeType.SubprocessOutput),
+      NodeEdges(NodeTypeId("FragmentInput", Some(process.metaData.id)), outputs.map(EdgeType.FragmentOutput),
         canChooseNodes = false, isForInputDefinition = false)
     }
 
@@ -204,7 +204,7 @@ object ComponentDefinitionPreparer {
       NodeEdges(NodeTypeId("Switch"), List(
         EdgeType.NextSwitch(Expression.spel("true")), EdgeType.SwitchDefault), canChooseNodes = true, isForInputDefinition = false),
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), canChooseNodes = false, isForInputDefinition = false)
-    ) ++ subprocessOutputs ++ joinInputs
+    ) ++ fragmentOutputs ++ joinInputs
   }
 
   def combineComponentsConfig(configs: ComponentsUiConfig*): ComponentsUiConfig = configs.reduce(_ |+| _)

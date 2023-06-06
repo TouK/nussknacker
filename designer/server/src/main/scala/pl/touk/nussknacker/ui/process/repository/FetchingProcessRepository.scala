@@ -13,7 +13,7 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 
 object FetchingProcessRepository {
-  case class FetchProcessesDetailsQuery(isSubprocess: Option[Boolean] = None,
+  case class FetchProcessesDetailsQuery(isFragment: Option[Boolean] = None,
                                         isArchived: Option[Boolean] = None,
                                         isDeployed: Option[Boolean] = None,
                                         categories: Option[Seq[String]] = None,
@@ -23,8 +23,8 @@ object FetchingProcessRepository {
 
   object FetchProcessesDetailsQuery {
     def unarchived: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(isArchived = Some(false))
-    def unarchivedProcesses: FetchProcessesDetailsQuery = unarchived.copy(isSubprocess = Some(false))
-    def unarchivedSubProcesses: FetchProcessesDetailsQuery = unarchived.copy(isSubprocess = Some(true))
+    def unarchivedProcesses: FetchProcessesDetailsQuery = unarchived.copy(isFragment = Some(false))
+    def unarchivedFragments: FetchProcessesDetailsQuery = unarchived.copy(isFragment = Some(true))
     def deployed: FetchProcessesDetailsQuery = unarchivedProcesses.copy(isDeployed = Some(true))
   }
 }

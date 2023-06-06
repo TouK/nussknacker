@@ -1,9 +1,9 @@
 import { ProcessStateType, ProcessType } from "./types";
-import { descriptionProcessArchived, descriptionSubprocess, descriptionSubprocessArchived, unknownTooltip } from "./messages";
+import { descriptionProcessArchived, descriptionFragment, descriptionFragmentArchived, unknownTooltip } from "./messages";
 import { absoluteBePath } from "../../common/UrlUtils";
 
 export function getStatusIcon(
-    { isArchived, isSubprocess, state }: ProcessType,
+    { isArchived, isFragment, state }: ProcessType,
     processState: ProcessStateType,
     isStateLoaded: boolean,
 ): string {
@@ -11,8 +11,8 @@ export function getStatusIcon(
         return absoluteBePath("/assets/process/archived.svg");
     }
 
-    if (isSubprocess) {
-        return absoluteBePath("/assets/process/subprocess.svg");
+    if (isFragment) {
+        return absoluteBePath("/assets/process/fragment.svg");
     }
 
     if (isStateLoaded) {
@@ -23,16 +23,16 @@ export function getStatusIcon(
 }
 
 export function getStatusTooltip(
-    { isArchived, isSubprocess, state }: ProcessType,
+    { isArchived, isFragment, state }: ProcessType,
     processState: ProcessStateType,
     isStateLoaded: boolean,
 ): string {
     if (isArchived) {
-        return isSubprocess ? descriptionSubprocessArchived() : descriptionProcessArchived();
+        return isFragment ? descriptionFragmentArchived() : descriptionProcessArchived();
     }
 
-    if (isSubprocess) {
-        return descriptionSubprocess();
+    if (isFragment) {
+        return descriptionFragment();
     }
 
     if (isStateLoaded) {

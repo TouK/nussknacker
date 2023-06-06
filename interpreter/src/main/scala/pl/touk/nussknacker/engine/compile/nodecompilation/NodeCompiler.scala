@@ -18,12 +18,12 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExc
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, GenericNodeTransformationMethodDef, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.{DefaultExpressionId, branchParameterExpressionId}
 import pl.touk.nussknacker.engine.graph.expression._
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
@@ -60,14 +60,14 @@ object NodeCompiler {
 }
 
 class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
-                   subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor,
+                   fragmentDefinitionExtractor: FragmentComponentDefinitionExtractor,
                    objectParametersExpressionCompiler: ExpressionCompiler,
                    classLoader: ClassLoader,
                    resultCollector: ResultCollector,
                    componentUseCase: ComponentUseCase) {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): NodeCompiler = {
-    new NodeCompiler(definitions, subprocessDefinitionExtractor, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, componentUseCase)
+    new NodeCompiler(definitions, fragmentDefinitionExtractor, objectParametersExpressionCompiler.withExpressionParsers(modify), classLoader, resultCollector, componentUseCase)
   }
 
   type GenericValidationContext = Either[ValidationContext, Map[String, ValidationContext]]
@@ -98,7 +98,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           val defaultCtx = contextWithOnlyGlobalVariables.withVariable(VariableConstants.InputVariableName, Unknown, paramName = None)
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
-    case SubprocessInputDefinition(_, params, _) =>
+    case FragmentInputDefinition(_, params, _) =>
       NodeCompilationResult(Map.empty, None, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)), Valid(new Source {}))
   }
 
@@ -137,12 +137,12 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
   }
 
-  def compileSubprocessInput(subprocessInput: SubprocessInput,
+  def compileFragmentInput(fragmentInput: FragmentInput,
                              ctx: ValidationContext)
                             (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
 
-    val ref = subprocessInput.ref
-    val validParamDefs = subprocessDefinitionExtractor.extractParametersDefinition(subprocessInput)
+    val ref = fragmentInput.ref
+    val validParamDefs = fragmentDefinitionExtractor.extractParametersDefinition(fragmentInput)
 
     val childCtx = ctx.pushNewContext()
     val newCtx = validParamDefs.value.foldLeft[ValidatedNel[ProcessCompilationError, ValidationContext]](Valid(childCtx)) {
@@ -334,9 +334,9 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
 
   //TODO: better classloader error handling
-  private def loadFromParameter(subprocessParameter: SubprocessParameter)(implicit nodeId: NodeId) =
-    subprocessParameter.typ.toRuntimeClass(classLoader).map(Typed(_)).getOrElse(throw new IllegalArgumentException(
-      s"Failed to load scenario fragment parameter: ${subprocessParameter.typ.refClazzName} for ${nodeId.id}"))
+  private def loadFromParameter(fragmentParameter: FragmentParameter)(implicit nodeId: NodeId) =
+    fragmentParameter.typ.toRuntimeClass(classLoader).map(Typed(_)).getOrElse(throw new IllegalArgumentException(
+      s"Failed to load scenario fragment parameter: ${fragmentParameter.typ.refClazzName} for ${nodeId.id}"))
 
   private def compileObjectWithTransformation[T](parameters: List[evaluatedparam.Parameter],
                                                  branchParameters: List[evaluatedparam.BranchParameters],

@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ModelDefinitionWithTypes, ProcessDefinition}
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
@@ -1182,12 +1182,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .streaming("scenario1")
       .source("id1", "source")
       .buildSimpleVariable("var1", usedVarName, "''")
-      .subprocessOneOut("sample", "frag1", "output1", outputName)
+      .fragmentOneOut("sample", "frag1", "output1", outputName)
       .emptySink("emptySink", "sink")
     val fragment = ScenarioBuilder
       .fragment("frag1")
       .fragmentOutput("out", "output1", "field1" -> "''")
-    val resolver = SubprocessResolver(Set(fragment))
+    val resolver = FragmentResolver(Set(fragment))
 
     val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
     withNonUsed shouldBe Symbol("valid")
@@ -1204,8 +1204,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   }
 
   private def validateWithDef(process: CanonicalProcess, definitions: ProcessDefinition[ObjectWithMethodDef]): CompilationResult[Unit] = {
-    val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
-    ProcessValidator.default(ModelDefinitionWithTypes(definitions), subprocessDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator).validate(process)
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    ProcessValidator.default(ModelDefinitionWithTypes(definitions), fragmentDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator).validate(process)
   }
 
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories

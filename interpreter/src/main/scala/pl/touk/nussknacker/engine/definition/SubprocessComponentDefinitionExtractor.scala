@@ -7,7 +7,7 @@ import cats.implicits.toTraverseOps
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MultipleOutputsForName, SubprocessParamClassLoadError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MultipleOutputsForName, FragmentParamClassLoadError}
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -21,26 +21,26 @@ import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
-import pl.touk.nussknacker.engine.graph.node.{Join, SubprocessInput, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
+import pl.touk.nussknacker.engine.graph.node.{Join, FragmentInput, FragmentInputDefinition, FragmentOutputDefinition}
 
-// We have two implementations of SubprocessDefinitionExtractor. The only difference is that SubprocessGraphDefinitionExtractor
-// extract parts of definition that is used for graph resolution wheres SubprocessComponentDefinitionExtractor is used
+// We have two implementations of FragmentDefinitionExtractor. The only difference is that FragmentGraphDefinitionExtractor
+// extract parts of definition that is used for graph resolution wheres FragmentComponentDefinitionExtractor is used
 // for component definition extraction (parameters, validators, etc.) for purpose of further parameters validation
 // We split it to avoid passing around ProcessingTypeData
-abstract class SubprocessDefinitionExtractor {
+abstract class FragmentDefinitionExtractor {
 
-  protected def extractSubprocessGraph(subprocess: CanonicalProcess): Validated[FragmentDefinitionError, (SubprocessInputDefinition, List[CanonicalNode], List[Output])] = {
-    subprocess.allStartNodes.collectFirst {
-      case FlatNode(input: SubprocessInputDefinition) :: nodes =>
-        val outputs = collectOutputs(subprocess)
+  protected def extractFragmentGraph(fragment: CanonicalProcess): Validated[FragmentDefinitionError, (FragmentInputDefinition, List[CanonicalNode], List[Output])] = {
+    fragment.allStartNodes.collectFirst {
+      case FlatNode(input: FragmentInputDefinition) :: nodes =>
+        val outputs = collectOutputs(fragment)
         Valid((input, nodes, outputs))
     }.getOrElse(Invalid(EmptyFragmentError))
   }
 
-  private def collectOutputs(subprocess: CanonicalProcess): List[Output] = {
-    subprocess.collectAllNodes.collect {
-      case SubprocessOutputDefinition(_, name, fields, _) => Output(name, fields.nonEmpty)
+  private def collectOutputs(fragment: CanonicalProcess): List[Output] = {
+    fragment.collectAllNodes.collect {
+      case FragmentOutputDefinition(_, name, fields, _) => Output(name, fields.nonEmpty)
     }
   }
 
@@ -50,31 +50,31 @@ sealed trait FragmentDefinitionError
 
 case object EmptyFragmentError extends FragmentDefinitionError
 
-class SubprocessComponentDefinitionExtractor(componentConfig: String => Option[SingleComponentConfig], classLoader: ClassLoader) extends SubprocessDefinitionExtractor {
+class FragmentComponentDefinitionExtractor(componentConfig: String => Option[SingleComponentConfig], classLoader: ClassLoader) extends FragmentDefinitionExtractor {
 
-  def extractSubprocessComponentDefinition(subprocess: CanonicalProcess): Validated[FragmentDefinitionError, SubprocessComponentDefinition] = {
-    extractSubprocessGraph(subprocess).map {
+  def extractFragmentComponentDefinition(fragment: CanonicalProcess): Validated[FragmentDefinitionError, FragmentComponentDefinition] = {
+    extractFragmentGraph(fragment).map {
       case (input, _, outputs) =>
-        val docsUrl = subprocess.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
-        val config = componentConfig(subprocess.id).getOrElse(SingleComponentConfig.zero).copy(docsUrl = docsUrl)
+        val docsUrl = fragment.metaData.typeSpecificData.asInstanceOf[FragmentSpecificData].docsUrl
+        val config = componentConfig(fragment.id).getOrElse(SingleComponentConfig.zero).copy(docsUrl = docsUrl)
         val parameters = input.parameters.map(toParameter(config)(_)).sequence.value
-        new SubprocessComponentDefinition(parameters, config, outputs)
+        new FragmentComponentDefinition(parameters, config, outputs)
     }
   }
 
-  def extractParametersDefinition(subprocessInput: SubprocessInput)(implicit nodeId: NodeId): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
-    val config = componentConfig(subprocessInput.ref.id).getOrElse(SingleComponentConfig.zero)
-    subprocessInput.subprocessParams.get.map(toParameter(config)).sequence
-      .mapWritten(_.map(data => SubprocessParamClassLoadError(data.fieldName, data.refClazzName, nodeId.id)))
+  def extractParametersDefinition(fragmentInput: FragmentInput)(implicit nodeId: NodeId): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
+    val config = componentConfig(fragmentInput.ref.id).getOrElse(SingleComponentConfig.zero)
+    fragmentInput.fragmentParams.get.map(toParameter(config)).sequence
+      .mapWritten(_.map(data => FragmentParamClassLoadError(data.fieldName, data.refClazzName, nodeId.id)))
   }
 
-  private def toParameter(componentConfig: SingleComponentConfig)(p: SubprocessParameter): Writer[List[SubprocessParamClassLoadErrorData], Parameter] = {
+  private def toParameter(componentConfig: SingleComponentConfig)(p: FragmentParameter): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {
     val paramName = p.name
     p.typ.toRuntimeClass(classLoader).map(Typed(_))
-      .map(Writer.value[List[SubprocessParamClassLoadErrorData], TypingResult])
+      .map(Writer.value[List[FragmentParamClassLoadErrorData], TypingResult])
       .getOrElse(Writer
-        .value[List[SubprocessParamClassLoadErrorData], TypingResult](Unknown)
-        .tell(List(SubprocessParamClassLoadErrorData(paramName, p.typ.refClazzName)))
+        .value[List[FragmentParamClassLoadErrorData], TypingResult](Unknown)
+        .tell(List(FragmentParamClassLoadErrorData(paramName, p.typ.refClazzName)))
       ).map(toParameter(componentConfig, paramName, _))
   }
 
@@ -91,40 +91,40 @@ class SubprocessComponentDefinitionExtractor(componentConfig: String => Option[S
 
 }
 
-object SubprocessComponentDefinitionExtractor {
+object FragmentComponentDefinitionExtractor {
 
-  def apply(modelData: ModelData): SubprocessComponentDefinitionExtractor = {
-    SubprocessComponentDefinitionExtractor(modelData.processConfig, modelData.modelClassLoader.classLoader)
+  def apply(modelData: ModelData): FragmentComponentDefinitionExtractor = {
+    FragmentComponentDefinitionExtractor(modelData.processConfig, modelData.modelClassLoader.classLoader)
   }
 
-  def apply(modelConfig: Config, classLoader: ClassLoader): SubprocessComponentDefinitionExtractor = {
+  def apply(modelConfig: Config, classLoader: ClassLoader): FragmentComponentDefinitionExtractor = {
     val componentsConfig = ComponentsUiConfigExtractor.extract(modelConfig)
-    new SubprocessComponentDefinitionExtractor(componentsConfig.get, classLoader)
+    new FragmentComponentDefinitionExtractor(componentsConfig.get, classLoader)
   }
 
 }
 
-object SubprocessGraphDefinitionExtractor extends SubprocessDefinitionExtractor {
+object FragmentGraphDefinitionExtractor extends FragmentDefinitionExtractor {
 
-  def extractSubprocessGraphDefinition(subprocess: CanonicalProcess): Validated[FragmentDefinitionError, SubprocessGraphDefinition] = {
-    extractSubprocessGraph(subprocess).map {
+  def extractFragmentGraphDefinition(fragment: CanonicalProcess): Validated[FragmentDefinitionError, FragmentGraphDefinition] = {
+    extractFragmentGraph(fragment).map {
       case (input, nodes, outputs) =>
-        val additionalBranches = subprocess.allStartNodes.collect {
+        val additionalBranches = fragment.allStartNodes.collect {
           case a@FlatNode(_: Join) :: _ => a
         }
-        new SubprocessGraphDefinition(input.parameters, nodes, additionalBranches, outputs)
+        new FragmentGraphDefinition(input.parameters, nodes, additionalBranches, outputs)
     }
   }
 
 }
 
-class SubprocessComponentDefinition(val parameters: List[Parameter],
+class FragmentComponentDefinition(val parameters: List[Parameter],
                                     val config: SingleComponentConfig,
                                     allOutputs: List[Output]) {
   def outputNames: List[String] = allOutputs.map(_.name).sorted
 }
 
-class SubprocessGraphDefinition(val subprocessParameters: List[SubprocessParameter],
+class FragmentGraphDefinition(val fragmentParameters: List[FragmentParameter],
                                 val nodes: List[CanonicalNode],
                                 val additionalBranches: List[List[CanonicalNode]],
                                 allOutputs: List[Output]) {
@@ -138,4 +138,4 @@ class SubprocessGraphDefinition(val subprocessParameters: List[SubprocessParamet
 
 }
 
-case class SubprocessParamClassLoadErrorData(fieldName: String, refClazzName: String)
+case class FragmentParamClassLoadErrorData(fieldName: String, refClazzName: String)

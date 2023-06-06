@@ -32,7 +32,7 @@ case class ContextId(value: String)
   * Context is container for variables used in expression evaluation
   * @param id correlation id/trace id used for tracing (logs, error presentation) and for tests mechanism, it should be always defined
   * @param variables variables available in evaluation
-  * @param parentContext context used for scopes handling, mainly for subprocess invocation purpose
+  * @param parentContext context used for scopes handling, mainly for fragment invocation purpose
   */
 case class Context(id: String, variables: Map[String, Any], parentContext: Option[Context]) {
 

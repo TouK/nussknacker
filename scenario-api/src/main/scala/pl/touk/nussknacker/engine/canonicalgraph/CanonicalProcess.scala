@@ -26,9 +26,9 @@ object CanonicalProcess {
       Nil
     case filterNode: canonicalnode.FilterNode if isNodeDisabled(filterNode) =>
       Nil
-    case subprocessNode: canonicalnode.Subprocess if isNodeDisabled(subprocessNode) =>
-      if (subprocessNode.outputs.size == 1) {
-        withoutDisabled(subprocessNode.outputs.values.head)
+    case fragmentNode: canonicalnode.Fragment if isNodeDisabled(fragmentNode) =>
+      if (fragmentNode.outputs.size == 1) {
+        withoutDisabled(fragmentNode.outputs.values.head)
       } else {
         throw new Exception("Fatal error. Disabled scenario fragment should be validated to have exactly one output")
       }
@@ -49,10 +49,10 @@ object CanonicalProcess {
       List(
         splitNode.copy(nexts = splitNode.nexts.map(withoutDisabled).filterNot(_.isEmpty))
       )
-    case subprocessNode: canonicalnode.Subprocess =>
+    case fragmentNode: canonicalnode.Fragment =>
       List(
-        subprocessNode.copy(
-          outputs = subprocessNode.outputs.map { case (id, canonicalNodes) =>
+        fragmentNode.copy(
+          outputs = fragmentNode.outputs.map { case (id, canonicalNodes) =>
             (id, withoutDisabled(canonicalNodes))
           }.filterNot { case (_, canonicalNodes) => canonicalNodes.isEmpty }
         )
@@ -113,7 +113,7 @@ object canonicalnode {
 
   case class Case(expression: Expression, nodes: List[CanonicalNode]) extends CanonicalTreeNode
 
-  case class Subprocess(data: SubprocessInput,
+  case class Fragment(data: FragmentInput,
                         outputs: Map[String, List[CanonicalNode]]) extends CanonicalNode
 
   def collectAllNodes(node: CanonicalNode): List[NodeData] =  node match {
@@ -121,7 +121,7 @@ object canonicalnode {
       case canonicalnode.FilterNode(data, nextFalse) => data :: nextFalse.flatMap(collectAllNodes)
       case canonicalnode.SwitchNode(data, nexts, defaultNext) => data :: nexts.flatMap(_.nodes).flatMap(collectAllNodes) ::: defaultNext.flatMap(collectAllNodes)
       case canonicalnode.SplitNode(data, nexts) => data :: nexts.flatten.flatMap(collectAllNodes)
-      case canonicalnode.Subprocess(data, outputs) => data :: outputs.values.flatten.toList.flatMap(collectAllNodes)
+      case canonicalnode.Fragment(data, outputs) => data :: outputs.values.flatten.toList.flatMap(collectAllNodes)
   }
 
 }

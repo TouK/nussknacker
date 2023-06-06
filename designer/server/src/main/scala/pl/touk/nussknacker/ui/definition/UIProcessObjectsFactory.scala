@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{SubprocessComponentDefinitionExtractor, ToStaticObjectDefinitionTransformer}
+import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, ToStaticObjectDefinitionTransformer}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 object UIProcessObjectsFactory {
@@ -32,8 +32,8 @@ object UIProcessObjectsFactory {
                               deploymentManager: DeploymentManager,
                               typeSpecificInitialData: TypeSpecificInitialData,
                               user: LoggedUser,
-                              subprocessesDetails: Set[SubprocessDetails],
-                              isSubprocess: Boolean,
+                              fragmentsDetails: Set[FragmentDetails],
+                              isFragment: Boolean,
                               processCategoryService: ProcessCategoryService,
                               additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
                               processingType: ProcessingType): UIProcessObjects = {
@@ -52,25 +52,25 @@ object UIProcessObjectsFactory {
     }
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
-    //FIXME: how to handle dynamic configuration of subprocesses??
-    val subprocessInputs = extractSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
+    //FIXME: how to handle dynamic configuration of fragments??
+    val fragmentInputs = extractFragmentInputs(fragmentsDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
     val uiClazzDefinitions = modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition)
-    val uiProcessDefinition = createUIProcessDefinition(processDefinition, subprocessInputs,
+    val uiProcessDefinition = createUIProcessDefinition(processDefinition, fragmentInputs,
       uiClazzDefinitions, processCategoryService)
 
     val customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2)
 
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
 
-    val subprocessesComponentsConfig = subprocessInputs.mapValuesNow(_.objectDefinition.componentConfig)
+    val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
     //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(subprocessesComponentsConfig, fixedComponentsUiConfig, dynamicComponentsConfig)
+    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fragmentsComponentsConfig, fixedComponentsUiConfig, dynamicComponentsConfig)
 
     val componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(processConfig)
 
     val additionalPropertiesConfigForUi = additionalPropertiesConfig
-      .filter(_ => !isSubprocess)// fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
+      .filter(_ => !isFragment)// fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
       .mapValuesNow(createUIAdditionalPropertyConfig)
 
     val defaultUseAsyncInterpretationFromConfig = processConfig.as[Option[Boolean]]("asyncExecutionConfig.defaultUseAsyncInterpretation")
@@ -80,7 +80,7 @@ object UIProcessObjectsFactory {
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
         user = user,
         processDefinition = uiProcessDefinition,
-        isSubprocess = isSubprocess,
+        isFragment = isFragment,
         componentsConfig = finalComponentsConfig,
         componentsGroupMapping = componentsGroupMapping,
         processCategoryService = processCategoryService,
@@ -92,8 +92,8 @@ object UIProcessObjectsFactory {
       additionalPropertiesConfig = additionalPropertiesConfigForUi,
       edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
         processDefinition = processDefinition,
-        isSubprocess = isSubprocess,
-        subprocessesDetails = subprocessesDetails
+        isFragment = isFragment,
+        fragmentsDetails = fragmentsDetails
       ),
       customActions = deploymentManager.customActions.map(UICustomAction(_)),
       defaultAsyncInterpretation = defaultAsyncInterpretation.value)
@@ -119,13 +119,13 @@ object UIProcessObjectsFactory {
     UIClazzDefinition(definition.clazzName, methodsWithHighestArity, staticMethodsWithHighestArity)
   }
 
-  private def extractSubprocessInputs(subprocessesDetails: Set[SubprocessDetails],
+  private def extractFragmentInputs(fragmentsDetails: Set[FragmentDetails],
                                       classLoader: ClassLoader,
                                       fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, FragmentObjectDefinition] = {
-    val definitionExtractor = new SubprocessComponentDefinitionExtractor(fixedComponentsConfig.get, classLoader)
+    val definitionExtractor = new FragmentComponentDefinitionExtractor(fixedComponentsConfig.get, classLoader)
     (for {
-      details <- subprocessesDetails
-      definition <- definitionExtractor.extractSubprocessComponentDefinition(details.canonical).toOption
+      details <- fragmentsDetails
+      definition <- definitionExtractor.extractFragmentComponentDefinition(details.canonical).toOption
     } yield {
       val objectDefinition = ObjectDefinition(definition.parameters, Some(Typed[java.util.Map[String, Any]]), Some(List(details.category)), definition.config)
       details.canonical.id -> FragmentObjectDefinition(objectDefinition, definition.outputNames)
@@ -154,7 +154,7 @@ object UIProcessObjectsFactory {
   }
 
   def createUIProcessDefinition(processDefinition: ProcessDefinition[ObjectDefinition],
-                                subprocessInputs: Map[String, FragmentObjectDefinition],
+                                fragmentInputs: Map[String, FragmentObjectDefinition],
                                 types: Set[UIClazzDefinition],
                                 processCategoryService: ProcessCategoryService): UIProcessDefinition = {
     def createUIObjectDef(objDef: ObjectDefinition) = createUIObjectDefinition(objDef, processCategoryService)
@@ -165,7 +165,7 @@ object UIProcessObjectsFactory {
       services = transformed.services,
       sourceFactories = transformed.sourceFactories,
       sinkFactories = transformed.sinkFactories,
-      subprocessInputs = subprocessInputs.mapValuesNow(createUIFragmentObjectDef),
+      fragmentInputs = fragmentInputs.mapValuesNow(createUIFragmentObjectDef),
       customStreamTransformers = transformed.customStreamTransformers.mapValuesNow(_._1),
       globalVariables = transformed.expressionConfig.globalVariables,
       typesInformation = types

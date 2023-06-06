@@ -113,8 +113,8 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                             .some((value) => value.includes(segment.toLowerCase()));
                     });
                 },
-                HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
-                HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
+                HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isFragment : true),
+                HIDE_SCENARIOS: (row, filter) => (filter ? row.isFragment : true),
             }),
         [columns, visibleColumns],
     );

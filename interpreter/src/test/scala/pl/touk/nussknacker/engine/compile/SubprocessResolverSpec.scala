@@ -11,16 +11,16 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, Subprocess}
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, Fragment}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 
-class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
+class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside{
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -28,27 +28,27 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "ala" -> "'makota'")
-      .subprocessOneOut("sub2", "subProcess1", "output", "fragmentResult", "ala" -> "'makota'")
+      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "ala" -> "'makota'")
+      .fragmentOneOut("sub2", "fragment1", "output", "fragmentResult", "ala" -> "'makota'")
       .emptySink("sink", "sink1")
 
-    val suprocessParameters = List(SubprocessParameter("ala", SubprocessClazzRef[String]))
+    val suprocessParameters = List(FragmentParameter("ala", FragmentClazzRef[String]))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+    val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(SubprocessInputDefinition("start", suprocessParameters)),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))) , List.empty
+        FlatNode(FragmentInputDefinition("start", suprocessParameters)),
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(FragmentOutputDefinition("out1", "output", List.empty))) , List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
 
-    resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe Symbol("empty")
+    resolved.nodes.filter(_.isInstanceOf[Fragment]) shouldBe Symbol("empty")
     resolved.nodes.find(_.id == "f1") shouldBe Symbol("empty")
     resolved.nodes.find(_.id == "sub-f1") shouldBe Symbol("defined")
-    resolved.nodes.find(_.id == "sub").get.data should matchPattern { case SubprocessInput(_, _, _, _, Some(subprocessParameters)) => }
+    resolved.nodes.find(_.id == "sub").get.data should matchPattern { case FragmentInput(_, _, _, _, Some(fragmentParameters)) => }
     resolved.nodes.find(_.id == "sub").get.data
     resolved.nodes.find(_.id == "sub2-f1") shouldBe Symbol("defined")
   }
@@ -57,30 +57,30 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "param" -> "'makota'")
+      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "param" -> "'makota'")
       .emptySink("sink", "sink1")
 
-    val subprocess = CanonicalProcess(MetaData("subProcess2", FragmentSpecificData()),
+    val fragment = CanonicalProcess(MetaData("fragment2", FragmentSpecificData()),
       List(
-        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
         List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()))))
-      ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
+      ), FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val nested =  CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+    val nested =  CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-        canonicalnode.Subprocess(SubprocessInput("sub2",
-        SubprocessRef("subProcess2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output", List.empty)))))), List.empty
+        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
+        canonicalnode.Fragment(FragmentInput("sub2",
+        FragmentRef("fragment2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty)))))), List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess, nested)).resolve(process)
+    val resolvedValidated = FragmentResolver(Set(fragment, nested)).resolve(process)
 
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
 
-    resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe Symbol("empty")
+    resolved.nodes.filter(_.isInstanceOf[Fragment]) shouldBe Symbol("empty")
     resolved.nodes.find(_.id == "f1") shouldBe Symbol("empty")
     resolved.nodes.find(_.id == "sub2") shouldBe Symbol("empty")
     resolved.nodes.find(_.id == "sub2-f1") shouldBe Symbol("empty")
@@ -94,16 +94,16 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "ala" -> "'makota'")
+      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "ala" -> "'makota'")
       .emptySink("sink", "sink1")
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+    val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "badoutput", List.empty))), List.empty
+        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(FragmentOutputDefinition("out1", "badoutput", List.empty))), List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
 
     resolvedValidated shouldBe Invalid(NonEmptyList.of(FragmentOutputNotDefined("badoutput", Set("sub-out1", "sub"))))
 
@@ -113,81 +113,81 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessDisabledManyOutputs("sub", "subProcess1", List("ala" -> "'makota'"), Map(
+      .fragmentDisabledManyOutputs("sub", "fragment1", List("ala" -> "'makota'"), Map(
         "output1" -> GraphBuilder.emptySink("sink1", "out1"),
         "output2" -> GraphBuilder.emptySink("sink2", "out2")
       ))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+    val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(
-          SubprocessInputDefinition("start",List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
+          FragmentInputDefinition("start",List(FragmentParameter("ala", FragmentClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         canonicalnode.SplitNode(
           Split("s"), List(
-            List(FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))),
-            List(FlatNode(SubprocessOutputDefinition("out2", "output", List.empty)))
+            List(FlatNode(FragmentOutputDefinition("out1", "output", List.empty))),
+            List(FlatNode(FragmentOutputDefinition("out2", "output", List.empty)))
           )
         )
       ), List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingManyOutputsSubprocess("sub", Set("output1", "output2"))))
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingManyOutputsFragment("sub", Set("output1", "output2"))))
 
   }
   test("not disable fragment with no outputs") {
 
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessDisabledEnd("sub", "subProcess1")
+      .fragmentDisabledEnd("sub", "fragment1")
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+    val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(
-          SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
+          FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
-        FlatNode(Sink("disabledSubprocessMockedSink", SinkRef("disabledSubprocessMockedSink", List())))
+        FlatNode(Sink("disabledFragmentMockedSink", SinkRef("disabledFragmentMockedSink", List())))
       ), List.empty
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingNoOutputsSubprocess("sub")))
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(DisablingNoOutputsFragment("sub")))
 
   }
 
   test("inline disabled fragment without inner nodes") {
-    val processWithEmptySubprocess = ScenarioBuilder.streaming("test")
+    val processWithEmptyFragment = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessOneOut("sub", "emptySubprocess", "output", "fragmentResult", "ala" -> "'makota'")
+      .fragmentOneOut("sub", "emptyFragment", "output", "fragmentResult", "ala" -> "'makota'")
       .filter("d", "true")
       .emptySink("sink", "sink1")
 
-    val processWithDisabledSubprocess =
+    val processWithDisabledFragment =
       ScenarioBuilder.streaming("test")
         .source("source", "source1")
-        .subprocessDisabled("sub", "subProcess1", "output", "ala" -> "'makota'")
+        .fragmentDisabled("sub", "fragment1", "output", "ala" -> "'makota'")
         .filter("d", "true")
         .emptySink("sink", "sink1")
 
-    val emptySubprocess = CanonicalProcess(MetaData("emptySubprocess", FragmentSpecificData()),
+    val emptyFragment = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()),
       List(
         FlatNode(
-          SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
-        FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
+          FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+        FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ), List.empty
     )
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+    val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(
-          SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
+          FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
-        FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
+        FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
       ), List.empty
     )
-    val resolver = SubprocessResolver(Set(subprocess, emptySubprocess))
+    val resolver = FragmentResolver(Set(fragment, emptyFragment))
     val pattern: PartialFunction[ValidatedNel[ProcessCompilationError, CanonicalProcess], _] = {
       case Valid(CanonicalProcess(_, flatNodes, additional)) =>
         flatNodes(0) match {
@@ -196,12 +196,12 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
           case e => fail(e.toString)
         }
         flatNodes(1) match {
-          case FlatNode(SubprocessInput(id, _, _, _, _)) =>
+          case FlatNode(FragmentInput(id, _, _, _, _)) =>
             id shouldBe "sub"
           case e => fail(e.toString)
         }
         flatNodes(2) match {
-          case FlatNode(SubprocessUsageOutput(_, _, _, _)) =>
+          case FlatNode(FragmentUsageOutput(_, _, _, _)) =>
             // output id is unpredictable
           case e => fail(e.toString)
         }
@@ -216,49 +216,49 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
         }
 
     }
-    inside(resolver.resolve(processWithEmptySubprocess))(pattern)
-    inside(resolver.resolve(processWithDisabledSubprocess))(pattern)
+    inside(resolver.resolve(processWithEmptyFragment))(pattern)
+    inside(resolver.resolve(processWithDisabledFragment))(pattern)
   }
 
   test("resolve fragment at end of process") {
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessEnd("sub", "subProcess1", "ala" -> "'makota'")
+      .fragmentEnd("sub", "fragment1", "ala" -> "'makota'")
 
-    val subprocess = ScenarioBuilder
-      .fragment("subProcess1", "ala" -> classOf[String])
+    val fragment = ScenarioBuilder
+      .fragment("fragment1", "ala" -> classOf[String])
       .filter("f1", "false")
       .emptySink("end", "sink1")
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
+    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
 
     resolvedValidated shouldBe Symbol("valid")
     val resolved = resolvedValidated.toOption.get
 
-    resolved.nodes.filter(_.isInstanceOf[Subprocess]) shouldBe Symbol("empty")
+    resolved.nodes.filter(_.isInstanceOf[Fragment]) shouldBe Symbol("empty")
   }
 
   test("detect unknown fragment") {
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .subprocessOneOut("nodeSubprocessId", "subProcessId", "fragmentResult", "output")
+      .fragmentOneOut("nodeFragmentId", "fragmentId", "fragmentResult", "output")
       .emptySink("id2", "sink")
 
-    val resolvedValidated = SubprocessResolver(subprocesses = Set()).resolve(process)
+    val resolvedValidated = FragmentResolver(fragments = Set()).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownSubprocess(id = "subProcessId", nodeId = "nodeSubprocessId")))
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownFragment(id = "fragmentId", nodeId = "nodeFragmentId")))
   }
 
   test("should resolve diamond fragments") {
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocess("sub", "subProcess1", List("ala" -> "'makota'"), Map("output" -> "fragmentResult"), Map("output" ->
+      .fragment("sub", "fragment1", List("ala" -> "'makota'"), Map("output" -> "fragmentResult"), Map("output" ->
         GraphBuilder.emptySink("sink", "type")))
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+    val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
-        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
+        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
         canonicalnode.SplitNode(Split("split"),
           List(
             List(FlatNode(Filter("filter2a", "false")), FlatNode(BranchEndData(BranchEndDefinition("join2a", "join1")))),
@@ -267,15 +267,15 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
         )
       ), List(
         FlatNode(Join("join1", None, "union", Nil, Nil, None)),
-        FlatNode(SubprocessOutputDefinition("output", "output", Nil, None))
+        FlatNode(FragmentOutputDefinition("output", "output", Nil, None))
       ):: Nil
     )
 
-    val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process).toOption.get.allStartNodes
+    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process).toOption.get.allStartNodes
     resolvedValidated should have length 2
   }
 
-  test("handle subprocess with empty outputs") {
+  test("handle fragment with empty outputs") {
     val fragment = ScenarioBuilder
       .fragment("fragment1")
       .split("split",
@@ -285,12 +285,12 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
     val scenario = ScenarioBuilder
       .streaming("scenario1")
       .source("source", "source1")
-      .subprocess("fragment", "fragment1", Nil, Map("output1" -> "outVar1"), Map(
+      .fragment("fragment", "fragment1", Nil, Map("output1" -> "outVar1"), Map(
         "output1" -> GraphBuilder.emptySink("id1", "sink"),
         "output2" -> GraphBuilder.emptySink("id2", "sink"),
       ))
     
-    val resolvedValidated = SubprocessResolver(Set(fragment)).resolve(scenario)
+    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(scenario)
     resolvedValidated shouldBe Symbol("valid")
 
   }
@@ -305,23 +305,23 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
     val scenario = ScenarioBuilder
       .streaming("scenario1")
       .source("source", "source1")
-      .subprocessOneOut("fragment", "fragment1", "output1", "outVar1")
+      .fragmentOneOut("fragment", "fragment1", "output1", "outVar1")
       .emptySink("id1", "sink")
 
-    val resolvedValidated = SubprocessResolver(Set(fragment)).resolve(scenario)
+    val resolvedValidated = FragmentResolver(Set(fragment)).resolve(scenario)
     resolvedValidated shouldBe Invalid(NonEmptyList.of(MultipleOutputsForName("output1", "fragment")))
 
   }
 
   //FIXME: not sure if it's good way.
-  private implicit class DisabledSubprocess[R](builder: GraphBuilder[R]) extends GraphBuilder[R] {
-    def subprocessDisabled(id: String, subProcessId: String, output: String, params: (String, Expression)*): GraphBuilder[R] =
-      build(node => builder.creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList), isDisabled = Some(true)), Map(output -> node))))
+  private implicit class DisabledFragment[R](builder: GraphBuilder[R]) extends GraphBuilder[R] {
+    def fragmentDisabled(id: String, fragmentId: String, output: String, params: (String, Expression)*): GraphBuilder[R] =
+      build(node => builder.creator(FragmentNode(FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled).toList), isDisabled = Some(true)), Map(output -> node))))
 
-    def subprocessDisabledManyOutputs(id: String, subProcessId: String, params: List[(String, Expression)], outputs: Map[String, SubsequentNode]): R =
-      creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled)), isDisabled = Some(true)), outputs))
-    def subprocessDisabledEnd(id: String, subProcessId: String, params: (String, Expression)*): R =
-      creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList), isDisabled = Some(true)), Map()))
+    def fragmentDisabledManyOutputs(id: String, fragmentId: String, params: List[(String, Expression)], outputs: Map[String, SubsequentNode]): R =
+      creator(FragmentNode(FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled)), isDisabled = Some(true)), outputs))
+    def fragmentDisabledEnd(id: String, fragmentId: String, params: (String, Expression)*): R =
+      creator(FragmentNode(FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled).toList), isDisabled = Some(true)), Map()))
     override def build(inner: Creator[R]): GraphBuilder[R] = builder.build(inner)
 
     override def creator: Creator[R] = builder.creator

@@ -46,7 +46,7 @@ class V1_031__FragmentSpecificDataSpec extends AnyFlatSpec with Matchers {
         |{
         |  "metaData": {
         |    "id": "empty-2",
-        |    "isSubprocess": false,
+        |    "isFragment": false,
         |    "typeSpecificData": {
         |      "parallelism": 2,
         |      "spillStateToDisk": true,
@@ -71,7 +71,7 @@ class V1_031__FragmentSpecificDataSpec extends AnyFlatSpec with Matchers {
         |{
         |  "metaData": {
         |    "id": "empty-2",
-        |    "isSubprocess": true,
+        |    "isFragment": true,
         |    "typeSpecificData": {
         |      "parallelism": 1,
         |      "spillStateToDisk": true,
@@ -90,7 +90,7 @@ class V1_031__FragmentSpecificDataSpec extends AnyFlatSpec with Matchers {
   }
 
 
-  it should "do nothing if json already without 'isSubprocess' field" in {
+  it should "do nothing if json already without 'isFragment' field" in {
     val rawJsonString =
       """
         |{

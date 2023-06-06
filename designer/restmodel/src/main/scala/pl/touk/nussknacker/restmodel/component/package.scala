@@ -62,7 +62,7 @@ package object component {
       name = process.idWithName.name,
       processId = process.processId,
       nodesUsagesData = nodesUsagesData,
-      isSubprocess = process.isSubprocess,
+      isFragment = process.isFragment,
       processCategory = process.processCategory,
       modificationDate = process.modificationDate, //TODO: Deprecated, please use modifiedAt
       modifiedAt = process.modifiedAt,
@@ -78,7 +78,7 @@ package object component {
                                              name: ProcessName,
                                              processId: ProcessId,
                                              nodesUsagesData : List[NodeUsageData],
-                                             isSubprocess: Boolean,
+                                             isFragment: Boolean,
                                              processCategory: String,
                                              modificationDate: Instant,
                                              modifiedAt: Instant,

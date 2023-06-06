@@ -1,14 +1,14 @@
-import {Edge, EdgeKind} from "../types"
+import { Edge, EdgeKind } from "../types";
 
 const EDITABLE_EDGES: string[] = [
-  EdgeKind.switchNext,
-  EdgeKind.switchDefault,
-  EdgeKind.filterFalse,
-  EdgeKind.filterTrue,
-  EdgeKind.subprocessOutput,
-]
+    EdgeKind.switchNext,
+    EdgeKind.switchDefault,
+    EdgeKind.filterFalse,
+    EdgeKind.filterTrue,
+    EdgeKind.fragmentOutput,
+];
 
 export function isEdgeEditable(edge?: Edge): boolean {
-  const edgeType = edge?.edgeType?.type
-  return edgeType && EDITABLE_EDGES.includes(edgeType)
+    const edgeType = edge?.edgeType?.type;
+    return edgeType && EDITABLE_EDGES.includes(edgeType);
 }

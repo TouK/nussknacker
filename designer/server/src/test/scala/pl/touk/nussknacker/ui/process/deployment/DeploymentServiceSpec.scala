@@ -575,7 +575,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       TestCat,
       canonicalProcess,
       Streaming,
-      isSubprocess = false,
+      isFragment = false,
       forwardedUserName = None)
     writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)
   }
@@ -590,7 +590,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       TestCat,
       canonicalProcess,
       Streaming,
-      isSubprocess = true,
+      isFragment = true,
       forwardedUserName = None)
 
     writeProcessRepository.saveNewProcess(action).map(_.rightValue.value.processId)

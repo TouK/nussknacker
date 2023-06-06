@@ -2,13 +2,11 @@ import _, { concat, differenceWith, intersectionWith, zip } from "lodash";
 import React, { useEffect } from "react";
 import { NodeType, Parameter, ProcessDefinitionData } from "../../../types";
 
-const parametersEquals = (oldParameter, newParameter) =>
-    oldParameter && newParameter && oldParameter.name === newParameter.name;
+const parametersEquals = (oldParameter, newParameter) => oldParameter && newParameter && oldParameter.name === newParameter.name;
 
 const newFields = (oldParameters, newParameters) => differenceWith(newParameters, oldParameters, parametersEquals);
 const removedFields = (oldParameters, newParameters) => differenceWith(oldParameters, newParameters, parametersEquals);
-const unchangedFields = (oldParameters, newParameters) =>
-    intersectionWith(oldParameters, newParameters, parametersEquals);
+const unchangedFields = (oldParameters, newParameters) => intersectionWith(oldParameters, newParameters, parametersEquals);
 
 const nodeDefinitionParameters = (node) => node?.ref.parameters;
 
@@ -44,9 +42,9 @@ export default function ParameterList({
     const newParams = concat(diffParams.unchanged, diffParams.added);
     const parametersChanged = !zip(newParams, nodeDefinitionParameters(editedNode)).reduce(
         (acc, params) => acc && parametersEquals(params[0], params[1]),
-        true
+        true,
     );
-    //If subprocess parameters changed, we update state of parent component and will be rerendered, current node state is probably not ready to be rendered
+    //If fragment parameters changed, we update state of parent component and will be rerendered, current node state is probably not ready to be rendered
     //TODO: setting state in parent node is a bit nasty.
 
     useEffect(() => {

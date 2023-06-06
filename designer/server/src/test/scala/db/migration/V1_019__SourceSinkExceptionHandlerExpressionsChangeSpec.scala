@@ -189,10 +189,10 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
           |"nodes":[
           |  $sourceToConvert,
           |  {
-          |    "type" : "SubprocessInput",
-          |    "id" : "subprocess",
+          |    "type" : "FragmentInput",
+          |    "id" : "fragment",
           |    "ref" : {
-          |      "id" : "subprocess1",
+          |      "id" : "fragment1",
           |      "parameters" : []
           |    },
           |    "outputs" : {
@@ -205,7 +205,7 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
 
     val converted = migrateAndConvert(oldJson)
 
-    val sink1 = converted.nodes(1).asInstanceOf[Subprocess].outputs("output1").head.data.asInstanceOf[Sink]
+    val sink1 = converted.nodes(1).asInstanceOf[Fragment].outputs("output1").head.data.asInstanceOf[Sink]
     sink1 shouldBe sinkToVerify("sink1")
 
   }
