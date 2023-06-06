@@ -44,8 +44,8 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
-  */
+ * This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
+ */
 class NodesResources(val processRepository: FetchingProcessRepository[Future],
                      fragmentRepository: FragmentRepository,
                      typeToConfig: ProcessingTypeDataProvider[ModelData, _],

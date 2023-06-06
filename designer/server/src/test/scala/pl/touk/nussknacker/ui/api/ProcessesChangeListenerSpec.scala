@@ -103,8 +103,7 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
 
     cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))), comment) ~> checkEventually {
       val head = processChangeListener.events.toArray.last
-      head should matchPattern
-      { case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Cancel) => }
+      head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Cancel) => }
     }
   }
 

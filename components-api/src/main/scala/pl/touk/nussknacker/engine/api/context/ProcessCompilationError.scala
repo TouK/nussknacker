@@ -16,7 +16,9 @@ sealed trait PartSubGraphCompilationError extends ProcessCompilationError
 
 sealed trait ParameterValidationError extends PartSubGraphCompilationError with InASingleNode {
   def message: String
+
   def description: String
+
   def paramName: String
 }
 
@@ -27,7 +29,8 @@ object ProcessCompilationError {
   val ValidatedNelApplicative: Applicative[ValidatedNelCompilationError] =
     Applicative[ValidatedNelCompilationError]
 
-  trait InASingleNode { self: ProcessCompilationError =>
+  trait InASingleNode {
+    self: ProcessCompilationError =>
 
     override def nodeIds: Set[String] = Set(nodeId)
 
@@ -36,7 +39,8 @@ object ProcessCompilationError {
   }
 
   // All errors which we want to be seen in process as properties errors should extend this trait
-  trait ScenarioPropertiesError { self: ProcessCompilationError =>
+  trait ScenarioPropertiesError {
+    self: ProcessCompilationError =>
     override def nodeIds: Set[String] = Set()
   }
 
@@ -118,7 +122,7 @@ object ProcessCompilationError {
     def apply(name: String)(implicit nodeId: NodeId): ProcessCompilationError =
       MissingCustomNodeExecutor(name, nodeId.id)
   }
-  
+
   case class MissingParameters(params: Set[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 
@@ -211,6 +215,7 @@ object ProcessCompilationError {
   case class DisablingNoOutputsFragment(id: String) extends ProcessCompilationError {
     override def nodeIds: Set[String] = Set.empty
   }
+
   case class UnknownFragment(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
   case class InvalidFragment(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode

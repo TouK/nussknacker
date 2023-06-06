@@ -74,9 +74,9 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           f1 = toCompilationResult(result.compiledObject, result.expressionTypingInfo),
           f2 = nexts.map(caseNode => compile(caseNode.node, contextAfter)).sequence,
           f3 = defaultNext.map(dn => compile(dn, contextAfter)).sequence) { case (_, (expr, caseExpressions), cases, defaultNext) =>
-            val compiledCases = caseExpressions.zip(cases).map(k => compiledgraph.node.Case(k._1, k._2))
-            compiledgraph.node.Switch(id, Applicative[Option].product(varName, expr), compiledCases, defaultNext)
-          }
+          val compiledCases = caseExpressions.zip(cases).map(k => compiledgraph.node.Case(k._1, k._2))
+          compiledgraph.node.Switch(id, Applicative[Option].product(varName, expr), compiledCases, defaultNext)
+        }
       case splittednode.EndingNode(data) => compileEndingNode(ctx, data)
 
     }

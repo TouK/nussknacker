@@ -168,7 +168,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
       (archivedFragment, Some(ToolbarCondition(Some(true), Some(true), Some(ToolbarConditionType.OneOf))), true)
     )
 
-    forAll(testingData) { (process: BaseProcessDetails[_], condition:  Option[ToolbarCondition], expected: Boolean) =>
+    forAll(testingData) { (process: BaseProcessDetails[_], condition: Option[ToolbarCondition], expected: Boolean) =>
       val result = ToolbarHelper.verifyCondition(condition, process)
       result shouldBe expected
     }
@@ -228,7 +228,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
             ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
             ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = false)
           ))),
-          ToolbarPanel("buttons2", None, None,  Some(List(
+          ToolbarPanel("buttons2", None, None, Some(List(
             ToolbarButton(ProcessCancel, None, None, None, None, disabled = false)
           )))
         ),
@@ -286,7 +286,7 @@ class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
             ToolbarButton(CustomLink, Some("metrics"), Some("metrics for process"), None, Some(s"/metrics/${processName(process)}"), disabled = false),
             ToolbarButton(CustomLink, Some("analytics"), None, None, Some(s"/analytics/${process.processId.value}"), disabled = true)
           ))),
-          ToolbarPanel("buttons1", None, Some(Small),  Some(List(
+          ToolbarPanel("buttons1", None, Some(Small), Some(List(
             ToolbarButton(ProcessDeploy, None, None, None, None, disabled = false)
           )))
         ),

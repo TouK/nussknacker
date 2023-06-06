@@ -28,7 +28,7 @@ object DBFetchingProcessRepository {
 
 }
 
-abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) extends FetchingProcessRepository[F] with LazyLogging {
+abstract class DBFetchingProcessRepository[F[_] : Monad](val dbConfig: DbConfig) extends FetchingProcessRepository[F] with LazyLogging {
 
   import api._
 
@@ -62,7 +62,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
         lastStateActionPerProcess.find(_._1 == process.id).map(_._2),
         lastDeployedActionPerProcess.find(_._1 == process.id).map(_._2),
         isLatestVersion = true
-      )}).map(_.toList)
+      )
+      }).map(_.toList)
   }
 
   override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]] = {
@@ -124,7 +125,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       process = process,
       processVersion = processVersion,
       lastActionData = actions.headOption,
-      lastStateActionData = actions.find{ case (entity, _) => StateActions.contains(entity.action) },
+      lastStateActionData = actions.find { case (entity, _) => StateActions.contains(entity.action) },
       lastDeployedActionData = actions.headOption.find(_._1.isDeployed),
       isLatestVersion = isLatestVersion,
       tags = tags,

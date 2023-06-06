@@ -36,7 +36,7 @@ import scala.language.higherKinds
 object ProcessService {
   type EmptyResponse = XError[Unit]
 
-  @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isFragment: Boolean, forwardedUserName: Option[RemoteUserName] )
+  @JsonCodec case class CreateProcessCommand(processName: ProcessName, category: String, isFragment: Boolean, forwardedUserName: Option[RemoteUserName])
 
   @JsonCodec case class UpdateProcessCommand(process: DisplayableProcess, comment: UpdateProcessComment, forwardedUserName: Option[RemoteUserName])
 }
@@ -71,9 +71,9 @@ trait ProcessService {
 }
 
 /**
-  * ProcessService provides functionality for archive, unarchive, deploy, cancel process.
-  * Each action includes verification based on actual process state and checking process is fragment / archived.
-  */
+ * ProcessService provides functionality for archive, unarchive, deploy, cancel process.
+ * Each action includes verification based on actual process state and checking process is fragment / archived.
+ */
 class DBProcessService(deploymentService: DeploymentService,
                        newProcessPreparer: NewProcessPreparer,
                        processCategoryService: ProcessCategoryService,
@@ -236,7 +236,7 @@ class DBProcessService(deploymentService: DeploymentService,
   def importProcess(processId: ProcessIdWithName, jsonString: String)(implicit user: LoggedUser): Future[XError[ValidatedDisplayableProcess]] = {
     withNotArchivedProcess(processId, "Import is not allowed for archived process.") { process =>
       val result = ProcessMarshaller.fromJson(jsonString).leftMap(UnmarshallError).toEither
-        .map{ jsonCanonicalProcess =>
+        .map { jsonCanonicalProcess =>
           val canonical = jsonCanonicalProcess.withProcessId(processId.name)
           val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
           val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, displayable.processingType, process.processCategory)
@@ -247,7 +247,7 @@ class DBProcessService(deploymentService: DeploymentService,
     }
   }
 
-  private def validateInitialScenarioProperties(canonicalProcess: CanonicalProcess, processingType:ProcessingType, category: String) = {
+  private def validateInitialScenarioProperties(canonicalProcess: CanonicalProcess, processingType: ProcessingType, category: String) = {
     val validationResult = processValidation.processingTypeValidationWithTypingInfo(canonicalProcess, processingType, category)
     validationResult.errors.processPropertiesErrors
 

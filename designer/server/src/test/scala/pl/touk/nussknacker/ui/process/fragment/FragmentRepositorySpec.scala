@@ -19,8 +19,12 @@ class FragmentRepositorySpec extends AnyFlatSpec with ScalatestRouteTest with Ma
   it should "fetches fragment by its version" in {
     val sampleFragment = ProcessConverter.toDisplayable(ProcessTestData.sampleFragment, TestProcessingTypes.Streaming, TestCat)
     val sampleFragment2 = ProcessConverter.toDisplayable(ProcessTestData.sampleFragment2, TestProcessingTypes.Streaming, TestCat)
-    savefragment(sampleFragment) { status shouldEqual StatusCodes.OK }
-    updateProcess(sampleFragment2) { status shouldEqual StatusCodes.OK }
+    savefragment(sampleFragment) {
+      status shouldEqual StatusCodes.OK
+    }
+    updateProcess(sampleFragment2) {
+      status shouldEqual StatusCodes.OK
+    }
 
     ProcessTestData.sampleFragment.metaData.id shouldBe ProcessTestData.sampleFragment2.metaData.id
     ProcessTestData.sampleFragment should not be ProcessTestData.sampleFragment2

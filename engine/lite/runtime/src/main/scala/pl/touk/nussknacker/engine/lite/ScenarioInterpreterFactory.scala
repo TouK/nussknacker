@@ -131,7 +131,7 @@ object ScenarioInterpreterFactory {
     type CompilationResult[K] = ValidatedNel[ProcessCompilationError, WithSinkTypes[K]]
 
     private type InterpreterOutputType = F[ResultType[PartResult]]
-    
+
     private type ScenarioInterpreterType = ScenarioInputBatch[Input] => InterpreterOutputType
 
     private type PartInterpreterType = DataBatch => InterpreterOutputType
@@ -170,7 +170,7 @@ object ScenarioInterpreterFactory {
         case (resultSoFar, a: SourcePart) =>
           resultSoFar.product(compiledPartInvoker(a)).andThen { case (WriterT((types, interpreter)), WriterT((types2, part))) =>
             compileSource(a).map { compiledSource =>
-              Writer(types ++ types2, computeNextSourceInvocation(interpreter, a, compiledSource andThen { validatedCtx => validatedCtx.fold(errs => monad.pure(Writer(errs.toList, List.empty)), ctx => part(DataBatch(List(ctx)))) } ))
+              Writer(types ++ types2, computeNextSourceInvocation(interpreter, a, compiledSource andThen { validatedCtx => validatedCtx.fold(errs => monad.pure(Writer(errs.toList, List.empty)), ctx => part(DataBatch(List(ctx)))) }))
             }
           }
       }.map(_.map(invokeListenersOnException))

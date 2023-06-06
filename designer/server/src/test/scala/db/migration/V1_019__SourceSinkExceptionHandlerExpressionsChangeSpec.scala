@@ -189,10 +189,10 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
           |"nodes":[
           |  $sourceToConvert,
           |  {
-          |    "type" : "FragmentInput",
-          |    "id" : "fragment",
+          |    "type" : "SubprocessInput",
+          |    "id" : "subprocess",
           |    "ref" : {
-          |      "id" : "fragment1",
+          |      "id" : "subprocess1",
           |      "parameters" : []
           |    },
           |    "outputs" : {

@@ -46,15 +46,17 @@ class DbFragmentRepository(db: DbConfig, ec: ExecutionContext) extends FragmentR
   }
 
   import db.profile.api._
+
   val espTables = new EspTables {
     override implicit val profile: JdbcProfile = db.profile
   }
 
   import espTables._
+
   implicit val iec = ec
 
   //Fetches fragment in given version if specified, fetches latest version otherwise
-  def listFragments(versions: Map[String, VersionId], category: Option[String]) : Future[Set[FragmentDetails]] = {
+  def listFragments(versions: Map[String, VersionId], category: Option[String]): Future[Set[FragmentDetails]] = {
     val versionFragments = Future.sequence {
       versions.map { case (fragmentId, fragmentVersion) =>
         fetchFragment(ProcessName(fragmentId), fragmentVersion, category)
@@ -68,7 +70,7 @@ class DbFragmentRepository(db: DbConfig, ec: ExecutionContext) extends FragmentR
     fetchedFragments.map(_.values.toSet)
   }
 
-  private def listLatestFragments(category: Option[String]) : Future[Set[FragmentDetails]] = {
+  private def listLatestFragments(category: Option[String]): Future[Set[FragmentDetails]] = {
     val action = for {
       latestProcesses <- processVersionsTableWithUnit.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
         .join(processVersionsTableWithScenarioJson).on { case (((processId, latestVersionDate)), processVersion) =>
@@ -83,7 +85,7 @@ class DbFragmentRepository(db: DbConfig, ec: ExecutionContext) extends FragmentR
     dbioRunner.run(action).map(_.flatten.toSet)
   }
 
-  private def fetchFragment(fragmentName: ProcessName, version: VersionId, category: Option[String]) : Future[FragmentDetails] = {
+  private def fetchFragment(fragmentName: ProcessName, version: VersionId, category: Option[String]): Future[FragmentDetails] = {
     val action = for {
       fragmentVersion <- processVersionsTableWithScenarioJson.filter(p => p.id === version)
         .join(fragmentsQueryByName(fragmentName, category))
@@ -106,7 +108,7 @@ class DbFragmentRepository(db: DbConfig, ec: ExecutionContext) extends FragmentR
     val query = processesTable.filter(_.isFragment).filter(!_.isArchived)
 
     category
-      .map{cat =>query.filter(p => p.processCategory === cat)}
+      .map { cat => query.filter(p => p.processCategory === cat) }
       .getOrElse(query)
   }
 

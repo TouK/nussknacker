@@ -51,7 +51,8 @@ import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, Te
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 
-trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions with BeforeAndAfterEach { self: ScalatestRouteTest with Suite with Matchers with ScalaFutures =>
+trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions with BeforeAndAfterEach {
+  self: ScalatestRouteTest with Suite with Matchers with ScalaFutures =>
 
   import ProcessesQueryEnrichments.RichProcessesQuery
   import TestCategories._
@@ -306,7 +307,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected def routeWithPermissions(route: RouteWithUser, isAdmin: Boolean = false): Route =
     if (isAdmin) withAdminPermissions(route) else withAllPermissions(route)
 
-  protected def toEntity[T:Encoder](data: T): HttpEntity.Strict = toEntity(implicitly[Encoder[T]].apply(data))
+  protected def toEntity[T: Encoder](data: T): HttpEntity.Strict = toEntity(implicitly[Encoder[T]].apply(data))
 
   private def toEntity(json: Json) = {
     val jsonString = json.printWith(humanReadablePrinter)
@@ -374,18 +375,18 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     } yield id).futureValue
   }
 
-  protected def createDeployedProcess(processName: ProcessName, category: String = TestCat) : ProcessId = {
+  protected def createDeployedProcess(processName: ProcessName, category: String = TestCat): ProcessId = {
     (for {
       id <- prepareValidProcess(processName, category, isFragment = false)
       _ <- prepareDeploy(id)
     } yield id).futureValue
   }
 
-  protected def createDeployedCanceledProcess(processName: ProcessName, category: String = TestCat) : ProcessId = {
+  protected def createDeployedCanceledProcess(processName: ProcessName, category: String = TestCat): ProcessId = {
     (for {
       id <- prepareValidProcess(processName, category, isFragment = false)
       _ <- prepareDeploy(id)
-      _ <-  prepareCancel(id)
+      _ <- prepareCancel(id)
     } yield id).futureValue
   }
 
@@ -446,7 +447,7 @@ final case class StateJson(name: String, icon: URI, tooltip: String, description
 object StateJson extends OptionValues {
   def apply(json: Json): StateJson = new StateJson(
     json.hcursor.downField("status").downField("name").as[String].toOption.value,
-    json.hcursor.downField("icon").as[String].toOption.map(URI.create)value,
+    json.hcursor.downField("icon").as[String].toOption.map(URI.create) value,
     json.hcursor.downField("tooltip").as[String].toOption.value,
     json.hcursor.downField("description").as[String].toOption.value,
   )

@@ -9,31 +9,32 @@ object Context {
   private val initialContextIdPrefix = "initial-"
 
   /**
-    * For performance reasons, is used unsecure random - see UUIDBenchmark for details. In this case random correlation id
-    * is used only for internal purpose so is not important in security context.
-    */
+   * For performance reasons, is used unsecure random - see UUIDBenchmark for details. In this case random correlation id
+   * is used only for internal purpose so is not important in security context.
+   */
   private val random = new Random()
 
   /**
-    * Deprecated: should be used ContextIdGenerator e.g. via EngineRuntimeContext.contextIdGenerator
-    * Should be used for newly created context - when there is no suitable external correlation / tracing id
-    */
+   * Deprecated: should be used ContextIdGenerator e.g. via EngineRuntimeContext.contextIdGenerator
+   * Should be used for newly created context - when there is no suitable external correlation / tracing id
+   */
   def withInitialId: Context = {
     Context(initialContextIdPrefix + new UUID(random.nextLong(), random.nextLong()).toString)
   }
 
-  def apply(id: String) : Context = Context(id, Map.empty, None)
+  def apply(id: String): Context = Context(id, Map.empty, None)
 
 }
 
 case class ContextId(value: String)
 
 /**
-  * Context is container for variables used in expression evaluation
-  * @param id correlation id/trace id used for tracing (logs, error presentation) and for tests mechanism, it should be always defined
-  * @param variables variables available in evaluation
-  * @param parentContext context used for scopes handling, mainly for fragment invocation purpose
-  */
+ * Context is container for variables used in expression evaluation
+ *
+ * @param id            correlation id/trace id used for tracing (logs, error presentation) and for tests mechanism, it should be always defined
+ * @param variables     variables available in evaluation
+ * @param parentContext context used for scopes handling, mainly for fragment invocation purpose
+ */
 case class Context(id: String, variables: Map[String, Any], parentContext: Option[Context]) {
 
   def apply[T](name: String): T =
@@ -57,11 +58,11 @@ case class Context(id: String, variables: Map[String, Any], parentContext: Optio
   def withVariables(otherVariables: Map[String, Any]): Context =
     copy(variables = variables ++ otherVariables)
 
-  def pushNewContext(variables: Map[String, Any]) : Context = {
+  def pushNewContext(variables: Map[String, Any]): Context = {
     Context(id, variables, Some(this))
   }
 
-  def popContext : Context =
+  def popContext: Context =
     parentContext.getOrElse(throw new RuntimeException("No parent context available"))
 
   def clearUserVariables: Context = {

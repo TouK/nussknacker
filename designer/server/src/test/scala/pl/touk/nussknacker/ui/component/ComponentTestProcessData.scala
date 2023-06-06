@@ -141,8 +141,8 @@ object ComponentTestProcessData {
   )
 
   /**
-    * @param name - created by user on GUI
-    * @param id - id placed in ProcessConfigCreator
-    */
+   * @param name - created by user on GUI
+   * @param id   - id placed in ProcessConfigCreator
+   */
   case class NodeConf(name: String, id: String)
 }

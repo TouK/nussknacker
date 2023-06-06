@@ -73,7 +73,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("should return state correctly when state is deployed") {
     val processName: ProcessName = generateProcessName
-    val id: ProcessId =  prepareProcess(processName).dbioActionValues
+    val id: ProcessId = prepareProcess(processName).dbioActionValues
 
     deploymentManager.withWaitForDeployFinish(processName) {
       deploymentService.deployProcessAsync(ProcessIdWithName(id, processName), None, None).futureValue
@@ -167,7 +167,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return properly state when state is canceled and process is canceled") {
     val processName: ProcessName = generateProcessName
-    val id =  prepareCanceledProcess(processName).dbioActionValues
+    val id = prepareCanceledProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue.status shouldBe SimpleStateStatus.Canceled
@@ -187,7 +187,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
     processDetails.lastStateAction should not be None
     processDetails.isCanceled shouldBe true
-    processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
+    processDetails.history.head.actions.map(_.action) should be(List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
 
   test("Should return canceled status for canceled process with not founded state - cleaned state") {
@@ -203,12 +203,12 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
     processDetails.lastStateAction should not be None
     processDetails.isCanceled shouldBe true
-    processDetails.history.head.actions.map(_.action) should be (List(ProcessActionType.Cancel, ProcessActionType.Deploy))
+    processDetails.history.head.actions.map(_.action) should be(List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
 
   test("Should return state with warning when state is running and process is canceled") {
     val processName: ProcessName = generateProcessName
-    val id =  prepareCanceledProcess(processName).dbioActionValues
+    val id = prepareCanceledProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -289,7 +289,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return error state when state is running and process is deployed with mismatch versions") {
     val processName: ProcessName = generateProcessName
-    val id =  prepareDeployedProcess(processName).dbioActionValues
+    val id = prepareDeployedProcess(processName).dbioActionValues
     val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "other", modelVersion = None))
 
     deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.Running, version) {
@@ -305,7 +305,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should always return process manager failure, even if some other verifications return invalid") {
     val processName: ProcessName = generateProcessName
-    val id =  prepareDeployedProcess(processName).dbioActionValues
+    val id = prepareDeployedProcess(processName).dbioActionValues
     val version = Some(ProcessVersion(versionId = VersionId(2), processId = ProcessId(1), processName = ProcessName(""), user = "", modelVersion = None))
 
     // FIXME: doesnt check recover from failed verifications ???
@@ -319,7 +319,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return warning state when state is running with empty version and process is deployed") {
     val processName: ProcessName = generateProcessName
-    val id =  prepareDeployedProcess(processName).dbioActionValues
+    val id = prepareDeployedProcess(processName).dbioActionValues
 
     deploymentManager.withProcessStateVersion(processName, SimpleStateStatus.Running, Option.empty) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
@@ -334,7 +334,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
   test("Should return error state when failed to get state") {
     val processName: ProcessName = generateProcessName
-    val id =  prepareDeployedProcess(processName).dbioActionValues
+    val id = prepareDeployedProcess(processName).dbioActionValues
 
     // FIXME: doesnt check recover from failed future of findJobStatus ???
     deploymentManager.withProcessStateVersion(processName, ProblemStateStatus.FailedToGet, Option.empty) {

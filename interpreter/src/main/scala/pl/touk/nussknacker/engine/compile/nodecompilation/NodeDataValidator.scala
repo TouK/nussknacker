@@ -75,10 +75,10 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
   }
 
   private def validateFragment(validationContext: ValidationContext,
-                                 outgoingEdges: List[OutgoingEdge],
-                                 compiler: NodeCompiler,
-                                 a: FragmentInput)
-                                (implicit nodeId: NodeId) = {
+                               outgoingEdges: List[OutgoingEdge],
+                               compiler: NodeCompiler,
+                               a: FragmentInput)
+                              (implicit nodeId: NodeId) = {
     fragmentResolver.resolveInput(a).map { definition =>
       val outputErrors = definition.validOutputs.andThen { outputs =>
         val outputFieldsValidated = outputs.collect { case Output(name, true) => name }.map { output =>
@@ -100,7 +100,7 @@ class NodeDataValidator(modelData: ModelData, fragmentResolver: FragmentResolver
   }
 
 
-  private def toValidationResponse[T<:TypedValue](nodeCompilationResult: NodeCompilationResult[_]): ValidationPerformed =
+  private def toValidationResponse[T <: TypedValue](nodeCompilationResult: NodeCompilationResult[_]): ValidationPerformed =
     ValidationPerformed(nodeCompilationResult.errors, nodeCompilationResult.parameters, expressionType = nodeCompilationResult.expressionType)
 }
 

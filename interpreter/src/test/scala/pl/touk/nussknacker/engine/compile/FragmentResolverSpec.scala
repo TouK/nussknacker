@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 
-class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside{
+class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -37,7 +37,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside{
     val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(FragmentInputDefinition("start", suprocessParameters)),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(FragmentOutputDefinition("out1", "output", List.empty))) , List.empty
+        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty
     )
 
     val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process)
@@ -64,14 +64,14 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside{
       List(
         FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
-        List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()))))
-      ), FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
+          List(FlatNode(Sink("deadEnd", SinkRef("sink1", List()))))
+        ), FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val nested =  CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
+    val nested = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
         canonicalnode.Fragment(FragmentInput("sub2",
-        FragmentRef("fragment2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty)))))), List.empty
+          FragmentRef("fragment2", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(FragmentOutputDefinition("sub2Out", "output", List.empty)))))), List.empty
     )
 
     val resolvedValidated = FragmentResolver(Set(fragment, nested)).resolve(process)
@@ -121,7 +121,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside{
     val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
       List(
         FlatNode(
-          FragmentInputDefinition("start",List(FragmentParameter("ala", FragmentClazzRef[String])))),
+          FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "false"), List()),
         canonicalnode.SplitNode(
           Split("s"), List(
@@ -202,7 +202,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside{
         }
         flatNodes(2) match {
           case FlatNode(FragmentUsageOutput(_, _, _, _)) =>
-            // output id is unpredictable
+          // output id is unpredictable
           case e => fail(e.toString)
         }
         flatNodes(3) match {
@@ -268,7 +268,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside{
       ), List(
         FlatNode(Join("join1", None, "union", Nil, Nil, None)),
         FlatNode(FragmentOutputDefinition("output", "output", Nil, None))
-      ):: Nil
+      ) :: Nil
     )
 
     val resolvedValidated = FragmentResolver(Set(fragment)).resolve(process).toOption.get.allStartNodes
@@ -289,7 +289,7 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside{
         "output1" -> GraphBuilder.emptySink("id1", "sink"),
         "output2" -> GraphBuilder.emptySink("id2", "sink"),
       ))
-    
+
     val resolvedValidated = FragmentResolver(Set(fragment)).resolve(scenario)
     resolvedValidated shouldBe Symbol("valid")
 
@@ -320,8 +320,10 @@ class FragmentResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     def fragmentDisabledManyOutputs(id: String, fragmentId: String, params: List[(String, Expression)], outputs: Map[String, SubsequentNode]): R =
       creator(FragmentNode(FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled)), isDisabled = Some(true)), outputs))
+
     def fragmentDisabledEnd(id: String, fragmentId: String, params: (String, Expression)*): R =
       creator(FragmentNode(FragmentInput(id, FragmentRef(fragmentId, params.map(Parameter.tupled).toList), isDisabled = Some(true)), Map()))
+
     override def build(inner: Creator[R]): GraphBuilder[R] = builder.build(inner)
 
     override def creator: Creator[R] = builder.creator

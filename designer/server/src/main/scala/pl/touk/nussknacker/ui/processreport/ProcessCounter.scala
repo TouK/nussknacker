@@ -14,20 +14,20 @@ import shapeless.syntax.typeable._
 class ProcessCounter(fragmentRepository: FragmentRepository) {
 
 
-  def computeCounts(canonicalProcess: CanonicalProcess, counts: String => Option[RawCount]) : Map[String, NodeCount] = {
+  def computeCounts(canonicalProcess: CanonicalProcess, counts: String => Option[RawCount]): Map[String, NodeCount] = {
 
-    def computeCounts(prefixes: List[String])(nodes: NonEmptyList[Iterable[CanonicalNode]]) : Map[String, NodeCount] = {
+    def computeCounts(prefixes: List[String])(nodes: NonEmptyList[Iterable[CanonicalNode]]): Map[String, NodeCount] = {
       nodes.map(startNode => computeCountsForSingle(prefixes)(startNode)).toList.reduceOption(_ ++ _).getOrElse(Map.empty)
     }
 
-    def computeCountsForSingle(prefixes: List[String])(nodes: Iterable[CanonicalNode]) : Map[String, NodeCount] = {
+    def computeCountsForSingle(prefixes: List[String])(nodes: Iterable[CanonicalNode]): Map[String, NodeCount] = {
 
       val computeCountsSamePrefixes = computeCountsForSingle(prefixes) _
 
-      def nodeCount(id: String, fragmentCounts: Map[String, NodeCount] = Map()) : NodeCount =
+      def nodeCount(id: String, fragmentCounts: Map[String, NodeCount] = Map()): NodeCount =
         nodeCountOption(Some(id), fragmentCounts)
 
-      def nodeCountOption(id: Option[String], fragmentCounts: Map[String, NodeCount] = Map()) : NodeCount = {
+      def nodeCountOption(id: Option[String], fragmentCounts: Map[String, NodeCount] = Map()): NodeCount = {
         val countId = (prefixes ++ id).mkString("-")
         val count = counts(countId).getOrElse(RawCount(0L, 0L))
         NodeCount(count.all, count.errors, fragmentCounts)
@@ -51,6 +51,7 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
       }.toMap
 
     }
+
     computeCounts(List())(canonicalProcess.allStartNodes)
   }
 

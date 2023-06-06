@@ -74,7 +74,7 @@ class ProcessCompilerData(compiler: ProcessCompiler,
 
   def lifecycle(nodesToUse: List[_ <: NodeData]): Seq[Lifecycle] = {
     val componentIds = nodesToUse.collect {
-      case e:WithComponent => e.componentId
+      case e: WithComponent => e.componentId
     }
     // TODO: For eager services we should open service implementation (ServiceInvoker) which is hold inside
     //       SyncInterpretationFunction.compiledNode inside ServiceRef instead of definition (GenericNodeTransformation)

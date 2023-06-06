@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.migration.{NodeMigration, ProcessMigration, ProcessMigrations}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 
-class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
+class TestMigrations(migrationsToAdd: Int*) extends ProcessMigrations {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -107,7 +107,7 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
       case sub@FragmentInputDefinition(_, subParams, _) if !subParams.exists(_.name == "param42") && subParams.exists(_.name == "param1") =>
         sub.copy(parameters = sub.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p))
 
-      case sub@FragmentInput(_, ref, _,_, _) if !ref.parameters.exists(_.name == "param42") && ref.parameters.exists(_.name == "param1") =>
+      case sub@FragmentInput(_, ref, _, _, _) if !ref.parameters.exists(_.name == "param42") && ref.parameters.exists(_.name == "param1") =>
         sub.copy(ref = sub.ref.copy(parameters = sub.ref.parameters.map(p => if (p.name == "param1") p.copy(name = "param42") else p)))
     }
   }

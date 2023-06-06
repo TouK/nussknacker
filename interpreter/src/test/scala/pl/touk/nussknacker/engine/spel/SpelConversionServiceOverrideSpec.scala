@@ -41,7 +41,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
 
   class MyProcessConfigCreator(spelCustomConversionsProviderOpt: Option[SpelConversionsProvider]) extends EmptyProcessConfigCreator {
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
-      Map("stringSource" -> WithCategories(SourceFactory.noParam[String](new  pl.touk.nussknacker.engine.api.process.Source {})))
+      Map("stringSource" -> WithCategories(SourceFactory.noParam[String](new pl.touk.nussknacker.engine.api.process.Source {})))
 
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = {

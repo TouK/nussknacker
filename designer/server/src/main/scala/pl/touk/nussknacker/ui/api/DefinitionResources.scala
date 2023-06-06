@@ -22,7 +22,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
 
   private val dictResources = new DictResources
 
-  def securedRoute(implicit user: LoggedUser) : Route = encodeResponse {
+  def securedRoute(implicit user: LoggedUser): Route = encodeResponse {
     path("processDefinitionData" / "componentIds") {
       get {
         complete {

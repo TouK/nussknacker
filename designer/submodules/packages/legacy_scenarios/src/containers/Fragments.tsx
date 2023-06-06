@@ -25,7 +25,7 @@ function ShowProcessIcon({ process }: { process: ProcessType }) {
 const ElementsRenderer: RowsRenderer = ({ processes }) =>
     processes.map((process) => (
         <Tr className="row-hover" key={process.name}>
-            <Td column="name">{process.name}</Td>,<Td column="category">{process.processCategory}</Td>
+            s<Td column="name">{process.name}</Td>,<Td column="category">{process.processCategory}</Td>
             <Td column="createdBy" className="centered-column" value={process.createdBy}>
                 {process.createdBy}
             </Td>

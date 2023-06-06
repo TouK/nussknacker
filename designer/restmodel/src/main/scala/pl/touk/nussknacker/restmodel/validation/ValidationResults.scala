@@ -53,7 +53,7 @@ object ValidationResults {
   object NodeTypingData {
     implicit val typingInfoEncoder: Encoder[ExpressionTypingInfo] = TypeEncoders.typingResultEncoder.contramap(_.typingResult)
     //FIXME: BaseFlowTest fails otherwise??
-    implicit val typingInfoDecoder: Decoder[Map[String, ExpressionTypingInfo]] = Decoder.const(Map.empty)//Decoder.failedWithMessage("typingInfo shouldn't be decoded")
+    implicit val typingInfoDecoder: Decoder[Map[String, ExpressionTypingInfo]] = Decoder.const(Map.empty) //Decoder.failedWithMessage("typingInfo shouldn't be decoded")
   }
 
   @JsonCodec case class NodeTypingData(variableTypes: Map[String, TypingResult],

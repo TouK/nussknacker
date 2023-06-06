@@ -38,21 +38,21 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
 
   test("compute counts for branches") {
     val process = ScenarioBuilder.streaming("proc1").sources(
-        GraphBuilder
-          .source("source1", "source")
-          .branchEnd("branch1", "join1"),
-        GraphBuilder
-          .source("source2", "source")
-          .branchEnd("branch2", "join1"),
-        GraphBuilder
-          .join("join1", "union", None,
-            List(
-              "branch1" -> List(),
-              "branch2" -> List()
-            )
+      GraphBuilder
+        .source("source1", "source")
+        .branchEnd("branch1", "join1"),
+      GraphBuilder
+        .source("source2", "source")
+        .branchEnd("branch2", "join1"),
+      GraphBuilder
+        .join("join1", "union", None,
+          List(
+            "branch1" -> List(),
+            "branch2" -> List()
           )
-          .emptySink("end", "sink")
-      )
+        )
+        .emptySink("end", "sink")
+    )
     val result = defaultCounter.computeCounts(process, Map(
       "source1" -> RawCount(1, 0),
       "source2" -> RawCount(2, 0),
@@ -102,7 +102,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
           "subFilter1" -> NodeCount(45, 4),
           "subFilter2" -> NodeCount(0, 0),
           "outId1" -> NodeCount(35, 5)
-      )),
+        )),
       "sink11" -> NodeCount(30, 10)
     )
   }

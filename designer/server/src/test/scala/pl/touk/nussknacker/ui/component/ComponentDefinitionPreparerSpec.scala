@@ -37,8 +37,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   }
 
   test("return objects sorted by label case insensitive") {
-    val groups = prepareGroupsOfNodes(List("foo","alaMaKota","BarFilter"))
-    groups.map(_.components.map(n=>n.label)) shouldBe List(
+    val groups = prepareGroupsOfNodes(List("foo", "alaMaKota", "BarFilter"))
+    groups.map(_.components.map(n => n.label)) shouldBe List(
       List("choice", "filter", "mapVariable", "split", "variable"),
       List("alaMaKota", "BarFilter", "foo")
     )
@@ -96,7 +96,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
     baseComponents should have size (5 + 3 + 1)
     baseComponents.filter(n => n.`type` == ComponentType.Filter) should have size 1
-    baseComponents.filter(n => n.`type` ==  ComponentType.CustomNode) should have size 4
+    baseComponents.filter(n => n.`type` == ComponentType.CustomNode) should have size 4
 
     val fooNodes = groups.filter(_.name == ComponentGroupName("foo")).flatMap(_.components)
     fooNodes should have size 1
@@ -210,7 +210,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty, processCategoryService),
       isFragment = false,
       componentsConfig = Map(),
-      componentsGroupMapping =  Map(),
+      componentsGroupMapping = Map(),
       processCategoryService = processCategoryService,
       customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2),
       TestProcessingTypes.Streaming

@@ -31,14 +31,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: merge with ProcessTestData?
-object TestFactory extends TestPermissions{
+object TestFactory extends TestPermissions {
 
   private val dummyDbConfig: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
 
   private val dummyDb: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", dummyDbConfig), HsqldbProfile)
 
   //FIIXME: remove testCategory dummy implementation
-  val testCategory:CategorizedPermission= Map(
+  val testCategory: CategorizedPermission = Map(
     TestCategories.TestCat -> Permission.ALL_PERMISSIONS,
     TestCategories.TestCat2 -> Permission.ALL_PERMISSIONS
   )

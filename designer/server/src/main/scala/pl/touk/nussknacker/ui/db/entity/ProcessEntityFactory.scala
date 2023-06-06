@@ -14,7 +14,7 @@ trait ProcessEntityFactory extends BaseEntityFactory {
   val processesTable: LTableQuery[ProcessEntityFactory#ProcessEntity] = LTableQuery(new ProcessEntity(_))
 
   class ProcessEntity(tag: Tag) extends Table[ProcessEntityData](tag, "processes") {
-    
+
     def id: Rep[ProcessId] = column[ProcessId]("id", O.PrimaryKey, O.AutoInc)
 
     def name: Rep[ProcessName] = column[ProcessName]("name", NotNull)

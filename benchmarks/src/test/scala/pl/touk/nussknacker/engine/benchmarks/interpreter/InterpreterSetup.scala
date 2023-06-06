@@ -24,17 +24,18 @@ import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
-class InterpreterSetup[T:ClassTag] {
+class InterpreterSetup[T: ClassTag] {
 
-  def sourceInterpretation[F[_]:InterpreterShape](process: CanonicalProcess,
-                           services: Map[String, Service],
-                           listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
+  def sourceInterpretation[F[_] : InterpreterShape](process: CanonicalProcess,
+                                                    services: Map[String, Service],
+                                                    listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
     val compiledProcess = compile(services, process, listeners)
     val interpreter = compiledProcess.interpreter
     val parts = failOnErrors(compiledProcess.compile())
 
     def compileNode(part: ProcessPart) =
       failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
+
     val compiled = compileNode(parts.sources.head)
     val shape = implicitly[InterpreterShape[F]]
     (initialCtx: Context, ec: ExecutionContext) =>
@@ -70,7 +71,7 @@ class InterpreterSetup[T:ClassTag] {
   }
 
   class Source extends SourceFactory {
-    
+
     @MethodToInvoke
     def create(): api.process.Source = null
 

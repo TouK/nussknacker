@@ -85,7 +85,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
 
     createEmptyScenario(processRootResource)
 
-    Post("/api/processValidation", TestFactory.posting.toEntity(process))~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+    Post("/api/processValidation", TestFactory.posting.toEntity(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       val invalidNodes = extractInvalidNodes
       invalidNodes.asObject.value should have size 1
@@ -159,7 +159,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
 
     createEmptyScenario(processRootResource)
 
-    Post("/api/processValidation", TestFactory.posting.toEntity(process))~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+    Post("/api/processValidation", TestFactory.posting.toEntity(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       extractInvalidNodes.asObject.value shouldBe empty
     }
@@ -186,7 +186,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
     }
 
   private def extractVariableExpression(cursor: ACursor) = {
-      cursor.downField("nodes")
+    cursor.downField("nodes")
       .downAt(_.hcursor.get[String]("id").rightValue == VariableNodeId)
       .downField("value")
       .downField("expression")

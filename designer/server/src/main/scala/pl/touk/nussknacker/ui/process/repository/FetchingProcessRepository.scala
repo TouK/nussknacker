@@ -23,13 +23,16 @@ object FetchingProcessRepository {
 
   object FetchProcessesDetailsQuery {
     def unarchived: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(isArchived = Some(false))
+
     def unarchivedProcesses: FetchProcessesDetailsQuery = unarchived.copy(isFragment = Some(false))
+
     def unarchivedFragments: FetchProcessesDetailsQuery = unarchived.copy(isFragment = Some(true))
+
     def deployed: FetchProcessesDetailsQuery = unarchivedProcesses.copy(isDeployed = Some(true))
   }
 }
 
-abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepository[F] {
+abstract class FetchingProcessRepository[F[_] : Monad] extends ProcessDBQueryRepository[F] {
 
   def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]]
 

@@ -35,7 +35,7 @@ object ComponentsUsageHelper {
         val fragmentUsageRefined: ScenarioComponentsUsage[NodeUsageData] = fragmentUsage.copy(nodeUsageData = ScenarioUsageData(fragmentNodeId))
         val fragmentsUsages: List[ScenarioComponentsUsage[NodeUsageData]] = fragmentsComponentUsages.get(fragmentName).toList.flatten.map {
           case u@ScenarioComponentsUsage(_, _, _, _, nodeId) =>
-            val refinedUsage: ScenarioComponentsUsage[NodeUsageData]= u.copy(processDetails = processDetails, nodeUsageData = FragmentUsageData(fragmentNodeId, nodeId))
+            val refinedUsage: ScenarioComponentsUsage[NodeUsageData] = u.copy(processDetails = processDetails, nodeUsageData = FragmentUsageData(fragmentNodeId, nodeId))
             refinedUsage
         }
         fragmentUsageRefined :: fragmentsUsages
@@ -50,6 +50,7 @@ object ComponentsUsageHelper {
         usages.map(_.nodeUsageData)
       }.toList)
   }
+
   private case class ScenarioComponentsUsage[NodeUsageDataShape](componentId: ComponentId, componentType: ComponentType, componentName: Option[String], processDetails: BaseProcessDetails[_], nodeUsageData: NodeUsageDataShape)
 
 }

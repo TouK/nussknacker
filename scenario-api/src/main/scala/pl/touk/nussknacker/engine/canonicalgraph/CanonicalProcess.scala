@@ -74,6 +74,7 @@ case class CanonicalProcess(metaData: MetaData,
                             nodes: List[CanonicalNode],
                             additionalBranches: List[List[CanonicalNode]] = List.empty
                            ) extends CanonicalTreeNode {
+
   import CanonicalProcess._
 
   lazy val id: String = metaData.id
@@ -100,6 +101,7 @@ object canonicalnode {
 
   sealed trait CanonicalNode extends CanonicalTreeNode {
     def data: NodeData
+
     def id: String = data.id
   }
 
@@ -114,14 +116,14 @@ object canonicalnode {
   case class Case(expression: Expression, nodes: List[CanonicalNode]) extends CanonicalTreeNode
 
   case class Fragment(data: FragmentInput,
-                        outputs: Map[String, List[CanonicalNode]]) extends CanonicalNode
+                      outputs: Map[String, List[CanonicalNode]]) extends CanonicalNode
 
-  def collectAllNodes(node: CanonicalNode): List[NodeData] =  node match {
-      case canonicalnode.FlatNode(data) => List(data)
-      case canonicalnode.FilterNode(data, nextFalse) => data :: nextFalse.flatMap(collectAllNodes)
-      case canonicalnode.SwitchNode(data, nexts, defaultNext) => data :: nexts.flatMap(_.nodes).flatMap(collectAllNodes) ::: defaultNext.flatMap(collectAllNodes)
-      case canonicalnode.SplitNode(data, nexts) => data :: nexts.flatten.flatMap(collectAllNodes)
-      case canonicalnode.Fragment(data, outputs) => data :: outputs.values.flatten.toList.flatMap(collectAllNodes)
+  def collectAllNodes(node: CanonicalNode): List[NodeData] = node match {
+    case canonicalnode.FlatNode(data) => List(data)
+    case canonicalnode.FilterNode(data, nextFalse) => data :: nextFalse.flatMap(collectAllNodes)
+    case canonicalnode.SwitchNode(data, nexts, defaultNext) => data :: nexts.flatMap(_.nodes).flatMap(collectAllNodes) ::: defaultNext.flatMap(collectAllNodes)
+    case canonicalnode.SplitNode(data, nexts) => data :: nexts.flatten.flatMap(collectAllNodes)
+    case canonicalnode.Fragment(data, outputs) => data :: outputs.values.flatten.toList.flatMap(collectAllNodes)
   }
 
 }

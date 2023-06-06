@@ -203,7 +203,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
       val aggregateVariables = runCollectOutputAggregate[Set[Number]](id, model, testProcess)
       var expected = List(Set(1), Set(2, 5), Set(7))
-      if(trigger == TumblingWindowTrigger.OnEndWithExtraWindow) {
+      if (trigger == TumblingWindowTrigger.OnEndWithExtraWindow) {
         expected = expected :+ Set()
       }
       aggregateVariables shouldBe expected.map(_.asJava)

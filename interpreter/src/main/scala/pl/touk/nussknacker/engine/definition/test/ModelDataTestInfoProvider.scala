@@ -27,11 +27,11 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = {
     collectAllSources(scenario).map(getTestingCapabilities(_, scenario.metaData)) match {
       case Nil => TestingCapabilities.Disabled
-      case s => s.reduce((tc1, tc2) => TestingCapabilities (
-          canBeTested = tc1.canBeTested || tc2.canBeTested,
-          canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
-          canTestWithForm = tc1.canTestWithForm && tc2.canTestWithForm, //TODO change to "or" after adding support for multiple sources
-        ))
+      case s => s.reduce((tc1, tc2) => TestingCapabilities(
+        canBeTested = tc1.canBeTested || tc2.canBeTested,
+        canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
+        canTestWithForm = tc1.canTestWithForm && tc2.canTestWithForm, //TODO change to "or" after adding support for multiple sources
+      ))
     }
   }
 

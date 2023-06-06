@@ -31,7 +31,7 @@ object ProcessConverter {
     DisplayableProcess(process.metaData.id, props, nodes, edges, processingType, category)
   }
 
-  def findNodes(process: CanonicalProcess) : List[NodeData] = {
+  def findNodes(process: CanonicalProcess): List[NodeData] = {
     process.allStartNodes.toList.flatMap(branch => toGraphInner(branch)._1)
   }
 
@@ -68,10 +68,10 @@ object ProcessConverter {
         val nodes = nextInner._1.flatten
         val edges = nextInner._2.flatten
         val connecting = outputs
-          .flatMap{ case (name, outputEdges) => createNextEdge(data.id, outputEdges, Some(FragmentOutput(name))) }.toList
+          .flatMap { case (name, outputEdges) => createNextEdge(data.id, outputEdges, Some(FragmentOutput(name))) }.toList
         (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
       case Nil =>
-        (List(),List())
+        (List(), List())
     }
 
   private def createNextEdge(id: String, tail: List[CanonicalNode], edgeType: Option[EdgeType] = None): List[displayablenode.Edge] = {

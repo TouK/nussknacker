@@ -24,8 +24,10 @@ package object component {
   @ConfiguredJsonCodec sealed trait NodeUsageData {
     def nodeId: NodeId
   }
+
   object NodeUsageData {
     case class FragmentUsageData(fragmentNodeId: String, nodeId: NodeId) extends NodeUsageData
+
     case class ScenarioUsageData(nodeId: NodeId) extends NodeUsageData
   }
 
@@ -77,7 +79,7 @@ package object component {
   final case class ComponentUsagesInScenario(id: String,
                                              name: ProcessName,
                                              processId: ProcessId,
-                                             nodesUsagesData : List[NodeUsageData],
+                                             nodesUsagesData: List[NodeUsageData],
                                              isFragment: Boolean,
                                              processCategory: String,
                                              modificationDate: Instant,

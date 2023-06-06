@@ -213,9 +213,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val scenario = ScenarioBuilder.streaming("test")
       .source("start", "transaction-source")
-      .disabledProcessor("disabled", "service", params = "id"->"'disabled'")
-      .processor("enabled", "service", "id"->"'enabled'")
-      .disabledProcessorEnd("disabledEnd", "service", "id"->"'disabled'")
+      .disabledProcessor("disabled", "service", params = "id" -> "'disabled'")
+      .processor("enabled", "service", "id" -> "'enabled'")
+      .disabledProcessorEnd("disabledEnd", "service", "id" -> "'disabled'")
     interpretProcess(scenario, Transaction(), Seq.empty, services)
 
     nodes shouldBe List("enabled")
@@ -851,6 +851,7 @@ object InterpreterSpec {
       .copy(
         isLazyParameter = true,
         editor = Some(SpelTemplateParameterEditor))
+
     override def parameters: List[api.definition.Parameter] = List(spelTemplateParameter)
 
     override def returnType: typing.TypingResult = Typed[String]
@@ -920,7 +921,7 @@ object InterpreterSpec {
             Future.successful(params("lazy").asInstanceOf[AnyRef])
           }
         }
-    })
+      })
 
   }
 

@@ -36,7 +36,7 @@ case class StreamMetaData(parallelism: Option[Int] = None,
                           useAsyncInterpretation: Option[Boolean] = None,
                           checkpointIntervalInSeconds: Option[Long] = None) extends ScenarioSpecificData {
 
-  def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
+  def checkpointIntervalDuration: Option[Duration] = checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
 
 }
 
@@ -55,7 +55,7 @@ object ProcessAdditionalFields {
                                                      properties: Option[Map[String, String]])
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
+  = deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
 }

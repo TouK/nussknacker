@@ -253,6 +253,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     val processId = "test"
     val nodeUsingDynamicServiceId = "end"
+
     def processWithService(params: (String, Expression)*): CanonicalProcess = {
       ScenarioBuilder
         .streaming(processId)
@@ -281,6 +282,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
         parameters.map(_.flatMap(_.asObject).flatMap(_.apply("name")).flatMap(_.asString).toList)
       }
     }
+
     //we check that buildInfo does not change
     val beforeReload = generationTime
     val beforeReload2 = generationTime
@@ -305,7 +307,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     reloadModel()
 
-    val afterReload =  generationTime
+    val afterReload = generationTime
     beforeReload should not be afterReload
     //now parameter is known and required
     dynamicServiceParameters shouldBe Some(List(parameterUUID))
@@ -348,7 +350,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   private def testProcess(process: CanonicalProcess, data: String): Json = {
     val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCategories.Category1)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> data, "processJson" -> displayableProcess.asJson.noSpaces)()
-    Post(s"/api/processManagement/test/${process.id}", multiPart)  ~> addCredentials(credentials) ~> mainRoute ~>  checkWithClue {
+    Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       responseAs[Json]
     }

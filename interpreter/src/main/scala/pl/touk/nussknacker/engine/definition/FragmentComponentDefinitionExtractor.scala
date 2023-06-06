@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.definition
 
-import cats.Id
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel, Writer}
 import cats.implicits.toTraverseOps
@@ -119,15 +118,15 @@ object FragmentGraphDefinitionExtractor extends FragmentDefinitionExtractor {
 }
 
 class FragmentComponentDefinition(val parameters: List[Parameter],
-                                    val config: SingleComponentConfig,
-                                    allOutputs: List[Output]) {
+                                  val config: SingleComponentConfig,
+                                  allOutputs: List[Output]) {
   def outputNames: List[String] = allOutputs.map(_.name).sorted
 }
 
 class FragmentGraphDefinition(val fragmentParameters: List[FragmentParameter],
-                                val nodes: List[CanonicalNode],
-                                val additionalBranches: List[List[CanonicalNode]],
-                                allOutputs: List[Output]) {
+                              val nodes: List[CanonicalNode],
+                              val additionalBranches: List[List[CanonicalNode]],
+                              allOutputs: List[Output]) {
 
   def validOutputs(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Set[Output]] = {
     NonEmptyList.fromList(allOutputs.groupBy(_.name).filter(_._2.size > 1).toList) match {

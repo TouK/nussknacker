@@ -545,7 +545,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val fragmentId = "fragment1"
 
     val configWithValidators: Config = defaultConfig
-        .withValue(s"componentsUiConfig.$fragmentId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
+      .withValue(s"componentsUiConfig.$fragmentId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
 
     val fragmentDefinition: CanonicalProcess = createFragmentDefinition(fragmentId, List(FragmentParameter("P1", FragmentClazzRef[Short])))
     val processWithFragment = createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter("P1", "123")))
@@ -581,8 +581,8 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val fragmentId = "fragment1"
 
     val configWithValidators: Config = defaultConfig
-        .withValue(s"componentsUiConfig.$fragmentId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
-        .withValue(s"componentsUiConfig.$fragmentId.params.P2.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
+      .withValue(s"componentsUiConfig.$fragmentId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
+      .withValue(s"componentsUiConfig.$fragmentId.params.P2.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
 
     val fragmentDefinition: CanonicalProcess = createFragmentDefinition(fragmentId, List(
       FragmentParameter("P1", FragmentClazzRef[Short]),
@@ -603,9 +603,9 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     result.errors.globalErrors shouldBe empty
     result.errors.invalidNodes.get("subIn") should matchPattern {
       case Some(List(
-              NodeValidationError("EmptyMandatoryParameter", _, _, Some("P1"), NodeValidationErrorType.SaveAllowed),
-              NodeValidationError("EmptyMandatoryParameter", _, _, Some("P2"), NodeValidationErrorType.SaveAllowed)
-           )) =>
+      NodeValidationError("EmptyMandatoryParameter", _, _, Some("P1"), NodeValidationErrorType.SaveAllowed),
+      NodeValidationError("EmptyMandatoryParameter", _, _, Some("P2"), NodeValidationErrorType.SaveAllowed)
+      )) =>
     }
   }
 
@@ -681,7 +681,7 @@ private object ProcessValidationSpec {
     )
   }
 
-  private def createProcessWithFragmentParams(fragmentDefinitionId: String, nodeParams: List[evaluatedparam.Parameter]): DisplayableProcess ={
+  private def createProcessWithFragmentParams(fragmentDefinitionId: String, nodeParams: List[evaluatedparam.Parameter]): DisplayableProcess = {
     createProcess(
       nodes = List(
         Source("source", SourceRef(sourceTypeName, Nil)),
@@ -707,10 +707,10 @@ private object ProcessValidationSpec {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`, category)
   }
 
-  private def createFragmentDefinition(fragmentDefinitionId: String, fragmentInputParams: List[FragmentParameter]): CanonicalProcess ={
+  private def createFragmentDefinition(fragmentDefinitionId: String, fragmentInputParams: List[FragmentParameter]): CanonicalProcess = {
     CanonicalProcess(MetaData(fragmentDefinitionId, FragmentSpecificData()), List(
-      FlatNode(FragmentInputDefinition("in", fragmentInputParams  )),
-      FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField",  Expression("spel",  "'value'"))))),
+      FlatNode(FragmentInputDefinition("in", fragmentInputParams)),
+      FlatNode(FragmentOutputDefinition("out", "out1", List(Field("strField", Expression("spel", "'value'"))))),
     ),
       additionalBranches = List.empty
     )

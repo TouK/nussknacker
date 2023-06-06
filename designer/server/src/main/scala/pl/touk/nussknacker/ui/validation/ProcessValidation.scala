@@ -39,9 +39,9 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData, _],
                         expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]]) {
 
   /**
-    * We cache there model with category as a key, because model can be reloaded.
-    * In consequence of that we have to make sure that we use actual state of model
-    */
+   * We cache there model with category as a key, because model can be reloaded.
+   * In consequence of that we have to make sure that we use actual state of model
+   */
   private val processValidatorCache = new DefaultCache[ValidatorKey, ProcessValidator](CacheConfig())
 
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -206,7 +206,7 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData, _],
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
     val processErrors = errors.filter(_.nodeIds.isEmpty)
-    val (propertiesErrors, otherErrors) =  processErrors.partition(_.isInstanceOf[ScenarioPropertiesError])
+    val (propertiesErrors, otherErrors) = processErrors.partition(_.isInstanceOf[ScenarioPropertiesError])
 
     ValidationResult.errors(
       invalidNodes = (for {

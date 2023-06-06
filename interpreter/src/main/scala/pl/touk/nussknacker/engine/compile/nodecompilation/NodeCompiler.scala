@@ -138,8 +138,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 
   def compileFragmentInput(fragmentInput: FragmentInput,
-                             ctx: ValidationContext)
-                            (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
+                           ctx: ValidationContext)
+                          (implicit nodeId: NodeId): NodeCompilationResult[List[compiledgraph.evaluatedparam.Parameter]] = {
 
     val ref = fragmentInput.ref
     val validParamDefs = fragmentDefinitionExtractor.extractParametersDefinition(fragmentInput)
@@ -173,7 +173,9 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)
     }
     val expressionTypingInfos = caseExpressions.map(_.expressionTypingInfo)
-      .foldLeft(expressionCompilation.map(_.expressionTypingInfo).getOrElse(Map.empty)){ _ ++ _}
+      .foldLeft(expressionCompilation.map(_.expressionTypingInfo).getOrElse(Map.empty)) {
+        _ ++ _
+      }
 
     val objCases = caseExpressions.map(_.compiledObject).sequence
 

@@ -103,7 +103,6 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   }
 
 
-
   protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = defaults
 
   protected def exceptionHandler(metaData: MetaData,
@@ -114,6 +113,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       case ComponentUseCase.TestRuntime =>
         new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
           override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+
           override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()
         }
       case _ => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)

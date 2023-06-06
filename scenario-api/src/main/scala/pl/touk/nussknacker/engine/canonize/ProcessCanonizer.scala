@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.graph.node.{BranchEnd, BranchEndData}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object ProcessCanonizer {
+
   import MaybeArtificial.applicative
   import cats.syntax.apply._
 
@@ -26,7 +27,7 @@ object ProcessCanonizer {
   def uncanonizeArtificial(canonicalProcess: CanonicalProcess): MaybeArtificial[EspProcess] = {
 
     val branches: MaybeArtificial[NonEmptyList[pl.touk.nussknacker.engine.graph.node.SourceNode]]
-      = canonicalProcess.allStartNodes.map(uncanonizeSource).sequence
+    = canonicalProcess.allStartNodes.map(uncanonizeSource).sequence
 
     branches.map(bList => EspProcess(canonicalProcess.metaData, bList))
   }
@@ -125,7 +126,7 @@ object NodeCanonizer {
         canonicalnode.SplitNode(bare, nexts.map(canonize)) :: Nil
       case node.FragmentNode(input, nexts) =>
         canonicalnode.Fragment(input, nexts.mapValuesNow(canonize)) :: Nil
-      case BranchEnd(e:BranchEndData) =>
+      case BranchEnd(e: BranchEndData) =>
         canonicalnode.FlatNode(e) :: Nil
     }
 

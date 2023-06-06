@@ -275,19 +275,19 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   }
 
   test("validate nodes after union if validation of part before fails") {
-    val process =  ScenarioBuilder.streaming("proc1").sources(
-        GraphBuilder
-          .source("sourceId1", "mySource")
-          .filter("invalidFilter", "not.a.valid.expression")
-          .branchEnd("branch1", "join1"),
-        GraphBuilder
-          .join("join1", "unionTransformer", Some("outPutVar"),
-            List(
-              "branch1" -> List("key" -> "'key1'", "value" -> "#input")
-            )
+    val process = ScenarioBuilder.streaming("proc1").sources(
+      GraphBuilder
+        .source("sourceId1", "mySource")
+        .filter("invalidFilter", "not.a.valid.expression")
+        .branchEnd("branch1", "join1"),
+      GraphBuilder
+        .join("join1", "unionTransformer", Some("outPutVar"),
+          List(
+            "branch1" -> List("key" -> "'key1'", "value" -> "#input")
           )
-          .processorEnd("stringService", "stringService" , "stringParam" -> "''")
-      )
+        )
+        .processorEnd("stringService", "stringService", "stringParam" -> "''")
+    )
     val validationResult = validator.validate(process)
 
     validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(ListMap("branch1" -> Typed[String]))
@@ -311,7 +311,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
             "branch2" -> List("key" -> "'key2'", "value" -> "#input.length()")
           )
         )
-        .processorEnd("stringService", "stringService" , "stringParam" -> serviceExpression)
+        .processorEnd("stringService", "stringService", "stringParam" -> serviceExpression)
     )
 
   test("extract expression typing info from join") {
@@ -330,7 +330,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
               "branch2" -> List("key" -> "'key2'", "value" -> "123")
             )
           )
-          .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
+          .processorEnd("stringService", "stringService", "stringParam" -> "'123'")
       )
 
     val validationResult = validator.validate(process)
@@ -370,7 +370,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
               "branch2" -> List("key" -> "123", "value" -> "123")
             )
           )
-          .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
+          .processorEnd("stringService", "stringService", "stringParam" -> "'123'")
       )
 
     val validationResult = validator.validate(process)
@@ -413,7 +413,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
           .branchEnd("branch2", "join2"),
         GraphBuilder
           .join("join2", "unionTransformer", Some("outPutVar2"), List("branch2" -> List("key" -> "'key1'", "value" -> "'ala'")))
-          .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
+          .processorEnd("stringService", "stringService", "stringParam" -> "'123'")
       )
     val validationResult = validator.validate(validProcess)
 
@@ -446,7 +446,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   }
 
   test("validate union using variables in branches with custom nodes") {
-    val process =  ScenarioBuilder.streaming("proc1").sources(
+    val process = ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder
         .source("sourceId1", "mySource")
         .buildSimpleVariable("variable1", "variable1", "42")
@@ -465,7 +465,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
             "branch2" -> List("key" -> "'key2'", "value" -> "#variable2")
           )
         )
-        .processorEnd("stringService", "stringService" , "stringParam" -> "''")
+        .processorEnd("stringService", "stringService", "stringParam" -> "''")
     )
 
     val validationResult = validator.validate(process)
@@ -474,19 +474,19 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   }
 
   test("should validate branch contexts without branch parameters") {
-    val process =  ScenarioBuilder.streaming("proc1").sources(
-        GraphBuilder
-          .source("sourceId1", "mySource")
-          .buildSimpleVariable("var1", "intVal", "123")
-          .branchEnd("branch1", "join1"),
-        GraphBuilder
-          .source("sourceId2", "mySource")
-          .buildSimpleVariable("var2", "strVal", "'abc'")
-          .branchEnd("branch2", "join1"),
-        GraphBuilder
-          .join("join1", "noBranchParameters", None, List())
-          .emptySink("end", "dummySink")
-      )
+    val process = ScenarioBuilder.streaming("proc1").sources(
+      GraphBuilder
+        .source("sourceId1", "mySource")
+        .buildSimpleVariable("var1", "intVal", "123")
+        .branchEnd("branch1", "join1"),
+      GraphBuilder
+        .source("sourceId2", "mySource")
+        .buildSimpleVariable("var2", "strVal", "'abc'")
+        .branchEnd("branch2", "join1"),
+      GraphBuilder
+        .join("join1", "noBranchParameters", None, List())
+        .emptySink("end", "dummySink")
+    )
     val validationResult = validator.validate(process)
 
     validationResult.result shouldBe Validated.invalid(CustomNodeError("join1", "Validation contexts do not match", Option.empty)).toValidatedNel

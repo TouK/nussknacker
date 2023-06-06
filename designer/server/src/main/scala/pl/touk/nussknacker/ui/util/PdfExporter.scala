@@ -25,7 +25,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Pro
 import scala.xml.{Elem, NodeSeq, XML}
 
 object PdfExporter extends LazyLogging {
-  
+
   private val fopFactory = new FopConfParser(getClass.getResourceAsStream("/fop/config.xml"),
     new URI("http://touk.pl"), ResourceResolverFactory.createDefaultResourceResolver).getFopFactoryBuilder.build
 
@@ -214,7 +214,7 @@ object PdfExporter extends LazyLogging {
     } else {
       <block margin-bottom="25pt" margin-top="5pt">
         <block font-size="13pt" font-weight="bold" text-align="left" id={node.id}>
-          {node.getClass.getSimpleName} {node.id}
+          {node.getClass.getSimpleName}{node.id}
         </block>
         <table width="100%" table-layout="fixed">
           <table-column xmlns:fox="http://xmlgraphics.apache.org/fop/extensions" fox:header="true" column-width="proportional-column-width(2)"/>
@@ -301,7 +301,7 @@ object PdfExporter extends LazyLogging {
   }
 
   private def attachments(processActivity: ProcessActivity) = if (processActivity.attachments.isEmpty) {
-    <block/>
+      <block/>
   } else {
     <block space-after.minimum="3em">
       <block font-size="15pt" font-weight="bold" text-align="left">
@@ -329,25 +329,25 @@ object PdfExporter extends LazyLogging {
         </table-header>
         <table-body>
           {processActivity.attachments.sortBy(_.createDate).map(attachment =>
-            <table-row>
+          <table-row>
 
-              <table-cell border="1pt solid black" padding-left="1pt">
-                <block>
-                  {format(attachment.createDate)}
-                </block>
-              </table-cell>
-              <table-cell border="1pt solid black" padding-left="1pt">
-                <block>
-                  {attachment.user}
-                </block>
-              </table-cell>
-              <table-cell border="1pt solid black" padding-left="1pt">
-                <block>
-                  {attachment.fileName}
-                </block>
-              </table-cell>
-            </table-row>
-          )}
+            <table-cell border="1pt solid black" padding-left="1pt">
+              <block>
+                {format(attachment.createDate)}
+              </block>
+            </table-cell>
+            <table-cell border="1pt solid black" padding-left="1pt">
+              <block>
+                {attachment.user}
+              </block>
+            </table-cell>
+            <table-cell border="1pt solid black" padding-left="1pt">
+              <block>
+                {attachment.fileName}
+              </block>
+            </table-cell>
+          </table-row>
+        )}
         </table-body>
       </table>
     </block>

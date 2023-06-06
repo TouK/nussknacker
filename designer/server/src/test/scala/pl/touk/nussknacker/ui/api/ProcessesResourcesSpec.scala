@@ -38,8 +38,8 @@ import scala.concurrent.Future
 import scala.language.higherKinds
 
 /**
-  * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb.
-  */
+ * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb.
+ */
 class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
@@ -203,9 +203,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   /**
-    * FIXME: We don't support situation when process is running on flink but action is not deployed - warning state (isRunning = false).
-    * In that case we can change process name.. We should block rename process in that situation.
-    */
+   * FIXME: We don't support situation when process is running on flink but action is not deployed - warning state (isRunning = false).
+   * In that case we can change process name.. We should block rename process in that situation.
+   */
   ignore("should not allow to rename process with running state") {
     createEmptyProcess(processName)
     val newName = ProcessName("ProcessChangedName")
@@ -231,7 +231,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createArchivedProcess(processName)
     val process = ProcessTestData.validProcess
 
-    updateProcess(processName, process)  {
+    updateProcess(processName, process) {
       status shouldEqual StatusCodes.Conflict
     }
   }
@@ -978,7 +978,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     dbioRunner.runInTransaction(writeProcessRepository.updateCategory(processId, category)).futureValue
 
   private def forScenarioStatus(processName: ProcessName, isAdmin: Boolean = false)(callback: (StatusCode, StateJson) => Unit): Unit =
-    tryForScenarioStatus(processName, isAdmin = isAdmin) {(status, response) =>
+    tryForScenarioStatus(processName, isAdmin = isAdmin) { (status, response) =>
       callback(status, StateJson(parser.decode[Json](response).toOption.value))
     }
 

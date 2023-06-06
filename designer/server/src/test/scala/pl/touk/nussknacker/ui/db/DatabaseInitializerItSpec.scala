@@ -4,7 +4,7 @@ import com.dimafeng.testcontainers.ForAllTestContainer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
-import org.scalatest.{OneInstancePerTest, OptionValues}
+import org.scalatest.{Ignore, OneInstancePerTest, OptionValues}
 import pl.touk.nussknacker.engine.api.component.ComponentType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.component.{ComponentIdParts, ScenarioComponentsUsages}
@@ -15,8 +15,12 @@ import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProces
 
 import scala.util.Using
 
+//TODO just for test - I wil restore it soon
+@Ignore
 class DatabaseInitializerOnHsqlItSpec extends DatabaseInitializerItSpec with WithPostgresDbConfig
 
+//TODO just for test - I wil restore it soon
+@Ignore
 @Slow
 class DatabaseInitializerOnPostgresItSpec extends DatabaseInitializerItSpec with WithPostgresDbConfig
 

@@ -71,15 +71,17 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   private val componentLinksConfig = ComponentLinksConfigExtractor.extract(ConfigFactory.parseString(
     s"""
       componentLinks: [
-        ${linkConfigs.map { link =>
-      s"""{
-         | id: "${link.id}",
-         | title: "${link.title}",
-         | url: "${link.url}",
-         | icon: "${link.icon}",
-         | ${link.supportedComponentTypes.map(types => s"""supportedComponentTypes: [${types.mkString(",")}]""").getOrElse("")}
-         | }""".stripMargin
-          }.mkString(",\n")}
+        ${
+      linkConfigs.map { link =>
+        s"""{
+           | id: "${link.id}",
+           | title: "${link.title}",
+           | url: "${link.url}",
+           | icon: "${link.icon}",
+           | ${link.supportedComponentTypes.map(types => s"""supportedComponentTypes: [${types.mkString(",")}]""").getOrElse("")}
+           | }""".stripMargin
+      }.mkString(",\n")
+    }
       ]
     """
   ))
@@ -94,91 +96,91 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   private val streamingConfig: Config = ConfigFactory.parseString(
     s"""
-      |{
-      |  componentsUiConfig {
-      |    $CustomerDataEnricherName {
-      |      icon: "$overriddenIcon"
-      |      componentGroup: "$responseGroupName"
-      |      componentId: "$customerDataEnricherComponentId"
-      |    },
-      |    $Filter {
-      |      icon: "$overriddenIcon"
-      |      docsUrl: "$filterDocsUrl"
-      |    },
-      |    $HiddenMarketingCustomerDataEnricherName {
-      |     componentGroup: "$hiddenGroupName"
-      |    },
-      |    $SharedEnricherName {
-      |      icon: "$overriddenIcon"
-      |    },
-      |    $SharedProvidedComponentName {
-      |      componentId: $SharedProvidedComponentName
-      |    },
-      |    ${cid(Streaming, KafkaAvroProvidedComponentName, Source)} {
-      |      componentId: "$overrideKafkaSourceComponentId"
-      |    }
-      |    ${cid(Streaming, KafkaAvroProvidedComponentName, Sink)} {
-      |      componentId: "$overrideKafkaSinkComponentId"
-      |    }
-      |  }
-      |
-      |  componentsGroupMapping {
-      |    "$SinksGroupName": "$executionGroupName",
-      |    "$ServicesGroupName": "$executionGroupName",
-      |    "$hiddenGroupName": null
-      |  }
-      |
-      |  components {
-      |    $ProviderName {
-      |      categories: ["$CategoryMarketingTests"]
-      |    }
-      |    $disableKafkaLite
-      |  }
-      |}
-      |""".stripMargin)
+       |{
+       |  componentsUiConfig {
+       |    $CustomerDataEnricherName {
+       |      icon: "$overriddenIcon"
+       |      componentGroup: "$responseGroupName"
+       |      componentId: "$customerDataEnricherComponentId"
+       |    },
+       |    $Filter {
+       |      icon: "$overriddenIcon"
+       |      docsUrl: "$filterDocsUrl"
+       |    },
+       |    $HiddenMarketingCustomerDataEnricherName {
+       |     componentGroup: "$hiddenGroupName"
+       |    },
+       |    $SharedEnricherName {
+       |      icon: "$overriddenIcon"
+       |    },
+       |    $SharedProvidedComponentName {
+       |      componentId: $SharedProvidedComponentName
+       |    },
+       |    ${cid(Streaming, KafkaAvroProvidedComponentName, Source)} {
+       |      componentId: "$overrideKafkaSourceComponentId"
+       |    }
+       |    ${cid(Streaming, KafkaAvroProvidedComponentName, Sink)} {
+       |      componentId: "$overrideKafkaSinkComponentId"
+       |    }
+       |  }
+       |
+       |  componentsGroupMapping {
+       |    "$SinksGroupName": "$executionGroupName",
+       |    "$ServicesGroupName": "$executionGroupName",
+       |    "$hiddenGroupName": null
+       |  }
+       |
+       |  components {
+       |    $ProviderName {
+       |      categories: ["$CategoryMarketingTests"]
+       |    }
+       |    $disableKafkaLite
+       |  }
+       |}
+       |""".stripMargin)
 
   private val fraudConfig: Config = ConfigFactory.parseString(
     s"""
-      |{
-      |  componentsUiConfig {
-      |    $HiddenFraudCustomerDataEnricherName {
-      |     componentGroup: "$hiddenGroupName"
-      |    }
-      |    $CategoryFraud {
-      |      icon: "$overriddenIcon"
-      |    }
-      |    $Filter {
-      |      icon: "$overriddenIcon"
-      |      docsUrl: "$filterDocsUrl"
-      |    },
-      |    $SharedEnricherName {
-      |      icon: "$overriddenIcon"
-      |    },
-      |    $SharedProvidedComponentName {
-      |      componentId: $SharedProvidedComponentName
-      |    },
-      |    ${cid(Fraud, KafkaAvroProvidedComponentName, Source)} {
-      |      componentId: "$overrideKafkaSourceComponentId"
-      |    }
-      |    ${cid(Fraud, KafkaAvroProvidedComponentName, Sink)} {
-      |      componentId: "$overrideKafkaSinkComponentId"
-      |    }
-      |  }
-      |
-      |  componentsGroupMapping {
-      |    "$SinksGroupName": "$executionGroupName",
-      |    "$ServicesGroupName": "$executionGroupName",
-      |    "$hiddenGroupName": null
-      |  }
-      |
-      |  components {
-      |    $ProviderName {
-      |      categories: ["$CategoryFraudTests"]
-      |    }
-      |    $disableKafkaLite
-      |  }
-      |}
-      |""".stripMargin)
+       |{
+       |  componentsUiConfig {
+       |    $HiddenFraudCustomerDataEnricherName {
+       |     componentGroup: "$hiddenGroupName"
+       |    }
+       |    $CategoryFraud {
+       |      icon: "$overriddenIcon"
+       |    }
+       |    $Filter {
+       |      icon: "$overriddenIcon"
+       |      docsUrl: "$filterDocsUrl"
+       |    },
+       |    $SharedEnricherName {
+       |      icon: "$overriddenIcon"
+       |    },
+       |    $SharedProvidedComponentName {
+       |      componentId: $SharedProvidedComponentName
+       |    },
+       |    ${cid(Fraud, KafkaAvroProvidedComponentName, Source)} {
+       |      componentId: "$overrideKafkaSourceComponentId"
+       |    }
+       |    ${cid(Fraud, KafkaAvroProvidedComponentName, Sink)} {
+       |      componentId: "$overrideKafkaSinkComponentId"
+       |    }
+       |  }
+       |
+       |  componentsGroupMapping {
+       |    "$SinksGroupName": "$executionGroupName",
+       |    "$ServicesGroupName": "$executionGroupName",
+       |    "$hiddenGroupName": null
+       |  }
+       |
+       |  components {
+       |    $ProviderName {
+       |      categories: ["$CategoryFraudTests"]
+       |    }
+       |    $disableKafkaLite
+       |  }
+       |}
+       |""".stripMargin)
 
   private val wrongConfig: Config = ConfigFactory.parseString(
     s"""
@@ -204,19 +206,19 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
        |}
        |""".stripMargin)
 
-  private val categoryConfig =  ConfigFactory.parseString(
+  private val categoryConfig = ConfigFactory.parseString(
     s"""
-      |{
-      |  categoriesConfig: {
-      |    "$CategoryMarketing": "$Streaming",
-      |    "$CategoryMarketingTests": "$Streaming",
-      |    "$CategoryMarketingSuper": "$Streaming",
-      |    "$CategoryFraud": "$Fraud",
-      |    "$CategoryFraudTests": "$Fraud",
-      |    "$CategoryFraudSuper": "$Fraud"
-      |  }
-      |}
-      |""".stripMargin)
+       |{
+       |  categoriesConfig: {
+       |    "$CategoryMarketing": "$Streaming",
+       |    "$CategoryMarketingTests": "$Streaming",
+       |    "$CategoryMarketingSuper": "$Streaming",
+       |    "$CategoryFraud": "$Fraud",
+       |    "$CategoryFraudTests": "$Fraud",
+       |    "$CategoryFraudSuper": "$Fraud"
+       |  }
+       |}
+       |""".stripMargin)
 
   private val categoryService = new ConfigProcessCategoryService(categoryConfig)
 
@@ -415,7 +417,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       components.foreach(comp => {
         //See linksConfig
         val availableLinksId = comp.componentType match {
-          case Processor | Enricher => List(usagesLinkId,invokeLinkId, editLinkId)
+          case Processor | Enricher => List(usagesLinkId, invokeLinkId, editLinkId)
           case CustomNode => List(usagesLinkId, editLinkId)
           case Filter => List(usagesLinkId, filterLinkId)
           case _ => List(usagesLinkId)
@@ -430,8 +432,8 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
         comp.links.map(_.id) should contain allElementsOf availableDocsLinksId ++ availableLinksId
 
         comp.links.filter(l => availableLinksId.contains(l.id)).foreach(link => {
-          link.title should include (comp.name)
-          link.url.toString should include (comp.id.value)
+          link.title should include(comp.name)
+          link.url.toString should include(comp.id.value)
         })
       })
     }
@@ -505,7 +507,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       )),
     )
 
-    forAll(testingData) { (user: LoggedUser, componentId: ComponentId, expected: List[(BaseProcessDetails[_], List[NodeUsageData])] ) =>
+    forAll(testingData) { (user: LoggedUser, componentId: ComponentId, expected: List[(BaseProcessDetails[_], List[NodeUsageData])]) =>
       val result = defaultComponentService.getComponentUsages(componentId)(user).futureValue
       val componentProcesses = expected.map {
         case (process, nodesUsagesData) => ComponentUsagesInScenario(process, nodesUsagesData)

@@ -96,7 +96,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   test("should hide node in hidden category") {
 
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model : ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator() {
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator() {
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map(
           "enricher" -> WithCategories(TestService),
@@ -113,7 +113,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   test("should be able to assign generic node to some category") {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model : ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator() {
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator() {
       override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
         Map(
           "someGenericNode" -> WithCategories(SampleGenericNodeTransformation).withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("someCategory"))))
@@ -130,13 +130,13 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   test("should override fragment's docsUrl from config with value from 'properties'") {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model : ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
     val fragment = ProcessTestData.sampleFragmentOneOut
     val docsUrl = "https://nussknacker.io/documentation/"
     val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.copy(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
 
     val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"),
-        Set(FragmentDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
+      Set(FragmentDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
 
     processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
   }

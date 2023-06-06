@@ -12,7 +12,7 @@ class ProcessToolbarsConfigProviderSpec extends AnyFlatSpec with Matchers {
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import ToolbarButtonsConfigVariant._
   import ToolbarPanelTypeConfig._
-  
+
   lazy val processToolbarConfig: Config = ConfigFactory.parseString(
     """
       |{
@@ -122,10 +122,10 @@ class ProcessToolbarsConfigProviderSpec extends AnyFlatSpec with Matchers {
       List(
         ToolbarPanelConfig(ProcessInfoPanel, None,
           Some("Process Info"), None, Some(List(
-          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, Some("save"), None, Some("/assets/buttons/save.svg"), None, None, Some(ToolbarCondition(None, Some(true), None))),
-          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessDeploy, None, None, None, None, None, None),
-          ToolbarButtonConfig(ToolbarButtonConfigType.CustomLink, Some("metrics"), Some("Metrics for process $processName"), Some("/assets/buttons/metrics.svg"), Some("/metrics/$processName"), None, None)
-        )), None)
+            ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, Some("save"), None, Some("/assets/buttons/save.svg"), None, None, Some(ToolbarCondition(None, Some(true), None))),
+            ToolbarButtonConfig(ToolbarButtonConfigType.ProcessDeploy, None, None, None, None, None, None),
+            ToolbarButtonConfig(ToolbarButtonConfigType.CustomLink, Some("metrics"), Some("Metrics for process $processName"), Some("/assets/buttons/metrics.svg"), Some("/metrics/$processName"), None, None)
+          )), None)
       ),
       Nil
     )

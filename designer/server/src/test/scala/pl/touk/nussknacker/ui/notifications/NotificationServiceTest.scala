@@ -61,7 +61,9 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
 
     val deploymentManager = mock[DeploymentManager]
     val (deploymentService, notificationService) = createServices(deploymentManager, processName)
+
     def notificationsFor(user: LoggedUser, after: Option[Instant] = None): List[Notification] = notificationService.notifications(after)(user, ctx).futureValue
+
     def deployProcess(givenDeployResult: Try[Option[ExternalDeploymentId]], user: LoggedUser): Option[ExternalDeploymentId] = {
       when(deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])).thenReturn(Future.fromTry(givenDeployResult))
       when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
@@ -80,7 +82,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
 
     notificationsFor(userForFail).map(_.toRefresh) shouldBe List(expectedRefreshAfterFail)
 
-    notificationsFor(userForFail, Some(currentInstant.minusSeconds(20))).map(_.toRefresh) shouldBe  List(expectedRefreshAfterFail)
+    notificationsFor(userForFail, Some(currentInstant.minusSeconds(20))).map(_.toRefresh) shouldBe List(expectedRefreshAfterFail)
     notificationsFor(userForFail, Some(currentInstant.plusSeconds(20))).map(_.toRefresh) shouldBe Symbol("empty")
 
     currentInstant = currentInstant.plus(1, ChronoUnit.HOURS)

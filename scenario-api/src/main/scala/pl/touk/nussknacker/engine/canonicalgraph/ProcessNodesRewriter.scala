@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import scala.reflect._
 
 /**
-  * Rewrites data of each node in process without changing the structure of process graph.
-  */
+ * Rewrites data of each node in process without changing the structure of process graph.
+ */
 trait ProcessNodesRewriter {
 
   def rewriteProcess(canonicalProcess: CanonicalProcess): CanonicalProcess = {
@@ -50,22 +50,22 @@ trait ProcessNodesRewriter {
     }
   }
 
-  protected def rewriteIfMatching[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): T = {
+  protected def rewriteIfMatching[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): T = {
     val rewritten = rewriteNode(data).getOrElse(data)
     assume(rewritten.isInstanceOf[T], s"Result type of rewritten node's data: ${rewritten.getClass} is not a subtype of expected type: ${classTag[T].runtimeClass}")
     rewritten
   }
 
   /**
-    * Rewrites node's data. Result type should be a subtype of T. Type parameter T depends on place in structure that is rewritten.
-    * See `rewriteSingleNode` for implementation details.
-    *
-    * @param data node's data
-    * @param metaData process metada
-    * @tparam T required common supertype for input `data` and result
-    * @return rewritten data that satisfy T
-    */
-  protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T]
+   * Rewrites node's data. Result type should be a subtype of T. Type parameter T depends on place in structure that is rewritten.
+   * See `rewriteSingleNode` for implementation details.
+   *
+   * @param data     node's data
+   * @param metaData process metada
+   * @tparam T required common supertype for input `data` and result
+   * @return rewritten data that satisfy T
+   */
+  protected def rewriteNode[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): Option[T]
 
 }
 
@@ -78,7 +78,7 @@ object ProcessNodesRewriter {
     }
     new ProcessNodesRewriter {
 
-      override protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
+      override protected def rewriteNode[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
         Some(exprRewriter.rewriteNode(data))
     }
   }
@@ -87,7 +87,7 @@ object ProcessNodesRewriter {
 
 trait ExpressionRewriter {
 
-  def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): T = {
+  def rewriteNode[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): T = {
     implicit val nodeId: NodeId = NodeId(data.id)
     rewriteNodeInternal(data).asInstanceOf[T]
   }

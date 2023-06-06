@@ -88,10 +88,10 @@ object ToolbarButton {
 @JsonCodec
 case class ToolbarButton(`type`: ToolbarButtonType, name: Option[String], title: Option[String], icon: Option[String], url: Option[String], disabled: Boolean)
 
-private [process] object ToolbarHelper {
+private[process] object ToolbarHelper {
 
   def createProcessToolbarId(config: ProcessToolbarsConfig, process: BaseProcessDetails[_]): String =
-    s"${config.uuidCode}-${if(process.isArchived) "archived" else "not-archived"}-${if(process.isFragment) "fragment" else "scenario"}"
+    s"${config.uuidCode}-${if (process.isArchived) "archived" else "not-archived"}-${if (process.isFragment) "fragment" else "scenario"}"
 
   def fillByProcessData(text: String, process: BaseProcessDetails[_], urlOption: Boolean = false): String = {
     val processName = if (urlOption) UriUtils.encodeURIComponent(process.name) else process.name
@@ -112,7 +112,7 @@ private [process] object ToolbarHelper {
   }
 
   private def verifyFragmentCondition(condition: ToolbarCondition, process: BaseProcessDetails[_]) =
-    verifyCondition(process.isFragment, condition.fragment,condition.shouldMatchAllOfConditions)
+    verifyCondition(process.isFragment, condition.fragment, condition.shouldMatchAllOfConditions)
 
   private def verifyArchivedCondition(condition: ToolbarCondition, process: BaseProcessDetails[_]) =
     verifyCondition(process.isArchived, condition.archived, condition.shouldMatchAllOfConditions)

@@ -70,7 +70,7 @@ object UIProcessObjectsFactory {
     val componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(processConfig)
 
     val additionalPropertiesConfigForUi = additionalPropertiesConfig
-      .filter(_ => !isFragment)// fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
+      .filter(_ => !isFragment) // fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
       .mapValuesNow(createUIAdditionalPropertyConfig)
 
     val defaultUseAsyncInterpretationFromConfig = processConfig.as[Option[Boolean]]("asyncExecutionConfig.defaultUseAsyncInterpretation")
@@ -101,6 +101,7 @@ object UIProcessObjectsFactory {
 
   private def prepareClazzDefinition(definition: ClazzDefinition): UIClazzDefinition = {
     def toUIBasicParam(p: generics.Parameter): UIBasicParameter = UIBasicParameter(p.name, p.refClazz)
+
     // TODO: present all overloaded methods on FE
     def toUIMethod(methods: List[MethodInfo]): UIMethodInfo = {
       val m = methods.maxBy(_.signatures.map(_.parametersToList.length).toList.max)
@@ -114,14 +115,15 @@ object UIProcessObjectsFactory {
         sig.varArg.isDefined
       )
     }
+
     val methodsWithHighestArity = definition.methods.mapValuesNow(toUIMethod)
     val staticMethodsWithHighestArity = definition.staticMethods.mapValuesNow(toUIMethod)
     UIClazzDefinition(definition.clazzName, methodsWithHighestArity, staticMethodsWithHighestArity)
   }
 
   private def extractFragmentInputs(fragmentsDetails: Set[FragmentDetails],
-                                      classLoader: ClassLoader,
-                                      fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, FragmentObjectDefinition] = {
+                                    classLoader: ClassLoader,
+                                    fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, FragmentObjectDefinition] = {
     val definitionExtractor = new FragmentComponentDefinitionExtractor(fixedComponentsConfig.get, classLoader)
     (for {
       details <- fragmentsDetails
@@ -158,6 +160,7 @@ object UIProcessObjectsFactory {
                                 types: Set[UIClazzDefinition],
                                 processCategoryService: ProcessCategoryService): UIProcessDefinition = {
     def createUIObjectDef(objDef: ObjectDefinition) = createUIObjectDefinition(objDef, processCategoryService)
+
     def createUIFragmentObjectDef(objDef: FragmentObjectDefinition) = createUIFragmentObjectDefinition(objDef, processCategoryService)
 
     val transformed = processDefinition.transform(createUIObjectDef)

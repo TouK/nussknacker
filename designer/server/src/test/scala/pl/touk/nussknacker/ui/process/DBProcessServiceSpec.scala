@@ -104,7 +104,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       (testReqRespUser, Set(fragmentTest, fragmentReqResp)),
     )
 
-    forAll(testingData) { (user: LoggedUser, expected: Set[ProcessDetails] ) =>
+    forAll(testingData) { (user: LoggedUser, expected: Set[ProcessDetails]) =>
       val result = dBProcessService.getFragmentsDetails(None)(user).futureValue
       val fragmentDetails = expected.map(convertBasicProcessToFragmentDetails)
       result shouldBe fragmentDetails

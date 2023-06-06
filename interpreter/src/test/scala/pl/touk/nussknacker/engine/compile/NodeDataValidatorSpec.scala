@@ -82,17 +82,17 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         par("b", "'dd'")))), ValidationContext(Map("aVar" -> Typed[Long]))) shouldBe ValidationPerformed(Nil, Some(genericParameters), None)
 
     inside(validate(Sink("tst1", SinkRef("genericParametersSink",
-          List(par("par1", "'a,b'"),
-            par("lazyPar1", "#aVar + ''"),
-            par("a", "'a'"),
-            par("b", "''")))), ValidationContext(Map("aVar" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, Some(params), _) =>
+      List(par("par1", "'a,b'"),
+        par("lazyPar1", "#aVar + ''"),
+        par("a", "'a'"),
+        par("b", "''")))), ValidationContext(Map("aVar" -> Typed[String])))) {
+      case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, Some(params), _) =>
         params shouldBe genericParameters
         error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
 
     validate(Sink("tst1", SinkRef("doNotExist", Nil)), ValidationContext()) should matchPattern {
-      case ValidationPerformed((_:MissingSinkFactory)::Nil, _, _) =>
+      case ValidationPerformed((_: MissingSinkFactory) :: Nil, _, _) =>
     }
 
   }
@@ -105,23 +105,23 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
         par("b", "'b'")))), ValidationContext()) shouldBe ValidationPerformed(Nil, Some(genericParameters), None)
 
     inside(validate(Source("tst1", SourceRef("genericParametersSource",
-          List(par("par1", "'a,b'"),
-            par("lazyPar1", "''"),
-            par("a", "'a'"),
-            par("b", "''")))), ValidationContext())) {
-      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, _, _) =>
+      List(par("par1", "'a,b'"),
+        par("lazyPar1", "''"),
+        par("a", "'a'"),
+        par("b", "''")))), ValidationContext())) {
+      case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, _, _) =>
         error.message shouldBe s"Bad expression type, expected: Long, found: ${Typed.fromInstance("").display}"
     }
 
     validate(Source("tst1", SourceRef("doNotExist", Nil)), ValidationContext()) should matchPattern {
-      case ValidationPerformed((_:MissingSourceFactory)::Nil, _, _) =>
+      case ValidationPerformed((_: MissingSourceFactory) :: Nil, _, _) =>
     }
 
   }
 
   test("should validate filter") {
     inside(validate(Filter("filter", "#a > 3"), ValidationContext(Map("a" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
+      case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Wrong part types"
     }
   }
@@ -129,29 +129,29 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
   test("should validate service") {
     inside(validate(node.Enricher("stringService", ServiceRef("stringService", List(par("stringParam", "#a.length + 33"))), "out"),
       ValidationContext(Map("a" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
+      case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Bad expression type, expected: String, found: Integer"
     }
 
     validate(Processor("tst1", ServiceRef("doNotExist", Nil)), ValidationContext()) should matchPattern {
-      case ValidationPerformed((_:MissingService)::Nil, _, _) =>
+      case ValidationPerformed((_: MissingService) :: Nil, _, _) =>
     }
   }
 
   test("should validate custom node") {
     inside(validate(CustomNode("tst1", Some("out"), "genericTransformer",
-          List(par("par1", "'a,b'"),
-            par("lazyPar1", "#aVar + ''"),
-            par("a", "'a'"),
-            par("b", "''"))), ValidationContext(Map("aVar" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, Some(params), _) =>
+      List(par("par1", "'a,b'"),
+        par("lazyPar1", "#aVar + ''"),
+        par("a", "'a'"),
+        par("b", "''"))), ValidationContext(Map("aVar" -> Typed[String])))) {
+      case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, Some(params), _) =>
         params shouldBe genericParameters
         error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
 
 
     validate(CustomNode("tst1", None, "doNotExist", Nil), ValidationContext()) should matchPattern {
-      case ValidationPerformed((_:MissingCustomNodeExecutor)::Nil, _, _) =>
+      case ValidationPerformed((_: MissingCustomNodeExecutor) :: Nil, _, _) =>
     }
   }
 
@@ -194,7 +194,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     inside(
       validate(Variable("var1", "var1", "doNotExist", None), ValidationContext(Map.empty))
     ) {
-      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
+      case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
     }
   }
@@ -223,7 +223,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     inside(
       validate(VariableBuilder("var1", "var1", List(Field("field1", "doNotExist")), None), ValidationContext(Map.empty))
     ) {
-      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
+      case ValidationPerformed((error: ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
     }
   }
@@ -237,7 +237,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
   }
 
   test("should return inferred type for variable builder output") {
-     inside(
+    inside(
       validate(VariableBuilder("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext(Map.empty))
     ) {
       case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
@@ -246,7 +246,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
   }
 
   test("should return inferred type for fragment definition output") {
-     inside(
+    inside(
       validate(FragmentOutputDefinition("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext.empty)
     ) {
       case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
@@ -275,7 +275,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val configWithValidators: Config = defaultConfig.withValue(s"componentsUiConfig.$fragmentId.params.P1.validators", fromIterable(List(Map("type" -> "MandatoryParameterValidator").asJava).asJava))
 
     validate(nodeToBeValidated, ValidationContext.empty, outgoingEdges = defaultFragmentOutgoingEdges, fragmentDefinition = fragmentDefinitionWithValidators, aModelData = getModelData(configWithValidators)) should matchPattern {
-        case ValidationPerformed(List(),None,None) =>
+      case ValidationPerformed(List(), None, None) =>
     }
   }
 
@@ -350,13 +350,13 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   test("should validate switch") {
     inside(
-     validate(Switch("switchId", Some("input"), Some("value1")), ValidationContext.empty, Map.empty, List(OutgoingEdge("caseTarget1", Some(NextSwitch("notExist")))))
-   ) {
-     case ValidationPerformed(List(
+      validate(Switch("switchId", Some("input"), Some("value1")), ValidationContext.empty, Map.empty, List(OutgoingEdge("caseTarget1", Some(NextSwitch("notExist")))))
+    ) {
+      case ValidationPerformed(List(
       ExpressionParserCompilationError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input"),
       ExpressionParserCompilationError("Non reference 'notExist' occurred. Maybe you missed '#' in front of it?", "switchId", Some("caseTarget1"), "notExist")
-     ), None, Some(Unknown)) =>
-   }
+      ), None, Some(Unknown)) =>
+    }
   }
 
   private def genericParameters = List(

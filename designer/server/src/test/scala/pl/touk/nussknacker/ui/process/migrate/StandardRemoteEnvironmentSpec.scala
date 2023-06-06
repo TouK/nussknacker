@@ -57,7 +57,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
                                   onMigrate: Future[UpdateProcessCommand] => Unit) = new MockRemoteEnvironment with TriedToAddProcess {
     private var remoteProcessList = initialRemoteProcessList
 
-    override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]) : Future[HttpResponse] = {
+    override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]): Future[HttpResponse] = {
       import HttpMethods._
       import StatusCodes._
 
@@ -143,6 +143,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
                                           fragments: List[ValidatedProcessDetails]) = new MockRemoteEnvironment {
 
     private def basicProcesses: List[BasicProcess] = (processes ++ fragments).map(BasicProcess.apply(_))
+
     private def allProcesses: List[ValidatedProcessDetails] = processes ++ fragments
 
     override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]): Future[HttpResponse] = {
@@ -177,7 +178,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
   it should "not migrate not validating scenario" in {
 
     val remoteEnvironment = new MockRemoteEnvironment {
-      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]) : Future[HttpResponse] = {
+      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]): Future[HttpResponse] = {
         if (path.toString.contains("processValidation") && method == HttpMethods.POST) {
           Marshal(ValidationResult.errors(Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed))), List(), List())).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
@@ -190,14 +191,14 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     }
 
     whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
-      result.leftValue shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
+      result.leftValue shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad", "message", "", None, NodeValidationErrorType.SaveAllowed))), List(), List()))
     }
 
   }
 
   it should "not migrate existing scenario when archived on target environment" in {
 
-    var migrated : Option[Future[UpdateProcessCommand]] = None
+    var migrated: Option[Future[UpdateProcessCommand]] = None
     val validArchivedProcess = ProcessTestData.archivedValidProcessDetails
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       validArchivedProcess,
@@ -216,7 +217,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
     val remoteEnvironment = new MockRemoteEnvironment {
 
-      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]) : Future[HttpResponse] = {
+      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity, header: Seq[HttpHeader]): Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/a") && method == HttpMethods.GET) {
           Marshal(displayableToProcess(process)).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
@@ -239,7 +240,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
     val remoteEnvironment = new MockRemoteEnvironment {
 
-      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity, headers: Seq[HttpHeader]) : Future[HttpResponse] = {
+      override protected def request(path: Uri, method: HttpMethod, request: MessageEntity, headers: Seq[HttpHeader]): Future[HttpResponse] = {
         if (path.toString().startsWith(s"$baseUri/processes/%C5%82%C3%B3d%C5%BA") && method == HttpMethods.GET) {
           Marshal(displayableToProcess(process)).to[RequestEntity].map { entity =>
             HttpResponse(StatusCodes.OK, entity = entity)
@@ -256,7 +257,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
   }
 
   it should "migrate valid existing scenario" in {
-    var migrated : Option[Future[UpdateProcessCommand]] = None
+    var migrated: Option[Future[UpdateProcessCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       ProcessTestData.validProcessDetails,
       ProcessTestData.validProcessDetails.processCategory,
@@ -279,7 +280,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
   }
 
   it should "migrate valid non-existing scenario" in {
-    var migrated : Option[Future[UpdateProcessCommand]] = None
+    var migrated: Option[Future[UpdateProcessCommand]] = None
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       ProcessTestData.validProcessDetails,
       ProcessTestData.validProcessDetails.processCategory,
@@ -303,7 +304,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
   it should "migrate fragment" in {
     val category = TestCategories.Category1
-    var migrated : Option[Future[UpdateProcessCommand]] = None
+    var migrated: Option[Future[UpdateProcessCommand]] = None
     val fragment = ProcessTestData.toValidatedDisplayable(ProcessTestData.sampleFragment, category)
     val validatedFragmentDetails = TestProcessUtil.validatedToProcess(fragment)
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
@@ -333,6 +334,6 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     val migrationResult = remoteEnvironment.testMigration().futureValue.rightValue
 
     migrationResult should have size 2
-    migrationResult.map(_.converted.id) should contain only (ProcessTestData.validProcessDetails.name, ProcessTestData.sampleFragment.id)
+    migrationResult.map(_.converted.id) should contain only(ProcessTestData.validProcessDetails.name, ProcessTestData.sampleFragment.id)
   }
 }

@@ -92,8 +92,8 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       List(
         canonicalnode.FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
         canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
-        List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()))))
-      ), canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
+          List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()))))
+        ), canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
 
     val fragmentWithSplit = CanonicalProcess(MetaData("splitFragment", FragmentSpecificData()),
       List(
@@ -105,11 +105,11 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       ), List.empty)
 
     val fragmentWithGlobalVar = CanonicalProcess(MetaData("fragmentGlobal", FragmentSpecificData()),
-          List(
-            canonicalnode.FlatNode(FragmentInputDefinition("start", List())),
-            canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"),
-            List()
-          ), canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
+      List(
+        canonicalnode.FlatNode(FragmentInputDefinition("start", List())),
+        canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"),
+          List()
+        ), canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
 
     val diamondFragment = CanonicalProcess(MetaData("diamondFragment", FragmentSpecificData()),
       List(
@@ -126,7 +126,7 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
           BranchParameters("end2", List(Parameter("value", "#ala")))
         ), None)),
         FlatNode(FragmentOutputDefinition("output22", "output33", Nil, None))
-      ):: Nil
+      ) :: Nil
     )
 
     val resolved = FragmentResolver(Set(fragmentWithSplit, fragment, fragmentWithGlobalVar, diamondFragment)).resolve(scenario)

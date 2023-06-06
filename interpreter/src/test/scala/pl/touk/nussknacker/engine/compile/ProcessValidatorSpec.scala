@@ -48,9 +48,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     Map("sampleEnricher" -> objectDefinition(List.empty, Some(Typed[SimpleRecord])), "withParamsService" -> objectDefinition(List(Parameter[String]("par1")),
       Some(Typed[SimpleRecord]))),
     Map("source" -> objectDefinition(List.empty, Some(Typed[SimpleRecord])),
-        "sourceWithUnknown" -> objectDefinition(List.empty, Some(Unknown)),
-        "sourceWithParam" -> objectDefinition(List(Parameter[Any]("param")), Some(Typed[SimpleRecord])),
-        "typedMapSource" -> objectDefinition(List(Parameter[TypedObjectDefinition]("type")), Some(Typed[TypedMap]))
+      "sourceWithUnknown" -> objectDefinition(List.empty, Some(Unknown)),
+      "sourceWithParam" -> objectDefinition(List(Parameter[Any]("param")), Some(Typed[SimpleRecord])),
+      "typedMapSource" -> objectDefinition(List(Parameter[TypedObjectDefinition]("type")), Some(Typed[TypedMap]))
     ),
     Map("sink" -> objectDefinition(List.empty, None),
       "sinkWithLazyParam" -> objectDefinition(List(Parameter[String]("lazyString").copy(isLazyParameter = true)), None)),
@@ -58,14 +58,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     Map("customTransformer" -> (objectDefinition(List.empty, Some(Typed[SimpleRecord])), emptyQueryNamesData),
       "withParamsTransformer" -> (objectDefinition(List(Parameter[String]("par1")), Some(Typed[SimpleRecord])), emptyQueryNamesData),
       "manyParams" -> (objectDefinition(List(
-                Parameter[String]("par1").copy(isLazyParameter = true),
-                Parameter[String]("par2"),
-                Parameter[String]("par3").copy(isLazyParameter = true),
-                Parameter[String]("par4")), Some(Typed[SimpleRecord])), emptyQueryNamesData),
+        Parameter[String]("par1").copy(isLazyParameter = true),
+        Parameter[String]("par2"),
+        Parameter[String]("par3").copy(isLazyParameter = true),
+        Parameter[String]("par4")), Some(Typed[SimpleRecord])), emptyQueryNamesData),
       "withManyParameters" -> (objectDefinition(List(
         Parameter[String]("lazyString").copy(isLazyParameter = true), Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
         Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0))))
-      , Some(Typed[SimpleRecord])), emptyQueryNamesData),
+        , Some(Typed[SimpleRecord])), emptyQueryNamesData),
       "withoutReturnType" -> (objectDefinition(List(Parameter[String]("par1")), None), emptyQueryNamesData),
       "withMandatoryParams" -> (objectDefinition(List(Parameter[String]("mandatoryParam")), Some(Unknown)), emptyQueryNamesData),
       "withNotBlankParams" -> (objectDefinition(List(NotBlankParameter("notBlankParam", Typed[String])), Some(Unknown)), emptyQueryNamesData),
@@ -106,7 +106,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .source("id1", "sourceWithUnknown")
       .filter("filter1", "#input.imaginary")
       .filter("filter2", "#input.imaginaryMethod()")
-     .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinitionCopy)
 
@@ -122,7 +122,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .source("id1", "sourceWithUnknown")
       .filter("filter1", "#input.imaginary")
       .filter("filter2", "#input.imaginaryMethod()")
-     .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -141,7 +141,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("TypeReferenceClassValidationSuccess")
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
-       .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
+        .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
@@ -160,7 +160,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("TypeReferenceClassValidationSuccess")
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
-       .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
+        .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
@@ -179,7 +179,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("TypeReferenceClassValidationFailure")
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
-       .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
+        .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
@@ -198,7 +198,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .streaming("process1")
       .source("id1", "source")
       .filter("filter1", "#input['plainValue'] == 1")
-     .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinitionCopy)
 
@@ -213,7 +213,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .streaming("process1")
       .source("id1", "source")
       .filter("filter1", "#input['plainValue'] == 1")
-     .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -227,7 +227,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .streaming("process1")
       .source("id1", "source")
       .filter("filter1", "{{\"\"}, {0}}[0][0] == 0 ")
-     .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -250,7 +250,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         "mapVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
         "spelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
       )
-     .emptySink("id2", "sink")
+      .emptySink("id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -278,9 +278,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
   test("allow global variables in source definition") {
     val correctProcess = ScenarioBuilder
-          .streaming("process1")
-          .source("id1", "sourceWithParam", "param" -> "#processHelper")
-         .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .streaming("process1")
+      .source("id1", "sourceWithParam", "param" -> "#processHelper")
+      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
@@ -317,14 +317,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-       .buildSimpleVariable("result-id2", "result", "wtf!!!").emptySink("end-id2", "sink")
+        .buildSimpleVariable("result-id2", "result", "wtf!!!").emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParserCompilationError(_, _, _, _), _)) =>
     }
   }
 
-  test ("find mandatory expressions for mandatory parameters") {
+  test("find mandatory expressions for mandatory parameters") {
     val processWithInvalidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -337,7 +337,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test ("find blank expressions for notBlank parameter") {
+  test("find blank expressions for notBlank parameter") {
     val processWithInvalidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -351,17 +351,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        BlankParameter(_, _, "notBlankParam", "customNodeId1"),
-        List(
-          BlankParameter(_, _, "notBlankParam", "customNodeId2"),
-          BlankParameter(_, _, "notBlankParam", "customNodeId3"),
-          BlankParameter(_, _, "notBlankParam", "customNodeId4")
-        )
+      BlankParameter(_, _, "notBlankParam", "customNodeId1"),
+      List(
+      BlankParameter(_, _, "notBlankParam", "customNodeId2"),
+      BlankParameter(_, _, "notBlankParam", "customNodeId3"),
+      BlankParameter(_, _, "notBlankParam", "customNodeId4")
+      )
       )) =>
     }
   }
 
-  test ("valid for Literal Integer param") {
+  test("valid for Literal Integer param") {
     val processWithInvalidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -374,7 +374,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test ("valid for Nullable Literal Integer param") {
+  test("valid for Nullable Literal Integer param") {
     val processWithInvalidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -387,7 +387,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test ("invalid for Nullable Literal Integer param") {
+  test("invalid for Nullable Literal Integer param") {
     val processWithInvalidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -398,15 +398,15 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
-        List(
-          InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
-        )
+      InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
+      List(
+      InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
+      )
       )) =>
     }
   }
 
-  test ("mismatch for Literal Number param") {
+  test("mismatch for Literal Number param") {
     val processWithInvalidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -417,12 +417,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        MismatchParameter(_, _, "regExpParam", "customNodeId"), _
+      MismatchParameter(_, _, "regExpParam", "customNodeId"), _
       )) =>
     }
   }
 
-  test ("valid for json param") {
+  test("valid for json param") {
     val processWithValidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -435,7 +435,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test ("invalid for json param") {
+  test("invalid for json param") {
     val processWithInvalidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -448,12 +448,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-        JsonRequiredParameter(_, _, "jsonParam", "customNodeId"),
-        List(
-          JsonRequiredParameter(_, _, "jsonParam", "customNodeId2"),
-          JsonRequiredParameter(_, _, "jsonParam", "customNodeId3"),
-          JsonRequiredParameter(_, _, "jsonParam", "customNodeId4")
-        )
+      JsonRequiredParameter(_, _, "jsonParam", "customNodeId"),
+      List(
+      JsonRequiredParameter(_, _, "jsonParam", "customNodeId2"),
+      JsonRequiredParameter(_, _, "jsonParam", "customNodeId3"),
+      JsonRequiredParameter(_, _, "jsonParam", "customNodeId4")
+      )
       )) =>
     }
   }
@@ -647,7 +647,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .enricher("enricher1", "out", "withParamsService")
       .emptySink("id2", "sink")
 
-    inside (validate(process, definitionWithTypedSource).result) {
+    inside(validate(process, definitionWithTypedSource).result) {
       case Invalid(NonEmptyList(MissingParameters(missingParam, "enricher1"), _)) => missingParam shouldBe Set("par1")
     }
   }
@@ -774,7 +774,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-         Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()").emptySink("id3", "sink")))
+        Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()").emptySink("id3", "sink")))
 
     val compilationResult = validate(process, definitionWithTypedSource)
     compilationResult.result should matchPattern {
@@ -801,7 +801,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .source("id1", "source")
       .switch("switch", "''", "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-         Case("false", GraphBuilder.buildSimpleVariable("id3", "result", "#var3").emptySink("end3", "sink")))
+        Case("false", GraphBuilder.buildSimpleVariable("id3", "result", "#var3").emptySink("end3", "sink")))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'var3'", "id3", Some(DefaultExpressionId), "#var3"), _)) =>
@@ -825,7 +825,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .source("id1", "source")
         .customNode("custom", "varName", "withoutReturnType", "par1" -> "'1'")
-       .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
+        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set("OutputVariable") =>
@@ -838,7 +838,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .source("id1", "source")
         .customNodeNoOutput("custom", "customTransformer")
-       .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
+        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(MissingParameters(vars, "custom"), Nil)) if vars == Set("OutputVariable") =>
@@ -851,8 +851,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .source("id1", "source")
         .customNode("custom", "outVar", "withManyParameters",
-          "long" -> "123123123133L", "lazyString" -> "'44'", "lazyInt" -> "43" )
-       .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
+          "long" -> "123123123133L", "lazyString" -> "'44'", "lazyInt" -> "43")
+        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     validate(process, baseDefinition).result should matchPattern {
       case Valid(_) =>
@@ -872,7 +872,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-       .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
+        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     validateWithDef(processWithInvalidExpresssion, failingDefinition).result should matchPattern {
       case Invalid(NonEmptyList(CannotCreateObjectError("You passed incorrect parameter, cannot proceed", "id1"), Nil)) =>
@@ -936,7 +936,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .enricher("service-2", "output2", "withCustomValidation",
           "age" -> "30",
           "fields" -> "{invalid: 'yes'}")
-       .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
+        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     val result = validateWithDef(process, withServiceRef)
 
@@ -953,7 +953,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .source("id1", "source")
         .customNode("custom", "outVar", "withParamsTransformer",
-          "par1" -> "#input.toString()" )
+          "par1" -> "#input.toString()")
         .emptySink("id2", "sink")
 
     validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern {
@@ -984,7 +984,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .emptySink("sinkWithLazyParam","sinkWithLazyParam", "lazyString" -> "#input.toString()")
+        .emptySink("sinkWithLazyParam", "sinkWithLazyParam", "lazyString" -> "#input.toString()")
 
     validate(process, baseDefinition).result should matchPattern {
       case Valid(_) =>
@@ -1066,7 +1066,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process =
       ScenarioBuilder
         .streaming("process")
-        .source("source","source")
+        .source("source", "source")
         .emptySink("sink", "sinkWithLazyParam", "lazyString" -> "'123'")
 
     val compilationResult = validate(process, baseDefinition)
@@ -1117,7 +1117,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test ("validate with custom validator") {
+  test("validate with custom validator") {
     val processWithValidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -1130,7 +1130,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test ("validate negatively with custom validator") {
+  test("validate negatively with custom validator") {
     val processWithInvalidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -1147,7 +1147,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test ("use additional variables in expressions") {
+  test("use additional variables in expressions") {
     val processWithValidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -1160,7 +1160,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     }
   }
 
-  test ("hide variables in expression") {
+  test("hide variables in expression") {
     val processWithValidExpression =
       ScenarioBuilder
         .streaming("process1")
@@ -1184,6 +1184,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .buildSimpleVariable("var1", usedVarName, "''")
       .fragmentOneOut("sample", "frag1", "output1", outputName)
       .emptySink("emptySink", "sink")
+
     val fragment = ScenarioBuilder
       .fragment("frag1")
       .fragmentOutput("out", "output1", "field1" -> "''")
@@ -1209,7 +1210,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   }
 
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
-    = Map("source" -> objectDefinition(List.empty, Some(Typed[SimpleRecord]))))
+  = Map("source" -> objectDefinition(List.empty, Some(Typed[SimpleRecord]))))
 
   private val definitionWithTypedSourceAndTransformNode =
     definitionWithTypedSource.withCustomStreamTransformer("custom",
@@ -1246,12 +1247,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation =
       EnricherContextTransformation(variableName, Typed.genericTypeClass[java.util.List[_]](List(
         TypingUtils.typeMapDefinition(definition))), new ServiceInvoker {
-          override def invokeService(params: Map[String, Any])
-                                (implicit ec: ExecutionContext,
-                                 collector: InvocationCollectors.ServiceInvocationCollector,
-                                 contextId: ContextId,
-                                 componentUseCase: ComponentUseCase): Future[Any] = Future.successful(null)
-        })
+        override def invokeService(params: Map[String, Any])
+                                  (implicit ec: ExecutionContext,
+                                   collector: InvocationCollectors.ServiceInvocationCollector,
+                                   contextId: ContextId,
+                                   componentUseCase: ComponentUseCase): Future[Any] = Future.successful(null)
+      })
 
   }
 
@@ -1263,8 +1264,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                             parameters: Map[String, DefinedSingleParameter]): ValidatedNel[ProcessCompilationError, TypingResult] = {
       Valid(parameters
         .get("definition").collect {
-          case DefinedEagerParameter(value: java.util.Map[String@unchecked, _], _) => TypingUtils.typeMapDefinition(value)
-        }.map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
+        case DefinedEagerParameter(value: java.util.Map[String@unchecked, _], _) => TypingUtils.typeMapDefinition(value)
+      }.map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
         .getOrElse(Unknown))
     }
 
@@ -1309,6 +1310,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
           }
         }
       }
+
       EnricherContextTransformation(variableName, returnType,
         new ServiceInvoker {
           override def invokeService(params: Map[String, Any])
@@ -1317,13 +1319,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
                                      contextId: ContextId,
                                      componentUseCase: ComponentUseCase): Future[Any] =
             Future.successful(s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age")
-      })
+        })
     }
   }
 }
 
 class StartingWithACustomValidator extends CustomParameterValidator {
   override def name: String = "test_custom_validator"
+
   import cats.data.Validated.{invalid, valid}
 
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =

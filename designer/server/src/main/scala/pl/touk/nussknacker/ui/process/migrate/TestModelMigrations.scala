@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 
 class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigrations, _], processValidation: ProcessValidation) {
 
-  def testMigrations(processes: List[ValidatedProcessDetails], fragments: List[ValidatedProcessDetails]) : List[TestMigrationResult] = {
+  def testMigrations(processes: List[ValidatedProcessDetails], fragments: List[ValidatedProcessDetails]): List[TestMigrationResult] = {
     val migratedFragments = fragments.flatMap(migrateProcess)
     val migratedProcesses = processes.flatMap(migrateProcess)
     val validation = processValidation.withFragmentResolver(new FragmentResolver(prepareFragmentRepository(migratedFragments.map(s => (s.newProcess, s.processCategory)))))
@@ -25,7 +25,7 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
     }
   }
 
-  private def migrateProcess(process: ValidatedProcessDetails) : Option[MigratedProcessDetails] = {
+  private def migrateProcess(process: ValidatedProcessDetails): Option[MigratedProcessDetails] = {
     val migrator = new ProcessModelMigrator(migrations)
     for {
       MigrationResult(newProcess, migrations) <- migrator.migrateProcess(process.mapProcess(_.toDisplayable), skipEmptyMigrations = false)
@@ -49,7 +49,7 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
     }
   }
 
-  private def extractNewErrors(before: ValidationResult, after: ValidationResult) : ValidationResult = {
+  private def extractNewErrors(before: ValidationResult, after: ValidationResult): ValidationResult = {
     // simplified comparison key: we ignore error message and description
     def errorToKey(error: NodeValidationError) = (error.fieldName, error.errorType, error.typ)
 
