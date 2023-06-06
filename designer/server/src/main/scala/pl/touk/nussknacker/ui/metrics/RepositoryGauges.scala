@@ -30,7 +30,7 @@ class RepositoryGauges(metricRegistry: MetricRegistry,
       implicit val user: LoggedUser = NussknackerInternalUser
       val result = processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery(isArchived = Some(false))).map { scenarios =>
         val all = scenarios.size
-        val deployed = scenarios.count(_.isDeployed)
+        val deployed = scenarios.count(_.lastAction.exists(_.isDeployed))
         val fragments = scenarios.count(_.isFragment)
         Values(all, deployed, fragments)
       }

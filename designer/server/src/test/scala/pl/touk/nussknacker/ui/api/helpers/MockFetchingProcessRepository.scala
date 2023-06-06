@@ -37,7 +37,7 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[Canonical
 
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](q: FetchProcessesDetailsQuery)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]] =
     getUserProcesses[PS].map(_.filter(
-      p => check(q.isFragment, p.isFragment) && check(q.isArchived, p.isArchived) && check(q.isDeployed, p.isDeployed) && checkSeq(q.categories, p.processCategory) && checkSeq(q.processingTypes, p.processingType)
+      p => check(q.isFragment, p.isFragment) && check(q.isArchived, p.isArchived) && check(q.isDeployed, p.lastAction.exists(_.isDeployed)) && checkSeq(q.categories, p.processCategory) && checkSeq(q.processingTypes, p.processingType)
     ))
 
   override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] =
