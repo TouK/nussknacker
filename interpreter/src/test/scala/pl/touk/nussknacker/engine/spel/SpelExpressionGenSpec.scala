@@ -11,15 +11,13 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.{NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 
 import scala.util.{Failure, Success, Try}
 
@@ -108,11 +106,7 @@ class SpelExpressionGenSpec extends AnyFunSuite with ScalaCheckDrivenPropertyChe
   }
 
   private def validate(expr: String, a: Any, b: Any): ValidatedNel[ExpressionParseError, TypedExpression] = {
-    val expressionConfig = ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true,
-      Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false,
-      methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, spelExpressionExcludeList = SpelExpressionExcludeList.default,
-      customConversionsProviders = List.empty)
-    val parser = SpelExpressionParser.default(getClass.getClassLoader, expressionConfig, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, SpelExpressionParser.Standard, TypeDefinitionSet.forDefaultAdditionalClasses)
+    val parser = SpelExpressionParser.default(getClass.getClassLoader, ProcessDefinitionBuilder.empty.expressionConfig, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, SpelExpressionParser.Standard, TypeDefinitionSet.forDefaultAdditionalClasses)
     implicit val nodeId: NodeId = NodeId("fooNode")
     val validationContext = ValidationContext.empty
       .withVariable("a", Typed.fromInstance(a), paramName = None).toOption.get

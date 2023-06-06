@@ -28,7 +28,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectErr
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, ModuloZeroError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
-import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -106,10 +106,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
                                methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
                                dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed) = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    val expressionConfig = ExpressionDefinition(Map.empty, imports, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true,
-      Map.empty, hideMetaVariable = false, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking,
-      methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionExcludeList = spelExpressionExcludeListWithCustomPatterns,
-      customConversionsProviders = List.empty)
+    val expressionConfig = ProcessDefinitionBuilder.empty.expressionConfig.copy(globalImports = imports, strictMethodsChecking = strictMethodsChecking,
+      staticMethodInvocationsChecking = staticMethodInvocationsChecking, methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed,
+      dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionExcludeList = spelExpressionExcludeListWithCustomPatterns)
     SpelExpressionParser.default(getClass.getClassLoader, expressionConfig, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, flavour, typeDefinitionSetWithCustomClasses(globalVariableTypes))
   }
 
