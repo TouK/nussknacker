@@ -30,7 +30,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(implicit
   import MockDeploymentManager._
 
   def this() = {
-    this(SimpleStateStatus.Running)(new ProcessingTypeDeploymentServiceStub(Nil))
+    this(SimpleStateStatus.NotDeployed)(new ProcessingTypeDeploymentServiceStub(Nil))
   }
 
   private def prepareProcessState(status: StateStatus): Option[StatusDetails] =
@@ -119,6 +119,10 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(implicit
     } finally {
       delayBeforeStateReturn = 0 seconds
     }
+  }
+
+  def withProcessRunning[T](processName: ProcessName)(action: => T): T = {
+    withProcessStateStatus(processName, SimpleStateStatus.Running)(action)
   }
 
   def withProcessFinished[T](processName: ProcessName)(action: => T): T = {
