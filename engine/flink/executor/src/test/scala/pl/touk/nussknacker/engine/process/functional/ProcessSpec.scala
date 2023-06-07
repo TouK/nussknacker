@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -284,8 +284,11 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     List(true, false).foreach { useAsync =>
       SinkForStrings.clear()
 
+      val additionalFields = process.metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+
       val scenarioToUse = process.copy(metaData = process.metaData
-        .copy(typeSpecificData = StreamMetaData(useAsyncInterpretation = Some(useAsync))))
+        .copy(additionalFields = Some(additionalFields.copy(properties = additionalFields.properties ++ Map("useAsyncInterpretation" -> useAsync.toString)))))
+
       val runId = UUID.randomUUID().toString
       val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), consumerId = runId)
       processInvoker.invokeWithSampleData(scenarioToUse, data, config = config)
