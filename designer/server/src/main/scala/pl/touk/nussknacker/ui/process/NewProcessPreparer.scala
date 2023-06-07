@@ -25,7 +25,7 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpec
     val emptyCanonical = CanonicalProcess(
       metaData = MetaData(
         id = processId,
-        typeSpecificData = typeSpecificData,
+        // TODO: pass initial typespecificdata to merge defaults
         additionalFields = defaultAdditionalFields(processingType, typeSpecificData.scenarioType)
       ),
       nodes = List.empty,
