@@ -51,7 +51,7 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
 @JsonCodec(decodeOnly = true)
 case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
-                             additionalFields: Option[ProcessAdditionalFields] = None) {
+                             additionalFields: ProcessAdditionalFields) {
 
   def toMetaData(id: String): MetaData = MetaData(
     id = id,
@@ -63,6 +63,11 @@ case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
 }
 
 object ProcessProperties {
+
+  def apply(typeSpecificProperties: TypeSpecificData): ProcessProperties = {
+    ProcessProperties(typeSpecificProperties, ProcessAdditionalFields.empty)
+  }
+
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =
     Encoder.forProduct3("typeSpecificProperties", "isSubprocess", "additionalFields") { p =>
     (p.typeSpecificProperties, p.isSubprocess, p.additionalFields)
