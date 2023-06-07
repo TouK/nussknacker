@@ -24,7 +24,8 @@ object collection extends HideToString {
   @Documentation(description = "Merges two maps. Values in the first map will be overwritten with values from the second map if keys are the same")
   @GenericType(typingFunction = classOf[MapMergeTyping])
   def merge[K, V](@ParamName("map1") map1: java.util.Map[K, V], @ParamName("map2") map2: java.util.Map[K, V]): java.util.Map[K, V] = {
-    val merged = new java.util.LinkedHashMap[K, V](map1)
+    val merged = new java.util.HashMap[K, V](map1.size() + map2.size())
+    merged.putAll(map1)
     merged.putAll(map2)
     merged
   }
@@ -140,9 +141,6 @@ object collection extends HideToString {
   @GenericType(typingFunction = classOf[ListElementTyping])
   def flatten[T](@ParamName("list") list: java.util.Collection[java.util.Collection[T]]): java.util.List[T] =
     list.asScala.flatMap(_.asScala).toList.asJava
-
-  private def checkIfComparable(list: Iterable[_]): Unit =
-    list.foreach(checkIfComparable)
 
   private def checkIfComparable(list: java.util.Collection[_]): Unit =
     list.asScala.foreach(checkIfComparable)

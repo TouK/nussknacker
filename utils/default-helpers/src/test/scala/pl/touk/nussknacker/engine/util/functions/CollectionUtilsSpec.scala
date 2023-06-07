@@ -48,7 +48,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
     Table(
       ("expression", "expected"),
-      ("#COLLECTION.merge({a:4,b:3,c:2,d:1},{e:'5',f:'rr'})", "{a: Integer{4}, b: Integer{3}, c: Integer{2}, d: Integer{1}, e: String{5}, f: String{rr}}"),
+      ("#COLLECTION.merge({a:4,c:2,b:3,d:1},{f:'rr',e:'5'})", "{a: Integer{4}, b: Integer{3}, c: Integer{2}, d: Integer{1}, e: String{5}, f: String{rr}}"),
       ("#COLLECTION.merge({a:4},{e:'5',f:'rr'})", "{a: Integer{4}, e: String{5}, f: String{rr}}"),
       ("#COLLECTION.merge({a:4,b:3,c:2,d:1},{e:'5'})", "{a: Integer{4}, b: Integer{3}, c: Integer{2}, d: Integer{1}, e: String{5}}"),
       ("#COLLECTION.merge({a:{innerA:10}},{b:{innerB:10}})", "{a: {innerA: Integer{10}}, b: {innerB: Integer{10}}}"),
@@ -58,7 +58,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       ("#COLLECTION.merge(#unknownMap,#unknownMap)", "Map[Unknown,Unknown]"),
       ("#COLLECTION.merge({a:'5'},#unknownMap)", "Map[Unknown,Unknown]"),
       ("#COLLECTION.merge(#stringMap,{a:'5'})", "Map[String,Unknown]"),
-      ("#COLLECTION.merge(#typedMap,{a:'5'})", "{key: Integer{20}, a: String{5}}"),
+      ("#COLLECTION.merge(#typedMap,{a:'5'})", "{a: String{5}, key: Integer{20}}"),
       ("#COLLECTION.merge({b:'50'}, #typedMap)", "{b: String{50}, key: Integer{20}}"),
     ).forEvery { (expression, expected) =>
       evaluateType(expression, types = types) shouldBe expected.valid

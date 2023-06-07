@@ -258,6 +258,12 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     Typed.fromInstance("1234.1234.1234.1").display shouldBe "String{1234.1234.12...}"
   }
 
+  test("should display fields in order") {
+    for (keys <- List("a", "b", "c", "d").permutations) {
+      typeMap(keys.map(_ -> Typed[String]): _*).display shouldBe "{a: String, b: String, c: String, d: String}"
+    }
+  }
+
   test("should correctly calculate union of types") {
     Typed(Set(Typed[Int], Typed[String])) shouldBe
       TypedUnion(Set(Typed.typedClass[Int], Typed.typedClass[String]))
