@@ -11,33 +11,57 @@ import pl.touk.nussknacker.engine.graph.node.SourceNode
 
 class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
+  // TODO: exception when non-streaming process?
   def parallelism(p: Int): ProcessMetaDataBuilder = {
-    val newTypeSpecificData = metaData.typeSpecificData match {
-      case s: StreamMetaData => s.copy(parallelism = Some(p))
-      case l: LiteStreamMetaData => l.copy(parallelism = Some(p))
-      case other => throw new IllegalArgumentException(s"Given execution engine: ${other.getClass.getSimpleName} doesn't support parallelism parameter")
-    }
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = newTypeSpecificData))
+    val additionalFields = metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+    new ProcessMetaDataBuilder(metaData.copy(
+      additionalFields = Some(additionalFields.copy(
+        properties = additionalFields.properties ++ Map("parallelism" -> p.toString)
+      ))
+    ))
   }
 
   //TODO: exception when non-streaming process?
-  def stateOnDisk(useStateOnDisk: Boolean) =
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(spillStateToDisk = Some(useStateOnDisk))))
+  def stateOnDisk(useStateOnDisk: Boolean): ProcessMetaDataBuilder = {
+    val additionalFields = metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+    new ProcessMetaDataBuilder(metaData.copy(
+      additionalFields = Some(additionalFields.copy(
+        properties = additionalFields.properties ++ Map("useStateOnDisk" -> useStateOnDisk.toString)
+      ))
+    ))
+  }
 
   //TODO: exception when non-streaming process?
-  def useAsyncInterpretation(useAsyncInterpretation: Boolean) =
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = metaData.typeSpecificData.asInstanceOf[StreamMetaData].copy(useAsyncInterpretation = Some(useAsyncInterpretation))))
+  def useAsyncInterpretation(useAsyncInterpretation: Boolean): ProcessMetaDataBuilder = {
+    val additionalFields = metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+    new ProcessMetaDataBuilder(metaData.copy(
+      additionalFields = Some(additionalFields.copy(
+        properties = additionalFields.properties ++ Map("useAsyncInterpretation" -> useAsyncInterpretation.toString)
+      ))
+    ))
+  }
 
 
   //TODO: exception when non-request-response process?
-  def slug(p: Option[String]) =
-    new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = RequestResponseMetaData(p)))
+  def slug(slug: Option[String]): ProcessMetaDataBuilder = {
+    val additionalFields = metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+    new ProcessMetaDataBuilder(metaData.copy(
+      additionalFields = Some(additionalFields.copy(
+        properties = additionalFields.properties ++ Map("slug" -> slug.getOrElse(""))
+      ))
+    ))
+  }
 
   def additionalFields(description: Option[String] = None,
-                       properties: Map[String, String] = Map.empty) =
+                       properties: Map[String, String] = Map.empty): ProcessMetaDataBuilder = {
+    val additionalFields = metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
     new ProcessMetaDataBuilder(metaData.copy(
-      additionalFields = Some(ProcessAdditionalFields(description, properties)))
-    )
+      additionalFields = Some(additionalFields.copy(
+        description = description,
+        properties = additionalFields.properties ++ properties
+      ))
+    ))
+  }
 
   def source(id: String, typ: String, params: (String, Expression)*): ProcessGraphBuilder =
     new ProcessGraphBuilder(
