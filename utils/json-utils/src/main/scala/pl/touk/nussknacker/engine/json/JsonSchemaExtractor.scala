@@ -16,7 +16,7 @@ class JsonSchemaExtractor {
   def getSchemaFromProperty(property: String, metaData: MetaData, nodeId: NodeId): Validated[NonEmptyList[ProcessCompilationError], Schema] = {
     def invalid(message: String): Invalid[NonEmptyList[CustomNodeError]] = Invalid(NonEmptyList.one(CustomNodeError(message, None)(nodeId)))
 
-    metaData.additionalFields.flatMap(_.properties.get(property))
+    metaData.additionalFields.properties.get(property)
       .map(rawSchema => Try(JsonSchemaBuilder.parseSchema(rawSchema)) match {
         case Success(schema) => Valid(schema)
         case Failure(exc) => invalid(s"""Error at parsing \"$property\": ${exc.getMessage}.""")

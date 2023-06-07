@@ -145,7 +145,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
 
-    val fragment = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData(), None), List.empty, List.empty)
+    val fragment = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"),
       Set(SubprocessDetails(fragment, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
     processObjects.componentsConfig.get(fragment.id) shouldBe empty

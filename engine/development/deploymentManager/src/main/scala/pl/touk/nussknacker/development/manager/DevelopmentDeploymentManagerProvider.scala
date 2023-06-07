@@ -63,7 +63,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   }
 
   private def description(canonicalProcess: CanonicalProcess) = {
-    canonicalProcess.metaData.additionalFields.flatMap(_.description)
+    canonicalProcess.metaData.additionalFields.description
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {

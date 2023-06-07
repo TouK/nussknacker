@@ -26,15 +26,11 @@ object MetaVariables {
   ))
 
   private def properties(meta: MetaData): TypedMap = {
-    TypedMap(meta.additionalFields.map(_.properties).getOrElse(Map.empty))
+    TypedMap(meta.additionalFields.properties)
   }
 
   private def propertiesType(metaData: MetaData): TypedObjectTypingResult = {
-    val definedProperties = metaData
-      .additionalFields
-      .map(_.properties)
-      .map(_.toList.sortBy(_._1))
-      .getOrElse(List.empty)
+    val definedProperties = metaData.additionalFields.properties.toList.sortBy(_._1)
 
     val propertiesTyping = TypedObjectDefinition(
       definedProperties.map { case (propertyName, _) =>  propertyName -> Typed[String] }

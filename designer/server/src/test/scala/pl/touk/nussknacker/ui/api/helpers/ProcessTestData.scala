@@ -197,11 +197,11 @@ object ProcessTestData {
     id = "fooProcess",
     properties = ProcessProperties(StreamMetaData(
       Some(2)),
-      Some(ProcessAdditionalFields(Some("scenario description"), Map(
+      ProcessAdditionalFields(Some("scenario description"), Map(
         "maxEvents" -> "text",
         "unknown" -> "x",
         "numberOfThreads" -> "wrong fixed value"
-      )))),
+      ))),
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
@@ -211,7 +211,7 @@ object ProcessTestData {
   val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), Some(ProcessAdditionalFields(Some("process description"), Map.empty))),
+      properties = ProcessProperties(StreamMetaData(Some(2)), ProcessAdditionalFields(Some("process description"), Map.empty)),
       nodes = List(
         node.Source(
           id = "sourceId",
@@ -231,7 +231,7 @@ object ProcessTestData {
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None), List(), List.empty)
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(), List.empty)
   }
 
   val sampleSubprocessOneOut = {
@@ -265,10 +265,7 @@ object ProcessTestData {
   def createEmptyUpdateProcessCommand(processName: ProcessName, comment: Option[UpdateProcessComment]): UpdateProcessCommand = {
     val displayableProcess = DisplayableProcess(
       id = processName.value,
-      properties = ProcessProperties(
-        StreamMetaData(),
-        None
-      ),
+      properties = ProcessProperties(StreamMetaData()),
       nodes = List.empty,
       edges = List.empty,
       processingType = TestProcessingTypes.Streaming,
@@ -296,7 +293,7 @@ object ProcessTestData {
 
     process.copy(
       properties = properties.copy(
-        additionalFields = additionalFields
+        additionalFields = additionalFields.getOrElse(ProcessAdditionalFields.empty)
       )
     )
   }
