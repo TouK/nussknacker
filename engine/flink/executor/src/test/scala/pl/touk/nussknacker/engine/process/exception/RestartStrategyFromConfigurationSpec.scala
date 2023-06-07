@@ -13,7 +13,7 @@ import scala.jdk.CollectionConverters._
 class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
 
   private val meta = MetaData("", StreamMetaData(), additionalFields = ProcessAdditionalFields(description = None,
-    properties = Map("myStrategy" -> "oneStrategy", "myOtherStrategy" -> "")))
+    properties = Map("myStrategy" -> "oneStrategy", "myOtherStrategy" -> ""), "StreamMetaData"))
 
   test("reads config") {
     testStrategy(Map(

@@ -201,7 +201,7 @@ object ProcessTestData {
         "maxEvents" -> "text",
         "unknown" -> "x",
         "numberOfThreads" -> "wrong fixed value"
-      ))),
+      ), "StreamMetaData")),
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
@@ -211,7 +211,7 @@ object ProcessTestData {
   val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), ProcessAdditionalFields(Some("process description"), Map.empty)),
+      properties = ProcessProperties(StreamMetaData(Some(2)), ProcessAdditionalFields(Some("process description"), Map.empty, "StreamMetaData")),
       nodes = List(
         node.Source(
           id = "sourceId",
@@ -293,7 +293,7 @@ object ProcessTestData {
 
     process.copy(
       properties = properties.copy(
-        additionalFields = additionalFields.getOrElse(ProcessAdditionalFields.empty)
+        additionalFields = additionalFields.getOrElse(ProcessAdditionalFields.empty(properties.additionalFields.scenarioType))
       )
     )
   }
