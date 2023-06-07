@@ -50,26 +50,31 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 }
 
 @JsonCodec(decodeOnly = true)
-case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
-                             additionalFields: ProcessAdditionalFields) {
+case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
 
   def toMetaData(id: String): MetaData = MetaData(
     id = id,
-    typeSpecificData = typeSpecificProperties,
     additionalFields = additionalFields
   )
-  val isSubprocess: Boolean = typeSpecificProperties.isSubprocess
+  val isSubprocess: Boolean = additionalFields.typeSpecificProperties.isSubprocess
+
+  def typeSpecificProperties: TypeSpecificData = additionalFields.typeSpecificProperties
 
 }
 
 object ProcessProperties {
+
+  def apply(typeSpecificProperties: TypeSpecificData,
+            additionalFields: ProcessAdditionalFields): ProcessProperties = {
+    ProcessProperties(ProcessAdditionalFields(additionalFields.description, additionalFields.properties ++ typeSpecificProperties.toMap, typeSpecificProperties.scenarioType))
+  }
 
   def apply(typeSpecificProperties: TypeSpecificData): ProcessProperties = {
     ProcessProperties(typeSpecificProperties, ProcessAdditionalFields(None, typeSpecificProperties.toMap, typeSpecificProperties.scenarioType))
   }
 
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =
-    Encoder.forProduct3("typeSpecificProperties", "isSubprocess", "additionalFields") { p =>
-    (p.typeSpecificProperties, p.isSubprocess, p.additionalFields)
+    Encoder.forProduct2( "isSubprocess", "additionalFields") { p =>
+      (p.isSubprocess, p.additionalFields)
   }
 }
