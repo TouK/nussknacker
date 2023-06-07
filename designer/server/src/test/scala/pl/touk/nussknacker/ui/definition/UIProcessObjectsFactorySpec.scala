@@ -133,7 +133,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val model : ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
     val fragment = ProcessTestData.sampleSubprocessOneOut
     val docsUrl = "https://nussknacker.io/documentation/"
-    val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.copy(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
+    val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.withTypeSpecificData(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
 
     val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"),
         Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
