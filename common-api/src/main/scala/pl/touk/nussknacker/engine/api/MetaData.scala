@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, HCursor}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.TypeSpecificUtils._
 
@@ -14,8 +14,8 @@ import scala.util.Try
 @JsonCodec case class LayoutData(x: Long, y: Long)
 
 // todo: MetaData should hold ProcessName as id
-@ConfiguredJsonCodec case class MetaData(id: String,
-                                         additionalFields: ProcessAdditionalFields) {
+@ConfiguredJsonCodec(encodeOnly = true) case class MetaData(id: String,
+                                                            additionalFields: ProcessAdditionalFields) {
   def isSubprocess: Boolean = typeSpecificData.isSubprocess
 
   def typeSpecificData: TypeSpecificData = {
@@ -32,17 +32,46 @@ import scala.util.Try
 }
 
 object MetaData {
+
+  private val actualDecoder: Decoder[MetaData] = deriveConfiguredDecoder[MetaData]
+
+  val legacyDecoder: Decoder[MetaData] = {
+    def legacyProcessAdditionalFieldsDecoder(scenarioType: String): Decoder[ProcessAdditionalFields] =
+      (c: HCursor) => for {
+        id <- c.downField("description").as[Option[String]]
+        properties <- c.downField("properties").as[Map[String, String]]
+      } yield {
+        ProcessAdditionalFields(id, properties, scenarioType)
+      }
+
+    (c: HCursor) => for {
+      id <- c.downField("id").as[String]
+      typeSpecificData <- c.downField("typeSpecificData").as[TypeSpecificData]
+      additionalFields <- c.downField("additionalFields")
+        .as[Option[ProcessAdditionalFields]](
+          io.circe.Decoder.decodeOption(
+            legacyProcessAdditionalFieldsDecoder(typeSpecificData.scenarioType)
+          )
+        ).map(_.getOrElse(ProcessAdditionalFields.empty(typeSpecificData.scenarioType)))
+    } yield {
+      MetaData(id, typeSpecificData, additionalFields)
+    }
+  }
+
+  implicit val decoder: Decoder[MetaData] = actualDecoder or legacyDecoder
+
   def apply(id: String, typeSpecificData: TypeSpecificData, additionalFields: ProcessAdditionalFields): MetaData = {
     MetaData(id = id, additionalFields = additionalFields.copy(
       properties = additionalFields.properties ++ typeSpecificData.toMap
     ))
   }
+
   def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
     MetaData(
       id = id,
       additionalFields = ProcessAdditionalFields.empty(typeSpecificData.scenarioType).copy(
         properties = typeSpecificData.toMap
-    ))
+      ))
   }
 }
 
