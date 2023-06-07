@@ -21,6 +21,6 @@ class V1_016__TypeSpecificMetaDataChangeSpec extends AnyFlatSpec with Matchers {
     val metaData = converted.map(_.metaData)
     
 
-    metaData shouldBe Some(MetaData("DEFGH", StreamMetaData(parallelism = Some(3)), Some(ProcessAdditionalFields(None, Map.empty))))
+    metaData shouldBe Some(MetaData("DEFGH", StreamMetaData(parallelism = Some(3)), ProcessAdditionalFields(None, Map.empty)))
   }
 }

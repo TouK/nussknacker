@@ -60,7 +60,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
   it should "unmarshall to displayable scenario properly" in {
     val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(processWithPartialAdditionalFields), TestProcessingTypes.Streaming, TestCategories.Category1)
 
-    val processDescription = displayableProcess.properties.additionalFields.flatMap(_.description)
+    val processDescription = displayableProcess.properties.additionalFields.description
     val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.description)
     processDescription shouldBe Some(someProcessDescription)
     nodeDescription shouldBe Some(someNodeDescription)

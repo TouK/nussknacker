@@ -13,53 +13,53 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
   // TODO: exception when non-streaming process?
   def parallelism(p: Int): ProcessMetaDataBuilder = {
-    val additionalFields = metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+    val additionalFields = metaData.additionalFields
     new ProcessMetaDataBuilder(metaData.copy(
-      additionalFields = Some(additionalFields.copy(
+      additionalFields = additionalFields.copy(
         properties = additionalFields.properties ++ Map("parallelism" -> p.toString)
-      ))
+      )
     ))
   }
 
   //TODO: exception when non-streaming process?
   def stateOnDisk(useStateOnDisk: Boolean): ProcessMetaDataBuilder = {
-    val additionalFields = metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+    val additionalFields = metaData.additionalFields
     new ProcessMetaDataBuilder(metaData.copy(
-      additionalFields = Some(additionalFields.copy(
+      additionalFields = additionalFields.copy(
         properties = additionalFields.properties ++ Map("useStateOnDisk" -> useStateOnDisk.toString)
-      ))
+      )
     ))
   }
 
   //TODO: exception when non-streaming process?
   def useAsyncInterpretation(useAsyncInterpretation: Boolean): ProcessMetaDataBuilder = {
-    val additionalFields = metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+    val additionalFields = metaData.additionalFields
     new ProcessMetaDataBuilder(metaData.copy(
-      additionalFields = Some(additionalFields.copy(
+      additionalFields = additionalFields.copy(
         properties = additionalFields.properties ++ Map("useAsyncInterpretation" -> useAsyncInterpretation.toString)
-      ))
+      )
     ))
   }
 
 
   //TODO: exception when non-request-response process?
   def slug(slug: Option[String]): ProcessMetaDataBuilder = {
-    val additionalFields = metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+    val additionalFields = metaData.additionalFields
     new ProcessMetaDataBuilder(metaData.copy(
-      additionalFields = Some(additionalFields.copy(
+      additionalFields = additionalFields.copy(
         properties = additionalFields.properties ++ Map("slug" -> slug.getOrElse(""))
-      ))
+      )
     ))
   }
 
   def additionalFields(description: Option[String] = None,
                        properties: Map[String, String] = Map.empty): ProcessMetaDataBuilder = {
-    val additionalFields = metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+    val additionalFields = metaData.additionalFields
     new ProcessMetaDataBuilder(metaData.copy(
-      additionalFields = Some(additionalFields.copy(
+      additionalFields = additionalFields.copy(
         description = description,
         properties = additionalFields.properties ++ properties
-      ))
+      )
     ))
   }
 
