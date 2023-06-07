@@ -39,7 +39,6 @@ import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessResolver}
 
-import scala.collection.immutable.{ListMap, Map}
 import scala.jdk.CollectionConverters._
 
 class ProcessValidationSpec extends AnyFunSuite with Matchers {
@@ -213,7 +212,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
     val result = validator.validate(process)
 
-    result.errors.globalErrors shouldBe List((NodeValidationError("DuplicatedNodeIds", "Two nodes cannot have same id", "Duplicate node ids: switchID", None, RenderNotAllowed)))
+    result.errors.globalErrors shouldBe List(NodeValidationError("DuplicatedNodeIds", "Two nodes cannot have same id", "Duplicate node ids: switchID", None, RenderNotAllowed))
     result.errors.invalidNodes shouldBe empty
     result.warnings shouldBe ValidationWarnings.success
   }
@@ -429,7 +428,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     validationResult.errors.invalidNodes shouldBe Symbol("empty")
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
     validationResult.nodeResults("sink2").variableTypes("var2") shouldBe Typed.fromInstance("42")
-    validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(ListMap(
+    validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(Map(
       "bar" -> Typed.fromInstance("42")
     ))
   }

@@ -45,7 +45,7 @@ class TypingResultAwareTypeInformationDetection(customisation: TypingResultAware
   )
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
-    val variables = forType(TypedObjectTypingResult(validationContext.localVariables.toList, Typed.typedClass[Map[String, AnyRef]]))
+    val variables = forType(TypedObjectTypingResult(validationContext.localVariables, Typed.typedClass[Map[String, AnyRef]]))
       .asInstanceOf[TypeInformation[Map[String, Any]]]
     val parentCtx = validationContext.parent.map(forContext)
 

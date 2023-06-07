@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import cats.data.{Validated, ValidatedNel}
+import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import org.springframework.util.{NumberUtils => SpringNumberUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, TypingFunction}
@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObje
 import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
 import java.util.{Collections, Objects}
-import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 import scala.reflect.ClassTag
@@ -192,7 +191,7 @@ object collection extends HideToString {
   class CollectionMergeTyping[F[_]](implicit classTag: ClassTag[F[_]]) extends TypingFunction {
     private val fClass: Class[F[_]] = classTag.runtimeClass.asInstanceOf[Class[F[_]]]
 
-    private def commonFieldHasTheSameType(fields1: ListMap[String, typing.TypingResult], fields2: ListMap[String, typing.TypingResult]) = {
+    private def commonFieldHasTheSameType(fields1: Map[String, typing.TypingResult], fields2: Map[String, typing.TypingResult]) = {
       val commonFields = fields1.keys.toSet intersect fields2.keys.toSet
       fields1.filter { case (key, _) => commonFields.contains(key) }.map { case (key, value) => key -> value.withoutValue } ==
         fields2.filter { case (key, _) => commonFields.contains(key) }.map { case (key, value) => key -> value.withoutValue }
@@ -202,7 +201,7 @@ object collection extends HideToString {
       case (listType@TypedClass(`fClass`, firstComponentType :: Nil)) :: TypedClass(`fClass`, secondComponentType :: Nil) :: Nil =>
         (firstComponentType, secondComponentType) match {
           case (TypedObjectTypingResult(x, _, infoX), TypedObjectTypingResult(y, _, infoY)) if commonFieldHasTheSameType(x, y) =>
-            listType.copy(params = TypedObjectTypingResult(ListMap.empty ++ x.view.map { case (key, value) => key -> value.withoutValue } ++ y.view.map { case (key, value) => key -> value.withoutValue }, Typed.typedClass[java.util.HashMap[_, _]], infoX ++ infoY) :: Nil).validNel
+            listType.copy(params = TypedObjectTypingResult(Map.empty ++ x.view.map { case (key, value) => key -> value.withoutValue } ++ y.view.map { case (key, value) => key -> value.withoutValue }, Typed.typedClass[java.util.HashMap[_, _]], infoX ++ infoY) :: Nil).validNel
           case (_: TypedObjectTypingResult, _: TypedObjectTypingResult) =>
             listType.copy(params = Unknown :: Nil).validNel
           case (`unknownMapType`, _: TypedObjectTypingResult) |

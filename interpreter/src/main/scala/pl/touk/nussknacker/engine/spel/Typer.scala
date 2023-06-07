@@ -226,7 +226,7 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
           if (literalKeys.size != keys.size) {
             invalid(MapWithExpressionKeysError)
           } else {
-            valid(TypedObjectTypingResult(literalKeys.zip(typedValues)))
+            valid(TypedObjectTypingResult(literalKeys.zip(typedValues).toMap))
           }
         }
       case e: MethodReference =>
@@ -517,9 +517,9 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
     case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
       valid(tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
-      valid(TypedObjectTypingResult(List(
-        ("key", tc.objType.params.headOption.getOrElse(Unknown)),
-        ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
+      valid(TypedObjectTypingResult(Map(
+        "key" -> tc.objType.params.headOption.getOrElse(Unknown),
+        "value" -> tc.objType.params.drop(1).headOption.getOrElse(Unknown))))
     case tc: SingleTypingResult if tc.objType.klass.isArray =>
       valid(tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult =>

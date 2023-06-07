@@ -188,12 +188,12 @@ object SwaggerTyped {
     if (elementType.isEmpty) {
       val patternPropertiesTypesSet = patternProperties.map { case PatternWithSwaggerTyped(_, propertySwaggerTyped) => typingResult(propertySwaggerTyped)}.toSet
       additionalProperties match {
-        case AdditionalPropertiesDisabled if patternPropertiesTypesSet.isEmpty => TypedObjectTypingResult(List.empty)
+        case AdditionalPropertiesDisabled if patternPropertiesTypesSet.isEmpty => TypedObjectTypingResult(Map.empty[String, TypingResult])
         case AdditionalPropertiesDisabled => typedStringKeyMap(Typed(patternPropertiesTypesSet))
         case AdditionalPropertiesEnabled(value) => typedStringKeyMap(Typed(patternPropertiesTypesSet + typingResult(value)))
       }
     } else {
-      TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy { case (propertyName, _) => propertyName })
+      TypedObjectTypingResult(elementType.mapValuesNow(typingResult))
     }
   }
 

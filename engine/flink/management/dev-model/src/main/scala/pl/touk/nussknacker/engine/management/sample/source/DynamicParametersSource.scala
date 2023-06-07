@@ -18,7 +18,7 @@ object DynamicParametersSource extends SourceFactory with DynamicParametersMixin
 
   override protected def result(validationContext: ValidationContext,
                                 otherParams: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): FinalResults = {
-    val paramsTyping = otherParams.map { case (paramName, definedParam) => paramName -> definedParam.returnType }
+    val paramsTyping = otherParams.map { case (paramName, definedParam) => paramName -> definedParam.returnType }.toMap
     FinalResults.forValidation(validationContext)(_.withVariable("input", TypedObjectTypingResult(paramsTyping), paramName = None))
   }
 }

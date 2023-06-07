@@ -26,7 +26,7 @@ class IgniteQueryHelper(getConnection: () => Connection) extends LazyLogging {
         .map { case (tableName, entries) =>
           val columnTypings = entries.map { case (_, columnName, klassName, _) => columnName -> Typed.typedClass(Class.forName(klassName)) }
 
-          tableName -> TableDefinition(typedObjectDefinition = TypedObjectDefinition(columnTypings))
+          tableName -> TableDefinition(typedObjectDefinition = TypedObjectDefinition(columnTypings.toMap))
         }
     }
   }

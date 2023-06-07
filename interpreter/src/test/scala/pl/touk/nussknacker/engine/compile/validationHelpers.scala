@@ -73,7 +73,7 @@ object validationHelpers {
         .definedBy { context =>
           val newType = TypedObjectTypingResult((1 to numberOfFields).map { i =>
             s"field$i" -> Typed[String]
-          }.toList)
+          }.toMap)
           context.withVariable(variableName, newType, paramName = None)
         }
         .implementedBy(null)
@@ -93,7 +93,7 @@ object validationHelpers {
           val newType = TypedObjectTypingResult(contexts.toSeq.map {
             case (branchId, _) =>
               branchId -> valueByBranchId(branchId).returnType
-          }.toList)
+          }.toMap)
           Valid(ValidationContext(Map(variableName -> newType)))
         }
         .implementedBy(null)
@@ -119,7 +119,7 @@ object validationHelpers {
           } else {
             val mainBranchContext = mainBranches.head._2
 
-            val newType = TypedObjectTypingResult(joinedBranches.toList.map {
+            val newType = TypedObjectTypingResult(joinedBranches.map {
               case (branchId, _) =>
                 branchId -> valueByBranchId(branchId).returnType
             })
@@ -353,14 +353,14 @@ object validationHelpers {
     }
 
     override protected def fallbackFinalResult(step: TransformationStep, inputContext: ValidationContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
-      val result = TypedObjectTypingResult(step.parameters.toMap.filterKeysNow(k => k != "par1" && k != "lazyPar1").toList.map { case (k, v) => k -> v.returnType })
+      val result = TypedObjectTypingResult(step.parameters.toMap.filterKeysNow(k => k != "par1" && k != "lazyPar1").map { case (k, v) => k -> v.returnType })
       prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, result)), step.state)
     }
 
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults
 
     protected def finalResult(context: ValidationContext, rest: List[(String, BaseDefinedParameter)], name: String)(implicit nodeId: NodeId): this.FinalResults = {
-      val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType })
+      val result = TypedObjectTypingResult(rest.map { case (k, v) => k -> v.returnType }.toMap)
       prepareFinalResultWithOptionalVariable(context, Some((name, result)), None)
     }
 

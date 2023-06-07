@@ -106,8 +106,8 @@ object ExampleFunctions {
       if (arguments.exists(!_.canBeSubclassOf(Typed[Number]))) return ArgumentTypeError.invalidNel
       arguments match {
         case t :: Nil => t.validNel
-        case l :: r :: Nil => TypedObjectTypingResult(List("left" -> l, "right" -> r)).validNel
-        case l :: m :: r :: Nil => TypedObjectTypingResult(List("left" -> l, "mid" -> m, "right" -> r)).validNel
+        case l :: r :: Nil => TypedObjectTypingResult(Map("left" -> l, "right" -> r)).validNel
+        case l :: m :: r :: Nil => TypedObjectTypingResult(Map("left" -> l, "mid" -> m, "right" -> r)).validNel
         case _ => ArgumentTypeError.invalidNel
       }
     }
