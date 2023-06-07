@@ -45,7 +45,7 @@ class TestMigrations(migrationsToAdd:Int*) extends ProcessMigrations {
     override def failOnNewValidationError: Boolean = false
 
     override def migrateProcess(canonicalProcess: CanonicalProcess, category: String): CanonicalProcess =
-      canonicalProcess.copy(metaData = canonicalProcess.metaData.copy(typeSpecificData =
+      canonicalProcess.copy(metaData = canonicalProcess.metaData.withTypeSpecificData(typeSpecificData =
         StreamMetaData(Some(11))))
   }
 
