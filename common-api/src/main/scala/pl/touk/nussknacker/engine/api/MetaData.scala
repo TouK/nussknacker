@@ -13,12 +13,11 @@ import scala.concurrent.duration.Duration
 
 // todo: MetaData should hold ProcessName as id
 @ConfiguredJsonCodec case class MetaData(id: String,
-                                         scenarioType: String,
                                          additionalFields: ProcessAdditionalFields) {
   def isSubprocess: Boolean = typeSpecificData.isSubprocess
 
   def typeSpecificData: TypeSpecificData = {
-    scenarioType match {
+    additionalFields.scenarioType match {
       case "StreamMetaData" =>
         val properties = additionalFields.properties
         StreamMetaData(
@@ -38,13 +37,15 @@ import scala.concurrent.duration.Duration
 
 object MetaData {
   def apply(id: String, typeSpecificData: TypeSpecificData, additionalFields: ProcessAdditionalFields): MetaData = {
-    MetaData(id = id, scenarioType = typeSpecificData.typeName, additionalFields = additionalFields.copy(
+    MetaData(id = id, additionalFields = additionalFields.copy(
       properties = additionalFields.properties ++ typeSpecificData.toMap
     ))
   }
   def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
-    MetaData(id = id, scenarioType = typeSpecificData.typeName, additionalFields = ProcessAdditionalFields.empty.copy(
-      properties = typeSpecificData.toMap
+    MetaData(
+      id = id,
+      additionalFields = ProcessAdditionalFields.empty(typeSpecificData.scenarioType).copy(
+        properties = typeSpecificData.toMap
     ))
   }
 }
@@ -73,7 +74,7 @@ object MetaData {
     }
   }
 
-  def typeName: String = {
+  def scenarioType: String = {
     this match {
       case _: StreamMetaData => "StreamMetaData"
       case _: LiteStreamMetaData => "LiteStreamMetaData"
@@ -104,21 +105,23 @@ case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioS
 case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData
 
 case class ProcessAdditionalFields(description: Option[String],
-                                   properties: Map[String, String])
+                                   properties: Map[String, String],
+                                   scenarioType: String)
 
 object ProcessAdditionalFields {
 
   //TODO: is this currently needed?
   private case class OptionalProcessAdditionalFields(description: Option[String],
-                                                     properties: Option[Map[String, String]])
+                                                     properties: Option[Map[String, String]],
+                                                     scenarioType: String)
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
+  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.scenarioType))
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
 
   // TODO: check if is needed
-  val empty: ProcessAdditionalFields = {
-    ProcessAdditionalFields(None, Map.empty)
+  def empty(scenarioType: String): ProcessAdditionalFields = {
+    ProcessAdditionalFields(None, Map.empty, scenarioType)
   }
 }

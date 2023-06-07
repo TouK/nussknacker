@@ -65,7 +65,7 @@ case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
 object ProcessProperties {
 
   def apply(typeSpecificProperties: TypeSpecificData): ProcessProperties = {
-    ProcessProperties(typeSpecificProperties, ProcessAdditionalFields.empty)
+    ProcessProperties(typeSpecificProperties, ProcessAdditionalFields(None, typeSpecificProperties.toMap, typeSpecificProperties.scenarioType))
   }
 
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =

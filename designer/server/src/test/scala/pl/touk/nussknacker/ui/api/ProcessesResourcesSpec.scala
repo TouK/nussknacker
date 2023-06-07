@@ -596,7 +596,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
 
     val meta = ProcessTestData.validProcess.metaData
-    val changedMeta = meta.copy(additionalFields = ProcessAdditionalFields(Some("changed descritption..."), Map.empty))
+    val changedMeta = meta.copy(additionalFields = ProcessAdditionalFields(Some("changed descritption..."), Map.empty, meta.additionalFields.scenarioType))
     updateProcess(processName, ProcessTestData.validProcess.copy(metaData = changedMeta)) {
       status shouldEqual StatusCodes.OK
     }
