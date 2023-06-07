@@ -139,7 +139,8 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
       ),
       additionalFields = ProcessAdditionalFields(
         description,
-        properties
+        properties,
+        "StreamMetaData"
       )
     )
   }
