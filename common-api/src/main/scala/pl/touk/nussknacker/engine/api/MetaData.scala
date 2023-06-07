@@ -21,13 +21,7 @@ import scala.util.Try
   def typeSpecificData: TypeSpecificData = {
     additionalFields.scenarioType match {
       case "StreamMetaData" =>
-        val properties = additionalFields.properties
-        StreamMetaData(
-          parallelism = properties.get("parallelism").filterNot(_.isEmpty).map(_.toInt), // TODO: błędne wartości do none
-          spillStateToDisk = properties.get("spillStateToDisk").filterNot(_.isEmpty).map(_.toBoolean),
-          useAsyncInterpretation = properties.get("useAsyncInterpretation").filterNot(_.isEmpty).map(_.toBoolean),
-          checkpointIntervalInSeconds = properties.get("checkpointIntervalInSeconds").filterNot(_.isEmpty).map(_.toLong)
-        )
+        StreamMetaData(additionalFields.properties)
       case _ => ???
     }
   }
