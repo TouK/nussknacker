@@ -35,7 +35,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
         //TODO maybe always return data for all fragments versions instead of fetching just one-by-one?
         pathEndOrSingleSlash {
           get {
-            parameter(Symbol("isFragment").as[Boolean]) { (isFragment) =>
+            parameter(Symbol("isFragment").as[Boolean]) { isFragment =>
               val fragments = fragmentRepository.loadFragments(Map.empty)
               complete(
                 UIProcessObjectsFactory.prepareUIProcessObjects(
@@ -45,6 +45,21 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
                   user,
                   fragments,
                   isFragment,
+                  processCategoryService,
+                  processingTypeData.additionalPropertiesConfig,
+                  processingType)
+              )
+              //TODO remove isSubprocess param path after NU 1.10 release
+            } ~ parameter(Symbol("isSubprocess").as[Boolean]) { isSubprocess =>
+              val fragments = fragmentRepository.loadFragments(Map.empty)
+              complete(
+                UIProcessObjectsFactory.prepareUIProcessObjects(
+                  processingTypeData.modelData,
+                  processingTypeData.deploymentManager,
+                  processingTypeData.typeSpecificInitialData,
+                  user,
+                  fragments,
+                  isFragment = isSubprocess,
                   processCategoryService,
                   processingTypeData.additionalPropertiesConfig,
                   processingType)

@@ -6,6 +6,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ## In version 1.10.0
 
 ### Code API changes
+* [#4354](https://github.com/TouK/nussknacker/pull/4354) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility). 
+  * `isSubprocess` query parameter is renamed to `isFragment` - `isSubprocess` will be removed in 1.11.0
 * [#4294](https://github.com/TouK/nussknacker/pull/4294) `HttpRemoteEnvironmentConfig` allows you to pass flag `passUsernameInMigration` - (default true).
   When set to true, migration attaches username in the form of `Remote[userName]` while migrating to secondary environment. To use the old migration endpoint, set to false.
 * [#4278](https://github.com/TouK/nussknacker/pull/4278) Now expression compiler and code suggestions mechanism are reusing the same

@@ -19,7 +19,7 @@ export function useAddProcessButtonProps(isFragment?: boolean): { action: () => 
                 isResizable: true,
                 isModal: true,
                 shouldCloseOnEsc: true,
-                kind: isFragment ? WindowKind.addfragment : WindowKind.addProcess,
+                kind: isFragment ? WindowKind.addFragment : WindowKind.addProcess,
                 title,
             }),
         [isFragment, open, title],

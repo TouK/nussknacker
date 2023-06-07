@@ -9,7 +9,7 @@ export function getWindowColors(type = WindowKind.default): string {
         case WindowKind.customAction:
             return css({ backgroundColor: "white", color: "black" });
         case WindowKind.addProcess:
-        case WindowKind.addfragment:
+        case WindowKind.addFragment:
         case WindowKind.default:
         default:
             return css({ backgroundColor: "#2D8E54", color: "white" });

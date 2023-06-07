@@ -4,6 +4,7 @@
 
 1.10.0 (not released yet)
 -------------------------
+* [#4354](https://github.com/TouK/nussknacker/pull/4354) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility)
 * [#4275](https://github.com/TouK/nussknacker/pull/4275) Add helper methods for use in expressions:
   * `#COLLECTION`: `concat`, `merge`, `min`, `max`, `slice`, `sum`, `sortedAsc`, `sortedDesc`, `take`, `takeLast`, `join`, `product`, `diff`, `intersect`, `distinct`, `shuffle`, `flatten`
   * `#UTIL`: `split`
