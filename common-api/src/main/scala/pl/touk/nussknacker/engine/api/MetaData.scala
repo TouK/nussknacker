@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, HCursor}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.TypeSpecificUtils._
 
@@ -14,8 +14,8 @@ import scala.util.Try
 @JsonCodec case class LayoutData(x: Long, y: Long)
 
 // todo: MetaData should hold ProcessName as id
-@ConfiguredJsonCodec case class MetaData(id: String,
-                                         additionalFields: ProcessAdditionalFields) {
+@ConfiguredJsonCodec(encodeOnly = true) case class MetaData(id: String,
+                                                            additionalFields: ProcessAdditionalFields) {
   def isSubprocess: Boolean = typeSpecificData.isSubprocess
 
   def typeSpecificData: TypeSpecificData = {
@@ -26,23 +26,50 @@ import scala.util.Try
     }
   }
 
+
   def withTypeSpecificData(typeSpecificData: TypeSpecificData): MetaData = {
     MetaData(id, typeSpecificData)
   }
 }
 
 object MetaData {
+
+  private val actualDecoder: Decoder[MetaData] = deriveConfiguredDecoder[MetaData]
+  private def legacyProcessAdditionalFieldsDecoder(scenarioType: String): Decoder[ProcessAdditionalFields] =
+    (c: HCursor) => for {
+      id <- c.downField("description").as[Option[String]]
+      properties <- c.downField("properties").as[Map[String, String]]
+    } yield {
+      ProcessAdditionalFields(id, properties, scenarioType)
+    }
+
+  val legacyDecoder: Decoder[MetaData] = (c: HCursor) => for {
+    id <- c.downField("id").as[String]
+    typeSpecificData <- c.downField("typeSpecificData").as[TypeSpecificData]
+    additionalFields <- c.downField("additionalFields")
+      .as[Option[ProcessAdditionalFields]](
+        io.circe.Decoder.decodeOption(
+          legacyProcessAdditionalFieldsDecoder(typeSpecificData.scenarioType)
+        )
+      ).map(_.getOrElse(ProcessAdditionalFields.empty(typeSpecificData.scenarioType)))
+  } yield {
+    MetaData(id, typeSpecificData, additionalFields)
+  }
+
+  implicit val decoder: Decoder[MetaData] = actualDecoder or legacyDecoder
+
   def apply(id: String, typeSpecificData: TypeSpecificData, additionalFields: ProcessAdditionalFields): MetaData = {
     MetaData(id = id, additionalFields = additionalFields.copy(
       properties = additionalFields.properties ++ typeSpecificData.toMap
     ))
   }
+
   def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
     MetaData(
       id = id,
       additionalFields = ProcessAdditionalFields.empty(typeSpecificData.scenarioType).copy(
         properties = typeSpecificData.toMap
-    ))
+      ))
   }
 }
 
@@ -99,7 +126,7 @@ case class StreamMetaData(parallelism: Option[Int] = None,
                           useAsyncInterpretation: Option[Boolean] = None,
                           checkpointIntervalInSeconds: Option[Long] = None) extends ScenarioSpecificData {
 
-  def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
+  def checkpointIntervalDuration: Option[Duration] = checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
 
 }
 
@@ -148,7 +175,7 @@ object ProcessAdditionalFields {
                                                      scenarioType: String)
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.scenarioType))
+  = deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.scenarioType))
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
 
@@ -177,7 +204,7 @@ object TypeSpecificUtils {
           // We allow for invalid values to be persisted. If we cannot convert a string to a desired type, we set it as
           // None in TypeSpecificData and store the invalid value in AdditionalFields.
           // TODO: Add logger or remove logging
-//          logger.debug(s"Could not convert property $propertyName with value \'$value\' to desired type.")
+          //          logger.debug(s"Could not convert property $propertyName with value \'$value\' to desired type.")
           None
       }
       .get
