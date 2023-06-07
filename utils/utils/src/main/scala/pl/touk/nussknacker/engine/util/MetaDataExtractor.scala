@@ -17,12 +17,8 @@ object MetaDataExtractor {
   = extractTypeSpecificData(metaData).fold(_ => throw new IllegalArgumentException("Wrong scenario type"), identity)
 
   def extractProperty(metaData: MetaData, property: String): Option[String] =
-    metaData
-      .additionalFields
-      .flatMap(
-        _.properties
-          .get(property)
-      )
+    metaData.additionalFields.properties.get(property)
+
 
   def extractProperty(metaData: MetaData, property: String, default: String): String =
     extractProperty(metaData, property).getOrElse(default)

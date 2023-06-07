@@ -26,10 +26,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
       ValidationResult.globalErrors(List(PrettyValidationErrors.noValidatorKnown(process.processingType)))
 
     case Some(config) => {
-      val additionalProperties = process.properties.additionalFields
-        .map(field => field.properties)
-        .getOrElse(Map.empty)
-        .toList
+      val additionalProperties = process.properties.additionalFields.properties.toList
 
       val validated = (
         getConfiguredValidationsResults(config, additionalProperties),

@@ -14,13 +14,13 @@ import scala.concurrent.duration.Duration
 // todo: MetaData should hold ProcessName as id
 @ConfiguredJsonCodec case class MetaData(id: String,
                                          scenarioType: String,
-                                         additionalFields: Option[ProcessAdditionalFields] = None) {
+                                         additionalFields: ProcessAdditionalFields) {
   def isSubprocess: Boolean = typeSpecificData.isSubprocess
 
   def typeSpecificData: TypeSpecificData = {
     scenarioType match {
       case "StreamMetaData" =>
-        val properties = additionalFields.getOrElse(throw new IllegalStateException("TODO")).properties
+        val properties = additionalFields.properties
         StreamMetaData(
           parallelism = properties.get("parallelism").filterNot(_.isEmpty).map(_.toInt), // TODO: błędne wartości do none
           spillStateToDisk = properties.get("spillStateToDisk").filterNot(_.isEmpty).map(_.toBoolean),
@@ -37,16 +37,15 @@ import scala.concurrent.duration.Duration
 }
 
 object MetaData {
-  def apply(id: String, typeSpecificData: TypeSpecificData, additionalFields: Option[ProcessAdditionalFields]): MetaData = {
-    val fields = additionalFields.getOrElse(ProcessAdditionalFields.empty)
-    MetaData(id = id, scenarioType = typeSpecificData.typeName, additionalFields = Some(fields.copy(
-      properties = fields.properties ++ typeSpecificData.toMap
-    )))
+  def apply(id: String, typeSpecificData: TypeSpecificData, additionalFields: ProcessAdditionalFields): MetaData = {
+    MetaData(id = id, scenarioType = typeSpecificData.typeName, additionalFields = additionalFields.copy(
+      properties = additionalFields.properties ++ typeSpecificData.toMap
+    ))
   }
   def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
-    MetaData(id = id, scenarioType = typeSpecificData.typeName, additionalFields = Some(ProcessAdditionalFields.empty.copy(
+    MetaData(id = id, scenarioType = typeSpecificData.typeName, additionalFields = ProcessAdditionalFields.empty.copy(
       properties = typeSpecificData.toMap
-    )))
+    ))
   }
 }
 

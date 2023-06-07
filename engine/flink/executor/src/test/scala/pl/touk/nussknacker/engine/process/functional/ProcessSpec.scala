@@ -284,10 +284,10 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     List(true, false).foreach { useAsync =>
       SinkForStrings.clear()
 
-      val additionalFields = process.metaData.additionalFields.getOrElse(ProcessAdditionalFields.empty)
+      val additionalFields = process.metaData.additionalFields
 
       val scenarioToUse = process.copy(metaData = process.metaData
-        .copy(additionalFields = Some(additionalFields.copy(properties = additionalFields.properties ++ Map("useAsyncInterpretation" -> useAsync.toString)))))
+        .copy(additionalFields = additionalFields.copy(properties = additionalFields.properties ++ Map("useAsyncInterpretation" -> useAsync.toString))))
 
       val runId = UUID.randomUUID().toString
       val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), consumerId = runId)
