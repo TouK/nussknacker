@@ -21,11 +21,12 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpec
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean): CanonicalProcess = {
     val creator = emptyProcessCreate.forTypeUnsafe(processingType)
     val specificMetaData = if(isSubprocess) creator.forFragment _ else creator.forScenario _
+    val typeSpecificData = specificMetaData(ProcessName(processId), processingType)
     val emptyCanonical = CanonicalProcess(
       metaData = MetaData(
         id = processId,
-        typeSpecificData = specificMetaData(ProcessName(processId), processingType),
-        additionalFields = defaultAdditionalFields(processingType)
+        typeSpecificData = typeSpecificData,
+        additionalFields = defaultAdditionalFields(processingType, typeSpecificData.scenarioType)
       ),
       nodes = List.empty,
       additionalBranches = List.empty
@@ -34,8 +35,8 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpec
   }
 
   // TODO: new typespecific defaults based on config
-  private def defaultAdditionalFields(processingType: ProcessingType): ProcessAdditionalFields = {
-    ProcessAdditionalFields(None, properties = defaultProperties(processingType))
+  private def defaultAdditionalFields(processingType: ProcessingType, scenarioType: String): ProcessAdditionalFields = {
+    ProcessAdditionalFields(None, properties = defaultProperties(processingType), scenarioType)
   }
 
   private def defaultProperties(processingType: ProcessingType): Map[String, String] = additionalFields.forTypeUnsafe(processingType)
