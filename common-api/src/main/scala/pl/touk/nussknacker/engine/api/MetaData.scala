@@ -5,9 +5,11 @@ import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.TypeSpecificUtils._
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 @JsonCodec case class LayoutData(x: Long, y: Long)
 
@@ -88,6 +90,14 @@ sealed trait ScenarioSpecificData extends TypeSpecificData
 
 case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData
 
+object FragmentSpecificData {
+  private val docsUrlName = "docsUrl"
+
+  def apply(properties: Map[String, String]): FragmentSpecificData = {
+    FragmentSpecificData(docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)))
+  }
+}
+
 // TODO: rename to FlinkStreamMetaData
 case class StreamMetaData(parallelism: Option[Int] = None,
                           //we assume it's safer to spill state to disk and fix performance than to fix heap problems...
@@ -99,6 +109,22 @@ case class StreamMetaData(parallelism: Option[Int] = None,
 
 }
 
+object StreamMetaData {
+  private val parallelismName = "parallelism"
+  private val spillStateToDiskName = "spillStateToDisk"
+  private val useAsyncInterpretationName = "useAsyncInterpretation"
+  private val checkpointIntervalInSecondsName = "checkpointIntervalInSeconds"
+
+  def apply(properties: Map[String, String]): StreamMetaData = {
+    StreamMetaData(
+      parallelism = properties.get(parallelismName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismName)),
+      spillStateToDisk = properties.get(spillStateToDiskName).flatMap(convertPropertyWithLog(_, _.toBoolean, spillStateToDiskName)),
+      useAsyncInterpretation = properties.get(useAsyncInterpretationName).flatMap(convertPropertyWithLog(_, _.toBoolean, useAsyncInterpretationName)),
+      checkpointIntervalInSeconds = properties.get(checkpointIntervalInSecondsName).flatMap(convertPropertyWithLog(_, _.toLong, checkpointIntervalInSecondsName))
+    )
+  }
+}
+
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
 case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData
 
@@ -106,7 +132,19 @@ case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecifi
 
 case class ProcessAdditionalFields(description: Option[String],
                                    properties: Map[String, String],
-                                   scenarioType: String)
+                                   scenarioType: String) {
+
+  def typeSpecificProperties: TypeSpecificData = {
+    scenarioType match {
+      case "StreamMetaData" => {
+        StreamMetaData(properties)
+      }
+      case "FragmentSpecificData" => FragmentSpecificData(properties)
+      case _ => ???
+    }
+  }
+
+}
 
 object ProcessAdditionalFields {
 
@@ -123,5 +161,31 @@ object ProcessAdditionalFields {
   // TODO: check if is needed
   def empty(scenarioType: String): ProcessAdditionalFields = {
     ProcessAdditionalFields(None, Map.empty, scenarioType)
+  }
+}
+
+object TypeSpecificUtils {
+
+  def toStringWithEmptyDefault(option: Option[Any]): String = {
+    option.fold("")(_.toString)
+  }
+
+  def mapEmptyStringToNone(option: Option[String]): Option[String] = option match {
+    case Some(s) if s.isEmpty => None
+    case other => other
+  }
+
+  def convertPropertyWithLog[T](value: String, converter: String => T, propertyName: String): Option[T] = {
+    Try(converter(value))
+      .map(Some(_))
+      .recover {
+        case _: IllegalArgumentException =>
+          // We allow for invalid values to be persisted. If we cannot convert a string to a desired type, we set it as
+          // None in TypeSpecificData and store the invalid value in AdditionalFields.
+          // TODO: Add logger or remove logging
+//          logger.debug(s"Could not convert property $propertyName with value \'$value\' to desired type.")
+          None
+      }
+      .get
   }
 }
