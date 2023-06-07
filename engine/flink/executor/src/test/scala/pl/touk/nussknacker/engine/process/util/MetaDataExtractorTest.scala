@@ -14,7 +14,7 @@ class MetaDataExtractorTest extends AnyFunSuite with Matchers {
     "time" -> "00:01:00",
     "duration" -> "P3DT2H",
     "period" -> "P3Y2M"
-  )))
+  ), "StreamMetaData"))
 
   test("extract date time property") {
     MetaDataExtractor.extractDateTimeProperty(metaData, "dateTime", LocalDateTime.now()) shouldBe
