@@ -13,15 +13,74 @@ import scala.concurrent.duration.Duration
 
 // todo: MetaData should hold ProcessName as id
 @ConfiguredJsonCodec case class MetaData(id: String,
-                                         typeSpecificData: TypeSpecificData,
+                                         scenarioType: String,
                                          additionalFields: Option[ProcessAdditionalFields] = None) {
-  val isSubprocess: Boolean = typeSpecificData.isSubprocess
+  def isSubprocess: Boolean = typeSpecificData.isSubprocess
+
+  def typeSpecificData: TypeSpecificData = {
+    scenarioType match {
+      case "StreamMetaData" =>
+        val properties = additionalFields.getOrElse(throw new IllegalStateException("TODO")).properties
+        StreamMetaData(
+          parallelism = properties.get("parallelism").filterNot(_.isEmpty).map(_.toInt), // TODO: błędne wartości do none
+          spillStateToDisk = properties.get("spillStateToDisk").filterNot(_.isEmpty).map(_.toBoolean),
+          useAsyncInterpretation = properties.get("useAsyncInterpretation").filterNot(_.isEmpty).map(_.toBoolean),
+          checkpointIntervalInSeconds = properties.get("checkpointIntervalInSeconds").filterNot(_.isEmpty).map(_.toLong)
+        )
+      case _ => ???
+    }
+  }
+
+  def withTypeSpecificData(typeSpecificData: TypeSpecificData): MetaData = {
+    MetaData(id, typeSpecificData)
+  }
+}
+
+object MetaData {
+  def apply(id: String, typeSpecificData: TypeSpecificData, additionalFields: Option[ProcessAdditionalFields]): MetaData = {
+    val fields = additionalFields.getOrElse(ProcessAdditionalFields.empty)
+    MetaData(id = id, scenarioType = typeSpecificData.typeName, additionalFields = Some(fields.copy(
+      properties = fields.properties ++ typeSpecificData.toMap
+    )))
+  }
+  def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
+    MetaData(id = id, scenarioType = typeSpecificData.typeName, additionalFields = Some(ProcessAdditionalFields.empty.copy(
+      properties = typeSpecificData.toMap
+    )))
+  }
 }
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {
   val isSubprocess = this match {
     case _: ScenarioSpecificData => false
     case _: FragmentSpecificData => true
+  }
+
+  def toMap: Map[String, String] = {
+    this match {
+      case data: ScenarioSpecificData => data match {
+        case StreamMetaData(parallelism, spillStateToDisk, useAsyncInterpretation, checkpointIntervalInSeconds) =>
+          Map(
+            "parallelism" -> parallelism.map(_.toString).getOrElse(""),
+            "spillStateToDisk" -> spillStateToDisk.map(_.toString).getOrElse(""),
+            "useAsyncInterpretation" -> useAsyncInterpretation.map(_.toString).getOrElse(""),
+            "checkpointIntervalInSeconds" -> checkpointIntervalInSeconds.map(_.toString).getOrElse(""),
+          )
+        case LiteStreamMetaData(parallelism) => ???
+        case RequestResponseMetaData(slug) => ???
+      }
+      case FragmentSpecificData(docsUrl) =>
+        Map("docsUrl" -> docsUrl.getOrElse(""))
+    }
+  }
+
+  def typeName: String = {
+    this match {
+      case _: StreamMetaData => "StreamMetaData"
+      case _: LiteStreamMetaData => "LiteStreamMetaData"
+      case _: RequestResponseMetaData => "RequestResponseMetaData"
+      case _: FragmentSpecificData => "FragmentSpecificData"
+    }
   }
 }
 
@@ -58,4 +117,9 @@ object ProcessAdditionalFields {
   =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
+
+  // TODO: check if is needed
+  val empty: ProcessAdditionalFields = {
+    ProcessAdditionalFields(None, Map.empty)
+  }
 }
