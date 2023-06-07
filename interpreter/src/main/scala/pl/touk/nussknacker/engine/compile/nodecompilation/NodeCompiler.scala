@@ -192,7 +192,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }.sequence
 
     val typedObject = compilationResult.map { fieldsComp =>
-      TypedObjectTypingResult(fieldsComp.map(f => (f.fieldName, f.typingResult)))
+      TypedObjectTypingResult(fieldsComp.map(f => (f.fieldName, f.typingResult)).toMap)
     }.valueOr(_ => Unknown)
 
     val fieldsTypingInfo = compilationResult.map { compilations =>
@@ -431,7 +431,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
   }
 
-  private def validateGenericTransformer[T](eitherSingleOrJoin: GenericValidationContext,
+  private def validateGenericTransformer(eitherSingleOrJoin: GenericValidationContext,
                                             parameters: List[evaluatedparam.Parameter],
                                             branchParameters: List[BranchParameters],
                                             outputVar: Option[String],

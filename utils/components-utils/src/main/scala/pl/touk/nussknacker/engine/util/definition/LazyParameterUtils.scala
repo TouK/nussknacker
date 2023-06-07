@@ -11,12 +11,12 @@ object LazyParameterUtils {
   def typedMap(params: ListMap[String, LazyParameter[AnyRef]]): LazyParameter[TypedMap] = {
     def wrapResultType(list: List[TypingResult]): TypingResult = {
       TypedObjectTypingResult(
-        params.toList.map(_._1).zip(list).map {
+        params.keys.zip(list).map {
           case (fieldName, TypedClass(_, _ :: valueType :: Nil)) =>
             fieldName -> valueType
           case other =>
             throw new IllegalArgumentException(s"Unexpected result of type transformation returned by sequence: $other")
-        }
+        }.toMap
       )
     }
     val paramsSeq = params.toList.map {

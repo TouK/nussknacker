@@ -35,7 +35,7 @@ object AvroSchemaTypeDefinitionExtractor {
           .getFields
           .asScala
           .map(field => field.name() -> typeDefinition(field.schema(), possibleTypes))
-          .toList
+          .toMap
 
         Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt)))
       }

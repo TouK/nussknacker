@@ -51,7 +51,7 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
             val finalContext = finalContextValidated.toOption.get
 
             val mapTypeInfo = context.typeInformationDetection
-              .forType(TypedObjectTypingResult(valueByBranchId.mapValuesNow(_.returnType).toList, Typed.typedClass[java.util.Map[_, _]]))
+              .forType(TypedObjectTypingResult(valueByBranchId.mapValuesNow(_.returnType), Typed.typedClass[java.util.Map[_, _]]))
               .asInstanceOf[TypeInformation[java.util.Map[String, AnyRef]]]
 
             val processedTypeInfo = context.typeInformationDetection.forValueWithContext(finalContext, KeyedValueType.info(mapTypeInfo))
@@ -98,10 +98,10 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
 
     val validatedContext = ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
       val newType = TypedObjectTypingResult(
-        (KeyField -> Typed[String]) :: inputContexts.map {
+        inputContexts.map {
           case (branchId, _) =>
             ContextTransformation.sanitizeBranchName(branchId) -> valueByBranchId(branchId).returnType
-        }.toList
+        } + (KeyField -> Typed[String])
       )
       ValidationContext(Map(variableName -> newType), Map.empty, parent)
     }

@@ -73,10 +73,9 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
               .map(id -> _)
           }.toList.sequence.map(_.toMap)
           validatedAggregatorReturnTypes.map(outputTypeByBranchId => {
-            val outputTypes = outputTypeByBranchId.toList
-              .map{case (k, v) => ContextTransformation.sanitizeBranchName(k) -> v}
-              .++(List(KeyFieldName -> Typed.typedClass[String]))
-            TypedObjectTypingResult(outputTypes, Typed.typedClass[java.util.Map[String, AnyRef]])
+            val outputTypes = outputTypeByBranchId
+              .map { case (k, v) => ContextTransformation.sanitizeBranchName(k) -> v } + (KeyFieldName -> Typed.typedClass[String])
+            TypedObjectTypingResult(outputTypes)
           })
 
         case _ => Validated.validNel(Unknown)
@@ -111,7 +110,7 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
 
       val types = aggregateByByBranchId.mapValuesNow(_.returnType)
       val optionTypes = types.mapValuesNow(t => Typed.genericTypeClass(classOf[Option[_]], List(t)))
-      val inputType = TypedObjectTypingResult(optionTypes.toList, objType = Typed.typedClass[java.util.Map[_, _]])
+      val inputType = TypedObjectTypingResult(optionTypes)
 
       val storedType = aggregator.computeStoredTypeUnsafe(inputType)
       val storedTypeInfo = context.typeInformationDetection.forType[AnyRef](storedType)

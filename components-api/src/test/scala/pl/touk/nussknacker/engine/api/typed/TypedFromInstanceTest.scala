@@ -4,10 +4,8 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.LoneElement
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
-import scala.collection.immutable.ListMap
 
 class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
 
@@ -42,7 +40,7 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
   }
 
   test("should type map types") {
-    val fieldTypes = ListMap(
+    val fieldTypes = Map(
       "a" -> TypedObjectWithValue(Typed.typedClass[Int], 1),
       "b" -> TypedObjectWithValue(Typed.typedClass[String], "string")
     )
@@ -81,12 +79,12 @@ class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement w
     checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Number]))
 
     val listOfTypedMaps = List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 1)))
-    val typedMapTypingResult = TypedObjectTypingResult(ListMap("a" -> Typed(classOf[Integer])))
+    val typedMapTypingResult = TypedObjectTypingResult(Map("a" -> Typed(classOf[Integer])))
     checkTypingResult(listOfTypedMaps, classOf[List[_]], typedMapTypingResult)
     checkTypingResult(listOfTypedMaps.asJava, classOf[java.util.List[_]], typedMapTypingResult)
-    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(ListMap("c" -> Typed(classOf[Integer]))))
-    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(ListMap("b" -> Typed(classOf[Integer]))))
-    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(ListMap("a" -> Typed(classOf[String]))))
+    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(Map("c" -> Typed(classOf[Integer]))))
+    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(Map("b" -> Typed(classOf[Integer]))))
+    checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(Map("a" -> Typed(classOf[String]))))
   }
 
   test("should find element type for lists of different elements") {

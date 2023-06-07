@@ -24,7 +24,7 @@ object TableDefinition {
 }
 
 case class TableDefinition(columnDefs: List[ColumnDefinition]) {
-  val rowType: TypedObjectTypingResult = TypedObjectTypingResult(columnDefs.map(col => col.name -> col.typing))
+  val rowType: TypedObjectTypingResult = TypedObjectTypingResult(columnDefs.map(col => col.name -> col.typing).toMap)
 
   val resultSetType: TypingResult = Typed.genericTypeClass(classOf[java.util.List[_]], rowType :: Nil)
 }

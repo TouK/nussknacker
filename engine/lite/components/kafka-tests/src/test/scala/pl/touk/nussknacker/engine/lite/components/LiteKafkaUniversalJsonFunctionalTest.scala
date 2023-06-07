@@ -110,7 +110,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (config(sampleObjMapInt, schemaObjMapLong, schemaObjMapLong), valid(sampleObjMapInt)),
       (conf(schemaObjMapLong, sampleObjMapIntOutput), valid(sampleObjMapInt)),
 
-      (config(samplePerson, schemaPerson, schemaObjStr), invalid(Nil, List("field"), List("age", "first", "last"), Nil)),
+      (config(samplePerson, schemaPerson, schemaObjStr), invalid(Nil, List("field"), List("last", "first", "age"), Nil)),
       (conf(schemaObjStr, samplePersonOutput), invalid(Nil, List("field"), List("first", "last", "age"), Nil)),
 
       (config(sampleObjMapAny, schemaObjMapAny, schemaObjMapLong), invalidTypes("path 'field.value' actual: 'Unknown' expected: 'Long'")),
