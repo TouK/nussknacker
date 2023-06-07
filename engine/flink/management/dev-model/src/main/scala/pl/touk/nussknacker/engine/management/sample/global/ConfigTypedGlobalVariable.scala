@@ -29,6 +29,7 @@ object ConfigTypedGlobalVariable extends TypedGlobalVariable {
   override def initialReturnType: TypingResult = Typed(classOf[java.util.List[_]])
 
   private def readProperty(metaData: MetaData): String = {
-    metaData.additionalFields.flatMap(_.properties.get("environment")).getOrElse("other")
+    // TODO: check is this correct?
+    metaData.additionalFields.properties.get("environment").getOrElse("other")
   }
 }
