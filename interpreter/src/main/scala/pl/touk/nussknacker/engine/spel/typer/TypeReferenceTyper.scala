@@ -31,10 +31,18 @@ class TypeReferenceTyper(evaluationContext: EvaluationContext,
           case None => Writer(List(TypeReferenceError(typeReferenceClazz.toString)), Unknown)
         }
       case Success(other) => throw new IllegalStateException(s"Not expected returned type: $other for TypeReference. Should be Class[_]")
-      case Failure(_: EvaluationException) => Writer(List(UnknownClassError(typeReference.toStringAST)), Unknown)
+      // SpEL's TypeReference handles in a specific way situation when type starts with lower case and has no dot - it looks for
+      // things like T(object), T(double) etc. If it can't find it, it throws IllegalArgumentException
+      case Failure(_: IllegalArgumentException) => Writer(List(UnknownClassError(extractClassName(typeReference))), Unknown)
+      case Failure(_: EvaluationException) => Writer(List(UnknownClassError(extractClassName(typeReference))), Unknown)
       case Failure(exception) => throw exception
     }
 
   }
 
+  // extracts xyz from T(xyz)
+  private def extractClassName(typeReference: TypeReference) = {
+    val withoutPrefix = typeReference.toStringAST.drop(2)
+    withoutPrefix.take(withoutPrefix.length - 1)
+  }
 }
