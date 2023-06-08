@@ -45,6 +45,7 @@
 * [#4346](https://github.com/TouK/nussknacker/pull/4346) Improvement: Don't fetch process state for fragment
 * [#4342](https://github.com/TouK/nussknacker/pull/4342) Improvement: Don't run custom action on archived scenario and fragment
 * [#4302](https://github.com/TouK/nussknacker/pull/4302) State inconsistency detection was moved from designer to DeploymentManager.
+* [#4360](https://github.com/TouK/nussknacker/pull/4360) Fix for spel validations: Typing type reference with class starting from lower case e.g. T(foo) caused nasty error
 
 1.9.1 (24 Apr 2023)
 ------------------------

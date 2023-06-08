@@ -210,7 +210,13 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("evaluate static method call on non-existing class") {
     inside(parse[Any]("T(java.lang.NonExistingClass).method()")) {
       case Invalid(NonEmptyList(error: UnknownClassError, _)) =>
-        error.message shouldBe "Class T(java.lang.NonExistingClass) does not exist"
+        error.message shouldBe "Class java.lang.NonExistingClass does not exist"
+    }
+  }
+
+  test("not throw an exception when is used lower case type") {
+    parse[Any]("T(foo).bar", ctx) should matchPattern {
+      case Invalid(NonEmptyList(UnknownClassError("foo"), _)) =>
     }
   }
 
