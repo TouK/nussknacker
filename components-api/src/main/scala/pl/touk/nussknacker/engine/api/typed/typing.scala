@@ -48,6 +48,9 @@ object typing {
 
     def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
       TypedObjectTypingResult(fields, stringMapWithValues[java.util.Map[_, _]](fields))
+
+    // For backward compatibility, to be removed once downstream projects switch to apply(fields: Map[String, TypingResult])
+    def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult = TypedObjectTypingResult(fields.toMap)
   }
 
   case class TypedObjectTypingResult(fields: Map[String, TypingResult],
