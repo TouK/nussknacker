@@ -20,9 +20,10 @@ import scala.util.Try
 
   def typeSpecificData: TypeSpecificData = {
     additionalFields.scenarioType match {
-      case "StreamMetaData" =>
-        StreamMetaData(additionalFields.properties)
-      case _ => ???
+      case "StreamMetaData" => StreamMetaData(additionalFields.properties)
+      case "LiteStreamMetaData" => LiteStreamMetaData(additionalFields.properties)
+      case "RequestResponseMetaData" => RequestResponseMetaData(additionalFields.properties)
+      case "FragmentSpecificData" => FragmentSpecificData(additionalFields.properties)
     }
   }
 
@@ -91,8 +92,10 @@ object MetaData {
             "useAsyncInterpretation" -> useAsyncInterpretation.map(_.toString).getOrElse(""),
             "checkpointIntervalInSeconds" -> checkpointIntervalInSeconds.map(_.toString).getOrElse(""),
           )
-        case LiteStreamMetaData(parallelism) => ???
-        case RequestResponseMetaData(slug) => ???
+        case LiteStreamMetaData(parallelism) =>
+          Map("parallelism" -> parallelism.map(_.toString).getOrElse(""))
+        case RequestResponseMetaData(slug) =>
+          Map("slug" -> slug.getOrElse(""))
       }
       case FragmentSpecificData(docsUrl) =>
         Map("docsUrl" -> docsUrl.getOrElse(""))
@@ -151,7 +154,25 @@ object StreamMetaData {
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
 case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData
 
+object LiteStreamMetaData {
+  private val parallelismName = "parallelism"
+
+  def apply(properties: Map[String, String]): LiteStreamMetaData = {
+    LiteStreamMetaData(
+      parallelism = properties.get(parallelismName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismName))
+    )
+  }
+}
+
 case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData
+
+object RequestResponseMetaData {
+  private val slugName = "slug"
+
+  def apply(properties: Map[String, String]): RequestResponseMetaData = {
+    RequestResponseMetaData(slug = properties.get(slugName))
+  }
+}
 
 case class ProcessAdditionalFields(description: Option[String],
                                    properties: Map[String, String],
@@ -159,11 +180,10 @@ case class ProcessAdditionalFields(description: Option[String],
 
   def typeSpecificProperties: TypeSpecificData = {
     scenarioType match {
-      case "StreamMetaData" => {
-        StreamMetaData(properties)
-      }
+      case "StreamMetaData" => StreamMetaData(properties)
+      case "LiteStreamMetaData" => LiteStreamMetaData(properties)
+      case "RequestResponseMetaData" => RequestResponseMetaData(properties)
       case "FragmentSpecificData" => FragmentSpecificData(properties)
-      case _ => ???
     }
   }
 
