@@ -34,7 +34,8 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpec
     emptyCanonical
   }
 
-  // TODO: new typespecific defaults based on config
+  // TODO: new typespecific defaults based on config - important for setting generated slug
+  // TODO: remove initialTypeSpeciifcData if this works correctly
   private def defaultAdditionalFields(processingType: ProcessingType, scenarioType: String): ProcessAdditionalFields = {
     ProcessAdditionalFields(None, properties = defaultProperties(processingType), scenarioType)
   }
