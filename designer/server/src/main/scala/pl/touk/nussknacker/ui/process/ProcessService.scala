@@ -110,15 +110,11 @@ class DBProcessService(deploymentService: DeploymentService,
       }
     }
 
-
-  // FIXME: How should look flow? Process -> archive -> delete?
   override def deleteProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
-    withProcess(processIdWithName) { process =>
-      withNotRunningProcessOrFragment(process, "Can't delete still running scenario.") { _ =>
-        dbioRunner.runInTransaction(
-          processRepository.deleteProcess(processIdWithName.id)
-        ).map(_ => ().asRight)
-      }
+    withArchivedProcess(processIdWithName, "Can't delete not archived scenario.") { process =>
+      dbioRunner.runInTransaction(
+        processRepository.deleteProcess(processIdWithName.id)
+      ).map(_ => ().asRight)
     }
 
   override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
@@ -281,6 +277,16 @@ class DBProcessService(deploymentService: DeploymentService,
     getProcess[Unit](processIdWithName).flatMap {
       case Left(err) => Future(Left(err))
       case Right(t) => callback(t)
+    }
+  }
+
+  private def withArchivedProcess[T](processIdWithName: ProcessIdWithName, errorMessage: String)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser): Future[XError[T]] = {
+    withProcess(processIdWithName) { process =>
+      if (process.isArchived) {
+        callback(process)
+      } else {
+        Future(Left(ProcessIllegalAction(errorMessage)))
+      }
     }
   }
 

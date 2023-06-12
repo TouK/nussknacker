@@ -48,12 +48,12 @@ object StateStatus {
   implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeString
     .contramap[StateStatus](_.name)
     .mapJson(nameJson => Json.fromFields(Seq("name" -> nameJson)))
-  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.at("name").map(NoParamStateStatus)
+  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.at("name").map(NoAttributesStateStatus)
 
   // Temporary methods to simplify status creation
-  def apply(statusName: StatusName): StateStatus = NoParamStateStatus(statusName)
+  def apply(statusName: StatusName): StateStatus = NoAttributesStateStatus(statusName)
 
-  def running(statusName: StatusName): StateStatus = new NoParamStateStatus(statusName) {
+  def running(statusName: StatusName): StateStatus = new NoAttributesStateStatus(statusName) {
     override def isRunning: Boolean = true
   }
 
@@ -66,7 +66,7 @@ trait StateStatus {
   def name: StatusName
 }
 
-case class NoParamStateStatus(name: StatusName) extends StateStatus {
+case class NoAttributesStateStatus(name: StatusName) extends StateStatus {
   override def toString: String = name
 }
 
