@@ -19,7 +19,7 @@ import scala.util.Try
   def isSubprocess: Boolean = typeSpecificData.isSubprocess
 
   def typeSpecificData: TypeSpecificData = {
-    additionalFields.scenarioType match {
+    additionalFields.metaDataType match {
       case "StreamMetaData" => StreamMetaData(additionalFields.properties)
       case "LiteStreamMetaData" => LiteStreamMetaData(additionalFields.properties)
       case "RequestResponseMetaData" => RequestResponseMetaData(additionalFields.properties)
@@ -51,9 +51,9 @@ object MetaData {
       additionalFields <- c.downField("additionalFields")
         .as[Option[ProcessAdditionalFields]](
           io.circe.Decoder.decodeOption(
-            legacyProcessAdditionalFieldsDecoder(typeSpecificData.scenarioType)
+            legacyProcessAdditionalFieldsDecoder(typeSpecificData.metaDataType)
           )
-        ).map(_.getOrElse(ProcessAdditionalFields.empty(typeSpecificData.scenarioType)))
+        ).map(_.getOrElse(ProcessAdditionalFields.empty(typeSpecificData.metaDataType)))
     } yield {
       MetaData(id, typeSpecificData, additionalFields)
     }
@@ -70,7 +70,7 @@ object MetaData {
   def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
     MetaData(
       id = id,
-      additionalFields = ProcessAdditionalFields.empty(typeSpecificData.scenarioType).copy(
+      additionalFields = ProcessAdditionalFields.empty(typeSpecificData.metaDataType).copy(
         properties = typeSpecificData.toMap
       ))
   }
@@ -102,7 +102,7 @@ object MetaData {
     }
   }
 
-  def scenarioType: String = {
+  def metaDataType: String = {
     this match {
       case _: StreamMetaData => "StreamMetaData"
       case _: LiteStreamMetaData => "LiteStreamMetaData"
@@ -176,14 +176,15 @@ object RequestResponseMetaData {
 
 case class ProcessAdditionalFields(description: Option[String],
                                    properties: Map[String, String],
-                                   scenarioType: String) {
+                                   metaDataType: String) {
 
   def typeSpecificProperties: TypeSpecificData = {
-    scenarioType match {
+    metaDataType match {
       case "StreamMetaData" => StreamMetaData(properties)
       case "LiteStreamMetaData" => LiteStreamMetaData(properties)
       case "RequestResponseMetaData" => RequestResponseMetaData(properties)
       case "FragmentSpecificData" => FragmentSpecificData(properties)
+      case _ => throw new IllegalStateException("Unrecognized metadata type.")
     }
   }
 
@@ -194,16 +195,16 @@ object ProcessAdditionalFields {
   //TODO: is this currently needed?
   private case class OptionalProcessAdditionalFields(description: Option[String],
                                                      properties: Option[Map[String, String]],
-                                                     scenarioType: String)
+                                                     metaDataType: String)
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.scenarioType))
+  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.metaDataType))
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
 
   // TODO: check if is needed
-  def empty(scenarioType: String): ProcessAdditionalFields = {
-    ProcessAdditionalFields(None, Map.empty, scenarioType)
+  def empty(metaDataType: String): ProcessAdditionalFields = {
+    ProcessAdditionalFields(None, Map.empty, metaDataType)
   }
 }
 

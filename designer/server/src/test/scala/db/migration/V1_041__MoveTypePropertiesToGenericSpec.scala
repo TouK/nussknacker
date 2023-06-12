@@ -41,7 +41,7 @@ class V1_041__MoveTypePropertiesToGenericSpec extends AnyFunSuite with Matchers 
        |         "useAsyncInterpretation" : "",
        |         "checkpointIntervalInSeconds" : "1000"
        |      },
-       |      "scenarioType": "StreamMetaData"
+       |      "metaDataType": "StreamMetaData"
        |    }
        |  },
        |  "nodes": [],
