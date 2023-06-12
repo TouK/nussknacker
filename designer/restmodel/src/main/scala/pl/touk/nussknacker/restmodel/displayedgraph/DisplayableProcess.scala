@@ -66,11 +66,11 @@ object ProcessProperties {
 
   def apply(typeSpecificProperties: TypeSpecificData,
             additionalFields: ProcessAdditionalFields): ProcessProperties = {
-    ProcessProperties(ProcessAdditionalFields(additionalFields.description, additionalFields.properties ++ typeSpecificProperties.toMap, typeSpecificProperties.scenarioType))
+    ProcessProperties(ProcessAdditionalFields(additionalFields.description, additionalFields.properties ++ typeSpecificProperties.toMap, typeSpecificProperties.metaDataType))
   }
 
   def apply(typeSpecificProperties: TypeSpecificData): ProcessProperties = {
-    ProcessProperties(typeSpecificProperties, ProcessAdditionalFields(None, typeSpecificProperties.toMap, typeSpecificProperties.scenarioType))
+    ProcessProperties(typeSpecificProperties, ProcessAdditionalFields(None, typeSpecificProperties.toMap, typeSpecificProperties.metaDataType))
   }
 
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =

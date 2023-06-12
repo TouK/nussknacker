@@ -293,7 +293,7 @@ object ProcessTestData {
 
     process.copy(
       properties = properties.copy(
-        additionalFields = additionalFields.getOrElse(ProcessAdditionalFields.empty(properties.additionalFields.scenarioType))
+        additionalFields = additionalFields.getOrElse(ProcessAdditionalFields.empty(properties.additionalFields.metaDataType))
       )
     )
   }
