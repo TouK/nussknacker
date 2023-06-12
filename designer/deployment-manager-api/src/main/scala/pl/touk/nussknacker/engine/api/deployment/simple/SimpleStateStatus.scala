@@ -59,19 +59,19 @@ object SimpleStateStatus {
 
   val NotDeployed: StateStatus = StateStatus("NOT_DEPLOYED")
   val DuringDeploy: StateStatus = StateStatus("DURING_DEPLOY")
-  val Running: StateStatus = StateStatus.running("RUNNING")
+  val Running: StateStatus = StateStatus("RUNNING")
   val Finished: StateStatus = StateStatus("FINISHED")
   val Restarting: StateStatus = StateStatus("RESTARTING")
   val DuringCancel: StateStatus = StateStatus("DURING_CANCEL")
   val Canceled: StateStatus = StateStatus("CANCELED")
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
-    case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Archive)
+    case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
     case SimpleStateStatus.DuringDeploy => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     case SimpleStateStatus.Running => List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy)
-    case SimpleStateStatus.Canceled => List(ProcessActionType.Deploy, ProcessActionType.Archive)
+    case SimpleStateStatus.Canceled => List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
     case SimpleStateStatus.Restarting => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-    case SimpleStateStatus.Finished => List(ProcessActionType.Deploy, ProcessActionType.Archive)
+    case SimpleStateStatus.Finished => List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
     case SimpleStateStatus.DuringCancel => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
     // When Failed - process is in terminal state in Flink and it doesn't require any cleanup in Flink, but in NK it does
     // - that's why Cancel action is available

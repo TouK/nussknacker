@@ -53,15 +53,9 @@ object StateStatus {
   // Temporary methods to simplify status creation
   def apply(statusName: StatusName): StateStatus = NoAttributesStateStatus(statusName)
 
-  def running(statusName: StatusName): StateStatus = new NoAttributesStateStatus(statusName) {
-    override def isRunning: Boolean = true
-  }
-
 }
 
 trait StateStatus {
-  // Is used to determine if scenario can be deleted or can have changed the name
-  def isRunning: Boolean = false
   // Status identifier, should be unique among all states registered within all processing types.
   def name: StatusName
 }

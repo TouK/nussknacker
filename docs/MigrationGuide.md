@@ -29,7 +29,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   There is separate `getProcessState` that returns `ProcessState` which is a status from engine resolved via `InconsistentStateDetector` and formatted with UI-related details.
   `PeriodicProcessEvent` uses `StatusDetails` instead of `ProcessState`.
   Constants defined in `ProblemStateStatus` are renamed to match UpperCamelCase formatting.
-* [#4350](https://github.com/TouK/nussknacker/pull/4350) `StateStatus.isDuringDeploy`, `StateStatus.isFinished`, `StateStatus.isFailed`, 
+* [#4350](https://github.com/TouK/nussknacker/pull/4350) `StateStatus.isDuringDeploy`, `StateStatus.isFinished`, `StateStatus.isFailed`, `StateStatus.isRunning`, 
   `ProcessState.isDeployed` methods were removed. Instead, you should compare status with specific status.
   
 ### Configuration changes

@@ -90,11 +90,20 @@ class DBProcessService(deploymentService: DeploymentService,
   override def archiveProcess(processIdWithName: ProcessIdWithName)(implicit user: LoggedUser): Future[EmptyResponse] =
     withNotArchivedProcess(processIdWithName, ProcessActionType.Archive) { process =>
       if (process.isSubprocess) {
-        archiveSubprocess(process)
+        doArchive(process)
       } else {
         // FIXME: This doesn't work correctly because concurrent request can change a state and double archive actions will be done.
         //        See ManagementResourcesConcurrentSpec and how DeploymentService handles it correctly for deploy and cancel
-        doOnProcessStateVerification(process, ProcessActionType.Archive)(doArchive)
+        doOnProcessStateVerification(process, ProcessActionType.Archive)(doArchive(process))
+      }
+    }
+
+  override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
+    withNotArchivedProcess(processIdWithName, "Can't rename archived scenario.") { process =>
+      if (process.isSubprocess) {
+        doRename(processIdWithName, name)
+      } else {
+        doOnProcessStateVerification(process, ProcessActionType.Rename)(doRename(processIdWithName, name))
       }
     }
 
@@ -115,20 +124,6 @@ class DBProcessService(deploymentService: DeploymentService,
       dbioRunner.runInTransaction(
         processRepository.deleteProcess(processIdWithName.id)
       ).map(_ => ().asRight)
-    }
-
-  override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
-    withNotArchivedProcess(processIdWithName, "Can't rename archived scenario.") { process =>
-      withNotRunningProcessOrFragment(process, "Can't change name still running scenario.") { _ =>
-        dbioRunner.runInTransaction(
-          processRepository
-            .renameProcess(processIdWithName, name)
-            .map {
-              case Right(_) => Right(UpdateProcessNameResponse.create(process.name, name.value))
-              case Left(value) => Left(value)
-            }
-        )
-      }
     }
 
   override def updateCategory(processIdWithName: ProcessIdWithName, category: String)(implicit user: LoggedUser): Future[XError[UpdateProcessCategoryResponse]] =
@@ -249,15 +244,12 @@ class DBProcessService(deploymentService: DeploymentService,
 
   }
 
-  private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =
-    doArchive(process)
-
-  private def doOnProcessStateVerification(process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(callback: BaseProcessDetails[_] => Future[EmptyResponse])
-                                          (implicit user: LoggedUser): Future[EmptyResponse] = {
+  private def doOnProcessStateVerification[T](process: BaseProcessDetails[_], actionToCheck: ProcessActionType)(callback: => Future[XError[T]])
+                                             (implicit user: LoggedUser): Future[XError[T]] = {
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     deploymentService.getProcessState(process).flatMap(state => {
       if (state.allowedActions.contains(actionToCheck)) {
-        callback(process)
+        callback
       } else {
         Future(Left(ProcessIllegalAction(actionToCheck, process.idWithName, state)))
       }
@@ -269,6 +261,17 @@ class DBProcessService(deploymentService: DeploymentService,
       processRepository.archive(processId = process.idWithName.id, isArchived = true),
       processActionRepository.markProcessAsArchived(processId = process.idWithName.id, process.processVersionId)
     )).map(_ => ().asRight)
+
+  private def doRename(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser) = {
+    dbioRunner.runInTransaction(
+      processRepository
+        .renameProcess(processIdWithName, name)
+        .map {
+          case Right(_) => Right(UpdateProcessNameResponse.create(processIdWithName.name.value, name.value))
+          case Left(value) => Left(value)
+        }
+    )
+  }
 
   private def toProcessResponse(processName: ProcessName, created: ProcessCreated): ProcessResponse =
     ProcessResponse(created.processId, created.processVersionId, processName)
@@ -308,23 +311,6 @@ class DBProcessService(deploymentService: DeploymentService,
         callback(process)
       }
     }
-
-  private def withNotRunningProcessOrFragment[T](process: BaseProcessDetails[_], errorMessage: String)(callback: BaseProcessDetails[_] => Future[XError[T]])(implicit user: LoggedUser) = {
-    if (process.isSubprocess) {
-      callback(process)
-    } else if (process.isDeployed) {
-      Future(Left(ProcessIllegalAction(errorMessage)))
-    } else {
-      implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
-      deploymentService.getProcessState(process).flatMap(ps => {
-        if (ps.status.isRunning) {
-          Future(Left(ProcessIllegalAction(errorMessage)))
-        } else {
-          callback(process)
-        }
-      })
-    }
-  }
 
   private def withProcessingType[T](category: String)(callback: ProcessingType => Future[Either[EspError, T]]): Future[Either[EspError, T]] =
     processCategoryService.getTypeForCategory(category) match {

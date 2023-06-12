@@ -21,14 +21,13 @@ object PeriodicStateStatus {
 
   case class ScheduledStatus(nextRunAt: LocalDateTime) extends StateStatus {
     override def name: StatusName = ScheduledStatus.name
-    override def isRunning: Boolean = true
   }
 
   case object ScheduledStatus {
     val name = "SCHEDULED"
   }
 
-  val WaitingForScheduleStatus: StateStatus = StateStatus.running("WAITING_FOR_SCHEDULE")
+  val WaitingForScheduleStatus: StateStatus = StateStatus("WAITING_FOR_SCHEDULE")
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case SimpleStateStatus.Running => List(ProcessActionType.Cancel) //periodic processes cannot be redeployed from GUI
