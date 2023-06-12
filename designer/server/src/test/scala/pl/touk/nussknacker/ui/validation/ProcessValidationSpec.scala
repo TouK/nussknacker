@@ -267,7 +267,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val process = validProcessWithFields(Map())
     val subprocess = process.copy(properties = process.properties.copy(
       additionalFields = process.properties.additionalFields.copy(
-        scenarioType = "FragmentSpecificData"
+        metaDataType = "FragmentSpecificData"
       )
     ))
 

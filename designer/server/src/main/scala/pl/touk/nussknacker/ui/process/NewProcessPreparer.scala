@@ -26,7 +26,7 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpec
       metaData = MetaData(
         id = processId,
         // TODO: pass initial typespecificdata to merge defaults
-        additionalFields = defaultAdditionalFields(processingType, typeSpecificData.scenarioType)
+        additionalFields = defaultAdditionalFields(processingType, typeSpecificData.metaDataType)
       ),
       nodes = List.empty,
       additionalBranches = List.empty
