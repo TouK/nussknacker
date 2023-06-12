@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.MandatoryParameterValidator
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
-import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
+import pl.touk.nussknacker.engine.management.{FlinkStreamingDeploymentManagerProvider, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicDeploymentManagerProvider
 import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
@@ -34,8 +34,7 @@ class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
       editor = None,
       validators = Some(List(MandatoryParameterValidator, CronParameterValidator.delegate)),
       label = None
-    )
-  )
+    )) ++ FlinkStreamingPropertiesConfig.properties
 
   override def name: String = "dev-periodic"
 

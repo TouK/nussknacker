@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntegerValidator, MandatoryParameterValidator, MinimalNumberValidator, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntegerValidator, MandatoryParameterValidator, MinimalNumberValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.cache.CachingProcessStateDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 
@@ -59,17 +59,22 @@ object FlinkStreamingPropertiesConfig {
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"))
 
-  private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
-    AdditionalPropertyConfig(
-      defaultValue = Some("true"),
-      editor = Some(BoolParameterEditor),
-      validators = None,
-      label = Some("Spill state to disk"))
+  private val spillStatePossibleValues = List(
+    FixedExpressionValue("", "Server default"),
+    FixedExpressionValue("false", "False"),
+    FixedExpressionValue("true", "True"))
 
   private val asyncPossibleValues = List(
     FixedExpressionValue("", "Server default"),
     FixedExpressionValue("false", "Synchronous"),
     FixedExpressionValue("true", "Asynchronous"))
+
+  private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
+    AdditionalPropertyConfig(
+      defaultValue = Some("true"),
+      editor = Some(FixedValuesParameterEditor(spillStatePossibleValues)),
+      validators = Some(List(FixedValuesValidator(spillStatePossibleValues))),
+      label = Some("Spill state to disk"))
 
   private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
     AdditionalPropertyConfig(
