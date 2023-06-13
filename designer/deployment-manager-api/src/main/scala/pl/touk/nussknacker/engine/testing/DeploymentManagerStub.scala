@@ -72,7 +72,7 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def name: String = "stub"
 
-  override def metaDataInitializer(config: Config): MetaDataInitializer = MetaDataInitializer("StreamMetaData")
+  override def metaDataInitializer(config: Config): MetaDataInitializer = FlinkStreamingPropertiesConfig.metaDataInitializer
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = FlinkStreamingPropertiesConfig.properties
 
@@ -82,25 +82,27 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 // TODO: Replace this class by a BaseDeploymentManagerProvider with default stubbed behavior
 object FlinkStreamingPropertiesConfig {
 
-  lazy val properties: Map[String, AdditionalPropertyConfig] =
-    Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
-
   private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
     AdditionalPropertyConfig(
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"))
 
-  private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
-    AdditionalPropertyConfig(
-      editor = Some(BoolParameterEditor),
-      validators = None,
-      label = Some("Spill state to disk"))
+  private val spillStatePossibleValues = List(
+    FixedExpressionValue("", "Server default"),
+    FixedExpressionValue("false", "False"),
+    FixedExpressionValue("true", "True"))
 
   private val asyncPossibleValues = List(
     FixedExpressionValue("", "Server default"),
     FixedExpressionValue("false", "Synchronous"),
     FixedExpressionValue("true", "Asynchronous"))
+
+  private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
+    AdditionalPropertyConfig(
+      editor = Some(FixedValuesParameterEditor(spillStatePossibleValues)),
+      validators = Some(List(FixedValuesValidator(spillStatePossibleValues))),
+      label = Some("Spill state to disk"))
 
   private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
     AdditionalPropertyConfig(
@@ -114,4 +116,12 @@ object FlinkStreamingPropertiesConfig {
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Checkpoint interval in seconds"))
 
+  val properties: Map[String, AdditionalPropertyConfig] =
+    Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
+
+  val metaDataInitializer: MetaDataInitializer = MetaDataInitializer(
+    metadataType = "StreamMetaData",
+    overridingProperties = Map(
+      "parallelism" -> "1",
+      "spillStateToDisk" -> "true"))
 }

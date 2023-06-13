@@ -30,7 +30,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   override def name: String = "flinkStreaming"
 
-  override def metaDataInitializer(config: Config): MetaDataInitializer = MetaDataInitializer("StreamMetaData", Map("parallelism" -> "1"))
+  override def metaDataInitializer(config: Config): MetaDataInitializer = FlinkStreamingPropertiesConfig.metaDataInitializer
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = FlinkStreamingPropertiesConfig.properties
 }
@@ -48,9 +48,6 @@ object FlinkStreamingDeploymentManagerProvider {
 
 
 object FlinkStreamingPropertiesConfig {
-
-  lazy val properties: Map[String, AdditionalPropertyConfig] =
-    Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
 
   private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
     AdditionalPropertyConfig(
@@ -85,5 +82,14 @@ object FlinkStreamingPropertiesConfig {
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Checkpoint interval in seconds"))
+
+  val properties: Map[String, AdditionalPropertyConfig] =
+    Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
+
+  val metaDataInitializer: MetaDataInitializer = MetaDataInitializer(
+    metadataType = "StreamMetaData",
+    overridingProperties = Map(
+      "parallelism" -> "1",
+      "spillStateToDisk" -> "true"))
 
 }
