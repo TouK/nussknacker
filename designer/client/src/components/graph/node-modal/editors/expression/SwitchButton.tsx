@@ -18,11 +18,11 @@ export const SwitchButton = styled(ButtonWithFocus)(({disabled, theme}) => ({
   justifyContent: "center",
 }))
 
-import {ReactComponent as CodeIcon} from "./icons/code.svg"
-import {ReactComponent as TextIcon} from "./icons/code_off.svg"
-import {ReactComponent as ListIcon} from "./icons/list.svg"
-import {ReactComponent as ScheduleIcon} from "./icons/schedule.svg"
-import {ReactComponent as DateIcon} from "./icons/date_range.svg"
+import CodeIcon from "./icons/code.svg"
+import TextIcon from "./icons/code_off.svg"
+import ListIcon from "./icons/list.svg"
+import ScheduleIcon from "./icons/schedule.svg"
+import DateIcon from "./icons/date_range.svg"
 
 function getTypeIcon(type: EditorType) {
   switch (type) {

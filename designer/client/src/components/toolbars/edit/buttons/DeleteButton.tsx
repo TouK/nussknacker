@@ -1,6 +1,6 @@
 import React from "react"
 import {useTranslation} from "react-i18next"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/delete.svg"
+import Icon from "../../../../assets/img/toolbarButtons/delete.svg"
 import {useSelectionActions} from "../../../graph/SelectionContextProvider"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {ToolbarButtonProps} from "../../types"

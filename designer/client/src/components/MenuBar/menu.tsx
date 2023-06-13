@@ -7,7 +7,7 @@ import { TruncatedList } from "react-truncate-list";
 import "react-truncate-list/dist/styles.css";
 import { css } from "@emotion/css";
 import { TabElement } from "./TabElement";
-import { ReactComponent as Arrow } from "../../assets/img/arrows/arrow-left.svg";
+import Arrow from "../../assets/img/arrows/arrow-left.svg";
 import { createPortal } from "react-dom";
 import { useIntersectionObserverRef, useKey } from "rooks";
 import FocusLock from "react-focus-lock";

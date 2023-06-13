@@ -1,8 +1,8 @@
 import {css, cx} from "@emotion/css"
 import React from "react"
 import {useNkTheme} from "../../containers/theme"
-import {ReactComponent as SearchSvg} from "../../assets/img/search.svg"
-import {ReactComponent as DeleteSvg} from "../../assets/img/toolbarButtons/delete.svg"
+import SearchSvg from "../../assets/img/search.svg"
+import DeleteSvg from "../../assets/img/toolbarButtons/delete.svg"
 
 const flex = css({
   width: 0, // edge 18. why? because! 🙃

@@ -8,7 +8,7 @@ import {NodeType} from "../../../types"
 import {ComponentIcon} from "../../toolbars/creator/ComponentIcon"
 import NodeUtils from "../NodeUtils"
 import ProcessUtils from "../../../common/ProcessUtils"
-import {ReactComponent as Icon} from "../../../assets/img/documentation.svg"
+import Icon from "../../../assets/img/documentation.svg"
 
 enum HeaderType {
   SUBTYPE_DOCS,

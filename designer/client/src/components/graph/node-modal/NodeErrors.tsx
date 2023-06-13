@@ -1,5 +1,5 @@
 import React from "react"
-import {ReactComponent as TipsError} from "../../../assets/img/icons/tipsError.svg"
+import TipsError from "../../../assets/img/icons/tipsError.svg"
 import NodeTip from "./NodeTip"
 import {css} from "@emotion/css"
 import {NodeValidationError} from "../../../types"

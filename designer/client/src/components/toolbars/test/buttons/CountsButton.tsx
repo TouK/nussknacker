@@ -1,7 +1,7 @@
 import React from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/counts.svg"
+import Icon from "../../../../assets/img/toolbarButtons/counts.svg"
 import {isSubprocess} from "../../../../reducers/selectors/graph"
 import {getFeatureSettings} from "../../../../reducers/selectors/settings"
 import {useWindows} from "../../../../windowManager"

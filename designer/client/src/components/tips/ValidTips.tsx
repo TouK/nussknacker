@@ -1,6 +1,6 @@
 import React from "react"
-import {ReactComponent as TestingMode} from "../../assets/img/icons/testingMode.svg"
-import {ReactComponent as TipsSuccess} from "../../assets/img/icons/tipsSuccess.svg"
+import TestingMode from "../../assets/img/icons/testingMode.svg"
+import TipsSuccess from "../../assets/img/icons/tipsSuccess.svg"
 
 import ValidTip from "./ValidTip"
 

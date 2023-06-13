@@ -1,6 +1,6 @@
 import React, { SyntheticEvent } from "react";
 import { v4 as uuid4 } from "uuid";
-import { ReactComponent as TipsError } from "../../assets/img/icons/tipsError.svg";
+import TipsError from "../../assets/img/icons/tipsError.svg";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import i18next from "i18next";
 import { concat, difference, isEmpty } from "lodash";

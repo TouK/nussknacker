@@ -4,7 +4,7 @@ import {useSelector} from "react-redux"
 import ProcessUtils from "../../../common/ProcessUtils"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {NodeType, ProcessDefinitionData} from "../../../types"
-import {ReactComponent as PropertiesSvg} from "../../../assets/img/properties.svg"
+import PropertiesSvg from "../../../assets/img/properties.svg"
 import ReactDOM from "react-dom"
 import {InlineSvg} from "../../SvgDiv"
 

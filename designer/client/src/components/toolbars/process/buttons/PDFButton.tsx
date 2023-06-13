@@ -6,7 +6,7 @@ import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {getProcessId, getProcessVersionId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
 import {useGraph} from "../../../graph/GraphContext"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/PDF.svg"
+import Icon from "../../../../assets/img/toolbarButtons/PDF.svg"
 import {ToolbarButtonProps} from "../../types"
 import HttpService from "../../../../http/HttpService"
 

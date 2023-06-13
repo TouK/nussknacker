@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { ReactComponent as Icon } from "../../../../assets/img/toolbarButtons/test-with-form.svg";
+import Icon from "../../../../assets/img/toolbarButtons/test-with-form.svg";
 import {
     getProcessId,
     getProcessToDisplay,

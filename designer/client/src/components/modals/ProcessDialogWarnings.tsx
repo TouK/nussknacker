@@ -1,7 +1,7 @@
 import {css} from "@emotion/css"
 import React from "react"
 import {useSelector} from "react-redux"
-import {ReactComponent as TipsWarning} from "../../assets/img/icons/tipsWarning.svg"
+import TipsWarning from "../../assets/img/icons/tipsWarning.svg"
 import {useNkTheme} from "../../containers/theme"
 import {hasWarnings} from "../../reducers/selectors/graph"
 import {IconWithLabel} from "../tips/IconWithLabel"

@@ -4,7 +4,7 @@ import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {zoomIn} from "../../../../actions/nk/zoom"
 import React from "react"
 import {useGraph} from "../../../graph/GraphContext"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/zoom-in.svg"
+import Icon from "../../../../assets/img/toolbarButtons/zoom-in.svg"
 import {ToolbarButtonProps} from "../../types"
 
 export function ZoomInButton(props: ToolbarButtonProps) {

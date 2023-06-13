@@ -4,7 +4,7 @@ import {layout} from "../../../../actions/nk/ui/layout"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {useTranslation} from "react-i18next"
 import {useGraph} from "../../../graph/GraphContext"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/layout.svg"
+import Icon from "../../../../assets/img/toolbarButtons/layout.svg"
 import {ToolbarButtonProps} from "../../types"
 
 function LayoutButton(props: ToolbarButtonProps) {

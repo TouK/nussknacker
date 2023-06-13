@@ -1,7 +1,7 @@
 import React from "react"
 import {useTranslation} from "react-i18next"
 import {NavLink} from "react-router-dom"
-import {ReactComponent as Nussknacker} from "../../assets/img/nussknacker-logo.svg"
+import Nussknacker from "../../assets/img/nussknacker-logo.svg"
 import {InstanceLogo} from "./instanceLogo"
 import ProcessBackButton from "../Process/ProcessBackButton"
 import {RootPath} from "../../containers/paths"

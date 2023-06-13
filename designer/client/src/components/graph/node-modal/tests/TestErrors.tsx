@@ -1,5 +1,5 @@
 import React from "react"
-import {ReactComponent as TipsWarning} from "../../../../assets/img/icons/tipsWarning.svg"
+import TipsWarning from "../../../../assets/img/icons/tipsWarning.svg"
 import NodeTip from "../NodeTip"
 import {useTestResults} from "../TestResultsWrapper"
 import {NodeTableBody} from "../NodeDetailsContent/NodeTable"

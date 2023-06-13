@@ -4,7 +4,7 @@ import {importFiles} from "../../../../actions/nk/importExport"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getProcessId} from "../../../../reducers/selectors/graph"
 import {useTranslation} from "react-i18next"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/import.svg"
+import Icon from "../../../../assets/img/toolbarButtons/import.svg"
 import {ToolbarButtonProps} from "../../types"
 
 type Props = ToolbarButtonProps

@@ -1,7 +1,7 @@
 import React, {useCallback} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/unarchive.svg"
+import Icon from "../../../../assets/img/toolbarButtons/unarchive.svg"
 import * as DialogMessages from "../../../../common/DialogMessages"
 import HttpService from "../../../../http/HttpService"
 import {getProcessId, isArchived} from "../../../../reducers/selectors/graph"

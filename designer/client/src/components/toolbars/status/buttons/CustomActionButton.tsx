@@ -1,7 +1,7 @@
 import React from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch} from "react-redux"
-import {ReactComponent as DefaultIcon} from "../../../../assets/img/toolbarButtons/custom_action.svg"
+import DefaultIcon from "../../../../assets/img/toolbarButtons/custom_action.svg"
 import {CustomAction} from "../../../../types"
 import {useWindows} from "../../../../windowManager"
 import {WindowKind} from "../../../../windowManager/WindowKind"

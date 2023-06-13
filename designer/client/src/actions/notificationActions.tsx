@@ -1,9 +1,9 @@
 import React from "react"
 import Notifications from "react-notification-system-redux"
 import {v4 as uuid4} from "uuid"
-import {ReactComponent as TipsError} from "../assets/img/icons/tipsError.svg"
-import {ReactComponent as TipsInfo} from "../assets/img/icons/tipsInfo.svg"
-import {ReactComponent as TipsSuccess} from "../assets/img/icons/tipsWarning.svg"
+import TipsError from "../assets/img/icons/tipsError.svg"
+import TipsInfo from "../assets/img/icons/tipsInfo.svg"
+import TipsSuccess from "../assets/img/icons/tipsWarning.svg"
 import Notification from "../components/notifications/Notification"
 import {Action} from "./reduxTypes"
 

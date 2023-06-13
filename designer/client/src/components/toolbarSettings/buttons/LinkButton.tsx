@@ -1,5 +1,5 @@
 import React from "react"
-import {ReactComponent as FallbackIcon} from "../../../assets/img/toolbarButtons/link.svg"
+import FallbackIcon from "../../../assets/img/toolbarButtons/link.svg"
 import {PlainStyleLink} from "../../../containers/plainStyleLink"
 import ToolbarButton from "../../toolbarComponents/ToolbarButton"
 import UrlIcon from "../../UrlIcon"

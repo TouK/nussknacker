@@ -1,7 +1,7 @@
 import React from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/compare.svg"
+import Icon from "../../../../assets/img/toolbarButtons/compare.svg"
 import {hasOneVersion} from "../../../../reducers/selectors/graph"
 import {useWindows} from "../../../../windowManager"
 import {WindowKind} from "../../../../windowManager/WindowKind"

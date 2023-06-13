@@ -1,7 +1,7 @@
 import React, {useCallback, useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/properties.svg"
+import Icon from "../../../../assets/img/toolbarButtons/properties.svg"
 import {
   getProcessToDisplay,
   getProcessUnsavedNewName,

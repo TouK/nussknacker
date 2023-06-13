@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import React from "react";
 import { Link } from "react-router-dom";
 import { v4 as uuid4 } from "uuid";
-import { ReactComponent as TipsWarning } from "../../assets/img/icons/tipsWarning.svg";
+import TipsWarning from "../../assets/img/icons/tipsWarning.svg";
 import NodeUtils from "../graph/NodeUtils";
 import { groupBy } from "lodash";
 

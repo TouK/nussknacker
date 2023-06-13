@@ -1,5 +1,5 @@
 import React, {PropsWithChildren, useState} from "react"
-import {ReactComponent as TipsInfo} from "../../../../assets/img/icons/tipsInfo.svg"
+import TipsInfo from "../../../../assets/img/icons/tipsInfo.svg"
 import NodeTip from "../NodeTip"
 import TestValue from "./TestValue"
 import {NodeResultsForContext} from "../../../../common/TestResultUtils"

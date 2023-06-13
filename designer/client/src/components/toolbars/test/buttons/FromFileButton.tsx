@@ -4,7 +4,7 @@ import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {getProcessId, getProcessToDisplay, getTestCapabilities} from "../../../../reducers/selectors/graph"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/from-file.svg"
+import Icon from "../../../../assets/img/toolbarButtons/from-file.svg"
 import {ToolbarButtonProps} from "../../types"
 import {testProcessFromFile} from "../../../../actions/nk/displayTestResults"
 

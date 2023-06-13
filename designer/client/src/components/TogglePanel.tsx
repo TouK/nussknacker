@@ -1,8 +1,8 @@
 import React from "react"
 import {useTranslation} from "react-i18next"
 import "../stylesheets/togglePanel.styl"
-import {ReactComponent as LeftIcon} from "../assets/img/arrows/arrow-left.svg"
-import {ReactComponent as RightIcon} from "../assets/img/arrows/arrow-right.svg"
+import LeftIcon from "../assets/img/arrows/arrow-left.svg"
+import RightIcon from "../assets/img/arrows/arrow-right.svg"
 import {cx} from "@emotion/css"
 
 interface Props {

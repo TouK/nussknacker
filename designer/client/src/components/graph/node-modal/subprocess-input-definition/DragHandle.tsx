@@ -1,7 +1,7 @@
 import {css, cx} from "@emotion/css"
 import React, {useCallback, useEffect, useState} from "react"
 import {DraggableProvidedDragHandleProps} from "react-beautiful-dnd"
-import {ReactComponent as Handlebars} from "../../../../assets/img/handlebars.svg"
+import Handlebars from "../../../../assets/img/handlebars.svg"
 import {useNkTheme} from "../../../../containers/theme"
 
 const grabbing = css({"*": {cursor: "grabbing !important"}})

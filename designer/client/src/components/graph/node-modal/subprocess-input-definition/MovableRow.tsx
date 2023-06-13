@@ -1,7 +1,7 @@
 import {css, cx} from "@emotion/css"
 import React, {PropsWithChildren, useRef} from "react"
 import {useDrag, useDrop} from "react-dnd"
-import {ReactComponent as Handlebars} from "../../../../assets/img/handlebars.svg"
+import Handlebars from "../../../../assets/img/handlebars.svg"
 
 const TYPE = "field"
 

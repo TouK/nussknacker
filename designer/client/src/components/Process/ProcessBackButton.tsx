@@ -1,6 +1,6 @@
 import React, {useMemo} from "react"
 import {ProcessLink} from "../../containers/processLink"
-import {ReactComponent as ProcessBackIcon} from "../../assets/img/arrows/back-process.svg"
+import ProcessBackIcon from "../../assets/img/arrows/back-process.svg"
 import {useTranslation} from "react-i18next"
 import styles from "./ProcessBackButton.styl"
 import {matchPath, useLocation} from "react-router-dom"

@@ -4,7 +4,7 @@ import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {hideRunProcessDetails} from "../../../../actions/nk/process"
 import {getShowRunProcessDetails} from "../../../../reducers/selectors/graph"
-import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/hide.svg"
+import Icon from "../../../../assets/img/toolbarButtons/hide.svg"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
 import {ToolbarButtonProps} from "../../types"
 

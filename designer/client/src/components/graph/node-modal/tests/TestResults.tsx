@@ -1,6 +1,6 @@
 import {isEmpty, isObject, join} from "lodash"
 import React from "react"
-import {ReactComponent as TipsInfo} from "../../../../assets/img/icons/tipsInfo.svg"
+import TipsInfo from "../../../../assets/img/icons/tipsInfo.svg"
 import NodeTip from "../NodeTip"
 import TestValue from "./TestValue"
 import {useTestResults} from "../TestResultsWrapper"

@@ -1,7 +1,7 @@
 import {isEmpty} from "lodash"
 import React, {ReactElement} from "react"
 import Dotdotdot from "react-dotdotdot"
-import {ReactComponent as TipsClose} from "../../assets/img/icons/tipsClose.svg"
+import TipsClose from "../../assets/img/icons/tipsClose.svg"
 import classnames from "./notifications.styl"
 
 interface Props {
