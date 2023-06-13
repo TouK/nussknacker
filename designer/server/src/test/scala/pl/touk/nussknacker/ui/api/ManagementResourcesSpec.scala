@@ -176,7 +176,6 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
         decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcess(processName) ~> check {
-            decodeDetails.lastStateAction should not be None
             decodeDetails.lastStateAction.exists(_.isCanceled) shouldBe  true
           }
         }
