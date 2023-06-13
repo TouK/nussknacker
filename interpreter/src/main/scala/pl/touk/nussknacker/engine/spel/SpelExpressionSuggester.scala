@@ -130,6 +130,7 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
                 }.toSet.map {
                   ExpressionSuggestion(_, Unknown, fromClass = false)
                 }
+              case _ => Nil
             }
           }
           Future.successful(r.getOrElse(Nil))
