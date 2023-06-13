@@ -369,7 +369,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   ).transform { case (_, modelData) =>
     ProcessingTypeData(new MockDeploymentManager,
       modelData,
-      MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()),
+      MockManagerProvider.metaDataInitializer(ConfigFactory.empty()),
       Map.empty,
       Nil,
       ProcessingTypeUsageStatistics(None, None))
@@ -445,7 +445,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     ).map { case (processingType, config) =>
       processingType -> ProcessingTypeData(new MockDeploymentManager,
         config,
-        MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()),
+        MockManagerProvider.metaDataInitializer(ConfigFactory.empty()),
         Map.empty,
         Nil,
         ProcessingTypeUsageStatistics(None, None))

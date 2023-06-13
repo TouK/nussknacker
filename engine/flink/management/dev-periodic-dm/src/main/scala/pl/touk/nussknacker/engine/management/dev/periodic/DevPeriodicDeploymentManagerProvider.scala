@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingT
 import pl.touk.nussknacker.engine.management.{FlinkStreamingDeploymentManagerProvider, FlinkStreamingPropertiesConfig}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicDeploymentManagerProvider
 import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,8 +24,7 @@ class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
       .createDeploymentManager(modelData, config)
   }
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData =
-    TypeSpecificInitialData(StreamMetaData(Some(1)))
+  override def metaDataInitializer(config: Config): MetaDataInitializer = MetaDataInitializer("StreamMetaData", Map("parallelism" -> "1"))
 
   // TODO: move it to PeriodicDeploymentManagerProvider with ability to override
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map(

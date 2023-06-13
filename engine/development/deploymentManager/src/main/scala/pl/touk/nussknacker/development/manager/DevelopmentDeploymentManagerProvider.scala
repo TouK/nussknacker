@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
 
 import java.util.UUID
@@ -185,7 +185,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
                                        sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
     new DevelopmentDeploymentManager(actorSystem)
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
+  override def metaDataInitializer(config: Config): MetaDataInitializer = MetaDataInitializer("StreamMetaData")
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
     Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None)) ++ FlinkStreamingPropertiesConfig.properties
