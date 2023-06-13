@@ -83,6 +83,6 @@ class InconsistentStateDetector {
   }
 
   protected def isFollowingDeployStatus(state: StatusDetails): Boolean = {
-    SimpleStateStatus.DefaultFollowingDeployStatus.contains(state.status)
+    SimpleStateStatus.DefaultFollowingDeployStatuses.contains(state.status)
   }
 }

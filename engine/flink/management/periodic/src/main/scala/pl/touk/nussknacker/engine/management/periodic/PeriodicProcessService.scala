@@ -124,7 +124,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   }
 
   private def isFollowingDeployStatus(state: StatusDetails): Boolean = {
-    SimpleStateStatus.DefaultFollowingDeployStatus.contains(state.status) ||
+    SimpleStateStatus.DefaultFollowingDeployStatuses.contains(state.status) ||
       state.status.name == PeriodicStateStatus.ScheduledStatus.name
   }
 
