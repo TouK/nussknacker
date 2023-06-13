@@ -24,7 +24,7 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[MetaData
       case (key, config) => (key, config.defaultValue.getOrElse(""))
     }
     val name = ProcessName(processId)
-    val initialMetadata = if(isSubprocess) MetaData(name.value, ProcessAdditionalFields(None, Map.empty, "FragmentSpecificData")) else creator.create(name, initialProperties)
+    val initialMetadata = if(isSubprocess) MetaData(name.value, ProcessAdditionalFields(None, Map("docsUrl" -> ""), "FragmentSpecificData")) else creator.create(name, initialProperties)
 
     val emptyCanonical = CanonicalProcess(
       metaData = initialMetadata,
