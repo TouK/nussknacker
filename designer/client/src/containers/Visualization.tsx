@@ -14,7 +14,7 @@ import { ProcessGraph as GraphEl } from "../components/graph/ProcessGraph";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ProcessUtils from "../common/ProcessUtils";
 import { useWindows } from "../windowManager";
-import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { parseWindowsQueryParams } from "../windowManager/useWindows";
 import NodeUtils from "../components/graph/NodeUtils";
 import { isEdgeEditable } from "../common/EdgeUtils";
@@ -27,7 +27,7 @@ import { clearProcess, loadProcessState } from "../actions/nk/process";
 import { fetchAndDisplayProcessCounts } from "../actions/nk/displayProcessCounts";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { DndProvider } from "react-dnd";
-import { VisualizationBasePath } from "./paths";
+import { useDecodedParams } from "../common/routerUtils";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -112,9 +112,7 @@ function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
 }
 
 function Visualization() {
-    const location = useLocation();
-    const re = new RegExp(`^${VisualizationBasePath}/(.*)$`);
-    const processId = decodeURIComponent(location.pathname.match(re)[1]);
+    const { id: processId } = useDecodedParams<{ id: string }>();
     const dispatch = useDispatch();
 
     const graphRef = useRef<Graph>();
