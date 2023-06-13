@@ -48,6 +48,9 @@ object TestFactory extends TestPermissions{
 
   val processValidation: ProcessValidation = ProcessTestData.processValidation.withSubprocessResolver(sampleResolver)
 
+  val flinkProcessValidation: ProcessValidation = ProcessTestData.processValidation.withSubprocessResolver(sampleResolver)
+    .withAdditionalPropertiesConfig(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties))
+
   val processResolving = new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
 
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
