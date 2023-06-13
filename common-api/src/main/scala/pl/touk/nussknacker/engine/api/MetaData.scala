@@ -40,9 +40,9 @@ object MetaData {
     def legacyProcessAdditionalFieldsDecoder(scenarioType: String): Decoder[ProcessAdditionalFields] =
       (c: HCursor) => for {
         id <- c.downField("description").as[Option[String]]
-        properties <- c.downField("properties").as[Map[String, String]]
+        properties <- c.downField("properties").as[Option[Map[String, String]]]
       } yield {
-        ProcessAdditionalFields(id, properties, scenarioType)
+        ProcessAdditionalFields(id, properties.getOrElse(Map.empty), scenarioType)
       }
 
     (c: HCursor) => for {
@@ -198,7 +198,7 @@ object ProcessAdditionalFields {
                                                      metaDataType: String)
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.metaDataType))
+  = deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.metaDataType))
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
 
@@ -227,7 +227,7 @@ object TypeSpecificUtils {
           // We allow for invalid values to be persisted. If we cannot convert a string to a desired type, we set it as
           // None in TypeSpecificData and store the invalid value in AdditionalFields.
           // TODO: Add logger or remove logging
-//          logger.debug(s"Could not convert property $propertyName with value \'$value\' to desired type.")
+          // logger.debug(s"Could not convert property $propertyName with value \'$value\' to desired type.")
           None
       }
       .get
