@@ -27,7 +27,7 @@ function prepareNotification(backendNotification: BackendNotification, dispatch:
                 dispatch(markBackendNotificationRead(backendNotification.id));
             },
         },
-        backendNotification.type
+        backendNotification.type,
     );
 }
 
@@ -59,8 +59,7 @@ export function Notifications(): JSX.Element {
 
     const refresh = useCallback(() => {
         const onlyUnreadPredicate = (be: BackendNotification) =>
-            !readNotifications.processedNotificationIds.includes(be.id) &&
-            !reactNotifications.map((k) => k.uid).includes(be.id);
+            !readNotifications.processedNotificationIds.includes(be.id) && !reactNotifications.map((k) => k.uid).includes(be.id);
 
         HttpService.loadBackendNotifications().then((notifications) => {
             dispatch(updateBackendNotifications(notifications.map((n) => n.id)));

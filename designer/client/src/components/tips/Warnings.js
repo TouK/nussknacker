@@ -31,9 +31,7 @@ export default class Warnings extends React.Component {
                                         key={uuid4()}
                                         className={"node-warning-link"}
                                         to={""}
-                                        onClick={(event) =>
-                                            showDetails(event, NodeUtils.getNodeById(warning.key, currentProcess))
-                                        }
+                                        onClick={(event) => showDetails(event, NodeUtils.getNodeById(warning.key, currentProcess))}
                                     >
                                         <span>{warning.key}</span>
                                         {index < warnings.length - 1 ? separator : null}

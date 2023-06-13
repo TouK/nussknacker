@@ -113,12 +113,12 @@ export function Menu(): JSX.Element {
                         tab={tab}
                     />
                 )),
-        [loggedUser, tabs]
+        [loggedUser, tabs],
     );
 
     const renderTruncator = useCallback(
         ({ hiddenItemsCount }) => <ExpandButton>{elements.slice(-hiddenItemsCount)}</ExpandButton>,
-        [elements]
+        [elements],
     );
 
     return <List renderTruncator={renderTruncator}>{elements}</List>;
