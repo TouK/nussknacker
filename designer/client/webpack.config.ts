@@ -33,12 +33,6 @@ const cssPreLoaders = [
     },
 ];
 
-const fileLoader = {
-    loader: "file-loader",
-    options: {
-        name: "assets/images/[name][hash].[ext]",
-    },
-};
 const outputPath = path.join(process.cwd(), "dist");
 
 const mode = isProd ? "production" : "development";
@@ -61,6 +55,7 @@ const config: Configuration = {
     output: {
         path: outputPath,
         filename: isProd ? "[contenthash].js" : "[name].js",
+        assetModuleFilename: "assets/images/[name][hash].[ext]",
     },
     devtool: isProd ? "hidden-source-map" : "eval-source-map",
     watchOptions: {
@@ -262,11 +257,11 @@ const config: Configuration = {
             },
             {
                 test: /\.(eot|ttf|woff|woff2)$/,
-                use: [fileLoader],
+                type: "asset/resource",
             },
             {
                 test: /\.(png|jpg)$/,
-                use: [fileLoader],
+                type: "asset/resource",
             },
             {
                 test: /\.svg$/,
@@ -280,6 +275,7 @@ const config: Configuration = {
                 oneOf: [
                     {
                         issuer: /\.[tj]sx?$/,
+                        type: "asset/resource",
                         use: [
                             "babel-loader",
                             {
@@ -288,11 +284,10 @@ const config: Configuration = {
                                     svgo: true,
                                 },
                             },
-                            fileLoader,
                         ],
                     },
                     {
-                        use: [fileLoader],
+                        type: "asset/resource",
                     },
                 ],
             },
