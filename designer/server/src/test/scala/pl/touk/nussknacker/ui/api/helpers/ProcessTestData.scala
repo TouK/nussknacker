@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
-import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
+import pl.touk.nussknacker.engine.{MetaDataInitializer, spel}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
@@ -300,6 +300,6 @@ object ProcessTestData {
 
   case class ProcessUsingSubprocess(process: CanonicalProcess, subprocess: CanonicalProcess)
 
-  val streamingTypeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(None))
+  val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer("StreamMetaData")
 
 }

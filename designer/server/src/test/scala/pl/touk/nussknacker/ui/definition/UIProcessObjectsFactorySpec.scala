@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, MetaDataInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -63,7 +63,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   private val mockDeploymentManager = new MockDeploymentManager
 
-  private val initialData = TypeSpecificInitialData.apply(StreamMetaData())
+  private val initialData = MetaDataInitializer("StreamMetadata")
 
   test("should read editor from annotations") {
     val model: ModelData = LocalModelData(ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"), new EmptyProcessConfigCreator() {
