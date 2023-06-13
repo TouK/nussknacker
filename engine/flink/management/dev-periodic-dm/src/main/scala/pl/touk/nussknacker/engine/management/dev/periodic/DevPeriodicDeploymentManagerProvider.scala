@@ -24,7 +24,7 @@ class DevPeriodicDeploymentManagerProvider extends DeploymentManagerProvider {
       .createDeploymentManager(modelData, config)
   }
 
-  override def metaDataInitializer(config: Config): MetaDataInitializer = MetaDataInitializer("StreamMetaData", Map("parallelism" -> "1"))
+  override def metaDataInitializer(config: Config): MetaDataInitializer = FlinkStreamingPropertiesConfig.metaDataInitializer
 
   // TODO: move it to PeriodicDeploymentManagerProvider with ability to override
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map(
