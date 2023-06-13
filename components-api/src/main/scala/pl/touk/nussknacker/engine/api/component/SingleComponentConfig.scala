@@ -60,7 +60,7 @@ object ParameterConfig {
   val empty: ParameterConfig = ParameterConfig(None, None, None, None)
 }
 
-@JsonCodec case class AdditionalPropertyConfig(defaultValue: Option[String],
+@JsonCodec case class AdditionalPropertyConfig(defaultValue: Option[String] = None,
                                                editor: Option[SimpleParameterEditor],
                                                validators: Option[List[ParameterValidator]],
                                                label: Option[String])
