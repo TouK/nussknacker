@@ -26,7 +26,7 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
     val additionalFields = metaData.additionalFields
     new ProcessMetaDataBuilder(metaData.copy(
       additionalFields = additionalFields.copy(
-        properties = additionalFields.properties ++ Map("useStateOnDisk" -> useStateOnDisk.toString)
+        properties = additionalFields.properties ++ Map("spillStateToDisk" -> useStateOnDisk.toString)
       )
     ))
   }
