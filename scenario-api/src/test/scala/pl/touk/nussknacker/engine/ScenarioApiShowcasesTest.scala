@@ -24,9 +24,14 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
     s"""{
        |  "metaData" : {
        |    "id" : "$scenarioId",
-       |    "typeSpecificData" : {
-       |      "spillStateToDisk" : true,
-       |      "type" : "StreamMetaData"
+       |    "additionalFields" : {
+       |      "properties" : {
+       |        "parallelism" : "",
+       |        "spillStateToDisk" : "true",
+       |        "useAsyncInterpretation" : "",
+       |        "checkpointIntervalInSeconds" : ""
+       |      },
+       |      "metaDataType" : "StreamMetaData"
        |    }
        |  },
        |  "nodes" : [
