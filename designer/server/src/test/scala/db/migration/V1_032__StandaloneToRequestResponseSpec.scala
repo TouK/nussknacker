@@ -11,7 +11,7 @@ class V1_032__StandaloneToRequestResponseSpec extends AnyFlatSpec with Matchers 
 
   private val id = "id1"
 
-  private def wrapEmptyProcess(typeSpecificData: String): Json = parse(
+  private def wrapEmptyScenario(typeSpecificData: String): Json = parse(
     s"""{
       |  "metaData": {
       |    "id": "$id",
@@ -24,15 +24,15 @@ class V1_032__StandaloneToRequestResponseSpec extends AnyFlatSpec with Matchers 
       |""".stripMargin
   )
 
-  private lazy val legacyStandaloneMetaData = wrapEmptyProcess {
+  private lazy val legacyStandaloneScenario = wrapEmptyScenario {
     s"""{
       |  "path": "/main",
-      |   "type": "StandaloneMetaData"
+      |  "type": "StandaloneMetaData"
       |}
       |""".stripMargin
   }
 
-  private lazy val streamMetaData = wrapEmptyProcess {
+  private lazy val streamScenario = wrapEmptyScenario {
     s"""{
       |  "parallelism": 2,
       |  "spillStateToDisk": true,
@@ -43,12 +43,20 @@ class V1_032__StandaloneToRequestResponseSpec extends AnyFlatSpec with Matchers 
       |""".stripMargin
   }
 
-  private lazy val requestResponseMetaData = wrapEmptyProcess {
+  private lazy val requestResponseScenario = wrapEmptyScenario {
     s"""{
       |  "path": "/main",
       |  "type": "RequestResponseMetaData"
       |}
       |""".stripMargin
+  }
+
+  private lazy val newRequestResponseScenario = wrapEmptyScenario {
+    s"""{
+       |  "slug": "/main",
+       |  "type": "RequestResponseMetaData"
+       |}
+       |""".stripMargin
   }
 
   private def parse(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Failed to decode")
@@ -59,8 +67,8 @@ class V1_032__StandaloneToRequestResponseSpec extends AnyFlatSpec with Matchers 
     // we need to apply both migrations because both has influence on shape of expected metadata
     val migrateMetadata = V1_032__StandaloneToRequestResponseDefinition.migrateMetadata _ andThen { o => o.flatMap(V1_033__RequestResponseUrlToSlug.migrateMetadata) }
     // TODO: write json manually
-    migrateMetadata(legacyStandaloneMetaData) shouldBe toJson(MetaData(id, RequestResponseMetaData(Some("/main"))))
-    migrateMetadata(requestResponseMetaData) shouldBe toJson(MetaData(id, RequestResponseMetaData(Some("/main"))))
-    migrateMetadata(streamMetaData) shouldBe toJson(MetaData(id, StreamMetaData(parallelism = Some(2))))
+    migrateMetadata(legacyStandaloneScenario).get shouldBe newRequestResponseScenario
+    migrateMetadata(requestResponseScenario).get shouldBe newRequestResponseScenario
+    migrateMetadata(streamScenario).get shouldBe streamScenario
   }
 }
