@@ -59,7 +59,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
       oldJob <- OptionT(checkOldJobStatus(processVersion))
       deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
       //when it's failed we don't need savepoint...
-      if Set(SimpleStateStatus.Running, SimpleStateStatus.DuringDeploy).contains(oldJob.status)
+      if SimpleStateStatus.DefaultFollowingDeployStatus.contains(oldJob.status)
       maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, deploymentId, canonicalProcess))
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")

@@ -65,6 +65,8 @@ object SimpleStateStatus {
   val DuringCancel: StateStatus = StateStatus("DURING_CANCEL")
   val Canceled: StateStatus = StateStatus("CANCELED")
 
+  val DefaultFollowingDeployStatus: Set[StateStatus] = Set(DuringDeploy, Running)
+
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
     case SimpleStateStatus.DuringDeploy => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
