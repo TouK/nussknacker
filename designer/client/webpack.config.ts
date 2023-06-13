@@ -55,7 +55,7 @@ const config: Configuration = {
     output: {
         path: outputPath,
         filename: isProd ? "[contenthash].js" : "[name].js",
-        assetModuleFilename: "assets/images/[name][hash].[ext]",
+        assetModuleFilename: "assets/images/[name][hash][ext]",
     },
     devtool: isProd ? "hidden-source-map" : "eval-source-map",
     watchOptions: {
@@ -70,7 +70,7 @@ const config: Configuration = {
             disableDotRule: true,
         },
         hot: true,
-        host: "0.0.0.0",
+        host: "::",
         allowedHosts: "all",
         headers: {
             "Access-Control-Allow-Credentials": "true",
@@ -167,12 +167,6 @@ const config: Configuration = {
             include: "allAssets",
             fileWhitelist: [/\.(woff2?|eot|ttf|otf)(\?.*)?$/i],
         }),
-        new PreloadWebpackPlugin({
-            rel: "preload",
-            as: "image",
-            include: "allAssets",
-            fileWhitelist: [/\.(svg)(\?.*)?$/i],
-        }),
         new webpack.ProvidePlugin({
             process: "process/browser",
         }),
@@ -264,31 +258,17 @@ const config: Configuration = {
                 type: "asset/resource",
             },
             {
-                test: /\.svg$/,
-                enforce: "pre",
-                exclude: /font/,
-                use: ["svg-transform-loader", "svgo-loader"],
-            },
-
-            {
-                test: /\.svg$/,
-                oneOf: [
+                test: /\.svg$/i,
+                issuer: /\.[tj]sx?$/,
+                use: [
+                    "babel-loader",
                     {
-                        issuer: /\.[tj]sx?$/,
-                        type: "asset/resource",
-                        use: [
-                            "babel-loader",
-                            {
-                                loader: "@svgr/webpack",
-                                options: {
-                                    svgo: true,
-                                },
-                            },
-                        ],
+                        loader: "@svgr/webpack",
+                        options: {
+                            babel: false,
+                        },
                     },
-                    {
-                        type: "asset/resource",
-                    },
+                    "svgo-loader",
                 ],
             },
         ],
