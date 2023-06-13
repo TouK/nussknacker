@@ -187,13 +187,20 @@ private class NuSpelNode(val spelNode: SpelNode, val parent: Option[NuSpelNodePa
     val allInPosition = (this :: children.flatMap(c => c.findNodeInPosition(position)))
       .filter(e => e.isInPosition(position))
     for {
-      shortest <- allInPosition.map(e => e.positionLength).minOption
-      last <- allInPosition.findLast(e => e.positionLength == shortest)
+      // scala 2.12 is missing minOption and findLast
+      shortest <- minOption(allInPosition.map(e => e.positionLength))
+      last <- allInPosition.reverse.find(e => e.positionLength == shortest)
     } yield last
   }
 
   def prevNode(): Option[NuSpelNode] = {
     parent.filter(_.nodeIndex > 0).map(p => p.node.children(p.nodeIndex - 1))
+  }
+
+  private def minOption(seq: Seq[Int]): Option[Int] = if(seq.isEmpty) {
+    None
+  } else {
+    Some(seq.min)
   }
 
   private def isInPosition(position: Int): Boolean = spelNode.getStartPosition <= position && position <= spelNode.getEndPosition
