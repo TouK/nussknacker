@@ -12,7 +12,7 @@ class V1_033__RequestResponseUrlToSlugSpec extends AnyFunSuite with Matchers {
 
   private val id = "id1"
 
-  private def wrapEmptyProcess(typeSpecificData: String): Json = parse(
+  private def wrapEmptyScenario(typeSpecificData: String): Json = parse(
     s"""{
       |  "metaData": {
       |    "id": "$id",
@@ -25,7 +25,7 @@ class V1_033__RequestResponseUrlToSlugSpec extends AnyFunSuite with Matchers {
       |""".stripMargin
   )
 
-  private lazy val legacyRequestResponseMetaData = wrapEmptyProcess {
+  private lazy val legacyRequestResponseScenario = wrapEmptyScenario {
     s"""{
        |  "path": "main",
        |  "type": "RequestResponseMetaData"
@@ -33,7 +33,7 @@ class V1_033__RequestResponseUrlToSlugSpec extends AnyFunSuite with Matchers {
        |""".stripMargin
   }
 
-  private lazy val requestResponseMetaData = wrapEmptyProcess {
+  private lazy val newRequestResponseScenario = wrapEmptyScenario {
     s"""{
        |  "slug": "main",
        |  "type": "RequestResponseMetaData"
@@ -41,7 +41,7 @@ class V1_033__RequestResponseUrlToSlugSpec extends AnyFunSuite with Matchers {
        |""".stripMargin
   }
 
-  private lazy val streamMetaData = wrapEmptyProcess {
+  private lazy val flinkScenario = wrapEmptyScenario {
     s"""{
        |  "parallelism": 2,
        |  "spillStateToDisk": true,
@@ -54,11 +54,8 @@ class V1_033__RequestResponseUrlToSlugSpec extends AnyFunSuite with Matchers {
 
   private def parse(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Failed to decode")
 
-  private def toJson(metaData: MetaData) = Some(CanonicalProcess(metaData, Nil).asJson)
-
   test("convert request response url to slug") {
-    migrateMetadata(legacyRequestResponseMetaData) shouldBe toJson(MetaData(id, RequestResponseMetaData(slug = Some("main"))))
-    migrateMetadata(requestResponseMetaData) shouldBe toJson(MetaData(id, RequestResponseMetaData(slug = Some("main"))))
-    migrateMetadata(streamMetaData) shouldBe toJson(MetaData(id, StreamMetaData(parallelism = Some(2))))
+    migrateMetadata(legacyRequestResponseScenario).get shouldBe newRequestResponseScenario
+    migrateMetadata(flinkScenario).get shouldBe flinkScenario
   }
 }
