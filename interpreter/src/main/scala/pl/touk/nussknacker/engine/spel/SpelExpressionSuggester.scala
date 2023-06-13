@@ -6,11 +6,11 @@ import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast.{Identifier, Indexer, Projection, PropertyOrFieldReference, QualifiedIdentifier, Selection, StringLiteral, TypeReference, VariableReference}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.dict.{DictQueryService, UiDictServices}
+import pl.touk.nussknacker.engine.api.dict.UiDictServices
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypedDict, TypedObjectTypingResult, TypedObjectWithValue, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
-import pl.touk.nussknacker.engine.dict.{LabelsDictTyper, SimpleDictRegistry}
+import pl.touk.nussknacker.engine.dict.LabelsDictTyper
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId

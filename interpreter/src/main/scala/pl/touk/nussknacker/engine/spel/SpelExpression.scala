@@ -220,7 +220,7 @@ object SpelExpressionParser extends LazyLogging {
       new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, classLoader)
     )
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
-    val validator = new SpelExpressionValidator(Typer.default(classLoader, expressionConfig, new LabelsDictTyper(dictRegistry), typeDefinitionSet))
+    val validator = new SpelExpressionValidator(Typer.default(classLoader, expressionConfig, new KeysDictTyper(dictRegistry), typeDefinitionSet))
     new SpelExpressionParser(parser, validator, dictRegistry, enableSpelForceCompile, flavour, evaluationContextPreparer)
   }
 
