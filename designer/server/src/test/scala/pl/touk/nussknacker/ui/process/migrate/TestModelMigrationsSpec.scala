@@ -126,7 +126,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
     val testMigration = new TestModelMigrations(
       mapProcessingTypeDataProvider(Streaming -> new TestMigrations(8)),
-      TestFactory.processValidation
+      TestFactory.flinkProcessValidation
     )
 
     val process =
