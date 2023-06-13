@@ -39,7 +39,7 @@
   `ProcessState` serialization uses this name as serialized state value. For compatibility reasons, it is still represented as a nested object with one `name` field.
 * [#4312](https://github.com/TouK/nussknacker/pull/4312) Fix for losing unsaved changes in designer after cancel/deploy
 * [#4332](https://github.com/TouK/nussknacker/pull/4332) Improvements: Don't fetch state for fragments at /api/processes/status
-* [#4326](https://github.com/TouK/nussknacker/pull/4326) Expressions validation mechanism now is accumulating as many errors as possible instead of failing fast - for purpose 
+* [#4326](https://github.com/TouK/nussknacker/pull/4326) Expressions validation mechanism now is accumulating as many errors as possible instead of failing fast - for purpose
   of backend code completion and dictionaries substitution
 * [#4339](https://github.com/TouK/nussknacker/pull/4339) Improvement: Don't fetch state for archived/unarchived scenario, return computed based on last state action
 * [#4343](https://github.com/TouK/nussknacker/pull/4343) Updated Flink 1.16.1 -> 1.16.2
