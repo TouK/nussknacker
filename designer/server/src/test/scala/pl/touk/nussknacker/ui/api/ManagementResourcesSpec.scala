@@ -123,7 +123,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> checkThatEventually {
       getProcess(processName) ~> check {
         val processDetails = responseAs[ProcessDetails]
-        processDetails.lastAction.exists(_.isDeployed) shouldBe true
+        processDetails.lastStateAction.exists(_.isDeployed) shouldBe true
       }
       cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))), comment = Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
@@ -164,7 +164,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       getProcess(processName) ~> check {
         val processDetails = responseAs[ProcessDetails]
         processDetails.lastStateAction shouldBe deployedWithVersions(1)
-        processDetails.lastAction.exists(_.isDeployed) shouldBe true
+        processDetails.lastStateAction.exists(_.isDeployed) shouldBe true
       }
     }
   }
@@ -178,7 +178,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcess(processName) ~> check {
             decodeDetails.lastStateAction should not be None
-            decodeDetails.lastAction.exists(_.isCanceled) shouldBe true
+            decodeDetails.lastStateAction.exists(_.isCanceled) shouldBe true
           }
         }
       }
