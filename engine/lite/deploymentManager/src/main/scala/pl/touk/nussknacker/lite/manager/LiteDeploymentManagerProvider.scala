@@ -14,14 +14,12 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
   private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
     AdditionalPropertyConfig(
-      defaultValue = Some("1"),
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"))
 
   private val slugConfig: (String, AdditionalPropertyConfig) = "slug" ->
     AdditionalPropertyConfig(
-      defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = None,
       label = Some("Slug")

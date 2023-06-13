@@ -33,24 +33,22 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpec
     emptyCanonical
   }
 
-  // TODO: new typespecific defaults based on config - important for setting generated slug
-  // TODO: remove initialTypeSpeciifcData if this works correctly
   private def defaultAdditionalFields(processingType: ProcessingType, typeSpecificData: TypeSpecificData): ProcessAdditionalFields = {
     ProcessAdditionalFields(None, properties = defaultProperties(processingType, typeSpecificData), typeSpecificData.metaDataType)
   }
 
   private def defaultProperties(processingType: ProcessingType,
                                 typeSpecificData: TypeSpecificData): Map[String, String] = {
-    val configOutsideProviderConfig: Map[String, String] = typeSpecificData match {
-      case data: ScenarioSpecificData =>
-        data match {
-          case RequestResponseMetaData(_) => typeSpecificData.toMap
-          case _ => Map.empty
-        }
+    val configOutsideProviderConfig = typeSpecificData.toMap
+    typeSpecificData match {
+      case _: ScenarioSpecificData => {
+        val configFromConfigProvider = additionalFields.forTypeUnsafe(processingType).map(s => s._1 -> s._2.defaultValue.getOrElse(""))
+        // We overwrite defaults from additionalPropertiesConfig by typeSpecificInitialData
+        configFromConfigProvider ++ configOutsideProviderConfig
+      }
+      // We don't add additional properties to fragments
       case FragmentSpecificData(_) => typeSpecificData.toMap
     }
-    val configFromConfigProvider = additionalFields.forTypeUnsafe(processingType).map(s => s._1 -> s._2.defaultValue.getOrElse(""))
-    configFromConfigProvider ++ configOutsideProviderConfig
   }
 
 }
