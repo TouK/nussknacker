@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process
 import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -25,7 +25,7 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpec
     val emptyCanonical = CanonicalProcess(
       metaData = MetaData(
         id = processId,
-        additionalFields = defaultAdditionalFields(processingType, typeSpecificData.metaDataType)
+        additionalFields = defaultAdditionalFields(processingType, typeSpecificData)
       ),
       nodes = List.empty,
       additionalBranches = List.empty
@@ -35,10 +35,47 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpec
 
   // TODO: new typespecific defaults based on config - important for setting generated slug
   // TODO: remove initialTypeSpeciifcData if this works correctly
-  private def defaultAdditionalFields(processingType: ProcessingType, scenarioType: String): ProcessAdditionalFields = {
-    ProcessAdditionalFields(None, properties = defaultProperties(processingType), scenarioType)
+  private def defaultAdditionalFields(processingType: ProcessingType, typeSpecificData: TypeSpecificData): ProcessAdditionalFields = {
+    ProcessAdditionalFields(None, properties = defaultProperties(processingType, typeSpecificData), typeSpecificData.metaDataType)
   }
 
-  private def defaultProperties(processingType: ProcessingType): Map[String, String] = additionalFields.forTypeUnsafe(processingType)
-    .collect { case (name, parameterConfig) if parameterConfig.defaultValue.isDefined => name -> parameterConfig.defaultValue.get }
+  private def defaultProperties(processingType: ProcessingType,
+                                typeSpecificData: TypeSpecificData): Map[String, String] = {
+    // TODO: check if this is correct handling of fragments
+    if (typeSpecificData.isSubprocess) {
+      return typeSpecificData.toMap
+    }
+
+    val additionalFieldsConfig = additionalFields.forTypeUnsafe(processingType)
+
+    validateRequiredConfigPresent(typeSpecificData, additionalFieldsConfig)
+
+    additionalFieldsConfig.collect {
+      case (name, parameterConfig) if !typeSpecificData.toMap.contains(name) =>
+        name -> parameterConfig.defaultValue.getOrElse("")
+      case (name, parameterConfig) if typeSpecificData.toMap.contains(name) =>
+        val typeSpecificDefault = typeSpecificData.toMap(name)
+        val parameterDefault = parameterConfig.defaultValue
+        // In case when the parameter default is None, we get the default from type specific initial data. This is necessary
+        // when defaults are dynamic - for example slug in request-response
+        if (parameterDefault.isDefined && parameterDefault.get != typeSpecificDefault) {
+          throw new IllegalStateException(
+            s"""Property with name: $name has inconsistent default configuration. For properties that are also present
+               | in TypeSpecificData the defaults have to match. The default value for property was: ${parameterDefault.get}
+               | and for corresponding property in TypeSpecificData was ${typeSpecificDefault}""".stripMargin)
+        }
+        name -> typeSpecificDefault
+    }
+  }
+
+  private def validateRequiredConfigPresent(typeSpecificData: TypeSpecificData,
+                                            propertyConfig: Map[String, AdditionalPropertyConfig]): Unit = {
+    typeSpecificData.toMap.collect {
+      case (key, _) if !propertyConfig.contains(key) =>
+        throw new IllegalStateException(
+          s"""Configuration for property with name: $key is not present. Type specific properties have to have explicit
+             | configuration (AdditionalPropertyConfig)""".stripMargin
+        )
+    }
+  }
 }
