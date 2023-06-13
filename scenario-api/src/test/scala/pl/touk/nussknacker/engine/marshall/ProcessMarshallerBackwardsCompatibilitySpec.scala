@@ -36,7 +36,7 @@ class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Match
       |         "useAsyncInterpretation" : "",
       |         "checkpointIntervalInSeconds" : "11"
       |       },
-      |       "scenarioType": "StreamMetaData"
+      |       "metaDataType": "StreamMetaData"
       |    }
       |  },
       |  "nodes" : [
