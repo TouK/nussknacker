@@ -40,6 +40,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
 import pl.touk.nussknacker.ui.statistics.{UsageStatisticsReportsSettings, UsageStatisticsReportsSettingsDeterminer}
+import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -197,7 +198,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           subprocessRepository,
           typeToConfig.mapValues(_.modelData),
           processValidation,
-          typeToConfig.mapValues(v => new ExpressionSuggester(v.modelData.modelDefinition.expressionConfig, v.modelData.modelDefinitionWithTypes.typeDefinitions, v.modelData.uiDictServices.dictQueryService, v.modelData.modelClassLoader.classLoader))
+          typeToConfig.mapValues(v => ExpressionSuggester(v.modelData))
         ),
         new ProcessesExportResources(futureProcessRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, futureProcessRepository, processAuthorizer),

@@ -3,21 +3,22 @@ package pl.touk.nussknacker.ui.api
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.TypeDefinitionSet
-import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
-import pl.touk.nussknacker.engine.api.dict.DictInstance
-import pl.touk.nussknacker.engine.api.dict.embedded.{EmbeddedDictDefinition, SimpleDictDefinition}
+import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
+import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter}
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, StaticMethodInfo}
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.types.EspTypeUtils
 import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.types.EspTypeUtils
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
 
 import java.time.{Duration, LocalDateTime}
+import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
@@ -54,10 +55,11 @@ class Util {
 class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
   implicit val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
 
-  private val dictService =  new SimpleDictQueryService(new SimpleDictRegistry(Map(
+  private val dictRegistry = new SimpleDictRegistry(Map(
     "dictFoo" -> EmbeddedDictDefinition(Map("one" -> "One", "two" -> "Two")),
     "dictBar" -> EmbeddedDictDefinition(Map("sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots")),
-  )), 10)
+  ))
+  private val dictServices =  UiDictServices(dictRegistry,new SimpleDictQueryService(dictRegistry, 10))
 
   private val clazzDefinitions: TypeDefinitionSet = TypeDefinitionSet(Set(
     EspTypeUtils.clazzDefinition(classOf[A]),
@@ -84,7 +86,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     ),
   ))
   private val expressionSuggester = new ExpressionSuggester(
-    ProcessDefinitionBuilder.empty.expressionConfig.copy(staticMethodInvocationsChecking = true), clazzDefinitions, dictService, getClass.getClassLoader)
+    ProcessDefinitionBuilder.empty.expressionConfig.copy(staticMethodInvocationsChecking = true), clazzDefinitions, dictServices, getClass.getClassLoader)
 
   private val variables: Map[String, TypingResult] = Map(
     "input" -> Typed[A],
@@ -322,6 +324,36 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     )
   }
 
+  test("should suggest #this in list projection") {
+    suggestionsFor("#listVar.listField.![#thi]", 0, "#listVar.listField.![#thi".length) shouldBe List(
+      suggestion("#this", Typed[A]),
+    )
+  }
+
+  test("should suggest #this in list selection") {
+    suggestionsFor("#listVar.listField.?[#thi]", 0, "#listVar.listField.?[#thi".length) shouldBe List(
+      suggestion("#this", Typed[A]),
+    )
+  }
+
+  test("should suggest #this in literal list projection") {
+    suggestionsFor("{1,2,3}.![#thi]", 0, "{1,2,3}.![#thi".length) shouldBe List(
+      suggestion("#this", Typed[Int]),
+    )
+  }
+
+  test("should suggest #this in literal list selection") {
+    suggestionsFor("{1,2,3}.?[#thi]", 0, "{1,2,3}.?[#thi".length) shouldBe List(
+      suggestion("#this", Typed[Int]),
+    )
+  }
+
+  test("should suggest #this in map selection") {
+    suggestionsFor("{abc: 1, def: 'xyz'}.![#this]", 0, "{abc: 1, def: 'xyz'}.![#this".length) shouldBe List(
+      suggestion("#this", TypedObjectTypingResult(ListMap("key" -> Typed[String], "value" -> Unknown))),
+    )
+  }
+
   test("should suggest #this fields in simple projection") {
     suggestionsFor("#listVar.listField.![#this.f]", 0, "#listVar.listField.![#this.f".length) shouldBe List(
       suggestion("foo", Typed[A]),
@@ -385,6 +417,28 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   test("should support type reference and suggest static fields") {
     suggestionsFor("T(java.time.Duration).z") shouldBe List(
       suggestion("ZERO", Typed[Duration]),
+    )
+  }
+
+  test("should suggest class package for type reference") {
+    suggestionsFor("T(j)", 0, "T(j".length) shouldBe List(
+      suggestion("java", Unknown),
+    )
+    suggestionsFor("T(java.t)", 0, "T(java.t".length) shouldBe List(
+      suggestion("time", Unknown),
+    )
+  }
+
+  test("should suggest classes for type reference") {
+    suggestionsFor("T(java.time.)", 0, "T(java.time.".length) shouldBe List(
+      suggestion("Duration", Unknown),
+      suggestion("LocalDateTime", Unknown),
+    )
+  }
+
+  test("should filter suggestions for type reference") {
+    suggestionsFor("T(java.time.D)", 0, "T(java.time.D".length) shouldBe List(
+      suggestion("Duration", Unknown),
     )
   }
 

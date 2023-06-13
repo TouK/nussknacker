@@ -825,6 +825,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .evaluateSync[java.util.List[Any]]() shouldBe List(1).asJava
   }
 
+  test("allow selection/projection on maps with #this") {
+    parse[java.util.Map[String, Any]]("{a:1}.?[#this.key=='']", ctx).validExpression
+      .evaluateSync[java.util.Map[String, Any]]() shouldBe Map().asJava
+    parse[java.util.Map[String, Any]]("{a:1}.?[#this.value==1]", ctx).validExpression
+      .evaluateSync[java.util.Map[String, Any]]() shouldBe Map("a" -> 1).asJava
+
+    parse[java.util.List[String]]("{a:1}.![#this.key]", ctx).validExpression
+      .evaluateSync[java.util.List[String]]() shouldBe List("a").asJava
+    parse[java.util.List[Any]]("{a:1}.![#this.value]", ctx).validExpression
+      .evaluateSync[java.util.List[Any]]() shouldBe List(1).asJava
+  }
+
   test("invokes methods on primitives correctly") {
     def invokeAndCheck[T:TypeTag](expr: String, result: T): Unit = {
       val parsed = parse[T](expr).validExpression
