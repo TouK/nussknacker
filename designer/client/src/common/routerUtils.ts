@@ -6,12 +6,12 @@ export const useDecodedParams: typeof useParams = () => {
     const { matches } = useContext(UNSAFE_RouteContext);
     const match = matches[matches.length - 1];
     return useMemo(() => {
-        const pathParts = location.pathname.replace(/^\//, "").replace(/\/$/, "").split("/").map(decodeURIComponent);
+        const pathParts = location.pathname.replace(/^\//, "").replace(/\/$/, "").split("/");
         const templateParts = match.route.path.replace(/^\//, "").replace(/\/$/, "").split("/");
         return Object.fromEntries(
             templateParts
                 .map((v, index) => {
-                    if (v.startsWith(":")) return [v.substring(1), pathParts[index]];
+                    if (v.startsWith(":")) return [v.substring(1), decodeURIComponent(pathParts[index])];
                     if (v === "*") return [v, pathParts.slice(index).join("/")];
                 })
                 .filter(Boolean),
