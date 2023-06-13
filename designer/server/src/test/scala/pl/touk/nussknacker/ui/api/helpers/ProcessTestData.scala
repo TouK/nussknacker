@@ -265,7 +265,7 @@ object ProcessTestData {
   def createEmptyUpdateProcessCommand(processName: ProcessName, comment: Option[UpdateProcessComment]): UpdateProcessCommand = {
     val displayableProcess = DisplayableProcess(
       id = processName.value,
-      properties = ProcessProperties(StreamMetaData()),
+      properties = ProcessProperties(StreamMetaData(Some(1))),
       nodes = List.empty,
       edges = List.empty,
       processingType = TestProcessingTypes.Streaming,
