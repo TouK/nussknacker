@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingT
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -48,7 +48,7 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
     )
   }
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = delegate.typeSpecificInitialData(config)
+  override def metaDataInitializer(config: Config): MetaDataInitializer = delegate.metaDataInitializer(config)
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = delegate.additionalPropertiesConfig(config)
 }

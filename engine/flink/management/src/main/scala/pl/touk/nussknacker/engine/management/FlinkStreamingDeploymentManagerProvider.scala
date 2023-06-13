@@ -30,7 +30,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   override def name: String = "flinkStreaming"
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(Some(1)))
+  override def metaDataInitializer(config: Config): MetaDataInitializer = MetaDataInitializer("StreamMetaData", Map("parallelism" -> "1"))
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = FlinkStreamingPropertiesConfig.properties
 }
