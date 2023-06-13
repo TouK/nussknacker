@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.definition.{SubprocessComponentDefinitionExtra
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{ModelData, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{ModelData, MetaDataInitializer}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
@@ -30,7 +30,7 @@ object UIProcessObjectsFactory {
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               deploymentManager: DeploymentManager,
-                              typeSpecificInitialData: TypeSpecificInitialData,
+                              metaDataInitializer: MetaDataInitializer,
                               user: LoggedUser,
                               subprocessesDetails: Set[SubprocessDetails],
                               isSubprocess: Boolean,
@@ -42,7 +42,7 @@ object UIProcessObjectsFactory {
     val toStaticObjectDefinitionTransformer = new ToStaticObjectDefinitionTransformer(
       ExpressionCompiler.withoutOptimization(modelDataForType),
       modelDataForType.modelDefinition.expressionConfig,
-      typeSpecificInitialData.forScenario(_, processingType))
+      metaDataInitializer.create(_ , Map.empty))
 
     val processDefinition: ProcessDefinition[ObjectDefinition] = {
       // We have to wrap this block with model's class loader because it invokes node compilation under the hood
