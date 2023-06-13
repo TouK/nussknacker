@@ -115,9 +115,8 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
-    processDetails.lastStateAction should not be None
     processDetails.lastStateAction.exists(_.isCanceled) shouldBe true
-    processDetails.lastDeployedAction should be(None)
+    processDetails.lastDeployedAction shouldBe None
     //one for deploy, one for cancel
     activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
   }
@@ -185,7 +184,6 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
-    processDetails.lastStateAction should not be None
     processDetails.lastStateAction.exists(_.isCanceled) shouldBe true
     processDetails.history.head.actions.map(_.action) should be(List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
@@ -201,7 +199,6 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
-    processDetails.lastStateAction should not be None
     processDetails.lastStateAction.exists(_.isCanceled) shouldBe true
     processDetails.history.head.actions.map(_.action) should be(List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
@@ -359,7 +356,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
     processDetails.lastStateAction shouldBe None
-    processDetails.lastStateAction shouldBe empty
+    processDetails.lastAction shouldBe None
   }
 
   test("Should return not deployed status for process with not found state - not deployed state") {
@@ -373,7 +370,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
     processDetails.lastStateAction shouldBe None
-    processDetails.lastStateAction shouldBe empty
+    processDetails.lastAction shouldBe None
   }
 
   test("Should return not deployed status for process without actions and with state (it should never happen) ") {
@@ -387,7 +384,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
     processDetails.lastStateAction shouldBe None
-    processDetails.lastStateAction shouldBe empty
+    processDetails.lastAction shouldBe None
   }
 
   test("Should return not deployed state for archived never deployed process") {
