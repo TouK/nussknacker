@@ -6,17 +6,18 @@ import pl.touk.nussknacker.engine.api.definition.{LiteralIntegerValidator, Minim
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
-import pl.touk.nussknacker.engine.{DeploymentManagerProvider, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{DeploymentManagerProvider, MetaDataInitializer}
 
 trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  private val streamingInitialMetaData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
+  private val streamingInitialMetaData = MetaDataInitializer("LiteStreamMetaData", Map("parallelism" -> "1"))
 
   private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
     AdditionalPropertyConfig(
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
-      label = Some("Parallelism"))
+      label = Some("Parallelism")
+    )
 
   private val slugConfig: (String, AdditionalPropertyConfig) = "slug" ->
     AdditionalPropertyConfig(
@@ -28,11 +29,12 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
   private val liteStreamProperties = Map(parallelismConfig)
   private val requestResponseProperties = RequestResponseOpenApiSettings.additionalPropertiesConfig ++ Map(slugConfig)
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = {
+  override def metaDataInitializer(config: Config): MetaDataInitializer = {
     forMode(config)(
       streamingInitialMetaData,
-      (scenarioName: ProcessName, _: String) => RequestResponseMetaData(Some(defaultRequestResponseSlug(scenarioName, config)))
+      MetaDataInitializer("RequestResponseMetaData", scenarioName => Map("slug" -> defaultRequestResponseSlug(scenarioName, config)))
     )
+
   }
 
   protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String
