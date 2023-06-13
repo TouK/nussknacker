@@ -89,7 +89,7 @@ object ScenarioBuilder {
     new ProcessMetaDataBuilder(MetaData(id, LiteStreamMetaData()))
 
   def requestResponse(id: String) =
-    new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(None)))
+    new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(Some(id))))
 
   def requestResponse(id: String, slug: String) =
     new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(Some(slug))))

@@ -265,7 +265,7 @@ object ProcessTestData {
   def createEmptyUpdateProcessCommand(processName: ProcessName, comment: Option[UpdateProcessComment]): UpdateProcessCommand = {
     val displayableProcess = DisplayableProcess(
       id = processName.value,
-      properties = ProcessProperties(StreamMetaData(Some(1))),
+      properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
       nodes = List.empty,
       edges = List.empty,
       processingType = TestProcessingTypes.Streaming,
@@ -300,6 +300,9 @@ object ProcessTestData {
 
   case class ProcessUsingSubprocess(process: CanonicalProcess, subprocess: CanonicalProcess)
 
-  val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer("StreamMetaData")
+  val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer("StreamMetaData", Map(
+    "parallelism" -> "1",
+    "spillStateToDisk" -> "true")
+  )
 
 }

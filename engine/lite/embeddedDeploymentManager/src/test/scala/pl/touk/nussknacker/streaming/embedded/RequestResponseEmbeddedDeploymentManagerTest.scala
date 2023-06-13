@@ -77,7 +77,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
         |""".stripMargin
 
     val scenario = ScenarioBuilder
-      .requestResponse(name.value)
+      .requestResponse(name.value, name.value)
       .additionalFields(properties = Map(
         "inputSchema" -> inputSchema,
         "outputSchema" -> outputSchema
