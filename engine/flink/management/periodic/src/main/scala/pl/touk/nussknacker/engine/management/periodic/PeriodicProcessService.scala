@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, FailedOnDeploy, PeriodicProcessDeploymentStatus, RetryingDeploy}
@@ -115,11 +116,16 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   //Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
   private def checkIfNotRunning(toDeploy: PeriodicProcessDeployment): Future[Option[PeriodicProcessDeployment]] = {
     delegateDeploymentManager.getProcessState(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh).map(_.value).map {
-      case Some(state) if state.status.isRunning || state.status.isDuringDeploy =>
+      case Some(state) if isFollowingDeployStatus(state) =>
         logger.debug(s"Deferring run of ${toDeploy.display} as scenario is currently running")
         None
       case _ => Some(toDeploy)
     }
+  }
+
+  private def isFollowingDeployStatus(state: StatusDetails): Boolean = {
+    SimpleStateStatus.DefaultFollowingDeployStatuses.contains(state.status) ||
+      state.status.name == PeriodicStateStatus.ScheduledStatus.name
   }
 
   def handleFinished: Future[Unit] = {
@@ -147,8 +153,8 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
       def needsReschedule(value: Boolean): RepositoryAction[NeedsReschedule] = a.map(_ => value)
     }
     processState match {
-      case Some(js) if js.status.isFailed => markFailedAction(deployedProcess, processState).needsReschedule(executionConfig.rescheduleOnFailure)
-      case Some(js) if js.status.isFinished => markFinished(deployedProcess, processState).needsReschedule(value = true)
+      case Some(js) if ProblemStateStatus.isProblemStatus(js.status) => markFailedAction(deployedProcess, processState).needsReschedule(executionConfig.rescheduleOnFailure)
+      case Some(js) if js.status == SimpleStateStatus.Finished => markFinished(deployedProcess, processState).needsReschedule(value = true)
       case None if deployedProcess.state.status == Deployed => markFinished(deployedProcess, processState).needsReschedule(value = true)
       case _ => scheduledProcessesRepository.monad.pure(()).needsReschedule(value = false)
     }
@@ -340,8 +346,8 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
 
     delegateState match {
       // Scheduled again or waiting to be scheduled again.
-      case state@Some(js) if js.status.isFinished => handleScheduled(state)
-      case state@Some(js) if js.status.isFailed => handleFailed(state)
+      case state@Some(js) if js.status == SimpleStateStatus.Finished => handleScheduled(state)
+      case state@Some(js) if ProblemStateStatus.isProblemStatus(js.status) => handleFailed(state)
       // Job was previously canceled and it still exists on Flink but a new periodic job can be already scheduled.
       case state@Some(js) if js.status == SimpleStateStatus.Canceled => handleScheduled(state)
       // Scheduled or never started or latest run already disappeared in Flink.

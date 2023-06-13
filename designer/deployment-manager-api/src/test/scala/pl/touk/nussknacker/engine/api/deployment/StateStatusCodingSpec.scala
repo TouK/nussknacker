@@ -40,7 +40,6 @@ class StateStatusCodingSpec extends AnyFunSuite with Matchers with EitherValuesD
 
   case class MyCustomStateStatus(someField: String) extends StateStatus {
     override def name: StatusName = "CUSTOM"
-    override def isRunning: Boolean = true
   }
 
 }

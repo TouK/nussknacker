@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeployment
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import ModelData._
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -32,7 +33,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
     for {
       statusWithFreshness <- getProcessState(name)
-      finishedStatusOpt = statusWithFreshness.value.filter(_.status.isFinished)
+      finishedStatusOpt = statusWithFreshness.value.filter(_.status == SimpleStateStatus.Finished)
       //There is small problem here: if no one invokes process status for long time, Flink can remove process from history
       // - then it 's gone, not finished.
       //TODO: it should be checked periodically instead of checking on each getProcessState invocation
@@ -58,7 +59,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
       oldJob <- OptionT(checkOldJobStatus(processVersion))
       deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
       //when it's failed we don't need savepoint...
-      if oldJob.status.isRunning || oldJob.status.isDuringDeploy
+      if SimpleStateStatus.DefaultFollowingDeployStatuses.contains(oldJob.status)
       maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, deploymentId, canonicalProcess))
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")
@@ -117,7 +118,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   private def requireRunningProcess[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value
     getFreshProcessState(processName).flatMap {
-      case Some(StatusDetails(status, Some(deploymentId), _, _, _, _)) if status.isRunning =>
+      case Some(StatusDetails(SimpleStateStatus.Running, Some(deploymentId), _, _, _, _)) =>
         action(deploymentId)
       case Some(state) =>
         Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status.name}"))

@@ -5,13 +5,12 @@ import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
-import pl.touk.nussknacker.engine.embedded.EmbeddedStateStatus.DetailedFailedStateStatus
-import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -96,7 +95,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
     manager.getProcessState(name).futureValue.value.map(_.status) should matchPattern {
-      case Some(DetailedFailedStateStatus(msg)) if msg.contains(TopicParamName) =>
+      case Some(ProblemStateStatus(msg, _)) if msg.contains(TopicParamName) =>
     }
   }
 

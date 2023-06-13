@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -125,7 +126,7 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = Future.successful {
     deployments.get(name).map { interpreterData =>
       StatusDetails(
-        status = interpreterData.scenarioDeployment.fold(EmbeddedStateStatus.failed, _.status()),
+        status = interpreterData.scenarioDeployment.fold(ex => ProblemStateStatus(s"Problems detected: ${ex.getMessage}"), _.status()),
         deploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId)),
         version = Some(interpreterData.processVersion))
     }

@@ -93,7 +93,6 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
 
     val status = state.value.status
     status shouldBe a[ScheduledStatus]
-    status.isRunning shouldBe true
     f.getAllowedActions(state.value) shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
   }
 

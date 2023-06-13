@@ -13,7 +13,7 @@ class DevelopmentProcessStateDefinitionManager(delegate: ProcessStateDefinitionM
 
 object DevelopmentStateStatus {
 
-  val AfterRunningStatus: StateStatus = StateStatus.running("AFTER")
+  val AfterRunningStatus: StateStatus = StateStatus("AFTER")
   val PreparingResourcesStatus: StateStatus = StateStatus("PREPARING")
   val TestStatus: StateStatus = StateStatus("TEST")
 

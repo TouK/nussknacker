@@ -9,8 +9,6 @@ import io.circe.syntax._
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -29,7 +27,7 @@ import skuber.api.client.{KubernetesClient, LoggingConfig}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
-import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, ObjectResource, Pod, ResourceQuotaList, Secret, Service, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, ObjectResource, Pod, ResourceQuotaList, Secret, Service}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source

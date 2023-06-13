@@ -123,7 +123,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     config.waitForDuringDeployFinish.toEnabledConfig.map { config =>
       retry.Pause(config.maxChecks, config.delay).apply {
         getFreshProcessState(processName).map {
-          case Some(state) if state.status.isDuringDeploy => Left(())
+          case Some(state) if state.status == SimpleStateStatus.DuringDeploy => Left(())
           case _ => Right(())
         }
       }.map(_.getOrElse(throw new IllegalStateException("Deploy execution finished, but job is still in during deploy state on Flink")))

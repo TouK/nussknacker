@@ -722,9 +722,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
     val processName = ProcessName(processToSave.id)
 
-    saveProcess(processToSave) {
-      status shouldEqual StatusCodes.OK
-    }
+    createArchivedProcess(processName)
 
     deleteProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
@@ -739,20 +737,16 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  test("not allow to delete still running process") {
-    createDeployedProcess(processName)
+  test("not allow to delete not archived process") {
+    createEmptyProcess(processName)
 
     deleteProcess(processName) { status =>
       status shouldEqual StatusCodes.Conflict
-
-      forScenarioReturned(processName) { process =>
-        process.isDeployed shouldBe true
-      }
     }
   }
 
   test("allow to delete fragment") {
-    createEmptyProcess(processName, isSubprocess = true)
+    createArchivedProcess(processName, isSubprocess = true)
 
     deleteProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
