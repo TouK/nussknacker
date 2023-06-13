@@ -6,12 +6,15 @@ import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.process.NewProcessPreparer.initialFragmentFields
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 object NewProcessPreparer {
 
   def apply(processTypes: ProcessingTypeDataProvider[ProcessingTypeData, _], additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]): NewProcessPreparer =
     new NewProcessPreparer(processTypes.mapValues(_.metaDataInitializer), additionalFields)
+
+  private val initialFragmentFields: ProcessAdditionalFields = ProcessAdditionalFields(None, Map("docsUrl" -> ""), "FragmentSpecificData")
 
 }
 
@@ -24,7 +27,7 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[MetaData
       case (key, config) => (key, config.defaultValue.getOrElse(""))
     }
     val name = ProcessName(processId)
-    val initialMetadata = if(isSubprocess) MetaData(name.value, ProcessAdditionalFields(None, Map.empty, "FragmentSpecificData")) else creator.create(name, initialProperties)
+    val initialMetadata = if(isSubprocess) MetaData(name.value, initialFragmentFields) else creator.create(name, initialProperties)
 
     val emptyCanonical = CanonicalProcess(
       metaData = initialMetadata,
