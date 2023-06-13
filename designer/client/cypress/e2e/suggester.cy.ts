@@ -35,7 +35,7 @@ describe("Expression suggester", () => {
         cy.layoutScenario();
         cy.get("[model-id=kafka-string]").trigger("dblclick");
         cy.get("[data-testid=window]").as("modal");
-        cy.get("[title=Value]").next().find(".ace_editor").click().type("{enter}.").contains(/^.$/m);
+        cy.get("[title=Value]").next().find(".ace_editor").click().type(" +{enter}#").contains(/^.$/m);
         cy.get(".ace_autocomplete")
             .should("be.visible")
             .matchImage({

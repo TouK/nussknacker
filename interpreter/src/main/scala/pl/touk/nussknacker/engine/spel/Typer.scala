@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
-import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SpelDictTyper}
+import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper, SpelDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{ConstructionOfUnknown, NoPropertyError, NonReferenceError, UnresolvedReferenceError}
@@ -566,14 +566,14 @@ private[spel] class Typer(commonSupertypeFinder: CommonSupertypeFinder,
 }
 
 object Typer {
-  def default(classLoader: ClassLoader, expressionConfig: ExpressionDefinition[_], dictRegistry: DictRegistry, typeDefinitionSet: TypeDefinitionSet): Typer = {
+  def default(classLoader: ClassLoader, expressionConfig: ExpressionDefinition[_], spelDictTyper: SpelDictTyper, typeDefinitionSet: TypeDefinitionSet): Typer = {
     val evaluationContextPreparer = EvaluationContextPreparer.default(classLoader, expressionConfig)
 
     val strictTypeChecking = expressionConfig.strictTypeChecking
     val classResolutionStrategy = if (strictTypeChecking) SupertypeClassResolutionStrategy.Intersection else SupertypeClassResolutionStrategy.Union
     val commonSupertypeFinder = new CommonSupertypeFinder(classResolutionStrategy, strictTypeChecking)
     new Typer(commonSupertypeFinder,
-      new KeysDictTyper(dictRegistry),
+      spelDictTyper,
       expressionConfig.strictMethodsChecking,
       expressionConfig.staticMethodInvocationsChecking,
       typeDefinitionSet,
