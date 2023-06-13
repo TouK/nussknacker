@@ -24,6 +24,7 @@ trait DeploymentManager extends AutoCloseable {
     */
   def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
+  // TODO: add cancel for given deployment id
   def cancel(name: ProcessName, user: User): Future[Unit]
 
   def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]]
@@ -37,7 +38,7 @@ trait DeploymentManager extends AutoCloseable {
     * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
   def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
-    getProcessState(name).map(_.map(statusDetailsOpt => {
+    getProcessStates(name).map(_.map(statusDetailsOpt => {
       val engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusDetailsOpt, lastStateAction)
       processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
     }))

@@ -1,26 +1,44 @@
 package pl.touk.nussknacker.engine.api.deployment.inconsistency
 
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StatusDetails}
 
 object InconsistentStateDetector extends InconsistentStateDetector
 
 class InconsistentStateDetector {
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
-  def resolve(statusDetails: Option[StatusDetails], lastStateAction: Option[ProcessAction]): StatusDetails =
-    (statusDetails, lastStateAction) match {
-      case (Some(state), _) if shouldAlwaysReturnStatus(state) => state
-      case (Some(state), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastStateAction)
-      case (_, Some(action)) if action.isDeployed => handleMismatchDeployedStateLastAction(statusDetails, action)
-      case (Some(state), _) if isFollowingDeployStatus(state) => handleFollowingDeployState(state, lastStateAction)
-      case (_, Some(action)) if action.isCanceled => handleCanceledState(statusDetails)
-      case (Some(state), _) => handleState(state, lastStateAction)
-      case (None, Some(_)) => StatusDetails(SimpleStateStatus.NotDeployed)
-      case (None, None) => StatusDetails(SimpleStateStatus.NotDeployed)
+  def resolve(statusDetails: List[StatusDetails], lastStateAction: Option[ProcessAction]): StatusDetails =
+    (doExtractAtMostOneStatus(statusDetails), lastStateAction) match {
+      case (Left(state), _) => state
+      case (Right(Some(state)), _) if shouldAlwaysReturnStatus(state) => state
+      case (Right(Some(state)), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastStateAction)
+      case (Right(statusDetailsOpt), Some(action)) if action.isDeployed => handleMismatchDeployedStateLastAction(statusDetailsOpt, action)
+      case (Right(Some(state)), _) if isFollowingDeployStatus(state) => handleFollowingDeployState(state, lastStateAction)
+      case (Right(statusDetailsOpt), Some(action)) if action.isCanceled => handleCanceledState(statusDetailsOpt)
+      case (Right(Some(state)), _) => handleState(state, lastStateAction)
+      case (Right(None), Some(_)) => StatusDetails(SimpleStateStatus.NotDeployed)
+      case (Right(None), None) => StatusDetails(SimpleStateStatus.NotDeployed)
     }
 
+  // TODO: This method is exposed to make transition between Option[StatusDetails] and List[StatusDetails] easier to perform.
+  //       After full migration to List[StatusDetails], this method should be removed
+  def extractAtMostOneStatus(statusDetails: List[StatusDetails]): Option[StatusDetails] =
+    doExtractAtMostOneStatus(statusDetails).fold(Some(_), identity)
+
+  private def doExtractAtMostOneStatus(statusDetails: List[StatusDetails]): Either[StatusDetails, Option[StatusDetails]] = {
+    val notFinishedStatuses = statusDetails.filterNot(isFinished)
+    (statusDetails, notFinishedStatuses) match {
+      case (Nil, Nil) => Right(None)
+      case (_, singleNotFinished :: Nil) => Right(Some(singleNotFinished))
+      case (_, firstNotFinished :: _ :: _) =>
+        Left(firstNotFinished.copy(
+          status = ProblemStateStatus.MultipleJobsRunning,
+          errors = List(s"Expected one job, instead: ${notFinishedStatuses.map(details => details.deploymentId.map(_.value).getOrElse("missing") + " - " + details.status).mkString(", ")}")))
+      case (firstFinished :: _, Nil) => Right(Some(firstFinished))
+    }
+  }
 
   private def handleState(statusDetails: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
     statusDetails.status match {
@@ -77,6 +95,9 @@ class InconsistentStateDetector {
         StatusDetails(ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user))
     }
 
+  protected def isFinished(state: StatusDetails): Boolean =
+    SimpleStateStatus.isFinishedStatus(state.status)
+
   // Methods below are protected in case of other state machine implementation for a given DeploymentManager
   protected def shouldAlwaysReturnStatus(state: StatusDetails): Boolean = {
     ProblemStateStatus.isProblemStatus(state.status)
@@ -85,4 +106,5 @@ class InconsistentStateDetector {
   protected def isFollowingDeployStatus(state: StatusDetails): Boolean = {
     SimpleStateStatus.DefaultFollowingDeployStatuses.contains(state.status)
   }
+
 }

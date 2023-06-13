@@ -32,12 +32,13 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     */
   override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
     for {
-      statusWithFreshness <- getProcessState(name)
-      finishedStatusOpt = statusWithFreshness.value.filter(_.status == SimpleStateStatus.Finished)
+      statusWithFreshness <- getProcessStates(name)
+      finishedStatusOpt = statusWithFreshness.value.headOption.filter(_.status == SimpleStateStatus.Finished)
       //There is small problem here: if no one invokes process status for long time, Flink can remove process from history
       // - then it 's gone, not finished.
       //TODO: it should be checked periodically instead of checking on each getProcessState invocation
       // (consider moving `markProcessFinishedIfLastActionDeploy` to InconsistentStateDetector as one "detectAndResolveAndFixStatus")
+      // also we should check all returned statuses, not only head
       cancelActionOpt <- finishedStatusOpt.map(_ => deploymentService.markProcessFinishedIfLastActionDeploy(name)).sequence.map(_.flatten)
       engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, cancelActionOpt.orElse(lastStateAction))
     } yield statusWithFreshness.copy(value = processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
@@ -45,7 +46,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     for {
-      oldJob <- checkOldJobStatus(processVersion)
+      oldJob <- oldJobToStop(processVersion)
       _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.deploymentId))
     } yield ()
   }
@@ -54,12 +55,8 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     val processName = processVersion.processName
 
     val stoppingResult = for {
-      // We do checkOldJobStatus twice: in validate and again in deploy. It is done that way because we don't want
-      // to obfuscate api adding another argument to deploy method - it would complicate testing of deploy() as well
-      oldJob <- OptionT(checkOldJobStatus(processVersion))
+      oldJob <- OptionT(oldJobToStop(processVersion))
       deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
-      //when it's failed we don't need savepoint...
-      if SimpleStateStatus.DefaultFollowingDeployStatuses.contains(oldJob.status)
       maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, deploymentId, canonicalProcess))
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")
@@ -76,32 +73,31 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
         prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, canonicalProcess),
         savepointPath.orElse(maybeSavepoint)
       )
-      _ <- waitForDuringDeployFinished(processName)
+      _ <- runResult.map(waitForDuringDeployFinished(processName, _)).getOrElse(Future.successful(()))
     } yield runResult
   }
 
-  protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit]
+  protected def waitForDuringDeployFinished(processName: ProcessName, deploymentId: ExternalDeploymentId): Future[Unit]
 
-  private def checkOldJobStatus(processVersion: ProcessVersion): Future[Option[StatusDetails]] = {
-    val processName = processVersion.processName
-    for {
-      oldJob <- getFreshProcessState(processName)
-      oldProcessStatus = oldJob.map(processStateDefinitionManager.processState)
-      _ <- if (oldProcessStatus.exists(!_.allowedActions.contains(ProcessActionType.Deploy)))
-        Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.map(_.status.name).getOrElse("")}")) else Future.successful(Some(()))
-    } yield oldJob
+  private def oldJobToStop(processVersion: ProcessVersion): Future[Option[StatusDetails]] = {
+    getFreshProcessStates(processVersion.processName)
+      // TODO: handle stopping of more than one jobs before deploy
+      .map(InconsistentStateDetector.extractAtMostOneStatus)
+      .map(_.filter(details => SimpleStateStatus.DefaultFollowingDeployStatuses.contains(details.status)))
   }
 
   protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit]
 
   override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
-    requireRunningProcess(processName) {
+    // TODO: savepoint for given deployment id
+    requireSingleRunningJob(processName) {
       makeSavepoint(_, savepointDir)
     }
   }
 
   override def stop(processName: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    requireRunningProcess(processName) {
+    // TODO: savepoint for given deployment id
+    requireSingleRunningJob(processName) {
       stop(_, savepointDir)
     }
   }
@@ -115,15 +111,20 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
     Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 
-  private def requireRunningProcess[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
+  private def requireSingleRunningJob[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value
-    getFreshProcessState(processName).flatMap {
-      case Some(StatusDetails(SimpleStateStatus.Running, Some(deploymentId), _, _, _, _)) =>
-        action(deploymentId)
-      case Some(state) =>
-        Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status.name}"))
-      case None =>
-        Future.failed(new IllegalStateException(s"Job $name not found"))
+    getFreshProcessStates(processName).flatMap { statuses =>
+      val runningDeploymentIds = statuses.collect {
+        case StatusDetails(SimpleStateStatus.Running, Some(deploymentId), _, _, _, _) => deploymentId
+      }
+      runningDeploymentIds match {
+        case Nil =>
+          Future.failed(new IllegalStateException(s"Job $name not found"))
+        case single :: Nil =>
+          action(single)
+        case moreThanOne =>
+          Future.failed(new IllegalStateException(s"Multiple running jobs: ${moreThanOne.mkString(", ")}"))
+      }
     }
   }
 

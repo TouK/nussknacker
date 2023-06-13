@@ -200,11 +200,11 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
       deployments <- scenarioStateK8sClient.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
       pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
     } yield {
-      // TODO: we should filter pods created by given deployment
       deployments.map(mapper.status(_, pods))
     }
   }
 
+  // FIXME: remove
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {

@@ -66,6 +66,8 @@ object SimpleStateStatus {
   val Canceled: StateStatus = StateStatus("CANCELED")
 
   val DefaultFollowingDeployStatuses: Set[StateStatus] = Set(DuringDeploy, Running)
+  def isFinishedStatus(status: StateStatus): Boolean =
+    List(SimpleStateStatus.Finished, SimpleStateStatus.Canceled).contains(status) || ProblemStateStatus.isProblemStatus(status)
 
   val statusActionsPF: PartialFunction[StateStatus, List[ProcessActionType]] = {
     case SimpleStateStatus.NotDeployed => List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)

@@ -4,12 +4,12 @@ import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, FailedOnDeploy, PeriodicProcessDeploymentStatus, RetryingDeploy}
@@ -115,7 +115,10 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
 
   //Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
   private def checkIfNotRunning(toDeploy: PeriodicProcessDeployment): Future[Option[PeriodicProcessDeployment]] = {
-    delegateDeploymentManager.getProcessState(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh).map(_.value).map {
+    delegateDeploymentManager.getProcessStates(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh)
+      .map(_.value)
+      .map(InconsistentStateDetector.extractAtMostOneStatus)
+      .map {
       case Some(state) if isFollowingDeployStatus(state) =>
         logger.debug(s"Deferring run of ${toDeploy.display} as scenario is currently running")
         None
@@ -132,12 +135,15 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
 
     def handleSingleProcess(deployedProcess: PeriodicProcessDeployment): Future[Unit] = {
       val processName = deployedProcess.periodicProcess.processVersion.processName
-      delegateDeploymentManager.getProcessState(processName)(DataFreshnessPolicy.Fresh).map(_.value).flatMap { state =>
-        handleFinishedAction(deployedProcess, state)
-          .flatMap { needsReschedule =>
-            if (needsReschedule) reschedule(deployedProcess) else scheduledProcessesRepository.monad.pure(()).emptyCallback
-          }.runWithCallbacks
-      }
+      delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh)
+        .map(_.value)
+        .map(InconsistentStateDetector.extractAtMostOneStatus)
+        .flatMap { state =>
+          handleFinishedAction(deployedProcess, state)
+            .flatMap { needsReschedule =>
+              if (needsReschedule) reschedule(deployedProcess) else scheduledProcessesRepository.monad.pure(()).emptyCallback
+            }.runWithCallbacks
+        }
     }
 
     for {
@@ -227,10 +233,11 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   }
 
   def deactivate(processName: ProcessName): Future[Unit] = for {
-    status <- delegateDeploymentManager.getProcessState(processName)(DataFreshnessPolicy.Fresh)
+    statuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh)
+    status = InconsistentStateDetector.extractAtMostOneStatus(statuses.value)
     maybePeriodicDeployment <- getLatestDeployment(processName)
     actionResult <- maybePeriodicDeployment match {
-      case Some(periodicDeployment) => handleFinishedAction(periodicDeployment, status.value)
+      case Some(periodicDeployment) => handleFinishedAction(periodicDeployment, status)
         .flatMap(_ => deactivateAction(processName))
         .runWithCallbacks
       case None => deactivateAction(processName).runWithCallbacks
