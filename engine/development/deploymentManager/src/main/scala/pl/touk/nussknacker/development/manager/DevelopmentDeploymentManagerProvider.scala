@@ -185,7 +185,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
                                        sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
     new DevelopmentDeploymentManager(actorSystem)
 
-  override def metaDataInitializer(config: Config): MetaDataInitializer = MetaDataInitializer("StreamMetaData")
+  override def metaDataInitializer(config: Config): MetaDataInitializer = FlinkStreamingPropertiesConfig.metaDataInitializer
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
     Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None)) ++ FlinkStreamingPropertiesConfig.properties

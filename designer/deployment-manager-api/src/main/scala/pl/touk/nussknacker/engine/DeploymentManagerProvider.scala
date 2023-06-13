@@ -12,7 +12,7 @@ import sttp.client3.SttpBackend
 import scala.concurrent.{ExecutionContext, Future}
 object MetaDataInitializer {
   type MetadataType = String
-  def apply(metadataType: MetadataType, staticallyOverriden: Map[String, String]): MetaDataInitializer = MetaDataInitializer(metadataType, _ => staticallyOverriden)
+  def apply(metadataType: MetadataType, overridingProperties: Map[String, String]): MetaDataInitializer = MetaDataInitializer(metadataType, _ => overridingProperties)
 }
 
 final case class MetaDataInitializer(metadataType: MetadataType,
