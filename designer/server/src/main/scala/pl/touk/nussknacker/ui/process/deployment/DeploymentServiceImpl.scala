@@ -252,11 +252,9 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       } else {
         processDetails.lastStateAction match {
           case Some(_) =>
-            for {
-              state <- DBIOAction.from(getStateFromDeploymentManager(manager, processDetails.idWithName, processDetails.lastStateAction))
-            } yield {
-              logger.debug(s"Status for: '${processDetails.name}' is: ${state.value.status} (from engine: ${state.value.status}, cached: ${state.cached}, last action: ${processDetails.lastAction.map(_.action)})")
-              state.value
+            DBIOAction.from(getStateFromDeploymentManager(manager, processDetails.idWithName, processDetails.lastStateAction)).map { statusWithFreshness =>
+              logger.debug(s"Status for: '${processDetails.name}' is: ${statusWithFreshness.value.status}, cached: ${statusWithFreshness.cached}, last action: ${processDetails.lastAction.map(_.action)})")
+              statusWithFreshness.value
             }
           case _ => //We assume that the process never deployed should have no state at the engine
             logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
