@@ -3,15 +3,16 @@ package pl.touk.nussknacker.ui.api
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.TypeDefinitionSet
+import pl.touk.nussknacker.engine.api.Documentation
 import pl.touk.nussknacker.engine.api.dict.{DictInstance, UiDictServices}
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter}
+import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter => GenericsParameter}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, StaticMethodInfo}
 import pl.touk.nussknacker.engine.dict.{SimpleDictQueryService, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.spel.ExpressionSuggestion
+import pl.touk.nussknacker.engine.spel.{ExpressionSuggestion, Parameter}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -50,6 +51,8 @@ class WithList {
 
 class Util {
   def now(): LocalDateTime = LocalDateTime.now()
+  @Documentation(description = "Method with description")
+  def withDescription(): Int = 42
 }
 
 class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
@@ -74,7 +77,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     ),
     ClazzDefinition(
       Typed.typedClass[LocalDateTime],
-      Map("isBefore" -> List(StaticMethodInfo(MethodTypeInfo(List(Parameter("arg0", Typed[LocalDateTime])), None, Typed[Boolean]), "isBefore", None))),
+      Map("isBefore" -> List(StaticMethodInfo(MethodTypeInfo(List(GenericsParameter("arg0", Typed[LocalDateTime])), None, Typed[Boolean]), "isBefore", None))),
       Map.empty
     ),
     EspTypeUtils.clazzDefinition(classOf[Util]),
@@ -113,9 +116,11 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     expressionSuggester.expressionSuggestions(Expression.spel(input), CaretPosition2d(row, if (column == -1) input.length else column), variables)(ExecutionContext.global).futureValue
   }
 
-  private def suggestion(methodName: String, refClazz: TypingResult): ExpressionSuggestion = {
-    ExpressionSuggestion(methodName = methodName, refClazz, fromClass = false)
+  private def suggestion(methodName: String, refClazz: TypingResult, description: Option[String] = None, parameters: List[Parameter] = Nil): ExpressionSuggestion = {
+    ExpressionSuggestion(methodName = methodName, refClazz, fromClass = false, description, parameters)
   }
+
+  private val suggestionForBazCWithParams: ExpressionSuggestion = suggestion("bazCWithParams", Typed[C], None, List(Parameter("string1", Typed[String]), Parameter("string2", Typed[String]), Parameter("int", Typed[Int])))
 
   test("should not suggest anything for empty input") {
     suggestionsFor("") shouldBe List()
@@ -160,19 +165,25 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
 
   test("should suggest methods for string literal") {
     suggestionsFor("\"abc\".") shouldBe List(
-      ExpressionSuggestion("toUpperCase", Typed[String], fromClass = false),
+      ExpressionSuggestion("toUpperCase", Typed[String], fromClass = false, None, Nil),
     )
   }
 
   test("should suggest fields and class methods for map literal") {
     suggestionsFor("{\"abc\":1}.") shouldBe List(
-      ExpressionSuggestion("abc", Typed.fromInstance(1), fromClass = false),
-      ExpressionSuggestion("empty", Typed[Boolean], fromClass = true),
+      ExpressionSuggestion("abc", Typed.fromInstance(1), fromClass = false, None, Nil),
+      ExpressionSuggestion("empty", Typed[Boolean], fromClass = true, None, Nil),
     )
   }
 
   test("should suggest dict variable methods") {
     suggestionsFor("#dictFoo.").map(_.methodName) shouldBe List("One", "Two")
+  }
+
+  test("should suggest method with description") {
+    suggestionsFor("#util.with") shouldBe List(
+      suggestion("withDescription", Typed[Int], Some("Method with description"))
+    )
   }
 
   test("should suggest dict variable methods using indexer syntax") {
@@ -212,7 +223,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     suggestionsFor("#union.") shouldBe List(
       suggestion("barB", Typed[B]),
       suggestion("bazC", Typed[C]),
-      suggestion("bazCWithParams", Typed[C]),
+      suggestionForBazCWithParams,
       suggestion("foo", Typed[A]),
       suggestion("fooString", Typed[String]),
       suggestion("toString", Typed[String]),
@@ -272,7 +283,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   test("should suggest for multiline code #2") {
     suggestionsFor("#input\n.barB\n.", 2, ".".length) shouldBe List(
       suggestion("bazC", Typed[C]),
-      suggestion("bazCWithParams", Typed[C]),
+      suggestionForBazCWithParams,
       suggestion("toString", Typed[String]),
     )
   }
@@ -290,7 +301,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   test("should omit whitespace formatting in suggest for multiline code #2") {
     suggestionsFor("#input\n  .barB\n  .ba", 2, "  .ba".length) shouldBe List(
       suggestion("bazC", Typed[C]),
-      suggestion("bazCWithParams", Typed[C]),
+      suggestionForBazCWithParams,
     )
   }
 
@@ -301,7 +312,7 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   test("should omit whitespace formatting in suggest for multiline code #4") {
     suggestionsFor("#input\n  .barB.ba", 1, "  .barB.ba".length) shouldBe List(
       suggestion("bazC",Typed[C]),
-      suggestion("bazCWithParams",Typed[C]),
+      suggestionForBazCWithParams,
     )
   }
 
@@ -404,13 +415,13 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
 
   test("should support type reference and suggest methods") {
     suggestionsFor("T(java.time.Duration).ZERO.plusD") shouldBe List(
-      suggestion("plusDays", Typed[Duration]),
+      suggestion("plusDays", Typed[Duration], None, List(Parameter("arg0", Typed[Long]))),
     )
   }
 
   test("should support type reference and suggest static methods") {
     suggestionsFor("T(java.time.Duration).p") shouldBe List(
-      suggestion("parse", Typed[Duration]),
+      suggestion("parse", Typed[Duration], None, List(Parameter("arg0", Typed[CharSequence]))),
     )
   }
 

@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { ClassDefinition } from "../../../../../types";
+import { ClassDefinition, TypingResult } from "../../../../../types";
 import HttpService from "../../../../../http/HttpService";
 import { ExpressionLang } from "./types";
 
@@ -12,8 +12,14 @@ export type ExpressionSuggestion = {
     refClazz: { display: string };
     fromClass: boolean;
     description?: string;
-    parameters?: any;
+    parameters?: { name: string; refClazz: { display: string } }[];
 };
+
+type NormalizedInput = {
+    normalizedInput: string;
+    normalizedCaretPosition: number;
+};
+
 export interface ExpressionSuggester {
     suggestionsFor(inputValue: string, caretPosition2d: CaretPosition2d): Promise<ExpressionSuggestion[]>;
 }
@@ -24,7 +30,7 @@ export class BackendExpressionSuggester implements ExpressionSuggester {
         private _typesInformation: ClassDefinition[],
         private variables: Record<string, any>,
         private _processingType: string,
-        private _httpService: typeof HttpService
+        private _httpService: typeof HttpService,
     ) {}
     suggestionsFor(inputValue: string, caretPosition2d: CaretPosition2d): Promise<ExpressionSuggestion[]> {
         return this._httpService
@@ -32,7 +38,7 @@ export class BackendExpressionSuggester implements ExpressionSuggester {
                 this.processId,
                 { language: ExpressionLang.SpEL, expression: inputValue },
                 caretPosition2d,
-                this.variables
+                this.variables,
             )
             .then((response) => response.data);
     }
@@ -45,7 +51,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         private _typesInformation: ClassDefinition[],
         variables,
         private _processingType: string,
-        private _httpService: Pick<typeof HttpService, "fetchDictLabelSuggestions">
+        private _httpService: Pick<typeof HttpService, "fetchDictLabelSuggestions">,
     ) {
         this._variables = _.mapKeys(variables, (value, variableName) => {
             return `#${variableName}`;
@@ -56,7 +62,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         const normalized = this._normalizeMultilineInputToSingleLine(inputValue, caretPosition2d);
         const lastExpressionPart = this._focusedLastExpressionPartWithoutMethodParens(
             normalized.normalizedInput,
-            normalized.normalizedCaretPosition
+            normalized.normalizedCaretPosition,
         );
         const properties = this._alreadyTypedProperties(lastExpressionPart);
         const variablesIncludingSelectionOrProjection = this._getAllVariables(normalized);
@@ -64,17 +70,14 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         return this._getSuggestions(lastExpressionPart, focusedClazz, variablesIncludingSelectionOrProjection);
     };
 
-    _normalizeMultilineInputToSingleLine = (inputValue: string, caretPosition2d: CaretPosition2d) => {
+    _normalizeMultilineInputToSingleLine = (inputValue: string, caretPosition2d: CaretPosition2d): NormalizedInput => {
         const rows = inputValue?.split("\n") || [];
         const trimmedRows = _.map(rows, (row) => {
             const trimmedAtStartRow = _.dropWhile(row, (c) => c === " ").join("");
             return { trimmedAtStartRow: trimmedAtStartRow, trimmedCount: row.length - trimmedAtStartRow.length };
         });
-        const beforeCaretInputLength = _.sum(
-            _.map(_.take(trimmedRows, caretPosition2d.row), (row) => row.trimmedAtStartRow.length)
-        );
-        const normalizedCaretPosition =
-            caretPosition2d.column - trimmedRows[caretPosition2d.row].trimmedCount + beforeCaretInputLength;
+        const beforeCaretInputLength = _.sum(_.map(_.take(trimmedRows, caretPosition2d.row), (row) => row.trimmedAtStartRow.length));
+        const normalizedCaretPosition = caretPosition2d.column - trimmedRows[caretPosition2d.row].trimmedCount + beforeCaretInputLength;
         const normalizedInput = _.map(trimmedRows, (row) => row.trimmedAtStartRow).join("");
         return {
             normalizedInput: normalizedInput,
@@ -82,11 +85,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         };
     };
 
-    _getSuggestions = (
-        value: string,
-        focusedClazz,
-        variables: Record<string, any>
-    ): Promise<ExpressionSuggestion[]> => {
+    _getSuggestions = (value: string, focusedClazz, variables: Record<string, any>): Promise<ExpressionSuggestion[]> => {
         const variableNames = _.keys(variables);
         const variableAlreadySelected = _.some(variableNames, (variable) => {
             return _.includes(value, `${variable}.`) || _.includes(value, `${variable}['`);
@@ -99,10 +98,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
             const inputValue = this._justTypedProperty(value);
             if (currentType.dict == null) {
                 const allowedMethodList = this._getAllowedMethods(currentType);
-                const result =
-                    inputValue.length === 0
-                        ? allowedMethodList
-                        : this._filterSuggestionsForInput(allowedMethodList, inputValue);
+                const result = inputValue.length === 0 ? allowedMethodList : this._filterSuggestionsForInput(allowedMethodList, inputValue);
                 return new Promise((resolve) => resolve(result));
             } else {
                 return this._getSuggestionsForDict(currentType.dict, inputValue);
@@ -150,18 +146,18 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
                     const parentType = this._getTypeInfo(currentParentClazz);
                     return this._extractMethod(parentType, prop);
                 },
-                variableClazzName
+                variableClazzName,
             );
         } else {
             return null;
         }
     };
 
-    _extractMethod(type, prop: string) {
-        if (type.union != null) {
+    _extractMethod(type: TypingResult, prop: string) {
+        if ("union" in type && type.union != null) {
             const foundedTypes = _.filter(
                 _.map(type.union, (clazz) => this._extractMethodFromClass(clazz, prop)),
-                (i) => i != null
+                (i) => i != null,
             );
             // TODO: compute union of extracted methods types
             return _.first(foundedTypes) || { refClazzName: "" };
@@ -174,8 +170,8 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         return _.get(clazz.methods, `${prop}.refClazz`);
     }
 
-    _getTypeInfo = (type) => {
-        if (type.union != null) {
+    _getTypeInfo = (type: TypingResult) => {
+        if ("union" in type && type.union != null) {
             const unionOfTypeInfos = _.map(type.union, (clazz) => this._getTypeInfoFromClass(clazz));
             return {
                 union: unionOfTypeInfos,
@@ -199,15 +195,13 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         };
     };
 
-    _getMethodsFromGlobalTypeInfo = (clazz) => {
+    _getMethodsFromGlobalTypeInfo = (clazz: TypingResult) => {
         const foundData = _.find(this._typesInformation, { clazzName: { refClazzName: clazz.refClazzName } });
         return !_.isEmpty(foundData) ? foundData.methods : [];
     };
 
     _focusedLastExpressionPartWithoutMethodParens = (expression: string, caretPosition: number) => {
-        return this._lastExpressionPartWithoutMethodParens(
-            this._currentlyFocusedExpressionPart(expression, caretPosition)
-        );
+        return this._lastExpressionPartWithoutMethodParens(this._currentlyFocusedExpressionPart(expression, caretPosition));
     };
 
     _currentlyFocusedExpressionPart = (value: string, caretPosition: number): string => {
@@ -249,7 +243,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
 
     _dotSeparatedToProperties = (value: string): string[] => {
         // TODO: Implement full SpEL support for accessing by indexer the same way as by properties - not just for last indexer
-        const indexerMatch = value.match(INDEXER_REGEX);
+        const indexerMatch: RegExpMatchArray = value.match(INDEXER_REGEX);
         if (indexerMatch) {
             return this._dotSeparatedToPropertiesIncludingLastIndexerKey(indexerMatch);
         } else {
@@ -257,20 +251,20 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         }
     };
 
-    _dotSeparatedToPropertiesIncludingLastIndexerKey = (indexerMatch) => {
+    _dotSeparatedToPropertiesIncludingLastIndexerKey = (indexerMatch: RegExpMatchArray): string[] => {
         const beforeIndexer = indexerMatch[1];
         const indexerKey = indexerMatch[2];
         const splittedProperties = _.split(beforeIndexer, ".");
         return _.concat(splittedProperties, indexerKey);
     };
 
-    _getAllVariables = (normalized): Record<string, any> => {
+    _getAllVariables = (normalized: NormalizedInput): Record<string, any> => {
         const thisClazz = this._findProjectionOrSelectionRootClazz(normalized);
         const data = thisClazz ? { "#this": thisClazz } : {};
         return _.merge(data, this._variables);
     };
 
-    _findProjectionOrSelectionRootClazz = (normalized) => {
+    _findProjectionOrSelectionRootClazz = (normalized: NormalizedInput) => {
         const currentProjectionOrSelection = this._findCurrentProjectionOrSelection(normalized);
         if (currentProjectionOrSelection) {
             const properties = this._alreadyTypedProperties(currentProjectionOrSelection);
@@ -288,7 +282,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
                 _.map(typ.union, (element) => {
                     return this._getFirstParameterType(element);
                 }),
-                (i) => i != null
+                (i) => i != null,
             );
             if (_.isEmpty(listOfFirstParams)) {
                 return null;
@@ -307,7 +301,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         }
     };
 
-    _findCurrentProjectionOrSelection = (normalized): string => {
+    _findCurrentProjectionOrSelection = (normalized: NormalizedInput): string => {
         const input = normalized.normalizedInput;
         const caretPosition = normalized.normalizedCaretPosition;
         const currentPart = this._currentlyFocusedExpressionPart(input, caretPosition);
@@ -316,7 +310,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
             currentPart.lastIndexOf("!["),
             currentPart.lastIndexOf("?["),
             currentPart.lastIndexOf("^["),
-            currentPart.lastIndexOf("$[")
+            currentPart.lastIndexOf("$["),
         );
         const isInMiddleOfProjectionSelection = lastOpening > currentPart.indexOf("]");
         if (isInMiddleOfProjectionSelection) {
@@ -336,7 +330,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
                     refClazz: typ.valueType,
                     fromClass: false,
                 };
-            })
+            }),
         );
     };
 

@@ -51,12 +51,12 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
         case TypingResultWithContext(tc: TypedClass, staticContext) => Future.successful(typeDefinitions.get(tc.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil))
         case TypingResultWithContext(to: TypedObjectWithValue, staticContext) => Future.successful(typeDefinitions.get(to.underlying.klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil))
         case TypingResultWithContext(to: TypedObjectTypingResult, _) =>
-          val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false) }
+          val suggestionsFromFields = filterMapByName(to.fields, p.getName).toList.map { case (methodName, clazzRef) => ExpressionSuggestion(methodName, clazzRef, fromClass = false, None, Nil) }
           val suggestionsFromClass = typeDefinitions.get(to.objType.klass).map(c => filterClassMethods(c, p.getName, staticContext = false, fromClass = suggestionsFromFields.nonEmpty)).getOrElse(Nil)
           Future.successful(suggestionsFromFields ++ suggestionsFromClass)
         case TypingResultWithContext(tu: TypedUnion, staticContext) => Future.successful(tu.possibleTypes.map(_.objType.klass).flatMap(klass => typeDefinitions.get(klass).map(c => filterClassMethods(c, p.getName, staticContext)).getOrElse(Nil)))
         case TypingResultWithContext(td: TypedDict, _) => dictQueryService.queryEntriesByLabel(td.dictId, if (shouldInsertDummyVariable) "" else p.getName)
-          .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false)))).getOrElse(successfulNil)
+          .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil)))).getOrElse(successfulNil)
       }.getOrElse(successfulNil)
     }
 
@@ -64,7 +64,12 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
       val methods = filterMapByName(if (staticContext) classDefinition.staticMethods else classDefinition.methods, name)
 
       methods.values.flatten
-        .map(m => ExpressionSuggestion(m.name, m.signatures.head.result, fromClass = fromClass))
+        .map { method =>
+          // TODO: present all overloaded methods, not only one with most parameters.
+          //  Current logic here is the same as in UIProcessObjectsFactory
+          val signature = method.signatures.toList.maxBy(_.parametersToList.length)
+          ExpressionSuggestion(method.name, signature.result, fromClass = fromClass, method.description, (signature.noVarArgs ::: signature.varArg.toList).map(p => Parameter(p.name, p.refClazz)))
+        }
         .toList
     }
 
@@ -86,7 +91,7 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
             }
           }
           val filteredVariables = filterMapByName(thisTypingResult.flatten.map("this" -> _).toMap ++ variables, v.toStringAST.stripPrefix("#"))
-          Future.successful(filteredVariables.map { case (variable, clazzRef) => ExpressionSuggestion(s"#$variable", clazzRef, fromClass = false) })
+          Future.successful(filteredVariables.map { case (variable, clazzRef) => ExpressionSuggestion(s"#$variable", clazzRef, fromClass = false, None, Nil) })
         // property is typed (#foo.bar), so we need to return filtered list of all methods and fields from previous spel node type
         case p: PropertyOrFieldReference =>
           suggestionsForPropertyOrFieldReference(nodeInPosition, p)
@@ -103,7 +108,7 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
             parent.spelNode match {
               case _: Indexer => parentPrevNodeTyping match {
                 case td: TypedDict => dictQueryService.queryEntriesByLabel(td.dictId, s.getLiteralValue.getValue.toString)
-                  .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false)))).getOrElse(successfulNil)
+                  .map(_.map(list => list.map(e => ExpressionSuggestion(e.label, td, fromClass = false, None, Nil)))).getOrElse(successfulNil)
                 case _ => successfulNil
               }
               case _ => successfulNil
@@ -128,7 +133,7 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
                 }.flatMap {
                   klass => klass.getName.stripPrefix(q.toStringAST.split('.').dropRight(1).mkString(".")).stripPrefix(".").split('.').headOption
                 }.toSet.map {
-                  ExpressionSuggestion(_, Unknown, fromClass = false)
+                  ExpressionSuggestion(_, Unknown, fromClass = false, None, Nil)
                 }
               case _ => Nil
             }
@@ -215,4 +220,6 @@ private case class NuSpelNodeParent(node: NuSpelNode, nodeIndex: Int)
 // TODO: fromClass is used to calculate suggestion score - to show fields first, then class methods. Maybe we should
 //  return score from BE?
 @JsonCodec(encodeOnly = true)
-case class ExpressionSuggestion(methodName: String, refClazz: TypingResult, fromClass: Boolean)
+case class ExpressionSuggestion(methodName: String, refClazz: TypingResult, fromClass: Boolean, description: Option[String], parameters: List[Parameter])
+@JsonCodec(encodeOnly = true)
+case class Parameter(name: String, refClazz: TypingResult)
