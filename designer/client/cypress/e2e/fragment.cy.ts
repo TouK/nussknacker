@@ -1,110 +1,121 @@
 describe("Fragment", () => {
-  const seed = "fragment"
-  before(() => {
-    cy.deleteAllTestProcesses({filter: seed, force: true})
-  })
+    const seed = "fragment";
+    before(() => {
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
+    });
 
-  after(() => {
-    cy.deleteAllTestProcesses({filter: seed})
-  })
-  
-  beforeEach(() => {
-    cy.viewport(1440, 1200)
-  })
+    after(() => {
+        cy.deleteAllTestProcesses({ filter: seed });
+    });
 
-  it("should allow adding input parameters and display used fragment graph in modal", () => {
-    cy.visitNewFragment(seed, "fragment").as("fragmentName")
-    cy.get("[model-id=input]").should("be.visible").trigger("dblclick")
-    cy.get("[data-testid=window]").should("be.visible").as("window")
-    cy.get("@window").contains("+").click()
-    cy.get("[data-testid='fieldsRow:3']").find(".fieldName input").type("xxxx")
-    cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='draggable:0']")
-    cy.get("[data-testid='fieldsRow:0']").find(".fieldName input").should("have.value", "xxxx")
-    cy.get("@window").matchImage()
-    cy.get("@window").contains(/^apply$/i).click()
-    cy.contains(/^save$/i).click()
-    cy.contains(/^ok$/i).click()
+    beforeEach(() => {
+        cy.viewport(1440, 1200);
+    });
 
-    cy.visitNewProcess(seed, "testProcess")
-    cy.layoutScenario()
+    it("should allow adding input parameters and display used fragment graph in modal", () => {
+        cy.visitNewFragment(seed, "fragment").as("fragmentName");
+        cy.get("[model-id=input]").should("be.visible").trigger("dblclick");
+        cy.get("[data-testid=window]").should("be.visible").as("window");
+        cy.get("@window").contains("+").click();
+        cy.get("[data-testid='fieldsRow:3']").find(".fieldName input").type("xxxx");
+        cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='draggable:0']");
+        cy.get("[data-testid='fieldsRow:0']").find(".fieldName input").should("have.value", "xxxx");
+        cy.get("@window").matchImage();
+        cy.get("@window")
+            .contains(/^apply$/i)
+            .click();
+        cy.contains(/^save$/i).click();
+        cy.contains(/^ok$/i).click();
 
-    cy.contains(/^fragments$/).should("be.visible").click()
-    cy.contains("fragment-test")
-      .last()
-      .should("be.visible")
-      .move({x: 800, y: 600, position: "right", force: true})
-      .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
-    cy.layoutScenario()
+        cy.visitNewProcess(seed, "testProcess");
+        cy.layoutScenario();
 
-    cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick")
-    cy.get("#nk-graph-subprocess [model-id='input']").should("be.visible")
-    cy.wait(750)
-    cy.get("[data-testid=window]").matchImage()
+        cy.contains(/^fragments$/)
+            .should("be.visible")
+            .click();
+        cy.contains("fragment-test")
+            .last()
+            .should("be.visible")
+            .move({ x: 800, y: 600, position: "right", force: true })
+            .drag("#nk-graph-main", { x: 800, y: 600, position: "right", force: true });
+        cy.layoutScenario();
 
-    cy.get("[data-testid=window]").contains("testOutput").parent().find("input").type("{selectall}fragmentResult")
-    cy.contains(/^apply/i).should("be.enabled").click()
+        cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick");
+        cy.get("#nk-graph-subprocess [model-id='input']").should("be.visible");
+        cy.wait(750);
+        cy.get("[data-testid=window]").matchImage();
 
-    cy.wait(750)
-    cy.get("[data-testid=graphPage]").matchImage({
-      screenshotConfig: {
-        blackout: [
-          "> :not(#nk-graph-main) > div",
-        ],
-      },
-    })
+        cy.get("[data-testid=window]").contains("testOutput").parent().find("input").type("{selectall}fragmentResult");
+        cy.contains(/^apply/i)
+            .should("be.enabled")
+            .click();
 
-    cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick")
-    cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.")
-    cy.wait(750)
-    cy.get("[data-testid=window]").matchImage()
-  })
+        cy.wait(750);
+        cy.get("[data-testid=graphPage]").matchImage({
+            screenshotConfig: {
+                blackout: ["> :not(#nk-graph-main) > div"],
+            },
+        });
 
-  it("should open properties", () => {
-    cy.visitNewFragment(seed, "fragment").as("fragmentName")
-    cy.contains(/^properties/i).should("be.enabled").click()
-    cy.contains(/^apply/i).should("be.enabled")
-    cy.get("[data-testid=window]").matchImage()
-  })
+        cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick");
+        cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.");
+        cy.get(".ace_autocomplete").should("be.visible");
+        cy.get("[data-testid=window]").matchImage();
+    });
 
-  it("should add documentation url in fragment properties and show it in modal within scenario", () => {
-    const seed2 = "fragment2"
-    cy.visitNewFragment(seed2, "fragment").as("fragmentName")
-    cy.contains(/^properties/i).should("be.enabled").click()
+    it("should open properties", () => {
+        cy.visitNewFragment(seed, "fragment").as("fragmentName");
+        cy.contains(/^properties/i)
+            .should("be.enabled")
+            .click();
+        cy.contains(/^apply/i).should("be.enabled");
+        cy.get("[data-testid=window]").matchImage();
+    });
 
-    const docsUrl = "https://nussknacker.io/"
+    it("should add documentation url in fragment properties and show it in modal within scenario", () => {
+        const seed2 = "fragment2";
+        cy.visitNewFragment(seed2, "fragment").as("fragmentName");
+        cy.contains(/^properties/i)
+            .should("be.enabled")
+            .click();
 
-    cy.get("[data-testid=window]").should("be.visible").find("input").within(inputs => {
-      cy.wrap(inputs).eq(1).click().type(docsUrl)
-    })
+        const docsUrl = "https://nussknacker.io/";
 
-    cy.contains(/^apply/i).should("be.enabled").click()
-    cy.contains(/^save/i).should("be.enabled").click()
-    cy.intercept("PUT", "/api/processes/*").as("save")
-    cy.contains(/^ok$/i).should("be.enabled").click()
+        cy.get("[data-testid=window]")
+            .should("be.visible")
+            .find("input")
+            .within((inputs) => {
+                cy.wrap(inputs).eq(1).click().type(docsUrl);
+            });
 
-    cy.wait(["@save", "@fetch"], {timeout: 20000}).each(res => {
-      cy.wrap(res).its("response.statusCode").should("eq", 200)
-    })
-    cy.contains(/^ok$/i).should("not.exist")
+        cy.contains(/^apply/i)
+            .should("be.enabled")
+            .click();
+        cy.contains(/^save/i).should("be.enabled").click();
+        cy.intercept("PUT", "/api/processes/*").as("save");
+        cy.contains(/^ok$/i).should("be.enabled").click();
 
-    cy.visitNewProcess(seed, "testProcess")
-    cy.layoutScenario()
+        cy.wait(["@save", "@fetch"], { timeout: 20000 }).each((res) => {
+            cy.wrap(res).its("response.statusCode").should("eq", 200);
+        });
+        cy.contains(/^ok$/i).should("not.exist");
 
-    cy.contains("fragments").should("be.visible").click()
-    cy.contains(`${seed2}-test`)
-      .last()
-      .should("be.visible")
-      .drag("#nk-graph-main", {x: 800, y: 600, position: "right", force: true})
-    cy.layoutScenario()
+        cy.visitNewProcess(seed, "testProcess");
+        cy.layoutScenario();
 
-    cy.get(`[model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick")
+        cy.contains("fragments").should("be.visible").click();
+        cy.contains(`${seed2}-test`).last().should("be.visible").drag("#nk-graph-main", { x: 800, y: 600, position: "right", force: true });
+        cy.layoutScenario();
 
-    cy.get("[title='Documentation']").should("have.attr", "href", docsUrl)
-    cy.get("[data-testid=window]").as("window")
-    cy.get("@window").contains(/^input$/).should("be.visible")
-    cy.get("@window").wait(200).matchImage()
+        cy.get(`[model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
 
-    cy.deleteAllTestProcesses({filter: seed2})
-  })
+        cy.get("[title='Documentation']").should("have.attr", "href", docsUrl);
+        cy.get("[data-testid=window]").as("window");
+        cy.get("@window")
+            .contains(/^input$/)
+            .should("be.visible");
+        cy.get("@window").wait(200).matchImage();
 
-})
+        cy.deleteAllTestProcesses({ filter: seed2 });
+    });
+});
