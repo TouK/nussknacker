@@ -1291,7 +1291,8 @@ lazy val commonApi = (project in file("common-api")).
       "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
       "io.circe" %% "circe-parser" % circeV,
       "io.circe" %% "circe-generic" % circeV,
-      "io.circe" %% "circe-generic-extras" % circeGenericExtrasV
+      "io.circe" %% "circe-generic-extras" % circeGenericExtrasV,
+      "org.scalatest" %% "scalatest" % scalaTestV % "test"
     )
   )
 
