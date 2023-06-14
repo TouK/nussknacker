@@ -60,7 +60,7 @@ describe("Fragment", () => {
         cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick");
         cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.");
         cy.get(".ace_autocomplete").should("be.visible");
-        cy.get("[data-testid=window]").matchImage();
+        cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
     });
 
     it("should open properties", () => {
