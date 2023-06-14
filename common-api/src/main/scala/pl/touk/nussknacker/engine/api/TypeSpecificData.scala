@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
-import pl.touk.nussknacker.engine.api.TypeSpecificDataConversionUtils.{convertPropertyWithLog, mapEmptyStringToNone, toStringWithEmptyDefault}
+import pl.touk.nussknacker.engine.api.TypeSpecificDataConversionUtils.{convertPropertyOrNone, mapEmptyStringToNone, toStringWithEmptyDefault}
 import io.circe.generic.extras.ConfiguredJsonCodec
 
 import java.util.concurrent.TimeUnit
@@ -76,10 +76,10 @@ object StreamMetaData {
 
   def apply(properties: Map[String, String]): StreamMetaData = {
     StreamMetaData(
-      parallelism = properties.get(parallelismName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismName)),
-      spillStateToDisk = properties.get(spillStateToDiskName).flatMap(convertPropertyWithLog(_, _.toBoolean, spillStateToDiskName)),
-      useAsyncInterpretation = properties.get(useAsyncInterpretationName).flatMap(convertPropertyWithLog(_, _.toBoolean, useAsyncInterpretationName)),
-      checkpointIntervalInSeconds = properties.get(checkpointIntervalInSecondsName).flatMap(convertPropertyWithLog(_, _.toLong, checkpointIntervalInSecondsName))
+      parallelism = properties.get(parallelismName).flatMap(convertPropertyOrNone(_, _.toInt)),
+      spillStateToDisk = properties.get(spillStateToDiskName).flatMap(convertPropertyOrNone(_, _.toBoolean)),
+      useAsyncInterpretation = properties.get(useAsyncInterpretationName).flatMap(convertPropertyOrNone(_, _.toBoolean)),
+      checkpointIntervalInSeconds = properties.get(checkpointIntervalInSecondsName).flatMap(convertPropertyOrNone(_, _.toLong))
     )
   }
 }
@@ -92,7 +92,7 @@ object LiteStreamMetaData {
 
   def apply(properties: Map[String, String]): LiteStreamMetaData = {
     LiteStreamMetaData(
-      parallelism = properties.get(parallelismName).flatMap(convertPropertyWithLog(_, _.toInt, parallelismName))
+      parallelism = properties.get(parallelismName).flatMap(convertPropertyOrNone(_, _.toInt))
     )
   }
 }
@@ -119,14 +119,10 @@ object TypeSpecificDataConversionUtils {
     case other => other
   }
 
-  def convertPropertyWithLog[T](value: String, converter: String => T, propertyName: String): Option[T] = {
+  def convertPropertyOrNone[T](value: String, converter: String => T): Option[T] = {
     Try(converter(value))
       .map(Some(_))
-      .recover {
-        case _: IllegalArgumentException => None
-          // TODO: Add logger or remove logging
-          // logger.debug(s"Could not convert property $propertyName with value \'$value\' to desired type.")
-      }
+      .recover { case _: IllegalArgumentException => None }
       .get
   }
 }

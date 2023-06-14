@@ -1463,7 +1463,7 @@ lazy val restmodel = (project in file("designer/restmodel"))
   .settings(
     name := "nussknacker-restmodel"
   )
-  .dependsOn(extensionsApi, testUtils % "test")
+  .dependsOn(extensionsApi, commonApi % "test->test", testUtils % "test")
 
 lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(commonSettings)

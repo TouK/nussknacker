@@ -202,7 +202,6 @@ class V1_041__MoveTypePropertiesToGenericSpec extends AnyFunSuite with Matchers 
 
 
   test("migrate flink scenario") {
-    // check converting nulls to empty strings
     migrateMetaData(legacyFlinkScenarioNoFields).get shouldBe updatedFlinkScenarioNoFields
     migrateMetaData(legacyFlinkScenarioWithDescriptionNoProperties).get shouldBe updatedFlinkScenarioWithDescriptionNoProperties
     migrateMetaData(legacyFlinkScenarioWithAdditionalProperties).get shouldBe updatedFlinkScenarioWithAdditionalProperties
