@@ -15,7 +15,6 @@ trait V1_041__MoveTypePropertiesToGenericDefinition extends ProcessJsonMigration
 object V1_041__MoveTypePropertiesToGenericDefinition {
 
   def migrateMetaData(json: Json): Option[Json] = json.as[CanonicalProcess] match {
-    // TODO: check if we handle invalid jsons correctly / transactionally
     case Left(failed: DecodingFailure) => throw new IllegalStateException(s"Migration failed - invalid json. $failed")
     case Right(canonicalProcess: CanonicalProcess) => Some(canonicalProcess.asJson)
   }
