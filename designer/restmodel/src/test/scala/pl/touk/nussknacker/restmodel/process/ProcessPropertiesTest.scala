@@ -11,7 +11,6 @@ class ProcessPropertiesTest extends AnyFunSuite with Matchers {
 
   private val id = "testId"
 
-  // TODO: tests for merging
   test("construct ProcessProperties from TypeSpecificData") {
     forAll(fullMetaDataCases) {
       (fullProperties: Map[String, String], metaDataName: String, typeSpecificData: TypeSpecificData) => {
