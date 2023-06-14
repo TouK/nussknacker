@@ -90,15 +90,6 @@ case class ProcessAdditionalFields(description: Option[String],
 
 object ProcessAdditionalFields {
 
-  def apply(description: Option[String],
-            properties: Map[String, String],
-            metaDataType: String): ProcessAdditionalFields = {
-    if (!Set("StreamMetaData", "LiteStreamMetaData", "RequestResponseMetaData", "FragmentSpecificData").contains(metaDataType)) {
-      throw new IllegalStateException("Unrecognized metadata type.")
-    }
-    new ProcessAdditionalFields(description, properties, metaDataType)
-  }
-
   //TODO: is this currently needed?
   private case class OptionalProcessAdditionalFields(description: Option[String],
                                                      properties: Option[Map[String, String]],
