@@ -43,9 +43,9 @@ class MetaDataTest extends AnyFunSuite with Matchers {
     }
   }
 
-  test("throw exception for unrecognized metadata name") {
+  test("throw exception for creating typeSpecificData with unrecognized metadata name") {
     assertThrows[IllegalStateException](
-      MetaData(testId, ProcessAdditionalFields(None, flinkFullProperties, "fakeMetaDataName"))
+      MetaData(testId, ProcessAdditionalFields(None, flinkFullProperties, "fakeMetaDataName")).typeSpecificData
     )
   }
 
