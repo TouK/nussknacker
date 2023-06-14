@@ -1,37 +1,33 @@
-import React, {PropsWithChildren, useState} from "react"
-import {ReactComponent as TipsInfo} from "../../../../assets/img/icons/tipsInfo.svg"
-import NodeTip from "../NodeTip"
-import TestValue from "./TestValue"
-import {NodeResultsForContext} from "../../../../common/TestResultUtils"
+import React, { PropsWithChildren, useState } from "react";
+import TipsInfo from "../../../../assets/img/icons/tipsInfo.svg";
+import NodeTip from "../NodeTip";
+import TestValue from "./TestValue";
+import { NodeResultsForContext } from "../../../../common/TestResultUtils";
 
 interface ExpressionTestResultsProps {
-  fieldName: string,
-  resultsToShow: NodeResultsForContext,
+    fieldName: string;
+    resultsToShow: NodeResultsForContext;
 }
 
 export default function ExpressionTestResults(props: PropsWithChildren<ExpressionTestResultsProps>): JSX.Element {
-  const {fieldName, resultsToShow} = props
-  const [hideTestResults, toggleTestResults] = useState(false)
+    const { fieldName, resultsToShow } = props;
+    const [hideTestResults, toggleTestResults] = useState(false);
 
-  const testValue = fieldName ? resultsToShow && resultsToShow.expressionResults[fieldName] : null
-  const showIconClass = hideTestResults ? "glyphicon glyphicon-eye-close" : "glyphicon glyphicon-eye-open"
+    const testValue = fieldName ? resultsToShow && resultsToShow.expressionResults[fieldName] : null;
+    const showIconClass = hideTestResults ? "glyphicon glyphicon-eye-close" : "glyphicon glyphicon-eye-open";
 
-  return (
-    testValue ?
-      (
+    return testValue ? (
         <div>
-          {props.children}
-          <div className="node-row node-test-results">
-            <div className="node-label">
-              <NodeTip title={"Value evaluated in test case"} icon={<TipsInfo/>}/>
-              {testValue.pretty ? <span className={showIconClass} onClick={() => toggleTestResults(s => !s)}/> : null}
+            {props.children}
+            <div className="node-row node-test-results">
+                <div className="node-label">
+                    <NodeTip title={"Value evaluated in test case"} icon={<TipsInfo />} />
+                    {testValue.pretty ? <span className={showIconClass} onClick={() => toggleTestResults((s) => !s)} /> : null}
+                </div>
+                <TestValue value={testValue} shouldHideTestResults={hideTestResults} />
             </div>
-            <TestValue value={testValue} shouldHideTestResults={hideTestResults}/>
-          </div>
         </div>
-      ) :
-      (
+    ) : (
         <>{props.children}</>
-      )
-  )
+    );
 }
