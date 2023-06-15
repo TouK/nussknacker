@@ -32,7 +32,7 @@ object MetaData {
 
   private val actualDecoder: Decoder[MetaData] = deriveConfiguredDecoder[MetaData]
 
-  val legacyDecoder: Decoder[MetaData] = {
+  private val legacyDecoder: Decoder[MetaData] = {
     def legacyProcessAdditionalFieldsDecoder(scenarioType: String): Decoder[ProcessAdditionalFields] =
       (c: HCursor) => for {
         id <- c.downField("description").as[Option[String]]

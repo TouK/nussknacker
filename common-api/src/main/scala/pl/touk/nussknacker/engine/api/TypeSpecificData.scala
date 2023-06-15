@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import scala.util.Try
 
 @ConfiguredJsonCodec sealed trait TypeSpecificData {
-  val isSubprocess = this match {
+  val isSubprocess: Boolean = this match {
     case _: ScenarioSpecificData => false
     case _: FragmentSpecificData => true
   }
