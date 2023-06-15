@@ -72,11 +72,11 @@ class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Mat
 
     val namedAggregators = aggregators.indices.map(id => s"field$id").zip(aggregators).tail.toMap
 
-    val mapAggregator = new MapAggregator(namedAggregators.mapValuesNow(_._1.asInstanceOf[Aggregator]).asJava)
-    val input = TypedObjectTypingResult(namedAggregators.mapValuesNow(_._2).toList, objType = Typed.typedClass[JMap[_, _]])
+    val mapAggregator = new MapAggregator(namedAggregators.mapValuesNow(_._1).asJava.asInstanceOf[JMap[String, Aggregator]])
+    val input = TypedObjectTypingResult(namedAggregators.mapValuesNow(_._2), objType = Typed.typedClass[JMap[_, _]])
     val el = namedAggregators.mapValuesNow(_._3).asJava
-    val stored = TypedObjectTypingResult(namedAggregators.mapValuesNow(_._4).toList, objType = Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
-    val output = TypedObjectTypingResult(namedAggregators.mapValuesNow(_._5).toList, objType = Typed.genericTypeClass(classOf[JMap[_, _]], List(Typed[String], Unknown)))
+    val stored = TypedObjectTypingResult(namedAggregators.mapValuesNow(_._4), objType = Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
+    val output = TypedObjectTypingResult(namedAggregators.mapValuesNow(_._5), objType = Typed.genericTypeClass(classOf[JMap[_, _]], List(Typed[String], Unknown)))
     checkAggregator(mapAggregator, input, el, stored, output)
   }
 

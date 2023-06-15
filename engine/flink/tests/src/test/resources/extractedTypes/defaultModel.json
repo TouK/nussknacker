@@ -505,6 +505,31 @@
     }
   },
   {
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "java.lang.Comparable"
+    },
+    "methods": {
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "java.lang.Double"},
     "methods": {
       "byteValue": [
@@ -12802,6 +12827,756 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.collection$"},
+    "methods": {
+      "concat": [
+        {
+          "description": "Concatenates two lists",
+          "name": "concat",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list1",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                },
+                {
+                  "name": "list2",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "diff": [
+        {
+          "description": "Returns a list that contains all elements contained in list1, that don't appear in list2",
+          "name": "diff",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list1",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                },
+                {
+                  "name": "list2",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "distinct": [
+        {
+          "description": "Returns a list that contains unique elements from the given list",
+          "name": "distinct",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "flatten": [
+        {
+          "description": "Returns a list of all elements from all lists in the given list",
+          "name": "flatten",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Collection[Unknown]",
+                        "params": [
+                          {
+                            "display": "Unknown",
+                            "params": [],
+                            "refClazzName": "java.lang.Object",
+                            "type": "Unknown"
+                          }
+                        ],
+                        "refClazzName": "java.util.Collection",
+                        "type": "TypedClass"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "intersect": [
+        {
+          "description": "Returns a list that contains all unique elements that are contained by both list1 and list2",
+          "name": "intersect",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list1",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                },
+                {
+                  "name": "list2",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "join": [
+        {
+          "description": "Creates a string made of all elements of the list separated with the given separator",
+          "name": "join",
+          "signature": {
+            "noVarArgs": [
+              {
+                "name": "list",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.List"
+                }
+              },
+              {"name": "separator", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "max": [
+        {
+          "description": "Returns the largest element (elements must be comparable)",
+          "name": "max",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.lang.Comparable"
+              }
+            }
+          ]
+        }
+      ],
+      "merge": [
+        {
+          "description": "Merges two maps. Values in the first map will be overwritten with values from the second map if keys are the same",
+          "name": "merge",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "map1",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      },
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Map"
+                  }
+                },
+                {
+                  "name": "map2",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      },
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Map"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ],
+      "min": [
+        {
+          "description": "Returns the smallest element (elements must be comparable)",
+          "name": "min",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.lang.Comparable"
+              }
+            }
+          ]
+        }
+      ],
+      "product": [
+        {
+          "description": "Cross joins two lists of maps: eg. product({{a: 'a'},{b: 'b'}}, {{c: 'c'},{d: 'd'}}) => {{a: 'a',c: 'c'},{b: 'b',c: 'c'},{a: 'a',d: 'd'},{b: 'b',d: 'd'}}",
+          "name": "product",
+          "signature": {
+            "noVarArgs": [
+              {
+                "name": "list1",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Map[Unknown,Unknown]",
+                      "params": [
+                        {
+                          "display": "Unknown",
+                          "params": [],
+                          "refClazzName": "java.lang.Object",
+                          "type": "Unknown"
+                        },
+                        {
+                          "display": "Unknown",
+                          "params": [],
+                          "refClazzName": "java.lang.Object",
+                          "type": "Unknown"
+                        }
+                      ],
+                      "refClazzName": "java.util.Map",
+                      "type": "TypedClass"
+                    }
+                  ],
+                  "refClazzName": "java.util.List"
+                }
+              },
+              {
+                "name": "list2",
+                "refClazz": {
+                  "params": [
+                    {
+                      "display": "Map[Unknown,Unknown]",
+                      "params": [
+                        {
+                          "display": "Unknown",
+                          "params": [],
+                          "refClazzName": "java.lang.Object",
+                          "type": "Unknown"
+                        },
+                        {
+                          "display": "Unknown",
+                          "params": [],
+                          "refClazzName": "java.lang.Object",
+                          "type": "Unknown"
+                        }
+                      ],
+                      "refClazzName": "java.util.Map",
+                      "type": "TypedClass"
+                    }
+                  ],
+                  "refClazzName": "java.util.List"
+                }
+              }
+            ],
+            "result": {
+              "params": [
+                {
+                  "display": "Map[Unknown,Unknown]",
+                  "params": [
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    },
+                    {
+                      "display": "Unknown",
+                      "params": [],
+                      "refClazzName": "java.lang.Object",
+                      "type": "Unknown"
+                    }
+                  ],
+                  "refClazzName": "java.util.Map",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.List"
+            }
+          }
+        }
+      ],
+      "shuffle": [
+        {
+          "description": "Returns a copy of the list with its elements shuffled",
+          "name": "shuffle",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "slice": [
+        {
+          "description": "Returns a slice of the list starting with start index (inclusive) and ending at stop index (exclusive)",
+          "name": "slice",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                },
+                {"name": "start", "refClazz": {"refClazzName": "java.lang.Integer"}},
+                {"name": "stop", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "sortedAsc": [
+        {
+          "description": "Returns a list of all elements sorted in ascending order (elements must be comparable)",
+          "name": "sortedAsc",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "sortedDesc": [
+        {
+          "description": "Returns a list of all elements sorted in descending order (elements must be comparable)",
+          "name": "sortedDesc",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "sum": [
+        {
+          "description": "Returns a sum of all elements",
+          "name": "sum",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "listOfNumbers",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Collection"
+                  }
+                }
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
+        }
+      ],
+      "take": [
+        {
+          "description": "Returns a list made of first n elements of the given list",
+          "name": "take",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                },
+                {"name": "max", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ],
+      "takeLast": [
+        {
+          "description": "Returns a list made of last n elements of the given list",
+          "name": "takeLast",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                },
+                {"name": "max", "refClazz": {"refClazzName": "java.lang.Integer"}}
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.conversion$"},
     "methods": {
       "toAny": [
@@ -13281,15 +14056,6 @@
           }
         }
       ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ],
       "zone": [
         {
           "description": "Returns time zone with given zone id e.g. Europe/Warsaw",
@@ -13569,15 +14335,6 @@
             "result": {"refClazzName": "java.time.ZonedDateTime"}
           }
         }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
       ]
     },
     "staticMethods": {}
@@ -13620,15 +14377,6 @@
               {"name": "lon", "refClazz": {"refClazzName": "java.lang.Number"}}
             ],
             "result": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.Point"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
           }
         }
       ]
@@ -13944,15 +14692,6 @@
             }
           ]
         }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
       ]
     },
     "staticMethods": {}
@@ -13960,12 +14699,26 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.util.functions.util$"},
     "methods": {
-      "toString": [
+      "split": [
         {
-          "name": "toString",
+          "description": "Splits given text into a list of Strings using given regular expression. Note that trailing empty strings won't be discarded; e.g. split('a|b|', '|') returns a list of three elements, the last of which is an empty string",
+          "name": "split",
           "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
+            "noVarArgs": [
+              {"name": "text", "refClazz": {"refClazzName": "java.lang.String"}},
+              {"name": "regexp", "refClazz": {"refClazzName": "java.lang.String"}}
+            ],
+            "result": {
+              "params": [
+                {
+                  "display": "String",
+                  "params": [],
+                  "refClazzName": "java.lang.String",
+                  "type": "TypedClass"
+                }
+              ],
+              "refClazzName": "java.util.List"
+            }
           }
         }
       ],

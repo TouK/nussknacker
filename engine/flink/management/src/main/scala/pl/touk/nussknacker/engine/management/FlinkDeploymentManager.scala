@@ -14,15 +14,34 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import ModelData._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
+abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
+                                     (implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
   extends DeploymentManager with AlwaysFreshProcessState with LazyLogging {
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
 
   private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
+
+  /**
+    * Gets status from engine, handles finished state, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
+    */
+  override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
+    for {
+      statusWithFreshness <- getProcessState(name)
+      finishedStatusOpt = statusWithFreshness.value.filter(_.status == SimpleStateStatus.Finished)
+      //There is small problem here: if no one invokes process status for long time, Flink can remove process from history
+      // - then it 's gone, not finished.
+      //TODO: it should be checked periodically instead of checking on each getProcessState invocation
+      // (consider moving `markProcessFinishedIfLastActionDeploy` to InconsistentStateDetector as one "detectAndResolveAndFixStatus")
+      cancelActionOpt <- finishedStatusOpt.map(_ => deploymentService.markProcessFinishedIfLastActionDeploy(name)).sequence.map(_.flatten)
+      engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, cancelActionOpt.orElse(lastStateAction))
+    } yield statusWithFreshness.copy(value = processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
+  }
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     for {
@@ -40,7 +59,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
       oldJob <- OptionT(checkOldJobStatus(processVersion))
       deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
       //when it's failed we don't need savepoint...
-      if oldJob.isDeployed
+      if SimpleStateStatus.DefaultFollowingDeployStatuses.contains(oldJob.status)
       maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, deploymentId, canonicalProcess))
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")
@@ -63,11 +82,12 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   protected def waitForDuringDeployFinished(processName: ProcessName): Future[Unit]
 
-  private def checkOldJobStatus(processVersion: ProcessVersion): Future[Option[ProcessState]] = {
+  private def checkOldJobStatus(processVersion: ProcessVersion): Future[Option[StatusDetails]] = {
     val processName = processVersion.processName
     for {
       oldJob <- getFreshProcessState(processName)
-      _ <- if (oldJob.exists(!_.allowedActions.contains(ProcessActionType.Deploy)))
+      oldProcessStatus = oldJob.map(processStateDefinitionManager.processState)
+      _ <- if (oldProcessStatus.exists(!_.allowedActions.contains(ProcessActionType.Deploy)))
         Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.map(_.status.name).getOrElse("")}")) else Future.successful(Some(()))
     } yield oldJob
   }
@@ -98,7 +118,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   private def requireRunningProcess[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value
     getFreshProcessState(processName).flatMap {
-      case Some(ProcessState(Some(deploymentId), status, _, _, _, _, _, _, _, _)) if status.isRunning =>
+      case Some(StatusDetails(SimpleStateStatus.Running, Some(deploymentId), _, _, _, _)) =>
         action(deploymentId)
       case Some(state) =>
         Future.failed(new IllegalStateException(s"Job $name is not running, status: ${state.status.name}"))

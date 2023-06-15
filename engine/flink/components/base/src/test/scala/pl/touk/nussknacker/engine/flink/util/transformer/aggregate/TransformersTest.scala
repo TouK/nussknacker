@@ -35,10 +35,8 @@ import java.time.{Duration, OffsetDateTime, ZoneId}
 import java.util
 import java.util.Arrays.asList
 import scala.jdk.CollectionConverters._
-import scala.collection.immutable.ListMap
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-import java.util.TimeZone
 
 class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
@@ -59,7 +57,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     validateOk("#AGG.set", "#input.str", Typed.fromDetailedType[java.util.Set[String]])
     validateOk("#AGG.map({f1: #AGG.sum, f2: #AGG.set})",
       "{f1: #input.eId, f2: #input.str}",
-      TypedObjectTypingResult(ListMap("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]])))
+      TypedObjectTypingResult(Map("f1" -> Typed[java.lang.Long], "f2" -> Typed.fromDetailedType[java.util.Set[String]])))
 
     validateError("#AGG.sum", "#input.str", "Invalid aggregate type: String, should be: Number")
     validateError("#AGG.map({f1: #AGG.set, f2: #AGG.set})", "{f1: #input.str}", "Fields do not match, aggregateBy: f1, aggregator: f1, f2")
@@ -146,7 +144,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val result = processValidator.validate(testProcess)
 
     inside(result.result) {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _), _)) =>
     }
   }
 
@@ -165,7 +163,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
   test("set tumbling aggregate") {
-    val id1 = ZoneId.of("Europe/Warsaw")
     val id = "1"
     val model = modelData(List(
       TestRecordHours(id, 10, 1, "a"),

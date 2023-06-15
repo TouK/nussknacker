@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -20,14 +21,26 @@ trait DeploymentManager extends AutoCloseable {
   //TODO: savepointPath is very flink specific, we should handle this mode via custom action
   /**
     * We assume that validate was already called and was successful
-    *  */
+    */
   def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
   def cancel(name: ProcessName, user: User): Future[Unit]
 
   def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]]
 
-  def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]]
+  /**
+    * Gets status from the engine
+    */
+  def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]]
+
+  /**
+    * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
+    */
+  def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
+    getProcessState(name).map(_.map(statusDetailsOpt => {
+      val engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusDetailsOpt, lastStateAction)
+      processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
+    }))
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
@@ -46,9 +59,9 @@ trait DeploymentManager extends AutoCloseable {
 trait AlwaysFreshProcessState { self: DeploymentManager =>
 
   final override def getProcessState(name: ProcessName)
-                                    (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] =
+                                    (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]] =
     getFreshProcessState(name).map(WithDataFreshnessStatus(_, cached = false))
 
-  protected def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]]
+  protected def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]]
 
 }

@@ -19,11 +19,11 @@ import scala.concurrent.duration._
 class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
                                            cacheTTL: FiniteDuration) extends DeploymentManager {
 
-  private val cache: AsyncCache[ProcessName, Option[ProcessState]] = Caffeine.newBuilder()
+  private val cache: AsyncCache[ProcessName, Option[StatusDetails]] = Caffeine.newBuilder()
     .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
-    .buildAsync[ProcessName, Option[ProcessState]]
+    .buildAsync[ProcessName, Option[StatusDetails]]
 
-  override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+  override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]] = {
     freshnessPolicy match {
       case DataFreshnessPolicy.Fresh =>
         val resultFuture = delegate.getProcessState(name)

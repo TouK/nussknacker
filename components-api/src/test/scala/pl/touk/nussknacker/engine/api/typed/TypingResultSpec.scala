@@ -7,13 +7,12 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, Nu
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
 
 import java.util
-import scala.collection.immutable.ListMap
 
 class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   private val commonSuperTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)
 
-  private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toList)
+  private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toMap)
 
   private def list(arg: TypingResult) = Typed.genericTypeClass[java.util.List[_]](List(arg))
 
@@ -115,13 +114,13 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     commonSuperTypeFinder.commonSupertype(Unknown, Typed[Long]) shouldEqual Unknown
 
     commonSuperTypeFinder.commonSupertype(
-      TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
-      TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))) shouldEqual
-      TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[java.lang.Long], "baz" -> Typed[String], "baz2" -> Typed[String]))
+      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Int], "baz" -> Typed[String])),
+      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[Long], "baz2" -> Typed[String]))) shouldEqual
+      TypedObjectTypingResult(Map("foo" -> Typed[String], "bar" -> Typed[java.lang.Long], "baz" -> Typed[String], "baz2" -> Typed[String]))
 
     commonSuperTypeFinder.commonSupertype(
-      TypedObjectTypingResult(ListMap("foo" -> Typed[String])), TypedObjectTypingResult(ListMap("foo" -> Typed[Long]))) shouldEqual
-      TypedObjectTypingResult(ListMap.empty[String, TypingResult])
+      TypedObjectTypingResult(Map("foo" -> Typed[String])), TypedObjectTypingResult(Map("foo" -> Typed[Long]))) shouldEqual
+      TypedObjectTypingResult(Map.empty[String, TypingResult])
   }
 
   test("find common supertype for complex types with inheritance in classes hierarchy") {
@@ -257,6 +256,12 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     Typed.fromInstance("1234.1234.12").display shouldBe "String{1234.1234.12}"
     Typed.fromInstance("1234.1234.1234").display shouldBe "String{1234.1234.1234}"
     Typed.fromInstance("1234.1234.1234.1").display shouldBe "String{1234.1234.12...}"
+  }
+
+  test("should display fields in order") {
+    for (keys <- List("a", "b", "c", "d").permutations) {
+      typeMap(keys.map(_ -> Typed[String]): _*).display shouldBe "{a: String, b: String, c: String, d: String}"
+    }
   }
 
   test("should correctly calculate union of types") {

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { ReactComponent as Icon } from "../../../../assets/img/toolbarButtons/test-with-form.svg";
+import Icon from "../../../../assets/img/toolbarButtons/test-with-form.svg";
 import {
     getProcessId,
     getProcessToDisplay,
@@ -35,17 +35,13 @@ function TestWithFormButton(props: Props) {
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const dispatch = useDispatch();
 
-    const isAvailable = () =>
-        !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canTestWithForm;
+    const isAvailable = () => !disabled && processIsLatestVersion && testCapabilities && testCapabilities.canTestWithForm;
 
     const [available, setAvailable] = useState(isAvailable);
     const [action, setAction] = useState(null);
     const [selectedSource, setSelectedSource] = useState(_.head(testFormParameters)?.sourceId);
     const [sourceParameters, setSourceParameters] = useState(updateParametersFromTestForm());
-    const variableTypes = useMemo(
-        () => findAvailableVariables?.(selectedSource),
-        [findAvailableVariables, selectedSource]
-    );
+    const variableTypes = useMemo(() => findAvailableVariables?.(selectedSource), [findAvailableVariables, selectedSource]);
 
     function updateParametersFromTestForm(): { [key: string]: GenericActionParameters } {
         return (testFormParameters || []).reduce(
@@ -58,12 +54,12 @@ function TestWithFormButton(props: Props) {
                             ...paramObj,
                             [param.name]: param.defaultValue,
                         }),
-                        {}
+                        {},
                     ),
                     onParamUpdate: (name: string) => (value: any) => onParamUpdate(testFormParam.sourceId, name, value),
                 },
             }),
-            {}
+            {},
         );
     }
 
@@ -87,7 +83,7 @@ function TestWithFormButton(props: Props) {
                     ...obj,
                     [uiParam.name]: paramValues[uiParam.name],
                 }),
-                {}
+                {},
             );
             const request: SourceWithParametersTest = {
                 sourceId: selectedSource as string,
@@ -95,15 +91,12 @@ function TestWithFormButton(props: Props) {
             };
             dispatch(testProcessWithParameters(processId, request, processToDisplay));
         },
-        [sourceParameters, selectedSource]
+        [sourceParameters, selectedSource],
     );
 
     useEffect(() => {
-        if (available) dispatch(fetchTestFormParameters(processToDisplay));
-    }, [available, processToDisplay]);
-
-    useEffect(() => {
-        setAvailable(isAvailable);
+        setAvailable(isAvailable());
+        if (isAvailable()) dispatch(fetchTestFormParameters(processToDisplay));
     }, [testCapabilities]);
 
     useEffect(() => {

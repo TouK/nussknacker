@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, TestFactory, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.db.entity.ProcessActionId
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
@@ -32,6 +33,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.DBIOActionValues
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
+import java.net.URI
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.duration.DurationInt
@@ -62,6 +64,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     def notificationsFor(user: LoggedUser, after: Option[Instant] = None): List[Notification] = notificationService.notifications(after)(user, ctx).futureValue
     def deployProcess(givenDeployResult: Try[Option[ExternalDeploymentId]], user: LoggedUser): Option[ExternalDeploymentId] = {
       when(deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])).thenReturn(Future.fromTry(givenDeployResult))
+      when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
       deploymentService.deployProcessAsync(processIdWithName, None, None)(user, ctx).flatten.futureValue
     }
 
@@ -84,9 +87,13 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     notificationsFor(userForFail).map(_.toRefresh) shouldBe Symbol("empty")
   }
 
+  private val notDeployed = SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
+
   private def createServices(deploymentManager: DeploymentManager, processName: ProcessName) = {
     when(deploymentManager.getProcessState(any[ProcessName])(any[DataFreshnessPolicy]))
-      .thenReturn(Future.successful(WithDataFreshnessStatus(Option.empty[ProcessState], cached = false)))
+      .thenReturn(Future.successful(WithDataFreshnessStatus(Option.empty[StatusDetails], cached = false)))
+    when(deploymentManager.getProcessState(any[ProcessName], any[Option[ProcessAction]])(any[DataFreshnessPolicy]))
+      .thenReturn(Future.successful(WithDataFreshnessStatus(notDeployed, cached = false)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])).thenReturn(Some(deploymentManager))
     when(managerDispatcher.deploymentManagerUnsafe(any[String])).thenReturn(deploymentManager)

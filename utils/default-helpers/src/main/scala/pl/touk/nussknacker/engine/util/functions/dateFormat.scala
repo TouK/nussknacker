@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import pl.touk.nussknacker.engine.api.Documentation
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString}
 
 import java.time._
 import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
@@ -9,7 +9,7 @@ import java.util.Locale
 
 object dateFormat extends DateFormatUtils(Locale.getDefault)
 
-class DateFormatUtils(defaultLocale: Locale) {
+class DateFormatUtils(defaultLocale: Locale) extends HideToString {
 
   @Documentation(description = "Parse LocalTime in ISO-8601 format e.g. '10:15' or '10:15:30'")
   def parseLocalTime(text: String): LocalTime = LocalTime.parse(text)

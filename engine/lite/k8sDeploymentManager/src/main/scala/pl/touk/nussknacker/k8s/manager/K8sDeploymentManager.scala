@@ -27,7 +27,7 @@ import skuber.api.client.{KubernetesClient, LoggingConfig}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
-import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, ObjectResource, Pod, ResourceQuotaList, Secret, Service, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, ObjectResource, Pod, ResourceQuotaList, Secret, Service}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
@@ -194,7 +194,7 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
     }
   }
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] = {
+  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
       deployments <- scenarioStateK8sClient.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)

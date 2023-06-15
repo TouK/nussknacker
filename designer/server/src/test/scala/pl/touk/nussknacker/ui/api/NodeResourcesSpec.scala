@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestCateg
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
+import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -39,7 +40,13 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.TestCat)
 
   private val validation = ProcessValidation(typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators), new SubprocessResolver(subprocessRepository))
-  private val nodeRoute = new NodesResources(futureFetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), validation, new ExpressionSuggester)
+  private val nodeRoute = new NodesResources(
+    futureFetchingProcessRepository,
+    subprocessRepository,
+    typeToConfig.mapValues(_.modelData),
+    validation,
+    typeToConfig.mapValues(v => new ExpressionSuggester(v.modelData.modelDefinition.expressionConfig, v.modelData.modelDefinitionWithTypes.typeDefinitions, v.modelData.uiDictServices, v.modelData.modelClassLoader.classLoader))
+  )
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
   = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)

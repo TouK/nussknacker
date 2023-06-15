@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import styles from "../stylesheets/processHistory.styl";
 import Date from "./common/Date";
-import { ReactComponent as Badge } from "./deployed.svg";
+import Badge from "./deployed.svg";
 import { ActionType, ProcessVersionType } from "./Process/types";
 
 type HistoryItemProps = {

@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, HideToString, ParamName}
 
-object geo {
+object geo extends HideToString {
 
   @Documentation(description = "Calculate distance in km between two points (with decimal coordinates), using haversine algorithm")
   def distanceInKm(@ParamName("first point latitude") currentLat: Number, @ParamName("first point longitude") currentLon: Number,

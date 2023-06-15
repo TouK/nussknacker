@@ -31,31 +31,7 @@ import java.net.URI
                                    description: String,
                                    startTime: Option[Long],
                                    attributes: Option[Json],
-                                   errors: List[String]) {
-
-  def isDeployed: Boolean = status.isRunning || status.isDuringDeploy
-
-  // TODO: those methods shouldn't be needed after refactors in DeploymentManager: split getProcessState into
-  //       fetching only details, and enriching details with presentation properties like icon, tooltip etc.
-  def toStatusDetails: StatusDetails = StatusDetails(
-    status = status,
-    deploymentId = deploymentId,
-    version = version,
-    startTime = startTime,
-    attributes = attributes,
-    errors = errors
-  )
-
-  def withStatusDetails(stateWithStatusDetails: ProcessState): ProcessState = {
-    copy(
-      status = stateWithStatusDetails.status,
-      allowedActions = stateWithStatusDetails.allowedActions,
-      icon = stateWithStatusDetails.icon,
-      tooltip = stateWithStatusDetails.tooltip,
-      description = stateWithStatusDetails.description)
-  }
-
-}
+                                   errors: List[String])
 
 object ProcessState {
   implicit val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
@@ -72,42 +48,20 @@ object StateStatus {
   implicit val statusEncoder: Encoder[StateStatus] = Encoder.encodeString
     .contramap[StateStatus](_.name)
     .mapJson(nameJson => Json.fromFields(Seq("name" -> nameJson)))
-  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.at("name").map(statusName => new StateStatus {
-    override def name: StatusName = statusName
-  })
+  implicit val statusDecoder: Decoder[StateStatus] = Decoder.decodeString.at("name").map(NoAttributesStateStatus)
 
   // Temporary methods to simplify status creation
-  def apply(statusName: StatusName): StateStatus = new StateStatus {
-    override def name: StatusName = statusName
-  }
-  def duringDeploy(statusName: StatusName): StateStatus = new StateStatus {
-    override def name: StatusName = statusName
-    override def isDuringDeploy: Boolean = true
-  }
+  def apply(statusName: StatusName): StateStatus = NoAttributesStateStatus(statusName)
 
-  def running(statusName: StatusName): StateStatus = new StateStatus {
-    override def name: StatusName = statusName
-    override def isRunning: Boolean = true
-  }
-
-  def finished(statusName: StatusName): StateStatus = new StateStatus {
-    override def name: StatusName = statusName
-    override def isFinished: Boolean = true
-  }
 }
 
 trait StateStatus {
-  //used for filtering processes (e.g. shouldBeRunning)
-  def isDuringDeploy: Boolean = false
-  //used for handling finished
-  def isFinished: Boolean = false
-
-  def isRunning: Boolean = false
-  def isFailed: Boolean = false
-
   // Status identifier, should be unique among all states registered within all processing types.
   def name: StatusName
+}
 
+case class NoAttributesStateStatus(name: StatusName) extends StateStatus {
+  override def toString: String = name
 }
 
 case class StatusDetails(status: StateStatus,

@@ -46,20 +46,12 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     customActionTest -> TestStatus
   )
 
-  private val memory: TrieMap[ProcessName, ProcessState] = TrieMap[ProcessName, ProcessState]()
+  private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
   private val random = new scala.util.Random()
 
-  implicit private class ProcessStateExpandable(processState: ProcessState) {
-    def withStateStatus(stateStatus: StateStatus): ProcessState = {
-      val processStateForStateStatus = processStateDefinitionManager.processState(
-        stateStatus, startTime = Some(System.currentTimeMillis())
-      )
-
-      processStateForStateStatus.copy(
-        deploymentId = processState.deploymentId,
-        version = processState.version
-      )
-    }
+  implicit private class ProcessStateExpandable(processState: StatusDetails) {
+    def withStateStatus(stateStatus: StateStatus): StatusDetails =
+      StatusDetails(stateStatus, processState.deploymentId, processState.version, Some(System.currentTimeMillis()))
   }
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
@@ -115,7 +107,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[ProcessState]] =
+  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] =
     Future.successful(memory.get(name))
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
@@ -132,18 +124,18 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
         .find(_.name.equals(actionRequest.name))
         .map(customAction => {
           val processName = actionRequest.processVersion.processName
-          val processState = memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
+          val statusDetails = memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
 
-          if (customAction.allowedStateStatusNames.contains(processState.status.name)) {
+          if (customAction.allowedStateStatusNames.contains(statusDetails.status.name)) {
             customActionStatusMapping
               .get(customAction)
               .map { status =>
                 asyncChangeState(processName, status)
                 Right(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
               }
-              .getOrElse(Left(CustomActionInvalidStatus(actionRequest, processState.status.name)))
+              .getOrElse(Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
           } else {
-            Left(CustomActionInvalidStatus(actionRequest, processState.status.name))
+            Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name))
           }
         })
         .getOrElse(Left(CustomActionNotImplemented(actionRequest)))
@@ -167,8 +159,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
       })
     }
 
-  private def createAndSaveProcessState(stateStatus: StateStatus, processVersion: ProcessVersion): ProcessState = {
-    val processState = processStateDefinitionManager.processState(
+  private def createAndSaveProcessState(stateStatus: StateStatus, processVersion: ProcessVersion): StatusDetails = {
+    val processState = StatusDetails(
       stateStatus,
       Some(ExternalDeploymentId(UUID.randomUUID().toString)),
       version = Some(processVersion),

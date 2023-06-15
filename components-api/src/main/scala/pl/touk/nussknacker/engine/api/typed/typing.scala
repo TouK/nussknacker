@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.jdk.CollectionConverters._
-import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
@@ -45,30 +44,25 @@ object typing {
   object TypedObjectTypingResult {
 
     def apply(definition: TypedObjectDefinition): TypedObjectTypingResult =
-      TypedObjectTypingResult(definition.fields.map { case (k, v) => (k, Typed(v))})
+      TypedObjectTypingResult(definition.fields)
 
-    def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult =
-      TypedObjectTypingResult(ListMap(fields: _*))
+    def apply(fields: Map[String, TypingResult]): TypedObjectTypingResult =
+      TypedObjectTypingResult(fields, stringMapWithValues[java.util.Map[_, _]](fields))
 
-    def apply(fields: List[(String, TypingResult)], objType: TypedClass): TypedObjectTypingResult =
-      TypedObjectTypingResult(ListMap(fields: _*), objType)
-
-    def apply(fields: ListMap[String, TypingResult]): TypedObjectTypingResult = {
-      TypedObjectTypingResult(fields, stringMapWithValues[java.util.Map[_, _]](fields.toList))
-    }
+    // For backward compatibility, to be removed once downstream projects switch to apply(fields: Map[String, TypingResult])
+    def apply(fields: List[(String, TypingResult)]): TypedObjectTypingResult = TypedObjectTypingResult(fields.toMap)
   }
 
-  // Warning, fields are kept in list-like map: 1) order is important 2) lookup has O(n) complexity
-  case class TypedObjectTypingResult(fields: ListMap[String, TypingResult],
+  case class TypedObjectTypingResult(fields: Map[String, TypingResult],
                                      objType: TypedClass,
                                      additionalInfo: Map[String, AdditionalDataValue] = Map.empty) extends SingleTypingResult {
-    override def valueOpt: Option[ListMap[String, Any]] =
-      fields.map{ case (k, v) => v.valueOpt.map((k, _))}.toList.sequence.map(ListMap(_: _*))
+    override def valueOpt: Option[Map[String, Any]] =
+      fields.map{ case (k, v) => v.valueOpt.map((k, _))}.toList.sequence.map(Map(_: _*))
 
     override def withoutValue: TypedObjectTypingResult =
-      TypedObjectTypingResult(ListMap(fields.mapValuesNow(_.withoutValue).toList: _*), objType, additionalInfo)
+      TypedObjectTypingResult(fields.mapValuesNow(_.withoutValue), objType, additionalInfo)
 
-    override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.mkString("{", ", ", "}")
+    override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.toList.sorted.mkString("{", ", ", "}")
   }
 
   case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
@@ -311,7 +305,7 @@ object typing {
 
     private def typeMapFields(map: Map[String, Any]) = map.map {
         case (k, v) => k -> fromInstance(v)
-      }.toList
+      }
 
     def apply(possibleTypes: TypingResult*): TypingResult = {
       apply(possibleTypes.toSet)
@@ -338,8 +332,8 @@ object typing {
 
   }
 
-  private def stringMapWithValues[T: ClassTag](fields: List[(String, TypingResult)]): TypedClass = {
-    val valueType = superTypeOfTypes(fields.map(_._2))
+  private def stringMapWithValues[T: ClassTag](fields: Map[String, TypingResult]): TypedClass = {
+    val valueType = superTypeOfTypes(fields.values)
     Typed.genericTypeClass[T](List(Typed[String], valueType))
   }
 
@@ -347,7 +341,7 @@ object typing {
     superTypeOfTypes(list.map(fromInstance))
   }
 
-  private def superTypeOfTypes(list: List[TypingResult]) = {
+  private def superTypeOfTypes(list: Iterable[TypingResult]) = {
     val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
     list.reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).getOrElse(Unknown)
   }

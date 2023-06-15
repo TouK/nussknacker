@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
-import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 
 case object UnionReturnObjectService extends EagerServiceWithStaticParametersAndReturnType {
@@ -20,7 +19,7 @@ case object UnionReturnObjectService extends EagerServiceWithStaticParametersAnd
   override def parameters: List[Parameter] = List.empty
 
   override def returnType: typing.TypingResult = Typed(
-    TypedObjectTypingResult(ListMap("foo" -> Typed[Int])),
-    TypedObjectTypingResult(ListMap("bar" -> Typed[Int])))
+    TypedObjectTypingResult(Map("foo" -> Typed[Int])),
+    TypedObjectTypingResult(Map("bar" -> Typed[Int])))
 
 }

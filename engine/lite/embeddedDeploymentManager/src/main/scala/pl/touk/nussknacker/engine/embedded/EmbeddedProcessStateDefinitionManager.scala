@@ -11,10 +11,5 @@ object EmbeddedProcessStateDefinitionManager extends OverridingProcessStateDefin
   delegate = SimpleProcessStateDefinitionManager,
   statusActionsPF = {
     case SimpleStateStatus.Restarting => List(ProcessActionType.Cancel)
-    // We don't know if it is temporal problem or not so deploy is still available
-    case EmbeddedStateStatus.DetailedFailedStateStatus(_) => List(ProcessActionType.Deploy, ProcessActionType.Cancel)
-  },
-  statusTooltipsPF = {
-    case EmbeddedStateStatus.DetailedFailedStateStatus(message) => s"Problems detected: $message"
   }
 )

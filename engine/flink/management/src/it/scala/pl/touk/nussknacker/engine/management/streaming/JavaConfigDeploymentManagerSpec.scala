@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -10,7 +11,7 @@ import pl.touk.nussknacker.engine.deployment.DeploymentData
 
 import scala.concurrent.duration._
 
-class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest {
+class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest with OptionValues {
 
   override protected def classPath: List[String] = ClassPaths.javaClasspath
 
@@ -27,8 +28,7 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
 
     eventually {
       val jobStatus = deploymentManager.getProcessState(ProcessName(process.id)).futureValue.value
-      jobStatus.map(_.status.name) shouldBe Some(SimpleStateStatus.Running.name)
-      jobStatus.map(_.status.isRunning) shouldBe Some(true)
+      jobStatus.map(_.status).value shouldBe SimpleStateStatus.Running
     }
 
     assert(deploymentManager.cancel(ProcessName(process.id), user = userToAct).isReadyWithin(10 seconds))

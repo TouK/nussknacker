@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.dict
 
-import cats.data.Validated.Invalid
-import cats.data.{Validated, ValidatedNel}
+import cats.data.{Validated, Writer}
 import com.typesafe.scalalogging.LazyLogging
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast.{Indexer, PropertyOrFieldReference, StringLiteral}
@@ -17,7 +16,7 @@ import pl.touk.nussknacker.engine.spel.ast
   */
 trait SpelDictTyper {
 
-  def typeDictValue(dict: TypedDict, node: SpelNode): ValidatedNel[ExpressionParseError, TypingResult]
+  def typeDictValue(dict: TypedDict, node: SpelNode): Writer[List[ExpressionParseError], TypingResult]
 
 }
 
@@ -27,7 +26,7 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
 
   protected def dictRegistry: DictRegistry
 
-  override def typeDictValue(dict: TypedDict, node: SpelNode): ValidatedNel[ExpressionParseError, dict.ValueType]  = {
+  override def typeDictValue(dict: TypedDict, node: SpelNode): Writer[List[ExpressionParseError], TypingResult]  = {
     node match {
       case _: Indexer =>
         node.children match {
@@ -35,25 +34,25 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
             val key = str.getLiteralValue.getValue.toString
             findKey(dict, key)
           case _ =>
-            Invalid(DictIndexCountError(node)).toValidatedNel
+            Writer(List(DictIndexCountError(node)), dict.valueType)
         }
       case pf: PropertyOrFieldReference  =>
         findKey(dict, pf.getName)
     }
   }
 
-  private def findKey(dict: TypedDict, value: String) = {
+  private def findKey(dict: TypedDict, value: String): Writer[List[ExpressionParseError], TypingResult] = {
+    val w = Writer.value[List[ExpressionParseError], TypingResult](dict.valueType)
     valueForDictKey(dict, value)
-      .map(_ => dict.valueType)
-      .leftMap {
+      .fold({
         case DictNotDeclared(dictId) =>
           // It will happen only if will be used dictionary for which, definition wasn't exposed in ExpressionConfig.dictionaries
-          NoDictError(dictId)
+          w.tell(List(NoDictError(dictId)))
         case DictEntryWithLabelNotExists(_, label, possibleLabels) =>
-          DictLabelError(label, possibleLabels, dict)
+          w.tell(List(DictLabelError(label, possibleLabels, dict)))
         case DictEntryWithKeyNotExists(_, key, possibleKeys) =>
-          DictKeyError(key, possibleKeys, dict)
-      }.toValidatedNel
+          w.tell(List(DictKeyError(key, possibleKeys, dict)))
+      }, _ => w)
   }
 
   protected def valueForDictKey(dict: TypedDict, key: String): Validated[DictRegistry.DictLookupError, Option[String]]

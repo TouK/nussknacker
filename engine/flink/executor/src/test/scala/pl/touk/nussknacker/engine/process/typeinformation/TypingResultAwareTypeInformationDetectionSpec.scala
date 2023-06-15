@@ -23,7 +23,6 @@ import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.util.Collections
 import scala.jdk.CollectionConverters._
-import scala.collection.immutable.ListMap
 
 class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Matchers with FlinkTypeInformationSerializationMixin {
 
@@ -34,7 +33,7 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
 
   test("test map serialization") {
     val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L, "fixedLong" -> 12L, "taggedString" -> "1")
-    val typingResult = TypedObjectTypingResult(ListMap("intF" -> Typed[Int], "strF" -> Typed[String],
+    val typingResult = TypedObjectTypingResult(Map("intF" -> Typed[Int], "strF" -> Typed[String],
       "longF" -> Typed[Long], "fixedLong" -> Typed.fromInstance(12L), "taggedString" -> Typed.tagged(Typed.typedClass[String], "someTag")), Typed.typedClass[Map[String, Any]])
 
     val typeInfo: TypeInformation[Map[String, Any]] = informationDetection.forType(typingResult)
@@ -55,7 +54,7 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
   test("map serialization fallbacks to Kryo when available") {
 
     val map = Map("obj" -> SomeTestClass("name"))
-    val typingResult = TypedObjectTypingResult(ListMap("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
+    val typingResult = TypedObjectTypingResult(Map("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
 
     val typeInfo: TypeInformation[Map[String, Any]] = informationDetection.forType(typingResult)
 
@@ -67,7 +66,7 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
 
   test("test context serialization") {
     val ctx = Context("11").copy(variables = Map("one" -> 11, "two" -> "ala", "three" -> Map("key" -> "value")))
-    val vCtx = ValidationContext(Map("one" -> Typed[Int], "two" -> Typed[String], "three" -> TypedObjectTypingResult(ListMap("key" -> Typed[String]),
+    val vCtx = ValidationContext(Map("one" -> Typed[Int], "two" -> Typed[String], "three" -> TypedObjectTypingResult(Map("key" -> Typed[String]),
       Typed.typedClass[Map[String, Any]])))
 
     val typeInfo = informationDetection.forContext(vCtx)
@@ -98,11 +97,11 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
   }
 
   test("Test serialization compatibility") {
-    val typingResult = TypedObjectTypingResult(ListMap("intF" -> Typed[Int], "strF" -> Typed[String]),
+    val typingResult = TypedObjectTypingResult(Map("intF" -> Typed[Int], "strF" -> Typed[String]),
       Typed.typedClass[Map[String, Any]])
-    val compatibleTypingResult = TypedObjectTypingResult(ListMap("intF" -> Typed[Int], "strF" -> Typed[String],
+    val compatibleTypingResult = TypedObjectTypingResult(Map("intF" -> Typed[Int], "strF" -> Typed[String],
           "longF" -> Typed[Long]), Typed.typedClass[Map[String, Any]])
-    val incompatibleTypingResult = TypedObjectTypingResult(ListMap("intF" -> Typed[Int], "strF" -> Typed[Long]),
+    val incompatibleTypingResult = TypedObjectTypingResult(Map("intF" -> Typed[Int], "strF" -> Typed[Long]),
       Typed.typedClass[Map[String, Any]])
 
     val oldSerializer = informationDetection.forType(typingResult).createSerializer(executionConfigWithoutKryo)
@@ -120,7 +119,7 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
   test("serialization compatibility with reconfigured serializer") {
 
     val map = Map("obj" -> SomeTestClass("name"))
-    val typingResult = TypedObjectTypingResult(ListMap("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
+    val typingResult = TypedObjectTypingResult(Map("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
 
     val oldSerializer = informationDetection.forType[Map[String, Any]](typingResult).createSerializer(executionConfigWithKryo)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
@@ -138,11 +137,11 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
   }
 
   test("serialization compatibility with custom flag config") {
-    val typingResult = TypedObjectTypingResult(ListMap("intF" -> Typed[Int], "strF" -> Typed[String]),
+    val typingResult = TypedObjectTypingResult(Map("intF" -> Typed[Int], "strF" -> Typed[String]),
       Typed.typedClass[CustomTypedObject])
-    val addField = TypedObjectTypingResult(ListMap("intF" -> Typed[Int], "strF" -> Typed[String],
+    val addField = TypedObjectTypingResult(Map("intF" -> Typed[Int], "strF" -> Typed[String],
       "longF" -> Typed[Long]), Typed.typedClass[CustomTypedObject])
-    val removeField = TypedObjectTypingResult(ListMap("intF" -> Typed[Int]), Typed.typedClass[CustomTypedObject])
+    val removeField = TypedObjectTypingResult(Map("intF" -> Typed[Int]), Typed.typedClass[CustomTypedObject])
 
     serializeRoundTrip(CustomTypedObject(Map[String, AnyRef]("intF" -> (5: java.lang.Integer), "strF" -> "").asJava), informationDetection.forType(typingResult))()
 
@@ -198,7 +197,7 @@ object testTypedObject {
   case class CustomTypedObject(map: java.util.Map[String, AnyRef]) extends java.util.HashMap[String, AnyRef](map)
 
   case class CustomObjectTypeInformation(fields: Map[String, TypeInformation[_]]) extends TypedObjectBasedTypeInformation[CustomTypedObject](fields) {
-    override def createSerializer(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[CustomTypedObject] = new CustomObjectTypeSerializer(serializers)
+    override def createSerializer(serializers: Array[(String, TypeSerializer[_])]): TypeSerializer[CustomTypedObject] = CustomObjectTypeSerializer(serializers)
   }
 
   case class CustomObjectTypeSerializer(override val serializers: Array[(String, TypeSerializer[_])])

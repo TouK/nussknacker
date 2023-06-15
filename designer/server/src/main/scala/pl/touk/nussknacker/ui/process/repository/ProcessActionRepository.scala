@@ -30,7 +30,7 @@ trait ProcessActionRepository[F[_]] {
 
 object DbProcessActionRepository {
   def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData, _])(implicit ec: ExecutionContext): DbProcessActionRepository[DB] =
-    new DbProcessActionRepository[DB](dbConfig, modelData.mapValues(_.configCreator.buildInfo())) with DbioRepistory
+    new DbProcessActionRepository[DB](dbConfig, modelData.mapValues(_.configCreator.buildInfo())) with DbioRepository
 }
 
 abstract class DbProcessActionRepository[F[_]](val dbConfig: DbConfig, buildInfos: ProcessingTypeDataProvider[Map[String, String], _]) (implicit ec: ExecutionContext)

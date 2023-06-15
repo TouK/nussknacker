@@ -46,7 +46,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
   protected lazy val schemaRegistryClient = new CachedSchemaRegistryClient(mappedSchemaRegistryAddress, 10)
 
   protected val kafkaContainer: KafkaContainer = {
-    val container = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.3.0")).configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
+    val container = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.4.0")).configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
     configureNetwork(container, kafkaHostname)
     container
   }

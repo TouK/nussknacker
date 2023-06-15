@@ -137,12 +137,11 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
-  override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
+  override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]] = {
     for {
       delegateState <- delegate.getProcessState(name)
       mergedStatus <- service.mergeStatusWithDeployments(name, delegateState.value)
-      formattedByPeriodicManager = mergedStatus.map(processStateDefinitionManager.processState)
-    } yield WithDataFreshnessStatus(formattedByPeriodicManager, delegateState.cached)
+    } yield WithDataFreshnessStatus(mergedStatus, delegateState.cached)
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =

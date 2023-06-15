@@ -16,17 +16,19 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
+import pl.touk.nussknacker.engine.api.process.LanguageConfiguration
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{KnownTypingResult, SingleTypingResult, Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypedUnion, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{KnownTypingResult, SingleTypingResult, Typed, TypedNull, TypedObjectTypingResult, TypedUnion, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, ModuloZeroError, OperatorMismatchTypeError, OperatorNonNumericError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{NoPropertyError, UnknownClassError, UnknownMethodError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, ModuloZeroError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
-import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
@@ -36,7 +38,6 @@ import java.time.{LocalDate, LocalDateTime}
 import java.util
 import java.util.{Collections, Locale}
 import scala.annotation.varargs
-import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
@@ -104,10 +105,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
                                methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
                                dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed) = {
     val imports = List(SampleValue.getClass.getPackage.getName)
-    SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
-      imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking,
-      typeDefinitionSetWithCustomClasses(globalVariableTypes), methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed,
-      dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionExcludeListWithCustomPatterns, DefaultSpelConversionsProvider.getConversionService)
+    val expressionConfig = ProcessDefinitionBuilder.empty.expressionConfig.copy(globalImports = imports, strictMethodsChecking = strictMethodsChecking,
+      staticMethodInvocationsChecking = staticMethodInvocationsChecking, methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed,
+      dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed, spelExpressionExcludeList = spelExpressionExcludeListWithCustomPatterns)
+    SpelExpressionParser.default(getClass.getClassLoader, expressionConfig, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, flavour, typeDefinitionSetWithCustomClasses(globalVariableTypes))
   }
 
   private def spelExpressionExcludeListWithCustomPatterns: SpelExpressionExcludeList = {
@@ -202,15 +203,21 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("evaluate static method call on unvalidated class") {
     inside(parse[Any]("T(java.lang.System).exit()")) {
-      case Invalid(NonEmptyList(error: TypeReferenceError, Nil)) =>
+      case Invalid(NonEmptyList(error: TypeReferenceError, _)) =>
         error.message shouldBe "class java.lang.System is not allowed to be passed as TypeReference"
     }
   }
 
   test("evaluate static method call on non-existing class") {
     inside(parse[Any]("T(java.lang.NonExistingClass).method()")) {
-      case Invalid(NonEmptyList(error: UnknownClassError, Nil)) =>
-        error.message shouldBe "Class T(java.lang.NonExistingClass) does not exist"
+      case Invalid(NonEmptyList(error: UnknownClassError, _)) =>
+        error.message shouldBe "Class java.lang.NonExistingClass does not exist"
+    }
+  }
+
+  test("not throw an exception when is used lower case type") {
+    parse[Any]("T(foo).bar", ctx) should matchPattern {
+      case Invalid(NonEmptyList(UnknownClassError("foo"), _)) =>
     }
   }
 
@@ -245,7 +252,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("use not existing method reference") {
     inside(parse[Any]("notExistingMethod(1)", ctxWithGlobal)) {
-      case Invalid(NonEmptyList(error: InvalidMethodReference, Nil)) =>
+      case Invalid(NonEmptyList(error: InvalidMethodReference, _)) =>
         error.message shouldBe "Invalid method reference: notExistingMethod(1)."
     }
   }
@@ -285,7 +292,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("register functions") {
     val twoDaysAgo = LocalDate.now().minusDays(2)
-    val withDays = ctx.withVariable("date", twoDaysAgo)
+    val withDays = ctx
+      .withVariable("date", twoDaysAgo)
+      .withVariable("today", classOf[LocalDate].getDeclaredMethod("now"))
     parse[Any]("#date.until(#today()).days", withDays).validExpression.evaluateSync[Integer](withDays) should equal(2)
   }
 
@@ -395,6 +404,12 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   }
 
+  test("accumulate errors") {
+    parse[Any]("#obj.children.^[id == 123].foo").invalidValue.toList should matchPattern {
+      case OperatorNotComparableError("==", _, _) :: NoPropertyError(childrenType, "foo") :: Nil if childrenType == Typed[Test] =>
+    }
+  }
+
   test("evaluate map") {
     val ctxWithVar = ctx.withVariable("processVariables", Collections.singletonMap("processingStartTime", 11L))
     parse[Any]("#processVariables['processingStartTime']", ctxWithVar, dynamicPropertyAccessAllowed = true).validExpression.evaluateSync[Long](ctxWithVar) should equal(11L)
@@ -422,9 +437,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("missing keys in Maps") {
     val validationCtx = ValidationContext.empty
-      .withVariable("map", TypedObjectTypingResult(ListMap(
+      .withVariable("map", TypedObjectTypingResult(Map(
         "foo" -> Typed[Int],
-        "nested" -> TypedObjectTypingResult(ListMap("bar" -> Typed[Int]))
+        "nested" -> TypedObjectTypingResult(Map("bar" -> Typed[Int]))
       )), paramName = None)
       .toOption.get
     val ctxWithMap = ctx.withVariable("map", Collections.emptyMap())
@@ -520,14 +535,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("validate simple literals") {
     parse[Long]("-1", ctx) shouldBe Symbol("valid")
     parse[Float]("-1.1", ctx) shouldBe Symbol("valid")
-    parse[Long]("-1.1", ctx) should not be (Symbol("valid"))
+    parse[Long]("-1.1", ctx) should not be Symbol("valid")
     parse[Double]("-1.1", ctx) shouldBe Symbol("valid")
     parse[java.math.BigDecimal]("-1.1", ctx) shouldBe Symbol("valid")
   }
 
   test("validate ternary operator") {
-    parse[Long]("'d'? 3 : 4", ctx) should not be (Symbol("valid"))
-    parse[String]("1 > 2 ? 12 : 23", ctx) should not be (Symbol("valid"))
+    parse[Long]("'d'? 3 : 4", ctx) should not be Symbol("valid")
+    parse[String]("1 > 2 ? 12 : 23", ctx) should not be Symbol("valid")
     parse[Long]("1 > 2 ? 12 : 23", ctx) shouldBe Symbol("valid")
     parse[Number]("1 > 2 ? 12 : 23.0", ctx) shouldBe Symbol("valid")
     parse[String]("1 > 2 ? 'ss' : 'dd'", ctx) shouldBe Symbol("valid")
@@ -535,7 +550,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("validate selection for inline list") {
-    parse[Long]("{44, 44}.?[#this.alamakota]", ctx) should not be (Symbol("valid"))
+    parse[Long]("{44, 44}.?[#this.alamakota]", ctx) should not be Symbol("valid")
     parse[java.util.List[_]]("{44, 44}.?[#this > 4]", ctx) shouldBe Symbol("valid")
   }
 
@@ -544,7 +559,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
     parseV[java.util.List[Int]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe Symbol("valid")
     parseV[java.util.List[Boolean]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe Symbol("invalid")
-    parseV[java.util.List[Int]]("#a.![#this / 5]", vctx) should not be (Symbol("valid"))
+    parseV[java.util.List[Int]]("#a.![#this / 5]", vctx) should not be Symbol("valid")
   }
 
   test("allow #this reference inside functions") {
@@ -622,7 +637,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("parseV typed map with existing field") {
     val ctxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedObjectTypingResult(ListMap("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
+      .withVariable("input", TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
 
 
     parseV[String]("#input.str", ctxWithMap) should be (Symbol("valid"))
@@ -635,7 +650,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("be able to convert between primitive types") {
     val ctxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedObjectTypingResult(ListMap("int" -> Typed[Int])), paramName = None).toOption.get
+      .withVariable("input", TypedObjectTypingResult(Map("int" -> Typed[Int])), paramName = None).toOption.get
 
     val ctx = Context("").withVariable("input", TypedMap(Map("int" -> 1)))
 
@@ -645,7 +660,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("evaluate parsed map") {
     val valCtxWithMap = ValidationContext
       .empty
-      .withVariable("input", TypedObjectTypingResult(ListMap("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
+      .withVariable("input", TypedObjectTypingResult(Map("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
 
     val ctx = Context("").withVariable("input", TypedMap(Map("str" -> "aaa", "lon" -> 3444)))
 
@@ -665,8 +680,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val ctxWithMap = ValidationContext
       .empty
       .withVariable("input", Typed(
-        TypedObjectTypingResult(ListMap("str" -> Typed[String])),
-        TypedObjectTypingResult(ListMap("lon" -> Typed[Long]))), paramName = None).toOption.get
+        TypedObjectTypingResult(Map("str" -> Typed[String])),
+        TypedObjectTypingResult(Map("lon" -> Typed[Long]))), paramName = None).toOption.get
 
 
     parseV[String]("#input.str", ctxWithMap) should be (Symbol("valid"))
@@ -810,6 +825,18 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .evaluateSync[java.util.List[Any]]() shouldBe List(1).asJava
   }
 
+  test("allow selection/projection on maps with #this") {
+    parse[java.util.Map[String, Any]]("{a:1}.?[#this.key=='']", ctx).validExpression
+      .evaluateSync[java.util.Map[String, Any]]() shouldBe Map().asJava
+    parse[java.util.Map[String, Any]]("{a:1}.?[#this.value==1]", ctx).validExpression
+      .evaluateSync[java.util.Map[String, Any]]() shouldBe Map("a" -> 1).asJava
+
+    parse[java.util.List[String]]("{a:1}.![#this.key]", ctx).validExpression
+      .evaluateSync[java.util.List[String]]() shouldBe List("a").asJava
+    parse[java.util.List[Any]]("{a:1}.![#this.value]", ctx).validExpression
+      .evaluateSync[java.util.List[Any]]() shouldBe List(1).asJava
+  }
+
   test("invokes methods on primitives correctly") {
     def invokeAndCheck[T:TypeTag](expr: String, result: T): Unit = {
       val parsed = parse[T](expr).validExpression
@@ -915,7 +942,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("should check map values") {
     val parser = expressionParser()
-    val expected = Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], TypedObjectTypingResult(List(("additional" -> Typed[String])))))
+    val expected = Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], TypedObjectTypingResult(Map("additional" -> Typed[String]))))
     inside(parser.parse("""{"aField": {"additional": 1}}""", ValidationContext.empty, expected)) {
       case Invalid(NonEmptyList(e: ExpressionTypeError, Nil)) =>
         e.expected shouldBe expected

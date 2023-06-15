@@ -7,8 +7,8 @@ import { bindActionCreators, Dispatch } from "redux";
 import { getBackendNotifications, getNotifications } from "../reducers/selectors/other";
 import { useInterval } from "./Interval";
 import Notification from "../components/notifications/Notification";
-import { ReactComponent as TipsSuccess } from "../assets/img/icons/tipsSuccess.svg";
-import { ReactComponent as TipsError } from "../assets/img/icons/tipsError.svg";
+import TipsSuccess from "../assets/img/icons/tipsSuccess.svg";
+import TipsError from "../assets/img/icons/tipsError.svg";
 import { v4 as uuid4 } from "uuid";
 import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
 import { displayProcessActivity, loadProcessState } from "../actions/nk";
@@ -27,7 +27,7 @@ function prepareNotification(backendNotification: BackendNotification, dispatch:
                 dispatch(markBackendNotificationRead(backendNotification.id));
             },
         },
-        backendNotification.type
+        backendNotification.type,
     );
 }
 
@@ -59,8 +59,7 @@ export function Notifications(): JSX.Element {
 
     const refresh = useCallback(() => {
         const onlyUnreadPredicate = (be: BackendNotification) =>
-            !readNotifications.processedNotificationIds.includes(be.id) &&
-            !reactNotifications.map((k) => k.uid).includes(be.id);
+            !readNotifications.processedNotificationIds.includes(be.id) && !reactNotifications.map((k) => k.uid).includes(be.id);
 
         HttpService.loadBackendNotifications().then((notifications) => {
             dispatch(updateBackendNotifications(notifications.map((n) => n.id)));

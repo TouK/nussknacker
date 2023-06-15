@@ -6,6 +6,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ## In version 1.10.0
 
 ### Code API changes
+* [#4352](https://github.com/TouK/nussknacker/pull/4352) `TypedObjectTypingResult#fields` are no longer ordered, fields will be sorted for presentation (see `TypedObjectTypingResult#display`)
 * [#4294](https://github.com/TouK/nussknacker/pull/4294) `HttpRemoteEnvironmentConfig` allows you to pass flag `passUsernameInMigration` - (default true).
   When set to true, migration attaches username in the form of `Remote[userName]` while migrating to secondary environment. To use the old migration endpoint, set to false.
 * [#4278](https://github.com/TouK/nussknacker/pull/4278) Now expression compiler and code suggestions mechanism are reusing the same
@@ -20,7 +21,17 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Sealed trait `StateStatus` is unsealed, all members are replaced by corresponding `SimpleStateStatus` state definitions,
   custom statuses are defined within each `ProcessStateDefinitionManager`.
   `ProcessAction` is moved from restmodel to extensions-api, package engine.api.deployment.
-
+* [#4339](https://github.com/TouK/nussknacker/pull/4339) Improvements: Don't fetch state for archived/unarchived scenario, return computed based on last state action
+  At BaseProcessDetails we provide lastStateAction field which can have an influence on the presented state of the scenario. 
+  We currently use it to distinguish between cancel / not_deployed and to detect inconsistent states between the designer and engine
+* [#4302](https://github.com/TouK/nussknacker/pull/4302) State inconsistency detection was moved from designer to DeploymentManager.
+  `DeploymentManager.getProcessState` for internal purposes returns `Option[StatusDetails]` which is based on job status from deployment manager (instead of `Option[ProcessState]` which contains UI info).
+  There is separate `getProcessState` that returns `ProcessState` which is a status from engine resolved via `InconsistentStateDetector` and formatted with UI-related details.
+  `PeriodicProcessEvent` uses `StatusDetails` instead of `ProcessState`.
+  Constants defined in `ProblemStateStatus` are renamed to match UpperCamelCase formatting.
+* [#4350](https://github.com/TouK/nussknacker/pull/4350) `StateStatus.isDuringDeploy`, `StateStatus.isFinished`, `StateStatus.isFailed`, `StateStatus.isRunning`, 
+  `ProcessState.isDeployed` methods were removed. Instead, you should compare status with specific status.
+  
 ### Configuration changes
 * [#4283](https://github.com/TouK/nussknacker/pull/4283) For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
   Please mind, that previous Nussknacker versions assumed its value is true if `authentication.audience` was defined.
@@ -30,6 +41,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   so you can simplify your deployment by removing them and updating to new
   ([`flink-scala` JAR](https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.1.0/flink-scala-2-13_2.13-1.1.0-assembly.jar))
   (this doesn't introduce any functional changes)
+
+### REST API changes
+* [#4350](https://github.com/TouK/nussknacker/pull/4350) `delete` action is available only for archived scenarios. Before the change it was checked that scenario is not running
 
 ## In version 1.9.0
 

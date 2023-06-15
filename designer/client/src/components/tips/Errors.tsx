@@ -1,6 +1,6 @@
 import React, { SyntheticEvent } from "react";
 import { v4 as uuid4 } from "uuid";
-import { ReactComponent as TipsError } from "../../assets/img/icons/tipsError.svg";
+import TipsError from "../../assets/img/icons/tipsError.svg";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import i18next from "i18next";
 import { concat, difference, isEmpty } from "lodash";
@@ -30,9 +30,7 @@ export default class Errors extends React.Component<Props> {
     }
 
     headerIcon = (errors) =>
-        isEmpty(errors.globalErrors) &&
-        isEmpty(errors.invalidNodes) &&
-        isEmpty(errors.processPropertiesErrors) ? null : (
+        isEmpty(errors.globalErrors) && isEmpty(errors.invalidNodes) && isEmpty(errors.processPropertiesErrors) ? null : (
             <TipsError className={"icon"} />
         );
 
@@ -64,9 +62,7 @@ export default class Errors extends React.Component<Props> {
         const nodeIds = Object.keys(nodeErrors);
 
         const looseNodeIds = nodeIds.filter((nodeId) => nodeErrors[nodeId].some((error) => error.typ === "LooseNode"));
-        const invalidEndNodeIds = nodeIds.filter((nodeId) =>
-            nodeErrors[nodeId].some((error) => error.typ === "InvalidTailOfBranch")
-        );
+        const invalidEndNodeIds = nodeIds.filter((nodeId) => nodeErrors[nodeId].some((error) => error.typ === "InvalidTailOfBranch"));
         const otherNodeErrorIds = difference(nodeIds, concat(looseNodeIds, invalidEndNodeIds));
         const errorsOnTop = this.errorsOnTopPresent(otherNodeErrorIds, propertiesErrors);
 
@@ -88,10 +84,7 @@ export default class Errors extends React.Component<Props> {
                     />
                     <NodeErrorsLinkSection
                         nodeIds={invalidEndNodeIds}
-                        message={i18next.t(
-                            "errors.invalidScenarioEnd",
-                            "Scenario must end with a sink, processor or fragment: "
-                        )}
+                        message={i18next.t("errors.invalidScenarioEnd", "Scenario must end with a sink, processor or fragment: ")}
                         showDetails={showDetails}
                         currentProcess={currentProcess}
                         className={errorsOnTop ? "error-secondary-container" : null}

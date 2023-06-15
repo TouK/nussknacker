@@ -223,7 +223,7 @@ object aggregates {
               .map(key -> _)
               .leftMap(m => NonEmptyList.of(s"$key - $m"))
           }.toList.sequence.leftMap(list => s"Invalid fields: ${list.toList.mkString(", ")}")
-          validationRes.map(fields => TypedObjectTypingResult(fields, objType = objType))
+          validationRes.map(fields => TypedObjectTypingResult(fields.toMap, objType = objType))
         case TypedObjectTypingResult(inputFields, _, _) =>
           Invalid(s"Fields do not match, aggregateBy: ${inputFields.keys.mkString(", ")}, aggregator: ${scalaFields.keys.mkString(", ")}")
         case _ =>

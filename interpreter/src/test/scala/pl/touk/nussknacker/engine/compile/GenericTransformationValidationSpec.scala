@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
-import scala.collection.immutable.ListMap
 
 class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
@@ -84,7 +83,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     result.result shouldBe Symbol("valid")
     val info1 = result.typing("end")
 
-    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
+    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(Map(
       "val1" -> Typed.fromInstance("aa"),
       "val2" -> Typed.fromInstance(11),
       "val3" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromInstance(false)))
@@ -107,7 +106,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
      result.result shouldBe Symbol("valid")
      val info1 = result.typing("end")
 
-     info1.inputValidationContext("otherNameThanInput") shouldBe TypedObjectTypingResult(ListMap(
+     info1.inputValidationContext("otherNameThanInput") shouldBe TypedObjectTypingResult(Map(
        "val1" -> Typed.fromInstance("aa"),
        "val2" -> Typed.fromInstance(11),
        "val3" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromInstance(false)))
@@ -203,7 +202,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       "generic", Some("par1"), "12")))
     val info1 = result.typing("end")
 
-    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap.empty[String, TypingResult])
+    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(Map.empty[String, TypingResult])
 
   }
 
@@ -224,7 +223,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
     val info1 = result.typing("end")
 
-    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
+    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(Map(
       "val1" -> Typed.fromInstance(""),
       "val2" -> Unknown
     ))
@@ -253,7 +252,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
       "generic", Some("par1"), "12")))
     val info1 = result.typing("end")
 
-    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap.empty[String, TypingResult])
+    info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(Map.empty[String, TypingResult])
   }
 
   test("should compute dynamic parameters in joins") {

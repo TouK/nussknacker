@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
+import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, FailedOnDeploy, PeriodicProcessDeploymentStatus, RetryingDeploy}
@@ -115,11 +116,16 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   //Currently we don't allow simultaneous runs of one scenario - only sequential, so if other schedule kicks in, it'll have to wait
   private def checkIfNotRunning(toDeploy: PeriodicProcessDeployment): Future[Option[PeriodicProcessDeployment]] = {
     delegateDeploymentManager.getProcessState(toDeploy.periodicProcess.processVersion.processName)(DataFreshnessPolicy.Fresh).map(_.value).map {
-      case Some(state) if state.isDeployed =>
+      case Some(state) if isFollowingDeployStatus(state) =>
         logger.debug(s"Deferring run of ${toDeploy.display} as scenario is currently running")
         None
       case _ => Some(toDeploy)
     }
+  }
+
+  private def isFollowingDeployStatus(state: StatusDetails): Boolean = {
+    SimpleStateStatus.DefaultFollowingDeployStatuses.contains(state.status) ||
+      state.status.name == PeriodicStateStatus.ScheduledStatus.name
   }
 
   def handleFinished: Future[Unit] = {
@@ -142,13 +148,13 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   }
 
   //We assume that this method leaves with data in consistent state
-  private def handleFinishedAction(deployedProcess: PeriodicProcessDeployment, processState: Option[ProcessState]): RepositoryAction[NeedsReschedule] = {
+  private def handleFinishedAction(deployedProcess: PeriodicProcessDeployment, processState: Option[StatusDetails]): RepositoryAction[NeedsReschedule] = {
     implicit class RichRepositoryAction[Unit](a: RepositoryAction[Unit]){
       def needsReschedule(value: Boolean): RepositoryAction[NeedsReschedule] = a.map(_ => value)
     }
     processState match {
-      case Some(js) if js.status.isFailed => markFailedAction(deployedProcess, processState).needsReschedule(executionConfig.rescheduleOnFailure)
-      case Some(js) if js.status.isFinished => markFinished(deployedProcess, processState).needsReschedule(value = true)
+      case Some(js) if ProblemStateStatus.isProblemStatus(js.status) => markFailedAction(deployedProcess, processState).needsReschedule(executionConfig.rescheduleOnFailure)
+      case Some(js) if js.status == SimpleStateStatus.Finished => markFinished(deployedProcess, processState).needsReschedule(value = true)
       case None if deployedProcess.state.status == Deployed => markFinished(deployedProcess, processState).needsReschedule(value = true)
       case _ => scheduledProcessesRepository.monad.pure(()).needsReschedule(value = false)
     }
@@ -182,7 +188,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     } yield callback
   }
 
-  private def markFinished(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
+  private def markFinished(deployment: PeriodicProcessDeployment, state: Option[StatusDetails]): RepositoryAction[Unit] = {
     logger.info(s"Marking ${deployment.display} as finished")
     for {
       _ <- scheduledProcessesRepository.markFinished(deployment.id)
@@ -190,7 +196,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     } yield handleEvent(FinishedEvent(currentState, state))
   }
 
-  private def handleFailedDeployment(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
+  private def handleFailedDeployment(deployment: PeriodicProcessDeployment, state: Option[StatusDetails]): RepositoryAction[Unit] = {
     def calculateNextRetryAt = now().plus(deploymentRetryConfig.deployRetryPenalize.toMillis, ChronoUnit.MILLIS)
 
     val retriesLeft =
@@ -212,7 +218,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     } yield handleEvent(FailedOnDeployEvent(currentState, state))
   }
 
-  private def markFailedAction(deployment: PeriodicProcessDeployment, state: Option[ProcessState]): RepositoryAction[Unit] = {
+  private def markFailedAction(deployment: PeriodicProcessDeployment, state: Option[StatusDetails]): RepositoryAction[Unit] = {
     logger.info(s"Marking ${deployment.display} as failed.")
     for {
       _ <- scheduledProcessesRepository.markFailed(deployment.id)
@@ -292,7 +298,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     deactivateAction(deployment.periodicProcess.processVersion.processName)
   }
 
-  def mergeStatusWithDeployments(name: ProcessName, delegateState: Option[ProcessState]): Future[Option[StatusDetails]] = {
+  def mergeStatusWithDeployments(name: ProcessName, delegateState: Option[StatusDetails]): Future[Option[StatusDetails]] = {
     def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): StatusDetails =
       StatusDetails(
         status = ScheduledStatus(processDeployment.runAt),
@@ -306,7 +312,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
 
     def createFailedProcessState(processDeployment: PeriodicProcessDeployment): StatusDetails =
       StatusDetails(
-        status = ProblemStateStatus.failed,
+        status = ProblemStateStatus.Failed,
         Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
         startTime = Option.empty,
@@ -314,39 +320,39 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
         errors = List.empty
       )
 
-    def handleFailed(original: Option[ProcessState]): Future[Option[StatusDetails]] = {
+    def handleFailed(original: Option[StatusDetails]): Future[Option[StatusDetails]] = {
       getLatestDeployment(name).map {
         // this method returns only active schedules, so 'None' means this process has been already canceled
-        case None => original.map(_.toStatusDetails.copy(status = SimpleStateStatus.Canceled))
+        case None => original.map(_.copy(status = SimpleStateStatus.Canceled))
         // Previous, failed job is still accessible via Flink API but process has been scheduled to run again in future.
         case Some(processDeployment) if processDeployment.state.status == PeriodicProcessDeploymentStatus.Scheduled =>
           Some(createScheduledProcessState(processDeployment))
-        case _ => original.map(_.toStatusDetails)
+        case _ => original
       }
     }
 
-    def handleScheduled(original: Option[ProcessState]): Future[Option[StatusDetails]] = {
+    def handleScheduled(original: Option[StatusDetails]): Future[Option[StatusDetails]] = {
       getLatestDeployment(name).map { maybeProcessDeployment =>
         maybeProcessDeployment.map { processDeployment =>
           processDeployment.state.status match {
             case PeriodicProcessDeploymentStatus.Scheduled => Some(createScheduledProcessState(processDeployment))
             case PeriodicProcessDeploymentStatus.Failed => Some(createFailedProcessState(processDeployment))
             case PeriodicProcessDeploymentStatus.Deployed | PeriodicProcessDeploymentStatus.Finished =>
-              original.map(o => o.toStatusDetails.copy(status = WaitingForScheduleStatus))
+              original.map(o => o.copy(status = WaitingForScheduleStatus))
           }
-        }.getOrElse(original.map(_.toStatusDetails))
+        }.getOrElse(original)
       }
     }
 
     delegateState match {
       // Scheduled again or waiting to be scheduled again.
-      case state@Some(js) if js.status.isFinished => handleScheduled(state)
-      case state@Some(js) if js.status.isFailed => handleFailed(state)
+      case state@Some(js) if js.status == SimpleStateStatus.Finished => handleScheduled(state)
+      case state@Some(js) if ProblemStateStatus.isProblemStatus(js.status) => handleFailed(state)
       // Job was previously canceled and it still exists on Flink but a new periodic job can be already scheduled.
       case state@Some(js) if js.status == SimpleStateStatus.Canceled => handleScheduled(state)
       // Scheduled or never started or latest run already disappeared in Flink.
       case state@None => handleScheduled(state)
-      case Some(js) => Future.successful(Some(js.toStatusDetails))
+      case Some(js) => Future.successful(Some(js))
     }
   }
 

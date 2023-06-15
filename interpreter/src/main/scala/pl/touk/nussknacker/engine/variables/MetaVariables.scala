@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.typed.{TypedMap, TypedObjectDefinition}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithType
 
-import scala.collection.immutable.ListMap
 
 final case class MetaVariables(processName: String, properties: TypedMap)
 
@@ -20,7 +19,7 @@ object MetaVariables {
     MetaVariables(metaData.id, properties(metaData))
 
   @Hidden
-  def typingResult(metaData: MetaData): TypingResult = TypedObjectTypingResult(ListMap(
+  def typingResult(metaData: MetaData): TypingResult = TypedObjectTypingResult(Map(
     "processName" -> Typed[String],
     "properties" -> propertiesType(metaData)
   ))
@@ -33,12 +32,9 @@ object MetaVariables {
     val definedProperties = metaData
       .additionalFields
       .map(_.properties)
-      .map(_.toList.sortBy(_._1))
-      .getOrElse(List.empty)
+      .getOrElse(Map.empty)
+      .map { case (propertyName, _) =>  propertyName -> Typed[String] }
 
-    val propertiesTyping = TypedObjectDefinition(
-      definedProperties.map { case (propertyName, _) =>  propertyName -> Typed[String] }
-    )
-    TypedObjectTypingResult(propertiesTyping)
+    TypedObjectTypingResult(definedProperties)
   }
 }

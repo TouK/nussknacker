@@ -3,14 +3,16 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionId
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
@@ -19,10 +21,10 @@ import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUse
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
-import pl.touk.nussknacker.ui.process.repository.{DBIOActionRunner, DbProcessActionRepository, DeploymentComment, FetchingProcessRepository, ProcessDBQueryRepository}
+import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.ui.util.FutureUtils._
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 import slick.dbio.DBIOAction
 
 import java.time.Clock
@@ -131,7 +133,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                                                                                         (implicit user: LoggedUser, ec: ExecutionContext): Future[(BaseProcessDetails[PS], ProcessActionId, Option[VersionId], Option[ProcessingType])] = {
     for {
       processDetailsOpt <- dbioRunner.run(processRepository.fetchLatestProcessDetailsForProcessId[PS](processId))
-      processDetails <- dbioRunner.run(processDataExistOrFail(processDetailsOpt, processId))
+      processDetails <- dbioRunner.run(existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.value.toString)))
       _ = checkIfCanPerformActionOnProcess(actionType, processDetails)
       versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
       buildInfoProcessIngType = getBuildInfoProcessingType(processDetails)
@@ -220,7 +222,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                               (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] = {
     dbioRunner.run(for {
       processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processIdWithName.id)
-      processDetails <- processDataExistOrFail(processDetailsOpt, processIdWithName.id)
+      processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.id.value.toString))
       inProgressActionTypes <- actionRepository.getInProgressActionTypes(processDetails.processId)
       result <- getProcessState(processDetails, inProgressActionTypes)
     } yield result)
@@ -237,78 +239,108 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   private def getProcessState(processDetails: BaseProcessDetails[_], inProgressActionTypes: Set[ProcessActionType])
                              (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     dispatcher.deploymentManager(processDetails.processingType).map { manager =>
-      if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
-        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
+      if (processDetails.isSubprocess) {
+        throw new FragmentStateException
+      } else if (processDetails.isArchived) {
+        getArchivedProcessState(processDetails)(manager)
+      } else if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy))
       } else if (inProgressActionTypes.contains(ProcessActionType.Cancel)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringCancel))
       } else {
-        checkStateInDeploymentManager(manager, processDetails)
+        processDetails.lastStateAction match {
+          case Some(_) =>
+            checkStateInDeploymentManager(manager, processDetails)
+          case _ => //We assume that the process never deployed should have no state at the engine
+            logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
+            DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
+        }
       }
-    }.getOrElse(DBIOAction.successful(SimpleProcessStateDefinitionManager.errorFailedToGet))
+    }.getOrElse(DBIOAction.successful(SimpleProcessStateDefinitionManager.ErrorFailedToGet))
+  }
+
+  //We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
+  private def getArchivedProcessState(processDetails: BaseProcessDetails[_])(implicit manager: DeploymentManager) = {
+    processDetails.lastStateAction.map(_.action) match {
+      case Some(Cancel) =>
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.Canceled))
+      case Some(_) =>
+        logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.ArchivedShouldBeCanceled}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(ProblemStateStatus.ArchivedShouldBeCanceled))
+      case _ =>
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
+    }
   }
 
   private def checkStateInDeploymentManager(deploymentManager: DeploymentManager, processDetails: BaseProcessDetails[_])
                                            (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
     for {
-      state <- DBIOAction.from(getStateFromEngine(deploymentManager, processDetails.idWithName))
-      cancelActionOpt <- handleFinishedProcess(processDetails, state.value)
+      state <- DBIOAction.from(getStateFromDeploymentManager(deploymentManager, processDetails.idWithName, processDetails.lastStateAction))
     } yield {
-      val lastAction = cancelActionOpt.orElse(processDetails.lastAction)
-      val finalState = InconsistentStateDetector.handleStatus(state.value, lastAction)
-      logger.debug(s"Status for: '${processDetails.name}' is: ${finalState.status} (from engine: ${state.value.map(_.status)}, cached: ${state.cached}, last action: ${lastAction.map(_.action)})")
-      finalState
+      logger.debug(s"Status for: '${processDetails.name}' is: ${state.value.status} (from engine: ${state.value.status}, cached: ${state.cached}, last action: ${processDetails.lastAction.map(_.action)})")
+      state.value
     }
   }
 
-  private def processDataExistOrFail[T](maybeProcess: Option[T], processId: ProcessId): DB[T] = {
-    maybeProcess match {
-      case Some(processData) => DBIOAction.successful(processData)
-      case None => DBIOAction.failed(ProcessNotFoundError(processId.value.toString))
+  private def existsOrFail[T](checkThisOpt: Option[T], failWith: Exception): DB[T] = {
+    checkThisOpt match {
+      case Some(checked) => DBIOAction.successful(checked)
+      case None => DBIOAction.failed(failWith)
     }
   }
 
-  private def getStateFromEngine(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName)
-                                (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[ProcessState]]] = {
-    lazy val failedToGetResult =
-      WithDataFreshnessStatus(
-        Option(SimpleProcessStateDefinitionManager.errorFailedToGet),
-        cached = false)
+  private def getStateFromDeploymentManager(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])
+                                           (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
 
-    val stateFromEngineFuture = deploymentManager.getProcessState(processIdWithName.name).recover {
+    val state = deploymentManager.getProcessState(processIdWithName.name, lastStateAction).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
-        failedToGetResult
+        failedToGetProcessState
     }
 
     scenarioStateTimeout.map { timeout =>
-      stateFromEngineFuture.withTimeout(timeout, timeoutResult = failedToGetResult).map {
+      state.withTimeout(timeout, timeoutResult = failedToGetProcessState).map {
         case CompletedNormally(value) =>
           value
         case CompletedByTimeout(value) =>
           logger.warn(s"Timeout: $timeout occurred during waiting for response from engine for ${processIdWithName.name}")
           value
       }
-    }.getOrElse(stateFromEngineFuture)
+    }.getOrElse(state)
   }
 
-  //TODO: there is small problem here: if no one invokes process status for long time, Flink can remove process from history
-  //- then it's gone, not finished.
-  private def handleFinishedProcess(processDetails: BaseProcessDetails[_], processState: Option[ProcessState])
-                                   (implicit ec: ExecutionContext): DB[Option[ProcessAction]] = {
+  def markProcessFinishedIfLastActionDeploy(processingType: ProcessingType, processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
-    processState.filter(_.status.isFinished).flatMap { _ =>
-      processDetails.lastDeployedAction.map { lastDeployedAction =>
-        val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)
-        processChangeListener.handle(OnFinished(processDetails.processId, lastDeployedAction.processVersionId))
-        actionRepository
-          .addInstantAction(processDetails.processId, lastDeployedAction.processVersionId, ProcessActionType.Cancel, Some(finishedComment), None)
-          .map(a => Some(ProcessDBQueryRepository.toProcessAction((a, None))))
+    dbioRunner.run(for {
+      processIdOpt <- processRepository.fetchProcessId(processName)
+      processId <- existsOrFail(processIdOpt, ProcessNotFoundError(processName.value))
+      processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
+      processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.value.toString))
+      _ = if (!processDetails.processingType.equals(processingType)) {
+        throw new IllegalArgumentException(s"Invalid scenario processingType (expected ${processingType}, got ${processDetails.processingType})")
       }
-    }.getOrElse(DBIOAction.successful(None))
+      cancelActionOpt <- {
+        processDetails.lastDeployedAction.map { lastDeployedAction =>
+          val finishedComment = DeploymentComment.unsafe("Scenario finished").toComment(ProcessActionType.Cancel)
+          processChangeListener.handle(OnFinished(processDetails.processId, lastDeployedAction.processVersionId))
+          actionRepository
+            .addInstantAction(processDetails.processId, lastDeployedAction.processVersionId, ProcessActionType.Cancel, Some(finishedComment), None)
+            .map(a => Some(ProcessDBQueryRepository.toProcessAction((a, None))))
+
+        }.getOrElse(DBIOAction.successful(None))
+      }
+    } yield cancelActionOpt)
   }
+
+  private lazy val failedToGetProcessState =
+    WithDataFreshnessStatus(
+      SimpleProcessStateDefinitionManager.ErrorFailedToGet,
+      cached = false)
 
   // It is very naive implementation for situation when designer was restarted after spawning some long running action
   // like deploy but before marking it as finished. Without this, user will always see "during deploy" status - even
@@ -321,3 +353,5 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   }
 
 }
+
+private class FragmentStateException extends Exception("Fragment doesn't have state.") with BadRequestError
