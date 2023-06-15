@@ -164,10 +164,12 @@ describe("Process", () => {
             cy.contains(/^Comment is required.$/i).should("exist");
         });
 
-        it('should not have "latest deploy" button by default', () => {
+        it('should have quick ranges (with optional "latest deploy"', () => {
             //FIXME: temporary fix for notifications race (?)
             cy.reload();
             cy.viewport("macbook-15");
+
+            // deploy scenario
             cy.contains(/^deploy$/i).click();
             cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
             cy.get("[data-testid=window] textarea").click().type("issues/123");
@@ -175,39 +177,32 @@ describe("Process", () => {
             cy.wait(["@deploy", "@fetch"], { timeout: 20000, log: true }).each((res) => {
                 cy.wrap(res).its("response.statusCode").should("eq", 200);
             });
+
             cy.contains(/^counts$/i).click();
-            cy.contains(/^latest deploy$/i).should("not.exist");
             cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
+            cy.contains(/^latest deploy$/i).should("not.exist");
             cy.get("[data-testid=window]").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
-            cy.contains(/^cancel$/i).click();
-            cy.contains(/^ok$/i).should("be.enabled").click();
-        });
 
-        it('should have "latest deploy" button', () => {
-            cy.viewport("macbook-15");
-            cy.contains(/^deploy$/i).click();
-            cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
-            cy.get("[data-testid=window] textarea").click().type("issues/123");
-            cy.contains(/^ok$/i).should("be.enabled").click();
-            cy.wait(["@deploy", "@fetch"], { timeout: 20000 }).each((res) => {
-                cy.wrap(res).its("response.statusCode").should("eq", 200);
-            });
-            cy.contains(/^counts$/i).click();
-            cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
+            // switch ff
             cy.window().then((window) => {
                 // first available after "Quick ranges" displayed
                 const setFF = window["__FF"];
                 setFF({ showDeploymentsInCounts: true });
             });
-            cy.contains(/^latest deploy$/i).should("exist");
-            cy.get("[data-testid=window]").should("be.visible").matchImage();
+            cy.contains(/^counts$/i).click();
+            cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
+            cy.contains(/^latest deploy$/i).should("be.visible");
+            cy.get("[data-testid=window]").matchImage();
             cy.get("[data-testid=window]")
                 .contains(/^cancel$/i)
                 .click();
+
+            // cancel deployed scenario
             cy.contains(/^cancel$/i).click();
+            cy.get("[data-testid=window] textarea").click().type("issues/123");
             cy.contains(/^ok$/i).should("be.enabled").click();
         });
 
@@ -250,7 +245,12 @@ describe("Process", () => {
             .click();
         const x = 900;
         const y = 630;
-        cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", { x, y, position: "right", force: true });
+        cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
+            x,
+            y,
+            position: "right",
+            force: true,
+        });
 
         cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`).trigger("mousedown");
         cy.get("#nk-graph-main").trigger("mousemove", { clientX: x, clientY: y }).trigger("mouseup", { force: true });
@@ -293,7 +293,12 @@ describe("Process", () => {
             .click();
         const x = 700;
         const y = 600;
-        cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", { x, y, position: "right", force: true });
+        cy.get("[data-testid='component:dead-end']").should("be.visible").drag("#nk-graph-main", {
+            x,
+            y,
+            position: "right",
+            force: true,
+        });
 
         cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`).trigger("mousedown");
         cy.get("#nk-graph-main").trigger("mousemove", { clientX: x, clientY: y }).trigger("mouseup", { force: true });
