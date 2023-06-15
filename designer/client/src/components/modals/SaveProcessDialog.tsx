@@ -10,25 +10,19 @@ import {ThunkAction} from "../../actions/reduxTypes"
 import {getProcessToDisplay, getProcessUnsavedNewName, isProcessRenamed} from "../../reducers/selectors/graph"
 import HttpService from "../../http/HttpService"
 import {clear} from "../../actions/undoRedoActions"
-import {useLocation, useNavigate} from "react-router-dom"
+import { visualizationUrl } from "../../common/VisualizationUrl";
+
+const doRenameProcess = async (processName: string, newProcessName: string) => {
+    const isSuccess = await HttpService.changeProcessName(processName, newProcessName);
+    if (isSuccess) {
+        const prevPath = visualizationUrl(processName);
+        const nextPath = visualizationUrl(newProcessName);
+        history.replaceState(history.state, null, window.location.href.replace(prevPath, nextPath));
+    }
+    return isSuccess;
+};
 
 export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const doRenameProcess = useCallback(
-    async (processName: string, newProcessName: string) => {
-      const isSuccess = await HttpService.changeProcessName(processName, newProcessName)
-      if (isSuccess) {
-        navigate({
-          ...location,
-          pathname: window.location.pathname.replace(encodeURIComponent(processName), encodeURIComponent(newProcessName)),
-        }, {replace: true})
-      }
-      return isSuccess
-    },
-    [location]
-  )
-
   const saveProcess = useCallback(
     (comment: string): ThunkAction => async (dispatch, getState) => {
       const state = getState()
