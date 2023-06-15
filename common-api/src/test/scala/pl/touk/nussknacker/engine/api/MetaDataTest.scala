@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import pl.touk.nussknacker.engine.api.MetaDataTestData.{emptyMetaDataCases, flinkFullProperties, fullMetaDataCases, invalidTypeAndEmptyMetaDataCases, nonTypeSpecificProperties}
+import pl.touk.nussknacker.engine.api.MetaDataTestData._
 
 class MetaDataTest extends AnyFunSuite with Matchers {
 

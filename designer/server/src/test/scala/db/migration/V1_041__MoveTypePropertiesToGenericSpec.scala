@@ -5,7 +5,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
 import io.circe.Json
-import io.circe.syntax._
 
 class V1_041__MoveTypePropertiesToGenericSpec extends AnyFunSuite with Matchers {
 
