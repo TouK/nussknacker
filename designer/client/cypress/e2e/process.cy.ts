@@ -144,18 +144,22 @@ describe("Process", () => {
       cy.contains(/^ok$/i).should("be.enabled").click()
     })
 
-    //Feature flag setting problem in CI
-    it.skip("should have \"latest deploy\" button", () => {
-      window.localStorage.setItem("persist:ff", `{"showDeploymentsInCounts": "true"}`)
-      cy.reload()
+    it("should have \"latest deploy\" button", () => {
       cy.viewport("macbook-15")
       cy.contains(/^deploy$/i).click()
       cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
+      cy.get("[data-testid=window] textarea").click().type("issues/123")
       cy.contains(/^ok$/i).should("be.enabled").click()
       cy.wait(["@deploy", "@fetch"], {timeout: 20000}).each(res => {
         cy.wrap(res).its("response.statusCode").should("eq", 200)
       })
       cy.contains(/^counts$/i).click()
+      cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible")
+      cy.window().then((window) => {
+       // first available after "Quick ranges" displayed
+        const setFF = window["__FF"];
+        setFF({ showDeploymentsInCounts: true });
+      });
       cy.contains(/^latest deploy$/i).should("exist")
       cy.get("[data-testid=window]").should("be.visible").matchImage()
       cy.get("[data-testid=window]").contains(/^cancel$/i).click()
