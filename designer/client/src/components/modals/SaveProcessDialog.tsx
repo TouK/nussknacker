@@ -11,48 +11,51 @@ import { getProcessToDisplay, getProcessUnsavedNewName, isProcessRenamed } from 
 import HttpService from "../../http/HttpService";
 import { clear } from "../../actions/undoRedoActions";
 import { visualizationUrl } from "../../common/VisualizationUrl";
-
-const doRenameProcess = async (processName: string, newProcessName: string) => {
-    const isSuccess = await HttpService.changeProcessName(processName, newProcessName);
-    if (isSuccess) {
-        const prevPath = visualizationUrl(processName);
-        const nextPath = visualizationUrl(newProcessName);
-        history.replaceState(history.state, null, window.location.href.replace(prevPath, nextPath));
-    }
-    return isSuccess;
-};
+import { useLocation, useNavigate } from "react-router-dom";
 
 export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
+    const location = useLocation();
+    const navigate = useNavigate();
     const saveProcess = useCallback(
-        (comment: string): ThunkAction =>
-            async (dispatch, getState) => {
+        (comment: string): ThunkAction => {
+            return async (dispatch, getState) => {
                 const state = getState();
                 const processJson = getProcessToDisplay(state);
+                const currentProcessName = processJson.id;
 
                 // save changes before rename and force same processId everywhere
-                await HttpService.saveProcess(processJson.id, processJson, comment);
+                await HttpService.saveProcess(currentProcessName, processJson, comment);
 
                 const unsavedNewName = getProcessUnsavedNewName(state);
-                const isRenamed = isProcessRenamed(state) && (await doRenameProcess(processJson.id, unsavedNewName));
-                const processId = isRenamed ? unsavedNewName : processJson.id;
+                const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
+                const processId = isRenamed ? unsavedNewName : currentProcessName;
 
                 await dispatch(clear());
                 await dispatch(displayCurrentProcessVersion(processId));
                 await dispatch(displayProcessActivity(processId));
+
                 if (isRenamed) {
-                    await dispatch(loadProcessToolbarsConfiguration(processId));
+                    await dispatch(loadProcessToolbarsConfiguration(unsavedNewName));
+                    navigate(
+                        {
+                            ...location,
+                            pathname: location.pathname.replace(visualizationUrl(currentProcessName), visualizationUrl(unsavedNewName)),
+                        },
+                        { replace: true },
+                    );
                 }
-            },
-        [doRenameProcess],
+            };
+        },
+        [location, navigate],
     );
 
-    const [{ comment }, setState] = useState({ comment: "" });
+    const [comment, setState] = useState("");
     const dispatch = useDispatch();
 
     const confirmAction = useCallback(async () => {
         await dispatch(saveProcess(comment));
         props.close();
-    }, [comment, dispatch, props]);
+    }, [comment, dispatch, props, saveProcess]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(
@@ -68,7 +71,7 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
             <div className={cx("modalContentDark", css({ minWidth: 600 }))}>
                 <h3>{props.data.title}</h3>
                 <CommentInput
-                    onChange={(e) => setState({ comment: e.target.value })}
+                    onChange={(e) => setState(e.target.value)}
                     value={comment}
                     className={css({
                         minWidth: 600,
