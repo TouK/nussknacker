@@ -15,25 +15,7 @@ import scala.util.Try
     case _: FragmentSpecificData => true
   }
 
-  def toMap: Map[String, String] = {
-    this match {
-      case data: ScenarioSpecificData => data match {
-        case StreamMetaData(parallelism, spillStateToDisk, useAsyncInterpretation, checkpointIntervalInSeconds) =>
-          Map(
-            "parallelism" -> toStringWithEmptyDefault(parallelism),
-            "spillStateToDisk" -> toStringWithEmptyDefault(spillStateToDisk),
-            "useAsyncInterpretation" -> toStringWithEmptyDefault(useAsyncInterpretation),
-            "checkpointIntervalInSeconds" -> toStringWithEmptyDefault(checkpointIntervalInSeconds),
-          )
-        case LiteStreamMetaData(parallelism) =>
-          Map("parallelism" -> toStringWithEmptyDefault(parallelism))
-        case RequestResponseMetaData(slug) =>
-          Map("slug" -> slug.getOrElse(""))
-      }
-      case FragmentSpecificData(docsUrl) =>
-        Map("docsUrl" -> docsUrl.getOrElse(""))
-    }
-  }
+  def toMap: Map[String, String]
 
   def metaDataType: String = {
     this match {
@@ -47,7 +29,9 @@ import scala.util.Try
 
 sealed trait ScenarioSpecificData extends TypeSpecificData
 
-case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData
+case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData {
+  override def toMap: Map[String, String] = Map(FragmentSpecificData.docsUrlName -> docsUrl.getOrElse(""))
+}
 
 object FragmentSpecificData {
   private val docsUrlName = "docsUrl"
@@ -65,6 +49,13 @@ case class StreamMetaData(parallelism: Option[Int] = None,
                           checkpointIntervalInSeconds: Option[Long] = None) extends ScenarioSpecificData {
 
   def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
+
+  override def toMap: Map[String, String] = Map(
+      StreamMetaData.parallelismName -> toStringWithEmptyDefault(parallelism),
+      StreamMetaData.spillStateToDiskName -> toStringWithEmptyDefault(spillStateToDisk),
+      StreamMetaData.useAsyncInterpretationName -> toStringWithEmptyDefault(useAsyncInterpretation),
+      StreamMetaData.checkpointIntervalInSecondsName -> toStringWithEmptyDefault(checkpointIntervalInSeconds),
+    )
 
 }
 
@@ -85,7 +76,9 @@ object StreamMetaData {
 }
 
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
-case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData
+case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData {
+  override def toMap: Map[String, String] = Map(LiteStreamMetaData.parallelismName -> toStringWithEmptyDefault(parallelism))
+}
 
 object LiteStreamMetaData {
   private val parallelismName = "parallelism"
@@ -97,7 +90,9 @@ object LiteStreamMetaData {
   }
 }
 
-case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData
+case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData {
+  override def toMap: Map[String, String] = Map(RequestResponseMetaData.slugName -> slug.getOrElse(""))
+}
 
 object RequestResponseMetaData {
   private val slugName = "slug"
