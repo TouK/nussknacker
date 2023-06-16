@@ -1,12 +1,12 @@
 package db.migration
 
-import db.migration.V1_041__MoveTypePropertiesToGenericDefinition.migrateMetaData
+import db.migration.V1_041__RemoveTypeSpecificDataDefinition.migrateMetaData
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
 import io.circe.Json
 
-class V1_041__MoveTypePropertiesToGenericSpec extends AnyFunSuite with Matchers {
+class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
 
   private def parse(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Failed to decode")
 
