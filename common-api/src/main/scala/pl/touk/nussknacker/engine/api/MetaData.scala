@@ -13,15 +13,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
                                                             additionalFields: ProcessAdditionalFields) {
   def isSubprocess: Boolean = typeSpecificData.isSubprocess
 
-  def typeSpecificData: TypeSpecificData = {
-    additionalFields.metaDataType match {
-      case "StreamMetaData" => StreamMetaData(additionalFields.properties)
-      case "LiteStreamMetaData" => LiteStreamMetaData(additionalFields.properties)
-      case "RequestResponseMetaData" => RequestResponseMetaData(additionalFields.properties)
-      case "FragmentSpecificData" => FragmentSpecificData(additionalFields.properties)
-      case _ => throw new IllegalStateException("Unrecognized metadata type.")
-    }
-  }
+  def typeSpecificData: TypeSpecificData = additionalFields.typeSpecificProperties
 
   def withTypeSpecificData(typeSpecificData: TypeSpecificData): MetaData = {
     MetaData(id, typeSpecificData)
