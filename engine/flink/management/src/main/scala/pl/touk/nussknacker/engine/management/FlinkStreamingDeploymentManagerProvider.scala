@@ -49,6 +49,7 @@ object FlinkStreamingPropertiesConfig {
 
   private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
     AdditionalPropertyConfig(
+      defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"))
@@ -65,18 +66,21 @@ object FlinkStreamingPropertiesConfig {
 
   private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
     AdditionalPropertyConfig(
+      defaultValue = None,
       editor = Some(FixedValuesParameterEditor(spillStatePossibleValues)),
       validators = Some(List(FixedValuesValidator(spillStatePossibleValues))),
       label = Some("Spill state to disk"))
 
   private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
     AdditionalPropertyConfig(
+      defaultValue = None,
       editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
       validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
       label = Some("IO mode"))
 
   private val checkpointIntervalConfig: (String, AdditionalPropertyConfig) = "checkpointIntervalInSeconds" ->
     AdditionalPropertyConfig(
+      defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Checkpoint interval in seconds"))

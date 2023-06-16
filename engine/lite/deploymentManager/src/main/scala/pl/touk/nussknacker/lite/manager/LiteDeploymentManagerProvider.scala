@@ -40,6 +40,7 @@ object LitePropertiesConfig {
 
   private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
     AdditionalPropertyConfig(
+      defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism")
@@ -47,6 +48,7 @@ object LitePropertiesConfig {
 
   private val slugConfig: (String, AdditionalPropertyConfig) = "slug" ->
     AdditionalPropertyConfig(
+      defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = None,
       label = Some("Slug")
