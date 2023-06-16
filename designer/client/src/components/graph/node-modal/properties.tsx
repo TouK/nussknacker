@@ -1,4 +1,4 @@
-import { NodeType, NodeValidationError, ProcessDefinitionData } from "../../../types";
+import { NodeType, NodeValidationError } from "../../../types";
 import { useSelector } from "react-redux";
 import { getAdditionalPropertiesConfig } from "./NodeDetailsContent/selectors";
 import React, { useMemo } from "react";
@@ -22,7 +22,6 @@ export function Properties({
 }: {
     isEditMode?: boolean;
     node: NodeType;
-    processDefinitionData?: ProcessDefinitionData;
     renderFieldLabel: (paramName: string) => JSX.Element;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showSwitch?: boolean;

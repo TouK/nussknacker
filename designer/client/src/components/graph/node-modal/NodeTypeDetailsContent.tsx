@@ -327,7 +327,6 @@ export function NodeTypeDetailsContent({
                     fieldErrors={fieldErrors}
                     isEditMode={isEditMode}
                     node={node}
-                    processDefinitionData={processDefinitionData}
                     renderFieldLabel={renderFieldLabel}
                     setProperty={setProperty}
                     showSwitch={showSwitch}
