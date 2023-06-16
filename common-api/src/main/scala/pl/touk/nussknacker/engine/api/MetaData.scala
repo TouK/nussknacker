@@ -32,6 +32,7 @@ object MetaData {
 
   private val actualDecoder: Decoder[MetaData] = deriveConfiguredDecoder[MetaData]
 
+  // TODO: remove legacy decoder after the migration is completed
   private val legacyDecoder: Decoder[MetaData] = {
     def legacyProcessAdditionalFieldsDecoder(scenarioType: String): Decoder[ProcessAdditionalFields] =
       (c: HCursor) => for {
@@ -71,6 +72,7 @@ object MetaData {
   }
 }
 
+// TODO: remove metaDataType val and typeSpecificProperties def after the migration is completed
 case class ProcessAdditionalFields(description: Option[String],
                                    properties: Map[String, String],
                                    metaDataType: String) {

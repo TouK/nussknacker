@@ -58,6 +58,7 @@ case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
   )
   val isSubprocess: Boolean = additionalFields.typeSpecificProperties.isSubprocess
 
+  // TODO: remove typeSpecificData-related code after the migration is completed
   def typeSpecificProperties: TypeSpecificData = additionalFields.typeSpecificProperties
 
 }
