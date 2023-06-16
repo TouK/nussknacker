@@ -49,7 +49,7 @@ object MetaData {
           io.circe.Decoder.decodeOption(
             legacyProcessAdditionalFieldsDecoder(typeSpecificData.metaDataType)
           )
-        ).map(_.getOrElse(ProcessAdditionalFields.empty(typeSpecificData.metaDataType)))
+        ).map(_.getOrElse(ProcessAdditionalFields(None, Map.empty, typeSpecificData.metaDataType)))
     } yield {
       MetaData(id, typeSpecificData, additionalFields)
     }
@@ -66,9 +66,8 @@ object MetaData {
   def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
     MetaData(
       id = id,
-      additionalFields = ProcessAdditionalFields.empty(typeSpecificData.metaDataType).copy(
-        properties = typeSpecificData.toMap
-      ))
+      additionalFields = ProcessAdditionalFields(None, typeSpecificData.toMap, typeSpecificData.metaDataType)
+    )
   }
 }
 
@@ -99,10 +98,5 @@ object ProcessAdditionalFields {
   = deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.metaDataType))
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
-
-  // TODO: check if is needed
-  def empty(metaDataType: String): ProcessAdditionalFields = {
-    ProcessAdditionalFields(None, Map.empty, metaDataType)
-  }
 
 }
