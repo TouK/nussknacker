@@ -26,12 +26,12 @@ object MetaData {
 
   // TODO: remove legacy decoder after the migration is completed
   private val legacyDecoder: Decoder[MetaData] = {
-    def legacyProcessAdditionalFieldsDecoder(scenarioType: String): Decoder[ProcessAdditionalFields] =
+    def legacyProcessAdditionalFieldsDecoder(metaDataType: String): Decoder[ProcessAdditionalFields] =
       (c: HCursor) => for {
-        id <- c.downField("description").as[Option[String]]
+        description <- c.downField("description").as[Option[String]]
         properties <- c.downField("properties").as[Option[Map[String, String]]]
       } yield {
-        ProcessAdditionalFields(id, properties.getOrElse(Map.empty), scenarioType)
+        ProcessAdditionalFields(description, properties.getOrElse(Map.empty), metaDataType)
       }
 
     (c: HCursor) => for {
@@ -44,16 +44,22 @@ object MetaData {
           )
         ).map(_.getOrElse(ProcessAdditionalFields(None, Map.empty, typeSpecificData.metaDataType)))
     } yield {
-      MetaData(id, typeSpecificData, additionalFields)
+      MetaData.combineTypeSpecificProperties(id, typeSpecificData, additionalFields)
     }
   }
 
   implicit val decoder: Decoder[MetaData] = actualDecoder or legacyDecoder
 
-  def apply(id: String, typeSpecificData: TypeSpecificData, additionalFields: ProcessAdditionalFields): MetaData = {
-    MetaData(id = id, additionalFields = additionalFields.copy(
-      properties = additionalFields.properties ++ typeSpecificData.toMap
-    ))
+  // TODO: remove legacy constructors after the migration is completed
+  def combineTypeSpecificProperties(id: String,
+                                    typeSpecificData: TypeSpecificData,
+                                    additionalFields: ProcessAdditionalFields): MetaData = {
+    MetaData(
+      id = id,
+      additionalFields = additionalFields.copy(
+        properties = additionalFields.properties ++ typeSpecificData.toMap
+      )
+    )
   }
 
   def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
