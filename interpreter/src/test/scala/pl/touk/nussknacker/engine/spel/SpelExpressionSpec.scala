@@ -66,6 +66,17 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     .withVariable("processHelper", SampleGlobalObject)
     .withVariable("javaClassWithVarargs", new JavaClassWithVarargs)
 
+  val maxSpelExpressionLimit = 10000
+
+  private def bigExpression(stringVar: String, length: Int): String = {
+    val builder = new StringBuilder()
+    builder.append("'")
+      .append(" ".padTo(length, ' '))
+      .append("'+ ")
+      .append(stringVar)
+      .result()
+  }
+
   case class Test(id: String, value: Long, children: java.util.List[Test] = List[Test]().asJava, bigValue: BigDecimal = BigDecimal.valueOf(0L))
 
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -143,6 +154,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("parsing first selection on array") {
     parse[Any]("{1,2,3,4,5,6,7,8,9,10}.^[(#this%2==0)]").validExpression.evaluateSync[java.util.ArrayList[Int]](ctx) should equal(2)
+  }
+
+  test("parsing expression that exceeding the limit") {
+    parse[String](bigExpression("#strVal",maxSpelExpressionLimit)).validExpression.evaluateSync[String](ctx) should equal(" ".padTo(maxSpelExpressionLimit,' '))
   }
 
   test("parsing last selection on array") {
