@@ -29,7 +29,7 @@ export default function ValidationLabels(props: Props) {
 
     const renderErrorLabels = () =>
         validationErrors.map((validationError, ix) => (
-            <span key={ix} className="validation-label-error" title={validationError.description}>
+            <span key={ix} className="validation-label-error line-cut" title={validationError.message}>
                 {validationError.message}
             </span>
         ));
@@ -39,7 +39,7 @@ export default function ValidationLabels(props: Props) {
     return (
         <div className={`validation-labels ${additionalClassName}`}>
             {isValid ? (
-                <span className="validation-label-info" title="Info">
+                <span className="validation-label-info line-cut" title={validationLabelInfo}>
                     {validationLabelInfo}
                 </span>
             ) : (
