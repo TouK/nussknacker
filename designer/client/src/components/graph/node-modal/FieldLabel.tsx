@@ -1,4 +1,4 @@
-import { NodeId, ParameterConfig, ProcessDefinitionData, UIParameter } from "../../../types";
+import { NodeId, ParameterConfig, ProcessDefinitionData, TypingResult, UIParameter } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import ProcessUtils from "../../../common/ProcessUtils";
@@ -24,11 +24,21 @@ export function FieldLabel({
     const processDefinitionData = useSelector(getProcessDefinitionData);
     const params = getNodeParams(processDefinitionData, nodeId);
     const parameter = findParamDefinitionByName(parameterDefinitions, paramName);
-    const label = params?.[paramName]?.label ?? paramName;
+    const label = (params?.[paramName]?.label ?? paramName) + ":";
 
     return (
         <div className="node-label" title={paramName}>
-            {label}:{parameter ? <div className="labelFooter">{ProcessUtils.humanReadableType(parameter.typ)}</div> : null}
+            {label}
+            {parameter && <LabelFooter parameterType={parameter.typ} />}
+        </div>
+    );
+}
+
+function LabelFooter({ parameterType }: { parameterType: TypingResult }): JSX.Element {
+    const readableType = ProcessUtils.humanReadableType(parameterType);
+    return (
+        <div className="labelFooter line-cut" title={readableType}>
+            {readableType}
         </div>
     );
 }
