@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
+import pl.touk.nussknacker.engine.util.config.FicusReaders.forDecoder
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
-import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration
+import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, FrontendStrategySettings}
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
 import sttp.model.{HeaderNames, MediaType, Uri}
 
@@ -32,6 +34,7 @@ case class OAuth2Configuration(usersFile: URI,
                                defaultTokenExpirationDuration: FiniteDuration = FiniteDuration(1, HOURS),
                                anonymousUserRole: Option[String] = None,
                                tokenCookie: Option[TokenCookieConfig] = None,
+                               overrideFrontendAuthenticationStrategy: Option[FrontendStrategySettings] = None,
                               ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 
@@ -54,6 +57,8 @@ object OAuth2Configuration {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.readers.EnumerationReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+  private implicit val valueReader: ValueReader[FrontendStrategySettings] = forDecoder
+
 
   val name = "OAuth2"
   def create(config: Config): OAuth2Configuration = config.as[OAuth2Configuration](authenticationConfigPath)
