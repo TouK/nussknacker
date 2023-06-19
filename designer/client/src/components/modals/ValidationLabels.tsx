@@ -5,20 +5,18 @@ import { Validator, withoutDuplications } from "../graph/node-modal/editors/Vali
 type Props = {
     validators: Array<Validator>;
     values: Array<string>;
-    additionalClassName?: string;
     validationLabelInfo?: string;
-    processNameValidationError?: string;
 };
 
 export default function ValidationLabels(props: Props) {
-    type ValidationErrors = {
+    type ValidationError = {
         message: string;
         description: string;
     };
 
-    const { validators, values, additionalClassName, validationLabelInfo } = props;
+    const { validators, values, validationLabelInfo } = props;
 
-    const validationErrors: ValidationErrors[] = withoutDuplications(validators)
+    const validationErrors: ValidationError[] = withoutDuplications(validators)
         .filter((v) => !v.isValid(...values))
         .map((validator) => ({
             message: validator.message && validator.message(),
@@ -29,22 +27,42 @@ export default function ValidationLabels(props: Props) {
 
     const renderErrorLabels = () =>
         validationErrors.map((validationError, ix) => (
-            <span key={ix} className="validation-label-error line-cut" title={validationError.message}>
-                {validationError.message}
-            </span>
+            // we don't pass description as tooltip message - we pass the entire non-line-limited string until we make
+            // changes on the backend
+            <LimitedValidationLabel key={ix} message={validationError.message} tooltipMessage={validationError.message} type={"ERROR"} />
         ));
 
     // TODO: We're assuming that we have disjoint union of type info & validation errors, which is not always the case.
     // It's possible that expression is valid and it's type is known, but a different type is expected.
     return (
-        <div className={`validation-labels ${additionalClassName}`}>
+        <div className={`validation-labels`}>
             {isValid ? (
-                <span className="validation-label-info line-cut" title={validationLabelInfo}>
-                    {validationLabelInfo}
-                </span>
+                <LimitedValidationLabel message={validationLabelInfo} tooltipMessage={validationLabelInfo} type={"INFO"} />
             ) : (
                 renderErrorLabels()
             )}
         </div>
+    );
+}
+
+type ValidationLabelProps = {
+    message: string;
+    tooltipMessage: string;
+    type: ValidationLabelType;
+};
+
+type ValidationLabelType = "INFO" | "ERROR";
+
+const labelTypeMap = {
+    INFO: "validation-label-info",
+    ERROR: "validation-label-error",
+};
+
+function LimitedValidationLabel(props: ValidationLabelProps): JSX.Element {
+    const className = `${labelTypeMap[props.type]} line-cut`;
+    return (
+        <span className={className} title={props.tooltipMessage}>
+            {props.message}
+        </span>
     );
 }
