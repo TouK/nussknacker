@@ -21,13 +21,14 @@ class OAuth2AuthenticationResources(override val name: String, realm: String, se
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
-  override val frontendStrategySettings: FrontendStrategySettings = FrontendStrategySettings.OAuth2(
-    configuration.authorizeUrl.map(_.toString),
-    configuration.authSeverPublicKey.map(CertificatesAndKeys.textualRepresentationOfPublicKey),
-    configuration.idTokenNonceVerificationRequired,
-    configuration.implicitGrantEnabled,
-    configuration.anonymousUserRole.isDefined
-  )
+  override val frontendStrategySettings: FrontendStrategySettings = configuration.overrideFrontendAuthenticationStrategy.getOrElse(
+    FrontendStrategySettings.OAuth2(
+      configuration.authorizeUrl.map(_.toString),
+      configuration.authSeverPublicKey.map(CertificatesAndKeys.textualRepresentationOfPublicKey),
+      configuration.idTokenNonceVerificationRequired,
+      configuration.implicitGrantEnabled,
+      configuration.anonymousUserRole.isDefined
+    ))
 
   val anonymousUserRole: Option[String] = configuration.anonymousUserRole
 

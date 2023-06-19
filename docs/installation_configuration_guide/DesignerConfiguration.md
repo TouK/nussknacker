@@ -352,6 +352,7 @@ authentication: {
   defaultTokenExpirationDuration: "1 hour" (default)
   anonymousUserRole: None (default)
   tokenCookie: None (default)
+  overrideFrontendAuthenticationStrategy: None (default)
 }
 ```
 
