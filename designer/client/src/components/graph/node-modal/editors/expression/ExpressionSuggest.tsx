@@ -181,7 +181,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
         } else {
             return new RegexExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);
         }
-    }, [id, processingType, typesInformation, variableTypes, backendCodeSuggestions]);
+    }, [id, processingType, typesInformation, variableTypes, backendCodeSuggestions, language]);
 
     const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester));
     useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester]);
