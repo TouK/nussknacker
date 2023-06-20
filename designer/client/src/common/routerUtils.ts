@@ -2,19 +2,22 @@ import { UNSAFE_RouteContext, useLocation, useParams } from "react-router-dom";
 import { useContext, useMemo } from "react";
 
 export const useDecodedParams: typeof useParams = () => {
-    const location = useLocation();
+    const { pathname } = useLocation();
     const { matches } = useContext(UNSAFE_RouteContext);
-    const match = matches[matches.length - 1];
+
+    const templateParts = useMemo(() => {
+        return matches.flatMap((m) => m.route.path?.split("/")).filter(Boolean);
+    }, [matches]);
+
+    const pathParts = useMemo(() => {
+        return pathname.replace(/^\//, "").replace(/\/$/, "").split("/");
+    }, [pathname]);
+
     return useMemo(() => {
-        const pathParts = location.pathname.replace(/^\//, "").replace(/\/$/, "").split("/");
-        const templateParts = match.route.path.replace(/^\//, "").replace(/\/$/, "").split("/");
-        return Object.fromEntries(
-            templateParts
-                .map((v, index) => {
-                    if (v.startsWith(":")) return [v.substring(1), decodeURIComponent(pathParts[index])];
-                    if (v === "*") return [v, pathParts.slice(index).join("/")];
-                })
-                .filter(Boolean),
-        );
-    }, [location.pathname, match.route.path]);
+        const paramEntries = templateParts.map((pathPart, index) => {
+            if (pathPart.startsWith(":")) return [pathPart.substring(1), decodeURIComponent(pathParts[index])];
+            if (pathPart === "*") return [pathPart, pathParts.slice(index).join("/")];
+        });
+        return Object.fromEntries(paramEntries.filter(Boolean));
+    }, [pathParts, templateParts]);
 };
