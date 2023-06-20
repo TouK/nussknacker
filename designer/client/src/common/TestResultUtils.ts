@@ -97,9 +97,7 @@ class TestResultUtils {
     };
 
     availableContexts = (testResults: NodeTestResults) => {
-        return uniq(
-            testResults.nodeResults.map((nr) => ({ id: nr.context.id, display: this._contextDisplay(nr.context) }))
-        );
+        return uniq(testResults.nodeResults.map((nr) => ({ id: nr.context.id, display: this._contextDisplay(nr.context) })));
     };
 
     hasTestResults = (testResults?: NodeTestResults): boolean => {
@@ -134,10 +132,10 @@ class TestResultUtils {
         const expressionResults = Object.fromEntries(
             nodeTestResults.invocationResults
                 .filter((result) => result.contextId == contextId)
-                .map((result) => [result.name, result.value])
+                .map((result) => [result.name, result.value]),
         );
         const externalInvocationResultsForCurrentContext = nodeTestResults.externalInvocationResults.filter(
-            (result) => result.contextId == contextId
+            (result) => result.contextId == contextId,
         );
         const externalInvocationResultsForEveryContext = nodeTestResults.externalInvocationResults;
         const error = nodeTestResults.errors?.find((error) => error.context.id === contextId)?.throwable;

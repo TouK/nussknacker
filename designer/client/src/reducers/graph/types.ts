@@ -1,25 +1,25 @@
-import {Layout} from "../../actions/nk"
-import {ProcessStateType, ProcessType} from "../../components/Process/types"
-import {Process} from "../../types"
-import {TestCapabilities, TestResults, TestFormParameters} from "../../common/TestResultUtils"
+import { Layout } from "../../actions/nk";
+import { ProcessStateType, ProcessType } from "../../components/Process/types";
+import { Process } from "../../types";
+import { TestCapabilities, TestResults, TestFormParameters } from "../../common/TestResultUtils";
 
 export interface NodeCounts {
-  errors?: number,
-  all?: number,
-  subprocessCounts?: ProcessCounts,
+    errors?: number;
+    all?: number;
+    subprocessCounts?: ProcessCounts;
 }
 
-export type ProcessCounts = Record<string, NodeCounts>
+export type ProcessCounts = Record<string, NodeCounts>;
 
 export type GraphState = {
-  graphLoading: boolean,
-  fetchedProcessDetails?: ProcessType,
-  processToDisplay?: Process,
-  selectionState?: string[],
-  layout: Layout,
-  testCapabilities?: TestCapabilities,
-  testFormParameters?: TestFormParameters[],
-  testResults: TestResults,
-  processCounts: ProcessCounts,
-  unsavedNewName: string | null,
-}
+    graphLoading: boolean;
+    fetchedProcessDetails?: ProcessType;
+    processToDisplay?: Process;
+    selectionState?: string[];
+    layout: Layout;
+    testCapabilities?: TestCapabilities;
+    testFormParameters?: TestFormParameters[];
+    testResults: TestResults;
+    processCounts: ProcessCounts;
+    unsavedNewName: string | null;
+};

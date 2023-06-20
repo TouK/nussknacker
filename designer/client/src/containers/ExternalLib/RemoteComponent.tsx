@@ -32,7 +32,7 @@ export const loadExternalReactModule = (url, props) => {
                 <RemoteComponent url={urlValue} scope={scopeValue} scriptOrigin={scriptValue} {...props} />
             </MuiThemeProvider>
         </NkThemeProvider>,
-        rootContainer
+        rootContainer,
     );
 };
 

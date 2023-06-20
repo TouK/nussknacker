@@ -77,7 +77,7 @@ export function withModuleFederationPlugins(cfg?: ModuleFederationParams): (wCfg
         ...require(path.join(process.cwd(), "federation.config.json")),
         ...cfg,
     };
-    const withHash = mapValues(remotes, value => `${value}?${hash}`);
+    const withHash = mapValues(remotes, (value) => `${value}?${hash}`);
     const plainRemotes = pickBy(withHash, hasFullUrl);
     const noHostRemotes = omitBy(withHash, hasFullUrl); // relative paths
     const promiseRemotes = mapValues(noHostRemotes, getPromise);

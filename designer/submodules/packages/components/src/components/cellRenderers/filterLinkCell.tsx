@@ -3,7 +3,7 @@ import { useFilterContext } from "../../common";
 import React, { useMemo } from "react";
 import { CellLink } from "./cellLink";
 
-type Props<M extends Record<string, any>> = CellRendererParams & { filterKey: keyof M, value: M[keyof M] };
+type Props<M extends Record<string, any>> = CellRendererParams & { filterKey: keyof M; value: M[keyof M] };
 
 export function FilterLinkCell<M>({ filterKey, ...props }: Props<M>): JSX.Element {
     const { getFilter, setFilter } = useFilterContext<M>();

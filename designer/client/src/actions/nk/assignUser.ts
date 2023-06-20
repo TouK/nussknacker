@@ -1,16 +1,16 @@
-import User, {UserData} from "../../common/models/User"
+import User, { UserData } from "../../common/models/User";
 
 export type LoggedUserAction = {
-  type: "LOGGED_USER",
-  user: User,
-}
+    type: "LOGGED_USER";
+    user: User;
+};
 
 export function assignUser(data: UserData): LoggedUserAction {
-  return {
-    type: "LOGGED_USER",
-    //FIXME: remove class from store - plain data only
-    user: new User(data),
-  }
+    return {
+        type: "LOGGED_USER",
+        //FIXME: remove class from store - plain data only
+        user: new User(data),
+    };
 }
 
-export default assignUser
+export default assignUser;

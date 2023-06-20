@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Columns, FilterLinkCell, TableWrapper } from "../../components";
-import {ScenariosFiltersModel, ScenariosFiltersModelType} from "../filters/scenariosFiltersModel";
+import { ScenariosFiltersModel, ScenariosFiltersModelType } from "../filters/scenariosFiltersModel";
 import { ListPartProps, RowType } from "./listPart";
 import { useTranslation } from "react-i18next";
 import { createFilterRules, ExternalLink, Highlight, metricsHref, useFilterContext } from "../../common";

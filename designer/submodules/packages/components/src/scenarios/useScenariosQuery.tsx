@@ -1,7 +1,7 @@
 import { UserData } from "nussknackerUi/common/models/User";
 import { useContext, useEffect, useMemo } from "react";
 import { NkApiContext } from "../settings/nkApiProvider";
-import {ProcessType, StatusDefinitionType} from "nussknackerUi/components/Process/types";
+import { ProcessType, StatusDefinitionType } from "nussknackerUi/components/Process/types";
 import { StatusesType } from "nussknackerUi/HttpService";
 import { useQuery, useQueryClient } from "react-query";
 import { UseQueryResult } from "react-query/types/react/types";

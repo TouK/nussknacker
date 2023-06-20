@@ -1,2 +1,2 @@
-export {makeElement} from "./element"
-export {makeLink} from "./link"
+export { makeElement } from "./element";
+export { makeLink } from "./link";

@@ -4,13 +4,13 @@
     "env": {
         "development": {
             "plugins": [
-              "react-refresh/babel",
-              [
-                "istanbul",
-                {
-                  "useInlineSourceMaps": false
-                }
-              ]
+                "react-refresh/babel",
+                [
+                    "istanbul",
+                    {
+                        "useInlineSourceMaps": false
+                    }
+                ]
             ]
         }
     }

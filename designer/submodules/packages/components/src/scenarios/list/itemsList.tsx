@@ -22,9 +22,7 @@ const ListRowContent = React.memo(function ListRowContent({ row }: { row: RowTyp
     return (
         <ListItemButton component={ExternalLink} href={scenarioHref(row.id)}>
             <ListItemAvatar>
-                <ScenarioAvatar
-                    process={row}
-                />
+                <ScenarioAvatar process={row} />
             </ListItemAvatar>
             <ListItemText primary={<FirstLine row={row} />} secondary={<SecondLine row={row} />} />
         </ListItemButton>
@@ -54,13 +52,13 @@ const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; styl
 });
 
 function ScenarioAndFragmentsList({
-                                      width,
-                                      isScrolling,
-                                      scrollTop,
-                                      height,
-                                      onChildScroll,
-                                      rows,
-                                  }: {
+    width,
+    isScrolling,
+    scrollTop,
+    height,
+    onChildScroll,
+    rows,
+}: {
     width: number;
     isScrolling: boolean;
     scrollTop: number;
@@ -70,8 +68,7 @@ function ScenarioAndFragmentsList({
 }) {
     const rowHeight = 72.02;
 
-    const rowRenderer = useCallback(({ index, key, style }: ListRowProps) => <ListRow style={style} key={key}
-                                                                                      row={rows[index]} />, [rows]);
+    const rowRenderer = useCallback(({ index, key, style }: ListRowProps) => <ListRow style={style} key={key} row={rows[index]} />, [rows]);
     return (
         <VList
             autoWidth

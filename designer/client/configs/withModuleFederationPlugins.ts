@@ -43,10 +43,7 @@ const NO_HOST_RE = /@\/\w/;
 const hasFullUrl = (value: string) => !value.match(NO_HOST_RE);
 const getPromise = (value: string) => `promise ${getPromiseScript(extractUrlAndGlobal(value))}`;
 
-export const withModuleFederationPlugins = (
-    webpackConfig: Configuration,
-    cfg?: ModuleFederationParams
-): Configuration => {
+export const withModuleFederationPlugins = (webpackConfig: Configuration, cfg?: ModuleFederationParams): Configuration => {
     const { remotes, ...federationConfig }: ModuleFederationParams = {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         ...require(path.join(process.cwd(), "federation.config.json")),
@@ -73,7 +70,7 @@ export const withModuleFederationPlugins = (
                 `mkdir -p "${webpackConfig.output.path}"`,
                 `tar -C .federated-types/${federationConfig.name} -czf "${path.join(
                     webpackConfig.output.path,
-                    `${federationConfig.name}-dts.tgz`
+                    `${federationConfig.name}-dts.tgz`,
                 )}" .`,
             ]),
             new container.ModuleFederationPlugin({

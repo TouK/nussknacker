@@ -1,27 +1,25 @@
-import {Reducer} from "../actions/reduxTypes"
-import {mergeReducers} from "./mergeReducers"
+import { Reducer } from "../actions/reduxTypes";
+import { mergeReducers } from "./mergeReducers";
 
 export type UiState = {
-  isToolTipsHighlighted: boolean,
-}
+    isToolTipsHighlighted: boolean;
+};
 
 const emptyUiState: UiState = {
-  isToolTipsHighlighted: false,
-}
+    isToolTipsHighlighted: false,
+};
 
 const uiReducer: Reducer<UiState> = (state = emptyUiState, action) => {
-  switch (action.type) {
-    case "SWITCH_TOOL_TIPS_HIGHLIGHT": {
-      return {
-        ...state,
-        isToolTipsHighlighted: action.isHighlighted,
-      }
+    switch (action.type) {
+        case "SWITCH_TOOL_TIPS_HIGHLIGHT": {
+            return {
+                ...state,
+                isToolTipsHighlighted: action.isHighlighted,
+            };
+        }
+        default:
+            return state;
     }
-    default:
-      return state
-  }
-}
+};
 
-export const reducer = mergeReducers<UiState>(
-  uiReducer,
-)
+export const reducer = mergeReducers<UiState>(uiReducer);

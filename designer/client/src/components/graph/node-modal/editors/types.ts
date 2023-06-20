@@ -1,1 +1,1 @@
-export type ParamType = $TodoType
+export type ParamType = $TodoType;

@@ -1,13 +1,5 @@
 import { Link, LinkProps } from "@mui/material";
-import React, {
-    createContext,
-    ForwardedRef,
-    forwardRef,
-    MouseEventHandler,
-    PropsWithChildren,
-    useCallback,
-    useContext,
-} from "react";
+import React, { createContext, ForwardedRef, forwardRef, MouseEventHandler, PropsWithChildren, useCallback, useContext } from "react";
 import { makeRelative } from "./scenarioHref";
 
 export interface Navigation {

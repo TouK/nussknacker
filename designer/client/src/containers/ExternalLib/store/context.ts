@@ -1,4 +1,4 @@
-import {createContext} from "react"
-import {ExternalLibContextType} from "./types"
+import { createContext } from "react";
+import { ExternalLibContextType } from "./types";
 
-export const ExternalLibContext = createContext<ExternalLibContextType>(null)
+export const ExternalLibContext = createContext<ExternalLibContextType>(null);

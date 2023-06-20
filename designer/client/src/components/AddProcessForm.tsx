@@ -18,10 +18,7 @@ interface AddProcessFormProps extends ChangeableValue<FormValue> {
 export function AddProcessForm({ nameValidators, value, onChange }: AddProcessFormProps): JSX.Element {
     const categories = useSelector(getWritableCategories);
 
-    const onFieldChange = useCallback(
-        (field: keyof FormValue, next: string) => onChange({ ...value, [field]: next }),
-        [onChange, value]
-    );
+    const onFieldChange = useCallback((field: keyof FormValue, next: string) => onChange({ ...value, [field]: next }), [onChange, value]);
 
     useEffect(() => {
         if (!value.processCategory) {
@@ -37,7 +34,7 @@ export function AddProcessForm({ nameValidators, value, onChange }: AddProcessFo
                     minWidth: 600,
                     paddingTop: 10,
                     paddingBottom: 20,
-                })
+                }),
             )}
         >
             <NodeTable>

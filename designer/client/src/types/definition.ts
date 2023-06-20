@@ -1,54 +1,53 @@
 //types from pl.touk.nussknacker.ui.definition
 
 interface TypingResultBase {
-  type: string,
-  display: string,
-  refClazzName: string,
+    type: string;
+    display: string;
+    refClazzName: string;
 }
 
 interface TypedClass {
-  refClazzName: string,
-  params: Array<TypingResult>,
+    refClazzName: string;
+    params: Array<TypingResult>;
 }
 
-export type TypingInfo = Record<string, TypingResult>
+export type TypingInfo = Record<string, TypingResult>;
 
 export interface TypedObjectTypingResult extends TypingResultBase, TypedClass {
-  fields: TypingInfo,
+    fields: TypingInfo;
 }
 
 interface TypedDict extends TypingResultBase {
-  id: string,
-  valueType: SingleTypingResult,
+    id: string;
+    valueType: SingleTypingResult;
 }
 
 type TypedTaggedValue = (TypedObjectTypingResult | TypedDict | TypedClass) & {
-  tag: string,
-}
+    tag: string;
+};
 
-type SingleTypingResult = TypingResultBase &
-  (TypedObjectTypingResult | TypedDict | TypedClass | TypedTaggedValue)
+type SingleTypingResult = TypingResultBase & (TypedObjectTypingResult | TypedDict | TypedClass | TypedTaggedValue);
 
 interface UnknownTyping extends TypingResultBase {
-  params: Array<TypingResult>,
+    params: Array<TypingResult>;
 }
 
 interface UnionTyping extends TypingResultBase {
-  union: Array<SingleTypingResult>,
+    union: Array<SingleTypingResult>;
 }
 
-export type TypingResult = UnknownTyping | SingleTypingResult | UnionTyping
+export type TypingResult = UnknownTyping | SingleTypingResult | UnionTyping;
 
 export interface UIParameter {
-  name: string,
-  typ: TypingResult,
-  editor: $TodoType,
-  validators: $TodoType,
-  defaultValue: {
-    language: string,
-    expression: string
-  },
-  additionalVariables: TypingInfo,
-  variablesToHide: Array<string>,
-  branchParam: boolean,
+    name: string;
+    typ: TypingResult;
+    editor: $TodoType;
+    validators: $TodoType;
+    defaultValue: {
+        language: string;
+        expression: string;
+    };
+    additionalVariables: TypingInfo;
+    variablesToHide: Array<string>;
+    branchParam: boolean;
 }

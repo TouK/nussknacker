@@ -15,11 +15,7 @@ export default function TestValue(props: Props) {
     return (
         <div className={`node-value${hiddenClassPart}`}>
             {get(value, "original") ? <Textarea className="node-input" readOnly={true} value={value.original} /> : null}
-            <Textarea
-                className="node-input"
-                readOnly={true}
-                value={value !== null ? prettyPrint(value.pretty) : "null"}
-            />
+            <Textarea className="node-input" readOnly={true} value={value !== null ? prettyPrint(value.pretty) : "null"} />
             {shouldHideTestResults ? <div className="fadeout" /> : null}
         </div>
     );

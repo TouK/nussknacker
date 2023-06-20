@@ -59,7 +59,7 @@ export const useNkTheme: () => { withFocus: string; theme: NkTheme } = () => {
                     boxShadow: `0 0 0 1px ${theme?.colors?.focusColor}`,
                 },
             }),
-        [theme]
+        [theme],
     );
 
     return { theme, withFocus };
@@ -92,9 +92,7 @@ function parseColorName(name: string) {
 }
 
 function colorsToVariables(colors: Record<string, string>): Record<`--${string}`, string> {
-    return Object.fromEntries(
-        Object.entries(colors).map(([name, value]) => [parseVarName(parseColorName(name)), value])
-    );
+    return Object.fromEntries(Object.entries(colors).map(([name, value]) => [parseVarName(parseColorName(name)), value]));
 }
 
 function themeToVariables(theme: Theme): { ":root": Record<`--${string}`, string> } {

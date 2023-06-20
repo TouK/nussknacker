@@ -7,8 +7,7 @@ import { ICommand } from "react-ace/lib/types";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
 
-export interface AceWrapperProps
-    extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
+export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
     inputProps: {
         language: string;
         readOnly?: boolean;
@@ -95,15 +94,8 @@ function handleTab(editor: Ace.Editor, shiftKey?: boolean): boolean {
 }
 
 export default forwardRef(function AceWrapper(
-    {
-        inputProps,
-        customAceEditorCompleter,
-        showLineNumbers,
-        wrapEnabled = true,
-        commands = [],
-        ...props
-    }: AceWrapperProps,
-    ref: ForwardedRef<ReactAce>
+    { inputProps, customAceEditorCompleter, showLineNumbers, wrapEnabled = true, commands = [], ...props }: AceWrapperProps,
+    ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
     const { language, readOnly, rows = 1 } = inputProps;
 
@@ -125,7 +117,7 @@ export default forwardRef(function AceWrapper(
                 exec: (editor) => handleTab(editor, true),
             },
         ],
-        []
+        [],
     );
 
     return (

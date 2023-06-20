@@ -1,1 +1,1 @@
-export {AuthInitializer} from "./AuthInitializer"
+export { AuthInitializer } from "./AuthInitializer";

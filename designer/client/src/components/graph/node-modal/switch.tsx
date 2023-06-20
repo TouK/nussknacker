@@ -1,12 +1,4 @@
-import {
-    Edge,
-    EdgeKind,
-    NodeType,
-    NodeValidationError,
-    ProcessDefinitionData,
-    UIParameter,
-    VariableTypes,
-} from "../../../types";
+import { Edge, EdgeKind, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter, VariableTypes } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { errorValidator } from "./editors/Validators";
 import { isEqual } from "lodash";
@@ -52,19 +44,12 @@ export function Switch({
     showValidation?: boolean;
     variableTypes?: VariableTypes;
 }): JSX.Element {
-    const definition = processDefinitionData.componentGroups
-        ?.flatMap((g) => g.components)
-        .find((c) => c.node.type === node.type)?.node;
+    const definition = processDefinitionData.componentGroups?.flatMap((g) => g.components).find((c) => c.node.type === node.type)?.node;
     const currentExpression = node["expression"];
     const currentExprVal = node["exprVal"];
     const exprValValidator = errorValidator(fieldErrors || [], "exprVal");
-    const showExpression = definition["expression"]
-        ? !isEqual(definition["expression"], currentExpression)
-        : currentExpression?.expression;
-    const showExprVal =
-        !exprValValidator.isValid() || definition["exprVal"]
-            ? definition["exprVal"] !== currentExprVal
-            : currentExprVal;
+    const showExpression = definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression;
+    const showExprVal = !exprValValidator.isValid() || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal;
     const [, isCompareView] = useDiffMark();
 
     const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id));
@@ -111,10 +96,7 @@ export function Switch({
                     nodeId={node.id}
                     value={edges}
                     onChange={setEditedEdges}
-                    edgeTypes={[
-                        { value: EdgeKind.switchNext },
-                        { value: EdgeKind.switchDefault, onlyOne: true, disabled: true },
-                    ]}
+                    edgeTypes={[{ value: EdgeKind.switchNext }, { value: EdgeKind.switchDefault, onlyOne: true, disabled: true }]}
                     ordered
                     readOnly={!isEditMode}
                     variableTypes={

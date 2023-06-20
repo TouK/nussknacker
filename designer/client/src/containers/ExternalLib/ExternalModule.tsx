@@ -1,9 +1,9 @@
-import {lazy} from "@loadable/component"
-import React, {PropsWithChildren, useMemo} from "react"
-import {SuspenseSpinner} from "../../components/SuspenseSpinner"
-import {LibContextProvider} from "./store"
-import {loadComponent, splitUrl} from "./tools"
-import {Module, ModuleUrl} from "./types"
+import { lazy } from "@loadable/component";
+import React, { PropsWithChildren, useMemo } from "react";
+import { SuspenseSpinner } from "../../components/SuspenseSpinner";
+import { LibContextProvider } from "./store";
+import { loadComponent, splitUrl } from "./tools";
+import { Module, ModuleUrl } from "./types";
 
 /**
  * Loads external module (federation) from url. Works as modules context provider.
@@ -12,19 +12,19 @@ import {Module, ModuleUrl} from "./types"
  * @param children
  * @constructor
  */
-export function ExternalModule<M extends Module>({children, url}: PropsWithChildren<{ url: ModuleUrl }>): JSX.Element {
-  const [, context] = useMemo(() => splitUrl(url), [url])
-  const LoadedLib = useMemo(() => lazy.lib(async () => loadComponent(url)), [url])
+export function ExternalModule<M extends Module>({ children, url }: PropsWithChildren<{ url: ModuleUrl }>): JSX.Element {
+    const [, context] = useMemo(() => splitUrl(url), [url]);
+    const LoadedLib = useMemo(() => lazy.lib(async () => loadComponent(url)), [url]);
 
-  return (
-    <SuspenseSpinner>
-      <LoadedLib>
-        {(lib: M) => (
-          <LibContextProvider<M> lib={lib} scope={context}>
-            {children}
-          </LibContextProvider>
-        )}
-      </LoadedLib>
-    </SuspenseSpinner>
-  )
+    return (
+        <SuspenseSpinner>
+            <LoadedLib>
+                {(lib: M) => (
+                    <LibContextProvider<M> lib={lib} scope={context}>
+                        {children}
+                    </LibContextProvider>
+                )}
+            </LoadedLib>
+        </SuspenseSpinner>
+    );
 }

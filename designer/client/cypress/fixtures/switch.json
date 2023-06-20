@@ -1,118 +1,114 @@
 {
-  "metaData" : {
-    "id" : "test",
-    "typeSpecificData" : {
-      "parallelism" : null,
-      "spillStateToDisk" : true,
-      "useAsyncInterpretation" : null,
-      "checkpointIntervalInSeconds" : null,
-      "type" : "StreamMetaData"
-    },
-    "additionalFields" : {
-      "description" : null,
-      "properties" : {
-        "environment" : "test",
-        "numberOfThreads" : "1"
-      }
-    }
-  },
-  "nodes" : [
-    {
-      "id" : "source",
-      "ref" : {
-        "typ" : "boundedSource",
-        "parameters" : [
-          {
-            "name" : "elements",
-            "expression" : {
-              "language" : "spel",
-              "expression" : "{}"
+    "metaData": {
+        "id": "test",
+        "typeSpecificData": {
+            "parallelism": null,
+            "spillStateToDisk": true,
+            "useAsyncInterpretation": null,
+            "checkpointIntervalInSeconds": null,
+            "type": "StreamMetaData"
+        },
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "environment": "test",
+                "numberOfThreads": "1"
             }
-          }
-        ]
-      },
-      "additionalFields" : {
-        "description" : null,
-        "layoutData" : {
-          "x" : 180,
-          "y" : 0
         }
-      },
-      "type" : "Source"
     },
-    {
-      "defaultNext" : [
-      ],
-      "nexts" : [
+    "nodes": [
         {
-          "expression" : {
-            "language" : "spel",
-            "expression" : "true"
-          },
-          "nodes" : [
-            {
-              "id" : "dead-end(true)",
-              "ref" : {
-                "typ" : "dead-end",
-                "parameters" : [
+            "id": "source",
+            "ref": {
+                "typ": "boundedSource",
+                "parameters": [
+                    {
+                        "name": "elements",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "{}"
+                        }
+                    }
                 ]
-              },
-              "endResult" : null,
-              "isDisabled" : null,
-              "additionalFields" : {
-                "description" : null,
-                "layoutData" : {
-                  "x" : 0,
-                  "y" : 360
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 180,
+                    "y": 0
                 }
-              },
-              "type" : "Sink"
-            }
-          ]
+            },
+            "type": "Source"
         },
         {
-          "expression" : {
-            "language" : "spel",
-            "expression" : "false"
-          },
-          "nodes" : [
-            {
-              "id" : "dead-end(false)",
-              "ref" : {
-                "typ" : "dead-end",
-                "parameters" : [
-                ]
-              },
-              "endResult" : null,
-              "isDisabled" : null,
-              "additionalFields" : {
-                "description" : null,
-                "layoutData" : {
-                  "x" : 360,
-                  "y" : 360
+            "defaultNext": [],
+            "nexts": [
+                {
+                    "expression": {
+                        "language": "spel",
+                        "expression": "true"
+                    },
+                    "nodes": [
+                        {
+                            "id": "dead-end(true)",
+                            "ref": {
+                                "typ": "dead-end",
+                                "parameters": []
+                            },
+                            "endResult": null,
+                            "isDisabled": null,
+                            "additionalFields": {
+                                "description": null,
+                                "layoutData": {
+                                    "x": 0,
+                                    "y": 360
+                                }
+                            },
+                            "type": "Sink"
+                        }
+                    ]
+                },
+                {
+                    "expression": {
+                        "language": "spel",
+                        "expression": "false"
+                    },
+                    "nodes": [
+                        {
+                            "id": "dead-end(false)",
+                            "ref": {
+                                "typ": "dead-end",
+                                "parameters": []
+                            },
+                            "endResult": null,
+                            "isDisabled": null,
+                            "additionalFields": {
+                                "description": null,
+                                "layoutData": {
+                                    "x": 360,
+                                    "y": 360
+                                }
+                            },
+                            "type": "Sink"
+                        }
+                    ]
                 }
-              },
-              "type" : "Sink"
-            }
-          ]
+            ],
+            "id": "switch",
+            "expression": {
+                "language": "spel",
+                "expression": "true"
+            },
+            "exprVal": "output",
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 180,
+                    "y": 180
+                }
+            },
+            "type": "Switch"
         }
-      ],
-      "id" : "switch",
-      "expression" : {
-        "language" : "spel",
-        "expression" : "true"
-      },
-      "exprVal" : "output",
-      "additionalFields" : {
-        "description" : null,
-        "layoutData" : {
-          "x" : 180,
-          "y" : 180
-        }
-      },
-      "type" : "Switch"
-    }
-  ],
-  "additionalBranches" : [
-  ]
+    ],
+    "additionalBranches": []
 }
