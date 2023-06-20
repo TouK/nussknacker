@@ -46,7 +46,7 @@ export default function BranchParameters({
                                     //here we assume the parameters are correct wrt branch definition. If this is not the case,
                                     //differences should be handled on other level, e.g. using reducers etc.
                                     const paramIndex = branchParameter.parameters.findIndex(
-                                        (paramInBranch) => paramInBranch.name === paramName
+                                        (paramInBranch) => paramInBranch.name === paramName,
                                     );
                                     const paramValue = branchParameter.parameters[paramIndex];
                                     const expressionPath = `branchParameters[${branchIndex}].parameters[${paramIndex}].expression`;

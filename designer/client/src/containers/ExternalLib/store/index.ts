@@ -1,1 +1,1 @@
-export {LibContextProvider} from "./LibContextProvider"
+export { LibContextProvider } from "./LibContextProvider";

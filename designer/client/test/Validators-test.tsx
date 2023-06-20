@@ -1,5 +1,5 @@
-import {notBlankValueValidator} from "../src/components/graph/node-modal/editors/Validators"
-import {describe, expect, it} from "@jest/globals"
+import { notBlankValueValidator } from "../src/components/graph/node-modal/editors/Validators";
+import { describe, expect, it } from "@jest/globals";
 
 describe("Validator", () => {
     describe("notBlankValueValidator", () => {
@@ -11,8 +11,8 @@ describe("Validator", () => {
             ["'someString' ", true],
             ['"someString" ', true],
             ['"someString" + ""', true],
-        ])('for expression: [%s] isValid should be %s', (expression: string, expected: boolean) => {
-            return expect(notBlankValueValidator.isValid(expression)).toEqual(expected)
-        })
-    })
-})
+        ])("for expression: [%s] isValid should be %s", (expression: string, expected: boolean) => {
+            return expect(notBlankValueValidator.isValid(expression)).toEqual(expected);
+        });
+    });
+});

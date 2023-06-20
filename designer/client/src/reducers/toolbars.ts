@@ -72,7 +72,7 @@ function insertItemOnTargetPlaceOnList(
     fromToolbar: ToolbarsSide | string,
     toToolbar: ToolbarsSide | string,
     fromIndex: number,
-    toIndex: number
+    toIndex: number,
 ): [string[], string[]] {
     const isSameToolbar = fromToolbar === toToolbar;
 
@@ -188,5 +188,5 @@ export const toolbars = persistReducer(
         blacklist: [`currentConfigId`],
         storage,
     },
-    reducer
+    reducer,
 );

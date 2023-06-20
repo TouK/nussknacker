@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from "react";
 import { flatten, uniq, uniqBy, sortBy } from "lodash";
 import { useFilterContext } from "../../common";
-import {ScenariosFiltersModel, ScenariosFiltersModelType} from "./scenariosFiltersModel";
+import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
 import { useStatusDefinitions, useUserQuery } from "../useScenariosQuery";
 import { QuickFilter } from "./quickFilter";
 import { FilterMenu } from "./filterMenu";
@@ -31,7 +31,10 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
         };
     }, [data, filterableKeys, userData?.categories]);
 
-    const statusFilterLabels = statusDefinitions.reduce((map, obj) => {map[obj.name] = obj.displayableName; return map;}, {})
+    const statusFilterLabels = statusDefinitions.reduce((map, obj) => {
+        map[obj.name] = obj.displayableName;
+        return map;
+    }, {});
     const { getFilter, setFilter, activeKeys } = useFilterContext<ScenariosFiltersModel>();
 
     const getLabel = useCallback(
@@ -65,10 +68,7 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
             <QuickFilter<ScenariosFiltersModel> isLoading={isLoading} filter="NAME">
                 <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                     <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
-                        <StatusOptionsStack
-                            options={filterableValues["status"]}
-                            withArchived={true}
-                        />
+                        <StatusOptionsStack options={filterableValues["status"]} withArchived={true} />
                     </FilterMenu>
                     <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                         <SimpleOptionsStack

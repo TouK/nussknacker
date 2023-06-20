@@ -1,12 +1,12 @@
-import {ToolbarsSide} from "../../reducers/toolbars"
-import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
-import {ToolbarButton} from "./buttons"
+import { ToolbarsSide } from "../../reducers/toolbars";
+import { ButtonsVariant } from "../toolbarComponents/ToolbarButtons";
+import { ToolbarButton } from "./buttons";
 
 export interface ToolbarConfig {
-  id: string,
-  title?: string,
-  buttons?: ToolbarButton[],
-  buttonsVariant?: ButtonsVariant,
+    id: string;
+    title?: string;
+    buttons?: ToolbarButton[];
+    buttonsVariant?: ButtonsVariant;
 }
 
-export type ToolbarsConfig = Partial<Record<ToolbarsSide, ToolbarConfig[]>>
+export type ToolbarsConfig = Partial<Record<ToolbarsSide, ToolbarConfig[]>>;

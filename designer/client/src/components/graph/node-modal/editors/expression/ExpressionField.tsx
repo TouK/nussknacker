@@ -47,10 +47,7 @@ function ExpressionField(props: Props): JSX.Element {
     const expressionObj = _.get(editedNode, exprPath);
     const editor = parameterDefinition?.editor || {};
 
-    const onValueChange = useCallback(
-        (newValue) => setNodeDataAt(exprTextPath, newValue),
-        [exprTextPath, setNodeDataAt]
-    );
+    const onValueChange = useCallback((newValue) => setNodeDataAt(exprTextPath, newValue), [exprTextPath, setNodeDataAt]);
 
     if (editor.type === EditorType.FIXED_VALUES_PARAMETER_EDITOR) {
         return (

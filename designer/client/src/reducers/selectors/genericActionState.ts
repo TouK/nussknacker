@@ -1,4 +1,4 @@
-import {RootState} from "../index"
-import {GenericActionState} from "../genericActionState";
+import { RootState } from "../index";
+import { GenericActionState } from "../genericActionState";
 
-export const getGenericActionValidation =  (state: RootState): GenericActionState => state.genericAction
+export const getGenericActionValidation = (state: RootState): GenericActionState => state.genericAction;

@@ -16,24 +16,21 @@
  * @type {Cypress.PluginConfig}
  */
 
-const browserify = require("@cypress/browserify-preprocessor")
+const browserify = require("@cypress/browserify-preprocessor");
 
 module.exports = (on, config) => {
-  if (process.env.CYPRESS_SNAPSHOT_UPDATE === "true") {
-    config.env.updateSnapshotsOnFail = true
-  }
-  require("@frsource/cypress-plugin-visual-regression-diff/dist/plugins").initPlugin(on, config)
+    if (process.env.CYPRESS_SNAPSHOT_UPDATE === "true") {
+        config.env.updateSnapshotsOnFail = true;
+    }
+    require("@frsource/cypress-plugin-visual-regression-diff/dist/plugins").initPlugin(on, config);
 
-  require("@cypress/code-coverage/task")(on, config)
+    require("@cypress/code-coverage/task")(on, config);
 
-  const options = browserify.defaultOptions
-  // transform[1][1] is "babelify"
-  // so we just add our code instrumentation plugin to the list
-  options.browserifyOptions.transform[1][1].plugins.push("babel-plugin-istanbul")
+    const options = browserify.defaultOptions;
+    // transform[1][1] is "babelify"
+    // so we just add our code instrumentation plugin to the list
+    options.browserifyOptions.transform[1][1].plugins.push("babel-plugin-istanbul");
 
-  on(
-    "file:preprocessor",
-    browserify({...options, typescript: require.resolve("typescript")}),
-  )
-  return config
-}
+    on("file:preprocessor", browserify({ ...options, typescript: require.resolve("typescript") }));
+    return config;
+};

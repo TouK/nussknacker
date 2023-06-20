@@ -49,7 +49,7 @@ function getUniqueIds(initialIds: string[], alreadyUsedIds: string[], isCopy: bo
 export function prepareNewNodesWithLayout(
     state: GraphState,
     nodesWithPositions: NodesWithPositions,
-    isCopy: boolean
+    isCopy: boolean,
 ): { layout: NodePosition[]; nodes: NodeType[]; uniqueIds?: NodeId[] } {
     const {
         layout,
@@ -70,10 +70,7 @@ export function prepareNewNodesWithLayout(
     };
 }
 
-export function addNodesWithLayout(
-    state: GraphState,
-    { nodes, layout }: ReturnType<typeof prepareNewNodesWithLayout>
-): GraphState {
+export function addNodesWithLayout(state: GraphState, { nodes, layout }: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
     return {
         ...state,
         processToDisplay: {
@@ -89,7 +86,7 @@ export function createEdge(
     toNode: NodeType,
     edgeType: EdgeType,
     allEdges: Edge[],
-    processDefinitionData: ProcessDefinitionData
+    processDefinitionData: ProcessDefinitionData,
 ) {
     const baseEdge = { from: fromNode.id, to: toNode.id };
     const adjustedEdgeType = edgeType || NodeUtils.edgeType(allEdges, fromNode, processDefinitionData);
@@ -104,10 +101,7 @@ export function removeBranchParameter(node: NodeType, branchId: NodeId) {
     };
 }
 
-export function adjustBranchParametersAfterDisconnect(
-    nodes: NodeType[],
-    removedEdges: Pick<Edge, "from" | "to">[]
-): NodeType[] {
+export function adjustBranchParametersAfterDisconnect(nodes: NodeType[], removedEdges: Pick<Edge, "from" | "to">[]): NodeType[] {
     return removedEdges.reduce((resultNodes, { from, to }) => {
         const node = resultNodes.find((n) => n.id === to);
         if (node && NodeUtils.nodeIsJoin(node)) {
@@ -124,29 +118,22 @@ export function adjustBranchParametersAfterDisconnect(
 export function enrichNodeWithProcessDependentData(
     originalNode: NodeType,
     processDefinitionData: ProcessDefinitionData,
-    edges: Edge[]
+    edges: Edge[],
 ): NodeType {
     const node = cloneDeep(originalNode);
 
     switch (NodeUtils.nodeType(node)) {
         case "Join": {
-            const { parameters } = ProcessUtils.findNodeObjectTypeDefinition(
-                node,
-                processDefinitionData.processDefinition
-            );
+            const { parameters } = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition);
             const declaredBranchParameters = parameters.filter((p) => p.branchParam);
             const incomingEdges = edges.filter((e) => e.to === node.id);
             const branchParameters = incomingEdges.map((edge) => {
                 const branchId = edge.from;
                 const existingBranchParams = node.branchParameters.find((p) => p.branchId === branchId);
                 const parameters = declaredBranchParameters.map((branchParamDef) => {
-                    const existingParamValue = existingBranchParams?.parameters?.find(
-                        (p) => p.name === branchParamDef.name
-                    );
+                    const existingParamValue = existingBranchParams?.parameters?.find((p) => p.name === branchParamDef.name);
                     if (!existingParamValue) {
-                        const templateParamValue = node.branchParametersTemplate?.find(
-                            (p) => p.name === branchParamDef.name
-                        );
+                        const templateParamValue = node.branchParametersTemplate?.find((p) => p.name === branchParamDef.name);
                         if (!templateParamValue) {
                             // We need to have this fallback to some template for situation when it is existing node and it has't got
                             // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor

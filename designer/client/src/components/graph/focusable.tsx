@@ -9,14 +9,14 @@ interface ContainerProps extends React.DetailedHTMLProps<React.HTMLAttributes<HT
 
 export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(function GraphPaperContainer(
     { onClick, className, onResize, ...props },
-    forwardedRef
+    forwardedRef,
 ) {
     const clickHandler: MouseEventHandler<HTMLDivElement> = useCallback(
         (event) => {
             event.currentTarget?.focus();
             onClick?.(event);
         },
-        [onClick]
+        [onClick],
     );
 
     const options = useMemo(
@@ -25,7 +25,7 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(fu
                 onResize?.(entry.contentRect);
             }, 100),
         }),
-        [onResize]
+        [onResize],
     );
 
     const { observe } = useSizeWithRef(forwardedRef, options);
@@ -37,12 +37,6 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(fu
     });
 
     return (
-        <div
-            className={cx(styles, className)}
-            ref={onResize ? observe : forwardedRef}
-            tabIndex={-1}
-            onClick={clickHandler}
-            {...props}
-        />
+        <div className={cx(styles, className)} ref={onResize ? observe : forwardedRef} tabIndex={-1} onClick={clickHandler} {...props} />
     );
 });

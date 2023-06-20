@@ -1,1 +1,1 @@
-export * from "./RemoteAuthStrategy"
+export * from "./RemoteAuthStrategy";

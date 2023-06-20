@@ -27,7 +27,7 @@ export function loadProcessState(processId: ProcessId): ThunkAction {
             dispatch({
                 type: "PROCESS_STATE_LOADED",
                 processState: data,
-            })
+            }),
         );
 }
 
@@ -47,7 +47,7 @@ export function displayTestCapabilities(processDetails: Process) {
             dispatch({
                 type: "UPDATE_TEST_CAPABILITIES",
                 capabilities: data,
-            })
+            }),
         );
 }
 
@@ -68,7 +68,5 @@ export function hideRunProcessDetails() {
 
 export function addAttachment(processId: ProcessId, processVersionId: ProcessVersionId, file: File) {
     return (dispatch) =>
-        HttpService.addAttachment(processId, processVersionId, file).then(() =>
-            dispatch(displayProcessActivity(processId))
-        );
+        HttpService.addAttachment(processId, processVersionId, file).then(() => dispatch(displayProcessActivity(processId)));
 }

@@ -54,12 +54,7 @@ export const IframeTab = ({ tab }: { tab: Pick<DynamicTabData, "addAccessTokenIn
     const { addAccessTokenInQueryParam, url } = tab;
     const accessToken = addAccessTokenInQueryParam && SystemUtils.getAccessToken();
     return (
-        <iframe
-            src={queryString.stringifyUrl({ url, query: { iframe: true, accessToken } })}
-            width="100%"
-            height="100%"
-            frameBorder="0"
-        />
+        <iframe src={queryString.stringifyUrl({ url, query: { iframe: true, accessToken } })} width="100%" height="100%" frameBorder="0" />
     );
 };
 
@@ -72,14 +67,14 @@ function useExtednedComponentProps<P extends Record<string, any>>(props: P) {
             navigate,
             ...props,
         }),
-        [navigate, props, rest]
+        [navigate, props, rest],
     );
 }
 
 export const DynamicTab = memo(function DynamicComponent<
     P extends {
         tab: Pick<DynamicTabData, "addAccessTokenInQueryParam" | "url" | "type">;
-    }
+    },
 >({ tab, ...props }: P): JSX.Element {
     const componentProps = useExtednedComponentProps(props);
     switch (tab.type) {

@@ -1,50 +1,50 @@
-import {NotificationsState, reducer as notifications} from "react-notification-system-redux"
-import {combineReducers} from "redux"
-import {GraphState, reducerWithUndo as graphReducer} from "./graph"
-import {reducer as httpErrorHandler} from "./httpErrorHandler"
-import {ProcessActivityState, reducer as processActivity} from "./processActivity"
-import {reducer as settings, SettingsState} from "./settings"
-import {toolbars, ToolbarsStates} from "./toolbars"
-import {NodeDetailsState, reducer as nodeDetails} from "./nodeDetailsState"
-import {reducer as ui, UiState} from "./ui"
-import {FeatureFlags, featureFlags} from "./featureFlags"
-import {UserSettings, userSettings} from "./userSettings"
-import {StateWithHistory} from "redux-undo"
-import {backendNotifications, BackendNotificationState} from "./notifications"
-import {reducer as scenarioState} from "./scenarioState"
-import {ProcessStateType} from "../components/Process/types"
-import {reducer as genericAction, GenericActionState} from "./genericActionState";
+import { NotificationsState, reducer as notifications } from "react-notification-system-redux";
+import { combineReducers } from "redux";
+import { GraphState, reducerWithUndo as graphReducer } from "./graph";
+import { reducer as httpErrorHandler } from "./httpErrorHandler";
+import { ProcessActivityState, reducer as processActivity } from "./processActivity";
+import { reducer as settings, SettingsState } from "./settings";
+import { toolbars, ToolbarsStates } from "./toolbars";
+import { NodeDetailsState, reducer as nodeDetails } from "./nodeDetailsState";
+import { reducer as ui, UiState } from "./ui";
+import { FeatureFlags, featureFlags } from "./featureFlags";
+import { UserSettings, userSettings } from "./userSettings";
+import { StateWithHistory } from "redux-undo";
+import { backendNotifications, BackendNotificationState } from "./notifications";
+import { reducer as scenarioState } from "./scenarioState";
+import { ProcessStateType } from "../components/Process/types";
+import { reducer as genericAction, GenericActionState } from "./genericActionState";
 
 export const reducer = combineReducers<RootState>({
-  httpErrorHandler,
-  graphReducer,
-  settings,
-  ui,
-  processActivity,
-  backendNotifications,
-  notifications,
-  toolbars,
-  featureFlags,
-  userSettings,
-  nodeDetails,
-  genericAction,
-  scenarioState
-})
+    httpErrorHandler,
+    graphReducer,
+    settings,
+    ui,
+    processActivity,
+    backendNotifications,
+    notifications,
+    toolbars,
+    featureFlags,
+    userSettings,
+    nodeDetails,
+    genericAction,
+    scenarioState,
+});
 
 export type RootState = {
-  httpErrorHandler: ReturnType<typeof httpErrorHandler>,
-  graphReducer: GraphState & { history: StateWithHistory<GraphState> },
-  settings: SettingsState,
-  ui: UiState,
-  processActivity: ProcessActivityState,
-  backendNotifications: BackendNotificationState,
-  notifications: NotificationsState,
-  toolbars: ToolbarsStates,
-  featureFlags: FeatureFlags,
-  userSettings: UserSettings,
-  nodeDetails: NodeDetailsState,
-  genericAction: GenericActionState,
-  scenarioState: ProcessStateType
-}
+    httpErrorHandler: ReturnType<typeof httpErrorHandler>;
+    graphReducer: GraphState & { history: StateWithHistory<GraphState> };
+    settings: SettingsState;
+    ui: UiState;
+    processActivity: ProcessActivityState;
+    backendNotifications: BackendNotificationState;
+    notifications: NotificationsState;
+    toolbars: ToolbarsStates;
+    featureFlags: FeatureFlags;
+    userSettings: UserSettings;
+    nodeDetails: NodeDetailsState;
+    genericAction: GenericActionState;
+    scenarioState: ProcessStateType;
+};
 
-export default reducer
+export default reducer;

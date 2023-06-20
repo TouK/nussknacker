@@ -3,7 +3,17 @@ import React, { useMemo } from "react";
 import { Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-export function FilterListItemLabel({ name, displayableName, icon, tooltip }: { name: string; displayableName?: string; icon?: string; tooltip?: string }): JSX.Element {
+export function FilterListItemLabel({
+    name,
+    displayableName,
+    icon,
+    tooltip,
+}: {
+    name: string;
+    displayableName?: string;
+    icon?: string;
+    tooltip?: string;
+}): JSX.Element {
     const { t } = useTranslation();
 
     const label = useMemo(() => {

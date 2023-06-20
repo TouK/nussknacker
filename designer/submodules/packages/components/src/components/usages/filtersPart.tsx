@@ -26,10 +26,7 @@ export function FiltersPart({
         <QuickFilter<UsagesFiltersModel> isLoading={isLoading} filter="TEXT">
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                 <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
-                    <StatusOptionsStack
-                        options={filterableValues["status"]}
-                        withArchived={false}
-                    />
+                    <StatusOptionsStack options={filterableValues["status"]} withArchived={false} />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                     <SimpleOptionsStack

@@ -35,10 +35,7 @@ const emptyGraphState: GraphState = {
     unsavedNewName: null,
 };
 
-export function updateValidationResult(
-    state: GraphState,
-    action: { validationResult: ValidationResult }
-): ValidationResult {
+export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
     return {
         ...action.validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
@@ -151,14 +148,11 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 .filter((e) => e.from === action.fromNode.id && !e.to)
                 //we do this to skip e.g. edges that became incorrect/unavailable
                 .filter((e) =>
-                    availableEdges.find(
-                        (available) => available?.name == e?.edgeType?.name && available?.type == e?.edgeType?.type
-                    )
+                    availableEdges.find((available) => available?.name == e?.edgeType?.name && available?.type == e?.edgeType?.type),
                 );
 
             const freeOutputEdge =
-                freeOutputEdges.find((e) => e.edgeType === action.edgeType) ||
-                (freeOutputEdges.length == 0 ? null : freeOutputEdges[0]);
+                freeOutputEdges.find((e) => e.edgeType === action.edgeType) || (freeOutputEdges.length == 0 ? null : freeOutputEdges[0]);
             if (freeOutputEdge) {
                 newEdges = state.processToDisplay.edges.map((e) =>
                     e === freeOutputEdge
@@ -166,7 +160,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                               ...freeOutputEdge,
                               to: action.toNode.id,
                           }
-                        : e
+                        : e,
                 );
             } else {
                 const edge = createEdge(
@@ -174,7 +168,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                     action.toNode,
                     action.edgeType,
                     state.processToDisplay.edges,
-                    action.processDefinitionData
+                    action.processDefinitionData,
                 );
                 newEdges = concat(state.processToDisplay.edges, edge);
             }
@@ -184,9 +178,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
                 processToDisplay: {
                     ...state.processToDisplay,
                     nodes: state.processToDisplay.nodes.map((n) =>
-                        action.toNode.id !== n.id
-                            ? n
-                            : enrichNodeWithProcessDependentData(n, action.processDefinitionData, newEdges)
+                        action.toNode.id !== n.id ? n : enrichNodeWithProcessDependentData(n, action.processDefinitionData, newEdges),
                     ),
                     edges: newEdges,
                 },
@@ -221,7 +213,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
 
             const idToUniqueId = zipObject(
                 action.nodesWithPositions.map((n) => n.node.id),
-                uniqueIds
+                uniqueIds,
             );
             const edgesWithValidIds = action.edges.map((edge) => ({
                 ...edge,
@@ -335,7 +327,7 @@ const undoableReducer = undoable(reducer, {
                 "selectionState",
             ];
             return !isEqual(pick(nextState, keys), pick(prevState._latestUnfiltered, keys));
-        }
+        },
     ),
 });
 

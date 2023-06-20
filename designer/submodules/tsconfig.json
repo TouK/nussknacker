@@ -33,8 +33,5 @@
         },
         "typeRoots": ["node_modules/@types", "types/@remote", "types"]
     },
-    "exclude": [
-        "node_modules",
-        ".federated-types"
-    ]
+    "exclude": ["node_modules", ".federated-types"]
 }

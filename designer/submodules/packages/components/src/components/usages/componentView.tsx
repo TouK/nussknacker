@@ -6,8 +6,8 @@ import { FiltersContextProvider, useFilterContext } from "../../common";
 import { Breadcrumbs } from "./breadcrumbs";
 import { UsagesFiltersModel } from "./usagesFiltersModel";
 import { ActiveFilters } from "../../scenarios/filters/activeFilters";
-import {sortBy, uniq} from "lodash";
-import {useStatusDefinitions, useUserQuery} from "../../scenarios/useScenariosQuery";
+import { sortBy, uniq } from "lodash";
+import { useStatusDefinitions, useUserQuery } from "../../scenarios/useScenariosQuery";
 import { FiltersPart } from "./filtersPart";
 import { useTranslation } from "react-i18next";
 import { ValueLinker } from "../../common/filters/filtersContext";
@@ -50,7 +50,10 @@ function Component(): JSX.Element {
         [data, userData],
     );
 
-    const statusFilterLabels = statusDefinitions.reduce((map, obj) => {map[obj.name] = obj.displayableName; return map;}, {})
+    const statusFilterLabels = statusDefinitions.reduce((map, obj) => {
+        map[obj.name] = obj.displayableName;
+        return map;
+    }, {});
     const { activeKeys } = useFilterContext<UsagesFiltersModel>();
 
     const getLabel = useCallback(

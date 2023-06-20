@@ -16,31 +16,30 @@
 // quick-n-serialize an SVG dom, needed for IE9 where there's no XMLSerializer nor SVG.xml
 // s: SVG dom, which is the <svg> elemennt
 function xmlSerializerForIE(s): string {
-  let out = ""
+    let out = "";
 
-  out += `<${s.nodeName}`
-  for (let n = 0; n < s.attributes.length; n++) {
-    out += ` ${s.attributes[n].name}='${s.attributes[n].value}'`
-  }
-
-  if (s.hasChildNodes()) {
-    out += ">\n"
-
-    for (let n = 0; n < s.childNodes.length; n++) {
-      out += xmlSerializerForIE(s.childNodes[n])
+    out += `<${s.nodeName}`;
+    for (let n = 0; n < s.attributes.length; n++) {
+        out += ` ${s.attributes[n].name}='${s.attributes[n].value}'`;
     }
 
-    out += `</${s.nodeName}>`
+    if (s.hasChildNodes()) {
+        out += ">\n";
 
-  } else out += " />\n"
+        for (let n = 0; n < s.childNodes.length; n++) {
+            out += xmlSerializerForIE(s.childNodes[n]);
+        }
 
-  return out
+        out += `</${s.nodeName}>`;
+    } else out += " />\n";
+
+    return out;
 }
 
 export function toXml(node: Node) {
-  return window.XMLSerializer ? new XMLSerializer().serializeToString(node) : xmlSerializerForIE(node)
+    return window.XMLSerializer ? new XMLSerializer().serializeToString(node) : xmlSerializerForIE(node);
 }
 
 export function svgTowDataURL(svgStr: string) {
-  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgStr)))}`
+    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgStr)))}`;
 }

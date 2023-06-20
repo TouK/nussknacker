@@ -17,9 +17,7 @@ export function UserSettingsPanel(): JSX.Element {
                 isMulti
                 value={value}
                 getOptionValue={(option) => `${option.label}_${option.value}`}
-                onChange={(values) =>
-                    reset(values?.reduce((current, { label, value }) => ({ ...current, [label]: !!value }), {}))
-                }
+                onChange={(values) => reset(values?.reduce((current, { label, value }) => ({ ...current, [label]: !!value }), {}))}
                 isValidNewOption={(inputValue) => /^[^_]/.test(inputValue)}
                 theme={(provided) => defaultsDeep(theme, provided)}
                 styles={{

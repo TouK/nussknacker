@@ -1,51 +1,53 @@
-import {css, cx} from "@emotion/css"
-import {DefaultContent, DefaultContentProps} from "@touk/window-manager"
-import React, {PropsWithChildren, useMemo} from "react"
-import {alpha, useNkTheme} from "../containers/theme"
-import {getWindowColors} from "./getWindowColors"
-import {LaddaButton} from "./LaddaButton"
-import ErrorBoundary from "../components/common/ErrorBoundary"
+import { css, cx } from "@emotion/css";
+import { DefaultContent, DefaultContentProps } from "@touk/window-manager";
+import React, { PropsWithChildren, useMemo } from "react";
+import { alpha, useNkTheme } from "../containers/theme";
+import { getWindowColors } from "./getWindowColors";
+import { LaddaButton } from "./LaddaButton";
+import ErrorBoundary from "../components/common/ErrorBoundary";
 
-export function WindowContent({children, ...props}: PropsWithChildren<DefaultContentProps>): JSX.Element {
-  const {theme} = useNkTheme()
-  const classnames = useMemo(() => ({
-    header: cx(getWindowColors(props.data.kind)),
-    headerButtons: css({
-      fontSize: 15,
-      "button:focus": {
-        background: alpha(theme.colors.secondaryColor, .25),
-      },
-      "button:hover": {
-        background: alpha(theme.colors.secondaryColor, .75),
-      },
-      "button[name=close]:focus": {
-        background: alpha(theme.colors.danger, .5),
-      },
-      "button[name=close]:hover": {
-        background: theme.colors.danger,
-        "svg path": {fill: theme.colors.secondaryColor},
-      },
-    }),
-    footer: css({
-      justifyContent: "flex-end",
-      background: theme.colors.secondaryBackground,
-      borderTop: `${theme.spacing.baseUnit / 3}px solid ${theme.colors.borderColor}`,
-    }),
-    ...props.classnames,
-  }), [props.classnames, props.data.kind, theme])
+export function WindowContent({ children, ...props }: PropsWithChildren<DefaultContentProps>): JSX.Element {
+    const { theme } = useNkTheme();
+    const classnames = useMemo(
+        () => ({
+            header: cx(getWindowColors(props.data.kind)),
+            headerButtons: css({
+                fontSize: 15,
+                "button:focus": {
+                    background: alpha(theme.colors.secondaryColor, 0.25),
+                },
+                "button:hover": {
+                    background: alpha(theme.colors.secondaryColor, 0.75),
+                },
+                "button[name=close]:focus": {
+                    background: alpha(theme.colors.danger, 0.5),
+                },
+                "button[name=close]:hover": {
+                    background: theme.colors.danger,
+                    "svg path": { fill: theme.colors.secondaryColor },
+                },
+            }),
+            footer: css({
+                justifyContent: "flex-end",
+                background: theme.colors.secondaryBackground,
+                borderTop: `${theme.spacing.baseUnit / 3}px solid ${theme.colors.borderColor}`,
+            }),
+            ...props.classnames,
+        }),
+        [props.classnames, props.data.kind, theme],
+    );
 
-  const components = useMemo(() => ({
-    FooterButton: LaddaButton,
-    ...props.components,
-  }), [props.components])
+    const components = useMemo(
+        () => ({
+            FooterButton: LaddaButton,
+            ...props.components,
+        }),
+        [props.components],
+    );
 
-  return (
-    <DefaultContent
-      {...props}
-      components={components}
-      classnames={classnames}
-    >
-      <ErrorBoundary>{children}</ErrorBoundary>
-    </DefaultContent>
-  )
+    return (
+        <DefaultContent {...props} components={components} classnames={classnames}>
+            <ErrorBoundary>{children}</ErrorBoundary>
+        </DefaultContent>
+    );
 }

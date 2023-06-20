@@ -1,1 +1,1 @@
-export {useExternalLib} from "./useExternalLib"
+export { useExternalLib } from "./useExternalLib";

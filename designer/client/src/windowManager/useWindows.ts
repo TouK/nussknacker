@@ -10,10 +10,7 @@ import { NodeType, Process } from "../types";
 import { WindowKind } from "./WindowKind";
 import { InfoDialogData } from "../components/modals/GenericInfoDialog";
 
-export function parseWindowsQueryParams<P extends Record<string, string | string[]>>(
-    append: P,
-    remove?: P
-): Record<string, string[]> {
+export function parseWindowsQueryParams<P extends Record<string, string | string[]>>(append: P, remove?: P): Record<string, string[]> {
     const query = queryString.parse(window.location.search, { arrayFormat: defaultArrayFormat });
     const keys = uniq(Object.keys({ ...append, ...remove }));
     return Object.fromEntries(
@@ -22,7 +19,7 @@ export function parseWindowsQueryParams<P extends Record<string, string | string
             const withAdded = uniq(current.concat(append?.[key]));
             const cleaned = without(withAdded, ...ensureArray(remove?.[key])).filter(Boolean);
             return [key, cleaned];
-        })
+        }),
     );
 }
 
@@ -33,11 +30,10 @@ export function useWindows(parent?: WindowId) {
 
     const open = useCallback(
         async <M = never>(windowData: Partial<WindowType<WindowKind, M>> = {}) => {
-            const isModal =
-                windowData.isModal === undefined ? !forceDisableModals : windowData.isModal && !forceDisableModals;
+            const isModal = windowData.isModal === undefined ? !forceDisableModals : windowData.isModal && !forceDisableModals;
             await _open({ isResizable: false, ...windowData, isModal });
         },
-        [forceDisableModals, _open]
+        [forceDisableModals, _open],
     );
 
     const openNodeWindow = useCallback(
@@ -48,7 +44,7 @@ export function useWindows(parent?: WindowId) {
                 kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
                 meta: { node, process },
             }),
-        [open]
+        [open],
     );
 
     const inform = useCallback(
@@ -58,7 +54,7 @@ export function useWindows(parent?: WindowId) {
                 meta: data,
             });
         },
-        [open]
+        [open],
     );
 
     const confirm = useCallback(
@@ -69,7 +65,7 @@ export function useWindows(parent?: WindowId) {
                 meta: defaults(data, { confirmText: "Yes", denyText: "No" }),
             });
         },
-        [open]
+        [open],
     );
 
     return useMemo(
@@ -80,6 +76,6 @@ export function useWindows(parent?: WindowId) {
             openNodeWindow,
             close: closeAll,
         }),
-        [confirm, open, inform, openNodeWindow, closeAll]
+        [confirm, open, inform, openNodeWindow, closeAll],
     );
 }

@@ -1,12 +1,12 @@
 import { useFilterContext } from "../../common";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {ScenariosFiltersModel, ScenariosFiltersModelType} from "./scenariosFiltersModel";
-import {FilterListItem, FilterListItemSwitch} from "./filterListItem";
+import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFiltersModel";
+import { FilterListItem, FilterListItemSwitch } from "./filterListItem";
 import { OptionsStack } from "./optionsStack";
 import { Divider } from "@mui/material";
 import { some, xor } from "lodash";
-import {FilterListItemLabel} from "./filterListItemLabel";
+import { FilterListItemLabel } from "./filterListItemLabel";
 
 export function OtherOptionsStack(): JSX.Element {
     const { t } = useTranslation();
@@ -42,10 +42,12 @@ export function OtherOptionsStack(): JSX.Element {
 
 export interface StatusFiltersParams<V extends string = string, T = string> {
     options?: T[];
-    withArchived: boolean
+    withArchived: boolean;
 }
 
-export function StatusOptionsStack(props: StatusFiltersParams<string, { name: string; displayableName: string; icon?: string; tooltip?: string }>): JSX.Element {
+export function StatusOptionsStack(
+    props: StatusFiltersParams<string, { name: string; displayableName: string; icon?: string; tooltip?: string }>,
+): JSX.Element {
     const { options = [], withArchived } = props;
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
@@ -80,7 +82,7 @@ export function StatusOptionsStack(props: StatusFiltersParams<string, { name: st
                         label={t("table.filter.ARCHIVED", "Archived")}
                     />
                 </>
-            ) : null }
+            ) : null}
         </OptionsStack>
     );
 }

@@ -25,17 +25,8 @@ interface Props {
 }
 
 export default function AdditionalProperty(props: Props) {
-    const {
-        showSwitch,
-        showValidation,
-        propertyName,
-        propertyConfig,
-        propertyErrors,
-        editedNode,
-        onChange,
-        renderFieldLabel,
-        readOnly,
-    } = props;
+    const { showSwitch, showValidation, propertyName, propertyConfig, propertyErrors, editedNode, onChange, renderFieldLabel, readOnly } =
+        props;
 
     const values = propertyConfig.values?.map((value) => ({ expression: value, label: value }));
     const propertyPath = `additionalFields.properties.${propertyName}`;

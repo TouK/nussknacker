@@ -33,11 +33,7 @@ export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps)
                             : NodeUtils.getNodeById(nodeId, currentProcess);
                     return (
                         <React.Fragment key={nodeId}>
-                            <NodeErrorLink
-                                onClick={(event) => showDetails(event, details)}
-                                nodeId={nodeId}
-                                disabled={!details}
-                            />
+                            <NodeErrorLink onClick={(event) => showDetails(event, details)} nodeId={nodeId} disabled={!details} />
                             {index < nodeIds.length - 1 ? separator : null}
                         </React.Fragment>
                     );
@@ -51,11 +47,7 @@ const ErrorHeader = ({ message, className }: { message: string; className?: stri
     return <span className={className}>{message}</span>;
 };
 
-const NodeErrorLink = (props: {
-    onClick: MouseEventHandler<HTMLAnchorElement>;
-    nodeId: NodeId;
-    disabled?: boolean;
-}) => {
+const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElement>; nodeId: NodeId; disabled?: boolean }) => {
     const { onClick, nodeId, disabled } = props;
     const { theme } = useNkTheme();
 
@@ -80,7 +72,7 @@ const NodeErrorLink = (props: {
                 styles,
                 css({
                     color: Color(theme.colors.error).desaturate(0.5).lighten(0.1).hex(),
-                })
+                }),
             )}
         >
             {nodeId}

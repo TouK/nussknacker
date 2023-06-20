@@ -1,14 +1,5 @@
 import _ from "lodash";
-import React, {
-    createContext,
-    PropsWithChildren,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
+import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useDebouncedCallback } from "use-debounce";
@@ -27,12 +18,7 @@ import * as ClipboardUtils from "../../common/ClipboardUtils";
 import { tryParseOrNull } from "../../common/JsonUtils";
 import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
 import { useDocumentListeners } from "../../containers/useDocumentListeners";
-import {
-    canModifySelectedNodes,
-    getProcessCategory,
-    getSelection,
-    getSelectionState,
-} from "../../reducers/selectors/graph";
+import { canModifySelectedNodes, getProcessCategory, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { useGraph } from "./GraphContext";
@@ -65,11 +51,11 @@ function useClipboardParse() {
                     (node) =>
                         NodeUtils.isNode(node) &&
                         NodeUtils.isPlainNode(node) &&
-                        NodeUtils.isAvailable(node, processDefinitionData, processCategory)
+                        NodeUtils.isAvailable(node, processDefinitionData, processCategory),
                 );
             return isValid ? selection : null;
         },
-        [processCategory, processDefinitionData]
+        [processCategory, processDefinitionData],
     );
 }
 
@@ -138,7 +124,7 @@ export const useSelectionActions = (): UserActions => {
 export default function SelectionContextProvider(
     props: PropsWithChildren<{
         pastePosition: () => { x: number; y: number };
-    }>
+    }>,
 ): JSX.Element {
     const dispatch = useDispatch();
     const { t } = useTranslation();
@@ -160,17 +146,10 @@ export default function SelectionContextProvider(
                 await ClipboardUtils.writeText(JSON.stringify(selection));
                 return selection.nodes;
             } else {
-                dispatch(
-                    error(
-                        t(
-                            "userActions.copy.failed",
-                            "Can not copy selected content. It should contain only plain nodes"
-                        )
-                    )
-                );
+                dispatch(error(t("userActions.copy.failed", "Can not copy selected content. It should contain only plain nodes")));
             }
         },
-        [canModifySelected, dispatch, selection, t]
+        [canModifySelected, dispatch, selection, t],
     );
     const cut = useCallback(
         async (isInternalEvent = false) => {
@@ -185,13 +164,13 @@ export default function SelectionContextProvider(
                                 defaultValue: "Cut node",
                                 defaultValue_plural: "Cut {{count}} nodes",
                                 count: copied.length,
-                            })
-                        )
+                            }),
+                        ),
                     );
                 }
             }
         },
-        [copy, dispatch, t]
+        [copy, dispatch, t],
     );
 
     const parse = useClipboardParse();
@@ -236,7 +215,7 @@ export default function SelectionContextProvider(
                 dispatch(error(t("userActions.paste.notAvailable", "Paste button is not available. Try Ctrl+V")));
             }
         },
-        [dispatch, parseInsertNodes, t]
+        [dispatch, parseInsertNodes, t],
     );
 
     const canAccessClipboard = useClipboardPermission();
@@ -253,17 +232,7 @@ export default function SelectionContextProvider(
                 dispatch(selectAll());
             },
         }),
-        [
-            copy,
-            cut,
-            paste,
-            selectionState,
-            hasSelection,
-            canAccessClipboard,
-            canModifySelected,
-            capabilities.editFrontend,
-            dispatch,
-        ]
+        [copy, cut, paste, selectionState, hasSelection, canAccessClipboard, canModifySelected, capabilities.editFrontend, dispatch],
     );
 
     useDocumentListeners(
@@ -271,8 +240,8 @@ export default function SelectionContextProvider(
             () => ({
                 selectionchange: () => setHasSelection(hasTextSelection),
             }),
-            []
-        )
+            [],
+        ),
     );
 
     return <SelectionContext.Provider value={userActions}>{props.children}</SelectionContext.Provider>;

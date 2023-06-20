@@ -7,7 +7,7 @@
 ## dev
 
 1. `npm install` or `npm ci`
-2. `npm start` or `NU_FE_CORE_URL=http://... npm start` 
+2. `npm start` or `NU_FE_CORE_URL=http://... npm start`
 3. read logs
 
 Note: `NU_FE_CORE_URL` should point to NU core frontend application (when running in development mode this is `http://localhost:3000`). By default, it is `/static` which is meant for production build.

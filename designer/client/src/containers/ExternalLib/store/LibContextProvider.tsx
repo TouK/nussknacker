@@ -1,12 +1,12 @@
-import React, {PropsWithChildren} from "react"
-import {Module, ModuleString} from "../types"
-import {ExternalLibContext} from "./context"
-import {ModulesStore} from "./modulesStore"
-import {useExternalLib} from "../hooks"
+import React, { PropsWithChildren } from "react";
+import { Module, ModuleString } from "../types";
+import { ExternalLibContext } from "./context";
+import { ModulesStore } from "./modulesStore";
+import { useExternalLib } from "../hooks";
 
 interface Props<M extends Module> {
-  lib: M,
-  scope: ModuleString,
+    lib: M;
+    scope: ModuleString;
 }
 
 /**
@@ -16,24 +16,20 @@ interface Props<M extends Module> {
  * @param children
  * @constructor
  */
-export function LibContextProvider<M extends Module>({lib, scope, children}: PropsWithChildren<Props<M>>): JSX.Element {
-  const {context} = useExternalLib()
+export function LibContextProvider<M extends Module>({ lib, scope, children }: PropsWithChildren<Props<M>>): JSX.Element {
+    const { context } = useExternalLib();
 
-  if (!lib) {
-    return null
-  }
+    if (!lib) {
+        return null;
+    }
 
-  if (context) {
-    context.add(scope, lib)
-    return <>{children}</>
-  }
+    if (context) {
+        context.add(scope, lib);
+        return <>{children}</>;
+    }
 
-  const modulesStore = new ModulesStore()
-  modulesStore.add(scope, lib)
+    const modulesStore = new ModulesStore();
+    modulesStore.add(scope, lib);
 
-  return (
-    <ExternalLibContext.Provider value={modulesStore}>
-      {children}
-    </ExternalLibContext.Provider>
-  )
+    return <ExternalLibContext.Provider value={modulesStore}>{children}</ExternalLibContext.Provider>;
 }

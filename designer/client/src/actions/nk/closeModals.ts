@@ -1,3 +1,3 @@
 export type CloseModalsAction = {
-  type: "CLOSE_MODALS",
-}
+    type: "CLOSE_MODALS";
+};

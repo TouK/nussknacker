@@ -1,16 +1,13 @@
 {
-  "extends": "../../tsconfig.json",
-  "exclude": [
-    "node_modules",
-    ".federated-types"
-  ],
-  "compilerOptions": {
-    "module": "esnext",
-    "moduleResolution": "Node"
-  },
-  "ts-node": {
+    "extends": "../../tsconfig.json",
+    "exclude": ["node_modules", ".federated-types"],
     "compilerOptions": {
-      "module": "CommonJS"
+        "module": "esnext",
+        "moduleResolution": "Node"
+    },
+    "ts-node": {
+        "compilerOptions": {
+            "module": "CommonJS"
+        }
     }
-  }
 }

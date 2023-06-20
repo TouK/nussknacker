@@ -12,10 +12,7 @@ import { RemoteComponent } from "../../../ExternalLib/RemoteComponent";
 
 type AuthLibCallback = (a: AuthClient) => void;
 
-function createAuthWrapper(
-    { url, scope }: { url: ModuleUrl; scope: ModuleString },
-    onInit: AuthLibCallback
-): FunctionComponent {
+function createAuthWrapper({ url, scope }: { url: ModuleUrl; scope: ModuleString }, onInit: AuthLibCallback): FunctionComponent {
     return function Wrapper({ children }: PropsWithChildren<unknown>) {
         return (
             <ErrorBoundary>

@@ -28,7 +28,7 @@ export function fragmentNodeHref(scenarioId: string, fragmentNodeId: string, nod
     const nid = encodeURIComponent(nodeId);
     const fid = encodeURIComponent(fragmentNodeId);
 
-    return encodeURI(urljoin(scenarioHref(scenarioId), `?nodeId=${fid},${fid}-${nid}`))
+    return encodeURI(urljoin(scenarioHref(scenarioId), `?nodeId=${fid},${fid}-${nid}`));
 }
 
 export function metricsHref(scenarioId: string): string {

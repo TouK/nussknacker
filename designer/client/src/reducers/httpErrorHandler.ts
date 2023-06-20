@@ -1,28 +1,28 @@
-import {Reducer} from "../actions/reduxTypes"
+import { Reducer } from "../actions/reduxTypes";
 
 export interface ErrorType {
-  response: { data: unknown, status: number },
+    response: { data: unknown; status: number };
 }
 
 export interface ErrorState {
-  error: ErrorType,
+    error: ErrorType;
 }
 
 const initialState: ErrorState = {
-  error: null,
-}
+    error: null,
+};
 
 export const reducer: Reducer<ErrorState> = (state = initialState, action) => {
-  switch (action.type) {
-    case "CLEAR_PROCESS": {
-      return initialState
+    switch (action.type) {
+        case "CLEAR_PROCESS": {
+            return initialState;
+        }
+        case "HANDLE_HTTP_ERROR": {
+            return {
+                error: action.error,
+            };
+        }
+        default:
+            return state;
     }
-    case "HANDLE_HTTP_ERROR": {
-      return {
-        error: action.error,
-      }
-    }
-    default:
-      return state
-  }
-}
+};

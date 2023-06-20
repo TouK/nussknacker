@@ -1,3 +1,3 @@
-export {createScript} from "./createScript"
-export {splitUrl} from "./splitUrl"
-export {loadComponent} from "./loadComponent"
+export { createScript } from "./createScript";
+export { splitUrl } from "./splitUrl";
+export { loadComponent } from "./loadComponent";

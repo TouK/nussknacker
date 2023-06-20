@@ -26,7 +26,7 @@ export function DropdownButton<T = any>(props: PropsWithChildren<ButtonProps & P
             setIsOpen((state) => !state);
             onClick?.(e);
         },
-        [onClick]
+        [onClick],
     );
 
     const onSelectChange = useCallback(
@@ -34,7 +34,7 @@ export function DropdownButton<T = any>(props: PropsWithChildren<ButtonProps & P
             setIsOpen(false);
             onSelect(value);
         },
-        [onSelect]
+        [onSelect],
     );
 
     return (
@@ -108,7 +108,7 @@ const Blanket = ({ onClick }: { onClick: MouseEventHandler }) =>
             }}
             onClick={onClick}
         />,
-        document.body
+        document.body,
     );
 
 interface DropdownProps {

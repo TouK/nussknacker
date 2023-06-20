@@ -1,4 +1,4 @@
 export enum CustomButtonTypes {
-  customLink = "custom-link",
-  customAction = "custom-action"
+    customLink = "custom-link",
+    customAction = "custom-action",
 }

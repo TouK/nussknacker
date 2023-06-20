@@ -51,7 +51,7 @@ function ProcessComments(): JSX.Element {
                 },
             });
         },
-        [confirm, dispatch, processId]
+        [confirm, dispatch, processId],
     );
 
     const onInputChange = useCallback((e) => setComment(e.target.value), []);
@@ -66,10 +66,7 @@ function ProcessComments(): JSX.Element {
                             <Date date={comment.createDate} />
                             <span className="comment-header">{`| v${comment.processVersionId} | ${comment.user}`}</span>
                             {comment.user != loggedUser.id ? null : (
-                                <span
-                                    className="remove glyphicon glyphicon-remove"
-                                    onClick={() => _deleteComment(comment)}
-                                />
+                                <span className="remove glyphicon glyphicon-remove" onClick={() => _deleteComment(comment)} />
                             )}
                         </div>
                         <CommentContent content={comment.content} commentSettings={commentSettings} />
@@ -80,12 +77,7 @@ function ProcessComments(): JSX.Element {
             {capabilities.write ? (
                 <div className="add-comment-panel">
                     <CommentInput onChange={onInputChange.bind(this)} value={comment} />
-                    <NkButton
-                        type="button"
-                        className="add-comment"
-                        onClick={_addComment}
-                        disabled={pending || comment == ""}
-                    >
+                    <NkButton type="button" className="add-comment" onClick={_addComment} disabled={pending || comment == ""}>
                         Add
                     </NkButton>
                 </div>
