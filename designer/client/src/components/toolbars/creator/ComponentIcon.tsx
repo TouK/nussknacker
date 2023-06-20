@@ -8,12 +8,13 @@ import PropertiesSvg from "../../../assets/img/properties.svg";
 import ReactDOM from "react-dom";
 import { InlineSvg } from "../../SvgDiv";
 
+let preloadedIndex = 0
 const preloadBeImage = memoize((src: string): string | null => {
     if (!src) {
         return null;
     }
 
-    const id = `svg${Date.now()}`;
+    const id = `svg${++preloadedIndex}`;
     const div = document.createElement("div");
     ReactDOM.render(<InlineSvg src={src} id={id} style={{ display: "none" }} />, div);
     document.body.appendChild(div);
