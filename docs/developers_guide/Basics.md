@@ -95,7 +95,7 @@ Your code should depend only on `nussknacker-xxx-api` or `nussknacker-xxx-compon
 The plug-in jar should be fatjar containing all libraries necessary for running your customization, 
 except for dependencies provided by execution engine. In particular, for custom component implementation, 
 following dependencies **should** be marked as `provided` and not be part of customization jar:
-- All Nussknacker modules with names ending in `-api`, e.g. `nussknacker-components-api`, `nussknacker-components-flink-api`, `nussknacker-lite-components-api`
+- All Nussknacker modules with names ending in `-api`, e.g. `nussknacker-components-api`, `nussknacker-flink-components-api`, `nussknacker-lite-components-api`
 - `nussknacker-utils`, `nussknacker-components-utils`, `nussknacker-helpers-utils` (are provided in `defaultModel.jar`)
 - `nussknacker-flink-components-utils` (is provided in `flinkExecutor.jar`)
 - Basic Flink dependencies: `flink-streaming-scala`, `flink-runtime`, `flink-statebackend-rocksdb` etc. for Flink components  (are provided in `flinkExecutor.jar`)
