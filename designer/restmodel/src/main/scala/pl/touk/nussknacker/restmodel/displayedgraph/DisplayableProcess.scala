@@ -65,13 +65,16 @@ case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
 
 object ProcessProperties {
 
-  def apply(typeSpecificProperties: TypeSpecificData,
-            additionalFields: ProcessAdditionalFields): ProcessProperties = {
-    ProcessProperties(ProcessAdditionalFields(additionalFields.description, additionalFields.properties ++ typeSpecificProperties.toMap, typeSpecificProperties.metaDataType))
+  def combineTypeSpecificProperties(typeSpecificProperties: TypeSpecificData,
+                                    additionalFields: ProcessAdditionalFields): ProcessProperties = {
+    ProcessProperties(additionalFields.combineTypeSpecificProperties(typeSpecificProperties))
   }
 
   def apply(typeSpecificProperties: TypeSpecificData): ProcessProperties = {
-    ProcessProperties(typeSpecificProperties, ProcessAdditionalFields(None, typeSpecificProperties.toMap, typeSpecificProperties.metaDataType))
+    ProcessProperties.combineTypeSpecificProperties(
+      typeSpecificProperties,
+      ProcessAdditionalFields(None, Map(), typeSpecificProperties.metaDataType)
+    )
   }
 
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =

@@ -195,7 +195,7 @@ object ProcessTestData {
 
   val processWithInvalidAdditionalProperties: DisplayableProcess = DisplayableProcess(
     id = "fooProcess",
-    properties = ProcessProperties(StreamMetaData(
+    properties = ProcessProperties.combineTypeSpecificProperties(StreamMetaData(
       Some(2)),
       ProcessAdditionalFields(Some("scenario description"), Map(
         "maxEvents" -> "text",
@@ -211,7 +211,10 @@ object ProcessTestData {
   val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), ProcessAdditionalFields(Some("process description"), Map.empty, "StreamMetaData")),
+      properties = ProcessProperties.combineTypeSpecificProperties(
+        StreamMetaData(Some(2)),
+        ProcessAdditionalFields(Some("process description"), Map.empty, "StreamMetaData")
+      ),
       nodes = List(
         node.Source(
           id = "sourceId",

@@ -56,9 +56,7 @@ object MetaData {
                                     additionalFields: ProcessAdditionalFields): MetaData = {
     MetaData(
       id = id,
-      additionalFields = additionalFields.copy(
-        properties = additionalFields.properties ++ typeSpecificData.toMap
-      )
+      additionalFields = additionalFields.combineTypeSpecificProperties(typeSpecificData)
     )
   }
 
@@ -74,6 +72,10 @@ object MetaData {
 case class ProcessAdditionalFields(description: Option[String],
                                    properties: Map[String, String],
                                    metaDataType: String) {
+
+  def combineTypeSpecificProperties(typeSpecificData: TypeSpecificData): ProcessAdditionalFields = {
+    this.copy(properties = properties ++ typeSpecificData.toMap)
+  }
 
   def typeSpecificProperties: TypeSpecificData = {
     metaDataType match {
