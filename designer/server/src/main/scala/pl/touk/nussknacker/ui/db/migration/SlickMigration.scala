@@ -55,20 +55,19 @@ trait ProcessJsonMigration extends SlickMigration with EspTables with LazyLoggin
     } yield updatedJson
   }
 
-  /**
-   * TODO: make json migrations transactional
-   * If updating json fails (returns None), we are choosing the previous json. This is because if we have process jsons
-   * that are in a state our updating function can't handle we want to be able to continue - otherwise we would have to
-   * make sure that all processes can be handled - which could be a problem for archived processes.
-   *
-   * As a result, it's important to know that migrations updating the process json are not transactional.
-   */
   private def prepareAndUpdateJson(json: String): String = {
     val jsonProcess = CirceUtil.decodeJsonUnsafe[Json](json, "invalid scenario")
     val updated = updateProcessJson(jsonProcess)
     updated.getOrElse(jsonProcess).noSpaces
   }
 
+  /**
+   * Note on transactions - in case of failure:
+   * <ul>
+   * <li>if we want to roll back the transaction and stop the application - the implementation should throw an exception</li>
+   * <li>if we want to continue and fall back to previous json - the implementation should return None</li>
+   * </ul>
+   */
   def updateProcessJson(json: Json): Option[Json]
 
 }

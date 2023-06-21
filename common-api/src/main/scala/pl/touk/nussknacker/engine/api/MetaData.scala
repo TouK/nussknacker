@@ -26,7 +26,7 @@ object MetaData {
 
   /**
    * TODO: remove legacy decoder after the migration is completed
-   * This may cause problems, because json migration is not transactional - some processes may still be in a legacy state
+   * This may cause problems, because the relevant migration is not done in transaction - some processes may still be in a legacy state
    * (for example some archived processes which the migration could not handle).
    */
   private val legacyDecoder: Decoder[MetaData] = {
