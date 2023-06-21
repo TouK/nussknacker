@@ -34,7 +34,22 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
     result.validValue shouldBe RunResult.success(util.Arrays.asList("myPrefix:t1", "configuredPrefix:t1"))
   }
 
+  test("should access source property") {
+    val scenario = ScenarioBuilder
+      .streamingLite("t1")
+      .source("source", TestScenarioRunner.testDataSource)
+      .buildVariable("v", "v", "varField" -> "#input.field")
+      .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#v.varField")
+
+    val runner = new LiteTestScenarioRunner(List(), ConfigFactory.empty())
+
+    val result = runner.runWithData[SourceData, String](scenario, List(SourceData("abc")))
+    result.validValue shouldBe RunResult.success("abc")
+  }
+
 }
+
+private case class SourceData(field: String)
 
 class CustomComponentProvider extends ComponentProvider {
   override def providerName: String = "custom"
