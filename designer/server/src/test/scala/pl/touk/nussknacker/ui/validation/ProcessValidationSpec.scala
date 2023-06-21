@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
@@ -236,10 +237,10 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
   test("not allow required scenario fields") {
     val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> (Map(
         "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
         "field2" -> AdditionalPropertyConfig(None, None, None, Some("label2"))
-      ))
+      ) ++ FlinkStreamingPropertiesConfig.properties))
     )
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "a", "field2" -> "b"))) shouldBe withoutErrorsAndWarnings
@@ -258,14 +259,18 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
   test("don't validate properties on fragment") {
     val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> (Map(
         "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
         "field2" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label2"))
-      ))
+      ) ++ FlinkStreamingPropertiesConfig.properties))
     )
 
     val process = validProcessWithFields(Map())
-    val subprocess = process.copy(properties = process.properties.copy(typeSpecificProperties = FragmentSpecificData()))
+    val subprocess = process.copy(properties = process.properties.copy(
+      additionalFields = process.properties.additionalFields.copy(
+        metaDataType = "FragmentSpecificData"
+      )
+    ))
 
     processValidation.validate(subprocess) shouldBe withoutErrorsAndWarnings
 
@@ -274,10 +279,10 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
   test("validate type) scenario field") {
     val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
     val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> (Map(
         "field1" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), Some("label")),
         "field2" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
-      ))
+      ) ++ FlinkStreamingPropertiesConfig.properties))
     )
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "true"))) shouldBe withoutErrorsAndWarnings
@@ -291,9 +296,9 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
   test("handle unknown properties validation") {
     val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> (Map(
         "field2" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
-      ))
+      ) ++ FlinkStreamingPropertiesConfig.properties))
     )
 
     val result = processValidation.validate(validProcessWithFields(Map("field1" -> "true")))
@@ -649,11 +654,11 @@ private object ProcessValidationSpec {
       c.withValue(s"componentsUiConfig.$n.params.par1.defaultValue", fromAnyRef("'realDefault'")))
 
   val validator: ProcessValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> (Map(
       "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
       "numberOfThreads" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
       "maxEvents" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
-    ))
+    ) ++ FlinkStreamingPropertiesConfig.properties))
   )
 
   def validProcessWithFields(fields: Map[String, String]): DisplayableProcess = {
@@ -703,7 +708,12 @@ private object ProcessValidationSpec {
                             `type`: ProcessingType = TestProcessingTypes.Streaming,
                             category: String = Category1,
                             additionalFields: Map[String, String] = Map()): DisplayableProcess = {
-    DisplayableProcess("test", ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`, category)
+    DisplayableProcess(
+      "test",
+      ProcessProperties.combineTypeSpecificProperties(
+        StreamMetaData(),
+        additionalFields = ProcessAdditionalFields(None, additionalFields, "StreamMetaData")),
+      nodes, edges, `type`, category)
   }
 
   private def createFragmentDefinition(fragmentDefinitionId: String, fragmentInputParams: List[SubprocessParameter]): CanonicalProcess ={
@@ -724,7 +734,7 @@ private object ProcessValidationSpec {
 
     val processValidationWithConfig: ProcessValidation = ProcessValidation(
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition, execConfig)),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> List(SampleCustomProcessValidator)),
       new SubprocessResolver(new StubSubprocessRepository(Set(
         SubprocessDetails(subprocess, Category1),

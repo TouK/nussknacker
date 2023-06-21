@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
-import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
+import pl.touk.nussknacker.engine.{MetaDataInitializer, spel}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
@@ -195,13 +195,13 @@ object ProcessTestData {
 
   val processWithInvalidAdditionalProperties: DisplayableProcess = DisplayableProcess(
     id = "fooProcess",
-    properties = ProcessProperties(StreamMetaData(
+    properties = ProcessProperties.combineTypeSpecificProperties(StreamMetaData(
       Some(2)),
-      Some(ProcessAdditionalFields(Some("scenario description"), Map(
+      ProcessAdditionalFields(Some("scenario description"), Map(
         "maxEvents" -> "text",
         "unknown" -> "x",
         "numberOfThreads" -> "wrong fixed value"
-      )))),
+      ), "StreamMetaData")),
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
@@ -211,7 +211,10 @@ object ProcessTestData {
   val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
-      properties = ProcessProperties(StreamMetaData(Some(2)), Some(ProcessAdditionalFields(Some("process description"), Map.empty))),
+      properties = ProcessProperties.combineTypeSpecificProperties(
+        StreamMetaData(Some(2)),
+        ProcessAdditionalFields(Some("process description"), Map.empty, "StreamMetaData")
+      ),
       nodes = List(
         node.Source(
           id = "sourceId",
@@ -231,7 +234,7 @@ object ProcessTestData {
   }
 
   val emptySubprocess = {
-    CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None), List(), List.empty)
+    CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(), List.empty)
   }
 
   val sampleSubprocessOneOut = {
@@ -265,10 +268,7 @@ object ProcessTestData {
   def createEmptyUpdateProcessCommand(processName: ProcessName, comment: Option[UpdateProcessComment]): UpdateProcessCommand = {
     val displayableProcess = DisplayableProcess(
       id = processName.value,
-      properties = ProcessProperties(
-        StreamMetaData(),
-        None
-      ),
+      properties = ProcessProperties(StreamMetaData(Some(1), Some(true))),
       nodes = List.empty,
       edges = List.empty,
       processingType = TestProcessingTypes.Streaming,
@@ -296,13 +296,16 @@ object ProcessTestData {
 
     process.copy(
       properties = properties.copy(
-        additionalFields = additionalFields
+        additionalFields = additionalFields.getOrElse(ProcessAdditionalFields(None, Map.empty, properties.additionalFields.metaDataType))
       )
     )
   }
 
   case class ProcessUsingSubprocess(process: CanonicalProcess, subprocess: CanonicalProcess)
 
-  val streamingTypeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(None))
+  val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer("StreamMetaData", Map(
+    "parallelism" -> "1",
+    "spillStateToDisk" -> "true")
+  )
 
 }

@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichme
 //   that parameters will be available in the scenario, even with a default values
 class ToStaticObjectDefinitionTransformer(objectParametersExpressionCompiler: ExpressionCompiler,
                                           expressionConfig: ExpressionDefinition[ObjectWithMethodDef],
-                                          createScenarioInitialData: ProcessName => ScenarioSpecificData) extends LazyLogging {
+                                          createMetaData: ProcessName => MetaData) extends LazyLogging {
 
   private val nodeValidator = new GenericNodeTransformationValidator(objectParametersExpressionCompiler, expressionConfig)
 
@@ -37,7 +37,7 @@ class ToStaticObjectDefinitionTransformer(objectParametersExpressionCompiler: Ex
       // TODO: We could determine initial parameters when component is firstly used in scenario instead of during loading model data
       //       Thanks to that, instead of passing fake nodeId/metaData and empty additionalFields, we could pass the real once
       val scenarioName = ProcessName("fakeScenarioName")
-      implicit val metaData: MetaData = MetaData(scenarioName.value, createScenarioInitialData(scenarioName), additionalFields = None)
+      implicit val metaData: MetaData = createMetaData(scenarioName)
       implicit val nodeId: NodeId = NodeId("fakeNodeId")
       nodeValidator
         .validateNode(transformer, Nil, Nil, generic.returnType.map(_ => "fakeOutputVariable"), generic.componentConfig)(inputContext)

@@ -31,10 +31,49 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   Constants defined in `ProblemStateStatus` are renamed to match UpperCamelCase formatting.
 * [#4350](https://github.com/TouK/nussknacker/pull/4350) `StateStatus.isDuringDeploy`, `StateStatus.isFinished`, `StateStatus.isFailed`, `StateStatus.isRunning`, 
   `ProcessState.isDeployed` methods were removed. Instead, you should compare status with specific status.
+* [#4357](https://github.com/TouK/nussknacker/pull/4357) Changed structure of `MetaData` in `CanonicalProcess` - `TypeSpecificData` automatically migrated to `ProcessAdditionalFields`
+  - Example MetaData structure before migration:
+  ```json
+  {
+    "id": "scenarioName",
+    "typeSpecificData": {
+      "parallelism": 1,
+      "spillStateToDisk": true,
+      "checkpointIntervalInSeconds": null,
+      "type": "StreamMetaData"
+    },
+    "additionalFields": {
+      "description": null,
+      "properties": {
+        "someCustomProperty": "someCustomValue"
+      }
+    }
+  }
+  ```
+  - Example MetaData structure after migration:
+  ```json
+  {
+    "id": "scenarioName",
+    "additionalFields": {
+      "description": null,
+      "properties": {
+        "parallelism" : "1",
+        "spillStateToDisk" : "true",
+        "useAsyncInterpretation" : "",
+        "checkpointIntervalInSeconds" : "",
+        "someCustomProperty": "someCustomValue"
+      },
+      "metaDataType": "StreamMetaData"
+    }
+  }
+  ```
   
 ### Configuration changes
 * [#4283](https://github.com/TouK/nussknacker/pull/4283) For OIDC provider, `accessTokenIsJwt` config property is introduced, with default values `false`.
   Please mind, that previous Nussknacker versions assumed its value is true if `authentication.audience` was defined.
+* [#4357](https://github.com/TouK/nussknacker/pull/4357) `TypeSpecificData` properties are now be configured in `DeploymentManagerProvider`:
+  - Main configuration is done through `additionalPropertiesConfig` like other additional properties
+  - Initial values overriding defaults from the main configuration can be set in `metaDataInitializer`
 
 ### Other changes
 * [#4305](https://github.com/TouK/nussknacker/pull/4305) `scala-compiler` and `scala-reflect` are now included in `flink-scala`,

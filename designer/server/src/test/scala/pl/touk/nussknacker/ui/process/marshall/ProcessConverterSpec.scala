@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.objectDefinition
 import pl.touk.nussknacker.engine.variables.MetaVariables
@@ -48,7 +49,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
     ProcessValidation(
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Nil),
       sampleResolver
     )
@@ -114,7 +115,11 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
 
   test("return variable type information for process that cannot be canonized") {
-    val meta = MetaData("process", metaData, additionalFields = Some(ProcessAdditionalFields(None, Map.empty)))
+    val meta = MetaData.combineTypeSpecificProperties(
+      id = "process",
+      typeSpecificData = metaData,
+      additionalFields = ProcessAdditionalFields(None, Map.empty, "StreamMetaData")
+    )
     val process = ValidatedDisplayableProcess(
       meta.id,
       ProcessProperties(meta.typeSpecificData),

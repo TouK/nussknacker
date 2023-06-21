@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, MetaDataInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -63,7 +63,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   private val mockDeploymentManager = new MockDeploymentManager
 
-  private val initialData = TypeSpecificInitialData.apply(StreamMetaData())
+  private val initialData = MetaDataInitializer("StreamMetadata")
 
   test("should read editor from annotations") {
     val model: ModelData = LocalModelData(ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"), new EmptyProcessConfigCreator() {
@@ -133,7 +133,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val model : ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
     val fragment = ProcessTestData.sampleSubprocessOneOut
     val docsUrl = "https://nussknacker.io/documentation/"
-    val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.copy(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
+    val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.withTypeSpecificData(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
 
     val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"),
         Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
@@ -145,7 +145,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
 
-    val fragment = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData(), None), List.empty, List.empty)
+    val fragment = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
     val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"),
       Set(SubprocessDetails(fragment, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
     processObjects.componentsConfig.get(fragment.id) shouldBe empty

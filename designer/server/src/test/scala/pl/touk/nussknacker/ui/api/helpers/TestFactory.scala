@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinitio
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
@@ -46,6 +47,9 @@ object TestFactory extends TestPermissions{
   val possibleValues: List[FixedExpressionValue] = List(FixedExpressionValue("a", "a"))
 
   val processValidation: ProcessValidation = ProcessTestData.processValidation.withSubprocessResolver(sampleResolver)
+
+  val flinkProcessValidation: ProcessValidation = ProcessTestData.processValidation.withSubprocessResolver(sampleResolver)
+    .withAdditionalPropertiesConfig(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties))
 
   val processResolving = new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
 
@@ -98,7 +102,7 @@ object TestFactory extends TestPermissions{
 
   def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.streamingTypeSpecificInitialData),
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map.empty)
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties)
   )
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =

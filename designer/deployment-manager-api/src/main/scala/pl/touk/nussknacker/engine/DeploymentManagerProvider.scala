@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.MetaDataInitializer.MetadataType
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NamedServiceProvider, ScenarioSpecificData}
+import pl.touk.nussknacker.engine.api.{MetaData, NamedServiceProvider, ProcessAdditionalFields}
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,7 +20,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
                               sttpBackend: SttpBackend[Future, Any],
                               deploymentService: ProcessingTypeDeploymentService): DeploymentManager
 
-  def typeSpecificInitialData(config: Config): TypeSpecificInitialData
+  def metaDataInitializer(config: Config): MetaDataInitializer
 
   def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map.empty
 
@@ -27,22 +28,20 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
 }
 
-trait TypeSpecificInitialData {
-  def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData
-  def forFragment(scenarioName: ProcessName, scenarioType: String): FragmentSpecificData = FragmentSpecificData()
+/**
+ * This class contains the logic of overriding defaults set through the standard mechanism - defaultValue field in
+ * AdditionalPropertyConfig. These initial values have to be overwritten because some initial values cannot be statically
+ * defined (like slug in request-response).
+ * This currently also requires the DeploymentManagerProvider to provide its metaDataType.
+ * TODO: set the defaults in one place without overriding
+ */
+final case class MetaDataInitializer(metadataType: MetadataType,
+                                     overrideDefaultProperties: ProcessName => Map[String, String] = _ => Map.empty) {
+  def create(name: ProcessName, initialProperties: Map[String, String]): MetaData =
+    MetaData(name.value, ProcessAdditionalFields(None, initialProperties ++ overrideDefaultProperties(name), metadataType))
 }
 
-object TypeSpecificInitialData {
-  def apply(forScenario: ScenarioSpecificData,
-            forFragment: FragmentSpecificData = FragmentSpecificData()): TypeSpecificInitialData =
-    FixedTypeSpecificInitialData(forScenario, forFragment)
-}
-
-case class FixedTypeSpecificInitialData(fixedForScenario: ScenarioSpecificData, fixedForFragment: FragmentSpecificData)
-  extends TypeSpecificInitialData {
-
-  override def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData = fixedForScenario
-
-  override def forFragment(scenarioName: ProcessName, scenarioType: String): FragmentSpecificData = fixedForFragment
-
+object MetaDataInitializer {
+  type MetadataType = String
+  def apply(metadataType: MetadataType, overridingProperties: Map[String, String]): MetaDataInitializer = MetaDataInitializer(metadataType, _ => overridingProperties)
 }

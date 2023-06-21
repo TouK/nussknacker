@@ -133,14 +133,15 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
   }
 
   private def processProperties(description: Option[String] = None, properties: Map[String, String] = Map.empty): ProcessProperties = {
-    ProcessProperties(
+    ProcessProperties.combineTypeSpecificProperties(
       typeSpecificProperties = StreamMetaData(
         parallelism = Some(1)
       ),
-      additionalFields = Some(ProcessAdditionalFields(
+      additionalFields = ProcessAdditionalFields(
         description,
-        properties
-      ))
+        properties,
+        "StreamMetaData"
+      )
     )
   }
 }

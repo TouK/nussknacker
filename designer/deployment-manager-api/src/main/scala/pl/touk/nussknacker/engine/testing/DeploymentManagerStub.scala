@@ -2,15 +2,17 @@ package pl.touk.nussknacker.engine.testing
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntegerValidator, MinimalNumberValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -70,6 +72,60 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def name: String = "stub"
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
+  override def metaDataInitializer(config: Config): MetaDataInitializer = FlinkStreamingPropertiesConfig.metaDataInitializer
 
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = FlinkStreamingPropertiesConfig.properties
+
+}
+
+// This is copy-pasted from flink-manager package - the deployment-manager-api cannot depend on that package - it would create a circular dependency.
+// TODO: Replace this class by a BaseDeploymentManagerProvider with default stubbed behavior
+object FlinkStreamingPropertiesConfig {
+
+  private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(StringParameterEditor),
+      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+      label = Some("Parallelism"))
+
+  private val spillStatePossibleValues = List(
+    FixedExpressionValue("", "Server default"),
+    FixedExpressionValue("false", "False"),
+    FixedExpressionValue("true", "True"))
+
+  private val asyncPossibleValues = List(
+    FixedExpressionValue("", "Server default"),
+    FixedExpressionValue("false", "Synchronous"),
+    FixedExpressionValue("true", "Asynchronous"))
+
+  private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(FixedValuesParameterEditor(spillStatePossibleValues)),
+      validators = Some(List(FixedValuesValidator(spillStatePossibleValues))),
+      label = Some("Spill state to disk"))
+
+  private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
+      validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
+      label = Some("IO mode"))
+
+  private val checkpointIntervalConfig: (String, AdditionalPropertyConfig) = "checkpointIntervalInSeconds" ->
+    AdditionalPropertyConfig(
+      defaultValue = None,
+      editor = Some(StringParameterEditor),
+      validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
+      label = Some("Checkpoint interval in seconds"))
+
+  val properties: Map[String, AdditionalPropertyConfig] =
+    Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
+
+  val metaDataInitializer: MetaDataInitializer = MetaDataInitializer(
+    metadataType = "StreamMetaData",
+    overridingProperties = Map(
+      "parallelism" -> "1",
+      "spillStateToDisk" -> "true"))
 }

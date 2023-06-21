@@ -56,7 +56,7 @@ describe("Process", () => {
             cy.contains(/^properties/i)
                 .should("be.enabled")
                 .click();
-            cy.contains("RENAMED").should("be.visible");
+            cy.get("[data-testid=window]").find("textarea").last().should("contain", "RENAMED");
         });
 
         it("should allow archive with redirect to list", function () {
@@ -81,7 +81,7 @@ describe("Process", () => {
                 .within((inputs) => {
                     cy.wrap(inputs).first().click().type("-renamed");
                     //this is idx of "Max events", which should be int
-                    cy.wrap(inputs).eq(6).click().type("wrong data");
+                    cy.wrap(inputs).eq(3).click().type("wrong data");
                 });
             cy.contains(/^apply/i)
                 .should("be.enabled")

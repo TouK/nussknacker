@@ -47,7 +47,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "5"
-      ))
+      ), "StreamMetaData")
     ))
 
     val result = validator.validate(process)
@@ -59,7 +59,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propOpt" -> "a"
-      ))
+      ), "StreamMetaData")
     ))
 
     val result = validator.validate(process)
@@ -73,7 +73,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> ""
-      ))
+      ), "StreamMetaData")
     ))
 
     val result = validator.validate(process)
@@ -90,7 +90,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "1",
         "propRegExp" -> ""
-      ))
+      ), "StreamMetaData")
     ))
 
     val result = validator.validate(process)
@@ -105,7 +105,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "1",
         "propRegExp" -> "asd"
-      ))
+      ), "StreamMetaData")
     ))
 
     val result = validator.validate(process)
@@ -119,7 +119,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "some text"
-      ))
+      ), "StreamMetaData")
     ))
 
     val result = validator.validate(process)
@@ -143,7 +143,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         optFixedFieldName -> "some text"
-      ))
+      ), "StreamMetaData")
     ))
 
     val result = validator.validate(process)
@@ -162,7 +162,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "5",
         "unknown" -> "some text"
-      ))
+      ), "StreamMetaData")
     ))
 
     val result = validator.validate(process)

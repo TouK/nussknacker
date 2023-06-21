@@ -3,59 +3,106 @@ package pl.touk.nussknacker.engine.api
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, HCursor}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
 
 @JsonCodec case class LayoutData(x: Long, y: Long)
 
 // todo: MetaData should hold ProcessName as id
-@ConfiguredJsonCodec case class MetaData(id: String,
-                                         typeSpecificData: TypeSpecificData,
-                                         additionalFields: Option[ProcessAdditionalFields] = None) {
-  val isSubprocess: Boolean = typeSpecificData.isSubprocess
-}
+@ConfiguredJsonCodec(encodeOnly = true) case class MetaData(id: String,
+                                                            additionalFields: ProcessAdditionalFields) {
+  def isSubprocess: Boolean = typeSpecificData.isSubprocess
 
-@ConfiguredJsonCodec sealed trait TypeSpecificData {
-  val isSubprocess = this match {
-    case _: ScenarioSpecificData => false
-    case _: FragmentSpecificData => true
+  def typeSpecificData: TypeSpecificData = additionalFields.typeSpecificProperties
+
+  def withTypeSpecificData(typeSpecificData: TypeSpecificData): MetaData = {
+    MetaData(id, typeSpecificData)
   }
 }
 
-sealed trait ScenarioSpecificData extends TypeSpecificData
+object MetaData {
 
-case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData
+  private val actualDecoder: Decoder[MetaData] = deriveConfiguredDecoder[MetaData]
 
-// TODO: rename to FlinkStreamMetaData
-case class StreamMetaData(parallelism: Option[Int] = None,
-                          //we assume it's safer to spill state to disk and fix performance than to fix heap problems...
-                          spillStateToDisk: Option[Boolean] = Some(true),
-                          useAsyncInterpretation: Option[Boolean] = None,
-                          checkpointIntervalInSeconds: Option[Long] = None) extends ScenarioSpecificData {
+  /**
+   * TODO: remove legacy decoder after the migration is completed
+   * This may cause problems, because the relevant migration is not done in transaction - some processes may still be in a legacy state
+   * (for example some archived processes which the migration could not handle).
+   */
+  private val legacyDecoder: Decoder[MetaData] = {
+    def legacyProcessAdditionalFieldsDecoder(metaDataType: String): Decoder[ProcessAdditionalFields] =
+      (c: HCursor) => for {
+        description <- c.downField("description").as[Option[String]]
+        properties <- c.downField("properties").as[Option[Map[String, String]]]
+      } yield {
+        ProcessAdditionalFields(description, properties.getOrElse(Map.empty), metaDataType)
+      }
 
-  def checkpointIntervalDuration  : Option[Duration]= checkpointIntervalInSeconds.map(Duration.apply(_, TimeUnit.SECONDS))
+    (c: HCursor) => for {
+      id <- c.downField("id").as[String]
+      typeSpecificData <- c.downField("typeSpecificData").as[TypeSpecificData]
+      additionalFields <- c.downField("additionalFields")
+        .as[Option[ProcessAdditionalFields]](
+          io.circe.Decoder.decodeOption(
+            legacyProcessAdditionalFieldsDecoder(typeSpecificData.metaDataType)
+          )
+        ).map(_.getOrElse(ProcessAdditionalFields(None, Map.empty, typeSpecificData.metaDataType)))
+    } yield {
+      MetaData.combineTypeSpecificProperties(id, typeSpecificData, additionalFields)
+    }
+  }
 
+  implicit val decoder: Decoder[MetaData] = actualDecoder or legacyDecoder
+
+  // TODO: remove legacy constructors after the migration is completed
+  def combineTypeSpecificProperties(id: String,
+                                    typeSpecificData: TypeSpecificData,
+                                    additionalFields: ProcessAdditionalFields): MetaData = {
+    MetaData(
+      id = id,
+      additionalFields = additionalFields.combineTypeSpecificProperties(typeSpecificData)
+    )
+  }
+
+  def apply(id: String, typeSpecificData: TypeSpecificData): MetaData = {
+    MetaData(
+      id = id,
+      additionalFields = ProcessAdditionalFields(None, typeSpecificData.toMap, typeSpecificData.metaDataType)
+    )
+  }
 }
 
-// TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
-case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData
-
-case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData
-
+// TODO: remove metaDataType val and typeSpecificProperties def after the migration is completed
 case class ProcessAdditionalFields(description: Option[String],
-                                   properties: Map[String, String])
+                                   properties: Map[String, String],
+                                   metaDataType: String) {
+
+  def combineTypeSpecificProperties(typeSpecificData: TypeSpecificData): ProcessAdditionalFields = {
+    this.copy(properties = properties ++ typeSpecificData.toMap)
+  }
+
+  def typeSpecificProperties: TypeSpecificData = {
+    metaDataType match {
+      case "StreamMetaData" => StreamMetaData(properties)
+      case "LiteStreamMetaData" => LiteStreamMetaData(properties)
+      case "RequestResponseMetaData" => RequestResponseMetaData(properties)
+      case "FragmentSpecificData" => FragmentSpecificData(properties)
+      case _ => throw new IllegalStateException("Unrecognized metadata type.")
+    }
+  }
+
+}
 
 object ProcessAdditionalFields {
 
   //TODO: is this currently needed?
   private case class OptionalProcessAdditionalFields(description: Option[String],
-                                                     properties: Option[Map[String, String]])
+                                                     properties: Option[Map[String, String]],
+                                                     metaDataType: String)
 
   implicit val circeDecoder: Decoder[ProcessAdditionalFields]
-  =  deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map())))
+  = deriveConfiguredDecoder[OptionalProcessAdditionalFields].map(opp => ProcessAdditionalFields(opp.description, opp.properties.getOrElse(Map()), opp.metaDataType))
 
   implicit val circeEncoder: Encoder[ProcessAdditionalFields] = deriveConfiguredEncoder
+
 }

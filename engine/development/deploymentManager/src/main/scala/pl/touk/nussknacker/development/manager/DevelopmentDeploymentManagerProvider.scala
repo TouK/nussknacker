@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{AfterRunningStatus, PreparingResourcesStatus, TestStatus}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
 
 import java.util.UUID
@@ -63,7 +64,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   }
 
   private def description(canonicalProcess: CanonicalProcess) = {
-    canonicalProcess.metaData.additionalFields.flatMap(_.description)
+    canonicalProcess.metaData.additionalFields.description
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
@@ -184,10 +185,10 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
                                        sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
     new DevelopmentDeploymentManager(actorSystem)
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
+  override def metaDataInitializer(config: Config): MetaDataInitializer = FlinkStreamingPropertiesConfig.metaDataInitializer
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
-    Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None))
+    Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None)) ++ FlinkStreamingPropertiesConfig.properties
 
   override def name: String = "development-tests"
 

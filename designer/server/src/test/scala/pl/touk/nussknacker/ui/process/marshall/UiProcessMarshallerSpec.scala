@@ -13,10 +13,22 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
   val someProcessDescription = "scenario description"
   val someNodeDescription = "single node description"
-  val processWithPartialAdditionalFields: Json = parse(
+  val processWithoutAdditionalProperties: Json = parse(
     s"""
        |{
-       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "additionalFields": {"description": "$someProcessDescription"}},
+       |    "metaData" : {
+       |    "id" : "testId",
+       |    "additionalFields" : {
+       |       "description": "$someProcessDescription",
+       |       "properties" : {
+       |         "parallelism" : "1",
+       |         "spillStateToDisk" : "true",
+       |         "useAsyncInterpretation" : "",
+       |         "checkpointIntervalInSeconds" : ""
+       |       },
+       |       "metaDataType": "StreamMetaData"
+       |    }
+       |  },
        |    "nodes" : [
        |        {
        |            "type" : "Source",
@@ -31,7 +43,21 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
   val processWithFullAdditionalFields: Json = parse(
     s"""
        |{
-       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2, "spillStateToDisk" : true }, "additionalFields": { "description": "$someProcessDescription", "properties": {}} },
+       |    "metaData" : {
+       |    "id" : "testId",
+       |    "additionalFields" : {
+       |       "description": "$someProcessDescription",
+       |       "properties" : {
+       |         "someProperty1": "",
+       |         "someProperty2": "someValue2",
+       |         "parallelism" : "1",
+       |         "spillStateToDisk" : "true",
+       |         "useAsyncInterpretation" : "",
+       |         "checkpointIntervalInSeconds" : ""
+       |       },
+       |       "metaDataType": "StreamMetaData"
+       |    }
+       |  },
        |    "nodes" : [
        |        {
        |            "type" : "Source",
@@ -43,24 +69,10 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
        |}
       """.stripMargin).fold(throw _, identity)
 
-  val processWithoutAdditionalFields: Json = parse(
-    s"""
-       |{
-       |    "metaData" : { "id": "custom", "typeSpecificData": {"type": "StreamMetaData", "parallelism" : 2}},
-       |    "nodes" : [
-       |        {
-       |            "type" : "Source",
-       |            "id" : "start",
-       |            "ref" : { "typ": "kafka-transaction", "parameters": [ { "name": "Topic", "expression": { "language": "spel", "expression": "in.topic" }}]}
-       |        }
-       |    ]
-       |}
-      """.stripMargin).fold(throw _, identity)
-
   it should "unmarshall to displayable scenario properly" in {
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(processWithPartialAdditionalFields), TestProcessingTypes.Streaming, TestCategories.Category1)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(processWithoutAdditionalProperties), TestProcessingTypes.Streaming, TestCategories.Category1)
 
-    val processDescription = displayableProcess.properties.additionalFields.flatMap(_.description)
+    val processDescription = displayableProcess.properties.additionalFields.description
     val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.description)
     processDescription shouldBe Some(someProcessDescription)
     nodeDescription shouldBe Some(someNodeDescription)
@@ -74,13 +86,5 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
     val processAfterMarshallAndUnmarshall = canonical.asJson.printWith(humanReadablePrinter)
 
     parse(processAfterMarshallAndUnmarshall).toOption.get shouldBe baseProcess
-  }
-
-  it should "unmarshall json without additional fields" in {
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(processWithoutAdditionalFields), TestProcessingTypes.Streaming, TestCategories.Category1)
-
-    displayableProcess.id shouldBe "custom"
-    displayableProcess.nodes.head.additionalFields shouldBe None
-    displayableProcess.properties.additionalFields shouldBe None
   }
 }

@@ -1195,6 +1195,7 @@ lazy val developmentTestsDeploymentManager = (project in development("deployment
     name := "nussknacker-development-tests-manager",
   ).dependsOn(
   deploymentManagerApi % "provided",
+  flinkDeploymentManager, // for accessing flink property config
   testUtils % "test"
 )
 
@@ -1290,7 +1291,8 @@ lazy val commonApi = (project in file("common-api")).
       "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
       "io.circe" %% "circe-parser" % circeV,
       "io.circe" %% "circe-generic" % circeV,
-      "io.circe" %% "circe-generic-extras" % circeGenericExtrasV
+      "io.circe" %% "circe-generic-extras" % circeGenericExtrasV,
+      "org.scalatest" %% "scalatest" % scalaTestV % "test"
     )
   )
 
@@ -1461,7 +1463,7 @@ lazy val restmodel = (project in file("designer/restmodel"))
   .settings(
     name := "nussknacker-restmodel"
   )
-  .dependsOn(extensionsApi, testUtils % "test")
+  .dependsOn(extensionsApi, commonApi % "test->test", testUtils % "test")
 
 lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(commonSettings)

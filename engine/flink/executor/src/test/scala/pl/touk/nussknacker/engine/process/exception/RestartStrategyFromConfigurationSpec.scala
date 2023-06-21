@@ -12,8 +12,15 @@ import scala.jdk.CollectionConverters._
 
 class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
 
-  private val meta = MetaData("", StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(description = None,
-    properties = Map("myStrategy" -> "oneStrategy", "myOtherStrategy" -> ""))))
+  private val metaData = MetaData.combineTypeSpecificProperties(
+    id = "",
+    typeSpecificData = StreamMetaData(),
+    additionalFields = ProcessAdditionalFields(
+      description = None,
+      properties = Map("myStrategy" -> "oneStrategy", "myOtherStrategy" -> ""),
+      metaDataType = "StreamMetaData"
+    )
+  )
 
   test("reads config") {
     testStrategy(Map(
@@ -44,7 +51,7 @@ class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
 
   private def testStrategy(configMap: Map[String, Any], expected: RestartStrategyConfiguration) = {
     val config = ConfigFactory.parseMap(configMap.asJava)
-    RestartStrategyFromConfiguration.readFromConfiguration(config, meta) shouldBe expected
+    RestartStrategyFromConfiguration.readFromConfiguration(config, metaData) shouldBe expected
   }
 
 }

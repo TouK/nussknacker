@@ -33,8 +33,8 @@ class SampleAdditionalInfoProvider extends AdditionalInfoProvider {
   }
 
   override def propertiesAdditionalInfo(config: Config)(metaData: MetaData): Future[Option[AdditionalInfo]] = {
-    val properties = metaData.additionalFields.map(_.properties)
-    (properties.flatMap(_.get("environment")), properties.flatMap(_.get("numberOfThreads"))) match {
+    val properties = metaData.additionalFields.properties
+    (properties.get("environment"), properties.get("numberOfThreads")) match {
       case (Some(environment), Some(numberOfThreads)) => Future.successful(Some {
         MarkdownAdditionalInfo(s"$numberOfThreads threads will be used on environment '$environment'")
       })

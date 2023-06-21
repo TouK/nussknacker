@@ -13,7 +13,7 @@ trait SchedulePropertyExtractor {
 object SchedulePropertyExtractor {
 
   def extractProperty(canonicalProcess: CanonicalProcess, name: String): Either[String, String] = {
-    canonicalProcess.metaData.additionalFields.flatMap(_.properties.get(name)).toRight(s"$name property is missing")
+    canonicalProcess.metaData.additionalFields.properties.get(name).toRight(s"$name property is missing")
   }
 
 }

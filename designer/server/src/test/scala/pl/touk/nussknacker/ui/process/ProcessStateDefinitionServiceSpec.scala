@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{ProcessingTypeData, MetaDataInitializer}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
@@ -158,7 +158,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     processingTypeToDeploymentManager.transform { case (_, deploymentManager) =>
       ProcessingTypeData(deploymentManager,
         LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
-        TypeSpecificInitialData(StreamMetaData(Some(1))),
+        MetaDataInitializer("StreamMetaData", Map("parallelism" -> "1")),
         Map.empty,
         Nil,
         ProcessingTypeUsageStatistics(None, None))

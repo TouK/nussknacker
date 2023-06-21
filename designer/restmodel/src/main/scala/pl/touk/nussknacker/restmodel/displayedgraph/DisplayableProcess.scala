@@ -50,21 +50,35 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 }
 
 @JsonCodec(decodeOnly = true)
-case class ProcessProperties(typeSpecificProperties: TypeSpecificData,
-                             additionalFields: Option[ProcessAdditionalFields] = None) {
+case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
 
   def toMetaData(id: String): MetaData = MetaData(
     id = id,
-    typeSpecificData = typeSpecificProperties,
     additionalFields = additionalFields
   )
-  val isSubprocess: Boolean = typeSpecificProperties.isSubprocess
+  val isSubprocess: Boolean = additionalFields.typeSpecificProperties.isSubprocess
+
+  // TODO: remove typeSpecificData-related code after the migration is completed
+  def typeSpecificProperties: TypeSpecificData = additionalFields.typeSpecificProperties
 
 }
 
 object ProcessProperties {
+
+  def combineTypeSpecificProperties(typeSpecificProperties: TypeSpecificData,
+                                    additionalFields: ProcessAdditionalFields): ProcessProperties = {
+    ProcessProperties(additionalFields.combineTypeSpecificProperties(typeSpecificProperties))
+  }
+
+  def apply(typeSpecificProperties: TypeSpecificData): ProcessProperties = {
+    ProcessProperties.combineTypeSpecificProperties(
+      typeSpecificProperties,
+      ProcessAdditionalFields(None, Map(), typeSpecificProperties.metaDataType)
+    )
+  }
+
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =
-    Encoder.forProduct3("typeSpecificProperties", "isSubprocess", "additionalFields") { p =>
-    (p.typeSpecificProperties, p.isSubprocess, p.additionalFields)
+    Encoder.forProduct2( "isSubprocess", "additionalFields") { p =>
+      (p.isSubprocess, p.additionalFields)
   }
 }

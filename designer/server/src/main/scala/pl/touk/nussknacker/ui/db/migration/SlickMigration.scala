@@ -61,6 +61,13 @@ trait ProcessJsonMigration extends SlickMigration with EspTables with LazyLoggin
     updated.getOrElse(jsonProcess).noSpaces
   }
 
+  /**
+   * Note on transactions - in case of failure:
+   * <ul>
+   * <li>if we want to roll back the transaction and stop the application - the implementation should throw an exception</li>
+   * <li>if we want to continue and fall back to previous json - the implementation should return None</li>
+   * </ul>
+   */
   def updateProcessJson(json: Json): Option[Json]
 
 }

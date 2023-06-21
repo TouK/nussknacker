@@ -52,7 +52,10 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
   private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
   private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
-  private val processProperties = ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "2", "environment" -> "test"))))
+  private val processProperties = ProcessProperties.combineTypeSpecificProperties(
+    StreamMetaData(),
+    additionalFields = ProcessAdditionalFields(None, Map("numberOfThreads" -> "2", "environment" -> "test"), "StreamMetaData")
+  )
 
   //see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {
@@ -156,7 +159,10 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
 
   test("validate properties") {
     saveProcess(testProcess) {
-      val request = PropertiesValidationRequest(ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "a", "environment" -> "test")))))
+      val request = PropertiesValidationRequest(ProcessProperties.combineTypeSpecificProperties(
+        StreamMetaData(),
+        additionalFields = ProcessAdditionalFields(None, Map("numberOfThreads" -> "a", "environment" -> "test"), "StreamMetaData")
+      ))
 
       Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(

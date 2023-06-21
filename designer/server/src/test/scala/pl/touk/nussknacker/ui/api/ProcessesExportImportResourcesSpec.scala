@@ -67,7 +67,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
       val processDetails = ProcessMarshaller.fromJson(response).toOption.get
       assertProcessPrettyPrinted(response, processDetails)
 
-      val modified = processDetails.copy(metaData = processDetails.metaData.copy(typeSpecificData = StreamMetaData(Some(987))))
+      val modified = processDetails.copy(metaData = processDetails.metaData.withTypeSpecificData(typeSpecificData = StreamMetaData(Some(987))))
       val multipartForm = MultipartUtils.prepareMultiPart(modified.asJson.spaces2, "process")
       Post(s"/processes/import/${processToSave.id}", multipartForm) ~> route ~> check {
         status shouldEqual StatusCodes.OK
@@ -82,7 +82,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   test("export process in new version") {
     val description = "alamakota"
     val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
-    val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Map.empty))))
+    val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = ProcessAdditionalFields(Some(description), Map.empty, "StreamMetaData")))
 
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
