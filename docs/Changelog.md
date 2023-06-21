@@ -47,6 +47,8 @@
 * [#4342](https://github.com/TouK/nussknacker/pull/4342) Improvement: Don't run custom action on archived scenario and fragment
 * [#4302](https://github.com/TouK/nussknacker/pull/4302) State inconsistency detection was moved from designer to DeploymentManager.
 * [#4360](https://github.com/TouK/nussknacker/pull/4360) Fix for spel validations: Typing type reference with class starting from lower case e.g. T(foo) caused nasty error
+* [#4357](https://github.com/TouK/nussknacker/pull/4357) Refactoring of scenario properties required by `DeploymentManager` (`TypeSpecificData`) -  
+  they are now derived from `ProcessAdditionalFields` and are configured in `additionalPropertiesConfig` in `DeploymentManagerProvider`
 
 1.9.1 (24 Apr 2023)
 ------------------------
