@@ -78,13 +78,15 @@ function TestWithFormButton(props: Props) {
 
     const onConfirmAction = useCallback(
         (paramValues) => {
-            const parameters: { [paramName: string]: Expression } = sourceParameters[selectedSource].parameters.reduce(
-                (obj, uiParam) => ({
-                    ...obj,
-                    [uiParam.name]: paramValues[uiParam.name],
-                }),
-                {},
-            );
+            const parameters: { [paramName: string]: Expression } = sourceParameters[selectedSource].parameters
+                .filter((uiParam) => !_.isEmpty(paramValues[uiParam.name].expression))
+                .reduce(
+                    (obj, uiParam) => ({
+                        ...obj,
+                        [uiParam.name]: paramValues[uiParam.name],
+                    }),
+                    {},
+                );
             const request: SourceWithParametersTest = {
                 sourceId: selectedSource as string,
                 parameterExpressions: parameters,
