@@ -5,8 +5,9 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, Source, SourceFactory}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
@@ -72,7 +73,7 @@ class LiteTestScenarioRunner(components: List[ComponentDefinition], config: Conf
   }
 }
 
-private[test] class SimpleSourceFactory(result: TypingResult) extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
+private[test] class SimpleSourceFactory(result: TypingResult) extends SourceFactory with SingleInputGenericNodeTransformation[Source] with WithExplicitTypesToExtract {
 
   override type State = Nothing
 
@@ -89,6 +90,12 @@ private[test] class SimpleSourceFactory(result: TypingResult) extends SourceFact
   }
 
   override def nodeDependencies: List[NodeDependency] = TypedNodeDependency[NodeId] :: Nil
+
+  override def typesToExtract: List[typing.TypedClass] = result match {
+    case result: typing.SingleTypingResult => List(result.objType)
+    case typing.TypedUnion(possibleTypes) => possibleTypes.map(_.objType).toList
+    case typing.TypedNull | typing.Unknown => Nil
+  }
 }
 
 private[test] object SimpleSinkFactory extends SinkFactory {
