@@ -201,21 +201,21 @@ class V1_041__RemoveTypeSpecificDataSpec extends AnyFunSuite with Matchers {
 
 
   test("migrate flink scenario") {
-    migrateMetaData(legacyFlinkScenarioNoFields).get shouldBe updatedFlinkScenarioNoFields
-    migrateMetaData(legacyFlinkScenarioWithDescriptionNoProperties).get shouldBe updatedFlinkScenarioWithDescriptionNoProperties
-    migrateMetaData(legacyFlinkScenarioWithAdditionalProperties).get shouldBe updatedFlinkScenarioWithAdditionalProperties
+    migrateMetaData(legacyFlinkScenarioNoFields) shouldBe Right(updatedFlinkScenarioNoFields)
+    migrateMetaData(legacyFlinkScenarioWithDescriptionNoProperties) shouldBe Right(updatedFlinkScenarioWithDescriptionNoProperties)
+    migrateMetaData(legacyFlinkScenarioWithAdditionalProperties) shouldBe Right(updatedFlinkScenarioWithAdditionalProperties)
   }
 
   test("migrate lite stream scenario") {
-    migrateMetaData(legacyLiteStreamScenario).get shouldBe updatedLiteStreamScenario
+    migrateMetaData(legacyLiteStreamScenario) shouldBe Right(updatedLiteStreamScenario)
   }
 
   test ("migrate lite request response scenario") {
-    migrateMetaData(legacyLiteRequestResponseScenario).get shouldBe updatedLiteRequestResponseScenario
+    migrateMetaData(legacyLiteRequestResponseScenario) shouldBe Right(updatedLiteRequestResponseScenario)
   }
 
   test("migrate fragment") {
-    migrateMetaData(legacyFragment).get shouldBe updatedFragment
+    migrateMetaData(legacyFragment) shouldBe Right(updatedFragment)
   }
 
 }

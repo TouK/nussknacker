@@ -24,7 +24,11 @@ object MetaData {
 
   private val actualDecoder: Decoder[MetaData] = deriveConfiguredDecoder[MetaData]
 
-  // TODO: remove legacy decoder after the migration is completed
+  /**
+   * TODO: remove legacy decoder after the migration is completed
+   * This may cause problems, because json migration is not transactional - some processes may still be in a legacy state
+   * (for example some archived processes which the migration could not handle).
+   */
   private val legacyDecoder: Decoder[MetaData] = {
     def legacyProcessAdditionalFieldsDecoder(metaDataType: String): Decoder[ProcessAdditionalFields] =
       (c: HCursor) => for {
