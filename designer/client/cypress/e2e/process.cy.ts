@@ -56,7 +56,7 @@ describe("Process", () => {
             cy.contains(/^properties/i)
                 .should("be.enabled")
                 .click();
-            cy.contains("RENAMED").should("be.visible");
+            cy.get("[data-testid=window]").find("textarea").last().should("contain", "RENAMED");
         });
 
         it("should allow archive with redirect to list", function () {
