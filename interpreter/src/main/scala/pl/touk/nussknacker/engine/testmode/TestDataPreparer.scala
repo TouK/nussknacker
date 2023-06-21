@@ -39,10 +39,10 @@ class TestDataPreparer(classloader: ClassLoader,
     (source, record) match {
       case (s: SourceTestSupport[T@unchecked], jsonRecord: ScenarioTestJsonRecord) => s.testRecordParser.parse(jsonRecord.record)
       case (s: TestWithParametersSupport[T@unchecked], parametersRecord: ScenarioTestParametersRecord) =>
-        val parameterTypingResults = s.testParametersDefinition.map { param =>
+        val parameterTypingResults = s.testParametersDefinition.collect { param =>
           parametersRecord.parameterExpressions.get(param.name) match {
             case Some(expression) => evaluateExpression(expression, param).map(e => param.name -> e)
-            case None => UnknownProperty(param.name).invalidNel
+            case None if !param.isOptional => UnknownProperty(param.name).invalidNel
           }
         }
         parameterTypingResults.sequence match {
