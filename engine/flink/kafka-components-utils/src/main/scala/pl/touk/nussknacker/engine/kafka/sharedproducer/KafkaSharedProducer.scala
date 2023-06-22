@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData}
 import pl.touk.nussknacker.engine.kafka.{KafkaProducerCreator, KafkaUtils}
 import pl.touk.nussknacker.engine.util.sharedservice.{SharedService, SharedServiceHolder}
+import org.apache.kafka.clients.producer.Callback
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -31,6 +32,10 @@ final case class DefaultSharedKafkaProducer(creationData: KafkaProducerCreator.B
     KafkaUtils.sendToKafka(producerRecord)(producer).map(_ => ())
   }
 
+  override def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]], callback: Callback): Unit = {
+    producer.send(producerRecord, callback)
+  }
+
   override protected def sharedServiceHolder: SharedServiceHolder[KafkaProducerCreator.Binary, _] = DefaultSharedKafkaProducerHolder
 
   override def internalClose(): Unit = {
@@ -50,6 +55,8 @@ trait SharedKafkaProducer {
 
   def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]])(implicit ec: ExecutionContext): Future[Unit]
 
+  def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]], callback: Callback): Unit
+
 }
 
 trait WithSharedKafkaProducer extends BaseSharedKafkaProducer[DefaultSharedKafkaProducer] {
@@ -68,6 +75,10 @@ trait BaseSharedKafkaProducer[P <: SharedKafkaProducer with SharedService[KafkaP
 
   def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]])(implicit ec: ExecutionContext): Future[Unit] = {
     sharedProducer.sendToKafka(producerRecord)
+  }
+
+  def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]], callback: Callback): Unit = {
+    sharedProducer.sendToKafka(producerRecord, callback)
   }
 
   def flush(): Unit = {
