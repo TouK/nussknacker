@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionType, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType, StatusDetails}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeplo
 import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.time.Clock
+import java.time.{Clock, Instant}
 
 class PeriodicDeploymentManagerTest extends AnyFunSuite
   with Matchers
@@ -89,11 +89,13 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled)
 
-    val state = f.periodicDeploymentManager.getProcessState(processName).futureValue.value
-
-    val status = state.value.status
+    val statuDetailsOpt = f.periodicDeploymentManager.getProcessState(processName).futureValue.value
+    val status = statuDetailsOpt.value.status
     status shouldBe a[ScheduledStatus]
-    f.getAllowedActions(state.value) shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+    f.getAllowedActions(statuDetailsOpt.value) shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+
+    val deployAction = ProcessAction(VersionId(1), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Deploy, None, None, Map.empty)
+    f.periodicDeploymentManager.getProcessState(processName, Some(deployAction)).futureValue.value.status shouldBe a[ScheduledStatus]
   }
 
   test("getProcessState - should be scheduled when scenario scheduled and job finished on Flink") {

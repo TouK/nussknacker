@@ -6,11 +6,13 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.ScheduledStatus
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
@@ -142,6 +144,17 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
       delegateState <- delegate.getProcessState(name)
       mergedStatus <- service.mergeStatusWithDeployments(name, delegateState.value)
     } yield WithDataFreshnessStatus(mergedStatus, delegateState.cached)
+  }
+
+  override protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetailsOpt: Option[StatusDetails]): StatusDetails = {
+    // InconsistentStateDetector is a little overkill here. It checks some things that won't happen in periodic case because scheduler
+    // is in the same jvm as designer. Also we have some synchronization logic that makes those inconsistencies impossible.
+    // After cleanup in scheduler mechanism, we should remove this
+    new InconsistentStateDetector {
+      override protected def isFollowingDeployStatus(state: StatusDetails): Boolean = {
+        IsFollowingDeployStatusDeterminer.isFollowingDeployStatus(state.status)
+      }
+    }.resolve(statusDetailsOpt, lastStateAction)
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =

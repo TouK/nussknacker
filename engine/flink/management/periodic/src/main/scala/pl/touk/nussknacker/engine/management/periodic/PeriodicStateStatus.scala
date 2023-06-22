@@ -25,6 +25,10 @@ object PeriodicStateStatus {
 
   case object ScheduledStatus {
     val name = "SCHEDULED"
+
+    def isScheduledStatus(status: StateStatus): Boolean = {
+      status.name == name
+    }
   }
 
   val WaitingForScheduleStatus: StateStatus = StateStatus("WAITING_FOR_SCHEDULE")
