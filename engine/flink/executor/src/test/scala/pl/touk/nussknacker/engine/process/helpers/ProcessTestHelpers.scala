@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.process.helpers
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.dict.DictInstance
@@ -21,10 +21,13 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
   object processInvoker {
 
+    def invokeWithSampleData(process: CanonicalProcess, data: List[SimpleRecord]): Unit =
+      invokeWithSampleData(process, data, config)
+
     def invokeWithSampleData(process: CanonicalProcess,
                              data: List[SimpleRecord],
-                             processVersion: ProcessVersion = ProcessVersion.empty,
-                             config: Config = ConfigFactory.load()): Unit = {
+                             config: Config,
+                             processVersion: ProcessVersion = ProcessVersion.empty): Unit = {
       val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(data, config)
 
       val env = flinkMiniCluster.createExecutionEnvironment()

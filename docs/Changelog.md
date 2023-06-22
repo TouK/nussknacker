@@ -2,6 +2,10 @@
 
 # Changelog
 
+1.11.0 (not released yet)
+-------------------------
+* [#4400](https://github.com/TouK/nussknacker/pull/4400) Improvement: Avoid long waits for closing job on test Flink minicluster
+* 
 1.10.0 (not released yet)
 -------------------------
 * [#4275](https://github.com/TouK/nussknacker/pull/4275) Add helper methods for use in expressions:

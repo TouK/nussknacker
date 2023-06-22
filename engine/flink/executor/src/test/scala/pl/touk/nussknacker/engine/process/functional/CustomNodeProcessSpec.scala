@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -318,8 +317,8 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
         GraphBuilder.endingCustomNode("custom-ending", None, "optionalEndingCustom", "param" -> "'param'")
       )
     val data = List(SimpleRecord("1", 3, "a", new Date(0)))
-
-    processInvoker.invokeWithSampleData(process, data, config = LifecycleRecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), runId))
+    val cfg = LifecycleRecordingExceptionConsumerProvider.configWithProvider(config, runId)
+    processInvoker.invokeWithSampleData(process, data, cfg)
 
     val exceptionConsumerLifecycleHistory = LifecycleRecordingExceptionConsumer.dataFor(runId)
     // Exception handler is prepared for source part and custom node itself (LazyParameterInterpreterFunction opens the exception handler).

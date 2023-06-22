@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import com.typesafe.config.ConfigFactory
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -14,7 +12,6 @@ import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.util.parameters.SingleSchemaBasedParameter
 
 import java.util.{Date, UUID}
 
@@ -290,8 +287,8 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
         .copy(additionalFields = additionalFields.copy(properties = additionalFields.properties ++ Map("useAsyncInterpretation" -> useAsync.toString))))
 
       val runId = UUID.randomUUID().toString
-      val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.load(), consumerId = runId)
-      processInvoker.invokeWithSampleData(scenarioToUse, data, config = config)
+      val cfg = RecordingExceptionConsumerProvider.configWithProvider(config, consumerId = runId)
+      processInvoker.invokeWithSampleData(scenarioToUse, data, cfg)
 
       val exception = RecordingExceptionConsumer.dataFor(runId).loneElement
       exception.throwable shouldBe a [NonTransientException]
