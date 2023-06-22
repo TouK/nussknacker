@@ -38,9 +38,15 @@ trait DeploymentManager extends AutoCloseable {
     */
   def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
     getProcessState(name).map(_.map(statusDetailsOpt => {
-      val engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusDetailsOpt, lastStateAction)
+      val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetailsOpt)
       processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
     }))
+
+  // This method is protected to make possible to override it with own logic handling different edge cases like
+  // other state on engine than based on lastStateAction
+  protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetailsOpt: Option[StatusDetails]): StatusDetails = {
+    InconsistentStateDetector.resolve(statusDetailsOpt, lastStateAction)
+  }
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
