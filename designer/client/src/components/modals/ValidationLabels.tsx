@@ -1,6 +1,7 @@
 import React from "react";
 import { isEmpty } from "lodash";
 import { Validator, withoutDuplications } from "../graph/node-modal/editors/Validators";
+import { css, cx } from "@emotion/css";
 
 type Props = {
     validators: Array<Validator>;
@@ -8,12 +9,12 @@ type Props = {
     validationLabelInfo?: string;
 };
 
-export default function ValidationLabels(props: Props) {
-    type ValidationError = {
-        message: string;
-        description: string;
-    };
+type ValidationError = {
+    message: string;
+    description: string;
+};
 
+export default function ValidationLabels(props: Props) {
     const { validators, values, validationLabelInfo } = props;
 
     const validationErrors: ValidationError[] = withoutDuplications(validators)
@@ -26,10 +27,15 @@ export default function ValidationLabels(props: Props) {
     const isValid: boolean = isEmpty(validationErrors);
 
     const renderErrorLabels = () =>
-        validationErrors.map((validationError, ix) => (
-            // we don't pass description as tooltip message - we pass the entire non-line-limited string until we make
-            // changes on the backend
-            <LimitedValidationLabel key={ix} message={validationError.message} tooltipMessage={validationError.message} type={"ERROR"} />
+        validationErrors.map((validationError) => (
+            // we don't pass description as tooltip message - we pass the entire non-line-limited string
+            // until we make changes on the backend
+            <LimitedValidationLabel
+                key={validationError.message}
+                message={validationError.message}
+                tooltipMessage={validationError.message}
+                type={"ERROR"}
+            />
         ));
 
     // TODO: We're assuming that we have disjoint union of type info & validation errors, which is not always the case.
@@ -53,15 +59,24 @@ type ValidationLabelProps = {
 
 type ValidationLabelType = "INFO" | "ERROR";
 
-const labelTypeMap = {
-    INFO: "validation-label-info",
-    ERROR: "validation-label-error",
-};
-
 function LimitedValidationLabel(props: ValidationLabelProps): JSX.Element {
-    const className = `${labelTypeMap[props.type]} line-cut`;
+    const labelTypeStyle = () => {
+        switch (props.type) {
+            case "INFO":
+                return "validation-label-info";
+            case "ERROR":
+                return "validation-label-error";
+        }
+    };
+    const lineLimitStyle = css({
+        display: "-webkit-box",
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: "vertical",
+        overflow: "hidden",
+    });
+
     return (
-        <span className={className} title={props.tooltipMessage}>
+        <span className={cx(labelTypeStyle(), lineLimitStyle)} title={props.tooltipMessage}>
             {props.message}
         </span>
     );
