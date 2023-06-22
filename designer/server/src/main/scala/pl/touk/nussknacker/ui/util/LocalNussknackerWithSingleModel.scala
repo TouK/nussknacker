@@ -47,7 +47,7 @@ object LocalNussknackerWithSingleModel  {
     }
     val file: File = prepareUsersFile()
     val configToUse = ConfigFactory.parseMap(Map[String, Any](
-      "authentication.usersFile" -> file.getAbsolutePath,
+      "authentication.usersFile" -> file.getAbsoluteFile.toURI.toString,
       "categoriesConfig" -> fromMap(categories.map(cat => cat -> typeName).toMap.asJava)
     ).asJava)
     new NussknackerAppInitializer(configToUse).init(router)
