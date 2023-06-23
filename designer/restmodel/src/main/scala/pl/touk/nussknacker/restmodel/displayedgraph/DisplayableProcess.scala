@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.restmodel.displayedgraph
 
-import io.circe.Encoder
+import io.circe.{Decoder, Encoder, HCursor}
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.CirceUtil._
+import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
 //it would be better to have two classes but it would either to derivce from each other, which is not easy for case classes
@@ -49,7 +51,6 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
 }
 
-@JsonCodec(decodeOnly = true)
 case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
 
   def toMetaData(id: String): MetaData = MetaData(
@@ -81,4 +82,35 @@ object ProcessProperties {
     Encoder.forProduct2("isSubprocess", "additionalFields") { p =>
       (p.isSubprocess, p.additionalFields)
   }
+
+  // This is a copy-paste from MetaData - see the comment there for the legacy consideration
+  implicit val decoder: Decoder[ProcessProperties] = {
+    val actualDecoder: Decoder[ProcessProperties] = deriveConfiguredDecoder[ProcessProperties]
+
+    val legacyDecoder: Decoder[ProcessProperties] = {
+      def legacyProcessAdditionalFieldsDecoder(metaDataType: String): Decoder[ProcessAdditionalFields] =
+        (c: HCursor) => for {
+          description <- c.downField("description").as[Option[String]]
+          properties <- c.downField("properties").as[Option[Map[String, String]]]
+        } yield {
+          ProcessAdditionalFields(description, properties.getOrElse(Map.empty), metaDataType)
+        }
+
+      (c: HCursor) =>
+        for {
+          typeSpecificData <- c.downField("typeSpecificData").as[TypeSpecificData]
+          additionalFields <- c.downField("additionalFields")
+            .as[Option[ProcessAdditionalFields]](
+              io.circe.Decoder.decodeOption(
+                legacyProcessAdditionalFieldsDecoder(typeSpecificData.metaDataType)
+              )
+            ).map(_.getOrElse(ProcessAdditionalFields(None, Map.empty, typeSpecificData.metaDataType)))
+        } yield {
+          ProcessProperties.combineTypeSpecificProperties(typeSpecificData, additionalFields)
+        }
+    }
+
+    actualDecoder or legacyDecoder
+  }
+
 }
