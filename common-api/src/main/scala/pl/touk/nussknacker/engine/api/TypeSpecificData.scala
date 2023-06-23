@@ -17,23 +17,18 @@ import scala.util.Try
 
   def toMap: Map[String, String]
 
-  def metaDataType: String = {
-    this match {
-      case _: StreamMetaData => "StreamMetaData"
-      case _: LiteStreamMetaData => "LiteStreamMetaData"
-      case _: RequestResponseMetaData => "RequestResponseMetaData"
-      case _: FragmentSpecificData => "FragmentSpecificData"
-    }
-  }
+  def metaDataType: String
 }
 
 sealed trait ScenarioSpecificData extends TypeSpecificData
 
 case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData {
   override def toMap: Map[String, String] = Map(FragmentSpecificData.docsUrlName -> docsUrl.getOrElse(""))
+  override def metaDataType: String = FragmentSpecificData.typeName
 }
 
 object FragmentSpecificData {
+  val typeName = "FragmentSpecificData"
   private val docsUrlName = "docsUrl"
 
   def apply(properties: Map[String, String]): FragmentSpecificData = {
@@ -56,10 +51,11 @@ case class StreamMetaData(parallelism: Option[Int] = None,
       StreamMetaData.useAsyncInterpretationName -> toStringWithEmptyDefault(useAsyncInterpretation),
       StreamMetaData.checkpointIntervalInSecondsName -> toStringWithEmptyDefault(checkpointIntervalInSeconds),
     )
-
+  override def metaDataType: String = StreamMetaData.typeName
 }
 
 object StreamMetaData {
+  val typeName = "StreamMetaData"
   private val parallelismName = "parallelism"
   private val spillStateToDiskName = "spillStateToDisk"
   private val useAsyncInterpretationName = "useAsyncInterpretation"
@@ -78,9 +74,11 @@ object StreamMetaData {
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
 case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData {
   override def toMap: Map[String, String] = Map(LiteStreamMetaData.parallelismName -> toStringWithEmptyDefault(parallelism))
+  override def metaDataType: String = LiteStreamMetaData.typeName
 }
 
 object LiteStreamMetaData {
+  val typeName = "LiteStreamMetaData"
   private val parallelismName = "parallelism"
 
   def apply(properties: Map[String, String]): LiteStreamMetaData = {
@@ -92,9 +90,11 @@ object LiteStreamMetaData {
 
 case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData {
   override def toMap: Map[String, String] = Map(RequestResponseMetaData.slugName -> slug.getOrElse(""))
+  override def metaDataType: String = RequestResponseMetaData.typeName
 }
 
 object RequestResponseMetaData {
+  val typeName = "RequestResponseMetaData"
   private val slugName = "slug"
 
   def apply(properties: Map[String, String]): RequestResponseMetaData = {

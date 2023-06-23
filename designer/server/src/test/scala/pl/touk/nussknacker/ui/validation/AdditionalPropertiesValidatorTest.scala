@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, RegExpParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
@@ -47,7 +47,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "5"
-      ), "StreamMetaData")
+      ), StreamMetaData.typeName)
     ))
 
     val result = validator.validate(process)
@@ -59,7 +59,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propOpt" -> "a"
-      ), "StreamMetaData")
+      ), StreamMetaData.typeName)
     ))
 
     val result = validator.validate(process)
@@ -73,7 +73,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> ""
-      ), "StreamMetaData")
+      ), StreamMetaData.typeName)
     ))
 
     val result = validator.validate(process)
@@ -90,7 +90,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "1",
         "propRegExp" -> ""
-      ), "StreamMetaData")
+      ), StreamMetaData.typeName)
     ))
 
     val result = validator.validate(process)
@@ -105,7 +105,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "1",
         "propRegExp" -> "asd"
-      ), "StreamMetaData")
+      ), StreamMetaData.typeName)
     ))
 
     val result = validator.validate(process)
@@ -119,7 +119,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "some text"
-      ), "StreamMetaData")
+      ), StreamMetaData.typeName)
     ))
 
     val result = validator.validate(process)
@@ -143,7 +143,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val process = ProcessTestData.displayableWithAdditionalFields(Some(
       ProcessAdditionalFields(None, properties = Map(
         optFixedFieldName -> "some text"
-      ), "StreamMetaData")
+      ), StreamMetaData.typeName)
     ))
 
     val result = validator.validate(process)
@@ -162,7 +162,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
       ProcessAdditionalFields(None, properties = Map(
         "propReq" -> "5",
         "unknown" -> "some text"
-      ), "StreamMetaData")
+      ), StreamMetaData.typeName)
     ))
 
     val result = validator.validate(process)

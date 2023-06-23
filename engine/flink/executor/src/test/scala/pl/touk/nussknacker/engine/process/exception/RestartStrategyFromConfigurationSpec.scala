@@ -18,7 +18,7 @@ class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
     additionalFields = ProcessAdditionalFields(
       description = None,
       properties = Map("myStrategy" -> "oneStrategy", "myOtherStrategy" -> ""),
-      metaDataType = "StreamMetaData"
+      metaDataType = StreamMetaData.typeName
     )
   )
 

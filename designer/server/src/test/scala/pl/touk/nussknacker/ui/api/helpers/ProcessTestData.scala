@@ -201,7 +201,7 @@ object ProcessTestData {
         "maxEvents" -> "text",
         "unknown" -> "x",
         "numberOfThreads" -> "wrong fixed value"
-      ), "StreamMetaData")),
+      ), StreamMetaData.typeName)),
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
@@ -213,7 +213,7 @@ object ProcessTestData {
       id = "fooProcess",
       properties = ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(Some(2)),
-        ProcessAdditionalFields(Some("process description"), Map.empty, "StreamMetaData")
+        ProcessAdditionalFields(Some("process description"), Map.empty, StreamMetaData.typeName)
       ),
       nodes = List(
         node.Source(
@@ -303,7 +303,7 @@ object ProcessTestData {
 
   case class ProcessUsingSubprocess(process: CanonicalProcess, subprocess: CanonicalProcess)
 
-  val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer("StreamMetaData", Map(
+  val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer(StreamMetaData.typeName, Map(
     "parallelism" -> "1",
     "spillStateToDisk" -> "true")
   )

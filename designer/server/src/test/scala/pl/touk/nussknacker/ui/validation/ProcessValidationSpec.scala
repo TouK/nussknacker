@@ -712,7 +712,7 @@ private object ProcessValidationSpec {
       "test",
       ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(),
-        additionalFields = ProcessAdditionalFields(None, additionalFields, "StreamMetaData")),
+        additionalFields = ProcessAdditionalFields(None, additionalFields, StreamMetaData.typeName)),
       nodes, edges, `type`, category)
   }
 

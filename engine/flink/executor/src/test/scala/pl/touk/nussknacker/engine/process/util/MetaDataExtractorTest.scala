@@ -24,7 +24,7 @@ class MetaDataExtractorTest extends AnyFunSuite with Matchers {
         "duration" -> "P3DT2H",
         "period" -> "P3Y2M"
       ),
-      "StreamMetaData"
+      StreamMetaData.typeName
     )
   )
 

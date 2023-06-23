@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.lite.manager
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{LiteralIntegerValidator, MinimalNumberValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -11,8 +12,8 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def metaDataInitializer(config: Config): MetaDataInitializer = {
     forMode(config)(
-      LitePropertiesConfig.streamingInitialMetaData,
-      MetaDataInitializer("RequestResponseMetaData", scenarioName => Map("slug" -> defaultRequestResponseSlug(scenarioName, config)))
+      MetaDataInitializer(LiteStreamMetaData.typeName, Map("parallelism" -> "1")),
+      MetaDataInitializer(RequestResponseMetaData.typeName, scenarioName => Map("slug" -> defaultRequestResponseSlug(scenarioName, config)))
     )
   }
 
@@ -36,8 +37,6 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 }
 
 object LitePropertiesConfig {
-  val streamingInitialMetaData: MetaDataInitializer = MetaDataInitializer("LiteStreamMetaData", Map("parallelism" -> "1"))
-
   private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
     AdditionalPropertyConfig(
       defaultValue = None,
