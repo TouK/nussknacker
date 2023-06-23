@@ -1,4 +1,4 @@
-import { UsagesFiltersModel } from "./usagesFiltersModel";
+import { UsagesFiltersModel, UsagesFiltersValues } from "./usagesFiltersModel";
 import { useFilterContext } from "../../common";
 import { QuickFilter } from "../../scenarios/filters/quickFilter";
 import { FilterMenu } from "../../scenarios/filters/filterMenu";
@@ -10,13 +10,12 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Divider, Stack } from "@mui/material";
 
-export function FiltersPart({
-    isLoading,
-    filterableValues,
-}: {
+interface FiltersPartProps {
     isLoading: boolean;
-    filterableValues: Partial<Record<keyof UsagesFiltersModel, { name: string }[]>>;
-}): JSX.Element {
+    filterableValues: UsagesFiltersValues;
+}
+
+export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
 
@@ -26,7 +25,7 @@ export function FiltersPart({
         <QuickFilter<UsagesFiltersModel> isLoading={isLoading} filter="TEXT">
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
                 <FilterMenu label={t("table.filter.STATUS", "Status")} count={getFilter("STATUS", true).length}>
-                    <StatusOptionsStack options={filterableValues["status"]} withArchived={false} />
+                    <StatusOptionsStack options={filterableValues["STATUS"]} withArchived={false} />
                 </FilterMenu>
                 <FilterMenu label={t("table.filter.CATEGORY", "Category")} count={getFilter("CATEGORY", true).length}>
                     <SimpleOptionsStack

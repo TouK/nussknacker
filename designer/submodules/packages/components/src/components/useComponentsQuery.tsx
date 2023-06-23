@@ -46,9 +46,11 @@ export function useComponentQuery(componentId: string): UseQueryResult<Component
     return { ...query, data: component } as UseQueryResult<ComponentType>;
 }
 
-type UsageWithStatus = ComponentUsageType & { data: ProcessStateType };
+export interface UsageWithStatus extends ComponentUsageType {
+    state: ProcessStateType;
+}
 
-export function useComponentUsagesWithStatus(componentId: string): UseQueryResult<Array<UsageWithStatus>> {
+export function useComponentUsagesWithStatus(componentId: string): UseQueryResult<UsageWithStatus[]> {
     const { data: usages = [], ...usagesQuery } = useComponentUsagesQuery(componentId);
     const { data: statuses, ...statusesQuery } = useScenariosStatusesQuery();
     return useMemo(() => {

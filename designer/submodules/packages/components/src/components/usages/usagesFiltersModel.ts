@@ -1,3 +1,5 @@
+import { StatusFilterOption } from "../../scenarios/filters/otherOptionsStack";
+
 export interface UsagesFiltersModel {
     TEXT?: string;
     CATEGORY?: string[];
@@ -5,4 +7,10 @@ export interface UsagesFiltersModel {
     HIDE_FRAGMENTS?: boolean; // TODO: apply the same filtering approach as is in ScenariosFiltersModel
     HIDE_SCENARIOS?: boolean;
     STATUS?: string[];
+}
+
+export interface UsagesFiltersValues {
+    CATEGORY?: { name: string }[];
+    CREATED_BY?: { name: string }[];
+    STATUS?: StatusFilterOption[];
 }
