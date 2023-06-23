@@ -30,7 +30,7 @@ class RequestResponseScenarioValidator(nussknackerInstanceName: Option[String]) 
     val withoutSanitization = ServicePreparer.serviceNameWithoutSanitization(nussknackerInstanceName, slug)
     val withSanitization = ServicePreparer.serviceName(nussknackerInstanceName, slug)
     val prefix = K8sDeploymentManager.nussknackerInstanceNamePrefix(nussknackerInstanceName)
-    Validated.cond(withSanitization == withoutSanitization, (), NonEmptyList.of(SpecificDataValidationError("slug", "Allowed characters include lowercase letters, digits, hyphen, " +
+    Validated.cond(withSanitization == withoutSanitization, (), NonEmptyList.of(SpecificDataValidationError(RequestResponseMetaData.slugName, "Allowed characters include lowercase letters, digits, hyphen, " +
               s"name must start and end alphanumeric character, total length ${if (prefix.isEmpty) s"(including prefix '$prefix') " else ""}cannot be more than ${K8sUtils.maxObjectNameLength}")))
   }
 

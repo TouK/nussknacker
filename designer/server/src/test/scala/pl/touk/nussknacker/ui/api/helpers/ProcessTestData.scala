@@ -304,8 +304,8 @@ object ProcessTestData {
   case class ProcessUsingSubprocess(process: CanonicalProcess, subprocess: CanonicalProcess)
 
   val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer(StreamMetaData.typeName, Map(
-    "parallelism" -> "1",
-    "spillStateToDisk" -> "true")
+    StreamMetaData.parallelismName -> "1",
+    StreamMetaData.spillStateToDiskName -> "true")
   )
 
 }

@@ -14,7 +14,11 @@ object NewProcessPreparer {
   def apply(processTypes: ProcessingTypeDataProvider[ProcessingTypeData, _], additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]): NewProcessPreparer =
     new NewProcessPreparer(processTypes.mapValues(_.metaDataInitializer), additionalFields)
 
-  private val initialFragmentFields: ProcessAdditionalFields = ProcessAdditionalFields(None, Map("docsUrl" -> ""), FragmentSpecificData.typeName)
+  private val initialFragmentFields: ProcessAdditionalFields = ProcessAdditionalFields(
+    None,
+    Map(FragmentSpecificData.docsUrlName -> ""),
+    FragmentSpecificData.typeName
+  )
 
 }
 

@@ -78,7 +78,7 @@ object ProcessProperties {
   }
 
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =
-    Encoder.forProduct2( "isSubprocess", "additionalFields") { p =>
+    Encoder.forProduct2("isSubprocess", "additionalFields") { p =>
       (p.isSubprocess, p.additionalFields)
   }
 }

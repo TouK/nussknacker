@@ -29,7 +29,7 @@ case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpec
 
 object FragmentSpecificData {
   val typeName = "FragmentSpecificData"
-  private val docsUrlName = "docsUrl"
+  val docsUrlName = "docsUrl"
 
   def apply(properties: Map[String, String]): FragmentSpecificData = {
     FragmentSpecificData(docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)))
@@ -49,24 +49,24 @@ case class StreamMetaData(parallelism: Option[Int] = None,
       StreamMetaData.parallelismName -> toStringWithEmptyDefault(parallelism),
       StreamMetaData.spillStateToDiskName -> toStringWithEmptyDefault(spillStateToDisk),
       StreamMetaData.useAsyncInterpretationName -> toStringWithEmptyDefault(useAsyncInterpretation),
-      StreamMetaData.checkpointIntervalInSecondsName -> toStringWithEmptyDefault(checkpointIntervalInSeconds),
+      StreamMetaData.checkpointIntervalName -> toStringWithEmptyDefault(checkpointIntervalInSeconds),
     )
   override def metaDataType: String = StreamMetaData.typeName
 }
 
 object StreamMetaData {
   val typeName = "StreamMetaData"
-  private val parallelismName = "parallelism"
-  private val spillStateToDiskName = "spillStateToDisk"
-  private val useAsyncInterpretationName = "useAsyncInterpretation"
-  private val checkpointIntervalInSecondsName = "checkpointIntervalInSeconds"
+  val parallelismName = "parallelism"
+  val spillStateToDiskName = "spillStateToDisk"
+  val useAsyncInterpretationName = "useAsyncInterpretation"
+  val checkpointIntervalName = "checkpointIntervalInSeconds"
 
   def apply(properties: Map[String, String]): StreamMetaData = {
     StreamMetaData(
       parallelism = properties.get(parallelismName).flatMap(convertPropertyOrNone(_, _.toInt)),
       spillStateToDisk = properties.get(spillStateToDiskName).flatMap(convertPropertyOrNone(_, _.toBoolean)),
       useAsyncInterpretation = properties.get(useAsyncInterpretationName).flatMap(convertPropertyOrNone(_, _.toBoolean)),
-      checkpointIntervalInSeconds = properties.get(checkpointIntervalInSecondsName).flatMap(convertPropertyOrNone(_, _.toLong))
+      checkpointIntervalInSeconds = properties.get(checkpointIntervalName).flatMap(convertPropertyOrNone(_, _.toLong))
     )
   }
 }
@@ -79,7 +79,7 @@ case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioS
 
 object LiteStreamMetaData {
   val typeName = "LiteStreamMetaData"
-  private val parallelismName = "parallelism"
+  val parallelismName = "parallelism"
 
   def apply(properties: Map[String, String]): LiteStreamMetaData = {
     LiteStreamMetaData(
@@ -95,7 +95,7 @@ case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecifi
 
 object RequestResponseMetaData {
   val typeName = "RequestResponseMetaData"
-  private val slugName = "slug"
+  val slugName = "slug"
 
   def apply(properties: Map[String, String]): RequestResponseMetaData = {
     RequestResponseMetaData(slug = mapEmptyStringToNone(properties.get(slugName)))

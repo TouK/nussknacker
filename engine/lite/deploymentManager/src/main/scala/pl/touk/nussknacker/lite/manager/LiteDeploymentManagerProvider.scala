@@ -12,8 +12,11 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def metaDataInitializer(config: Config): MetaDataInitializer = {
     forMode(config)(
-      MetaDataInitializer(LiteStreamMetaData.typeName, Map("parallelism" -> "1")),
-      MetaDataInitializer(RequestResponseMetaData.typeName, scenarioName => Map("slug" -> defaultRequestResponseSlug(scenarioName, config)))
+      MetaDataInitializer(LiteStreamMetaData.typeName, Map(LiteStreamMetaData.parallelismName -> "1")),
+      MetaDataInitializer(
+        RequestResponseMetaData.typeName,
+        scenarioName => Map(RequestResponseMetaData.slugName -> defaultRequestResponseSlug(scenarioName, config))
+      )
     )
   }
 
@@ -37,7 +40,7 @@ trait LiteDeploymentManagerProvider extends DeploymentManagerProvider {
 }
 
 object LitePropertiesConfig {
-  private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
+  private val parallelismConfig: (String, AdditionalPropertyConfig) = LiteStreamMetaData.parallelismName ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
@@ -45,7 +48,7 @@ object LitePropertiesConfig {
       label = Some("Parallelism")
     )
 
-  private val slugConfig: (String, AdditionalPropertyConfig) = "slug" ->
+  private val slugConfig: (String, AdditionalPropertyConfig) = RequestResponseMetaData.slugName ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
