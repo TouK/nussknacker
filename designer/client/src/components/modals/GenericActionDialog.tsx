@@ -104,7 +104,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                                     <Editor
                                         editorConfig={param?.editor}
                                         className={"node-value"}
-                                        validators={validators[fieldName]}
+                                        validators={validators[fieldName] || []}
                                         formatter={formatter}
                                         expressionInfo={null}
                                         onValueChange={setParam(fieldName)}
