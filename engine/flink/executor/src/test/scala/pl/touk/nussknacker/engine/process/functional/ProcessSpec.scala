@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.functional
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -284,7 +285,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       val additionalFields = process.metaData.additionalFields
 
       val scenarioToUse = process.copy(metaData = process.metaData
-        .copy(additionalFields = additionalFields.copy(properties = additionalFields.properties ++ Map("useAsyncInterpretation" -> useAsync.toString))))
+        .copy(additionalFields = additionalFields.copy(properties = additionalFields.properties ++ Map(StreamMetaData.useAsyncInterpretationName -> useAsync.toString))))
 
       val runId = UUID.randomUUID().toString
       val cfg = RecordingExceptionConsumerProvider.configWithProvider(config, consumerId = runId)

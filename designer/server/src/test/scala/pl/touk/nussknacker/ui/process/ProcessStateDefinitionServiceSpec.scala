@@ -158,7 +158,7 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     processingTypeToDeploymentManager.transform { case (_, deploymentManager) =>
       ProcessingTypeData(deploymentManager,
         LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
-        MetaDataInitializer("StreamMetaData", Map("parallelism" -> "1")),
+        MetaDataInitializer(StreamMetaData.typeName, Map(StreamMetaData.parallelismName -> "1")),
         Map.empty,
         Nil,
         ProcessingTypeUsageStatistics(None, None))

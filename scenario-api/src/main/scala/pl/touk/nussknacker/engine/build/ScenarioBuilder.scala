@@ -26,7 +26,7 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
     val additionalFields = metaData.additionalFields
     new ProcessMetaDataBuilder(metaData.copy(
       additionalFields = additionalFields.copy(
-        properties = additionalFields.properties ++ Map("spillStateToDisk" -> useStateOnDisk.toString)
+        properties = additionalFields.properties ++ Map(StreamMetaData.spillStateToDiskName -> useStateOnDisk.toString)
       )
     ))
   }
@@ -36,7 +36,7 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
     val additionalFields = metaData.additionalFields
     new ProcessMetaDataBuilder(metaData.copy(
       additionalFields = additionalFields.copy(
-        properties = additionalFields.properties ++ Map("useAsyncInterpretation" -> useAsyncInterpretation.toString)
+        properties = additionalFields.properties ++ Map(StreamMetaData.useAsyncInterpretationName -> useAsyncInterpretation.toString)
       )
     ))
   }
@@ -47,7 +47,7 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
     val additionalFields = metaData.additionalFields
     new ProcessMetaDataBuilder(metaData.copy(
       additionalFields = additionalFields.copy(
-        properties = additionalFields.properties ++ Map("slug" -> slug.getOrElse(""))
+        properties = additionalFields.properties ++ Map(RequestResponseMetaData.slugName -> slug.getOrElse(""))
       )
     ))
   }

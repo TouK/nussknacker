@@ -34,6 +34,6 @@ object EmbeddedRequestResponseScenarioValidator extends CustomProcessValidator {
 
 object IllegalRequestResponseSlug {
   def apply(slug: String): ProcessCompilationError = {
-    SpecificDataValidationError("slug", s"Illegal slug: $slug. Slug should contain only unreserved url path characters: ${UrlUtils.unreservedUrlCharactersRegex}")
+    SpecificDataValidationError(RequestResponseMetaData.slugName, s"Illegal slug: $slug. Slug should contain only unreserved url path characters: ${UrlUtils.unreservedUrlCharactersRegex}")
   }
 }

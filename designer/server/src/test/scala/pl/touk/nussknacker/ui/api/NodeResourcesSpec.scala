@@ -54,7 +54,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
   private val processProperties = ProcessProperties.combineTypeSpecificProperties(
     StreamMetaData(),
-    additionalFields = ProcessAdditionalFields(None, Map("numberOfThreads" -> "2", "environment" -> "test"), "StreamMetaData")
+    additionalFields = ProcessAdditionalFields(None, Map("numberOfThreads" -> "2", "environment" -> "test"), StreamMetaData.typeName)
   )
 
   //see SampleNodeAdditionalInfoProvider
@@ -161,7 +161,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
     saveProcess(testProcess) {
       val request = PropertiesValidationRequest(ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(),
-        additionalFields = ProcessAdditionalFields(None, Map("numberOfThreads" -> "a", "environment" -> "test"), "StreamMetaData")
+        additionalFields = ProcessAdditionalFields(None, Map("numberOfThreads" -> "a", "environment" -> "test"), StreamMetaData.typeName)
       ))
 
       Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {

@@ -83,10 +83,10 @@ case class ProcessAdditionalFields(description: Option[String],
 
   def typeSpecificProperties: TypeSpecificData = {
     metaDataType match {
-      case "StreamMetaData" => StreamMetaData(properties)
-      case "LiteStreamMetaData" => LiteStreamMetaData(properties)
-      case "RequestResponseMetaData" => RequestResponseMetaData(properties)
-      case "FragmentSpecificData" => FragmentSpecificData(properties)
+      case StreamMetaData.typeName => StreamMetaData(properties)
+      case LiteStreamMetaData.typeName => LiteStreamMetaData(properties)
+      case RequestResponseMetaData.typeName => RequestResponseMetaData(properties)
+      case FragmentSpecificData.typeName => FragmentSpecificData(properties)
       case _ => throw new IllegalStateException("Unrecognized metadata type.")
     }
   }

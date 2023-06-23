@@ -268,7 +268,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val process = validProcessWithFields(Map())
     val subprocess = process.copy(properties = process.properties.copy(
       additionalFields = process.properties.additionalFields.copy(
-        metaDataType = "FragmentSpecificData"
+        metaDataType = FragmentSpecificData.typeName
       )
     ))
 
@@ -712,7 +712,7 @@ private object ProcessValidationSpec {
       "test",
       ProcessProperties.combineTypeSpecificProperties(
         StreamMetaData(),
-        additionalFields = ProcessAdditionalFields(None, additionalFields, "StreamMetaData")),
+        additionalFields = ProcessAdditionalFields(None, additionalFields, StreamMetaData.typeName)),
       nodes, edges, `type`, category)
   }
 

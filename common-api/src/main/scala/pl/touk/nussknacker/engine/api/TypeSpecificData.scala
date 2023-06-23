@@ -17,24 +17,19 @@ import scala.util.Try
 
   def toMap: Map[String, String]
 
-  def metaDataType: String = {
-    this match {
-      case _: StreamMetaData => "StreamMetaData"
-      case _: LiteStreamMetaData => "LiteStreamMetaData"
-      case _: RequestResponseMetaData => "RequestResponseMetaData"
-      case _: FragmentSpecificData => "FragmentSpecificData"
-    }
-  }
+  def metaDataType: String
 }
 
 sealed trait ScenarioSpecificData extends TypeSpecificData
 
 case class FragmentSpecificData(docsUrl: Option[String] = None) extends TypeSpecificData {
   override def toMap: Map[String, String] = Map(FragmentSpecificData.docsUrlName -> docsUrl.getOrElse(""))
+  override def metaDataType: String = FragmentSpecificData.typeName
 }
 
 object FragmentSpecificData {
-  private val docsUrlName = "docsUrl"
+  val typeName = "FragmentSpecificData"
+  val docsUrlName = "docsUrl"
 
   def apply(properties: Map[String, String]): FragmentSpecificData = {
     FragmentSpecificData(docsUrl = mapEmptyStringToNone(properties.get(docsUrlName)))
@@ -54,23 +49,24 @@ case class StreamMetaData(parallelism: Option[Int] = None,
       StreamMetaData.parallelismName -> toStringWithEmptyDefault(parallelism),
       StreamMetaData.spillStateToDiskName -> toStringWithEmptyDefault(spillStateToDisk),
       StreamMetaData.useAsyncInterpretationName -> toStringWithEmptyDefault(useAsyncInterpretation),
-      StreamMetaData.checkpointIntervalInSecondsName -> toStringWithEmptyDefault(checkpointIntervalInSeconds),
+      StreamMetaData.checkpointIntervalName -> toStringWithEmptyDefault(checkpointIntervalInSeconds),
     )
-
+  override def metaDataType: String = StreamMetaData.typeName
 }
 
 object StreamMetaData {
-  private val parallelismName = "parallelism"
-  private val spillStateToDiskName = "spillStateToDisk"
-  private val useAsyncInterpretationName = "useAsyncInterpretation"
-  private val checkpointIntervalInSecondsName = "checkpointIntervalInSeconds"
+  val typeName = "StreamMetaData"
+  val parallelismName = "parallelism"
+  val spillStateToDiskName = "spillStateToDisk"
+  val useAsyncInterpretationName = "useAsyncInterpretation"
+  val checkpointIntervalName = "checkpointIntervalInSeconds"
 
   def apply(properties: Map[String, String]): StreamMetaData = {
     StreamMetaData(
       parallelism = properties.get(parallelismName).flatMap(convertPropertyOrNone(_, _.toInt)),
       spillStateToDisk = properties.get(spillStateToDiskName).flatMap(convertPropertyOrNone(_, _.toBoolean)),
       useAsyncInterpretation = properties.get(useAsyncInterpretationName).flatMap(convertPropertyOrNone(_, _.toBoolean)),
-      checkpointIntervalInSeconds = properties.get(checkpointIntervalInSecondsName).flatMap(convertPropertyOrNone(_, _.toLong))
+      checkpointIntervalInSeconds = properties.get(checkpointIntervalName).flatMap(convertPropertyOrNone(_, _.toLong))
     )
   }
 }
@@ -78,10 +74,12 @@ object StreamMetaData {
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
 case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData {
   override def toMap: Map[String, String] = Map(LiteStreamMetaData.parallelismName -> toStringWithEmptyDefault(parallelism))
+  override def metaDataType: String = LiteStreamMetaData.typeName
 }
 
 object LiteStreamMetaData {
-  private val parallelismName = "parallelism"
+  val typeName = "LiteStreamMetaData"
+  val parallelismName = "parallelism"
 
   def apply(properties: Map[String, String]): LiteStreamMetaData = {
     LiteStreamMetaData(
@@ -92,10 +90,12 @@ object LiteStreamMetaData {
 
 case class RequestResponseMetaData(slug: Option[String]) extends ScenarioSpecificData {
   override def toMap: Map[String, String] = Map(RequestResponseMetaData.slugName -> slug.getOrElse(""))
+  override def metaDataType: String = RequestResponseMetaData.typeName
 }
 
 object RequestResponseMetaData {
-  private val slugName = "slug"
+  val typeName = "RequestResponseMetaData"
+  val slugName = "slug"
 
   def apply(properties: Map[String, String]): RequestResponseMetaData = {
     RequestResponseMetaData(slug = mapEmptyStringToNone(properties.get(slugName)))

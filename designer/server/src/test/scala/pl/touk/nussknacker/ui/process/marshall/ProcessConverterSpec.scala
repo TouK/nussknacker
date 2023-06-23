@@ -118,7 +118,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     val meta = MetaData.combineTypeSpecificProperties(
       id = "process",
       typeSpecificData = metaData,
-      additionalFields = ProcessAdditionalFields(None, Map.empty, "StreamMetaData")
+      additionalFields = ProcessAdditionalFields(None, Map.empty, StreamMetaData.typeName)
     )
     val process = ValidatedDisplayableProcess(
       meta.id,

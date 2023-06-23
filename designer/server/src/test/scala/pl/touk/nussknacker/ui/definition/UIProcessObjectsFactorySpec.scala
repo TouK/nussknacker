@@ -63,7 +63,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   private val mockDeploymentManager = new MockDeploymentManager
 
-  private val initialData = MetaDataInitializer("StreamMetadata")
+  private val initialData = MetaDataInitializer(StreamMetaData.typeName)
 
   test("should read editor from annotations") {
     val model: ModelData = LocalModelData(ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"), new EmptyProcessConfigCreator() {

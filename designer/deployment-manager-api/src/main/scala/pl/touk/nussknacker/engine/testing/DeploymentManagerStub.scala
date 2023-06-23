@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
@@ -82,7 +82,7 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 // TODO: Replace this class by a BaseDeploymentManagerProvider with default stubbed behavior
 object FlinkStreamingPropertiesConfig {
 
-  private val parallelismConfig: (String, AdditionalPropertyConfig) = "parallelism" ->
+  private val parallelismConfig: (String, AdditionalPropertyConfig) = StreamMetaData.parallelismName ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
@@ -99,21 +99,21 @@ object FlinkStreamingPropertiesConfig {
     FixedExpressionValue("false", "Synchronous"),
     FixedExpressionValue("true", "Asynchronous"))
 
-  private val spillStateConfig: (String, AdditionalPropertyConfig) = "spillStateToDisk" ->
+  private val spillStateConfig: (String, AdditionalPropertyConfig) = StreamMetaData.spillStateToDiskName ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(FixedValuesParameterEditor(spillStatePossibleValues)),
       validators = Some(List(FixedValuesValidator(spillStatePossibleValues))),
       label = Some("Spill state to disk"))
 
-  private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = "useAsyncInterpretation" ->
+  private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = StreamMetaData.useAsyncInterpretationName ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
       validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
       label = Some("IO mode"))
 
-  private val checkpointIntervalConfig: (String, AdditionalPropertyConfig) = "checkpointIntervalInSeconds" ->
+  private val checkpointIntervalConfig: (String, AdditionalPropertyConfig) = StreamMetaData.checkpointIntervalName ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
@@ -124,8 +124,8 @@ object FlinkStreamingPropertiesConfig {
     Map(parallelismConfig, spillStateConfig, asyncInterpretationConfig, checkpointIntervalConfig)
 
   val metaDataInitializer: MetaDataInitializer = MetaDataInitializer(
-    metadataType = "StreamMetaData",
+    metadataType = StreamMetaData.typeName,
     overridingProperties = Map(
-      "parallelism" -> "1",
-      "spillStateToDisk" -> "true"))
+      StreamMetaData.parallelismName -> "1",
+      StreamMetaData.spillStateToDiskName -> "true"))
 }
