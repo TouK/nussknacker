@@ -546,6 +546,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
   settings(commonSettings).
   settings(itSettings()).
   settings(assemblyNoScala("nussknacker-flink-manager.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-flink-manager",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
@@ -573,7 +574,9 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test",
         "com.github.tomakehurst" % "wiremock-jre8" % wireMockV % Test
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
-    }
+    },
+    // override scala-collection-compat from com.softwaremill.retry:retry
+    dependencyOverrides += "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV
   ).dependsOn(deploymentManagerApi % "provided",
   interpreter % "provided",
   componentsApi % "provided",
