@@ -39,6 +39,8 @@
   Components usages by a scenario are stored in the processes version table. It allows to speed up fetching components usages across all scenarios,
   especially for a big number of scenarios and each with a lot of nodes.
 * [#4254](https://github.com/TouK/nussknacker/pull/4254) Add simple spel expression suggestions endpoint to BE
+* [#4323](https://github.com/TouK/nussknacker/pull/4323) Improved code suggestions with Typer
+* [#4406](https://github.com/TouK/nussknacker/pull/4406) `backendCodeSuggestions` set to `true`, so by default Nussknacker will use new suggestion mechanism
 * [#4299](https://github.com/TouK/nussknacker/pull/4299)[4322](https://github.com/TouK/nussknacker/pull/4322) `StateStatus` is identified by its name. 
   `ProcessState` serialization uses this name as serialized state value. For compatibility reasons, it is still represented as a nested object with one `name` field.
 * [#4312](https://github.com/TouK/nussknacker/pull/4312) Fix for losing unsaved changes in designer after cancel/deploy
