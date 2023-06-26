@@ -17,5 +17,5 @@ export enum ValidationLabelType {
 export const ValidationLabel = styled.span((props: { type: ValidationLabelType; theme?: Theme }) => ({
     fontSize: "12px",
     marginTop: "3px",
-    color: props.type == ValidationLabelType.ERROR ? `${props.theme.colors.error} !important` : `green !important`,
+    color: props.type == ValidationLabelType.ERROR ? `${props.theme.colors?.error} !important` : `green !important`,
 }));
