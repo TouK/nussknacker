@@ -19,7 +19,8 @@ function CountsButton(props: ToolbarButtonProps) {
 
     return featuresSettings?.counts && !subprocess ? (
         <ToolbarButton
-            name={t("panels.actions.test-counts.button", "counts")}
+            name={t("panels.actions.test-counts.name", "counts")}
+            title={t("panels.actions.test-counts.button.title", "count node invocations in given period")}
             icon={<Icon />}
             disabled={disabled}
             onClick={() =>

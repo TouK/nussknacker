@@ -12,7 +12,7 @@ There are several features in Nussknacker designed specifically to ease testing 
 ## Test data capture
 **(Streaming processing mode only)**
 
-You can use `generate` button to capture events from the input Kafka topic into the file. You will be prompted to enter number of events to be captured. This feature works also if there are multiple Kafka input topics to the scenario.
+You can use `generate file` button to capture events from the input Kafka topic into the file. You will be prompted to enter number of events to be captured. This feature works also if there are multiple Kafka input topics to the scenario.
 Below you can see how such file looks like.
 ```json
 {"sourceId":"kafka1","record":{"keySchemaId":null,"valueSchemaId":null,"consumerRecord":{"key":null,"value":{"clientId":"4","amount":30,"eventDate":1674548921},"topic":"transactions","partition":0,"offset":58209,"timestamp":1674548933921,"timestampType":"CreateTime","headers":{},"leaderEpoch":0}},"timestamp":1674548933921}

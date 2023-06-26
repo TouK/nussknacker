@@ -21,7 +21,8 @@ function GenerateAndTestButton(props: Props) {
     return (
         <CapabilitiesToolbarButton
             write
-            name={t("panels.actions.generate-and-test.button", "test")}
+            name={t("panels.actions.generate-and-test.button.name", "generated")}
+            title={t("panels.actions.generate-and-test.button.title", "run test on generated data")}
             icon={<Icon />}
             disabled={!available}
             onClick={() =>
