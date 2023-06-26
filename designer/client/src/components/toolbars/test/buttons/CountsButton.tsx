@@ -8,6 +8,7 @@ import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
 import { ToolbarButtonProps } from "../../types";
+import UrlIcon from "../../../UrlIcon";
 
 // TODO: counts and metrics should not be visible in archived process
 function CountsButton(props: ToolbarButtonProps) {
@@ -19,8 +20,9 @@ function CountsButton(props: ToolbarButtonProps) {
 
     return featuresSettings?.counts && !subprocess ? (
         <ToolbarButton
-            name={t("panels.actions.test-counts.button", "counts")}
-            icon={<Icon />}
+            name={props.name || t("panels.actions.test-counts.name", "counts")}
+            title={props.title || t("panels.actions.test-from-file.button.title", "count node invocations in given period")}
+            icon={<UrlIcon src={props.icon} FallbackComponent={Icon} />}
             disabled={disabled}
             onClick={() =>
                 open({

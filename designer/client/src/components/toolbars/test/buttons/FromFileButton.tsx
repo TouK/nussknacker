@@ -7,6 +7,7 @@ import { getProcessId, getProcessToDisplay, getTestCapabilities } from "../../..
 import Icon from "../../../../assets/img/toolbarButtons/from-file.svg";
 import { ToolbarButtonProps } from "../../types";
 import { testProcessFromFile } from "../../../../actions/nk/displayTestResults";
+import UrlIcon from "../../../UrlIcon";
 
 type Props = StateProps & ToolbarButtonProps;
 
@@ -19,8 +20,9 @@ function FromFileButton(props: Props) {
     return (
         <CapabilitiesToolbarButton
             write
-            name={t("panels.actions.test-fromFile.button", "from file")}
-            icon={<Icon />}
+            name={props.name || t("panels.actions.test-from-file.button.name", "from file")}
+            title={props.title || t("panels.actions.test-from-file.button.title", "run test on data from file")}
+            icon={<UrlIcon src={props.icon} FallbackComponent={Icon} />}
             disabled={!available}
             onDrop={(files) => files.forEach((file) => testProcessFromFile(processId, file, processToDisplay))}
         />

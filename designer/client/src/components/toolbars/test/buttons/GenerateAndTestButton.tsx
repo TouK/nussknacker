@@ -7,6 +7,7 @@ import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
+import UrlIcon from "../../../UrlIcon";
 
 type Props = ToolbarButtonProps;
 
@@ -21,8 +22,9 @@ function GenerateAndTestButton(props: Props) {
     return (
         <CapabilitiesToolbarButton
             write
-            name={t("panels.actions.generate-and-test.button", "test")}
-            icon={<Icon />}
+            name={props.name || t("panels.actions.generate-and-test.button.name", "generated")}
+            title={props.title || t("panels.actions.generate-and-test.button.title", "run test on generated data")}
+            icon={<UrlIcon src={props.icon} FallbackComponent={Icon} />}
             disabled={!available}
             onClick={() =>
                 open({

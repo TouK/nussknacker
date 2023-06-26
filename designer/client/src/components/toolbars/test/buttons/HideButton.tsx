@@ -7,6 +7,7 @@ import { getShowRunProcessDetails } from "../../../../reducers/selectors/graph";
 import Icon from "../../../../assets/img/toolbarButtons/hide.svg";
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
 import { ToolbarButtonProps } from "../../types";
+import UrlIcon from "../../../UrlIcon";
 
 type Props = StateProps & ToolbarButtonProps;
 
@@ -17,8 +18,9 @@ function HideButton(props: Props) {
 
     return (
         <ToolbarButton
-            name={t("panels.actions.test-hide.button", "hide")}
-            icon={<Icon />}
+            name={props.name || t("panels.actions.test-hide.button.name", "hide")}
+            title={props.title || t("panels.actions.test-hide.button.title", "hide counts")}
+            icon={<UrlIcon src={props.icon} FallbackComponent={Icon} />}
             disabled={!available}
             onClick={() => hideRunProcessDetails()}
         />

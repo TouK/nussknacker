@@ -20,6 +20,7 @@ import { Expression } from "../../../../types";
 import { SourceWithParametersTest } from "../../../../http/HttpService";
 import { getFindAvailableVariables } from "../../../graph/node-modal/NodeDetailsContent/selectors";
 import { displayTestCapabilities, fetchTestFormParameters } from "../../../../actions/nk";
+import UrlIcon from "../../../UrlIcon";
 
 type Props = ToolbarButtonProps;
 
@@ -138,8 +139,9 @@ function TestWithFormButton(props: Props) {
 
     return (
         <ToolbarButton
-            name={t("panels.actions.test-with-form.button", "test form")}
-            icon={<Icon />}
+            name={props.name || t("panels.actions.test-with-form.button.name", "ad hoc")}
+            title={props.title || t("panels.actions.test-with-form.button.title", "run test on ad hoc data")}
+            icon={<UrlIcon src={props.icon} FallbackComponent={Icon} />}
             disabled={!available || disabled}
             onClick={onButtonClick}
         />
