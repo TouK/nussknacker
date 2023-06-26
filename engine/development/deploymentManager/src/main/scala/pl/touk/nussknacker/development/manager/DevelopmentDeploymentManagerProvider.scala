@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
 
+import java.net.URI
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
@@ -39,7 +40,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   private val customActionAfterRunning = CustomAction(AfterRunningStatus.name, List(Running.name))
   private val customActionPreparingResources = CustomAction(PreparingResourcesStatus.name, List(NotDeployed.name, Canceled.name))
-  private val customActionTest = CustomAction(TestStatus.name, Nil)
+  private val customActionTest = CustomAction(TestStatus.name, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
 
   private val customActionStatusMapping = Map(
     customActionAfterRunning -> AfterRunningStatus,

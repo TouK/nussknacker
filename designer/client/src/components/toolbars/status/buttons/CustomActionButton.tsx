@@ -8,6 +8,7 @@ import { WindowKind } from "../../../../windowManager/WindowKind";
 import { StatusType } from "../../../Process/types";
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
 import { ToolbarButtonProps } from "../../types";
+import UrlIcon from "../../../UrlIcon";
 
 type CustomActionProps = {
     action: CustomAction;
@@ -21,7 +22,7 @@ export default function CustomActionButton(props: CustomActionProps) {
     const dispatch = useDispatch();
     const { t } = useTranslation();
 
-    const icon = action.icon ? <img alt={`custom-action-${action.name}`} src={action.icon} /> : <DefaultIcon />;
+    const icon = action.icon ? <UrlIcon src={action.icon} FallbackComponent={DefaultIcon} /> : <DefaultIcon />;
 
     const statusName = processStatus?.name;
     const available = !disabled && action.allowedStateStatusNames.includes(statusName);
