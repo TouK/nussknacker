@@ -19,8 +19,6 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
 
-    const otherFilters: Array<keyof UsagesFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
-
     return (
         <QuickFilter<UsagesFiltersModel> isLoading={isLoading} filter="TEXT">
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
@@ -42,32 +40,6 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         value={getFilter("CREATED_BY", true)}
                         onChange={setFilter("CREATED_BY")}
                     />
-                </FilterMenu>
-                <FilterMenu label={t("table.filter.other", "Other")} count={otherFilters.filter((k) => getFilter(k)).length}>
-                    <OptionsStack
-                        label={t("table.filter.other", "Other")}
-                        options={otherFilters.map((name) => ({ name }))}
-                        value={otherFilters
-                            .flatMap((k) => getFilter(k))
-                            .filter(Boolean)
-                            .map(toString)}
-                        onChange={(v) => otherFilters.forEach((k) => setFilter(k, v))}
-                    >
-                        <FilterListItem
-                            invert
-                            color="default"
-                            checked={getFilter("HIDE_SCENARIOS") === true}
-                            onChange={(checked) => setFilter("HIDE_SCENARIOS", checked)}
-                            label={t("table.filter.SHOW_SCENARIOS", "Show scenarios")}
-                        />
-                        <FilterListItem
-                            invert
-                            color="default"
-                            checked={getFilter("HIDE_FRAGMENTS") === true}
-                            onChange={(checked) => setFilter("HIDE_FRAGMENTS", checked)}
-                            label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
-                        />
-                    </OptionsStack>
                 </FilterMenu>
             </Stack>
         </QuickFilter>
