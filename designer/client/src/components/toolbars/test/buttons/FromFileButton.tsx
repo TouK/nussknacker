@@ -19,7 +19,8 @@ function FromFileButton(props: Props) {
     return (
         <CapabilitiesToolbarButton
             write
-            name={t("panels.actions.test-fromFile.button", "from file")}
+            name={t("panels.actions.test-from-file.button.name", "from file")}
+            title={t("panels.actions.test-from-file.button.title", "run test on data from file")}
             icon={<Icon />}
             disabled={!available}
             onDrop={(files) => files.forEach((file) => testProcessFromFile(processId, file, processToDisplay))}

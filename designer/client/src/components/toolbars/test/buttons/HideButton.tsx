@@ -17,7 +17,8 @@ function HideButton(props: Props) {
 
     return (
         <ToolbarButton
-            name={t("panels.actions.test-hide.button", "hide")}
+            name={t("panels.actions.test-hide.button.name", "hide")}
+            title={t("panels.actions.test-hide.button.title", "hide counts")}
             icon={<Icon />}
             disabled={!available}
             onClick={() => hideRunProcessDetails()}
