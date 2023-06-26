@@ -5,6 +5,18 @@ import { render } from "@testing-library/react";
 import { getAllByText, queryAllByText } from "@testing-library/dom";
 import { I18nextProvider } from "react-i18next";
 import i18n from "../src/i18n";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+
+function MockTheme({ children }) {
+    const theme = createTheme({
+        colors: {
+            error: {
+                main: "red",
+            },
+        },
+    });
+    return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
+}
 
 describe("test validation labels", () => {
     const fieldName = "fieldName";
@@ -37,7 +49,9 @@ describe("test validation labels", () => {
             //when
             render(
                 <I18nextProvider i18n={i18n}>
-                    <ValidationLabels validators={validators} values={[""]} />
+                    <MockTheme>
+                        <ValidationLabels validators={validators} values={[""]} />
+                    </MockTheme>
                 </I18nextProvider>,
             );
 
