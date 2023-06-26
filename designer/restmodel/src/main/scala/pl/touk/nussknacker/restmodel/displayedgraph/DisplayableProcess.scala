@@ -98,7 +98,7 @@ object ProcessProperties {
 
       (c: HCursor) =>
         for {
-          typeSpecificData <- c.downField("typeSpecificData").as[TypeSpecificData]
+          typeSpecificData <- c.downField("typeSpecificProperties").as[TypeSpecificData]
           additionalFields <- c.downField("additionalFields")
             .as[Option[ProcessAdditionalFields]](
               io.circe.Decoder.decodeOption(

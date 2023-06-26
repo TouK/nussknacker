@@ -46,7 +46,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers with EitherValuesDetai
       s"""{
          |  "id" : "$givenProcessName",
          |  "properties" : {
-         |    "typeSpecificData" : {
+         |    "typeSpecificProperties" : {
          |      "parallelism" : $givenParallelism,
          |      "type" : "${StreamMetaData.typeName}"
          |    },
