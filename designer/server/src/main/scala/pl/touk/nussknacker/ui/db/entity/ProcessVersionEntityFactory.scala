@@ -44,7 +44,7 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
       case (versionId: VersionId, processId: ProcessId, jsonString: String, createDate: Timestamp, user: String, modelVersion: Option[Int]) =>
         ProcessVersionEntityData(versionId, processId, Some(ProcessMarshaller.fromJsonUnsafe(jsonString)), createDate, user, modelVersion, None)
     },
-      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._3.get.asJson.noSpaces, t._4, t._5, t._6) }
+      (e: ProcessVersionEntityData) => throw new IllegalAccessException("ProcessVersionEntityWithScenarioJson shouldn't be used for data modifications - use ProcessVersionEntity instead")
     )
 
   }
@@ -66,7 +66,7 @@ trait ProcessVersionEntityFactory extends BaseEntityFactory {
 
     override def * : ProvenShape[ProcessVersionEntityData] = (id, processId, createDate, user, modelVersion) <> (
       (ProcessVersionEntityData.apply(_: VersionId, _: ProcessId, None, _: Timestamp, _: String, _: Option[Int], None)).tupled,
-      (e: ProcessVersionEntityData) => ProcessVersionEntityData.unapply(e).map { t => (t._1, t._2, t._4, t._5, t._6) }
+      (e: ProcessVersionEntityData) => throw new IllegalAccessException("ProcessVersionEntityWithUnit shouldn't be used for insertions")
     )
 
   }
