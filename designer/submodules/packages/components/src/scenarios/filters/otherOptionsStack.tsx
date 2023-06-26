@@ -5,7 +5,7 @@ import { ScenariosFiltersModel, ScenariosFiltersModelType } from "./scenariosFil
 import { FilterListItem, FilterListItemSwitch } from "./filterListItem";
 import { OptionsStack } from "./optionsStack";
 import { Divider } from "@mui/material";
-import { some, xor } from "lodash";
+import { xor } from "lodash";
 import { FilterListItemLabel } from "./filterListItemLabel";
 
 export function OtherOptionsStack(): JSX.Element {
@@ -40,14 +40,18 @@ export function OtherOptionsStack(): JSX.Element {
     );
 }
 
-export interface StatusFiltersParams<V extends string = string, T = string> {
-    options?: T[];
-    withArchived: boolean;
+export interface StatusFilterOption {
+    name: string;
+    displayableName: string;
+    icon: string;
 }
 
-export function StatusOptionsStack(
-    props: StatusFiltersParams<string, { name: string; displayableName: string; icon?: string; tooltip?: string }>,
-): JSX.Element {
+interface StatusFiltersParams {
+    options?: StatusFilterOption[];
+    withArchived?: boolean;
+}
+
+export function StatusOptionsStack(props: StatusFiltersParams): JSX.Element {
     const { options = [], withArchived } = props;
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();

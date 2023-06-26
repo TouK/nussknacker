@@ -4,7 +4,7 @@ import { UsagesTable } from "./usagesTable";
 import { useComponentUsagesWithStatus } from "../useComponentsQuery";
 import { FiltersContextProvider, useFilterContext } from "../../common";
 import { Breadcrumbs } from "./breadcrumbs";
-import { UsagesFiltersModel } from "./usagesFiltersModel";
+import { UsagesFiltersModel, UsagesFiltersValues } from "./usagesFiltersModel";
 import { ActiveFilters } from "../../scenarios/filters/activeFilters";
 import { sortBy, uniq } from "lodash";
 import { useStatusDefinitions, useUserQuery } from "../../scenarios/useScenariosQuery";
@@ -39,15 +39,15 @@ function Component(): JSX.Element {
     const { t } = useTranslation();
 
     const { data: userData } = useUserQuery();
-    const filterableValues = useMemo(
+    const filterableValues = useMemo<UsagesFiltersValues>(
         () => ({
             CREATED_BY: uniq(["modifiedBy", "createdBy"].flatMap((k) => data.flatMap((v) => v[k])))
                 .sort()
                 .map((v) => ({ name: v })),
             CATEGORY: (userData?.categories || []).map((name) => ({ name })),
-            status: sortBy(statusDefinitions, (v) => v.displayableName),
+            STATUS: sortBy(statusDefinitions, (v) => v.displayableName),
         }),
-        [data, userData],
+        [data, statusDefinitions, userData?.categories],
     );
 
     const statusFilterLabels = statusDefinitions.reduce((map, obj) => {
@@ -73,7 +73,7 @@ function Component(): JSX.Element {
 
             return name;
         },
-        [t],
+        [statusFilterLabels, t],
     );
 
     return (

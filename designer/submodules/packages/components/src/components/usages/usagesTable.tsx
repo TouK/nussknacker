@@ -8,8 +8,9 @@ import { NodesCell } from "./nodesCell";
 import { UsagesFiltersModel } from "./usagesFiltersModel";
 import { useDebouncedValue } from "rooks";
 import { FilterLinkCell } from "../cellRenderers";
+import { UsageWithStatus } from "../useComponentsQuery";
 
-export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Element {
+export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element {
     const { data = [], isLoading } = props;
     const { t } = useTranslation();
     const filtersContext = useFilterContext<UsagesFiltersModel>();
@@ -17,7 +18,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
     const [filterText] = useDebouncedValue(_filterText, 400);
 
     const columns = useMemo(
-        (): Columns<ComponentUsageType> => [
+        (): Columns<UsageWithStatus> => [
             {
                 field: "name",
                 cellClassName: "noPadding stretch",
@@ -88,8 +89,8 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
 
     const filterRules = useMemo(
         () =>
-            createFilterRules<ComponentUsageType, UsagesFiltersModel>({
-                CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row["processCategory"] === f),
+            createFilterRules<UsageWithStatus, UsagesFiltersModel>({
+                CATEGORY: (row, value) => !value?.length || [].concat(value).some((f) => row.processCategory === f),
                 CREATED_BY: (row, value) =>
                     !value?.length ||
                     [].concat(value).some((f) =>
@@ -115,6 +116,7 @@ export function UsagesTable(props: TableViewData<ComponentUsageType>): JSX.Eleme
                 },
                 HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
                 HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
+                STATUS: (row, filter) => !filter?.length || [].concat(filter).some((f) => row.state?.status?.name.includes(f)),
             }),
         [columns, visibleColumns],
     );

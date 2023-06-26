@@ -99,6 +99,12 @@ describe("Components list", () => {
         cy.contains(/^≥ 1$/i).click();
         cy.get("body").click();
         cy.get("[data-id=filter] [data-testid=LinkIcon]").click();
+        cy.contains(/^status$/i).click();
+        cy.contains(/^running$/i).click();
+        cy.contains(/^no rows$/i).should("be.visible");
+        cy.contains(/^not deployed$/i).click();
+        cy.matchQuery("?STATUS=RUNNING&STATUS=NOT_DEPLOYED");
+        cy.get("body").click();
         cy.contains("components-test").click();
         cy.contains("import test data").should("be.visible");
     });
