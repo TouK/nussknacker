@@ -1,7 +1,8 @@
 import React from "react";
 import { isEmpty } from "lodash";
 import { Validator, withoutDuplications } from "../graph/node-modal/editors/Validators";
-import { css, cx } from "@emotion/css";
+import { lineLimitStyle, ValidationLabel, ValidationLabelType } from "../common/ValidationLabel";
+import styled from "@emotion/styled";
 
 type Props = {
     validators: Array<Validator>;
@@ -13,6 +14,11 @@ type ValidationError = {
     message: string;
     description: string;
 };
+
+const LabelsContainer = styled.div({
+    display: "inline-grid",
+    maxWidth: "fit-content",
+});
 
 export default function ValidationLabels(props: Props) {
     const { validators, values, validationLabelInfo } = props;
@@ -27,57 +33,31 @@ export default function ValidationLabels(props: Props) {
     const isValid: boolean = isEmpty(validationErrors);
 
     const renderErrorLabels = () =>
-        validationErrors.map((validationError) => (
-            // we don't pass description as tooltip message - we pass the entire non-line-limited string
-            // until we make changes on the backend
-            <LimitedValidationLabel
-                key={validationError.message}
-                message={validationError.message}
-                tooltipMessage={validationError.message}
-                type={"ERROR"}
-            />
-        ));
+        validationErrors.map((validationError) => {
+            // we don't pass description as tooltip message until we make changes on the backend
+            return (
+                <ValidationLabel
+                    key={validationError.message}
+                    title={validationError.message}
+                    type={ValidationLabelType.ERROR}
+                    className={lineLimitStyle}
+                >
+                    {validationError.message}
+                </ValidationLabel>
+            );
+        });
 
     // TODO: We're assuming that we have disjoint union of type info & validation errors, which is not always the case.
     // It's possible that expression is valid and it's type is known, but a different type is expected.
     return (
-        <div className={`validation-labels`}>
+        <LabelsContainer>
             {isValid ? (
-                <LimitedValidationLabel message={validationLabelInfo} tooltipMessage={validationLabelInfo} type={"INFO"} />
+                <ValidationLabel title={validationLabelInfo} type={ValidationLabelType.INFO} className={lineLimitStyle}>
+                    {validationLabelInfo}
+                </ValidationLabel>
             ) : (
                 renderErrorLabels()
             )}
-        </div>
-    );
-}
-
-type ValidationLabelProps = {
-    message: string;
-    tooltipMessage: string;
-    type: ValidationLabelType;
-};
-
-type ValidationLabelType = "INFO" | "ERROR";
-
-function LimitedValidationLabel(props: ValidationLabelProps): JSX.Element {
-    const labelTypeStyle = () => {
-        switch (props.type) {
-            case "INFO":
-                return "validation-label-info";
-            case "ERROR":
-                return "validation-label-error";
-        }
-    };
-    const lineLimitStyle = css({
-        display: "-webkit-box",
-        WebkitLineClamp: 3,
-        WebkitBoxOrient: "vertical",
-        overflow: "hidden",
-    });
-
-    return (
-        <span className={cx(labelTypeStyle(), lineLimitStyle)} title={props.tooltipMessage}>
-            {props.message}
-        </span>
+        </LabelsContainer>
     );
 }
