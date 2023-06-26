@@ -13,20 +13,8 @@ import { useTranslation } from "react-i18next";
 import { ValueLinker } from "../../common/filters/filtersContext";
 
 export function ComponentView(): JSX.Element {
-    const valueLinker: ValueLinker<UsagesFiltersModel> = useCallback(
-        (setNewValue) => (id, value) => {
-            switch (id) {
-                case "HIDE_SCENARIOS":
-                    return value && setNewValue("HIDE_FRAGMENTS", false);
-                case "HIDE_FRAGMENTS":
-                    return value && setNewValue("HIDE_SCENARIOS", false);
-            }
-        },
-        [],
-    );
-
     return (
-        <FiltersContextProvider<UsagesFiltersModel> getValueLinker={valueLinker}>
+        <FiltersContextProvider<UsagesFiltersModel>>
             <Component />
         </FiltersContextProvider>
     );
@@ -59,10 +47,6 @@ function Component(): JSX.Element {
     const getLabel = useCallback(
         (name: keyof UsagesFiltersModel, value?: string | number) => {
             switch (name) {
-                case "HIDE_FRAGMENTS":
-                    return t("table.filter.desc.HIDE_FRAGMENTS", "Fragments hidden");
-                case "HIDE_SCENARIOS":
-                    return t("table.filter.desc.HIDE_SCENARIOS", "Scenarios hidden");
                 case "STATUS":
                     return t("table.filter.status." + value, statusFilterLabels[value]);
             }

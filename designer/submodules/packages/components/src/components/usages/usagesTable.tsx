@@ -114,8 +114,6 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                             .some((value) => value.includes(segment.toLowerCase()));
                     });
                 },
-                HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
-                HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
                 STATUS: (row, filter) => !filter?.length || [].concat(filter).some((f) => row.state?.status?.name.includes(f)),
             }),
         [columns, visibleColumns],
