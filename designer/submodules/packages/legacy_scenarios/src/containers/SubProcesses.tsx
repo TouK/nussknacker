@@ -5,6 +5,7 @@ import { Td, Tr } from "reactable";
 import Date from "../components/common/Date";
 import { ProcessType } from "../components/Process/types";
 import TableRowIcon from "../components/table/TableRowIcon";
+import "../stylesheets/processes.styl";
 import styles from "./processesTable.styl";
 import { Page } from "./Page";
 import { Filterable, ProcessesList, RowsRenderer } from "./ProcessesList";
