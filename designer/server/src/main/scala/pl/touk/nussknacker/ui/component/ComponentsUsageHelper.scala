@@ -28,12 +28,12 @@ object ComponentsUsageHelper {
 
     val scenariosComponentUsages = flattenUsages(processesDetails.filter(_.isSubprocess == false))
     val fragmentsComponentUsages = flattenUsages(processesDetails.filter(_.isSubprocess == true))
-      .groupBy(_.processDetails.name)
+    val groupedFragmentsComponentUsages = fragmentsComponentUsages.groupBy(_.processDetails.name)
 
     val scenarioUsagesWithResolvedFragments: List[ScenarioComponentsUsage[NodeUsageData]] = scenariosComponentUsages.flatMap {
       case fragmentUsage@ScenarioComponentsUsage(_, ComponentType.Fragments, Some(fragmentName), processDetails, fragmentNodeId) =>
         val fragmentUsageRefined: ScenarioComponentsUsage[NodeUsageData] = fragmentUsage.copy(nodeUsageData = ScenarioUsageData(fragmentNodeId))
-        val fragmentsUsages: List[ScenarioComponentsUsage[NodeUsageData]] = fragmentsComponentUsages.get(fragmentName).toList.flatten.map {
+        val fragmentsUsages: List[ScenarioComponentsUsage[NodeUsageData]] = groupedFragmentsComponentUsages.get(fragmentName).toList.flatten.map {
           case u@ScenarioComponentsUsage(_, _, _, _, nodeId) =>
             val refinedUsage: ScenarioComponentsUsage[NodeUsageData]= u.copy(processDetails = processDetails, nodeUsageData = FragmentUsageData(fragmentNodeId, nodeId))
             refinedUsage
@@ -44,7 +44,13 @@ object ComponentsUsageHelper {
         List(usageOfOtherComponentTypeRefined)
     }
 
-    scenarioUsagesWithResolvedFragments
+    val fragmentUsages: List[ScenarioComponentsUsage[NodeUsageData]] = fragmentsComponentUsages.flatMap {
+      case componentUsage@ScenarioComponentsUsage(_, _, _, _, nodeId: NodeId) =>
+        val u: ScenarioComponentsUsage[NodeUsageData] = componentUsage.copy(nodeUsageData = ScenarioUsageData(nodeId))
+        List(u)
+    }
+
+    (scenarioUsagesWithResolvedFragments ++ fragmentUsages)
       .groupBy(_.componentId)
       .mapValuesNow(_.groupBy(_.processDetails).mapValuesNow { usages =>
         usages.map(_.nodeUsageData)
