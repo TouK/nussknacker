@@ -47,9 +47,7 @@ export default function ValidationLabels(props: Props) {
     return (
         <LabelsContainer>
             {isValid ? (
-                <LimitedValidationLabel title={validationLabelInfo} type="INFO">
-                    {validationLabelInfo}
-                </LimitedValidationLabel>
+                <LimitedValidationLabel title={validationLabelInfo}>{validationLabelInfo}</LimitedValidationLabel>
             ) : (
                 renderErrorLabels()
             )}

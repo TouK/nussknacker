@@ -3,7 +3,7 @@ import styled from "@emotion/styled";
 export const ValidationLabel = styled.span<{ type?: "INFO" | "ERROR" }>(({ theme, type }) => ({
     fontSize: "12px",
     marginTop: "3px",
-    color: type === "ERROR" ? `${theme.colors?.error} !important` : `green !important`,
+    color: type === "ERROR" ? theme.colors?.error : theme.colors?.sucess,
 }));
 
 export const LimitedValidationLabel = styled(ValidationLabel)({
