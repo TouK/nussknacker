@@ -1,10 +1,9 @@
-import { NodeId, ParameterConfig, ProcessDefinitionData, UIParameter } from "../../../types";
-import { useSelector } from "react-redux";
-import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
-import ProcessUtils from "../../../common/ProcessUtils";
-import React from "react";
-import { lineLimitStyle } from "../../common/ValidationLabel";
 import styled from "@emotion/styled";
+import React from "react";
+import { useSelector } from "react-redux";
+import ProcessUtils from "../../../common/ProcessUtils";
+import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
+import { NodeId, ParameterConfig, ProcessDefinitionData, UIParameter } from "../../../types";
 
 export function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {
     return definitions?.find((param) => param.name === paramName);
@@ -17,6 +16,10 @@ function getNodeParams(processDefinitionData: ProcessDefinitionData, nodeId: Nod
 const Footer = styled.div({
     fontWeight: 500,
     opacity: 0.7,
+    display: "-webkit-box",
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
 });
 
 export function FieldLabel({
@@ -36,13 +39,7 @@ export function FieldLabel({
 
     return (
         <div className="node-label" title={paramName}>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            {label}:
-            {parameter ? (
-                <Footer title={readableType} className={lineLimitStyle}>
-                    {readableType}
-                </Footer>
-            ) : null}
+            {label}:{parameter ? <Footer title={readableType}>{readableType}</Footer> : null}
         </div>
     );
 }

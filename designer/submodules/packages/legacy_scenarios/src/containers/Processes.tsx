@@ -4,6 +4,7 @@ import React from "react";
 import { Td, Tr } from "reactable";
 import Date from "../components/common/Date";
 import ProcessStateIcon from "../components/Process/ProcessStateIcon";
+import "../stylesheets/processes.styl";
 import styles from "./processesTable.styl";
 import { EditItem } from "./editItem";
 import { MetricsItem } from "./metricsItem";
