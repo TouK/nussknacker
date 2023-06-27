@@ -251,7 +251,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         processDetails.lastStateAction match {
           case Some(_) =>
             DBIOAction.from(getStateFromDeploymentManager(manager, processDetails.idWithName, processDetails.lastStateAction)).map { statusWithFreshness =>
-              logger.debug(s"Status for: '${processDetails.name}' is: ${statusWithFreshness.value.status}, cached: ${statusWithFreshness.cached}, last action: ${processDetails.lastAction.map(_.action)})")
+              logger.debug(s"Status for: '${processDetails.name}' is: ${statusWithFreshness.value.status}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction.map(_.action)})")
               statusWithFreshness.value
             }
           case _ => //We assume that the process never deployed should have no state at the engine
