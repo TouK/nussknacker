@@ -46,8 +46,8 @@ object ComponentsUsageHelper {
 
     val fragmentUsages: List[ScenarioComponentsUsage[NodeUsageData]] = fragmentsComponentUsages.flatMap {
       case componentUsage@ScenarioComponentsUsage(_, _, _, _, nodeId: NodeId) =>
-        val u: ScenarioComponentsUsage[NodeUsageData] = componentUsage.copy(nodeUsageData = ScenarioUsageData(nodeId))
-        List(u)
+        val usage: ScenarioComponentsUsage[NodeUsageData] = componentUsage.copy(nodeUsageData = ScenarioUsageData(nodeId))
+        List(usage)
     }
 
     (scenarioUsagesWithResolvedFragments ++ fragmentUsages)
