@@ -19,16 +19,15 @@ export function scenarioHref(scenarioId: string): string {
 
 export function nodeHref(scenarioId: string, nodeId: string): string {
     // , and / allowed in nodeId
-    const nid = encodeURIComponent(nodeId);
-    // double encode because of query arrays and react-router
-    return encodeURI(urljoin(scenarioHref(scenarioId), `?nodeId=${nid}`));
+    const nid = encodeURIComponent(encodeURIComponent(nodeId));
+    return urljoin(scenarioHref(scenarioId), `?nodeId=${nid}`);
 }
 
 export function fragmentNodeHref(scenarioId: string, fragmentNodeId: string, nodeId: string): string {
-    const nid = encodeURIComponent(nodeId);
-    const fid = encodeURIComponent(fragmentNodeId);
+    const nid = encodeURIComponent(encodeURIComponent(nodeId));
+    const fid = encodeURIComponent(encodeURIComponent(fragmentNodeId));
 
-    return encodeURI(urljoin(scenarioHref(scenarioId), `?nodeId=${fid},${fid}-${nid}`));
+    return urljoin(scenarioHref(scenarioId), `?nodeId=${fid},${fid}-${nid}`);
 }
 
 export function metricsHref(scenarioId: string): string {
