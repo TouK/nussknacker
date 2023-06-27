@@ -8,7 +8,7 @@ import { Link as RouterLink, Navigate, useParams } from "react-router-dom";
 export function Breadcrumbs(): JSX.Element {
     const { componentId } = useParams<"componentId">();
     const { data: component, isLoading: componentLoading } = useComponentQuery(componentId);
-    const back = useBackHref();
+    const back = useBackHref({ pathname: "../../" });
 
     return (
         <MuiBreadcrumbs aria-label="breadcrumb" sx={{ color: (theme) => theme.palette.getContrastText(theme.palette.background.default) }}>
