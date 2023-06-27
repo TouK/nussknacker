@@ -1,8 +1,8 @@
-import React from "react";
-import { isEmpty } from "lodash";
-import { Validator, withoutDuplications } from "../graph/node-modal/editors/Validators";
-import { lineLimitStyle, ValidationLabel, ValidationLabelType } from "../common/ValidationLabel";
 import styled from "@emotion/styled";
+import { isEmpty } from "lodash";
+import React from "react";
+import { LimitedValidationLabel } from "../common/ValidationLabel";
+import { Validator, withoutDuplications } from "../graph/node-modal/editors/Validators";
 
 type Props = {
     validators: Array<Validator>;
@@ -36,14 +36,9 @@ export default function ValidationLabels(props: Props) {
         validationErrors.map((validationError) => {
             // we don't pass description as tooltip message until we make changes on the backend
             return (
-                <ValidationLabel
-                    key={validationError.message}
-                    title={validationError.message}
-                    type={ValidationLabelType.ERROR}
-                    className={lineLimitStyle}
-                >
+                <LimitedValidationLabel key={validationError.message} title={validationError.message} type="ERROR">
                     {validationError.message}
-                </ValidationLabel>
+                </LimitedValidationLabel>
             );
         });
 
@@ -52,9 +47,9 @@ export default function ValidationLabels(props: Props) {
     return (
         <LabelsContainer>
             {isValid ? (
-                <ValidationLabel title={validationLabelInfo} type={ValidationLabelType.INFO} className={lineLimitStyle}>
+                <LimitedValidationLabel title={validationLabelInfo} type="INFO">
                     {validationLabelInfo}
-                </ValidationLabel>
+                </LimitedValidationLabel>
             ) : (
                 renderErrorLabels()
             )}
