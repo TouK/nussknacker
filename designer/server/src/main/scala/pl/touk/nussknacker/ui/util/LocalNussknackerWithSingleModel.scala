@@ -27,7 +27,21 @@ object LocalNussknackerWithSingleModel  {
 
   def run(modelData: ModelData,
           deploymentManagerProvider: DeploymentManagerProvider,
-          managerConfig: Config, categories: Set[String]): Unit = {
+          managerConfig: Config,
+          categories: Set[String]): Unit = {
+    val file: File = prepareUsersFile()
+    val appConfig = ConfigFactory.parseMap(Map[String, Any](
+      "authentication.usersFile" -> file.getAbsoluteFile.toURI.toString,
+      "categoriesConfig" -> fromMap(categories.map(cat => cat -> typeName).toMap.asJava)
+    ).asJava)
+
+    run(modelData, deploymentManagerProvider, managerConfig, appConfig)
+  }
+
+  def run(modelData: ModelData,
+          deploymentManagerProvider: DeploymentManagerProvider,
+          managerConfig: Config,
+          appConfig: Config): Unit = {
     val router = new NusskanckerDefaultAppRouter {
       override protected def prepareProcessingTypeData(config: ConfigWithUnresolvedVersion,
                                                        getDeploymentService: () => DeploymentService,
@@ -45,12 +59,8 @@ object LocalNussknackerWithSingleModel  {
         })
       }
     }
-    val file: File = prepareUsersFile()
-    val configToUse = ConfigFactory.parseMap(Map[String, Any](
-      "authentication.usersFile" -> file.getAbsoluteFile.toURI.toString,
-      "categoriesConfig" -> fromMap(categories.map(cat => cat -> typeName).toMap.asJava)
-    ).asJava)
-    new NussknackerAppInitializer(configToUse).init(router)
+
+    new NussknackerAppInitializer(appConfig).init(router)
   }
 
   //TODO: easier way of handling users file
