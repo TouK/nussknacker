@@ -58,11 +58,21 @@ describe("Fragment", () => {
         });
 
         cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick");
-        cy.intercept("POST", "/api/nodes/*/validation").as("validation");
+        cy.intercept("POST", "/api/nodes/*/validation", (request) => {
+            if (request.body.nodeData.ref?.parameters[0]?.expression.expression == "#fragmentResult.") {
+                request.alias = "validation";
+            }
+        });
+        cy.intercept("POST", "/api/parameters/*/suggestions", (request) => {
+            if (request?.body.expression.expression == "#fragmentResult.") {
+                request.alias = "suggestions";
+            }
+        });
         cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.");
-        cy.get(".ace_autocomplete").should("be.visible");
         // We wait for validation result to be sure that red message below the form field will be visible
-        cy.wait("@validation", { timeout: 5000 }).its("response.statusCode").should("eq", 200);
+        cy.wait("@validation").its("response.statusCode").should("eq", 200);
+        cy.wait("@suggestions").its("response.statusCode").should("eq", 200);
+        cy.get(".ace_autocomplete").should("be.visible");
         cy.get("[data-testid=window]").matchImage({ maxDiffThreshold: 0.01 });
     });
 
