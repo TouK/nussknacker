@@ -9,6 +9,7 @@ import { UsagesFiltersModel } from "./usagesFiltersModel";
 import { useDebouncedValue } from "rooks";
 import { FilterLinkCell } from "../cellRenderers";
 import { UsageWithStatus } from "../useComponentsQuery";
+import { ScenariosFiltersModelType } from "../../scenarios/filters/scenariosFiltersModel";
 
 export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element {
     const { data = [], isLoading } = props;
@@ -114,8 +115,15 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                             .some((value) => value.includes(segment.toLowerCase()));
                     });
                 },
-                HIDE_FRAGMENTS: (row, filter) => (filter ? !row.isSubprocess : true),
-                HIDE_SCENARIOS: (row, filter) => (filter ? row.isSubprocess : true),
+                TYPE: (row, value) =>
+                    !value?.length ||
+                    []
+                        .concat(value)
+                        .some(
+                            (f) =>
+                                (f === ScenariosFiltersModelType.SCENARIOS && !row.isSubprocess) ||
+                                (f === ScenariosFiltersModelType.FRAGMENTS && row.isSubprocess),
+                        ),
                 STATUS: (row, filter) => !filter?.length || [].concat(filter).some((f) => row.state?.status?.name.includes(f)),
             }),
         [columns, visibleColumns],

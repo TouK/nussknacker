@@ -9,6 +9,8 @@ import { FilterListItem } from "../../scenarios/filters/filterListItem";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Divider, Stack } from "@mui/material";
+import { ScenariosFiltersModel, ScenariosFiltersModelType } from "../../scenarios/filters/scenariosFiltersModel";
+import { xor } from "lodash";
 
 interface FiltersPartProps {
     isLoading: boolean;
@@ -19,7 +21,8 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
 
-    const otherFilters: Array<keyof UsagesFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
+    const otherFilters: Array<keyof UsagesFiltersModel> = ["TYPE"];
+    const getTypeFilter = () => getFilter("TYPE", true);
 
     return (
         <QuickFilter<UsagesFiltersModel> isLoading={isLoading} filter="TEXT">
@@ -54,17 +57,15 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         onChange={(v) => otherFilters.forEach((k) => setFilter(k, v))}
                     >
                         <FilterListItem
-                            invert
                             color="default"
-                            checked={getFilter("HIDE_SCENARIOS") === true}
-                            onChange={(checked) => setFilter("HIDE_SCENARIOS", checked)}
+                            checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.SCENARIOS)}
+                            onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.SCENARIOS], getTypeFilter()))}
                             label={t("table.filter.SHOW_SCENARIOS", "Show scenarios")}
                         />
                         <FilterListItem
-                            invert
                             color="default"
-                            checked={getFilter("HIDE_FRAGMENTS") === true}
-                            onChange={(checked) => setFilter("HIDE_FRAGMENTS", checked)}
+                            checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.FRAGMENTS)}
+                            onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.FRAGMENTS], getTypeFilter()))}
                             label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
                         />
                     </OptionsStack>
