@@ -34,6 +34,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     for {
       statusWithFreshness <- getProcessState(name)
       finishedStatusOpt = statusWithFreshness.value.filter(_.status == SimpleStateStatus.Finished)
+      _ = logger.debug(s"Status for ${name.value}: $statusWithFreshness. Is finished: ${finishedStatusOpt.isDefined}. Data freshness: $freshnessPolicy")
       //There is small problem here: if no one invokes process status for long time, Flink can remove process from history
       // - then it 's gone, not finished.
       //TODO: it should be checked periodically instead of checking on each getProcessState invocation
