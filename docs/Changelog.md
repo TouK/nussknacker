@@ -5,7 +5,8 @@
 1.11.0 (not released yet)
 -------------------------
 * [#4400](https://github.com/TouK/nussknacker/pull/4400) Improvement: Avoid long waits for closing job on test Flink minicluster
-* 
+* [#4435](https://github.com/TouK/nussknacker/pull/4435) Fix: handle resolving refs when parsing Swagger 2.0 schema in openapi enricher
+
 1.10.0 (not released yet)
 -------------------------
 * [#4275](https://github.com/TouK/nussknacker/pull/4275) Add helper methods for use in expressions:

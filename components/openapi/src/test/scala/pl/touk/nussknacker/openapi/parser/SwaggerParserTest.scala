@@ -132,4 +132,20 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
       )
     }
   }
+
+  test("handles local references in swagger 2.0") {
+    val openApi = parseServicesFromResource("swagger-2.0-refs.yml")
+    val openApiService = openApi.headOption match {
+      case Some(Valid(openApiService)) => openApiService
+      case _ => fail("Failed to parse Swagger service")
+    }
+    openApiService.responseSwaggerType shouldBe Some(
+      SwaggerObject(Map(
+        "message" -> SwaggerString,
+      ))
+    )
+    openApiService.parameters shouldBe List(
+      QueryParameter("queryParam", SwaggerString)
+    )
+  }
 }
