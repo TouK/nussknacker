@@ -1,16 +1,19 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
+import io.circe.Json
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import org.apache.kafka.clients.producer.ProducerRecord
-import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.{Context, MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import java.io.{PrintWriter, StringWriter}
 import java.lang
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
+import scala.annotation.tailrec
 import scala.io.Source
 
 class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig)
@@ -29,14 +32,15 @@ class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: 
                                          nodeId: Option[String],
                                          message: Option[String],
                                          exceptionInput: Option[String],
-                                         //TODO: consider using JSON here?
-                                         inputEvent: Option[String],
+                                         inputEvent: Option[Json],
                                          stackTrace: Option[String],
                                          timestamp: Long,
                                          host: Option[String],
                                          additionalData: Map[String, String])
 
 object KafkaExceptionInfo {
+
+  private val encoder = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
 
   //TODO: better hostname (e.g. from some Flink config)
   private lazy val hostName = InetAddress.getLocalHost.getHostName
@@ -47,7 +51,7 @@ object KafkaExceptionInfo {
       exceptionInfo.nodeComponentInfo.map(_.nodeId),
       Option(exceptionInfo.throwable.message),
       Option(exceptionInfo.throwable.input),
-      optional(exceptionInfo.context, config.includeInputEvent).map(_.toString),
+      optional(extractInput(exceptionInfo.context), config.includeInputEvent).map(encoder.encode),
       serializeStackTrace(config.stackTraceLengthLimit, exceptionInfo.throwable),
       exceptionInfo.throwable.timestamp.toEpochMilli,
       optional(hostName, config.includeHost),
@@ -67,5 +71,11 @@ object KafkaExceptionInfo {
     }
   }
 
-}
+  @tailrec
+  private def extractInput(context: Context): Option[Any] = context.get(VariableConstants.InputVariableName) match {
+    case found@Some(_) => found
+    case None if context.parentContext.isDefined => extractInput(context.parentContext.get)
+    case _ => None
+  }
 
+}
