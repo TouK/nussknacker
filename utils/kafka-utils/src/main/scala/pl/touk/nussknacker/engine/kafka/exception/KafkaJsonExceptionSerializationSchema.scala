@@ -4,7 +4,7 @@ import io.circe.Json
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import org.apache.kafka.clients.producer.ProducerRecord
-import pl.touk.nussknacker.engine.api.{Context, MetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.{Context, MetaData}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -13,7 +13,6 @@ import java.io.{PrintWriter, StringWriter}
 import java.lang
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
-import scala.annotation.tailrec
 import scala.io.Source
 
 class KafkaJsonExceptionSerializationSchema(metaData: MetaData, consumerConfig: KafkaExceptionConsumerConfig)
@@ -71,11 +70,7 @@ object KafkaExceptionInfo {
     }
   }
 
-  @tailrec
-  private def extractInput(context: Context): Option[Any] = context.get(VariableConstants.InputVariableName) match {
-    case found@Some(_) => found
-    case None if context.parentContext.isDefined => extractInput(context.parentContext.get)
-    case _ => None
-  }
+  private def extractInput(context: Context): Map[String, Any] =
+   context.parentContext.map(extractInput).getOrElse(Map.empty) ++ context.variables
 
 }

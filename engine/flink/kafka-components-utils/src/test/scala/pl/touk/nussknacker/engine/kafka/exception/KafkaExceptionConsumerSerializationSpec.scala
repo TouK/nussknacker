@@ -27,9 +27,9 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
     includeInputEvent = true,
     additionalParams = Map("testValue" -> "1"))
 
-  private val inputEvent = Map("name" -> "lcl", "age" -> 36)
+  private val variables = Map(VariableConstants.InputVariableName -> Map("name" -> "lcl", "age" -> 36))
 
-  private val context = Context("ctxId", Map(VariableConstants.InputVariableName -> inputEvent), None)
+  private val context = Context("ctxId", variables, None)
 
   private val exception = NuExceptionInfo(Some(NodeComponentInfo("nodeId", "componentName", ComponentType.Enricher)), NonTransientException("input1", "mess", Instant.ofEpochMilli(111)), context)
 
@@ -54,7 +54,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
     decodedPayload.exceptionInput shouldBe Some("input1")
     decodedPayload.message shouldBe Some("mess")
     decodedPayload.timestamp shouldBe 111
-    decodedPayload.inputEvent shouldBe Some(encoder.encode(inputEvent))
+    decodedPayload.inputEvent shouldBe Some(encoder.encode(variables))
     decodedPayload.additionalData shouldBe Map("testValue" -> "1")
   }
 
