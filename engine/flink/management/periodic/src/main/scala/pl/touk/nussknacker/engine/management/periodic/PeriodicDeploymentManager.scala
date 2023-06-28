@@ -78,7 +78,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
                                                   customActionsProvider: PeriodicCustomActionsProvider,
                                                   toClose: () => Unit)
                                                  (implicit val ec: ExecutionContext)
-  extends DeploymentManager with LazyLogging {
+  extends DeploymentManager with LazyLogging with DeploymentManagerInconsistentStateHandlerMixIn {
 
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {

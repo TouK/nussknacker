@@ -23,6 +23,9 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
     .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
     .buildAsync[ProcessName, Option[StatusDetails]]
 
+  override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
+    delegate.getProcessState(name, lastStateAction)
+
   override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]] = {
     freshnessPolicy match {
       case DataFreshnessPolicy.Fresh =>

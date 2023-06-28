@@ -11,6 +11,22 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeployment
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
 
+trait DeploymentManagerInconsistentStateHandlerMixIn {
+  self: DeploymentManager =>
+  final override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
+    getProcessState(name).map(_.map(statusDetailsOpt => {
+      val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetailsOpt)
+      processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
+    }))
+
+  // This method is protected to make possible to override it with own logic handling different edge cases like
+  // other state on engine than based on lastStateAction
+  protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetailsOpt: Option[StatusDetails]): StatusDetails = {
+    InconsistentStateDetector.resolve(statusDetailsOpt, lastStateAction)
+  }
+}
+
+
 trait DeploymentManager extends AutoCloseable {
 
   /**
@@ -36,17 +52,7 @@ trait DeploymentManager extends AutoCloseable {
   /**
     * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
-  def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
-    getProcessState(name).map(_.map(statusDetailsOpt => {
-      val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetailsOpt)
-      processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
-    }))
-
-  // This method is protected to make possible to override it with own logic handling different edge cases like
-  // other state on engine than based on lastStateAction
-  protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetailsOpt: Option[StatusDetails]): StatusDetails = {
-    InconsistentStateDetector.resolve(statusDetailsOpt, lastStateAction)
-  }
+  def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 

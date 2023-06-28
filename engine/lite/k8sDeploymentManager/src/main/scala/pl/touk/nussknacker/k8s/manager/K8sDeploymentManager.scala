@@ -38,7 +38,7 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
                            config: K8sDeploymentManagerConfig,
                            rawConfig: Config)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem)
-  extends LiteDeploymentManager with LazyLogging {
+  extends LiteDeploymentManager with LazyLogging with DeploymentManagerInconsistentStateHandlerMixIn {
 
   // lazy initialization to allow starting application even if k8s is not available - e.g. in case if multiple DeploymentManagers configured
   private lazy val k8sClient = createK8sClient(effectiveSkuberAppConfig, ConnectionPoolSettings(effectiveSkuberAppConfig))

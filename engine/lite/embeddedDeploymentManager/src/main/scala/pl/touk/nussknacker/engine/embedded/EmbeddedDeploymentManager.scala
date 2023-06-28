@@ -62,7 +62,8 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
  */
 class EmbeddedDeploymentManager(override protected val modelData: ModelData,
                                 processingTypeDeploymentService: ProcessingTypeDeploymentService,
-                                deploymentStrategy: DeploymentStrategy)(implicit ec: ExecutionContext) extends LiteDeploymentManager with LazyLogging {
+                                deploymentStrategy: DeploymentStrategy)(implicit ec: ExecutionContext) extends LiteDeploymentManager
+  with LazyLogging with DeploymentManagerInconsistentStateHandlerMixIn {
 
   private val retrieveDeployedScenariosTimeout = 10.seconds
   @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = {
