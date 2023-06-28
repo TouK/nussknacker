@@ -46,7 +46,7 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         onChange={setFilter("CREATED_BY")}
                     />
                 </FilterMenu>
-                <FilterMenu label={t("table.filter.other", "Other")} count={otherFilters.filter((k) => getFilter(k)).length}>
+                <FilterMenu label={t("table.filter.other", "Other")} count={getFilter("TYPE", true).length}>
                     <OptionsStack
                         label={t("table.filter.other", "Other")}
                         options={otherFilters.map((name) => ({ name }))}
