@@ -1,16 +1,17 @@
 package pl.touk.nussknacker.engine.api.deployment.inconsistency
 
+import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState, StatusDetails}
 
 object InconsistentStateDetector extends InconsistentStateDetector
 
-class InconsistentStateDetector {
+class InconsistentStateDetector extends LazyLogging {
 
   //This method handles some corner cases like retention for keeping old states - some engine can cleanup canceled states. It's more Flink hermetic.
-  def resolve(statusDetails: Option[StatusDetails], lastStateAction: Option[ProcessAction]): StatusDetails =
-    (statusDetails, lastStateAction) match {
+  def resolve(statusDetails: Option[StatusDetails], lastStateAction: Option[ProcessAction]): StatusDetails = {
+    val status = (statusDetails, lastStateAction) match {
       case (Some(state), _) if shouldAlwaysReturnStatus(state) => state
       case (Some(state), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastStateAction)
       case (_, Some(action)) if action.isDeployed => handleMismatchDeployedStateLastAction(statusDetails, action)
@@ -20,6 +21,9 @@ class InconsistentStateDetector {
       case (None, Some(_)) => StatusDetails(SimpleStateStatus.NotDeployed)
       case (None, None) => StatusDetails(SimpleStateStatus.NotDeployed)
     }
+    logger.debug(s"Resolved $statusDetails , lastStateAction: $lastStateAction to status $status")
+    status
+  }
 
 
   private def handleState(statusDetails: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
@@ -63,6 +67,7 @@ class InconsistentStateDetector {
       case Some(state) =>
         state.version match {
           case _ if !(isFollowingDeployStatus(state)) =>
+            logger.debug(s"handleMismatchDeployedStateLastAction: is not following deploy status, but it should be. $state")
             state.copy(status = ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user))
           case Some(ver) if ver.versionId != action.processVersionId =>
             state.copy(status = ProblemStateStatus.mismatchDeployedVersion(ver.versionId, action.processVersionId, action.user))
@@ -74,6 +79,7 @@ class InconsistentStateDetector {
             state.copy(status = ProblemStateStatus.Failed) //Generic error in other cases
         }
       case None =>
+        logger.debug(s"handleMismatchDeployedStateLastAction for empty statusDetails. Action.processVersionId: ${action.processVersionId}")
         StatusDetails(ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user))
     }
 
