@@ -27,7 +27,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(actorSystem: ActorSystem)
-  extends DeploymentManager with AlwaysFreshProcessState with LazyLogging {
+  extends DeploymentManager with AlwaysFreshProcessState with LazyLogging with DeploymentManagerInconsistentStateHandlerMixIn {
 
   import SimpleStateStatus._
 
