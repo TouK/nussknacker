@@ -1,4 +1,4 @@
-import { UsagesFiltersModel, UsagesFiltersValues } from "./usagesFiltersModel";
+import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersValues } from "./usagesFiltersModel";
 import { useFilterContext } from "../../common";
 import { QuickFilter } from "../../scenarios/filters/quickFilter";
 import { FilterMenu } from "../../scenarios/filters/filterMenu";
@@ -9,6 +9,7 @@ import { FilterListItem } from "../../scenarios/filters/filterListItem";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Divider, Stack } from "@mui/material";
+import { xor } from "lodash";
 
 interface FiltersPartProps {
     isLoading: boolean;
@@ -19,7 +20,8 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
 
-    const otherFilters: Array<keyof UsagesFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
+    const otherFilters: Array<keyof UsagesFiltersModel> = ["TYPE"];
+    const getTypeFilter = () => getFilter("TYPE", true);
 
     return (
         <QuickFilter<UsagesFiltersModel> isLoading={isLoading} filter="TEXT">
@@ -43,7 +45,7 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         onChange={setFilter("CREATED_BY")}
                     />
                 </FilterMenu>
-                <FilterMenu label={t("table.filter.other", "Other")} count={otherFilters.filter((k) => getFilter(k)).length}>
+                <FilterMenu label={t("table.filter.other", "Other")} count={getFilter("TYPE", true).length}>
                     <OptionsStack
                         label={t("table.filter.other", "Other")}
                         options={otherFilters.map((name) => ({ name }))}
@@ -54,17 +56,15 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         onChange={(v) => otherFilters.forEach((k) => setFilter(k, v))}
                     >
                         <FilterListItem
-                            invert
                             color="default"
-                            checked={getFilter("HIDE_SCENARIOS") === true}
-                            onChange={(checked) => setFilter("HIDE_SCENARIOS", checked)}
+                            checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.SCENARIOS)}
+                            onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.SCENARIOS], getTypeFilter()))}
                             label={t("table.filter.SHOW_SCENARIOS", "Show scenarios")}
                         />
                         <FilterListItem
-                            invert
                             color="default"
-                            checked={getFilter("HIDE_FRAGMENTS") === true}
-                            onChange={(checked) => setFilter("HIDE_FRAGMENTS", checked)}
+                            checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.FRAGMENTS)}
+                            onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.FRAGMENTS], getTypeFilter()))}
                             label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
                         />
                     </OptionsStack>
