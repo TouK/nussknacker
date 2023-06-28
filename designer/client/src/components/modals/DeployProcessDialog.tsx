@@ -6,9 +6,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { getProcessId } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { ProcessId } from "../../types";
-import { PromptContent } from "../../windowManager";
-import { WindowKind } from "../../windowManager/WindowKind";
+import { PromptContent, WindowKind } from "../../windowManager";
 import CommentInput from "../CommentInput";
+import { ValidationLabel } from "../common/ValidationLabel";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 
 export type ToggleProcessActionModalData = {
@@ -64,9 +64,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
                     )}
                     autoFocus
                 />
-                <span className="validation-label-error" title={validationError}>
-                    {validationError}
-                </span>
+                <ValidationLabel type="ERROR">{validationError}</ValidationLabel>
             </div>
         </PromptContent>
     );
