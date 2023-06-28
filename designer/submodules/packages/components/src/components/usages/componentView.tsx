@@ -4,14 +4,12 @@ import { UsagesTable } from "./usagesTable";
 import { useComponentUsagesWithStatus } from "../useComponentsQuery";
 import { FiltersContextProvider, useFilterContext } from "../../common";
 import { Breadcrumbs } from "./breadcrumbs";
-import { UsagesFiltersModel, UsagesFiltersValues } from "./usagesFiltersModel";
+import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersValues } from "./usagesFiltersModel";
 import { ActiveFilters } from "../../scenarios/filters/activeFilters";
 import { sortBy, uniq } from "lodash";
 import { useStatusDefinitions, useUserQuery } from "../../scenarios/useScenariosQuery";
 import { FiltersPart } from "./filtersPart";
 import { useTranslation } from "react-i18next";
-import { ValueLinker } from "../../common/filters/filtersContext";
-import { ScenariosFiltersModelType } from "../../scenarios/filters/scenariosFiltersModel";
 
 export function ComponentView(): JSX.Element {
     return (
@@ -50,9 +48,9 @@ function Component(): JSX.Element {
             switch (name) {
                 case "TYPE":
                     switch (value) {
-                        case ScenariosFiltersModelType.FRAGMENTS:
+                        case UsagesFiltersModelType.FRAGMENTS:
                             return t("table.filter.FRAGMENTS", "Fragments");
-                        case ScenariosFiltersModelType.SCENARIOS:
+                        case UsagesFiltersModelType.SCENARIOS:
                             return t("table.filter.SCENARIOS", "Scenarios");
                     }
                     break;

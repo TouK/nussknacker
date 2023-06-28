@@ -13,3 +13,8 @@ export interface UsagesFiltersValues {
     CREATED_BY?: { name: string }[];
     STATUS?: StatusFilterOption[];
 }
+
+export enum UsagesFiltersModelType {
+    SCENARIOS = "SCENARIOS",
+    FRAGMENTS = "FRAGMENTS",
+}

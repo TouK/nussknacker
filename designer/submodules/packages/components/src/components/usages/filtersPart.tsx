@@ -1,4 +1,4 @@
-import { UsagesFiltersModel, UsagesFiltersValues } from "./usagesFiltersModel";
+import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersValues } from "./usagesFiltersModel";
 import { useFilterContext } from "../../common";
 import { QuickFilter } from "../../scenarios/filters/quickFilter";
 import { FilterMenu } from "../../scenarios/filters/filterMenu";
@@ -9,7 +9,6 @@ import { FilterListItem } from "../../scenarios/filters/filterListItem";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Divider, Stack } from "@mui/material";
-import { ScenariosFiltersModel, ScenariosFiltersModelType } from "../../scenarios/filters/scenariosFiltersModel";
 import { xor } from "lodash";
 
 interface FiltersPartProps {
@@ -58,14 +57,14 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                     >
                         <FilterListItem
                             color="default"
-                            checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.SCENARIOS)}
-                            onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.SCENARIOS], getTypeFilter()))}
+                            checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.SCENARIOS)}
+                            onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.SCENARIOS], getTypeFilter()))}
                             label={t("table.filter.SHOW_SCENARIOS", "Show scenarios")}
                         />
                         <FilterListItem
                             color="default"
-                            checked={getFilter("TYPE", true)?.includes(ScenariosFiltersModelType.FRAGMENTS)}
-                            onChange={() => setFilter("TYPE", xor([ScenariosFiltersModelType.FRAGMENTS], getTypeFilter()))}
+                            checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.FRAGMENTS)}
+                            onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.FRAGMENTS], getTypeFilter()))}
                             label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
                         />
                     </OptionsStack>
