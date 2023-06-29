@@ -61,8 +61,13 @@ case class Context(id: String, variables: Map[String, Any], parentContext: Optio
     Context(id, variables, Some(this))
   }
 
-  def popContext : Context =
-    parentContext.getOrElse(throw new RuntimeException("No parent context available"))
+  //it returns all variables from context including parent tree
+  def allVariables: Map[String, Any] = {
+    def extractContextVariables(context: Context): Map[String, Any] =
+      context.parentContext.map(extractContextVariables).getOrElse(Map.empty) ++ context.variables
+
+    extractContextVariables(this)
+  }
 
   def clearUserVariables: Context = {
     //clears variables from context but leaves technical variables, hidden from user

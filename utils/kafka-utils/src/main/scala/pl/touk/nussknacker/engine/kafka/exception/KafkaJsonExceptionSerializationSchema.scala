@@ -50,7 +50,7 @@ object KafkaExceptionInfo {
       exceptionInfo.nodeComponentInfo.map(_.nodeId),
       Option(exceptionInfo.throwable.message),
       Option(exceptionInfo.throwable.input),
-      optional(extractInput(exceptionInfo.context), config.includeInputEvent).map(encoder.encode),
+      optional(exceptionInfo.context.allVariables, config.includeInputEvent).map(encoder.encode),
       serializeStackTrace(config.stackTraceLengthLimit, exceptionInfo.throwable),
       exceptionInfo.throwable.timestamp.toEpochMilli,
       optional(hostName, config.includeHost),
@@ -69,8 +69,5 @@ object KafkaExceptionInfo {
       Option(Source.fromString(writer.toString).getLines().take(stackTraceLengthLimit).mkString("\n"))
     }
   }
-
-  private def extractInput(context: Context): Map[String, Any] =
-   context.parentContext.map(extractInput).getOrElse(Map.empty) ++ context.variables
 
 }

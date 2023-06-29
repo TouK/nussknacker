@@ -7,6 +7,8 @@
 * [#4400](https://github.com/TouK/nussknacker/pull/4400) Improvement: Avoid long waits for closing job on test Flink minicluster
 * [#4435](https://github.com/TouK/nussknacker/pull/4435) Fix: handle resolving refs when parsing Swagger 2.0 schema in openapi enricher
 * [#4440](https://github.com/TouK/nussknacker/pull/4440) Improvement: Better exception info handling at KafkaExceptionInfo - extract input from context
+* [#4440](https://github.com/TouK/nussknacker/pull/4440) Improvement: Better exception info handling at KafkaExceptionInfo.inputEvent,
+  from now we will return here JSON with all context variables (including context parent tree)
 
 1.10.0 (not released yet)
 -------------------------
