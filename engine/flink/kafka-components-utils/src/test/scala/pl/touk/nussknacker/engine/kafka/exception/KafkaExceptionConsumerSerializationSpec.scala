@@ -6,8 +6,9 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
-import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.MockProducerCreator
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import java.time.Instant
 import scala.jdk.CollectionConverters._
@@ -16,15 +17,21 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
 
   private val mockProducer = new MockProducer[Array[Byte], Array[Byte]](false, new ByteArraySerializer, new ByteArraySerializer)
 
+  private val encoder = BestEffortJsonEncoder(failOnUnknown = false, getClass.getClassLoader)
+
   private val metaData = MetaData("test", StreamMetaData())
 
   private val consumerConfig = KafkaExceptionConsumerConfig("mockTopic",
     stackTraceLengthLimit = 20,
     includeHost = true,
-    includeInputEvent = false,
+    includeInputEvent = true,
     additionalParams = Map("testValue" -> "1"))
 
-  private val exception = NuExceptionInfo(Some(NodeComponentInfo("nodeId", "componentName", ComponentType.Enricher)), NonTransientException("input1", "mess", Instant.ofEpochMilli(111)), Context("ctxId"))
+  private val variables = Map(VariableConstants.InputVariableName -> Map("name" -> "lcl", "age" -> 36))
+
+  private val context = Context("ctxId", variables, None)
+
+  private val exception = NuExceptionInfo(Some(NodeComponentInfo("nodeId", "componentName", ComponentType.Enricher)), NonTransientException("input1", "mess", Instant.ofEpochMilli(111)), context)
 
   private val serializationSchema = new KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
 
@@ -47,6 +54,7 @@ class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers 
     decodedPayload.exceptionInput shouldBe Some("input1")
     decodedPayload.message shouldBe Some("mess")
     decodedPayload.timestamp shouldBe 111
+    decodedPayload.inputEvent shouldBe Some(encoder.encode(variables))
     decodedPayload.additionalData shouldBe Map("testValue" -> "1")
   }
 
