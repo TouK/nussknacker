@@ -2,7 +2,7 @@
 
 # Changelog
 
-1.10.0 (29 Jun 2023)
+1.11.0 (Not released yet)
 -------------------------
 * [#4440](https://github.com/TouK/nussknacker/pull/4440) Improvement: Better exception info handling at KafkaExceptionInfo.inputEvent,
   from now we will return here JSON with all context variables (including context parent tree)
