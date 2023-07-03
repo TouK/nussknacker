@@ -15,10 +15,7 @@ import java.util.UUID
                                     action: ProcessActionType,
                                     commentId: Option[Long],
                                     comment: Option[String],
-                                    buildInfo: Map[String, String]) {
-  def isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
-  def isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
-}
+                                    buildInfo: Map[String, String])
 
 final case class ProcessActionId(value: UUID) {
   override def toString: String = value.toString

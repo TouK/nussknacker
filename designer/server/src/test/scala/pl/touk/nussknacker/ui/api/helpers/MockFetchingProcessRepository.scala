@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.api.deployment.ProcessAction
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.processdetails
@@ -37,7 +37,7 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[Canonical
 
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](q: FetchProcessesDetailsQuery)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]] =
     getUserProcesses[PS].map(_.filter(
-      p => check(q.isFragment, p.isFragment) && check(q.isArchived, p.isArchived) && check(q.isDeployed, p.lastStateAction.exists(_.isDeployed)) && checkSeq(q.categories, p.processCategory) && checkSeq(q.processingTypes, p.processingType)
+      p => check(q.isFragment, p.isFragment) && check(q.isArchived, p.isArchived) && check(q.isDeployed, p.lastStateAction.exists(_.action.equals(ProcessActionType.Deploy))) && checkSeq(q.categories, p.processCategory) && checkSeq(q.processingTypes, p.processingType)
     ))
 
   override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] =

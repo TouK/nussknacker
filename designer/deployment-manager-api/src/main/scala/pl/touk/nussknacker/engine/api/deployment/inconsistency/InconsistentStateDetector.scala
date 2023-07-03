@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment.inconsistency
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType, StatusDetails}
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 object InconsistentStateDetector extends InconsistentStateDetector
@@ -15,9 +15,9 @@ class InconsistentStateDetector extends LazyLogging {
       case (Left(state), _) => state
       case (Right(Some(state)), _) if shouldAlwaysReturnStatus(state) => state
       case (Right(Some(state)), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastStateAction)
-      case (Right(statusDetailsOpt), Some(action)) if action.isDeployed => handleMismatchDeployedStateLastAction(statusDetailsOpt, action)
+      case (Right(statusDetailsOpt), Some(action)) if action.action.equals(ProcessActionType.Deploy) => handleMismatchDeployedStateLastAction(statusDetailsOpt, action)
       case (Right(Some(state)), _) if isFollowingDeployStatus(state) => handleFollowingDeployState(state, lastStateAction)
-      case (Right(statusDetailsOpt), Some(action)) if action.isCanceled => handleCanceledState(statusDetailsOpt)
+      case (Right(statusDetailsOpt), Some(action)) if action.action.equals(ProcessActionType.Cancel) => handleCanceledState(statusDetailsOpt)
       case (Right(Some(state)), _) => handleState(state, lastStateAction)
       case (Right(None), Some(a)) => StatusDetails(SimpleStateStatus.NotDeployed, Some(DeploymentId(a.id.toString)))
       case (Right(None), None) => StatusDetails(SimpleStateStatus.NotDeployed, None)
@@ -61,14 +61,14 @@ class InconsistentStateDetector extends LazyLogging {
 
   private def handleRestartingState(statusDetails: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
     lastStateAction match {
-      case Some(action) if action.isDeployed => statusDetails
+      case Some(action) if action.action.equals(ProcessActionType.Deploy) => statusDetails
       case _ => handleState(statusDetails, lastStateAction)
     }
 
   //This method handles some corner cases for following deploy state mismatch last action version
   private def handleFollowingDeployState(statusDetails: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
     lastStateAction match {
-      case Some(action) if !action.isDeployed =>
+      case Some(action) if !action.action.equals(ProcessActionType.Deploy) =>
         statusDetails.copy(status = ProblemStateStatus.shouldNotBeRunning(true))
       case Some(_) =>
         statusDetails

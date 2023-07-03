@@ -115,7 +115,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.isCanceled) shouldBe true
+    processDetails.lastStateAction.exists(_.action.equals(ProcessActionType.Cancel)) shouldBe true
     processDetails.lastDeployedAction shouldBe None
     //one for deploy, one for cancel
     activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
@@ -184,7 +184,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.isCanceled) shouldBe true
+    processDetails.lastStateAction.exists(_.action.equals(ProcessActionType.Cancel)) shouldBe true
     processDetails.history.head.actions.map(_.action) should be(List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
 
@@ -199,7 +199,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.isCanceled) shouldBe true
+    processDetails.lastStateAction.exists(_.action.equals(ProcessActionType.Cancel)) shouldBe true
     processDetails.history.head.actions.map(_.action) should be(List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
 
