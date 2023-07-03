@@ -54,7 +54,7 @@ class InterpreterSetup[T:ClassTag] {
       = Map("sink" -> WithCategories(SinkFactory.noParam(new Sink {})))
     }
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator,
+    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, getClass.getClassLoader,
       api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
     val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)

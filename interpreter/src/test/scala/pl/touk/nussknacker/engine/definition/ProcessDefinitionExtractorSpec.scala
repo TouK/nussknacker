@@ -26,7 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers with OptionValues {
 
   private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
-    ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator,
+    ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator, getClass.getClassLoader,
       process.ProcessObjectDependencies(ConfigFactory.load(), ObjectNamingProvider(getClass.getClassLoader)))
 
   private val definitionWithTypes = ModelDefinitionWithTypes(processDefinition)
