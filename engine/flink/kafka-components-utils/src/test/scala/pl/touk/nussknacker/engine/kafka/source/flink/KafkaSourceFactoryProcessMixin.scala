@@ -35,7 +35,7 @@ trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with Kafk
   protected  lazy val creator: ProcessConfigCreator = new KafkaSourceFactoryProcessConfigCreator()
 
   protected lazy val modelDefinitionWithTypes: ModelDefinitionWithTypes =
-    ModelDefinitionWithTypes(ProcessDefinitionExtractor.extractObjectWithMethods(creator,
+    ModelDefinitionWithTypes(ProcessDefinitionExtractor.extractObjectWithMethods(creator, getClass.getClassLoader,
       process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader))))
 
   protected override def beforeAll(): Unit = {

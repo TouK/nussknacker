@@ -53,7 +53,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   }
 
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
-  private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(MyProcessConfigCreator,
+  private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(MyProcessConfigCreator, getClass.getClassLoader,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
   private val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
   private val validator = ProcessValidator.default(ModelDefinitionWithTypes(objectWithMethodDef), subprocessDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator)
