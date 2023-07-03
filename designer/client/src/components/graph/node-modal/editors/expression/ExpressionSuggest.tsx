@@ -14,6 +14,7 @@ import AceEditor from "./AceWithSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import ReactAce from "react-ace/lib/ace";
 import { ExpressionLang } from "./types";
+import { TypingResult } from "../../../../../types";
 import type { Ace } from "ace-builds";
 
 const { TokenIterator } = ace.require("ace/token_iterator");
@@ -23,6 +24,7 @@ const { TokenIterator } = ace.require("ace/token_iterator");
 // - maybe ESC should be allowed to hide suggestions but leave modal open?
 
 const identifierRegexpsWithoutDot = [/[#a-zA-Z0-9-_]/];
+const identifierRegexpsIncludingDot = [/[#a-zA-Z0-9-_.]/];
 
 function isSqlTokenAllowed(iterator, modeId): boolean {
     if (modeId === "ace/mode/sql") {
@@ -60,6 +62,14 @@ interface Props {
     variableTypes: Record<string, unknown>;
 }
 
+interface Completion<P = unknown> extends Ace.Completion {
+    description: ReactElement;
+    parameters: P[];
+    returnType: string;
+    name: string;
+    docHTML: string;
+}
+
 interface Editor extends Ace.Editor {
     readonly completer: {
         activated: boolean;
@@ -70,12 +80,16 @@ interface EditSession extends Ace.EditSession {
     readonly $modeId: unknown;
 }
 
-class CustomAceEditorCompleter implements Ace.Completer {
+interface AceEditorCompleter<P = unknown> extends Ace.Completer {
+    getDocTooltip(item: Completion<P>): void;
+
+    getCompletions(editor: Editor, session: EditSession, position: Ace.Point, prefix: string, callback: Ace.CompleterCallback): void;
+}
+
+class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: TypingResult; name: string }> {
     private isTokenAllowed = overSome([isSqlTokenAllowed, isSpelTokenAllowed]);
     // We add hash to identifier pattern to start suggestions just after hash is typed
-    public identifierRegexps = identifierRegexpsWithoutDot;
-    // This is necessary to make live auto complete works after dot
-    public triggerCharacters = ["."];
+    private identifierRegexps = identifierRegexpsIncludingDot;
 
     constructor(private expressionSuggester: ExpressionSuggester) {}
 
@@ -96,37 +110,54 @@ class CustomAceEditorCompleter implements Ace.Completer {
         }
 
         this.expressionSuggester.suggestionsFor(editor.getValue(), caretPosition2d).then((suggestions) => {
-            callback(
-                null,
-                map(suggestions, (s) => {
-                    const methodName = s.methodName;
-                    const returnType = ProcessUtils.humanReadableType(s.refClazz);
-
-                    let docHTML = null;
-                    if (s.description || !isEmpty(s.parameters)) {
-                        const paramsSignature = s.parameters
-                            .map((p) => `${ProcessUtils.humanReadableType(p.refClazz)} ${p.name}`)
-                            .join(", ");
-                        const javaStyleSignature = `${returnType} ${methodName}(${paramsSignature})`;
-                        docHTML = ReactDOMServer.renderToStaticMarkup(
-                            <div className="function-docs">
-                                <b>{javaStyleSignature}</b>
-                                <hr />
-                                <p>{s.description}</p>
-                            </div>,
-                        );
-                    }
-
-                    return {
-                        value: methodName,
-                        score: s.fromClass ? 1 : 1000,
-                        meta: returnType,
-                        className: `${s.fromClass ? `class` : `default`}Method ace_`,
-                        docHTML: docHTML,
-                    };
-                }),
-            );
+            // This trick enforce autocompletion to invoke getCompletions even if some result found before - in case if list of suggestions will change during typing
+            editor.completer.activated = false;
+            // We have dot in identifier pattern to enable live autocompletion after dots, but also we remove it from pattern just before callback, because
+            // otherwise our results lists will be filtered out (because entries not matches '#full.property.path' but only 'path')
+            this.identifierRegexps = identifierRegexpsWithoutDot;
+            try {
+                callback(
+                    null,
+                    map(suggestions, (s) => {
+                        const methodName = s.methodName;
+                        const returnType = ProcessUtils.humanReadableType(s.refClazz);
+                        return {
+                            name: methodName,
+                            value: methodName,
+                            score: s.fromClass ? 1 : 1000,
+                            meta: returnType,
+                            description: s.description,
+                            parameters: s.parameters,
+                            returnType: returnType,
+                            className: `${s.fromClass ? `class` : `default`}Method ace_`,
+                            // force ignore ace internal exactMatch setting based on penalty
+                            get exactMatch() {
+                                return 0;
+                            },
+                            set exactMatch(value) {
+                                return;
+                            },
+                        };
+                    }),
+                );
+            } finally {
+                this.identifierRegexps = identifierRegexpsIncludingDot;
+            }
         });
+    }
+
+    getDocTooltip(item: Completion<{ refClazz: TypingResult; name: string }>): void {
+        if (item.description || !isEmpty(item.parameters)) {
+            const paramsSignature = item.parameters.map((p) => `${ProcessUtils.humanReadableType(p.refClazz)} ${p.name}`).join(", ");
+            const javaStyleSignature = `${item.returnType} ${item.name}(${paramsSignature})`;
+            item.docHTML = ReactDOMServer.renderToStaticMarkup(
+                <div className="function-docs">
+                    <b>{javaStyleSignature}</b>
+                    <hr />
+                    <p>{item.description}</p>
+                </div>,
+            );
+        }
     }
 }
 
