@@ -251,7 +251,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         processDetails.lastStateAction match {
           case Some(_) =>
             DBIOAction.from(getStateFromDeploymentManager(manager, processDetails.idWithName, processDetails.lastStateAction)).map { statusWithFreshness =>
-              logger.debug(s"Status for: '${processDetails.name}' is: ${statusWithFreshness.value.status}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction.map(_.action)})")
+              logger.debug(s"Status for: '${processDetails.name}' is: ${statusWithFreshness.value.status}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction.map(_.actionType)})")
               statusWithFreshness.value
             }
           case _ => //We assume that the process never deployed should have no state at the engine
@@ -264,7 +264,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   //We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
   private def getArchivedProcessState(processDetails: BaseProcessDetails[_])(implicit manager: DeploymentManager) = {
-    processDetails.lastStateAction.map(_.action) match {
+    processDetails.lastStateAction.map(_.actionType) match {
       case Some(Cancel) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.Canceled, None)))

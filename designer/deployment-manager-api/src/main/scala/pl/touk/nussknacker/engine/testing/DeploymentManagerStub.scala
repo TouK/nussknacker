@@ -34,9 +34,9 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
   //We map lastStateAction to state to avoid some corner/blocking cases with the deleting/canceling scenario on tests..
   override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
     val lastStateActionStatus = lastStateAction match {
-      case Some(action) if action.action.equals(ProcessActionType.Deploy) =>
+      case Some(action) if action.actionType.equals(ProcessActionType.Deploy) =>
         SimpleStateStatus.Running
-      case Some(action) if action.action.equals(ProcessActionType.Cancel) =>
+      case Some(action) if action.actionType.equals(ProcessActionType.Cancel) =>
         SimpleStateStatus.Canceled
       case _ =>
         SimpleStateStatus.NotDeployed

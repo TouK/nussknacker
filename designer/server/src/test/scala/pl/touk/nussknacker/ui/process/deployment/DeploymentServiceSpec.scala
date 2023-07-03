@@ -115,7 +115,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.action.equals(ProcessActionType.Cancel)) shouldBe true
+    processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
     processDetails.lastDeployedAction shouldBe None
     //one for deploy, one for cancel
     activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
@@ -127,7 +127,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processIdName = ProcessIdWithName(id, processName)
 
     def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ProcessActionType]) = {
-      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.flatMap(_.lastStateAction).map(_.action) shouldBe expectedAction
+      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.flatMap(_.lastStateAction).map(_.actionType) shouldBe expectedAction
       deploymentService.getProcessState(processIdName).futureValue.status shouldBe expectedStatus
     }
 
@@ -184,8 +184,8 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.action.equals(ProcessActionType.Cancel)) shouldBe true
-    processDetails.history.head.actions.map(_.action) should be(List(ProcessActionType.Cancel, ProcessActionType.Deploy))
+    processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
+    processDetails.history.head.actions.map(_.actionType) should be(List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
 
   test("Should return canceled status for canceled process with not founded state - cleaned state") {
@@ -199,8 +199,8 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
 
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
-    processDetails.lastStateAction.exists(_.action.equals(ProcessActionType.Cancel)) shouldBe true
-    processDetails.history.head.actions.map(_.action) should be(List(ProcessActionType.Cancel, ProcessActionType.Deploy))
+    processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
+    processDetails.history.head.actions.map(_.actionType) should be(List(ProcessActionType.Cancel, ProcessActionType.Deploy))
   }
 
   test("Should return state with warning when state is running and process is canceled") {

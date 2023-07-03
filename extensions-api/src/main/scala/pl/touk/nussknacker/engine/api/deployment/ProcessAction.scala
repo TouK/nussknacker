@@ -12,7 +12,7 @@ import java.util.UUID
                                     processVersionId: VersionId,
                                     performedAt: Instant,
                                     user: String,
-                                    action: ProcessActionType,
+                                    actionType: ProcessActionType,
                                     commentId: Option[Long],
                                     comment: Option[String],
                                     buildInfo: Map[String, String])
