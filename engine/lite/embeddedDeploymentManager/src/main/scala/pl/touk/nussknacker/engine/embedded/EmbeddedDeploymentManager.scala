@@ -127,7 +127,7 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = Future.successful {
     deployments.get(name).map { interpreterData =>
       StatusDetails(
-        status = interpreterData.scenarioDeployment.fold(ex => ProblemStateStatus(s"Problems detected: ${ex.getMessage}"), _.status()),
+        status = interpreterData.scenarioDeployment.fold(ex => ProblemStateStatus(s"Scenario compilation errors"), _.status()),
         deploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId)),
         version = Some(interpreterData.processVersion))
     }

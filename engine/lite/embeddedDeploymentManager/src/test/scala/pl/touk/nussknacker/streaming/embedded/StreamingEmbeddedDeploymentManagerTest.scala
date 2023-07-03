@@ -95,7 +95,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
     manager.getProcessState(name).futureValue.value.map(_.status) should matchPattern {
-      case Some(ProblemStateStatus(msg, _)) if msg.contains(TopicParamName) =>
+      case Some(ProblemStateStatus("Scenario compilation errors", _)) =>
     }
   }
 
