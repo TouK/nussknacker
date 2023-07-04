@@ -51,6 +51,9 @@ jobs:
             fe_changes:
               - 'designer/client/**'
               - 'designer/submodules/**'
+              - 'docs/**'
+              - '**.md'
+              - '.github/workflows/pr.yml'
             all_changes:
               - '**'
       - name: Define variables
