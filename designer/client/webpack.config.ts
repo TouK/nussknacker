@@ -21,6 +21,7 @@ const isProd = process.env.NODE_ENV === "production";
 const entry = {
     main: path.resolve(__dirname, "./src/init.js"),
 };
+const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 
 const cssPreLoaders = [
     {
@@ -36,6 +37,7 @@ const cssPreLoaders = [
 const outputPath = path.join(process.cwd(), "dist");
 
 const mode = isProd ? "production" : "development";
+const isBundleReport = process.env.NODE_ENV === "bundleReport";
 const config: Configuration = {
     mode: mode,
     performance: {
@@ -187,6 +189,7 @@ const config: Configuration = {
         }),
         isProd ? null : new ReactRefreshWebpackPlugin({ overlay: false }),
         new webpack.ProgressPlugin(progressBar),
+        isBundleReport ? new BundleAnalyzerPlugin() : null,
     ].filter(Boolean),
     module: {
         rules: [
