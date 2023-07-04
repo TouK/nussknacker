@@ -14,7 +14,7 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
 
   //see config.js comment
   private lazy val mainContentFile = {
-    val mainPath = Path.of("/", "web", "static", "main.html").toString
+    val mainPath = "/web/static/main.html"
     val data = Try(ResourceLoader.load(mainPath))
     val content = data.toOption.getOrElse {
       logger.error(s"Failed to find $mainPath - probably frontend resources are not packaged in jar. Frontend won't work properly!")
