@@ -226,6 +226,7 @@ lazy val commonSettings =
         "org.apache.avro" % "avro" % avroV,
         "com.typesafe" % "config" % configV,
         "commons-io" % "commons-io" % flinkCommonsIOV,
+        "org.apache.commons" % "commons-text" % flinkCommonsTextV, // dependency of commons-lang3
         "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
 
         "io.circe" %% "circe-core" % circeV,
