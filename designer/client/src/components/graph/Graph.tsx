@@ -183,14 +183,14 @@ export class Graph extends React.Component<Props> {
 
     bindEventHandlers(): void {
         const showNodeDetails = (cellView: dia.CellView) => {
-            const { processToDisplay, readonly, nodeIdPrefixForSubprocessTests = "" } = this.props;
+            const { processToDisplay, readonly, nodeIdPrefixForFragmentTests = "" } = this.props;
             const { nodeData, edgeData } = cellView.model.attributes;
             const nodeId = nodeData?.id || (isEdgeEditable(edgeData) ? edgeData.from : null);
             if (nodeId) {
                 this.props.showModalNodeDetails(
                     {
                         ...NodeUtils.getNodeById(nodeId, processToDisplay),
-                        id: nodeIdPrefixForSubprocessTests + nodeId,
+                        id: nodeIdPrefixForFragmentTests + nodeId,
                     },
                     processToDisplay,
                     readonly,
@@ -437,9 +437,9 @@ export class Graph extends React.Component<Props> {
     };
 
     changeLayoutIfNeeded = (batched?: boolean): void => {
-        const { layout, layoutChanged, isSubprocess } = this.props;
+        const { layout, layoutChanged, isFragment } = this.props;
 
-        if (isSubprocess) {
+        if (isFragment) {
             return;
         }
 
@@ -514,15 +514,15 @@ export class Graph extends React.Component<Props> {
     }
 
     render(): JSX.Element {
-        const { divId, isSubprocess } = this.props;
+        const { divId, isFragment } = this.props;
         return (
             <>
                 <GraphPaperContainer
                     ref={this.setEspGraphRef}
-                    onResize={isSubprocess ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
+                    onResize={isFragment ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
                     id={divId}
                 />
-                {!isSubprocess && <ComponentDragPreview scale={this.zoom} />}
+                {!isFragment && <ComponentDragPreview scale={this.zoom} />}
             </>
         );
     }

@@ -121,8 +121,8 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                         .concat(value)
                         .some(
                             (f) =>
-                                (f === ScenariosFiltersModelType.SCENARIOS && !row.isSubprocess) ||
-                                (f === ScenariosFiltersModelType.FRAGMENTS && row.isSubprocess),
+                                (f === ScenariosFiltersModelType.SCENARIOS && !row.isFragment) ||
+                                (f === ScenariosFiltersModelType.FRAGMENTS && row.isFragment),
                         ),
                 STATUS: (row, filter) => !filter?.length || [].concat(filter).some((f) => row.state?.status?.name.includes(f)),
             }),

@@ -13,10 +13,10 @@ private[component] object DefaultsComponentIcon {
   val EnricherIcon = "/assets/components/Enricher.svg"
   val SinkIcon = "/assets/components/Sink.svg"
   val SourceIcon = "/assets/components/Source.svg"
-  val FragmentsIcon = "/assets/components/SubprocessInput.svg"
+  val FragmentsIcon = "/assets/components/FragmentInput.svg"
   val CustomNodeIcon = "/assets/components/CustomNode.svg"
-  val FragmentInputIcon = "/assets/components/SubprocessInputDefinition.svg"
-  val FragmentOutputIcon = "/assets/components/SubprocessOutputDefinition.svg"
+  val FragmentInputIcon = "/assets/components/FragmentInputDefinition.svg"
+  val FragmentOutputIcon = "/assets/components/FragmentOutputDefinition.svg"
 
   def fromComponentType(componentType: ComponentType): String = componentType match {
     case ComponentType.Filter => FilterIcon

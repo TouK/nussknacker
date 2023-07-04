@@ -2,11 +2,11 @@ import { Edge, EdgeKind, VariableTypes } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessToDisplay } from "../../../reducers/selectors/graph";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { NodeValue } from "./subprocess-input-definition/NodeValue";
+import { NodeValue } from "./fragment-input-definition/NodeValue";
 import { EdgeTypeOption, EdgeTypeSelect } from "./EdgeTypeSelect";
 import { EditableEditor } from "./editors/EditableEditor";
 import { css, cx } from "@emotion/css";
-import { FieldsRow } from "./subprocess-input-definition/FieldsRow";
+import { FieldsRow } from "./fragment-input-definition/FieldsRow";
 import { SelectWithFocus } from "../../withFocus";
 import NodeUtils from "../NodeUtils";
 import { uniq } from "lodash";
@@ -38,7 +38,7 @@ export function EdgeFields(props: Props): JSX.Element {
         onChange(edge);
     }, [edge, onChange]);
 
-    //NOTE: subprocess node preview is read only so we can ignore wrong "process" and nodes here.
+    //NOTE: fragment node preview is read only so we can ignore wrong "process" and nodes here.
     const availableNodes = process.nodes.filter((n) => NodeUtils.hasInputs(n));
     const otherEdges = useMemo(() => process.edges.filter((e) => e.from !== edge.from), [edge.from, process.edges]);
     const targetNodes = useMemo(() => availableNodes.filter((n) => n.id === edge.to), [availableNodes, edge.to]);

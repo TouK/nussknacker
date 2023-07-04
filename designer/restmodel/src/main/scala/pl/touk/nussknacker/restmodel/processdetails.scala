@@ -21,8 +21,11 @@ object processdetails {
 
   sealed trait Process {
     val lastAction: Option[ProcessAction]
+
     def isDeployed: Boolean = !isNotDeployed && lastAction.exists(_.isDeployed)
+
     def isCanceled: Boolean = !isNotDeployed && lastAction.exists(_.isCanceled)
+
     def isNotDeployed: Boolean = lastAction.isEmpty
   }
 
@@ -32,7 +35,7 @@ object processdetails {
       name = ProcessName(baseProcessDetails.name),
       processId = baseProcessDetails.processId,
       processVersionId = baseProcessDetails.processVersionId,
-      isSubprocess = baseProcessDetails.isSubprocess,
+      isFragment = baseProcessDetails.isFragment,
       isArchived = baseProcessDetails.isArchived,
       processCategory = baseProcessDetails.processCategory,
       processingType = baseProcessDetails.processingType,
@@ -53,7 +56,7 @@ object processdetails {
                                      processId: ApiProcessId,
                                      processVersionId: VersionId,
                                      isArchived: Boolean,
-                                     isSubprocess: Boolean,
+                                     isFragment: Boolean,
                                      processCategory: String,
                                      processingType: ProcessingType,
                                      modificationDate: Instant,
@@ -72,6 +75,7 @@ object processdetails {
   object BaseProcessDetails {
     //It's necessary to encode / decode ProcessState
     implicit def encoder[T](implicit shape: Encoder[T]): Encoder[BaseProcessDetails[T]] = deriveConfiguredEncoder
+
     implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveConfiguredDecoder
   }
 
@@ -82,7 +86,7 @@ object processdetails {
                                               isLatestVersion: Boolean,
                                               description: Option[String],
                                               isArchived: Boolean,
-                                              isSubprocess: Boolean,
+                                              isFragment: Boolean,
                                               processingType: ProcessingType,
                                               processCategory: String,
                                               modificationDate: Instant, //TODO: Deprecated, please use modifiedAt
@@ -103,7 +107,7 @@ object processdetails {
                                              ) extends Process {
     lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, ProcessName(name))
 
-    def mapProcess[NewShape](action: ProcessShape => NewShape) : BaseProcessDetails[NewShape] = copy(json = action(json))
+    def mapProcess[NewShape](action: ProcessShape => NewShape): BaseProcessDetails[NewShape] = copy(json = action(json))
 
     def toEngineProcessVersion: EngineProcessVersion = EngineProcessVersion(
       versionId = processVersionId,
@@ -121,9 +125,12 @@ object processdetails {
     // TODO: Find places where FetchDisplayable is used and think about replacing it with FetchCanonical. We generally should use displayable representation
     //       only in GUI (not for deployment or exports) and in GUI it should be post processed using ProcessDictSubstitutor
     implicit case object FetchDisplayable extends ProcessShapeFetchStrategy[DisplayableProcess]
+
     implicit case object FetchCanonical extends ProcessShapeFetchStrategy[CanonicalProcess]
+
     // In fact Unit won't be returned inside shape and Nothing would be more verbose but it won't help in compilation because Nothing <: DisplayableProcess
     implicit case object NotFetch extends ProcessShapeFetchStrategy[Unit]
+
     implicit case object FetchComponentsUsages extends ProcessShapeFetchStrategy[ScenarioComponentsUsages]
   }
 

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, spel}
@@ -55,8 +55,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   private val processBase = ScenarioBuilder.streaming("proc1").source("sourceId", "mySource")
   private val objectWithMethodDef = ProcessDefinitionExtractor.extractObjectWithMethods(MyProcessConfigCreator, getClass.getClassLoader,
     process.ProcessObjectDependencies(ConfigFactory.empty, ObjectNamingProvider(getClass.getClassLoader)))
-  private val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
-  private val validator = ProcessValidator.default(ModelDefinitionWithTypes(objectWithMethodDef), subprocessDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator)
+  private val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+  private val validator = ProcessValidator.default(ModelDefinitionWithTypes(objectWithMethodDef), fragmentDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator)
 
   private val expectedGenericParameters = List(
     Parameter[String]("par1").copy(editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
@@ -95,22 +95,22 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   test("should validate sources") {
     val result = validator.validate(
       ScenarioBuilder.streaming("proc1").source("sourceId", "genericParametersSource",
-           "par1" -> "'val1,val2,val3'",
-           "lazyPar1" -> "'ll' == null ? 1 : 5",
-           "val1" -> "'aa'",
-           "val2" -> "11",
-           "val3" -> "{false}"
-         )
-         .emptySink("end", "dummySink")
-     )
-     result.result shouldBe Symbol("valid")
-     val info1 = result.typing("end")
+        "par1" -> "'val1,val2,val3'",
+        "lazyPar1" -> "'ll' == null ? 1 : 5",
+        "val1" -> "'aa'",
+        "val2" -> "11",
+        "val3" -> "{false}"
+      )
+        .emptySink("end", "dummySink")
+    )
+    result.result shouldBe Symbol("valid")
+    val info1 = result.typing("end")
 
-     info1.inputValidationContext("otherNameThanInput") shouldBe TypedObjectTypingResult(Map(
-       "val1" -> Typed.fromInstance("aa"),
-       "val2" -> Typed.fromInstance(11),
-       "val3" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromInstance(false)))
-     ))
+    info1.inputValidationContext("otherNameThanInput") shouldBe TypedObjectTypingResult(Map(
+      "val1" -> Typed.fromInstance("aa"),
+      "val2" -> Typed.fromInstance(11),
+      "val3" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromInstance(false)))
+    ))
 
     result.parametersInNodes("sourceId") shouldBe expectedGenericParameters
   }
@@ -118,34 +118,34 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   test("should validate sinks") {
     val result = validator.validate(
       processBase.emptySink("end", "genericParametersSink",
-           "par1" -> "'val1,val2,val3'",
-           "lazyPar1" -> "#input == null ? 1 : 5",
-           "val1" -> "'aa'",
-           "val2" -> "11",
-           "val3" -> "{false}"
-         )
-     )
-     result.result shouldBe Symbol("valid")
+        "par1" -> "'val1,val2,val3'",
+        "lazyPar1" -> "#input == null ? 1 : 5",
+        "val1" -> "'aa'",
+        "val2" -> "11",
+        "val3" -> "{false}"
+      )
+    )
+    result.result shouldBe Symbol("valid")
 
     result.parametersInNodes("end") shouldBe expectedGenericParameters
   }
 
   test("should validate services") {
     val result = validator.validate(
-    processBase.processor("genericProcessor", "genericParametersProcessor",
-              "par1" -> "'val1,val2,val3'",
-              "lazyPar1" -> "#input == null ? 1 : 5",
-              "val1" -> "'aa'",
-              "val2" -> "11",
-              "val3" -> "{false}"
-            ).enricher("genericEnricher", "out", "genericParametersProcessor",
-                "par1" -> "'val1,val2,val3'",
-                "lazyPar1" -> "#input == null ? 1 : 5",
-                "val1" -> "'aa'",
-                "val2" -> "11",
-                "val3" -> "{false}"
-              )
-            .emptySink("end", "dummySink")
+      processBase.processor("genericProcessor", "genericParametersProcessor",
+        "par1" -> "'val1,val2,val3'",
+        "lazyPar1" -> "#input == null ? 1 : 5",
+        "val1" -> "'aa'",
+        "val2" -> "11",
+        "val3" -> "{false}"
+      ).enricher("genericEnricher", "out", "genericParametersProcessor",
+        "par1" -> "'val1,val2,val3'",
+        "lazyPar1" -> "#input == null ? 1 : 5",
+        "val1" -> "'aa'",
+        "val2" -> "11",
+        "val3" -> "{false}"
+      )
+        .emptySink("end", "dummySink")
     )
     result.result shouldBe Symbol("valid")
 
@@ -258,23 +258,23 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   test("should compute dynamic parameters in joins") {
 
     val process = ScenarioBuilder.streaming("proc1").sources(
-        GraphBuilder
-          .source("sourceId1", "mySource")
-          .buildSimpleVariable("var1", "intVal", "123")
-          .branchEnd("branch1", "join1"),
-        GraphBuilder
-          .source("sourceId2", "mySource")
-          .buildSimpleVariable("var2", "strVal", "'abc'")
-          .branchEnd("branch2", "join1"),
-        GraphBuilder
-          .join("join1", "genericJoin", Some("outPutVar"),
-            List(
-              "branch1" -> List("isLeft" -> "true"),
-              "branch2" -> List("isLeft" -> "false")
-            ), "rightValue" -> "#strVal + 'dd'"
-          )
-          .emptySink("end", "dummySink")
-      )
+      GraphBuilder
+        .source("sourceId1", "mySource")
+        .buildSimpleVariable("var1", "intVal", "123")
+        .branchEnd("branch1", "join1"),
+      GraphBuilder
+        .source("sourceId2", "mySource")
+        .buildSimpleVariable("var2", "strVal", "'abc'")
+        .branchEnd("branch2", "join1"),
+      GraphBuilder
+        .join("join1", "genericJoin", Some("outPutVar"),
+          List(
+            "branch1" -> List("isLeft" -> "true"),
+            "branch2" -> List("isLeft" -> "false")
+          ), "rightValue" -> "#strVal + 'dd'"
+        )
+        .emptySink("end", "dummySink")
+    )
     val validationResult = validator.validate(process)
 
     val varsInEnd = validationResult.variablesInNodes("end")

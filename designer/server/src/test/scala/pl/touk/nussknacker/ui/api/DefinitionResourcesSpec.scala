@@ -27,7 +27,7 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
   private val definitionResources = new DefinitionResources(
     modelDataProvider = testModelDataProvider,
     processingTypeDataProvider = testProcessingTypeDataProvider,
-    subprocessRepository,
+    fragmentRepository,
     processCategoryService
   )
 
@@ -67,10 +67,10 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
 
   it("should return info about editor based on fragment node configuration") {
     val processName = ProcessName(SampleProcess.process.id)
-    val processWithSubProcess = ProcessTestData.validProcessWithSubprocess(processName)
-    val displayableSubProcess = ProcessConverter.toDisplayable(processWithSubProcess.subprocess, TestProcessingTypes.Streaming, TestCategories.TestCat)
-    saveSubProcess(displayableSubProcess)(succeed)
-    saveProcess(processName, processWithSubProcess.process, TestCat)(succeed)
+    val processWithfragment = ProcessTestData.validProcessWithFragment(processName)
+    val displayablefragment = ProcessConverter.toDisplayable(processWithfragment.fragment, TestProcessingTypes.Streaming, TestCategories.TestCat)
+    savefragment(displayablefragment)(succeed)
+    saveProcess(processName, processWithfragment.process, TestCat)(succeed)
 
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK
@@ -79,7 +79,7 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
 
       val editor = response
         .downField("processDefinition")
-        .downField("subprocessInputs")
+        .downField("fragmentInputs")
         .downField("sub1")
         .downField("parameters")
         .downAt(_.hcursor.get[String]("name").rightValue == "param1")
@@ -229,6 +229,6 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
   }
 
   private def getProcessDefinitionData(processingType: String): RouteTestResult = {
-    Get(s"/processDefinitionData/$processingType?isSubprocess=false") ~> withPermissions(definitionResources, testPermissionRead)
+    Get(s"/processDefinitionData/$processingType?isFragment=false") ~> withPermissions(definitionResources, testPermissionRead)
   }
 }

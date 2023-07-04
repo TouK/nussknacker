@@ -1,0 +1,1 @@
+ALTER TABLE "processes" RENAME COLUMN "is_subprocess" TO "is_fragment";

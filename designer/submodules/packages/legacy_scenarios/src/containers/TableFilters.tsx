@@ -2,12 +2,12 @@ import React, { Dispatch, SetStateAction } from "react";
 import { CategoriesFilter } from "../components/table/CategoriesFilter";
 import { StatusFilter } from "../components/table/StatusFilter";
 import SearchFilter from "../components/table/SearchFilter";
-import { SubprocessFilter } from "../components/table/SubprocessFilter";
+import { FragmentFilter } from "../components/table/FragmentFilter";
 import { ensureArray } from "../common/arrayUtils";
 
 export enum SearchItem {
     categories = "categories",
-    isSubprocess = "isSubprocess",
+    isFragment = "isFragment",
     isDeployed = "isDeployed",
 }
 
@@ -16,7 +16,7 @@ export type CategoryName = string;
 export type FiltersState = Partial<{
     search: string;
     categories: CategoryName[];
-    isSubprocess: boolean;
+    isFragment: boolean;
     isDeployed: boolean;
 }>;
 
@@ -41,8 +41,8 @@ export function TableFilters(props: Props): JSX.Element {
                 />
             )}
 
-            {filters.includes(SearchItem.isSubprocess) && (
-                <SubprocessFilter onChange={(isSubprocess) => onChange((s) => ({ ...s, isSubprocess }))} value={value.isSubprocess} />
+            {filters.includes(SearchItem.isFragment) && (
+                <FragmentFilter onChange={(isFragment) => onChange((s) => ({ ...s, isFragment }))} value={value.isFragment} />
             )}
 
             {filters.includes(SearchItem.isDeployed) && (

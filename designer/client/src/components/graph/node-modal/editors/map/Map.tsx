@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Field, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
-import { FieldsRow } from "../../subprocess-input-definition/FieldsRow";
-import { Items } from "../../subprocess-input-definition/Items";
-import { NodeRowFields } from "../../subprocess-input-definition/NodeRowFields";
+import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
+import { Items } from "../../fragment-input-definition/Items";
+import { NodeRowFields } from "../../fragment-input-definition/NodeRowFields";
 import { Error, mandatoryValueValidator, uniqueListValueValidator, Validator } from "../Validators";
 import MapKey from "./MapKey";
 import MapValue from "./MapValue";

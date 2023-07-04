@@ -18,10 +18,10 @@ export type ProcessingType = string;
 
 export function fetchProcessDefinition(
     processingType: ProcessingType,
-    isSubprocess?: boolean,
+    isFragment?: boolean,
 ): ThunkAction<Promise<ProcessDefinitionDataAction>> {
     return (dispatch) => {
-        return HttpService.fetchProcessDefinitionData(processingType, isSubprocess).then((response) =>
+        return HttpService.fetchProcessDefinitionData(processingType, isFragment).then((response) =>
             dispatch(processDefinitionData(response.data)),
         );
     };

@@ -19,7 +19,7 @@ class ScenarioComponentsUsagesHelperTest extends AnyFunSuite with Matchers {
       .filter("checkId", "#input.id != null")
       .buildSimpleVariable("var1", "varName", "''")
       .filter("checkId2", "#input.id != null")
-      .subprocessOneOut("subProcess1", "barSubProcess", "out", "subOutput")
+      .fragmentOneOut("fragment1", "barfragment", "out", "subOutput")
       .switch("switch1", "#input.id != null", "output",
         Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
         Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
@@ -31,7 +31,7 @@ class ScenarioComponentsUsagesHelperTest extends AnyFunSuite with Matchers {
       ComponentIdParts(Some(existingSourceFactory), ComponentType.Source) -> List("source"),
       ComponentIdParts(None, ComponentType.Filter) -> List("checkId", "checkId2"),
       ComponentIdParts(None, ComponentType.Variable) -> List("var1"),
-      ComponentIdParts(Some("barSubProcess"), ComponentType.Fragments) -> List("subProcess1"),
+      ComponentIdParts(Some("barfragment"), ComponentType.Fragments) -> List("fragment1"),
       ComponentIdParts(None, ComponentType.Switch) -> List("switch1"),
       ComponentIdParts(Some(existingSinkFactory), ComponentType.Sink) -> List("out1"),
       ComponentIdParts(Some(existingSinkFactory2), ComponentType.Sink) -> List("out2"),

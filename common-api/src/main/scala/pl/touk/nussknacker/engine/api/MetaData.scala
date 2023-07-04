@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 // todo: MetaData should hold ProcessName as id
 @ConfiguredJsonCodec(encodeOnly = true) case class MetaData(id: String,
                                                             additionalFields: ProcessAdditionalFields) {
-  def isSubprocess: Boolean = typeSpecificData.isSubprocess
+  def isFragment: Boolean = typeSpecificData.isFragment
 
   def typeSpecificData: TypeSpecificData = additionalFields.typeSpecificProperties
 

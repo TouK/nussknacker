@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { Edge, NodeType } from "../../../../types";
 import NodeUtils from "../../NodeUtils";
 import { ContentSize } from "./ContentSize";
-import { SubprocessContent } from "./SubprocessContent";
+import { FragmentContent } from "./FragmentContent";
 import { getNodeErrors, getPropertiesErrors } from "./selectors";
 import { RootState } from "../../../../reducers";
 import { NodeDetailsContent } from "../NodeDetailsContent";
@@ -25,7 +25,7 @@ export function NodeGroupContent({ node, edges, onChange }: Props): JSX.Element 
             <ContentSize>
                 <NodeDetailsContent node={node} edges={edges} onChange={onChange} nodeErrors={errors} showValidation showSwitch />
             </ContentSize>
-            {NodeUtils.nodeIsSubprocess(node) && <SubprocessContent nodeToDisplay={node} />}
+            {NodeUtils.nodeIsFragment(node) && <FragmentContent nodeToDisplay={node} />}
         </div>
     );
 }

@@ -9,7 +9,7 @@ const options: OptionType<boolean | never>[] = [
     { label: "Show only fragments", value: true },
 ];
 
-export function SubprocessFilter(props: ValueFieldProps<boolean | never>): JSX.Element {
+export function FragmentFilter(props: ValueFieldProps<boolean | never>): JSX.Element {
     const { onChange } = props;
     const value = useParseValue(options, props.value);
     return (

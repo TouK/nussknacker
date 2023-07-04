@@ -6,8 +6,8 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Depl
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.{NodeData, FragmentInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails._
@@ -32,24 +32,24 @@ object TestProcessUtil {
     Encoder[DisplayableProcess].apply(toDisplayable(espProcess, processingType))
 
   def createBasicProcess(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, lastAction: Option[ProcessActionType] = None, json: Option[DisplayableProcess] = None): BaseProcessDetails[DisplayableProcess] =
-    toDetails(name, category, isSubprocess = false, isArchived, processingType, json = json, lastAction = lastAction)
+    toDetails(name, category, isFragment = false, isArchived, processingType, json = json, lastAction = lastAction)
 
-  def createSubProcess(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None): BaseProcessDetails[DisplayableProcess] =
-    toDetails(name, category, isSubprocess = true, isArchived, processingType, lastAction = lastAction, json = Some(json.getOrElse(createDisplayableSubprocess(name, processingType, category))))
+  def createfragment(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None): BaseProcessDetails[DisplayableProcess] =
+    toDetails(name, category, isFragment = true, isArchived, processingType, lastAction = lastAction, json = Some(json.getOrElse(createDisplayableFragment(name, processingType, category))))
 
-  def displayableToProcess(displayable: DisplayableProcess, category: Category = TestCategories.Category1, isArchived: Boolean = false, isSubprocess: Boolean = false) : ProcessDetails =
-    toDetails(displayable.id, category, isArchived = isArchived, processingType = displayable.processingType, json = Some(displayable), isSubprocess = isSubprocess)
+  def displayableToProcess(displayable: DisplayableProcess, category: Category = TestCategories.Category1, isArchived: Boolean = false, isFragment: Boolean = false): ProcessDetails =
+    toDetails(displayable.id, category, isArchived = isArchived, processingType = displayable.processingType, json = Some(displayable), isFragment = isFragment)
 
-  def validatedToProcess(displayable: ValidatedDisplayableProcess) : ValidatedProcessDetails =
+  def validatedToProcess(displayable: ValidatedDisplayableProcess): ValidatedProcessDetails =
     toDetails(
       displayable.id,
       processingType = displayable.processingType,
       category = displayable.category
     ).copy(json = displayable)
 
-  def toDetails(name: String, category: Category = TestCategories.Category1, isSubprocess: Boolean = false, isArchived: Boolean = false,
+  def toDetails(name: String, category: Category = TestCategories.Category1, isFragment: Boolean = false, isArchived: Boolean = false,
                 processingType: ProcessingType = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None,
-                description: Option[String] = None, history: Option[List[ProcessVersion]] = None) : ProcessDetails = {
+                description: Option[String] = None, history: Option[List[ProcessVersion]] = None): ProcessDetails = {
     val jsonData = json.map(_.copy(id = name, processingType = processingType, category = category)).getOrElse(createEmptyJson(name, processingType, category))
     BaseProcessDetails[DisplayableProcess](
       id = name,
@@ -59,7 +59,7 @@ object TestProcessUtil {
       isLatestVersion = true,
       description = description,
       isArchived = isArchived,
-      isSubprocess = isSubprocess,
+      isFragment = isFragment,
       processingType = processingType,
       processCategory = category,
       modificationDate = Instant.now(),
@@ -91,10 +91,10 @@ object TestProcessUtil {
     DisplayableProcess(id, ProcessProperties(typeSpecificProperties), Nil, Nil, processingType, category)
   }
 
-  def createDisplayableSubprocess(name: String, processingType: ProcessingType, category: Category): DisplayableProcess =
-    createDisplayableSubprocess(name, List(SubprocessInputDefinition("input", List(SubprocessParameter("in", SubprocessClazzRef[String])))), processingType, category)
+  def createDisplayableFragment(name: String, processingType: ProcessingType, category: Category): DisplayableProcess =
+    createDisplayableFragment(name, List(FragmentInputDefinition("input", List(FragmentParameter("in", FragmentClazzRef[String])))), processingType, category)
 
-  def createDisplayableSubprocess(name: String, nodes: List[NodeData], processingType: ProcessingType, category: Category): DisplayableProcess =
+  def createDisplayableFragment(name: String, nodes: List[NodeData], processingType: ProcessingType, category: Category): DisplayableProcess =
     DisplayableProcess(name, ProcessProperties(FragmentSpecificData()), nodes, Nil, processingType, category)
 
   def createProcessAction(action: ProcessActionType): ProcessAction = ProcessAction(

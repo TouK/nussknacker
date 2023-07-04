@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
-import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.{Source, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -22,16 +22,16 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     case spel: SpelExpressionParser => spel.typingDictLabels
   }
 
-  private lazy val nodeCompiler = new NodeCompiler(modelData.modelDefinition, SubprocessComponentDefinitionExtractor(modelData), expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, ComponentUseCase.TestDataGeneration)
+  private lazy val nodeCompiler = new NodeCompiler(modelData.modelDefinition, FragmentComponentDefinitionExtractor(modelData), expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, ComponentUseCase.TestDataGeneration)
 
   override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = {
     collectAllSources(scenario).map(getTestingCapabilities(_, scenario.metaData)) match {
       case Nil => TestingCapabilities.Disabled
-      case s => s.reduce((tc1, tc2) => TestingCapabilities (
-          canBeTested = tc1.canBeTested || tc2.canBeTested,
-          canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
-          canTestWithForm = tc1.canTestWithForm && tc2.canTestWithForm, //TODO change to "or" after adding support for multiple sources
-        ))
+      case s => s.reduce((tc1, tc2) => TestingCapabilities(
+        canBeTested = tc1.canBeTested || tc2.canBeTested,
+        canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData,
+        canTestWithForm = tc1.canTestWithForm && tc2.canTestWithForm, //TODO change to "or" after adding support for multiple sources
+      ))
     }
   }
 

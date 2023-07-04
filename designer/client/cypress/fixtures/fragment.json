@@ -40,7 +40,7 @@
                     "y": 0
                 }
             },
-            "type": "SubprocessInputDefinition"
+            "type": "FragmentInputDefinition"
         },
         {
             "id": "output",
@@ -68,7 +68,7 @@
                     "y": 0
                 }
             },
-            "type": "SubprocessOutputDefinition"
+            "type": "FragmentOutputDefinition"
         }
     ],
     "additionalBranches": []

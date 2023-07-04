@@ -31,7 +31,7 @@ export interface GraphProps {
 
     processToDisplay: Process;
     divId: string;
-    nodeIdPrefixForSubprocessTests?: string;
+    nodeIdPrefixForFragmentTests?: string;
     processCounts: ProcessCounts;
     capabilities: Capabilities;
     fetchedProcessDetails: ProcessType;
@@ -40,7 +40,7 @@ export interface GraphProps {
     readonly?: boolean;
     nodeSelectionEnabled?: boolean;
     isDraggingOver?: boolean;
-    isSubprocess?: boolean;
+    isFragment?: boolean;
 
     connectDropTarget;
 }

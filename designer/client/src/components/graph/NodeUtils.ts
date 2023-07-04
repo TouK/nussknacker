@@ -11,7 +11,7 @@ import {
     Process,
     ProcessDefinitionData,
     PropertiesType,
-    SubprocessNodeType,
+    FragmentNodeType,
     UINodeType,
 } from "../../types";
 import { UnknownRecord } from "../../types/common";
@@ -30,8 +30,8 @@ class NodeUtils {
         return type === "Properties";
     };
 
-    nodeIsSubprocess = (node): node is SubprocessNodeType => {
-        return this.nodeType(node) === "SubprocessInput";
+    nodeIsFragment = (node): node is FragmentNodeType => {
+        return this.nodeType(node) === "FragmentInput";
     };
 
     isPlainNode = (node: UINodeType) => {
@@ -107,7 +107,7 @@ class NodeUtils {
         const edgeType = edge?.edgeType;
         const type = edgeType?.type;
         switch (type) {
-            case EdgeKind.subprocessOutput:
+            case EdgeKind.fragmentOutput:
                 return edgeType?.name;
             case EdgeKind.switchNext:
                 return edgeType?.condition?.expression;
@@ -180,11 +180,11 @@ class NodeUtils {
         return `${edge.from}-${edge.to}`;
     };
 
-    noInputNodeTypes = ["Source", "SubprocessInputDefinition"];
+    noInputNodeTypes = ["Source", "FragmentInputDefinition"];
 
-    noOutputNodeTypes = ["Sink", "SubprocessOutputDefinition"];
+    noOutputNodeTypes = ["Sink", "FragmentOutputDefinition"];
 
-    //TODO: methods below should be based on backend data, e.g. Subprocess can have outputs or not - based on individual subprocess...
+    //TODO: methods below should be based on backend data, e.g. Fragment can have outputs or not - based on individual fragment...
     hasInputs = (node: NodeType) => !this.noInputNodeTypes.some((nodeType) => _.isEqual(nodeType, node?.type));
 
     hasOutputs = (node: NodeType) => !this.noOutputNodeTypes.some((nodeType) => _.isEqual(nodeType, node?.type));

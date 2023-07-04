@@ -54,7 +54,7 @@ export interface ProcessDefinition {
     sourceFactories?: Record<string, NodeObjectTypeDefinition>;
     sinkFactories?: Record<string, NodeObjectTypeDefinition>;
     customStreamTransformers?: Record<string, NodeObjectTypeDefinition>;
-    subprocessInputs?: Record<string, NodeObjectTypeDefinition>;
+    fragmentInputs?: Record<string, NodeObjectTypeDefinition>;
     globalVariables?: GlobalVariables;
     typesInformation?: ClassDefinition[];
 }

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
@@ -61,7 +61,7 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
 
     badComponentsType.foreach(componentType => {
       val name = componentType.toString
-      intercept[IllegalArgumentException]{
+      intercept[IllegalArgumentException] {
         provider.createComponentId(processingType, Some(name), componentType)
       }.getMessage shouldBe s"Component id can't be overridden for: '$name' with component type: '$componentType'."
     })
@@ -75,17 +75,17 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
       (VariableBuilder(componentName, "", Nil), Some(cid(ComponentType.MapVariable))),
       (Variable(componentName, "", ""), Some(cid(ComponentType.Variable))),
       (Split(componentName), Some(cid(ComponentType.Split))),
-      (SubprocessInputDefinition(componentName, Nil), Some(cid(ComponentType.FragmentInput))),
-      (SubprocessOutputDefinition(componentName, ""), Some(cid(ComponentType.FragmentOutput))),
+      (FragmentInputDefinition(componentName, Nil), Some(cid(ComponentType.FragmentInput))),
+      (FragmentOutputDefinition(componentName, ""), Some(cid(ComponentType.FragmentOutput))),
 
       (Source("source", SourceRef(componentName, Nil)), Some(cid(ComponentType.Source))),
       (Sink("sink", SinkRef(componentName, Nil)), Some(cid(ComponentType.Sink))),
       (Enricher("enricher", ServiceRef(componentName, Nil), "out"), Some(cid(ComponentType.Enricher))),
       (Processor("processor", ServiceRef(componentName, Nil)), Some(cid(ComponentType.Processor))),
       (CustomNode("custom", None, componentName, Nil), Some(cid(ComponentType.CustomNode))),
-      (SubprocessInput("subprocess", SubprocessRef(componentName, Nil)), Some(cid(ComponentType.Fragments))),
+      (FragmentInput("fragment", FragmentRef(componentName, Nil)), Some(cid(ComponentType.Fragments))),
 
-      (SubprocessUsageOutput("output", componentName, None), None),
+      (FragmentUsageOutput("output", componentName, None), None),
       (BranchEndData(BranchEndDefinition("", "")), None),
 
       (Source("source", SourceRef(componentNameToOverride, Nil)), Some(overriddenId)),

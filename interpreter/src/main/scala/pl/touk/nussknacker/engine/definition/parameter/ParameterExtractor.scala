@@ -16,7 +16,7 @@ import scala.util.control.NonFatal
 
 object ParameterExtractor {
 
-  //TODO: extract more logic to be handled by ParameterData etc. so that it can be reused in UIProcessObjectsFactory to determine subprocess data...
+  //TODO: extract more logic to be handled by ParameterData etc. so that it can be reused in UIProcessObjectsFactory to determine fragment data...
   def extractParameter(p: java.lang.reflect.Parameter, componentConfig: SingleComponentConfig): Parameter = {
     val nodeParamNames = Option(p.getAnnotation(classOf[ParamName]))
       .map(_.value())

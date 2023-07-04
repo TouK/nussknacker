@@ -6,14 +6,14 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, SubprocessInputDefinition, SubprocessUsageOutput, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, FragmentInputDefinition, FragmentUsageOutput, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect._
 
 /**
-  * Rewrites data of each node in process without changing the structure of process graph.
-  */
+ * Rewrites data of each node in process without changing the structure of process graph.
+ */
 trait ProcessNodesRewriter {
 
   def rewriteProcess(canonicalProcess: CanonicalProcess): CanonicalProcess = {
@@ -43,29 +43,29 @@ trait ProcessNodesRewriter {
         SplitNode(
           rewriteIfMatching(data),
           nodes.map(rewriteNodes))
-      case Subprocess(data, outputs) =>
-        Subprocess(
+      case Fragment(data, outputs) =>
+        Fragment(
           rewriteIfMatching(data),
           outputs.map { case (k, v) => (k, rewriteNodes(v)) })
     }
   }
 
-  protected def rewriteIfMatching[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): T = {
+  protected def rewriteIfMatching[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): T = {
     val rewritten = rewriteNode(data).getOrElse(data)
     assume(rewritten.isInstanceOf[T], s"Result type of rewritten node's data: ${rewritten.getClass} is not a subtype of expected type: ${classTag[T].runtimeClass}")
     rewritten
   }
 
   /**
-    * Rewrites node's data. Result type should be a subtype of T. Type parameter T depends on place in structure that is rewritten.
-    * See `rewriteSingleNode` for implementation details.
-    *
-    * @param data node's data
-    * @param metaData process metada
-    * @tparam T required common supertype for input `data` and result
-    * @return rewritten data that satisfy T
-    */
-  protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T]
+   * Rewrites node's data. Result type should be a subtype of T. Type parameter T depends on place in structure that is rewritten.
+   * See `rewriteSingleNode` for implementation details.
+   *
+   * @param data     node's data
+   * @param metaData process metada
+   * @tparam T required common supertype for input `data` and result
+   * @return rewritten data that satisfy T
+   */
+  protected def rewriteNode[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): Option[T]
 
 }
 
@@ -78,7 +78,7 @@ object ProcessNodesRewriter {
     }
     new ProcessNodesRewriter {
 
-      override protected def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
+      override protected def rewriteNode[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): Option[T] =
         Some(exprRewriter.rewriteNode(data))
     }
   }
@@ -87,7 +87,7 @@ object ProcessNodesRewriter {
 
 trait ExpressionRewriter {
 
-  def rewriteNode[T <: NodeData: ClassTag](data: T)(implicit metaData: MetaData): T = {
+  def rewriteNode[T <: NodeData : ClassTag](data: T)(implicit metaData: MetaData): T = {
     implicit val nodeId: NodeId = NodeId(data.id)
     rewriteNodeInternal(data).asInstanceOf[T]
   }
@@ -116,7 +116,7 @@ trait ExpressionRewriter {
       case n: node.Sink =>
         n.copy(
           ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))
-      case n: node.SubprocessInput =>
+      case n: node.FragmentInput =>
         n.copy(
           ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))
       case n: node.Filter =>
@@ -128,13 +128,13 @@ trait ExpressionRewriter {
       case n: Source =>
         n.copy(
           ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))
-      case n: SubprocessOutputDefinition =>
+      case n: FragmentOutputDefinition =>
         n.copy(
           fields = rewriteFields(n.fields))
-      case n: SubprocessUsageOutput =>
+      case n: FragmentUsageOutput =>
         n.copy(
           outputVar = n.outputVar.map(ov => ov.copy(fields = rewriteFields(ov.fields))))
-      case _: BranchEndData | _: Split | _: SubprocessInputDefinition => data
+      case _: BranchEndData | _: Split | _: FragmentInputDefinition => data
     }
 
   private def rewriteFields(list: List[Field])(implicit metaData: MetaData, nodeId: NodeId): List[Field] =

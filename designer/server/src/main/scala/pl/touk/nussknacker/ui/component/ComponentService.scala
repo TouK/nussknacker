@@ -69,7 +69,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
   override def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
-      .getProcessesAndSubprocesses[ScenarioComponentsUsages]
+      .getProcessesAndFragments[ScenarioComponentsUsages]
       .map { processDetailsList =>
         val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processDetailsList)
 
@@ -95,7 +95,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
   private def getUserAccessibleComponentUsages(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] = {
     processService
-      .getProcessesAndSubprocesses[ScenarioComponentsUsages]
+      .getProcessesAndFragments[ScenarioComponentsUsages]
       .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }
 
@@ -103,10 +103,10 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
                                                       processingType: ProcessingType,
                                                       user: LoggedUser): Future[List[ComponentListElement]] = {
     processService
-      .getSubprocessesDetails(processingTypes = Some(List(processingType)))(user)
-      .map { subprocesses =>
+      .getFragmentsDetails(processingTypes = Some(List(processingType)))(user)
+      .map { fragments =>
         // We assume that fragments have unique component ids ($processing-type-fragment-$name) thus we do not need to validate them.
-        val componentObjects = componentObjectsService.prepare(processingType, processingTypeData, user, subprocesses)
+        val componentObjects = componentObjectsService.prepare(processingType, processingTypeData, user, fragments)
         createComponents(componentObjects, processingType, componentIdProvider)
       }
   }

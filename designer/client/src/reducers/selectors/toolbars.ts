@@ -3,14 +3,14 @@ import { RootState } from "../index";
 import { ToolbarsSide, ToolbarsState, ToolbarsStates } from "../toolbars";
 import { createSelector } from "reselect";
 import { getSettings } from "./settings";
-import { isArchived, isSubprocess } from "./graph";
+import { isArchived, isFragment } from "./graph";
 
 const getToolbarsState = (state: RootState): ToolbarsStates => state.toolbars || {};
 export const getToolbarsConfig = createSelector(
     getSettings,
-    isSubprocess,
+    isFragment,
     isArchived,
-    (settings, subprocess, archived) => settings?.processToolbarsConfiguration || defaultToolbarsConfig(subprocess, archived),
+    (settings, fragment, archived) => settings?.processToolbarsConfiguration || defaultToolbarsConfig(fragment, archived),
 );
 export const getToolbarsConfigId = createSelector(getToolbarsConfig, getToolbarsState, (c, t) => c?.id || t?.currentConfigId);
 export const getToolbars = createSelector(getToolbarsState, getToolbarsConfigId, (t, id) => t?.[`#${id}`] || ({} as ToolbarsState));

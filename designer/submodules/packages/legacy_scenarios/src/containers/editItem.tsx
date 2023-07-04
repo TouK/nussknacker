@@ -16,7 +16,7 @@ export function EditItem({ process }: { process: ProcessType }) {
 export function ShowItem({ process }: { process: ProcessType }) {
     const { t } = useTranslation();
 
-    const title = process.isSubprocess ? t("tableRowIcon-show-subprocess", "Show fragment") : t("tableRowIcon-show", "Show scenario");
+    const title = process.isFragment ? t("tableRowIcon-show-fragment", "Show fragment") : t("tableRowIcon-show", "Show scenario");
 
     return (
         <ProcessLink processId={process.name}>

@@ -71,7 +71,7 @@ function Processes() {
     return (
         <Page className={tabStyles.tabContentPage}>
             <ProcessesList
-                defaultQuery={{ isSubprocess: false, isArchived: false }}
+                defaultQuery={{ isFragment: false, isArchived: false }}
                 searchItems={[SearchItem.categories, SearchItem.isDeployed]}
                 sortable={sortable}
                 filterable={filterable}

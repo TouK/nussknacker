@@ -6,7 +6,7 @@ import { TestCapabilities, TestResults, TestFormParameters } from "../../common/
 export interface NodeCounts {
     errors?: number;
     all?: number;
-    subprocessCounts?: ProcessCounts;
+    fragmentCounts?: ProcessCounts;
 }
 
 export type ProcessCounts = Record<string, NodeCounts>;

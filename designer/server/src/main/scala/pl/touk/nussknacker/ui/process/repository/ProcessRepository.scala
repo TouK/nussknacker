@@ -35,6 +35,7 @@ object ProcessRepository {
 
   object RemoteUserName {
     val headerName = "Remote-User-Name".toLowerCase
+
     def extractFromHeader: HttpHeader => Option[RemoteUserName] = {
       case HttpHeader(`headerName`, value) => Some(RemoteUserName(value))
       case _ => None
@@ -48,7 +49,7 @@ object ProcessRepository {
                                  category: String,
                                  canonicalProcess: CanonicalProcess,
                                  processingType: ProcessingType,
-                                 isSubprocess: Boolean,
+                                 isFragment: Boolean,
                                  forwardedUserName: Option[RemoteUserName],
                                 )
 
@@ -88,13 +89,13 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
   override def run[R]: DB[R] => DB[R] = identity
 
   /**
-    * These action should be done on transaction - move it to ProcessService.createProcess
-    */
+   * These action should be done on transaction - move it to ProcessService.createProcess
+   */
   def saveNewProcess(action: CreateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[Option[ProcessCreated]]] = {
     val userName = action.forwardedUserName.map(_.display).getOrElse(loggedUser.username)
     val processToSave = ProcessEntityData(
       id = ProcessId(-1L), name = action.processName, processCategory = action.category, description = None,
-      processingType = action.processingType, isSubprocess = action.isSubprocess, isArchived = false,
+      processingType = action.processingType, isFragment = action.isFragment, isArchived = false,
       createdAt = Timestamp.from(now), createdBy = userName
     )
 
@@ -224,7 +225,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       .sortBy(_.id.desc)
       .result.headOption.flatMap {
       case Some(version) => newCommentAction(process.id, version.id, Some(UpdateProcessComment(s"Rename: [${process.name.value}] -> [$newName]")))
-      case None =>  DBIO.successful(())
+      case None => DBIO.successful(())
     }
 
     val action = processesTable.filter(_.name === newName).result.headOption.flatMap {

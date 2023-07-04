@@ -26,33 +26,33 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val categorySecret = "secret"
 
   private val json = ProcessTestData.sampleDisplayableProcess
-  private val subJson = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, Streaming, categoryMarketing)
+  private val subJson = ProcessConverter.toDisplayable(ProcessTestData.sampleFragment, Streaming, categoryMarketing)
 
   private val someVersion = VersionId(666L)
 
   private val marketingProcess = createBasicProcess("marketingProcess", category = categoryMarketing, lastAction = Some(Deploy), json = Some(json))
-  private val marketingSubprocess = createSubProcess("marketingSubprocess", category = categoryMarketing, json = Some(subJson))
-  private val marketingArchivedSubprocess = createSubProcess("marketingArchivedSubprocess", isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
+  private val marketingFragment = createfragment("marketingFragment", category = categoryMarketing, json = Some(subJson))
+  private val marketingArchivedFragment = createfragment("marketingArchivedFragment", isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
   private val marketingArchivedProcess = createBasicProcess("marketingArchivedProcess", isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
 
   private val fraudProcess = createBasicProcess("fraudProcess", category = categoryFraud, processingType = Fraud, lastAction = Some(Deploy))
   private val fraudArchivedProcess = createBasicProcess("fraudArchivedProcess", isArchived = true, category = categoryFraudSecond, processingType = Fraud, lastAction = Some(Archive), json = Some(json))
-  private val fraudSubprocess = createSubProcess("fraudSubprocess", category = categoryFraud, processingType = Fraud, json = Some(json))
-  private val fraudArchivedSubprocess = createSubProcess("fraudArchivedSubprocess", isArchived = true, category = categoryFraud, processingType = Fraud, json = Some(subJson))
+  private val fraudFragment = createfragment("fraudFragment", category = categoryFraud, processingType = Fraud, json = Some(json))
+  private val fraudArchivedFragment = createfragment("fraudArchivedFragment", isArchived = true, category = categoryFraud, processingType = Fraud, json = Some(subJson))
 
   private val fraudSecondProcess = createBasicProcess("fraudSecondProcess", category = categoryFraudSecond, processingType = Fraud, lastAction = Some(Cancel), json = Some(json))
-  private val fraudSecondSubprocess = createSubProcess("fraudSecondSubprocess", category = categoryFraudSecond, processingType = Fraud)
+  private val fraudSecondFragment = createfragment("fraudSecondFragment", category = categoryFraudSecond, processingType = Fraud)
 
   private val secretProcess = createBasicProcess("secretProcess", category = categorySecret)
-  private val secretSubprocess = createSubProcess("secretSubprocess", category = categorySecret)
-  private val secretArchivedSubprocess = createSubProcess("secretArchivedSubprocess", isArchived = true, category = categorySecret, lastAction = Some(Archive))
+  private val secretFragment = createfragment("secretFragment", category = categorySecret)
+  private val secretArchivedFragment = createfragment("secretArchivedFragment", isArchived = true, category = categorySecret, lastAction = Some(Archive))
   private val secretArchivedProcess = createBasicProcess("secretArchivedProcess", isArchived = true, category = categorySecret, lastAction = Some(Archive), json = Some(json))
 
   private val processes: List[ProcessDetails] = List(
-    marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess,
-    fraudProcess, fraudArchivedProcess, fraudSubprocess, fraudArchivedSubprocess,
-    fraudSecondProcess, fraudSecondSubprocess,
-    secretProcess, secretArchivedProcess, secretSubprocess, secretArchivedSubprocess
+    marketingProcess, marketingArchivedProcess, marketingFragment, marketingArchivedFragment,
+    fraudProcess, fraudArchivedProcess, fraudFragment, fraudArchivedFragment,
+    fraudSecondProcess, fraudSecondFragment,
+    secretProcess, secretArchivedProcess, secretFragment, secretArchivedFragment
   )
 
   private val admin: LoggedUser = TestFactory.adminUser()
@@ -103,44 +103,44 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
       val names = processes.map(_.idWithName.name)
-      val result = mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery(names = Some(names), isArchived = Some(false), isSubprocess = Some(false)))(DisplayableShape, user, global).futureValue
+      val result = mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery(names = Some(names), isArchived = Some(false), isFragment = Some(false)))(DisplayableShape, user, global).futureValue
       result shouldBe expected
     }
   }
 
-  it should "fetchSubProcessesDetails for each user" in {
+  it should "fetchFragmentsDetails for each user" in {
     val testingData = Table(
       ("user", "expected"),
-      (admin, List(marketingSubprocess, fraudSubprocess, fraudSecondSubprocess, secretSubprocess)),
-      (marketingUser, List(marketingSubprocess)),
-      (fraudUser, List(fraudSubprocess, fraudSecondSubprocess)),
+      (admin, List(marketingFragment, fraudFragment, fraudSecondFragment, secretFragment)),
+      (marketingUser, List(marketingFragment)),
+      (fraudUser, List(fraudFragment, fraudSecondFragment)),
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
-      val result = mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(DisplayableShape, user, global).futureValue
+      val result = mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedFragments)(DisplayableShape, user, global).futureValue
       result shouldBe expected
     }
   }
 
-  it should "fetchSubProcessesDetails with each processing shape strategy" in {
-    val subprocesses = List(marketingSubprocess, fraudSubprocess, fraudSecondSubprocess, secretSubprocess)
-    val mockRepository = MockFetchingProcessRepository.withProcessesDetails(subprocesses)
+  it should "fetchFragmentsDetails with each processing shape strategy" in {
+    val fragments = List(marketingFragment, fraudFragment, fraudSecondFragment, secretFragment)
+    val mockRepository = MockFetchingProcessRepository.withProcessesDetails(fragments)
 
-    val displayableSubProcesses = List(marketingSubprocess, fraudSubprocess, fraudSecondSubprocess, secretSubprocess)
-    val canonicalSubProcesses = displayableSubProcesses.map(p => p.copy(json = ProcessConverter.fromDisplayable(p.json)))
-    val noneSubProcesses = displayableSubProcesses.map(p => p.copy(json = ()))
+    val displayableFragments = List(marketingFragment, fraudFragment, fraudSecondFragment, secretFragment)
+    val canonicalFragments = displayableFragments.map(p => p.copy(json = ProcessConverter.fromDisplayable(p.json)))
+    val noneFragments = displayableFragments.map(p => p.copy(json = ()))
 
-    mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(DisplayableShape, admin, global).futureValue shouldBe displayableSubProcesses
-    mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(CanonicalShape, admin, global).futureValue shouldBe canonicalSubProcesses
-    mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(NoneShape, admin, global).futureValue shouldBe noneSubProcesses
+    mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedFragments)(DisplayableShape, admin, global).futureValue shouldBe displayableFragments
+    mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedFragments)(CanonicalShape, admin, global).futureValue shouldBe canonicalFragments
+    mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedFragments)(NoneShape, admin, global).futureValue shouldBe noneFragments
   }
 
   it should "fetchAllProcessesDetails for each user" in {
     val testingData = Table(
       ("user", "expected"),
-      (admin, List(marketingProcess, marketingSubprocess, fraudProcess, fraudSubprocess, fraudSecondProcess, fraudSecondSubprocess, secretProcess, secretSubprocess)),
-      (marketingUser, List(marketingProcess, marketingSubprocess)),
-      (fraudUser, List(fraudProcess, fraudSubprocess, fraudSecondProcess, fraudSecondSubprocess)),
+      (admin, List(marketingProcess, marketingFragment, fraudProcess, fraudFragment, fraudSecondProcess, fraudSecondFragment, secretProcess, secretFragment)),
+      (marketingUser, List(marketingProcess, marketingFragment)),
+      (fraudUser, List(fraudProcess, fraudFragment, fraudSecondProcess, fraudSecondFragment)),
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
@@ -152,10 +152,10 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   it should "fetchLatestProcessDetailsForProcessId for each user" in {
     val testingData = Table(
       ("user", "ProcessWithoutNodes", "expected"),
-      (admin, secretSubprocess, Some(secretSubprocess)),
+      (admin, secretFragment, Some(secretFragment)),
       (marketingUser, marketingProcess, Some(marketingProcess)),
       (marketingUser, marketingArchivedProcess, Some(marketingArchivedProcess)),
-      (marketingUser, marketingArchivedSubprocess, Some(marketingArchivedSubprocess)),
+      (marketingUser, marketingArchivedFragment, Some(marketingArchivedFragment)),
       (fraudUser, marketingProcess, None),
     )
 
@@ -168,14 +168,14 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   it should "fetchProcessDetailsForId for each user" in {
     val testingData = Table(
       ("user", "processId", "versionId", "expected"),
-      (admin, secretSubprocess.processId, secretSubprocess.processVersionId, Some(secretSubprocess)),
-      (admin, secretSubprocess.processId, someVersion, None),
+      (admin, secretFragment.processId, secretFragment.processVersionId, Some(secretFragment)),
+      (admin, secretFragment.processId, someVersion, None),
       (marketingUser, marketingProcess.processId, marketingProcess.processVersionId, Some(marketingProcess)),
       (marketingUser, marketingProcess.processId, someVersion, None),
       (marketingUser, marketingArchivedProcess.processId, marketingArchivedProcess.processVersionId, Some(marketingArchivedProcess)),
       (marketingUser, marketingArchivedProcess.processId, someVersion, None),
-      (marketingUser, marketingArchivedSubprocess.processId, marketingArchivedSubprocess.processVersionId, Some(marketingArchivedSubprocess)),
-      (marketingUser, marketingArchivedSubprocess.processId, someVersion, None),
+      (marketingUser, marketingArchivedFragment.processId, marketingArchivedFragment.processVersionId, Some(marketingArchivedFragment)),
+      (marketingUser, marketingArchivedFragment.processId, someVersion, None),
       (fraudUser, marketingProcess.processId, marketingProcess.processVersionId, None),
     )
 
@@ -207,8 +207,8 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     val testingData = Table(
       ("user", "userProcesses"),
       (admin, processes),
-      (marketingUser, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess)),
-      (fraudUser, List(fraudProcess, fraudSubprocess, fraudSecondProcess, fraudSecondSubprocess, fraudArchivedProcess, fraudArchivedSubprocess)),
+      (marketingUser, List(marketingProcess, marketingArchivedProcess, marketingFragment, marketingArchivedFragment)),
+      (fraudUser, List(fraudProcess, fraudFragment, fraudSecondProcess, fraudSecondFragment, fraudArchivedProcess, fraudArchivedFragment)),
     )
 
     forAll(testingData) { (user: LoggedUser, userProcesses: List[ProcessDetails]) =>
@@ -227,7 +227,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     val allProcessesCategoryQuery = allProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
     val allProcessesCategoryTypesQuery = allProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
-    val processesQuery = FetchProcessesDetailsQuery(isSubprocess = Some(false), isArchived = Some(false))
+    val processesQuery = FetchProcessesDetailsQuery(isFragment = Some(false), isArchived = Some(false))
     val deployedProcessesQuery = processesQuery.copy(isDeployed = Some(true))
     val deployedProcessesCategoryQuery = deployedProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
     val deployedProcessesCategoryProcessingTypesQuery = deployedProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
@@ -237,26 +237,26 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     val notDeployedProcessesCategoryProcessingTypesQuery = notDeployedProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
     val archivedQuery = FetchProcessesDetailsQuery(isArchived = Some(true))
-    val archivedProcessesQuery = archivedQuery.copy(isSubprocess = Some(false))
+    val archivedProcessesQuery = archivedQuery.copy(isFragment = Some(false))
     val archivedProcessesCategoryQuery = archivedProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
     val archivedProcessesCategoryProcessingTypesQuery = archivedProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
-    val allSubProcessesQuery = FetchProcessesDetailsQuery(isSubprocess = Some(true))
-    val subProcessesQuery = allSubProcessesQuery.copy(isArchived = Some(false))
-    val subProcessesCategoryQuery = subProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
-    val subProcessesCategoryTypesQuery = subProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
+    val allFragmentsQuery = FetchProcessesDetailsQuery(isFragment = Some(true))
+    val fragmentsQuery = allFragmentsQuery.copy(isArchived = Some(false))
+    val fragmentsCategoryQuery = fragmentsQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
+    val fragmentsCategoryTypesQuery = fragmentsCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
-    val archivedSubProcessesQuery = FetchProcessesDetailsQuery(isSubprocess = Some(true), isArchived = Some(true))
-    val archivedSubProcessesCategoryQuery = archivedSubProcessesQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
-    val archivedSubProcessesCategoryTypesQuery = archivedSubProcessesCategoryQuery.copy(processingTypes = Some(List(Streaming)))
+    val archivedFragmentsQuery = FetchProcessesDetailsQuery(isFragment = Some(true), isArchived = Some(true))
+    val archivedFragmentsCategoryQuery = archivedFragmentsQuery.copy(categories = Some(Seq(categoryMarketing, categoryFraud, categoryFraudSecond)))
+    val archivedFragmentsCategoryTypesQuery = archivedFragmentsCategoryQuery.copy(processingTypes = Some(List(Streaming)))
 
     //when
     val testingData = Table(
       ("user", "query", "expected"),
       //admin user
       (admin, allProcessesQuery, processes),
-      (admin, allProcessesCategoryQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess, fraudProcess, fraudArchivedProcess, fraudSubprocess, fraudArchivedSubprocess, fraudSecondProcess, fraudSecondSubprocess)),
-      (admin, allProcessesCategoryTypesQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess)),
+      (admin, allProcessesCategoryQuery, List(marketingProcess, marketingArchivedProcess, marketingFragment, marketingArchivedFragment, fraudProcess, fraudArchivedProcess, fraudFragment, fraudArchivedFragment, fraudSecondProcess, fraudSecondFragment)),
+      (admin, allProcessesCategoryTypesQuery, List(marketingProcess, marketingArchivedProcess, marketingFragment, marketingArchivedFragment)),
       (admin, processesQuery, List(marketingProcess, fraudProcess, fraudSecondProcess, secretProcess)),
       (admin, deployedProcessesQuery, List(marketingProcess, fraudProcess)),
       (admin, deployedProcessesCategoryQuery, List(marketingProcess, fraudProcess)),
@@ -264,22 +264,22 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       (admin, notDeployedProcessesQuery, List(fraudSecondProcess, secretProcess)),
       (admin, notDeployedProcessesCategoryQuery, List(fraudSecondProcess)),
       (admin, notDeployedProcessesCategoryProcessingTypesQuery, List()),
-      (admin, archivedQuery, List(marketingArchivedProcess, marketingArchivedSubprocess, fraudArchivedProcess, fraudArchivedSubprocess, secretArchivedProcess, secretArchivedSubprocess)),
+      (admin, archivedQuery, List(marketingArchivedProcess, marketingArchivedFragment, fraudArchivedProcess, fraudArchivedFragment, secretArchivedProcess, secretArchivedFragment)),
       (admin, archivedProcessesQuery, List(marketingArchivedProcess, fraudArchivedProcess, secretArchivedProcess)),
       (admin, archivedProcessesCategoryQuery, List(marketingArchivedProcess, fraudArchivedProcess)),
       (admin, archivedProcessesCategoryProcessingTypesQuery, List(marketingArchivedProcess)),
-      (admin, allSubProcessesQuery, List(marketingSubprocess, marketingArchivedSubprocess, fraudSubprocess, fraudArchivedSubprocess, fraudSecondSubprocess, secretSubprocess, secretArchivedSubprocess)),
-      (admin, subProcessesQuery, List(marketingSubprocess, fraudSubprocess, fraudSecondSubprocess, secretSubprocess)),
-      (admin, subProcessesCategoryQuery, List(marketingSubprocess, fraudSubprocess, fraudSecondSubprocess)),
-      (admin, subProcessesCategoryTypesQuery, List(marketingSubprocess)),
-      (admin, archivedSubProcessesQuery, List(marketingArchivedSubprocess, fraudArchivedSubprocess, secretArchivedSubprocess)),
-      (admin, archivedSubProcessesCategoryQuery, List(marketingArchivedSubprocess, fraudArchivedSubprocess)),
-      (admin, archivedSubProcessesCategoryTypesQuery, List(marketingArchivedSubprocess)),
+      (admin, allFragmentsQuery, List(marketingFragment, marketingArchivedFragment, fraudFragment, fraudArchivedFragment, fraudSecondFragment, secretFragment, secretArchivedFragment)),
+      (admin, fragmentsQuery, List(marketingFragment, fraudFragment, fraudSecondFragment, secretFragment)),
+      (admin, fragmentsCategoryQuery, List(marketingFragment, fraudFragment, fraudSecondFragment)),
+      (admin, fragmentsCategoryTypesQuery, List(marketingFragment)),
+      (admin, archivedFragmentsQuery, List(marketingArchivedFragment, fraudArchivedFragment, secretArchivedFragment)),
+      (admin, archivedFragmentsCategoryQuery, List(marketingArchivedFragment, fraudArchivedFragment)),
+      (admin, archivedFragmentsCategoryTypesQuery, List(marketingArchivedFragment)),
 
       //marketing user
-      (marketingUser, allProcessesQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess)),
-      (marketingUser, allProcessesCategoryQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess)),
-      (marketingUser, allProcessesCategoryTypesQuery, List(marketingProcess, marketingArchivedProcess, marketingSubprocess, marketingArchivedSubprocess)),
+      (marketingUser, allProcessesQuery, List(marketingProcess, marketingArchivedProcess, marketingFragment, marketingArchivedFragment)),
+      (marketingUser, allProcessesCategoryQuery, List(marketingProcess, marketingArchivedProcess, marketingFragment, marketingArchivedFragment)),
+      (marketingUser, allProcessesCategoryTypesQuery, List(marketingProcess, marketingArchivedProcess, marketingFragment, marketingArchivedFragment)),
       (marketingUser, processesQuery, List(marketingProcess)),
       (marketingUser, deployedProcessesQuery, List(marketingProcess)),
       (marketingUser, deployedProcessesCategoryQuery, List(marketingProcess)),
@@ -287,21 +287,21 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       (marketingUser, notDeployedProcessesQuery, List()),
       (marketingUser, notDeployedProcessesCategoryQuery, List()),
       (marketingUser, notDeployedProcessesCategoryProcessingTypesQuery, List()),
-      (marketingUser, archivedQuery, List(marketingArchivedProcess, marketingArchivedSubprocess)),
+      (marketingUser, archivedQuery, List(marketingArchivedProcess, marketingArchivedFragment)),
       (marketingUser, archivedProcessesQuery, List(marketingArchivedProcess)),
       (marketingUser, archivedProcessesCategoryQuery, List(marketingArchivedProcess)),
       (marketingUser, archivedProcessesCategoryProcessingTypesQuery, List(marketingArchivedProcess)),
-      (marketingUser, allSubProcessesQuery, List(marketingSubprocess, marketingArchivedSubprocess)),
-      (marketingUser, subProcessesQuery, List(marketingSubprocess)),
-      (marketingUser, subProcessesCategoryQuery, List(marketingSubprocess)),
-      (marketingUser, subProcessesCategoryTypesQuery, List(marketingSubprocess)),
-      (marketingUser, archivedSubProcessesQuery, List(marketingArchivedSubprocess)),
-      (marketingUser, archivedSubProcessesCategoryQuery, List(marketingArchivedSubprocess)),
-      (marketingUser, archivedSubProcessesCategoryTypesQuery, List(marketingArchivedSubprocess)),
+      (marketingUser, allFragmentsQuery, List(marketingFragment, marketingArchivedFragment)),
+      (marketingUser, fragmentsQuery, List(marketingFragment)),
+      (marketingUser, fragmentsCategoryQuery, List(marketingFragment)),
+      (marketingUser, fragmentsCategoryTypesQuery, List(marketingFragment)),
+      (marketingUser, archivedFragmentsQuery, List(marketingArchivedFragment)),
+      (marketingUser, archivedFragmentsCategoryQuery, List(marketingArchivedFragment)),
+      (marketingUser, archivedFragmentsCategoryTypesQuery, List(marketingArchivedFragment)),
 
       //fraud user
-      (fraudUser, allProcessesQuery, List(fraudProcess, fraudArchivedProcess, fraudSubprocess, fraudArchivedSubprocess, fraudSecondProcess, fraudSecondSubprocess)),
-      (fraudUser, allProcessesCategoryQuery, List(fraudProcess, fraudArchivedProcess, fraudSubprocess, fraudArchivedSubprocess, fraudSecondProcess, fraudSecondSubprocess)),
+      (fraudUser, allProcessesQuery, List(fraudProcess, fraudArchivedProcess, fraudFragment, fraudArchivedFragment, fraudSecondProcess, fraudSecondFragment)),
+      (fraudUser, allProcessesCategoryQuery, List(fraudProcess, fraudArchivedProcess, fraudFragment, fraudArchivedFragment, fraudSecondProcess, fraudSecondFragment)),
       (fraudUser, allProcessesCategoryTypesQuery, List()),
       (fraudUser, processesQuery, List(fraudProcess, fraudSecondProcess)),
       (fraudUser, deployedProcessesQuery, List(fraudProcess)),
@@ -310,18 +310,18 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
       (fraudUser, notDeployedProcessesQuery, List(fraudSecondProcess)),
       (fraudUser, notDeployedProcessesCategoryQuery, List(fraudSecondProcess)),
       (fraudUser, notDeployedProcessesCategoryProcessingTypesQuery, List()),
-      (fraudUser, archivedQuery, List(fraudArchivedProcess, fraudArchivedSubprocess)),
+      (fraudUser, archivedQuery, List(fraudArchivedProcess, fraudArchivedFragment)),
       (fraudUser, archivedProcessesQuery, List(fraudArchivedProcess)),
       (fraudUser, archivedProcessesCategoryQuery, List(fraudArchivedProcess)),
       (fraudUser, archivedProcessesCategoryProcessingTypesQuery, List()),
-      (fraudUser, allSubProcessesQuery, List(fraudSubprocess, fraudArchivedSubprocess, fraudSecondSubprocess)),
-      (fraudUser, subProcessesQuery, List(fraudSubprocess, fraudSecondSubprocess)),
-      (fraudUser, subProcessesCategoryQuery, List(fraudSubprocess, fraudSecondSubprocess)),
-      (fraudUser, subProcessesCategoryTypesQuery, List()),
-      (fraudUser, archivedSubProcessesQuery, List(fraudArchivedSubprocess)),
-      (fraudUser, archivedSubProcessesQuery, List(fraudArchivedSubprocess)),
-      (fraudUser, archivedSubProcessesCategoryQuery, List(fraudArchivedSubprocess)),
-      (fraudUser, archivedSubProcessesCategoryTypesQuery, List()),
+      (fraudUser, allFragmentsQuery, List(fraudFragment, fraudArchivedFragment, fraudSecondFragment)),
+      (fraudUser, fragmentsQuery, List(fraudFragment, fraudSecondFragment)),
+      (fraudUser, fragmentsCategoryQuery, List(fraudFragment, fraudSecondFragment)),
+      (fraudUser, fragmentsCategoryTypesQuery, List()),
+      (fraudUser, archivedFragmentsQuery, List(fraudArchivedFragment)),
+      (fraudUser, archivedFragmentsQuery, List(fraudArchivedFragment)),
+      (fraudUser, archivedFragmentsCategoryQuery, List(fraudArchivedFragment)),
+      (fraudUser, archivedFragmentsCategoryTypesQuery, List()),
     )
 
     forAll(testingData) { (user: LoggedUser, query: FetchProcessesDetailsQuery, expected: List[ProcessDetails]) =>

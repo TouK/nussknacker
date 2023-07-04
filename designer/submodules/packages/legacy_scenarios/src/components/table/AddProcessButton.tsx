@@ -21,22 +21,20 @@ function AddButton({ className, title, onClick }: AddButtonProps): JSX.Element {
 }
 
 interface AddProcessButtonProps {
-    isSubprocess?: boolean;
+    isFragment?: boolean;
     className?: string;
 }
 
-export function AddProcessButton({ isSubprocess, className }: AddProcessButtonProps): JSX.Element {
+export function AddProcessButton({ isFragment, className }: AddProcessButtonProps): JSX.Element {
     const { t } = useTranslation();
     const { onScenarioAdd, onFragmentAdd } = useContext(ScenariosContext);
-    const action = isSubprocess ? onFragmentAdd : onScenarioAdd;
+    const action = isFragment ? onFragmentAdd : onScenarioAdd;
 
     return (
         <AddButton
             className={className}
             title={
-                isSubprocess
-                    ? t("addProcessButton.subprocess", "Create new fragment")
-                    : t("addProcessButton.process", "Create new scenario")
+                isFragment ? t("addProcessButton.fragment", "Create new fragment") : t("addProcessButton.process", "Create new scenario")
             }
             onClick={action}
         />
