@@ -8,6 +8,7 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.EngineRuntime
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
@@ -23,7 +24,7 @@ object RequestResponseTestScenarioRunner {
   implicit class LiteKafkaTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
     def requestResponseBased(baseConfig: Config = ConfigFactory.load()): RequestResponseTestScenarioRunnerBuilder = {
-      RequestResponseTestScenarioRunnerBuilder(Nil, baseConfig)
+      RequestResponseTestScenarioRunnerBuilder(Nil, baseConfig, testRuntimeMode = false)
     }
   }
 
@@ -39,7 +40,7 @@ object RequestResponseTestScenarioRunner {
 
 }
 
-class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], config: Config)
+class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], config: Config, componentUseCase: ComponentUseCase)
     extends TestScenarioRunner {
 
   def runWithRequests[T](
@@ -53,7 +54,7 @@ class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], c
         modelData,
         additionalListeners = Nil,
         resultCollector = ProductionServiceInvocationCollector,
-        componentUseCase = EngineRuntime
+        componentUseCase = componentUseCase
       ).map { interpreter =>
         interpreter.open()
         try {
@@ -71,7 +72,7 @@ class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], c
 
 }
 
-case class RequestResponseTestScenarioRunnerBuilder(extraComponents: List[ComponentDefinition], config: Config)
+case class RequestResponseTestScenarioRunnerBuilder(extraComponents: List[ComponentDefinition], config: Config, testRuntimeMode: Boolean)
     extends TestScenarioRunnerBuilder[RequestResponseTestScenarioRunner, RequestResponseTestScenarioRunnerBuilder] {
 
   override def withExtraComponents(
@@ -79,7 +80,11 @@ case class RequestResponseTestScenarioRunnerBuilder(extraComponents: List[Compon
   ): RequestResponseTestScenarioRunnerBuilder =
     copy(extraComponents = extraComponents)
 
+
+  override def inTestRuntimeMode(): RequestResponseTestScenarioRunnerBuilder =
+    copy(testRuntimeMode = testRuntimeMode)
+
   override def build(): RequestResponseTestScenarioRunner =
-    new RequestResponseTestScenarioRunner(extraComponents, config)
+    new RequestResponseTestScenarioRunner(extraComponents, config, componentUseCase(testRuntimeMode))
 
 }
