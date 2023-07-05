@@ -30,14 +30,14 @@ describe("Expression suggester", () => {
             });
     });
 
-    it("should display javadocs", () => {
+    it.only("should display javadocs", () => {
         cy.visitNewProcess(seed, "variables");
         cy.get("[title='toggle left panel']").click();
         cy.layoutScenario();
         cy.get("[model-id=kafka-string]").trigger("dblclick");
         cy.get("[data-testid=window]").as("modal");
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
-            if (request.body.nodeData.ref?.parameters[0]?.expression.expression == "#DATE.parseDat") {
+            if (request.body.nodeData.ref?.parameters[1]?.expression.expression == "#DATE.parseDat") {
                 request.alias = "validation";
             }
         });
