@@ -31,21 +31,21 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val someVersion = VersionId(666L)
 
   private val marketingProcess = createBasicProcess("marketingProcess", category = categoryMarketing, lastAction = Some(Deploy), json = Some(json))
-  private val marketingFragment = createfragment("marketingFragment", category = categoryMarketing, json = Some(subJson))
-  private val marketingArchivedFragment = createfragment("marketingArchivedFragment", isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
+  private val marketingFragment = createFragment("marketingFragment", category = categoryMarketing, json = Some(subJson))
+  private val marketingArchivedFragment = createFragment("marketingArchivedFragment", isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
   private val marketingArchivedProcess = createBasicProcess("marketingArchivedProcess", isArchived = true, category = categoryMarketing, lastAction = Some(Archive))
 
   private val fraudProcess = createBasicProcess("fraudProcess", category = categoryFraud, processingType = Fraud, lastAction = Some(Deploy))
   private val fraudArchivedProcess = createBasicProcess("fraudArchivedProcess", isArchived = true, category = categoryFraudSecond, processingType = Fraud, lastAction = Some(Archive), json = Some(json))
-  private val fraudFragment = createfragment("fraudFragment", category = categoryFraud, processingType = Fraud, json = Some(json))
-  private val fraudArchivedFragment = createfragment("fraudArchivedFragment", isArchived = true, category = categoryFraud, processingType = Fraud, json = Some(subJson))
+  private val fraudFragment = createFragment("fraudFragment", category = categoryFraud, processingType = Fraud, json = Some(json))
+  private val fraudArchivedFragment = createFragment("fraudArchivedFragment", isArchived = true, category = categoryFraud, processingType = Fraud, json = Some(subJson))
 
   private val fraudSecondProcess = createBasicProcess("fraudSecondProcess", category = categoryFraudSecond, processingType = Fraud, lastAction = Some(Cancel), json = Some(json))
-  private val fraudSecondFragment = createfragment("fraudSecondFragment", category = categoryFraudSecond, processingType = Fraud)
+  private val fraudSecondFragment = createFragment("fraudSecondFragment", category = categoryFraudSecond, processingType = Fraud)
 
   private val secretProcess = createBasicProcess("secretProcess", category = categorySecret)
-  private val secretFragment = createfragment("secretFragment", category = categorySecret)
-  private val secretArchivedFragment = createfragment("secretArchivedFragment", isArchived = true, category = categorySecret, lastAction = Some(Archive))
+  private val secretFragment = createFragment("secretFragment", category = categorySecret)
+  private val secretArchivedFragment = createFragment("secretArchivedFragment", isArchived = true, category = categorySecret, lastAction = Some(Archive))
   private val secretArchivedProcess = createBasicProcess("secretArchivedProcess", isArchived = true, category = categorySecret, lastAction = Some(Archive), json = Some(json))
 
   private val processes: List[ProcessDetails] = List(

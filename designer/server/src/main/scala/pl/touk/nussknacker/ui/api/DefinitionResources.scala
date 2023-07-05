@@ -55,8 +55,8 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
               complete(
                 UIProcessObjectsFactory.prepareUIProcessObjects(
                   processingTypeData.modelData,
+                  processingTypeData.staticObjectsDefinition,
                   processingTypeData.deploymentManager,
-                  processingTypeData.metaDataInitializer,
                   user,
                   fragments,
                   isFragment = isSubprocess,

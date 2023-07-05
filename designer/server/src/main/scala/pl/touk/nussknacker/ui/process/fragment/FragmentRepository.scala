@@ -96,7 +96,7 @@ class DbFragmentRepository(db: DbConfig, ec: ExecutionContext) extends FragmentR
     }
 
     dbioRunner.run(action).flatMap {
-      case Some(subproc) => Future.successful(subproc)
+      case Some(frag) => Future.successful(frag)
       case None => Future.failed(new Exception(s"Fragment $fragmentName, version: $version not found"))
     }
   }

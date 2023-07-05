@@ -285,7 +285,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     baseComponents ++ prepareSharedComponents ++ prepareMarketingComponents ++ prepareFraudComponents ++ fragmentMarketingComponents ++ fragmentFraudComponents
 
   private val fragmentFromCategories = AllCategories.flatMap(cat => categoryService.getTypeForCategory(cat).map(processingType =>
-    createfragment(cat, category = cat, processingType = processingType)
+    createFragment(cat, category = cat, processingType = processingType)
   )).toSet
 
   private def marketingComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) =
@@ -492,8 +492,8 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       (admin, fraudCustomerDataEnricherComponentId, List((CanceledFraudProcessWith2Enrichers, List(ScenarioUsageData(DefaultCustomName), ScenarioUsageData(SecondCustomName))))),
       (admin, filterComponentId, List(
         (DeployedFraudProcessWith2Filters, List(ScenarioUsageData(DefaultFilterName), ScenarioUsageData(SecondFilterName))),
-        (FraudProcessWithFragment, List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudFragment.name, FragmentFilterName))),
         (FraudFragment, List(ScenarioUsageData(FragmentFilterName))),
+        (FraudProcessWithFragment, List(ScenarioUsageData(SecondFilterName), FragmentUsageData(FraudFragment.name, FragmentFilterName))),
       )),
     )
 

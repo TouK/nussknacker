@@ -37,17 +37,17 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
 
   private val category1Process = createBasicProcess("category1Process", category = Category1, lastAction = Some(Deploy))
   private val category2ArchivedProcess = createBasicProcess("category2ArchivedProcess", isArchived = true, category = Category2)
-  private val testfragment = createfragment("testfragment", category = TestCat)
+  private val testfragment = createFragment("testfragment", category = TestCat)
   private val reqRespArchivedfragment = createBasicProcess("reqRespArchivedfragment", isArchived = true, category = ReqRes)
 
   private val processes: List[ProcessDetails] = List(
     category1Process, category2ArchivedProcess, testfragment, reqRespArchivedfragment
   )
 
-  private val fragmentCategory1 = createfragment("fragmentCategory1", category = Category1)
-  private val fragmentCategory2 = createfragment("fragmentCategory2", category = Category2)
-  private val fragmentTest = createfragment("fragmentTest", category = TestCat)
-  private val fragmentReqResp = createfragment("fragmentReqResp", category = ReqRes)
+  private val fragmentCategory1 = createFragment("fragmentCategory1", category = Category1)
+  private val fragmentCategory2 = createFragment("fragmentCategory2", category = Category2)
+  private val fragmentTest = createFragment("fragmentTest", category = TestCat)
+  private val fragmentReqResp = createFragment("fragmentReqResp", category = ReqRes)
 
   private val fragments = Set(
     fragmentCategory1, fragmentCategory2, fragmentTest, fragmentReqResp

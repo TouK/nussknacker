@@ -34,7 +34,7 @@ object TestProcessUtil {
   def createBasicProcess(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, lastAction: Option[ProcessActionType] = None, json: Option[DisplayableProcess] = None): BaseProcessDetails[DisplayableProcess] =
     toDetails(name, category, isFragment = false, isArchived, processingType, json = json, lastAction = lastAction)
 
-  def createfragment(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None): BaseProcessDetails[DisplayableProcess] =
+  def createFragment(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None): BaseProcessDetails[DisplayableProcess] =
     toDetails(name, category, isFragment = true, isArchived, processingType, lastAction = lastAction, json = Some(json.getOrElse(createDisplayableFragment(name, processingType, category))))
 
   def displayableToProcess(displayable: DisplayableProcess, category: Category = TestCategories.Category1, isArchived: Boolean = false, isFragment: Boolean = false): ProcessDetails =
