@@ -36,7 +36,14 @@ describe("Expression suggester", () => {
         cy.layoutScenario();
         cy.get("[model-id=kafka-string]").trigger("dblclick");
         cy.get("[data-testid=window]").as("modal");
+        cy.intercept("POST", "/api/nodes/*/validation", (request) => {
+            if (request.body.nodeData.ref?.parameters[0]?.expression.expression == "#DATE.parseDat") {
+                request.alias = "validation";
+            }
+        });
         cy.get("[title=Value]").next().find(".ace_editor").click().type("{selectall}#DATE.parseDat");
+        // We wait for validation result to be sure that red message below the form field will be visible
+        cy.wait("@validation").its("response.statusCode").should("eq", 200);
         cy.get(".ace_autocomplete").should("be.visible");
         cy.get("[data-testid=graphPage]").matchImage({
             screenshotConfig: {
