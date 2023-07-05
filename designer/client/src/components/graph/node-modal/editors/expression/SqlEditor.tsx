@@ -8,6 +8,23 @@ import { Formatter, FormatterType, typeFormatters } from "./Formatter";
 import RawEditor, { RawEditorProps } from "./RawEditor";
 import { switchableTo } from "./StringEditor";
 import { ExpressionLang } from "./types";
+import { Ace } from "ace-builds";
+
+interface SyntaxMode extends Ace.SyntaxMode {
+    $highlightRules: {
+        setAliases(string): void;
+    };
+}
+
+interface EditSession extends Ace.EditSession {
+    bgTokenizer: {
+        lines: string[];
+        stop(): void;
+        start(integer): void;
+    };
+
+    getMode(): SyntaxMode;
+}
 
 export interface Props extends RawEditorProps {
     formatter: Formatter;
@@ -19,7 +36,7 @@ function useAliasUsageHighlight(token = "alias") {
     const [keywords, setKeywords] = useState<string>("");
     const ref = useRef<ReactAce>();
     const editor = ref.current?.editor;
-    const session = useMemo(() => editor?.getSession(), [editor]);
+    const session = useMemo(() => editor?.getSession() as EditSession, [editor]);
 
     const getValuesForToken = useCallback(
         (line: string, index: number) =>
