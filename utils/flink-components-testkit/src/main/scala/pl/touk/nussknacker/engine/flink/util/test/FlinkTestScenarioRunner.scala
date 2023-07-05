@@ -2,10 +2,9 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, SourceFactory}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -39,7 +38,11 @@ private object testComponents {
 
 }
 
-class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val config: Config, flinkMiniCluster: FlinkMiniClusterHolder) extends ClassBasedTestScenarioRunner {
+class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
+                              val config: Config,
+                              flinkMiniCluster: FlinkMiniClusterHolder,
+                              componentUseCase: ComponentUseCase
+                             ) extends ClassBasedTestScenarioRunner {
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
@@ -80,7 +83,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
     //It's copied from registrar.register only for handling compilation errors..
     //TODO: figure how to get compilation result on highest level - registrar.register?
-    val compiler = new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData)
+    val compiler = new FlinkProcessCompilerWithTestComponents(testComponentHolder, modelData, componentUseCase)
     val compileProcessData = compiler.compileProcess(scenario, ProcessVersion.empty, ProductionServiceInvocationCollector, getClass.getClassLoader)
 
     compileProcessData.compileProcess().map { _ =>
@@ -103,19 +106,24 @@ object FlinkTestScenarioRunner {
 
   implicit class FlinkTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
     def flinkBased(config: Config, flinkMiniCluster: FlinkMiniClusterHolder): FlinkTestScenarioRunnerBuilder = {
-      FlinkTestScenarioRunnerBuilder(List.empty, config, flinkMiniCluster)
+      FlinkTestScenarioRunnerBuilder(List.empty, config, flinkMiniCluster, testRuntimeMode = false)
     }
   }
 
 }
 
-case class FlinkTestScenarioRunnerBuilder(components: List[ComponentDefinition], config: Config, flinkMiniCluster: FlinkMiniClusterHolder)
+case class FlinkTestScenarioRunnerBuilder(components: List[ComponentDefinition], config: Config, flinkMiniCluster: FlinkMiniClusterHolder, testRuntimeMode: Boolean)
   extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
+
+  import TestScenarioRunner._
 
   override def withExtraComponents(components: List[ComponentDefinition]): FlinkTestScenarioRunnerBuilder = {
     copy(components = components)
   }
 
-  override def build() = new FlinkTestScenarioRunner(components, config, flinkMiniCluster)
+  override def inTestRuntimeMode: FlinkTestScenarioRunnerBuilder =
+    copy(testRuntimeMode = true)
+
+  override def build() = new FlinkTestScenarioRunner(components, config, flinkMiniCluster, componentUseCase(testRuntimeMode))
 
 }

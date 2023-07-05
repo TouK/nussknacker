@@ -44,10 +44,11 @@ object SynchronousLiteInterpreter {
   def run(modelData: ModelData,
           scenario: CanonicalProcess,
           data: ScenarioInputBatch[Any],
+          componentUseCase: ComponentUseCase,
           runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): SynchronousResult = {
 
     ScenarioInterpreterFactory
-      .createInterpreter[Id, Any, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
+      .createInterpreter[Id, Any, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, componentUseCase)
       .map { interpreter =>
         interpreter.open(runtimeContextPreparer.prepare(JobData(scenario.metaData, ProcessVersion.empty)))
         try {
