@@ -1,10 +1,7 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import io.circe.Json
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import java.net.URI
 
@@ -46,25 +43,11 @@ trait ProcessStateDefinitionManager {
   def statusActions(stateStatus: StateStatus): List[ProcessActionType]
 
   /**
-    * TODO: this method should be rarely used - instead we should avoid passing around ProcessState - instead pass StatusDetails
-    *       and at the end add "presentation" properties via processState(StatusDetails)
-    * Enhances raw [[StateStatus]] with scenario properties, including deployment info.
-    */
-  def processState(status: StateStatus,
-                   deploymentId: Option[ExternalDeploymentId] = None,
-                   version: Option[ProcessVersion] = None,
-                   startTime: Option[Long] = None,
-                   attributes: Option[Json] = None,
-                   errors: List[String] = List.empty): ProcessState = {
-    processState(StatusDetails(status, deploymentId, version, startTime, attributes, errors))
-  }
-
-  /**
     * Enhances raw [[StateStatus]] with scenario properties, including deployment info.
     */
   def processState(statusDetails: StatusDetails): ProcessState = {
     ProcessState(
-      statusDetails.deploymentId,
+      statusDetails.externalDeploymentId,
       statusDetails.status,
       statusDetails.version,
       statusActions(statusDetails.status),

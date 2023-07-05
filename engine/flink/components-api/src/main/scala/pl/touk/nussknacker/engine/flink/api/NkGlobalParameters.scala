@@ -49,10 +49,10 @@ case class NamingParameters(tags: Map[String, String])
 object NkGlobalParameters {
 
   def create(buildInfo: String,
-            processVersion: ProcessVersion,
-            modelConfig: Config,
-            namingParameters: Option[NamingParameters],
-            additionalInformation: Map[String, String]): NkGlobalParameters = {
+             processVersion: ProcessVersion,
+             modelConfig: Config,
+             namingParameters: Option[NamingParameters],
+             additionalInformation: Map[String, String]): NkGlobalParameters = {
     val configGlobalParameters = modelConfig.getAs[ConfigGlobalParameters]("globalParameters")
     NkGlobalParameters(buildInfo, processVersion, configGlobalParameters, namingParameters, additionalInformation)
   }

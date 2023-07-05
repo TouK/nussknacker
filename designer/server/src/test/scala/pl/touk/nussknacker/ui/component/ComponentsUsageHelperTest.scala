@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, Variable, CustomNode => CustomNodeType}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ScenarioComponentsUsagesHelper
 
 import java.time.Instant
+import java.util.UUID
 
 class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -46,7 +47,7 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     .emptySink("sink", existingSinkFactory)
   private val processDetails1 = displayableToProcess(TestProcessUtil.toDisplayable(process1))
 
-  private val processDetails1ButDeployed = processDetails1.copy(lastAction = Option(ProcessAction(VersionId.initialVersionId, Instant.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
+  private val processDetails1ButDeployed = processDetails1.copy(lastAction = Option(ProcessAction(ProcessActionId(UUID.randomUUID()), VersionId.initialVersionId, Instant.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
 
   private val process2 = ScenarioBuilder
     .streaming("fooProcess2")

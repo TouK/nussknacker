@@ -4,14 +4,13 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.Inside
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
-import pl.touk.nussknacker.engine.api.deployment.StateStatus
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState, StateStatus, StatusDetails}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 class FlinkProcessStateSpec extends AnyFunSpec with Matchers with Inside {
   def createProcessState(stateStatus: StateStatus): ProcessState =
-    FlinkProcessStateDefinitionManager.processState(stateStatus, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
+    FlinkProcessStateDefinitionManager.processState(StatusDetails(stateStatus, None, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty)))
 
   it ("scenario state should be during deploy") {
     val state = createProcessState(SimpleStateStatus.DuringDeploy)

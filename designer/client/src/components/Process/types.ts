@@ -61,7 +61,7 @@ export interface ProcessType {
 
 export type ProcessStateType = {
     status: StatusType;
-    deploymentId?: string;
+    externalDeploymentId?: string;
     allowedActions: Array<ActionType>;
     icon: string;
     tooltip: string;

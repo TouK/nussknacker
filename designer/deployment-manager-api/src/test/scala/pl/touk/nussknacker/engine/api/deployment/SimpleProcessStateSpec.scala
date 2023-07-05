@@ -11,7 +11,7 @@ import scala.collection.immutable.List
 class SimpleProcessStateSpec extends AnyFunSpec with Matchers with Inside {
 
   def createProcessState(stateStatus: StateStatus): ProcessState =
-    SimpleProcessStateDefinitionManager.processState(stateStatus, Some(ExternalDeploymentId("12")))
+    SimpleProcessStateDefinitionManager.processState(StatusDetails(stateStatus, None, Some(ExternalDeploymentId("12"))))
 
   it ("scenario state should be during deploy") {
     val state = createProcessState(SimpleStateStatus.DuringDeploy)

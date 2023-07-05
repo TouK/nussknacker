@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.api.deployment.simple
 
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{ProcessActionType, DefaultActions}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{DefaultActions, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.{ProblemStateStatus, statusActionsPF}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateDefinitionDetails, StateStatus, StatusDetails}
 
 /**
   * Base [[ProcessStateDefinitionManager]] with basic state definitions and state transitions.
@@ -29,6 +29,6 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   override def stateDefinitions: Map[StatusName, StateDefinitionDetails] =
     SimpleStateStatus.definitions
 
-  val ErrorFailedToGet: ProcessState = processState(FailedToGet)
+  val ErrorFailedToGet: ProcessState = processState(StatusDetails(FailedToGet, None))
 
 }

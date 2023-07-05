@@ -62,7 +62,8 @@ object ExecutionConfigPreparer extends LazyLogging {
         "versionId" -> processVersion.versionId.value.toString,
         "processId" -> processVersion.processId.value.toString,
         "modelVersion" -> processVersion.modelVersion.map(_.toString).orNull,
-        "user" -> processVersion.user
+        "user" -> processVersion.user,
+        "deploymentId" -> deploymentData.deploymentId.value
       )
       val additionalProperties = deploymentData.additionalDeploymentData.map {
         case (k, v) => s"deployment.properties.$k" -> v
