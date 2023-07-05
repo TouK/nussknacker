@@ -33,10 +33,12 @@ object LiteTestScenarioRunner {
 case class LiteTestScenarioRunnerBuilder(extraComponents: List[ComponentDefinition], config: Config, testRuntimeMode: Boolean)
   extends TestScenarioRunnerBuilder[LiteTestScenarioRunner, LiteTestScenarioRunnerBuilder] {
 
+  import TestScenarioRunner._
+
   override def withExtraComponents(extraComponents: List[ComponentDefinition]): LiteTestScenarioRunnerBuilder =
     copy(extraComponents = extraComponents)
 
-  override def inTestRuntimeMode(): LiteTestScenarioRunnerBuilder =
+  override def inTestRuntimeMode: LiteTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
 
   override def build(): LiteTestScenarioRunner = new LiteTestScenarioRunner(extraComponents, config, componentUseCase(testRuntimeMode))

@@ -115,11 +115,13 @@ object FlinkTestScenarioRunner {
 case class FlinkTestScenarioRunnerBuilder(components: List[ComponentDefinition], config: Config, flinkMiniCluster: FlinkMiniClusterHolder, testRuntimeMode: Boolean)
   extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
 
+  import TestScenarioRunner._
+
   override def withExtraComponents(components: List[ComponentDefinition]): FlinkTestScenarioRunnerBuilder = {
     copy(components = components)
   }
 
-  override def inTestRuntimeMode(): FlinkTestScenarioRunnerBuilder =
+  override def inTestRuntimeMode: FlinkTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
 
   override def build() = new FlinkTestScenarioRunner(components, config, flinkMiniCluster, componentUseCase(testRuntimeMode))

@@ -59,10 +59,12 @@ case class LiteKafkaTestScenarioRunnerBuilder(extraComponents: List[ComponentDef
                                               testRuntimeMode: Boolean)
   extends TestScenarioRunnerBuilder[LiteKafkaTestScenarioRunner, LiteKafkaTestScenarioRunnerBuilder] {
 
+  import TestScenarioRunner._
+
   override def withExtraComponents(extraComponents: List[ComponentDefinition]): LiteKafkaTestScenarioRunnerBuilder =
     copy(extraComponents = extraComponents)
 
-  override def inTestRuntimeMode(): LiteKafkaTestScenarioRunnerBuilder =
+  override def inTestRuntimeMode: LiteKafkaTestScenarioRunnerBuilder =
     copy(testRuntimeMode = true)
 
   def withSchemaRegistryClientFactory(schemaRegistryClientFactor: SchemaRegistryClientFactoryWithRegistration): LiteKafkaTestScenarioRunnerBuilder =

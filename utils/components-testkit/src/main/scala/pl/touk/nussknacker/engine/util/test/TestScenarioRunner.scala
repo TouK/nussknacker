@@ -35,6 +35,7 @@ object TestScenarioRunner {
   val testResultSink = "sink"
   val testResultService = "invocationCollector"
 
+  def componentUseCase(testRuntimeMode: Boolean): ComponentUseCase = if (testRuntimeMode) TestRuntime else EngineRuntime
 }
 
 /**
@@ -47,11 +48,9 @@ trait TestScenarioRunner
 
 trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunnerBuilder[R, _]] {
 
-  def componentUseCase(testRuntimeMode: Boolean): ComponentUseCase = if (testRuntimeMode) TestRuntime else EngineRuntime
-
   def withExtraComponents(components: List[ComponentDefinition]): B
 
-  def inTestRuntimeMode(): B
+  def inTestRuntimeMode: B
 
   def build(): R
 

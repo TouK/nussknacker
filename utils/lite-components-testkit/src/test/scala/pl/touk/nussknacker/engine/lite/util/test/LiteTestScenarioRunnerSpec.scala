@@ -5,6 +5,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
+import pl.touk.nussknacker.engine.api.process.ComponentUseCase.EngineRuntime
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -28,7 +29,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "{#o1, #o2}")
 
     val runner = new LiteTestScenarioRunner(List(ComponentDefinition("customByHand", new CustomComponent("myPrefix"))),
-      ConfigFactory.empty().withValue("components.custom.prefix", fromAnyRef("configuredPrefix")))
+      ConfigFactory.empty().withValue("components.custom.prefix", fromAnyRef("configuredPrefix")), EngineRuntime)
 
     val result = runner.runWithData[String, java.util.List[String]](scenario, List("t1"))
     result.validValue shouldBe RunResult.success(util.Arrays.asList("myPrefix:t1", "configuredPrefix:t1"))
@@ -41,7 +42,7 @@ class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with Validate
       .buildVariable("v", "v", "varField" -> "#input.field")
       .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#v.varField")
 
-    val runner = new LiteTestScenarioRunner(List(), ConfigFactory.empty())
+    val runner = new LiteTestScenarioRunner(List(), ConfigFactory.empty(), EngineRuntime)
 
     val result = runner.runWithData[SourceData, String](scenario, List(SourceData("abc")))
     result.validValue shouldBe RunResult.success("abc")
