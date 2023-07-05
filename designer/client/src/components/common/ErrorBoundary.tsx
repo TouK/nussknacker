@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from "react";
-import ErrorBoundary2, { ErrorBoundaryProps } from "react-error-boundary";
+import { ErrorBoundary as ErrorBoundary2, ErrorBoundaryProps } from "react-error-boundary";
 import { css } from "@emotion/css";
 
 const styles = css`

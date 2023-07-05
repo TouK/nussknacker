@@ -1,6 +1,6 @@
-import React from "react";
+import React, { PropsWithChildren } from "react";
 import LoaderSpinner from "./Spinner";
 
-export const SuspenseSpinner: React.FC = ({ children }) => (
+export const SuspenseSpinner: React.FC<PropsWithChildren> = ({ children }) => (
     <React.Suspense fallback={<LoaderSpinner show={true} />}>{children}</React.Suspense>
 );

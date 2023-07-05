@@ -2,10 +2,10 @@ import { ModuleString, ModuleUrl } from "./types";
 import { useExternalLib } from "./hooks";
 import React from "react";
 import { splitUrl } from "./tools";
-import ReactDOM from "react-dom";
 import { NkThemeProvider } from "../theme";
 import { MuiThemeProvider } from "../muiThemeProvider";
 import { ExternalModule } from "./ExternalModule";
+import { createRoot } from "react-dom/client";
 
 function Component<P>({ scope, ...props }: { scope: ModuleString } & P) {
     const {
@@ -24,15 +24,14 @@ export function RemoteComponent<P>({ url, ...props }: { url: ModuleUrl; scope: M
 
 export const loadExternalReactModule = (url, props) => {
     const rootContainer = document.createElement(`div`);
-    document.body.appendChild(rootContainer);
+    const divElement = createRoot(rootContainer);
     const [urlValue, scopeValue, scriptValue] = splitUrl(url);
-    ReactDOM.render(
+    divElement.render(
         <NkThemeProvider>
             <MuiThemeProvider>
                 <RemoteComponent url={urlValue} scope={scopeValue} scriptOrigin={scriptValue} {...props} />
             </MuiThemeProvider>
         </NkThemeProvider>,
-        rootContainer,
     );
 };
 

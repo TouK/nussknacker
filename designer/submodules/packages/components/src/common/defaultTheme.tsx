@@ -73,6 +73,9 @@ export const useDefaultTheme = (parent = {}): Theme => {
                                     root.palette.mode
                                 ],
                             },
+                            columnHeaderTitleContainer: {
+                                padding: "0 6px",
+                            },
                             "cell--withRenderer": {
                                 "&.noPadding": {
                                     padding: 0,

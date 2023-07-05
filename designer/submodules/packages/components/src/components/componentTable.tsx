@@ -1,4 +1,3 @@
-import { GridActionsCellItem } from "@mui/x-data-grid";
 import { ComponentType } from "nussknackerUi/HttpService";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +6,7 @@ import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
 import { ExternalLink, NuIcon } from "../common";
 import { filterRules } from "./filterRules";
 import { ComponentsFiltersModel } from "./filters";
+import { GridActionsCellItem } from "@mui/x-data-grid/components";
 
 export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element {
     const { data = [], isLoading } = props;
@@ -54,14 +54,13 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 getActions: ({ row }) =>
                     row.links.map((link, i) => (
                         <GridActionsCellItem
-                            component={ExternalLink}
                             key={link.id}
-                            href={link.url}
                             icon={<NuIcon src={link.icon} title={link.title} sx={{ fontSize: "1.5rem", verticalAlign: "middle" }} />}
                             label={link.title}
                             showInMenu={i > 0}
-                            target="_blank"
-                        />
+                        >
+                            <ExternalLink href={link.url} target="_blank"></ExternalLink>
+                        </GridActionsCellItem>
                     )),
             },
         ],

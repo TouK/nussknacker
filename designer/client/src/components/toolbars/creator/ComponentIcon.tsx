@@ -7,8 +7,9 @@ import { NodeType, ProcessDefinitionData } from "../../../types";
 import PropertiesSvg from "../../../assets/img/properties.svg";
 import ReactDOM from "react-dom";
 import { InlineSvg } from "../../SvgDiv";
+import { createRoot } from "react-dom/client";
 
-let preloadedIndex = 0
+let preloadedIndex = 0;
 const preloadBeImage = memoize((src: string): string | null => {
     if (!src) {
         return null;
@@ -16,7 +17,9 @@ const preloadBeImage = memoize((src: string): string | null => {
 
     const id = `svg${++preloadedIndex}`;
     const div = document.createElement("div");
-    ReactDOM.render(<InlineSvg src={src} id={id} style={{ display: "none" }} />, div);
+    const divElement = createRoot(div);
+
+    divElement.render(<InlineSvg src={src} id={id} style={{ display: "none" }} />);
     document.body.appendChild(div);
     return `#${id}`;
 });

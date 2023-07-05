@@ -10,8 +10,10 @@ export const NodeRow = forwardRef<HTMLDivElement, Props>(function FieldRow(props
     const { label, className, children, ...passProps } = props;
     return (
         <div ref={ref} className={cx("node-row", className)} {...passProps}>
-            {label && <NodeLabel label={label} />}
-            {children}
+            <>
+                {label && <NodeLabel label={label} />}
+                {children}
+            </>
         </div>
     );
 });
