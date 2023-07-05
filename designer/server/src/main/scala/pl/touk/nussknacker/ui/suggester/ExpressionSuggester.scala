@@ -18,8 +18,8 @@ class ExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDefinit
   def expressionSuggestions(expression: Expression, caretPosition2d: CaretPosition2d, variables: Map[String, TypingResult])
                            (implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
     expression.language match {
-      // currently we only support Spel expressions
-      case Language.Spel => spelExpressionSuggester.expressionSuggestions(expression, caretPosition2d.normalizedCaretPosition(expression.expression), variables)
+      // currently we only support Spel and SpelTemplate expressions
+      case Language.Spel | Language.SpelTemplate => spelExpressionSuggester.expressionSuggestions(expression, caretPosition2d.normalizedCaretPosition(expression.expression), variables)
       case _ => Future.successful(Nil)
     }
   }

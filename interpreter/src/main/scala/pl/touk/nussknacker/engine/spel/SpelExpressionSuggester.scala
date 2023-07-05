@@ -2,8 +2,10 @@ package pl.touk.nussknacker.engine.spel
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
+import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression, TemplateParserContext}
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast.{Identifier, Indexer, Projection, PropertyOrFieldReference, QualifiedIdentifier, Selection, StringLiteral, TypeReference, VariableReference}
+import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
@@ -74,8 +76,8 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
     }
 
     val suggestions = for {
-      parsedSpelNode <- nuSpelNodeParser.parse(input, variables).toOption
-      nodeInPosition <- parsedSpelNode.findNodeInPosition(normalizedCaretPosition)
+      (parsedSpelNode, adjustedPosition) <- nuSpelNodeParser.parse(input, expression.language, normalizedCaretPosition, variables).toOption.flatten
+      nodeInPosition <- parsedSpelNode.findNodeInPosition(adjustedPosition)
     } yield {
       nodeInPosition.spelNode match {
         // variable is typed (#foo), so we need to return filtered list of all variables that match currently typed name
@@ -169,17 +171,49 @@ class SpelExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDef
 private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser()
 
-  def parse(input: String, variables: Map[String, TypingResult]): Try[NuSpelNode] = {
-    val rawSpelExpression = Try(parser.parseRaw(input))
-    rawSpelExpression.map { parsedSpelExpression =>
-      val collectedTypingResult = typer.doTypeExpression(parsedSpelExpression, ValidationContext(variables))._2
-      val nuAst = new NuSpelNode(parsedSpelExpression.getAST, None, collectedTypingResult)
-      nuAst
+  def parse(input: String, language: String, position: Int, variables: Map[String, TypingResult]): Try[Option[(NuSpelNode, Int)]] = {
+    val rawExpression = if (language == Expression.Language.Spel) {
+      Try(parser.parseExpression(input))
+    } else if (language == Expression.Language.SpelTemplate) {
+      Try(parser.parseExpression(input, new TemplateParserContext()))
+    } else {
+      Failure(new IllegalArgumentException(s"Language $language is not supported"))
+    }
+    rawExpression.map { parsedExpression =>
+      val collectedTypingResult = typer.doTypeExpression(parsedExpression, ValidationContext(variables))._2
+      val parsedSpelExpression = parsedExpression match {
+        case s: SpelExpression => Some((s, position))
+        case c: CompositeStringExpression => findExpressionInPositionAndAdjustPosition(c, position)
+        case _: LiteralExpression => None
+      }
+      parsedSpelExpression.map(e => (new NuSpelNode(e._1.getAST, None, collectedTypingResult), e._2))
     }.recoverWith {
       case e =>
-        logger.debug(s"Failed to parse spel expression: $input, error: ${e.getMessage}")
+        logger.debug(s"Failed to parse $language expression: $input, error: ${e.getMessage}")
         Failure(e)
     }
+  }
+
+  private def findExpressionInPositionAndAdjustPosition(expression: CompositeStringExpression, position: Int): Option[(SpelExpression, Int)] = {
+    var currentPosition = 0
+    for (e <- expression.getExpressions) {
+      currentPosition += e.getExpressionString.length
+      e match {
+        case s: SpelExpression =>
+          // FIXME: this method does not work if there are any spaces around spel expression, e.g. 'Hello #{ #world }
+          //  SpelExpressionParser simply ignores them and pure expression is returned
+          currentPosition += 3 // '#{'.length + '}'.length
+          if (currentPosition > position) {
+            return Some((s, position - (currentPosition - 1 - e.getExpressionString.length)))
+          }
+        case _ =>
+          if (currentPosition > position) {
+            return None
+          }
+      }
+
+    }
+    None
   }
 }
 
@@ -203,7 +237,7 @@ private class NuSpelNode(val spelNode: SpelNode, val parent: Option[NuSpelNodePa
     parent.filter(_.nodeIndex > 0).map(p => p.node.children(p.nodeIndex - 1))
   }
 
-  private def minOption(seq: Seq[Int]): Option[Int] = if(seq.isEmpty) {
+  private def minOption(seq: Seq[Int]): Option[Int] = if (seq.isEmpty) {
     None
   } else {
     Some(seq.min)
@@ -221,5 +255,6 @@ private case class NuSpelNodeParent(node: NuSpelNode, nodeIndex: Int)
 //  return score from BE?
 @JsonCodec(encodeOnly = true)
 case class ExpressionSuggestion(methodName: String, refClazz: TypingResult, fromClass: Boolean, description: Option[String], parameters: List[Parameter])
+
 @JsonCodec(encodeOnly = true)
 case class Parameter(name: String, refClazz: TypingResult)
