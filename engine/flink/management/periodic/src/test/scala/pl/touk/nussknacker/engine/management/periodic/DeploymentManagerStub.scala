@@ -3,15 +3,16 @@ package pl.touk.nussknacker.engine.management.periodic
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
 
+import java.time.Instant
 import scala.concurrent.Future
 
-class DeploymentManagerStub extends BaseDeploymentManager {
+class DeploymentManagerStub extends BaseDeploymentManager with PostprocessingProcessStatus {
 
   var jobStatus: Option[StatusDetails] = None
 
@@ -35,6 +36,14 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
   override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
     Future.successful(WithDataFreshnessStatus(processStateDefinitionManager.processState(jobStatus.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed))), cached = false))
+
+  override def postprocess(name: ProcessName, statusDetailsOpt: Option[StatusDetails]): Future[Option[ProcessAction]] =
+    Future.successful(
+      for {
+        statusDetails <- statusDetailsOpt
+        if statusDetails.status == SimpleStateStatus.Finished
+      } yield ProcessAction(VersionId(-123), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Cancel, None, None, Map.empty)
+    )
 
   override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = Future.successful(jobStatus)
 

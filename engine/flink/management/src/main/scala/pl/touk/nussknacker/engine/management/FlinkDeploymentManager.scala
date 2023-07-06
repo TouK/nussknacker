@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
                                      (implicit ec: ExecutionContext, deploymentService: ProcessingTypeDeploymentService)
-  extends DeploymentManager with AlwaysFreshProcessState with LazyLogging {
+  extends DeploymentManager with PostprocessingProcessStatus with AlwaysFreshProcessState with LazyLogging {
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
 
@@ -33,15 +33,22 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
     for {
       statusWithFreshness <- getProcessState(name)
-      finishedStatusOpt = statusWithFreshness.value.filter(_.status == SimpleStateStatus.Finished)
-      _ = logger.debug(s"Status for ${name.value}: $statusWithFreshness. Is finished: ${finishedStatusOpt.isDefined}. Data freshness: $freshnessPolicy")
-      //There is small problem here: if no one invokes process status for long time, Flink can remove process from history
-      // - then it 's gone, not finished.
-      //TODO: it should be checked periodically instead of checking on each getProcessState invocation
-      // (consider moving `markProcessFinishedIfLastActionDeploy` to InconsistentStateDetector as one "detectAndResolveAndFixStatus")
-      cancelActionOpt <- finishedStatusOpt.map(_ => deploymentService.markProcessFinishedIfLastActionDeploy(name)).sequence.map(_.flatten)
-      engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, cancelActionOpt.orElse(lastStateAction))
+      _ = logger.debug(s"Status for ${name.value}: $statusWithFreshness")
+      actionAfterPostprocessOpt <- postprocess(name, statusWithFreshness.value)
+      engineStateResolvedWithLastAction = InconsistentStateDetector.resolve(statusWithFreshness.value, actionAfterPostprocessOpt.orElse(lastStateAction))
     } yield statusWithFreshness.copy(value = processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
+  }
+
+  //There is small problem here: if no one invokes process status for long time, Flink can remove process from history
+  // - then it 's gone, not finished.
+  //TODO: it should be checked periodically instead of checking on each getProcessState invocation
+  // (consider moving `markProcessFinishedIfLastActionDeploy` to InconsistentStateDetector as one "detectAndResolveAndFixStatus")
+  override def postprocess(name: ProcessName, statusDetailsOpt: Option[StatusDetails]): Future[Option[ProcessAction]] = {
+    statusDetailsOpt
+      .filter(_.status == SimpleStateStatus.Finished)
+      .map(_ => deploymentService.markProcessFinishedIfLastActionDeploy(name))
+      .sequence
+      .map(_.flatten)
   }
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {

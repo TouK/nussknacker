@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.Future
 
 trait DeploymentManagerInconsistentStateHandlerMixIn {
   self: DeploymentManager =>
@@ -65,6 +65,14 @@ trait DeploymentManager extends AutoCloseable {
 
   //TODO: savepointPath is very flink specific, we should handle it via custom action
   def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult]
+
+}
+
+// This is Flink-specific but we have to abstract over this, to keep PeriodicDeploymentManager loosely coupled with Flink
+// See comments in FlinkDeploymentManager
+trait PostprocessingProcessStatus { self: DeploymentManager =>
+
+  def postprocess(name: ProcessName, statusDetailsOpt: Option[StatusDetails]): Future[Option[ProcessAction]]
 
 }
 
