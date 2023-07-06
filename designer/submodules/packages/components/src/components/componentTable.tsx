@@ -6,7 +6,7 @@ import { Columns, TableViewData, TableWrapper } from "./tableWrapper";
 import { ExternalLink, NuIcon } from "../common";
 import { filterRules } from "./filterRules";
 import { ComponentsFiltersModel } from "./filters";
-import { GridActionsCellItem } from "@mui/x-data-grid/components";
+import { GridActionsCellItem } from "@mui/x-data-grid";
 
 export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element {
     const { data = [], isLoading } = props;

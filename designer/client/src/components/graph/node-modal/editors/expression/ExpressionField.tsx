@@ -1,4 +1,3 @@
-import _ from "lodash";
 import React, { useCallback } from "react";
 import { NodeType, UIParameter, VariableTypes } from "../../../../../types";
 import { UnknownFunction } from "../../../../../types/common";
@@ -8,6 +7,7 @@ import { Error } from "../Validators";
 import { EditorType } from "./Editor";
 import { NodeResultsForContext } from "../../../../../common/TestResultUtils";
 import { useDiffMark } from "../../PathsToMark";
+import { get } from "lodash";
 
 type Props = {
     fieldName: string;
@@ -44,7 +44,7 @@ function ExpressionField(props: Props): JSX.Element {
     const [isMarked] = useDiffMark();
     const readOnly = !isEditMode;
     const exprTextPath = `${exprPath}.expression`;
-    const expressionObj = _.get(editedNode, exprPath);
+    const expressionObj = get(editedNode, exprPath);
     const editor = parameterDefinition?.editor || {};
 
     const onValueChange = useCallback((newValue) => setNodeDataAt(exprTextPath, newValue), [exprTextPath, setNodeDataAt]);

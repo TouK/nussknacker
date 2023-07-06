@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import _, { uniqBy } from "lodash";
+import { get, has, isEmpty, isEqual, uniqBy } from "lodash";
 import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils";
 import ProcessUtils from "../../common/ProcessUtils";
 import {
@@ -18,7 +18,7 @@ import { UnknownRecord } from "../../types/common";
 
 class NodeUtils {
     isNode = (obj: UnknownRecord): obj is NodeType => {
-        return !_.isEmpty(obj) && _.has(obj, "id") && _.has(obj, "type");
+        return !isEmpty(obj) && has(obj, "id") && has(obj, "type");
     };
 
     nodeType = (node: NodeType) => {
@@ -35,7 +35,7 @@ class NodeUtils {
     };
 
     isPlainNode = (node: UINodeType) => {
-        return !_.isEmpty(node) && !this.nodeIsProperties(node);
+        return !isEmpty(node) && !this.nodeIsProperties(node);
     };
 
     nodeIsJoin = (node: NodeType): boolean => {
@@ -89,7 +89,7 @@ class NodeUtils {
             return edgesForNode.edges[0];
         } else {
             const currentConnectionsTypes = allEdges.filter((edge) => edge.from === node.id).map((e) => e.edgeType);
-            return edgesForNode.edges.find((et) => !currentConnectionsTypes.find((currentType) => _.isEqual(currentType, et)));
+            return edgesForNode.edges.find((et) => !currentConnectionsTypes.find((currentType) => isEqual(currentType, et)));
         }
     };
 
@@ -99,7 +99,7 @@ class NodeUtils {
         const data = processDefinitionData.edgesForNodes
             .filter((e) => !forInput || e.isForInputDefinition === forInput)
             //here we use == in second comparison, as we sometimes compare null to undefined :|
-            .find((e) => e.nodeId.type === _.get(node, "type") && e.nodeId.id == nodeObjectTypeDefinition);
+            .find((e) => e.nodeId.type === get(node, "type") && e.nodeId.id == nodeObjectTypeDefinition);
         return data || { edges: [null], canChooseNodes: false };
     };
 
@@ -185,9 +185,9 @@ class NodeUtils {
     noOutputNodeTypes = ["Sink", "SubprocessOutputDefinition"];
 
     //TODO: methods below should be based on backend data, e.g. Subprocess can have outputs or not - based on individual subprocess...
-    hasInputs = (node: NodeType) => !this.noInputNodeTypes.some((nodeType) => _.isEqual(nodeType, node?.type));
+    hasInputs = (node: NodeType) => !this.noInputNodeTypes.some((nodeType) => isEqual(nodeType, node?.type));
 
-    hasOutputs = (node: NodeType) => !this.noOutputNodeTypes.some((nodeType) => _.isEqual(nodeType, node?.type));
+    hasOutputs = (node: NodeType) => !this.noOutputNodeTypes.some((nodeType) => isEqual(nodeType, node?.type));
 }
 
 //TODO this pattern is not necessary, just export every public function as in actions.js

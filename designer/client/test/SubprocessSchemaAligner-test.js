@@ -1,5 +1,5 @@
 import * as SubprocessSchemaAligner from "../src/components/graph/SubprocessSchemaAligner";
-import _ from "lodash";
+import { omit } from "lodash";
 
 const subprocessProcessDefinitionData = {
     componentGroups: [
@@ -48,7 +48,7 @@ describe("subprocess schema aligner test", () => {
             { name: "param1", expression: { language: "spel", expression: "''" } },
             { name: "param2", expression: { language: "spel", expression: "'cde'" } },
         ]);
-        expect(_.omit(alignedSubprocess, "ref")).toEqual(_.omit(subprocessNode, "ref"));
+        expect(omit(alignedSubprocess, "ref")).toEqual(omit(subprocessNode, "ref"));
     });
 
     it("should not change anything if subprocess is valid with schema", () => {

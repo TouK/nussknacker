@@ -2,7 +2,7 @@
 import { AxiosRequestConfig } from "axios";
 import { v4 as uuid4 } from "uuid";
 import api from "../api";
-import _ from "lodash";
+import { isEmpty, set } from "lodash";
 
 class SystemUtils {
     public static AUTHORIZATION_HEADER_NAMESPACE = "Authorization";
@@ -36,7 +36,7 @@ class SystemUtils {
 
     public setAuthorizationToken = (token): void => {
         api.interceptors.request.use((config: AxiosRequestConfig) => {
-            _.set(config.headers, SystemUtils.AUTHORIZATION_HEADER_NAMESPACE, this.authorizationToken());
+            set(config.headers, SystemUtils.AUTHORIZATION_HEADER_NAMESPACE, this.authorizationToken());
             return config;
         });
 
@@ -44,7 +44,7 @@ class SystemUtils {
     };
 
     public getUserId = (): string => {
-        if (_.isEmpty(localStorage.getItem(SystemUtils.USER_ID_NAMESPACE))) {
+        if (isEmpty(localStorage.getItem(SystemUtils.USER_ID_NAMESPACE))) {
             localStorage.setItem(SystemUtils.USER_ID_NAMESPACE, uuid4());
         }
 
