@@ -7,7 +7,6 @@ import { NodeType, ProcessDefinitionData } from "../../../types";
 import PropertiesSvg from "../../../assets/img/properties.svg";
 import ReactDOM from "react-dom";
 import { InlineSvg } from "../../SvgDiv";
-import { createRoot } from "react-dom/client";
 
 let preloadedIndex = 0;
 const preloadBeImage = memoize((src: string): string | null => {
@@ -17,9 +16,7 @@ const preloadBeImage = memoize((src: string): string | null => {
 
     const id = `svg${++preloadedIndex}`;
     const div = document.createElement("div");
-    const divElement = createRoot(div);
-
-    divElement.render(<InlineSvg src={src} id={id} style={{ display: "none" }} />);
+    ReactDOM.render(<InlineSvg src={src} id={id} style={{ display: "none" }} />, div);
     document.body.appendChild(div);
     return `#${id}`;
 });
@@ -43,7 +40,7 @@ export const getComponentIconSrc: {
     return null;
 };
 
-interface Created extends ComponentIconParops {
+interface Created extends ComponentIconProps {
     processDefinition: ProcessDefinitionData;
 }
 
@@ -77,12 +74,12 @@ class Icon extends React.Component<Created> {
     }
 }
 
-interface ComponentIconParops {
+interface ComponentIconProps {
     node: NodeType;
     className?: string;
 }
 
-export const ComponentIcon = (props: ComponentIconParops) => {
+export const ComponentIcon = (props: ComponentIconProps) => {
     const processDefinitionData = useSelector(getProcessDefinitionData);
     return <Icon {...props} processDefinition={processDefinitionData} />;
 };
