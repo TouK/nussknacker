@@ -144,6 +144,16 @@ NU_FE_CORE_URL=http://localhost:3000 npm start
 
 > WARNING: When using **unified linux environment** prefix npm start invocation with NU_FE_CORE_URL=http://host.docker.internal:3000 and add entry in `/etc/hosts` leading to `127.0.0.1`
 
+#### Using unified linux environment with update image snapshots mode enabled
+
+#### Analyzing webpack build budnle
+
+It helps to realize what's really inside your bundle and find out what modules make up the most of it's size
+
+```
+npm run build-bundle-analyzer
+```
+
 ### Fixing cypress tests
 
 After some changes in frontend it might be needed to rewrite captured image snapshots. The easiest way is to:
