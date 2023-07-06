@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
+import org.scalatest.prop.TableDrivenPropertyChecks
+import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType, StatusDetails}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType, StatusDetails}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeplo
 import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.time.{Clock, Instant}
+import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
 
 class PeriodicDeploymentManagerTest extends AnyFunSuite
   with Matchers
@@ -108,6 +108,21 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
     val status = state.value.status
     status shouldBe a[ScheduledStatus]
     f.getAllowedActions(state.value) shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
+  }
+
+  test("getProcessState - should be finished when scenario finished and job finished on Flink") {
+    val f = new Fixture
+    val processId = f.repository.addOnlyProcess(processName, CronScheduleProperty("0 0 0 1 1 ? 1970"))
+    f.repository.addOnlyDeployment(processId, PeriodicProcessDeploymentStatus.Finished, LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC))
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
+    f.periodicProcessService.deactivate(processName).futureValue
+
+    val deployAction = ProcessAction(VersionId(1), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Deploy, None, None, Map.empty)
+    val state = f.periodicDeploymentManager.getProcessState(processName, Some(deployAction)).futureValue.value
+
+    val status = state.status
+    status shouldBe SimpleStateStatus.Finished
+    state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
   }
 
   test("getProcessState - should be running when scenario deployed and job running on Flink") {

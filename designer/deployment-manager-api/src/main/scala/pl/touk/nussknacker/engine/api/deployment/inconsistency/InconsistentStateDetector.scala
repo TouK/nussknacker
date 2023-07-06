@@ -66,8 +66,8 @@ class InconsistentStateDetector extends LazyLogging {
     statusDetails match {
       case Some(state) =>
         state.version match {
-          case _ if !(isFollowingDeployStatus(state)) =>
-            logger.debug(s"handleMismatchDeployedStateLastAction: is not following deploy status, but it should be. $state")
+          case _ if !isFollowingDeployStatus(state) && !isFinishedStatus(state) =>
+            logger.debug(s"handleMismatchDeployedStateLastAction: is not following deploy status nor finished, but it should be. $state")
             state.copy(status = ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user))
           case Some(ver) if ver.versionId != action.processVersionId =>
             state.copy(status = ProblemStateStatus.mismatchDeployedVersion(ver.versionId, action.processVersionId, action.user))
@@ -91,4 +91,9 @@ class InconsistentStateDetector extends LazyLogging {
   protected def isFollowingDeployStatus(state: StatusDetails): Boolean = {
     SimpleStateStatus.DefaultFollowingDeployStatuses.contains(state.status)
   }
+
+  protected def isFinishedStatus(state: StatusDetails): Boolean = {
+    state.status == SimpleStateStatus.Finished
+  }
+
 }
