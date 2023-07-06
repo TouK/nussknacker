@@ -58,6 +58,7 @@ const config: Configuration = {
         path: outputPath,
         filename: isProd ? "[contenthash].js" : "[name].js",
         assetModuleFilename: "assets/images/[name][hash][ext]",
+        clean: true,
     },
     devtool: isProd ? "hidden-source-map" : "eval-source-map",
     watchOptions: {
