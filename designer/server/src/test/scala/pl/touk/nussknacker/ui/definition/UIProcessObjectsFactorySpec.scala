@@ -10,8 +10,9 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.ToStaticObjectDefinitionTransformer
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig, MetaDataInitializer}
+import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
@@ -71,17 +72,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
         Map("enricher" -> WithCategories(TestService))
     })
 
-    val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(
-      model,
-      mockDeploymentManager,
-      initialData,
-      TestFactory.user("userId"),
-      Set(),
-      false,
-      new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
-      Map.empty,
-      TestProcessingTypes.Streaming
-    )
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
 
     processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.editor)).toMap shouldBe Map(
       "paramDualEditor" -> DualParameterEditor(
@@ -104,9 +95,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
         )
     })
 
-    val processObjects =
-      UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"), Set(), false,
-        new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
 
     processObjects.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
   }
@@ -120,9 +109,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
         )
     })
 
-    val processObjects =
-      UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"), Set(), false,
-        new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
 
     val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
     componentsGroups should not be empty
@@ -135,8 +122,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val docsUrl = "https://nussknacker.io/documentation/"
     val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.withTypeSpecificData(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
 
-    val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"),
-        Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
+    val processObjects = prepareUIProcessObjects(model, Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")))
 
     processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
   }
@@ -146,9 +132,25 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
 
     val fragment = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
-    val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, initialData, TestFactory.user("userId"),
-      Set(SubprocessDetails(fragment, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
+    val processObjects = prepareUIProcessObjects(model, Set(SubprocessDetails(fragment, "Category1")))
     processObjects.componentsConfig.get(fragment.id) shouldBe empty
   }
+
+  private def prepareUIProcessObjects(model: ModelData,
+                                      subprocessesDetails: Set[SubprocessDetails]) = {
+    val staticObjectsDefinition = ToStaticObjectDefinitionTransformer.transformModel(model, initialData.create(_, Map.empty))
+    UIProcessObjectsFactory.prepareUIProcessObjects(
+      model,
+      staticObjectsDefinition,
+      mockDeploymentManager,
+      TestFactory.user("userId"),
+      subprocessesDetails,
+      isSubprocess = false,
+      new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
+      Map.empty,
+      TestProcessingTypes.Streaming
+    )
+  }
+
 
 }

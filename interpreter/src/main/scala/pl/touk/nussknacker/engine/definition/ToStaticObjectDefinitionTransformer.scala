@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, SingleInputGenericNodeTransformation, WithStaticParameters}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId, ScenarioSpecificData}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.GenericNodeTransformationValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 
 // This class purpose is to provide initial set of parameters that will be presented after first usage of a component.
@@ -56,6 +57,23 @@ class ToStaticObjectDefinitionTransformer(objectParametersExpressionCompiler: Ex
         inferParameters(single)(ValidationContext())
       case join: JoinGenericNodeTransformation[_] =>
         inferParameters(join)(Map.empty)
+    }
+  }
+
+}
+
+object ToStaticObjectDefinitionTransformer {
+
+  def transformModel(modelDataForType: ModelData,
+                     createMetaData: ProcessName => MetaData): ProcessDefinition[ObjectDefinition] = {
+    val toStaticObjectDefinitionTransformer = new ToStaticObjectDefinitionTransformer(
+      ExpressionCompiler.withoutOptimization(modelDataForType),
+      modelDataForType.modelDefinition.expressionConfig,
+      createMetaData)
+
+    // We have to wrap this block with model's class loader because it invokes node compilation under the hood
+    modelDataForType.withThisAsContextClassLoader {
+      modelDataForType.modelDefinition.transform(toStaticObjectDefinitionTransformer.toStaticObjectDefinition)
     }
   }
 

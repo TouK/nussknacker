@@ -1,26 +1,22 @@
 package pl.touk.nussknacker.ui.component
 
-import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
-import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
-import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{BaseModelData, ProcessingTypeData}
-import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
-import pl.touk.nussknacker.restmodel.component.NodeUsageData
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.{FragmentUsageData, ScenarioUsageData}
+import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario, NodeUsageData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockFetchingProcessRepository, TestFactory}
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockFetchingProcessRepository, MockManagerProvider, TestFactory}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.component.DefaultsComponentGroupName._
@@ -32,10 +28,6 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
-import sttp.client3.SttpBackend
-
-import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures
   with EitherValuesDetailedMessage with OptionValues {
@@ -220,13 +212,6 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   private val categoryService = new ConfigProcessCategoryService(categoryConfig)
 
-  private object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
-    override def createDeploymentManager(modelData: BaseModelData, config: Config)
-                                        (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                         sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
-      new MockDeploymentManager
-  }
-
   private val baseComponents: List[ComponentListElement] =
     List(
       baseComponent(Filter, overriddenIcon, BaseGroupName, AllCategories),
@@ -367,12 +352,11 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
     Fraud -> LocalModelData(fraudConfig, ComponentFraudTestConfigCreator),
   ).transform { case (_, modelData) =>
-    ProcessingTypeData(new MockDeploymentManager,
+    ProcessingTypeData.createProcessingTypeData(
+      MockManagerProvider,
+      new MockDeploymentManager,
       modelData,
-      MockManagerProvider.metaDataInitializer(ConfigFactory.empty()),
-      Map.empty,
-      Nil,
-      ProcessingTypeUsageStatistics(None, None))
+      ConfigFactory.empty())
   }
   private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(processingTypeDataMap, DefaultComponentIdProvider.createUnsafe(processingTypeDataMap, categoryService))
 
@@ -442,13 +426,12 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     val badProcessingTypeDataMap = Map(
       Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
       Fraud -> LocalModelData(wrongConfig, WronglyConfiguredConfigCreator),
-    ).map { case (processingType, config) =>
-      processingType -> ProcessingTypeData(new MockDeploymentManager,
-        config,
-        MockManagerProvider.metaDataInitializer(ConfigFactory.empty()),
-        Map.empty,
-        Nil,
-        ProcessingTypeUsageStatistics(None, None))
+    ).map { case (processingType, modelData) =>
+      processingType -> ProcessingTypeData.createProcessingTypeData(
+        MockManagerProvider,
+        new MockDeploymentManager,
+        modelData,
+        ConfigFactory.empty())
     }
     val componentObjectsService = new ComponentObjectsService(categoryService)
     val componentObjectsMap = badProcessingTypeDataMap.transform(componentObjectsService.prepareWithoutFragments)
