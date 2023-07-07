@@ -60,7 +60,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
       .sortBy(_._1.performedAt.desc)
 
   protected def fetchLatestProcessesQuery(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
-                                          lastDeployedActionPerProcess: Seq[(ProcessId, (ProcessActionEntityData, Option[CommentEntityData]))],
+                                          lastDeployedActionPerProcess: Set[ProcessId],
                                           isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser): Query[(((Rep[ProcessId], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((ProcessId, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
     processVersionsTableWithUnit
       .groupBy(_.processId)
@@ -72,7 +72,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
       .filter{ case ((_, _), process) =>
         isDeployed match {
           case None => true: Rep[Boolean]
-          case Some(dep) => process.id.inSet(lastDeployedActionPerProcess.map(_._1)) === dep
+          case Some(dep) => process.id.inSet(lastDeployedActionPerProcess) === dep
         }
       }
 
