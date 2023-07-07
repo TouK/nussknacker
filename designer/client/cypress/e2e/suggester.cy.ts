@@ -2,7 +2,10 @@ describe("Expression suggester", () => {
     const seed = "suggester";
 
     before(() => {
-        cy.deleteAllTestProcesses({ filter: seed, force: true });
+        cy.deleteAllTestProcesses({
+            filter: seed,
+            force: true,
+        });
     });
 
     after(() => {
@@ -32,6 +35,7 @@ describe("Expression suggester", () => {
 
     it.only("should display javadocs", () => {
         cy.visitNewProcess(seed, "variables");
+        cy.viewport(1440, 1200);
         cy.get("[title='toggle left panel']").click();
         cy.layoutScenario();
         cy.get("[model-id=kafka-string]").trigger("dblclick");
@@ -45,8 +49,9 @@ describe("Expression suggester", () => {
         // We wait for validation result to be sure that red message below the form field will be visible
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
         cy.get(".ace_autocomplete").should("be.visible");
-        cy.get("[data-testid=graphPage]").matchImage({
+        cy.get("[data-testid=window]").matchImage({
             screenshotConfig: {
+                padding: [16, 200, 16, 200],
                 blackout: ["> :not(#nk-graph-main) > div"],
             },
         });
