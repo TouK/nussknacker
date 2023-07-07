@@ -9,7 +9,7 @@
         "postinstall": "patch-package",
         "prebuild": "i18next '!(node_modules|cypress|dist|test)/**/*.{js,ts,tsx}'",
         "build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress",
-        "build-bundle-analyzer": "NODE_ENV=bundleReport webpack --profile --json > stats.json",
+        "build-bundle-analyzer": "NODE_ENV=bundleReport webpack --mode production --profile --json > stats.json",
         "clean": "rm -rf dist",
         "clean-build": "npm run clean && npm run build",
         "check-types": "tsc",
