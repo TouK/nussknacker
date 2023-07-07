@@ -51,6 +51,8 @@ jobs:
             fe_changes:
               - 'designer/client/**'
               - 'designer/submodules/**'
+              - 'docs/**'
+              - '**.md'
             all_changes:
               - '**'
       - name: Define variables

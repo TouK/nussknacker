@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkConfig
-import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.ScheduledStatus
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
@@ -78,7 +77,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
                                                   customActionsProvider: PeriodicCustomActionsProvider,
                                                   toClose: () => Unit)
                                                  (implicit val ec: ExecutionContext)
-  extends DeploymentManager with LazyLogging with DeploymentManagerInconsistentStateHandlerMixIn {
+  extends DeploymentManager with LazyLogging {
 
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
@@ -146,7 +145,22 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     } yield WithDataFreshnessStatus(mergedStatus, delegateState.cached)
   }
 
-  override protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetailsOpt: Option[StatusDetails]): StatusDetails = {
+  override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
+    for {
+      statusWithFreshness <- getProcessState(name)
+      _ = logger.debug(s"Status for ${name.value}: $statusWithFreshness")
+      actionAfterPostprocessOpt <- {
+        delegate match {
+          case postprocessing: PostprocessingProcessStatus =>
+            postprocessing.postprocess(name, statusWithFreshness.value)
+          case _ => Future.successful(None)
+        }
+      }
+      engineStateResolvedWithLastAction = flattenStatus(actionAfterPostprocessOpt.orElse(lastStateAction), statusWithFreshness.value)
+    } yield statusWithFreshness.copy(value = processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
+  }
+
+  protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetailsOpt: Option[StatusDetails]): StatusDetails = {
     // InconsistentStateDetector is a little overkill here. It checks some things that won't happen in periodic case because scheduler
     // is in the same jvm as designer. Also we have some synchronization logic that makes those inconsistencies impossible.
     // After cleanup in scheduler mechanism, we should remove this

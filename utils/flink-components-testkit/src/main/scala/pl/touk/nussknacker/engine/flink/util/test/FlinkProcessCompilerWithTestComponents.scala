@@ -46,5 +46,5 @@ class FlinkProcessCompilerWithTestComponents(creator: ProcessConfigCreator,
 
   private def testComponentsWithCategories[T <: Component : ClassTag] = testComponentsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap
 
-  def this(componentsHolder: TestComponentsHolder, modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, false, modelData.objectNaming, ComponentUseCase.EngineRuntime, componentsHolder)
+  def this(componentsHolder: TestComponentsHolder, modelData: ModelData, componentUseCase: ComponentUseCase) = this(modelData.configCreator, modelData.processConfig, false, modelData.objectNaming, componentUseCase, componentsHolder)
 }

@@ -46,7 +46,7 @@ class AdditionalVariableSpec extends AnyFunSuite with Matchers {
 
   private def definition(sourceFactory: SourceFactory): List[Parameter] = {
     ProcessDefinitionExtractor
-      .extractObjectWithMethods(new CreatorWithComponent(sourceFactory), ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming))
+      .extractObjectWithMethods(new CreatorWithComponent(sourceFactory), getClass.getClassLoader, ProcessObjectDependencies(ConfigFactory.empty(), DefaultNamespacedObjectNaming))
       .sourceFactories.head._2.asInstanceOf[StandardObjectWithMethodDef].parameters
   }
 

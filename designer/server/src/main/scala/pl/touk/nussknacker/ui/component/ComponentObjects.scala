@@ -53,8 +53,8 @@ private[component] class ComponentObjectsService(categoryService: ProcessCategor
                                      subprocesses: Set[SubprocessDetails]): UIProcessObjects = {
     UIProcessObjectsFactory.prepareUIProcessObjects(
       modelDataForType = processingTypeData.modelData,
+      staticObjectsDefinition = processingTypeData.staticObjectsDefinition,
       deploymentManager = processingTypeData.deploymentManager,
-      metaDataInitializer = processingTypeData.metaDataInitializer,
       user = user,
       subprocessesDetails = subprocesses,
       isSubprocess = false, //It excludes fragment's components: input / output

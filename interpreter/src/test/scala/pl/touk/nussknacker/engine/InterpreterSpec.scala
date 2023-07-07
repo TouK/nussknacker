@@ -139,7 +139,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         .copy(languages = LanguageConfiguration(List(LiteralExpressionParser)), dynamicPropertyAccessAllowed = true)
     }
 
-    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
+    val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, getClass.getClassLoader, api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
     val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
     ProcessCompilerData.prepare(process, definitionsWithTypes, new SimpleDictRegistry(Map.empty).toEngineRegistry,

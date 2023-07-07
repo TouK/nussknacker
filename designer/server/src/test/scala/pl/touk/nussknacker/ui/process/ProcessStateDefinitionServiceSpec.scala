@@ -10,10 +10,10 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{ProcessingTypeData, MetaDataInitializer}
+import pl.touk.nussknacker.engine.{MetaDataInitializer, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockManagerProvider}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.{Category1, Category2, TestCat, TestCat2}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
@@ -156,12 +156,11 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
 
   private def createProcessingTypeDataMap(processingTypeToDeploymentManager: Map[ProcessingType, DeploymentManager]): Map[ProcessingType, ProcessingTypeData] = {
     processingTypeToDeploymentManager.transform { case (_, deploymentManager) =>
-      ProcessingTypeData(deploymentManager,
+      ProcessingTypeData.createProcessingTypeData(
+        MockManagerProvider,
+        deploymentManager,
         LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
-        MetaDataInitializer(StreamMetaData.typeName, Map(StreamMetaData.parallelismName -> "1")),
-        Map.empty,
-        Nil,
-        ProcessingTypeUsageStatistics(None, None))
+        ConfigFactory.empty())
     }
   }
 

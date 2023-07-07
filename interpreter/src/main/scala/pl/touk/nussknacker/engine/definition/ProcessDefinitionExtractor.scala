@@ -25,9 +25,10 @@ object ProcessDefinitionExtractor {
   // Returns object definitions with high-level possible return types of components within given ProcessConfigCreator.
   //TODO: enable passing components directly, without ComponentProvider discovery, e.g. for testing
   def extractObjectWithMethods(creator: ProcessConfigCreator,
+                               classLoader: ClassLoader,
                                processObjectDependencies: ProcessObjectDependencies): ProcessDefinition[ObjectWithMethodDef] = {
 
-    val componentsFromProviders = extractFromComponentProviders(creator.getClass.getClassLoader, processObjectDependencies)
+    val componentsFromProviders = extractFromComponentProviders(classLoader, processObjectDependencies)
     val services = creator.services(processObjectDependencies) ++ componentsFromProviders.services
     val sourceFactories = creator.sourceFactories(processObjectDependencies) ++ componentsFromProviders.sourceFactories
     val sinkFactories = creator.sinkFactories(processObjectDependencies) ++ componentsFromProviders.sinkFactories

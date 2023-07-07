@@ -226,6 +226,7 @@ lazy val commonSettings =
         "org.apache.avro" % "avro" % avroV,
         "com.typesafe" % "config" % configV,
         "commons-io" % "commons-io" % flinkCommonsIOV,
+        "org.apache.commons" % "commons-text" % flinkCommonsTextV, // dependency of commons-lang3
         "org.apache.commons" % "commons-lang3" % flinkCommonsLang3V,
 
         "io.circe" %% "circe-core" % circeV,
@@ -734,7 +735,7 @@ lazy val benchmarks = (project in file("benchmarks")).
     Jmh / classDirectory := (Test / classDirectory).value,
     Jmh / dependencyClasspath := (Test / dependencyClasspath).value,
     Jmh / generateJmhSourcesAndResources := (Jmh / generateJmhSourcesAndResources).dependsOn(Test / compile).value,
-  ).dependsOn(interpreter, flinkSchemedKafkaComponentsUtils, flinkExecutor, flinkBaseComponents, testUtils % "test")
+  ).dependsOn(designer, extensionsApi, interpreter, flinkSchemedKafkaComponentsUtils, flinkExecutor, flinkBaseComponents, testUtils % "test")
 
 
 lazy val kafkaUtils = (project in utils("kafka-utils")).

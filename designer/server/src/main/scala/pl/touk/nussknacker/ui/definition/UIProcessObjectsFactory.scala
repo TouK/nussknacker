@@ -29,8 +29,8 @@ object UIProcessObjectsFactory {
   import net.ceedubs.ficus.Ficus._
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
+                              staticObjectsDefinition: ProcessDefinition[ObjectDefinition],
                               deploymentManager: DeploymentManager,
-                              metaDataInitializer: MetaDataInitializer,
                               user: LoggedUser,
                               subprocessesDetails: Set[SubprocessDetails],
                               isSubprocess: Boolean,
@@ -39,26 +39,15 @@ object UIProcessObjectsFactory {
                               processingType: ProcessingType): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
-    val toStaticObjectDefinitionTransformer = new ToStaticObjectDefinitionTransformer(
-      ExpressionCompiler.withoutOptimization(modelDataForType),
-      modelDataForType.modelDefinition.expressionConfig,
-      metaDataInitializer.create(_ , Map.empty))
-
-    val processDefinition: ProcessDefinition[ObjectDefinition] = {
-      // We have to wrap this block with model's class loader because it invokes node compilation under the hood
-      modelDataForType.withThisAsContextClassLoader {
-        modelDataForType.modelDefinition.transform(toStaticObjectDefinitionTransformer.toStaticObjectDefinition)
-      }
-    }
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
     //FIXME: how to handle dynamic configuration of subprocesses??
     val subprocessInputs = extractSubprocessInputs(subprocessesDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
     val uiClazzDefinitions = modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition)
-    val uiProcessDefinition = createUIProcessDefinition(processDefinition, subprocessInputs,
+    val uiProcessDefinition = createUIProcessDefinition(staticObjectsDefinition, subprocessInputs,
       uiClazzDefinitions, processCategoryService)
 
-    val customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2)
+    val customTransformerAdditionalData = staticObjectsDefinition.customStreamTransformers.mapValuesNow(_._2)
 
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
 
@@ -91,7 +80,7 @@ object UIProcessObjectsFactory {
       componentsConfig = finalComponentsConfig,
       additionalPropertiesConfig = additionalPropertiesConfigForUi,
       edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
-        processDefinition = processDefinition,
+        processDefinition = staticObjectsDefinition,
         isSubprocess = isSubprocess,
         subprocessesDetails = subprocessesDetails
       ),

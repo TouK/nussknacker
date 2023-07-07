@@ -1,21 +1,24 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import akka.actor.ActorSystem
 import com.google.common.collect.LinkedHashMultimap
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
-import pl.touk.nussknacker.engine.management.FlinkDeploymentManager
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
+import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import shapeless.syntax.typeable.typeableOps
+import sttp.client3.SttpBackend
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
 
 object MockDeploymentManager {
@@ -183,4 +186,12 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(implicit
     }
 
 
+}
+
+
+object MockManagerProvider extends FlinkStreamingDeploymentManagerProvider {
+  override def createDeploymentManager(modelData: BaseModelData, config: Config)
+                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem,
+                                       sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
+    new MockDeploymentManager
 }
