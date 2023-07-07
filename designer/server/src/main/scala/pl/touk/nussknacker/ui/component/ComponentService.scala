@@ -10,7 +10,6 @@ import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
-import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -18,7 +17,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ComponentService {
-  def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]]
+  def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]]
 
   def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]]
 }
@@ -54,31 +53,31 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
 
   private def componentIdProvider: ComponentIdProvider = processingTypeDataProvider.combined
 
-  override def getComponentsList(user: LoggedUser): Future[List[ComponentListElement]] = {
-    processingTypeDataProvider.all.toList.flatTraverse {
-      case (processingType, processingTypeData) =>
-        extractComponentsFromProcessingType(processingTypeData, processingType, user)
-    }.map { components =>
-      val filteredComponents = components.filter(component => component.categories.nonEmpty)
-
-      val mergedComponents = mergeSameComponentsAcrossProcessingTypes(filteredComponents)
-
-      mergedComponents
-        .sortBy(ComponentListElement.sortMethod)
-    }
+  override def getComponentsList(implicit user: LoggedUser): Future[List[ComponentListElement]] = {
+    for {
+      components <- processingTypeDataProvider.all.toList.flatTraverse {
+        case (processingType, processingTypeData) =>
+          extractComponentsFromProcessingType(processingTypeData, processingType, user)
+      }
+      filteredComponents = components.filter(component => component.categories.nonEmpty)
+      mergedComponents = mergeSameComponentsAcrossProcessingTypes(filteredComponents)
+      userAccessibleComponentUsages <- getUserAccessibleComponentUsages
+      enrichedWithUsagesComponents = mergedComponents.map(c => c.copy(usageCount = userAccessibleComponentUsages.getOrElse(c.id, 0)))
+      sortedComponents = enrichedWithUsagesComponents.sortBy(ComponentListElement.sortMethod)
+    } yield sortedComponents
   }
 
   override def getComponentUsages(componentId: ComponentId)(implicit user: LoggedUser): Future[XError[List[ComponentUsagesInScenario]]] =
     processService
       .getProcessesAndSubprocesses[ScenarioComponentsUsages]
-      .map(processDetailsList => {
+      .map { processDetailsList =>
         val componentsUsage = ComponentsUsageHelper.computeComponentsUsage(componentIdProvider, processDetailsList)
 
         componentsUsage
           .get(componentId)
           .map(data => Right(data.map { case (process, nodesUsagesData) => ComponentUsagesInScenario(process, nodesUsagesData) }.sortBy(_.id)))
           .getOrElse(Left(ComponentNotFoundError(componentId)))
-      })
+      }
 
   private def extractComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
                                                   processingType: ProcessingType,
@@ -90,34 +89,29 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
     // When user has no access to the model then it makes no sense to extract data.
     userProcessingTypeCategories match {
       case Nil => Future(List.empty)
-      case _ => getComponentUsages(userProcessingTypeCategories)(user, ec).flatMap { componentUsages =>
-        extractUserComponentsFromProcessingType(processingTypeData, processingType, user, componentUsages)
-      }
+      case _ => extractUserComponentsFromProcessingType(processingTypeData, processingType, user)
     }
   }
 
-  private def getComponentUsages(categories: List[Category])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] = {
+  private def getUserAccessibleComponentUsages(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Map[ComponentId, Long]] = {
     processService
       .getProcessesAndSubprocesses[ScenarioComponentsUsages]
-      .map(_.filter(p => categories.contains(p.processCategory))) //TODO: move it to service?
       .map(processes => ComponentsUsageHelper.computeComponentsUsageCount(componentIdProvider, processes))
   }
 
   private def extractUserComponentsFromProcessingType(processingTypeData: ProcessingTypeData,
                                                       processingType: ProcessingType,
-                                                      user: LoggedUser,
-                                                      componentUsages: Map[ComponentId, Long]): Future[List[ComponentListElement]] = {
+                                                      user: LoggedUser): Future[List[ComponentListElement]] = {
     processService
       .getSubprocessesDetails(processingTypes = Some(List(processingType)))(user)
       .map { subprocesses =>
         // We assume that fragments have unique component ids ($processing-type-fragment-$name) thus we do not need to validate them.
         val componentObjects = componentObjectsService.prepare(processingType, processingTypeData, user, subprocesses)
-        createComponents(componentObjects, componentUsages, processingType, componentIdProvider)
+        createComponents(componentObjects, processingType, componentIdProvider)
       }
   }
 
   private def createComponents(componentObjects: ComponentObjects,
-                               componentUsages: Map[ComponentId, Long],
                                processingType: ProcessingType,
                                componentIdProvider: ComponentIdProvider): List[ComponentListElement] = {
     componentObjects
@@ -126,7 +120,6 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
         val componentId = componentIdProvider.createComponentId(processingType, Some(com.label), com.`type`)
         val icon = getComponentIcon(componentObjects.config, com)
         val links = createComponentLinks(componentId, com, componentObjects.config)
-        val usageCount = componentUsages.getOrElse(componentId, 0L)
 
         ComponentListElement(
           id = componentId,
@@ -136,7 +129,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
           componentGroupName = groupName,
           categories = com.categories,
           links = links,
-          usageCount = usageCount
+          usageCount = -1 // It will be enriched in the next step, after merge of components definitions
         )
       }
   }
@@ -155,6 +148,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
       .getOrElse(componentLinks)
   }
 
+  // TODO: We should log some errors when we find some differences between definition of components
   private def mergeSameComponentsAcrossProcessingTypes(components: Iterable[ComponentListElement]): List[ComponentListElement] = {
     val sameComponentsByComponentId = components.groupBy(_.id)
     sameComponentsByComponentId
@@ -163,8 +157,7 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
         case head :: Nil => head
         case components@(head :: _) =>
           val categories = components.flatMap(_.categories).toList.distinct.sorted
-          val usageCount = components.map(_.usageCount).sum
-          head.copy(categories = categories, usageCount = usageCount)
+          head.copy(categories = categories)
       }
       .toList
   }

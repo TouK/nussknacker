@@ -6,7 +6,8 @@
   from now we will return here JSON with all context variables (including context parent tree)
 * [#4452](https://github.com/TouK/nussknacker/pull/4452) Ace editor bump 1.4.12 -> 1.23.0
 * [#4455](https://github.com/TouK/nussknacker/pull/4455) Improvement: Allow to run TestScenarioRunner in TestRuntime mode
-* [#4465](https://github.com/TouK/nussknacker/pull/4465) Faster loading of diagram editor (components panel) and component's usage panel: Component's definition loaded once
+* [#4465](https://github.com/TouK/nussknacker/pull/4465) Faster loading of diagram editor (components panel) and components tab: Component's definition loaded once
+* [#4468](https://github.com/TouK/nussknacker/pull/4468) Faster loading of components tab: Component's usages fetched once instead of fetching for each processing type
 
 1.10.0 (29 Jun 2023)
 -------------------------
