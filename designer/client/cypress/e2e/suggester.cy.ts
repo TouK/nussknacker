@@ -34,10 +34,8 @@ describe("Expression suggester", () => {
     });
 
     it.only("should display javadocs", () => {
-        cy.visitNewProcess(seed, "variables");
         cy.viewport(1440, 1200);
-        cy.get("[title='toggle left panel']").click();
-        cy.layoutScenario();
+        cy.visitNewProcess(seed, "variables");
         cy.get("[model-id=kafka-string]").trigger("dblclick");
         cy.get("[data-testid=window]").as("modal");
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
