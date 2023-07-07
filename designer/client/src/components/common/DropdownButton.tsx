@@ -122,11 +122,9 @@ interface DropdownProps {
 const Dropdown = ({ children, isOpen, target, onClose, style }: DropdownProps) => (
     <span style={{ ...style, position: "relative" }}>
         <span style={{ position: "relative", width: "100%", height: "100%", display: "flex" }}>
-            <>
-                {target}
-                {isOpen ? <Menu>{children}</Menu> : null}
-                {isOpen ? <Blanket onClick={onClose} /> : null}
-            </>
+            {target}
+            {isOpen ? <Menu>{children}</Menu> : null}
+            {isOpen ? <Blanket onClick={onClose} /> : null}
         </span>
     </span>
 );
