@@ -49,8 +49,8 @@ describe("Expression suggester", () => {
         cy.get(".ace_autocomplete").should("be.visible");
         cy.get("[data-testid=window]").matchImage({
             screenshotConfig: {
-                padding: [16, 200, 16, 200],
-                blackout: ["> :not(#nk-graph-main) > div"],
+                padding: [16, 400, 16, 400],
+                blackout: ["[data-testid=graphPage]"],
             },
         });
     });
