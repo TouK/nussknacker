@@ -9,7 +9,7 @@ describe("Expression suggester", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed });
+        // cy.deleteAllTestProcesses({ filter: seed });
     });
 
     it("should display colorfull and sorted completions", () => {
@@ -33,7 +33,7 @@ describe("Expression suggester", () => {
             });
     });
 
-    it.only("should display javadocs", () => {
+    it("should display javadocs", () => {
         cy.viewport(1440, 1200);
         cy.visitNewProcess(seed, "variables");
         cy.get("[model-id=kafka-string]").trigger("dblclick");
@@ -47,12 +47,8 @@ describe("Expression suggester", () => {
         // We wait for validation result to be sure that red message below the form field will be visible
         cy.wait("@validation").its("response.statusCode").should("eq", 200);
         cy.get(".ace_autocomplete").should("be.visible");
-        cy.get("[data-testid=window]").matchImage({
-            screenshotConfig: {
-                padding: [16, 400, 16, 400],
-                blackout: ["[data-testid=graphPage]"],
-            },
-        });
+        cy.get("[data-testid=window]").matchImage();
+        cy.get(".ace_editor .ace_tooltip").matchImage();
     });
 
     it("should display completions for second line (bugfix)", () => {
