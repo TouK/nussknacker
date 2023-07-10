@@ -9,7 +9,7 @@ describe("Expression suggester", () => {
     });
 
     after(() => {
-        // cy.deleteAllTestProcesses({ filter: seed });
+        cy.deleteAllTestProcesses({ filter: seed });
     });
 
     it("should display colorfull and sorted completions", () => {
