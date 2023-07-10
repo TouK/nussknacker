@@ -162,7 +162,7 @@ class ProcessUtils {
             case "Source": {
                 return isEmpty(clazzName) ? [] : [{ input: clazzName }];
             }
-            case "SubprocessInputDefinition": {
+            case "FragmentInputDefinition": {
                 return node.parameters?.map((param) => ({ [param.name]: param.typ }));
             }
             case "Enricher": {
@@ -206,8 +206,8 @@ class ProcessUtils {
                 case "CustomNode": {
                     return processDefinition.customStreamTransformers?.[nodeDefinitionId];
                 }
-                case "SubprocessInput": {
-                    return processDefinition.subprocessInputs?.[nodeDefinitionId];
+                case "FragmentInput": {
+                    return processDefinition.fragmentInputs?.[nodeDefinitionId];
                 }
             }
         }
@@ -224,7 +224,7 @@ class ProcessUtils {
             case "Sink": {
                 return node.ref.typ;
             }
-            case "SubprocessInput": {
+            case "FragmentInput": {
                 return node.ref.id;
             }
             case "Enricher":

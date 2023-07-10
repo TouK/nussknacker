@@ -34,7 +34,7 @@ import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
@@ -113,11 +113,11 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val managers = typeToConfig.mapValues(_.deploymentManager)
 
-    val subprocessRepository = new DbSubprocessRepository(dbConfig, system.dispatcher)
-    val subprocessResolver = new SubprocessResolver(subprocessRepository)
+    val fragmentRepository = new DbFragmentRepository(dbConfig, system.dispatcher)
+    val fragmentResolver = new FragmentResolver(fragmentRepository)
 
     val additionalProperties = typeToConfig.mapValues(_.additionalPropertiesConfig)
-    val processValidation = ProcessValidation(modelData, additionalProperties, typeToConfig.mapValues(_.additionalValidators), subprocessResolver)
+    val processValidation = ProcessValidation(modelData, additionalProperties, typeToConfig.mapValues(_.additionalValidators), fragmentResolver)
 
     val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.uiDictServices.dictRegistry))
     val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
@@ -132,7 +132,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processChangeListener = ProcessChangeListenerLoader
       .loadListeners(getClass.getClassLoader, resolvedConfig, NussknackerServices(new PullProcessRepository(futureProcessRepository)))
 
-    val scenarioResolver = new ScenarioResolver(subprocessResolver)
+    val scenarioResolver = new ScenarioResolver(fragmentResolver)
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     val dmDispatcher = new DeploymentManagerDispatcher(managers, futureProcessRepository)
 
@@ -145,7 +145,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader)
     val authorizationRules = AuthenticationConfiguration.getRules(resolvedConfig)
 
-    val counter = new ProcessCounter(subprocessRepository)
+    val counter = new ProcessCounter(fragmentRepository)
 
     Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment)
 
@@ -195,7 +195,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         ),
         new NodesResources(
           futureProcessRepository,
-          subprocessRepository,
+          fragmentRepository,
           typeToConfig.mapValues(_.modelData),
           processValidation,
           typeToConfig.mapValues(v => ExpressionSuggester(v.modelData))
@@ -204,8 +204,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new ProcessActivityResource(processActivityRepository, futureProcessRepository, processAuthorizer),
         new ManagementResources(processAuthorizer, futureProcessRepository, featureTogglesConfig.deploymentCommentSettings,
           deploymentService, dmDispatcher, customActionInvokerService, metricsRegistry, scenarioTestService, typeToConfig.mapValues(_.modelData)),
-        new ValidationResources(futureProcessRepository ,processResolving),
-        new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
+        new ValidationResources(futureProcessRepository, processResolving),
+        new DefinitionResources(modelData, typeToConfig, fragmentRepository, processCategoryService),
         new UserResources(processCategoryService),
         new NotificationResources(notificationService),
         appResources,

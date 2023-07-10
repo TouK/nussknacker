@@ -29,8 +29,8 @@ const ElementsRenderer: RowsRenderer = ({ processes }) =>
             <Td column="actionUser" className="centered-column" value={process?.lastAction?.user}>
                 {process?.lastAction?.user}
             </Td>
-            <Td column="subprocess" className="centered-column" value={process.isSubprocess}>
-                <Glyphicon glyph={process.isSubprocess ? "ok" : "remove"} />
+            <Td column="fragment" className="centered-column" value={process.isFragment}>
+                <Glyphicon glyph={process.isFragment ? "ok" : "remove"} />
             </Td>
             <Td column="view" className={classNames("edit-column", styles.iconOnly)}>
                 <ShowItem process={process} />
@@ -38,7 +38,7 @@ const ElementsRenderer: RowsRenderer = ({ processes }) =>
         </Tr>
     ));
 
-const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy", "subprocess", "actionDate", "actionUser"];
+const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy", "fragment", "actionDate", "actionUser"];
 const filterable: Filterable = ["name", "processCategory", "createdBy"];
 
 function Archive() {
@@ -50,7 +50,7 @@ function Archive() {
         { key: "createdAt", label: t("archiveList.createdAt", "Created at") },
         { key: "actionDate", label: t("archiveList.archivedAt", "Archived at") },
         { key: "actionUser", label: t("archiveList.archivedBy", "Archived by") },
-        { key: "subprocess", label: t("archiveList.subprocess", "Fragment") },
+        { key: "fragment", label: t("archiveList.fragment", "Fragment") },
         { key: "view", label: t("archiveList.view", "View") },
     ];
 
@@ -58,7 +58,7 @@ function Archive() {
         <Page className={tabStyles.tabContentPage}>
             <ProcessesList
                 defaultQuery={{ isArchived: true }}
-                searchItems={[SearchItem.categories, SearchItem.isSubprocess]}
+                searchItems={[SearchItem.categories, SearchItem.isFragment]}
                 sortable={sortable}
                 filterable={filterable}
                 columns={columns}

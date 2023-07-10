@@ -15,7 +15,7 @@ object ProcessIllegalAction {
   def archived(action: ProcessActionType, processIdWithName: ProcessIdWithName): ProcessIllegalAction =
     ProcessIllegalAction(s"Forbidden action: $action for archived scenario: ${processIdWithName.name.value}.")
 
-  def subprocess(action: ProcessActionType, processIdWithName: ProcessIdWithName): ProcessIllegalAction =
-    ProcessIllegalAction(s"Forbidden action: $action for subproces: ${processIdWithName.name.value}.")
+  def fragment(action: ProcessActionType, processIdWithName: ProcessIdWithName): ProcessIllegalAction =
+    ProcessIllegalAction(s"Forbidden action: $action for fragment: ${processIdWithName.name.value}.")
 
 }

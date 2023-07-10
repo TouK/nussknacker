@@ -8,8 +8,8 @@ import { ToolbarsConfig } from "./types";
 import { WIP_TOOLBARS } from "./WIP_TOOLBARS";
 
 //It's only to local development
-export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
-    const processPanelButtons = (!isSubprocess ? [{ type: BuiltinButtonTypes.processProperties }] : []).concat([
+export function defaultToolbarsConfig(isFragment: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
+    const processPanelButtons = (!isFragment ? [{ type: BuiltinButtonTypes.processProperties }] : []).concat([
         { type: BuiltinButtonTypes.processCompare },
         { type: BuiltinButtonTypes.processMigrate },
         { type: BuiltinButtonTypes.processImport },

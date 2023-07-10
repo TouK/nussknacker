@@ -50,19 +50,19 @@ function useUnmountCleanup() {
 function useProcessState(time = 10000) {
     const dispatch = useDispatch();
     const fetchedProcessDetails = useSelector(getFetchedProcessDetails);
-    const { isSubprocess, isArchived, id } = fetchedProcessDetails || {};
+    const { isFragment, isArchived, id } = fetchedProcessDetails || {};
 
     const fetch = useCallback(() => dispatch(loadProcessState(id)), [dispatch, id]);
 
     useEffect(() => {
         let processStateIntervalId;
-        if (id && !isSubprocess && !isArchived) {
+        if (id && !isFragment && !isArchived) {
             processStateIntervalId = setInterval(fetch, time);
         }
         return () => {
             clearInterval(processStateIntervalId);
         };
-    }, [fetch, id, isArchived, isSubprocess, time]);
+    }, [fetch, id, isArchived, isFragment, time]);
 }
 
 function useCountsIfNeeded() {

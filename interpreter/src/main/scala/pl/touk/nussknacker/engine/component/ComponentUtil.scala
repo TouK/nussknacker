@@ -17,9 +17,9 @@ object ComponentUtil {
     case _: CustomNodeData => Some(ComponentType.CustomNode)
     case _: Enricher => Some(ComponentType.Enricher)
     case _: Processor => Some(ComponentType.Processor)
-    case _: SubprocessInput => Some(ComponentType.Fragments)
-    case _: SubprocessInputDefinition => Some(ComponentType.FragmentInput)
-    case _: SubprocessOutputDefinition => Some(ComponentType.FragmentOutput)
+    case _: FragmentInput => Some(ComponentType.Fragments)
+    case _: FragmentInputDefinition => Some(ComponentType.FragmentInput)
+    case _: FragmentOutputDefinition => Some(ComponentType.FragmentOutput)
     case _ => None
   }
 

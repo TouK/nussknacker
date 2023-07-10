@@ -31,7 +31,7 @@ class RepositoryGauges(metricRegistry: MetricRegistry,
       val result = processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery(isArchived = Some(false))).map { scenarios =>
         val all = scenarios.size
         val deployed = scenarios.count(_.isDeployed)
-        val fragments = scenarios.count(_.isSubprocess)
+        val fragments = scenarios.count(_.isFragment)
         Values(all, deployed, fragments)
       }
       Await.result(result, awaitTime)

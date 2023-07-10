@@ -17,7 +17,7 @@ function ShowProcessIcon({ process }: { process: ProcessType }) {
     const { t } = useTranslation();
     return (
         <ProcessLink processId={process.name}>
-            <TableRowIcon glyph="edit" title={t("tableRowIcon-edit-subprocess", "Edit fragment")} />
+            <TableRowIcon glyph="edit" title={t("tableRowIcon-edit-fragment", "Edit fragment")} />
         </ProcessLink>
     );
 }
@@ -25,7 +25,7 @@ function ShowProcessIcon({ process }: { process: ProcessType }) {
 const ElementsRenderer: RowsRenderer = ({ processes }) =>
     processes.map((process) => (
         <Tr className="row-hover" key={process.name}>
-            <Td column="name">{process.name}</Td>,<Td column="category">{process.processCategory}</Td>
+            s<Td column="name">{process.name}</Td>,<Td column="category">{process.processCategory}</Td>
             <Td column="createdBy" className="centered-column" value={process.createdBy}>
                 {process.createdBy}
             </Td>
@@ -44,7 +44,7 @@ const ElementsRenderer: RowsRenderer = ({ processes }) =>
 const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy"];
 const filterable: Filterable = ["name", "processCategory", "createdBy"];
 
-function SubProcesses() {
+function Fragments() {
     const { t } = useTranslation();
     const columns = [
         { key: "name", label: t("fragmentList.name", "Name") },
@@ -57,7 +57,7 @@ function SubProcesses() {
     return (
         <Page className={tabStyles.tabContentPage}>
             <ProcessesList
-                defaultQuery={{ isSubprocess: true, isArchived: false }}
+                defaultQuery={{ isFragment: true, isArchived: false }}
                 searchItems={[SearchItem.categories]}
                 sortable={sortable}
                 filterable={filterable}
@@ -69,8 +69,8 @@ function SubProcesses() {
     );
 }
 
-export const SubProcessesTabData = {
-    path: `subprocesses`,
+export const FragmentsTabData = {
+    path: `fragments`,
     header: "Fragments",
-    Component: SubProcesses,
+    Component: Fragments,
 };

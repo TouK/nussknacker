@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.restmodel.component.{NodeId, NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -30,20 +30,20 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+  private val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
     List(
-      canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
-      canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
+      canonicalnode.FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+      canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty
   )
 
-  private val subprocessDetails = displayableToProcess(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming, TestCategories.Category1))
+  private val fragmentDetails = displayableToProcess(ProcessConverter.toDisplayable(fragment, TestProcessingTypes.Streaming, TestCategories.Category1))
 
   private val process1 = ScenarioBuilder
-      .streaming("fooProcess1")
-      .source("source", existingSourceFactory)
-      .customNode("custom", "out1", existingStreamTransformer)
-      .customNode("custom2", "out2", otherExistingStreamTransformer)
-      .emptySink("sink", existingSinkFactory)
+    .streaming("fooProcess1")
+    .source("source", existingSourceFactory)
+    .customNode("custom", "out1", existingStreamTransformer)
+    .customNode("custom2", "out2", otherExistingStreamTransformer)
+    .emptySink("sink", existingSinkFactory)
   private val processDetails1 = displayableToProcess(TestProcessUtil.toDisplayable(process1))
 
   private val processDetails1ButDeployed = processDetails1.copy(lastAction = Option(ProcessAction(VersionId.initialVersionId, Instant.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
@@ -67,23 +67,23 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   private val processDetailsWithSomeBasesStreaming = displayableToProcess(TestProcessUtil.toDisplayable(processWithSomeBasesStreaming))
 
   private val processWithSomeBasesFraud = ScenarioBuilder
-      .streaming("processWithSomeBases")
-      .source("source", existingSourceFactory)
-      .filter("checkId", "#input.id != null")
-      .switch("switchFraud", "#input.id != null", "output",
-        Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
-        Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
-      )
+    .streaming("processWithSomeBases")
+    .source("source", existingSourceFactory)
+    .filter("checkId", "#input.id != null")
+    .switch("switchFraud", "#input.id != null", "output",
+      Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
+      Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
+    )
   private val processDetailsWithSomeBasesFraud = displayableToProcess(TestProcessUtil.toDisplayable(processWithSomeBasesFraud, TestProcessingTypes.Fraud))
 
-  private val processWithSubprocess = ScenarioBuilder
-      .streaming("processWithSomeBases")
-      .source("source", existingSourceFactory)
-      .customNode("custom", "outCustom", otherExistingStreamTransformer2)
-      .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map.empty, Map(
-        "sink" -> GraphBuilder.emptySink("sink", existingSinkFactory)
-      ))
-  private val processDetailsWithSubprocess = displayableToProcess(TestProcessUtil.toDisplayable(processWithSubprocess))
+  private val processWithFragment = ScenarioBuilder
+    .streaming("processWithSomeBases")
+    .source("source", existingSourceFactory)
+    .customNode("custom", "outCustom", otherExistingStreamTransformer2)
+    .fragment(fragment.metaData.id, fragment.metaData.id, Nil, Map.empty, Map(
+      "sink" -> GraphBuilder.emptySink("sink", existingSinkFactory)
+    ))
+  private val processDetailsWithFragment = displayableToProcess(TestProcessUtil.toDisplayable(processWithFragment))
 
   private val defaultComponentIdProvider = new DefaultComponentIdProvider(Map(
     Streaming -> Map(
@@ -102,27 +102,27 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
         oid(overriddenOtherExistingStreamTransformer) -> 1, bid(Switch) -> 1, bid(Filter) -> 2
       )),
-      (List(processDetails2, subprocessDetails), Map(
+      (List(processDetails2, fragmentDetails), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Source, existingSourceFactory) -> 1,
         oid(overriddenOtherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
-        bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
+        bid(FragmentInput) -> 1, bid(FragmentOutput) -> 1
       )),
-      (List(processDetails2, processDetailsWithSomeBasesStreaming, subprocessDetails), Map(
+      (List(processDetails2, processDetailsWithSomeBasesStreaming, fragmentDetails), Map(
         sid(Sink, existingSinkFactory) -> 2, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 2,
         oid(overriddenOtherExistingStreamTransformer) -> 1, sid(CustomNodeType, otherExistingStreamTransformer2) -> 1,
-        bid(Switch) -> 1, bid(Filter) -> 2, bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
+        bid(Switch) -> 1, bid(Filter) -> 2, bid(FragmentInput) -> 1, bid(FragmentOutput) -> 1
       )),
       (List(processDetailsWithSomeBasesFraud, processDetailsWithSomeBasesStreaming), Map(
         sid(Sink, existingSinkFactory) -> 1, sid(Sink, existingSinkFactory2) -> 1, sid(Source, existingSourceFactory) -> 1,
         fid(Sink, existingSinkFactory) -> 1, fid(Sink, existingSinkFactory2) -> 1, fid(Source, existingSourceFactory) -> 1,
         bid(Switch) -> 2, bid(Filter) -> 3
       )),
-      (List(processDetailsWithSubprocess, subprocessDetails), Map(
-        sid(Source, existingSourceFactory) -> 1, sid(Sink, existingSinkFactory) -> 1, sid(Fragments, subprocess.metaData.id) -> 1,
-        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2, bid(FragmentInput) -> 1,  bid(FragmentOutput) -> 1
+      (List(processDetailsWithFragment, fragmentDetails), Map(
+        sid(Source, existingSourceFactory) -> 1, sid(Sink, existingSinkFactory) -> 1, sid(Fragments, fragment.metaData.id) -> 1,
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2, bid(FragmentInput) -> 1, bid(FragmentOutput) -> 1
       )),
-      (List(subprocessDetails, subprocessDetails), Map(
-        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2, bid(FragmentInput) -> 2,  bid(FragmentOutput) -> 2
+      (List(fragmentDetails, fragmentDetails), Map(
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> 2, bid(FragmentInput) -> 2, bid(FragmentOutput) -> 2
       ))
     )
 
@@ -158,13 +158,13 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
         fid(Sink, existingSinkFactory) -> List((processDetailsWithSomeBasesFraud, List(ScenarioUsageData("out1")))),
         fid(Sink, existingSinkFactory2) -> List((processDetailsWithSomeBasesFraud, List(ScenarioUsageData("out2")))),
       )),
-      (List(processDetailsWithSubprocess, subprocessDetails), Map(
-        sid(Source, existingSourceFactory) -> List((processDetailsWithSubprocess, List(ScenarioUsageData("source")))),
-        sid(CustomNodeType, otherExistingStreamTransformer2) -> List((processDetailsWithSubprocess, List(ScenarioUsageData("custom"))), (subprocessDetails, List(ScenarioUsageData("f1")))),
-        sid(Sink, existingSinkFactory) -> List((processDetailsWithSubprocess, List(ScenarioUsageData("sink")))),
-        sid(Fragments, subprocess.metaData.id) -> List((processDetailsWithSubprocess, List(ScenarioUsageData(subprocess.metaData.id)))),
-        bid(FragmentInput) -> List((subprocessDetails, List(ScenarioUsageData("start")))),
-        bid(FragmentOutput) -> List((subprocessDetails, List(ScenarioUsageData("out1")))),
+      (List(processDetailsWithFragment, fragmentDetails), Map(
+        sid(Source, existingSourceFactory) -> List((processDetailsWithFragment, List(ScenarioUsageData("source")))),
+        sid(CustomNodeType, otherExistingStreamTransformer2) -> List((processDetailsWithFragment, List(ScenarioUsageData("custom"))), (fragmentDetails, List(ScenarioUsageData("f1")))),
+        sid(Sink, existingSinkFactory) -> List((processDetailsWithFragment, List(ScenarioUsageData("sink")))),
+        sid(Fragments, fragment.metaData.id) -> List((processDetailsWithFragment, List(ScenarioUsageData(fragment.metaData.id)))),
+        bid(FragmentInput) -> List((fragmentDetails, List(ScenarioUsageData("start")))),
+        bid(FragmentOutput) -> List((fragmentDetails, List(ScenarioUsageData("out1")))),
       ))
     )
 
@@ -187,8 +187,11 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
   }
 
   private def sid(componentType: ComponentType, id: String) = ComponentId.default(Streaming, id, componentType)
+
   private def fid(componentType: ComponentType, id: String) = ComponentId.default(Fraud, id, componentType)
+
   private def bid(componentType: ComponentType) = ComponentId.forBaseComponent(componentType)
+
   private def oid(overriddenName: String) = ComponentId(overriddenName)
 
   private def withComponentsUsages(processesDetails: List[ProcessDetails]): List[BaseProcessDetails[ScenarioComponentsUsages]] = {

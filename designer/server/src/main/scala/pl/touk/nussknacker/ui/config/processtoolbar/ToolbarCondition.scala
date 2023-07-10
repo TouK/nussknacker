@@ -13,6 +13,6 @@ object ToolbarConditionType extends Enumeration {
     `type`.equals(AllOf)
 }
 
-case class ToolbarCondition(subprocess: Option[Boolean], archived: Option[Boolean], `type`: Option[ToolbarConditionType]) {
+case class ToolbarCondition(fragment: Option[Boolean], archived: Option[Boolean], `type`: Option[ToolbarConditionType]) {
   def shouldMatchAllOfConditions: Boolean = `type`.exists(ToolbarConditionType.isAllOf)
 }

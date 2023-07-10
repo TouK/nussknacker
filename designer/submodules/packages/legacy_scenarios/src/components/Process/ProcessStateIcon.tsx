@@ -82,7 +82,7 @@ class ProcessStateIcon extends React.Component<Props, State> {
             "state-icon",
             isStateLoaded === false && "state-pending",
             //TODO: normalize colors svg files
-            (process.isArchived || process.isSubprocess) &&
+            (process.isArchived || process.isFragment) &&
                 css({
                     filter: "invert()",
                     opacity: 1,

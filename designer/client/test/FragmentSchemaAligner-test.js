@@ -1,19 +1,19 @@
-import * as SubprocessSchemaAligner from "../src/components/graph/SubprocessSchemaAligner";
+import * as FragmentSchemaAligner from "../src/components/graph/FragmentSchemaAligner";
 import { omit } from "lodash";
 
-const subprocessProcessDefinitionData = {
+const fragmentProcessDefinitionData = {
     componentGroups: [
         {
             name: "fragments",
             components: [
                 {
-                    type: "subprocess",
-                    label: "subproc1",
+                    type: "fragment",
+                    label: "frag1",
                     node: {
-                        type: "SubprocessInput",
+                        type: "FragmentInput",
                         id: "",
                         ref: {
-                            id: "subproc1",
+                            id: "frag1",
                             parameters: [
                                 { name: "param1", expression: { language: "spel", expression: "''" } },
                                 { name: "param2", expression: { language: "spel", expression: "''" } },
@@ -27,13 +27,13 @@ const subprocessProcessDefinitionData = {
     processDefinition: {},
 };
 
-describe("subprocess schema aligner test", () => {
+describe("fragment schema aligner test", () => {
     it("should remove redundant and add missing parameters according to schema", () => {
-        const subprocessNode = {
-            type: "SubprocessInput",
+        const fragmentNode = {
+            type: "FragmentInput",
             id: "node4",
             ref: {
-                id: "subproc1",
+                id: "frag1",
                 parameters: [
                     { name: "oldParam1", expression: { language: "spel", expression: "'abc'" } },
                     { name: "param2", expression: { language: "spel", expression: "'cde'" } },
@@ -42,21 +42,21 @@ describe("subprocess schema aligner test", () => {
             outputs: {},
         };
 
-        const alignedSubprocess = SubprocessSchemaAligner.alignSubprocessWithSchema(subprocessProcessDefinitionData, subprocessNode);
+        const alignedFragment = FragmentSchemaAligner.alignFragmentWithSchema(fragmentProcessDefinitionData, fragmentNode);
 
-        expect(alignedSubprocess.ref.parameters).toEqual([
+        expect(alignedFragment.ref.parameters).toEqual([
             { name: "param1", expression: { language: "spel", expression: "''" } },
             { name: "param2", expression: { language: "spel", expression: "'cde'" } },
         ]);
-        expect(omit(alignedSubprocess, "ref")).toEqual(omit(subprocessNode, "ref"));
+        expect(omit(alignedFragment, "ref")).toEqual(omit(fragmentNode, "ref"));
     });
 
-    it("should not change anything if subprocess is valid with schema", () => {
-        const subprocessNode = {
-            type: "SubprocessInput",
+    it("should not change anything if fragment is valid with schema", () => {
+        const fragmentNode = {
+            type: "FragmentInput",
             id: "node4",
             ref: {
-                id: "subproc1",
+                id: "frag1",
                 parameters: [
                     { name: "param1", expression: { language: "spel", expression: "'abc'" } },
                     { name: "param2", expression: { language: "spel", expression: "'cde'" } },
@@ -65,8 +65,8 @@ describe("subprocess schema aligner test", () => {
             outputs: {},
         };
 
-        const alignedSubprocess = SubprocessSchemaAligner.alignSubprocessWithSchema(subprocessProcessDefinitionData, subprocessNode);
+        const alignedFragment = FragmentSchemaAligner.alignFragmentWithSchema(fragmentProcessDefinitionData, fragmentNode);
 
-        expect(alignedSubprocess).toEqual(subprocessNode);
+        expect(alignedFragment).toEqual(fragmentNode);
     });
 });

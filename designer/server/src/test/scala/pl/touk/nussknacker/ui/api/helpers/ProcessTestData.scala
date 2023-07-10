@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTr
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -27,7 +27,7 @@ import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
+import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 object ProcessTestData {
@@ -94,7 +94,7 @@ object ProcessTestData {
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Nil),
-    new SubprocessResolver(new StubSubprocessRepository(Set()))
+    new FragmentResolver(new StubFragmentRepository(Set()))
   )
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")
@@ -233,34 +233,34 @@ object ProcessTestData {
     )
   }
 
-  val emptySubprocess = {
+  val emptyFragment = {
     CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(), List.empty)
   }
 
-  val sampleSubprocessOneOut = {
+  val sampleFragmentOneOut = {
     CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
-      FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
-      canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
+      FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
+      canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
     ), List.empty)
   }
 
-  val sampleSubprocess = {
+  val sampleFragment = {
     CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
-      FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
+      FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param1", FragmentClazzRef[String])))),
       SplitNode(Split("split"), List(
-        List(FlatNode(SubprocessOutputDefinition("out", "out1", List.empty))),
-        List(FlatNode(SubprocessOutputDefinition("out2", "out2", List.empty)))
+        List(FlatNode(FragmentOutputDefinition("out", "out1", List.empty))),
+        List(FlatNode(FragmentOutputDefinition("out2", "out2", List.empty)))
       ))
     ), List.empty)
   }
 
-  val sampleSubprocess2 = {
+  val sampleFragment2 = {
     CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
-      FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param2", SubprocessClazzRef[String])))),
+      FlatNode(FragmentInputDefinition("in", List(FragmentParameter("param2", FragmentClazzRef[String])))),
       SplitNode(Split("split"), List(
-        List(FlatNode(SubprocessOutputDefinition("out", "out1", List.empty))),
-        List(FlatNode(SubprocessOutputDefinition("out2", "out2", List.empty))),
-        List(FlatNode(SubprocessOutputDefinition("out3", "out2", List.empty)))
+        List(FlatNode(FragmentOutputDefinition("out", "out1", List.empty))),
+        List(FlatNode(FragmentOutputDefinition("out2", "out2", List.empty))),
+        List(FlatNode(FragmentOutputDefinition("out3", "out2", List.empty)))
       ))
     ), List.empty)
   }
@@ -278,15 +278,15 @@ object ProcessTestData {
     UpdateProcessCommand(displayableProcess, comment.getOrElse(UpdateProcessComment("")), None)
   }
 
-  def validProcessWithSubprocess(processName: ProcessName, subprocess: CanonicalProcess = sampleSubprocessOneOut): ProcessUsingSubprocess = {
-    ProcessUsingSubprocess(
+  def validProcessWithFragment(processName: ProcessName, fragment: CanonicalProcess = sampleFragmentOneOut): ProcessUsingFragment = {
+    ProcessUsingFragment(
       process = ScenarioBuilder
         .streaming(processName.value)
         .source("source", existingSourceFactory)
-        .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map.empty, Map(
+        .fragment(fragment.metaData.id, fragment.metaData.id, Nil, Map.empty, Map(
           "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)
         )),
-      subprocess = subprocess
+      fragment = fragment
     )
   }
 
@@ -301,7 +301,7 @@ object ProcessTestData {
     )
   }
 
-  case class ProcessUsingSubprocess(process: CanonicalProcess, subprocess: CanonicalProcess)
+  case class ProcessUsingFragment(process: CanonicalProcess, fragment: CanonicalProcess)
 
   val streamingTypeSpecificInitialData: MetaDataInitializer = MetaDataInitializer(StreamMetaData.typeName, Map(
     StreamMetaData.parallelismName -> "1",

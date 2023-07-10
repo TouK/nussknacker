@@ -5,12 +5,12 @@ import { AccountTree, NoiseControlOff } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { TableCellAvatar } from "./tableCellAvatar";
 
-export function ScenarioAvatar({ process }: { process: Pick<ProcessType, "isSubprocess" | "state"> }) {
+export function ScenarioAvatar({ process }: { process: Pick<ProcessType, "isFragment" | "state"> }) {
     const { t } = useTranslation();
-    const { isSubprocess, state } = process;
+    const { isFragment, state } = process;
     return (
         <TableCellAvatar>
-            {isSubprocess ? (
+            {isFragment ? (
                 <AccountTree
                     titleAccess={t("scenario.iconTitle", "Fragment is stateless.", {
                         context: "FRAGMENT",

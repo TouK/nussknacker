@@ -57,7 +57,8 @@ case class ProcessProperties(additionalFields: ProcessAdditionalFields) {
     id = id,
     additionalFields = additionalFields
   )
-  val isSubprocess: Boolean = additionalFields.typeSpecificProperties.isSubprocess
+
+  val isFragment: Boolean = additionalFields.typeSpecificProperties.isFragment
 
   // TODO: remove typeSpecificData-related code after the migration is completed
   def typeSpecificProperties: TypeSpecificData = additionalFields.typeSpecificProperties
@@ -79,9 +80,9 @@ object ProcessProperties {
   }
 
   implicit val encodeProcessProperties: Encoder[ProcessProperties] =
-    Encoder.forProduct2("isSubprocess", "additionalFields") { p =>
-      (p.isSubprocess, p.additionalFields)
-  }
+    Encoder.forProduct2("isFragment", "additionalFields") { p =>
+      (p.isFragment, p.additionalFields)
+    }
 
   // This is a copy-paste from MetaData - see the comment there for the legacy consideration
   implicit val decoder: Decoder[ProcessProperties] = {

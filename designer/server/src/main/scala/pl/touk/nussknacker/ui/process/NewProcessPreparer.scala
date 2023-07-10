@@ -25,13 +25,13 @@ object NewProcessPreparer {
 
 class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[MetaDataInitializer, _],
                          additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig], _]) {
-  def prepareEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean): CanonicalProcess = {
+  def prepareEmptyProcess(processId: String, processingType: ProcessingType, isFragment: Boolean): CanonicalProcess = {
     val creator = emptyProcessCreate.forTypeUnsafe(processingType)
     val initialProperties = additionalFields.forTypeUnsafe(processingType).map {
       case (key, config) => (key, config.defaultValue.getOrElse(""))
     }
     val name = ProcessName(processId)
-    val initialMetadata = if(isSubprocess) MetaData(name.value, initialFragmentFields) else creator.create(name, initialProperties)
+    val initialMetadata = if (isFragment) MetaData(name.value, initialFragmentFields) else creator.create(name, initialProperties)
 
     val emptyCanonical = CanonicalProcess(
       metaData = initialMetadata,

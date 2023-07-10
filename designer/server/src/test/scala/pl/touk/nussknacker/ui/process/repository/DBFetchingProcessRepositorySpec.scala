@@ -260,7 +260,7 @@ class DBFetchingProcessRepositorySpec
       category,
       espProcess,
       TestProcessingTypes.Streaming,
-      isSubprocess = false,
+      isFragment = false,
       forwardedUserName = None)
 
     dbioRunner.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe Symbol("right")

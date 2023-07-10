@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{LazyInterpreterDependencies, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{LazyInterpreterDependencies, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
@@ -29,7 +29,7 @@ object ProcessCompilerData {
   def prepare(process: CanonicalProcess,
               definitionWithTypes: ModelDefinitionWithTypes,
               dictRegistry: EngineDictRegistry,
-              subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor,
+              fragmentDefinitionExtractor: FragmentComponentDefinitionExtractor,
               listeners: Seq[ProcessListener],
               userCodeClassLoader: ClassLoader,
               resultsCollector: ResultCollector,
@@ -40,7 +40,7 @@ object ProcessCompilerData {
 
     val expressionCompiler = ExpressionCompiler.withOptimization(userCodeClassLoader, dictRegistry, modelDefinition.expressionConfig, definitionWithTypes.typeDefinitions)
     //for testing environment it's important to take classloader from user jar
-    val nodeCompiler = new NodeCompiler(modelDefinition, subprocessDefinitionExtractor, expressionCompiler, userCodeClassLoader, resultsCollector, componentUseCase)
+    val nodeCompiler = new NodeCompiler(modelDefinition, fragmentDefinitionExtractor, expressionCompiler, userCodeClassLoader, resultsCollector, componentUseCase)
     val subCompiler = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     val processCompiler = new ProcessCompiler(userCodeClassLoader, subCompiler, GlobalVariablesPreparer(modelDefinition.expressionConfig), nodeCompiler, customProcessValidator)
 
@@ -74,7 +74,7 @@ class ProcessCompilerData(compiler: ProcessCompiler,
 
   def lifecycle(nodesToUse: List[_ <: NodeData]): Seq[Lifecycle] = {
     val componentIds = nodesToUse.collect {
-      case e:WithComponent => e.componentId
+      case e: WithComponent => e.componentId
     }
     // TODO: For eager services we should open service implementation (ServiceInvoker) which is hold inside
     //       SyncInterpretationFunction.compiledNode inside ServiceRef instead of definition (GenericNodeTransformation)

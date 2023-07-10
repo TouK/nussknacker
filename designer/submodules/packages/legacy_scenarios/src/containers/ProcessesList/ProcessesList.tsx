@@ -49,7 +49,7 @@ export function ProcessesList(props: BaseProcessesOwnProps): JSX.Element {
     );
     return (
         <SearchContextProvider>
-            <ProcessTableTools allowAdd={allowAdd} isSubprocess={defaultQuery.isSubprocess}>
+            <ProcessTableTools allowAdd={allowAdd} isFragment={defaultQuery.isFragment}>
                 <SearchQuery filters={searchItems} onChange={setFilters} />
             </ProcessTableTools>
 

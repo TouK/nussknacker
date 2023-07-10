@@ -8,8 +8,8 @@ describe("edgeType retrieved", () => {
     });
 
     it("should get edge types for node", () => {
-        expect(NodeUtils.edgesForNode({ id: "node1", type: "SubprocessInput", ref: { id: "sub1" } }, processDefinitionData)).toEqual({
-            nodeId: { type: "SubprocessInput", id: "sub1" },
+        expect(NodeUtils.edgesForNode({ id: "node1", type: "FragmentInput", ref: { id: "sub1" } }, processDefinitionData)).toEqual({
+            nodeId: { type: "FragmentInput", id: "sub1" },
             edges: [{ type: "edge3" }],
         });
         expect(NodeUtils.edgesForNode({ id: "node1", type: "Filter" }, processDefinitionData)).toEqual({
@@ -226,7 +226,7 @@ const processDefinitionData = {
             edges: [{ type: "edge1" }, { type: "edge2" }],
         },
         {
-            nodeId: { type: "SubprocessInput", id: "sub1" },
+            nodeId: { type: "FragmentInput", id: "sub1" },
             edges: [{ type: "edge3" }],
         },
     ],

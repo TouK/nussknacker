@@ -45,7 +45,7 @@ export default function ParameterList({
         (acc, params) => acc && parametersEquals(params[0], params[1]),
         true,
     );
-    //If subprocess parameters changed, we update state of parent component and will be rerendered, current node state is probably not ready to be rendered
+    //If fragment parameters changed, we update state of parent component and will be rerendered, current node state is probably not ready to be rendered
     //TODO: setting state in parent node is a bit nasty.
 
     useEffect(() => {

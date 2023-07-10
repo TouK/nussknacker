@@ -14,15 +14,15 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessListener, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator, SubprocessResolver}
+import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator, FragmentResolver}
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.{CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
@@ -200,7 +200,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
       val aggregateVariables = runCollectOutputAggregate[Set[Number]](id, model, testProcess)
       var expected = List(Set(1), Set(2, 5), Set(7))
-      if(trigger == TumblingWindowTrigger.OnEndWithExtraWindow) {
+      if (trigger == TumblingWindowTrigger.OnEndWithExtraWindow) {
         expected = expected :+ Set()
       }
       aggregateVariables shouldBe expected.map(_.asJava)
@@ -214,7 +214,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
-      .subprocessOneOut("fragmentWithTumblingAggregate", "fragmentWithTumblingAggregate", "aggregate", "fragmentResult", ("aggBy", asSpelExpression("#input.eId")), ("key", asSpelExpression("#input.id")))
+      .fragmentOneOut("fragmentWithTumblingAggregate", "fragmentWithTumblingAggregate", "aggregate", "fragmentResult", ("aggBy", asSpelExpression("#input.eId")), ("key", asSpelExpression("#input.id")))
       .buildSimpleVariable("key", "key", "#fragmentResult.key")
       .buildSimpleVariable("globalVarAccessTest", "globalVarAccessTest", "#meta.processName")
       .emptySink("end", "dead-end")
@@ -238,7 +238,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
-      .subprocessOneOut("fragmentWithTumblingAggregate", "fragmentWithTumblingAggregate", "aggregate", "fragmentResult", ("aggBy", asSpelExpression("#input.eId")), ("key", asSpelExpression("#input.id")))
+      .fragmentOneOut("fragmentWithTumblingAggregate", "fragmentWithTumblingAggregate", "aggregate", "fragmentResult", ("aggBy", asSpelExpression("#input.eId")), ("key", asSpelExpression("#input.id")))
       .buildSimpleVariable("inputVarAccessTest", "inputVarAccessTest", "#input")
       .emptySink("end", "dead-end")
 
@@ -544,7 +544,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   private def resolveFragmentWithTumblingAggregate(scenario: CanonicalProcess): CanonicalProcess = {
     val fragmentWithTumblingAggregate = CanonicalProcess(MetaData("fragmentWithTumblingAggregate", FragmentSpecificData()),
       List(
-        canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("aggBy", SubprocessClazzRef[Int]), SubprocessParameter("key", SubprocessClazzRef[String])))),
+        canonicalnode.FlatNode(FragmentInputDefinition("start", List(FragmentParameter("aggBy", FragmentClazzRef[Int]), FragmentParameter("key", FragmentClazzRef[String])))),
         canonicalnode.FlatNode(CustomNode("agg", Some("aggresult"), "aggregate-tumbling", List(
           evaluatedparam.Parameter("groupBy", asSpelExpression("#key")),
           evaluatedparam.Parameter("aggregator", asSpelExpression("#AGG.sum")),
@@ -552,9 +552,9 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
           evaluatedparam.Parameter("windowLength", asSpelExpression("T(java.time.Duration).parse('PT2H')")),
           evaluatedparam.Parameter("emitWhen", asSpelExpression("T(pl.touk.nussknacker.engine.flink.util.transformer.aggregate.TumblingWindowTrigger).OnEnd"))
         ))),
-        canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "aggregate", List(Field("key", asSpelExpression("#key")), Field("aggresult", asSpelExpression("#aggresult")))))), List.empty)
+        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "aggregate", List(Field("key", asSpelExpression("#key")), Field("aggresult", asSpelExpression("#aggresult")))))), List.empty)
 
-    SubprocessResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
+    FragmentResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
   }
 }
 

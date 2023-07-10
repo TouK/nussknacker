@@ -33,21 +33,21 @@ trait RemoteEnvironment {
 
   val passUsernameInMigration: Boolean = true
 
-  def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]]
+  def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext): Future[Either[EspError, Map[String, Difference]]]
 
-  def processVersions(processName: ProcessName)(implicit ec: ExecutionContext) : Future[List[ProcessVersion]]
+  def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessVersion]]
 
-  def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]]
+  def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[EspError, Unit]]
 
-  def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext) : Future[Either[EspError, List[TestMigrationResult]]]
+  def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]]
 }
 
 case class RemoteEnvironmentCommunicationError(statusCode: StatusCode, getMessage: String) extends EspError
 
 case class MigrationValidationError(errors: ValidationErrors) extends EspError {
-  override def getMessage : String = {
+  override def getMessage: String = {
     val messages = errors.globalErrors.map(_.message) ++
-      errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case(node, nerror) => s"$node - ${nerror.map(_.message).mkString(", ")}"}
+      errors.processPropertiesErrors.map(_.message) ++ errors.invalidNodes.map { case (node, nerror) => s"$node - ${nerror.map(_.message).mkString(", ")}" }
     s"Cannot migrate, following errors occurred: ${messages.mkString(", ")}"
   }
 }
@@ -99,7 +99,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   protected def request(uri: Uri, method: HttpMethod, request: MessageEntity, headers: Seq[HttpHeader]): Future[HttpResponse]
 
-  override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
+  override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext): Future[Either[EspError, Map[String, Difference]]] = {
     val id = localProcess.id
     (for {
       process <- EitherT(fetchProcessVersion(id, remoteProcessVersion))
@@ -108,7 +108,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   override def migrate(localProcess: DisplayableProcess, category: String)
-                      (implicit ec: ExecutionContext, loggedUser: LoggedUser) : Future[Either[EspError, Unit]] = {
+                      (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Either[EspError, Unit]] = {
     (for {
       validation <- EitherT(validateProcess(localProcess))
       _ <- EitherT.fromEither[Future](if (validation.errors != ValidationErrors.success) Left[EspError, Unit](MigrationValidationError(validation.errors)) else Right(()))
@@ -121,18 +121,21 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
           createProcessOnRemote(localProcess, category, userToForward)
         case Left(other) => EitherT.leftT[Future, EspError](other)
       }
-      usernameToPass = if(passUsernameInMigration) Some(RemoteUserName(loggedUser.username)) else None
-      _ <- EitherT { saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}"), usernameToPass) }
+      usernameToPass = if (passUsernameInMigration) Some(RemoteUserName(loggedUser.username)) else None
+      _ <- EitherT {
+        saveProcess(localProcess, UpdateProcessComment(s"Scenario migrated from $environmentId by ${loggedUser.username}"), usernameToPass)
+      }
     } yield ()).value
   }
 
   private def createProcessOnRemote(localProcess: DisplayableProcess, category: String, loggedUser: Option[LoggedUser])
-                                 (implicit ec: ExecutionContext): FutureE[Unit] = {
+                                   (implicit ec: ExecutionContext): FutureE[Unit] = {
     val remoteUserNameHeader: List[HttpHeader] = loggedUser.map(user => RawHeader(RemoteUserName.headerName, user.username)).toList
     EitherT {
       invokeForSuccess(
         HttpMethods.POST, List("processes", localProcess.id, category),
-        Query(("isSubprocess", localProcess.metaData.isSubprocess.toString)), HttpEntity.Empty, remoteUserNameHeader
+        //TODO replace `isSubprocess` with `isFragment` after 1.10 release
+        Query(("isSubprocess", localProcess.metaData.isFragment.toString)), HttpEntity.Empty, remoteUserNameHeader
       )
     }
   }
@@ -140,11 +143,11 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   override def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
-      basicProcesses = allBasicProcesses.filterNot(_.isSubprocess).filter(processToInclude)
-      basicSubProcesses = allBasicProcesses.filter(_.isSubprocess).filter(processToInclude)
+      basicProcesses = allBasicProcesses.filterNot(_.isFragment).filter(processToInclude)
+      basicFragments = allBasicProcesses.filter(_.isFragment).filter(processToInclude)
       processes <- fetchGroupByGroup(basicProcesses)
-      subProcesses <- fetchGroupByGroup(basicSubProcesses)
-    } yield testModelMigrations.testMigrations(processes, subProcesses)).value
+      fragments <- fetchGroupByGroup(basicFragments)
+    } yield testModelMigrations.testMigrations(processes, fragments)).value
   }
 
   private def fetchGroupByGroup[T](basicProcesses: List[BasicProcess])

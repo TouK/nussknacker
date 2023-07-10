@@ -6,7 +6,7 @@ export enum EdgeKind {
     filterTrue = "FilterTrue",
     switchDefault = "SwitchDefault",
     switchNext = "NextSwitch",
-    subprocessOutput = "SubprocessOutput",
+    fragmentOutput = "FragmentOutput",
 }
 
 export type EdgeType = {

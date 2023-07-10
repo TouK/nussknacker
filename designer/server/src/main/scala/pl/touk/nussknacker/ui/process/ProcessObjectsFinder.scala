@@ -6,9 +6,9 @@ object ProcessObjectsFinder {
 
   import pl.touk.nussknacker.engine.util.Implicits.RichStringList
 
-  def componentIds(processDefinitions: List[ProcessDefinition[_]], subprocessIds: List[String]): List[String] = {
+  def componentIds(processDefinitions: List[ProcessDefinition[_]], fragmentIds: List[String]): List[String] = {
     val ids = processDefinitions.flatMap(_.componentIds)
-    (ids ++ subprocessIds).distinct.sortCaseInsensitive
+    (ids ++ fragmentIds).distinct.sortCaseInsensitive
   }
 
 }

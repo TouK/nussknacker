@@ -1,14 +1,14 @@
 import { ActionType, ProcessStateType, ProcessType } from "./types";
 import {
     descriptionProcessArchived,
-    descriptionSubprocess,
-    descriptionSubprocessArchived,
+    descriptionFragment,
+    descriptionFragmentArchived,
     unknownDescription,
     unknownTooltip,
 } from "./messages";
 
 export const unknownIcon = "/assets/states/status-unknown.svg";
-const subprocessIcon = "/assets/process/subprocess.svg";
+const fragmentIcon = "/assets/process/fragment.svg";
 const archivedIcon = "/assets/process/archived.svg";
 
 class ProcessStateUtils {
@@ -18,44 +18,44 @@ class ProcessStateUtils {
 
     public canArchive = (state: ProcessStateType): boolean => state?.allowedActions.includes(ActionType.Archive);
 
-    getStateDescription({ isArchived, isSubprocess }: ProcessType, processState: ProcessStateType): string {
+    getStateDescription({ isArchived, isFragment }: ProcessType, processState: ProcessStateType): string {
         if (isArchived) {
-            return isSubprocess ? descriptionSubprocessArchived() : descriptionProcessArchived();
+            return isFragment ? descriptionFragmentArchived() : descriptionProcessArchived();
         }
 
-        if (isSubprocess) {
-            return descriptionSubprocess();
+        if (isFragment) {
+            return descriptionFragment();
         }
 
         return processState?.description || unknownDescription();
     }
 
-    getStatusIcon({ isArchived, isSubprocess, state }: ProcessType, processState: ProcessStateType): string {
+    getStatusIcon({ isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
         if (isArchived) {
             return archivedIcon;
         }
 
-        if (isSubprocess) {
-            return subprocessIcon;
+        if (isFragment) {
+            return fragmentIcon;
         }
 
         return processState?.icon || state?.icon || unknownIcon;
     }
 
-    getStatusTooltip({ isArchived, isSubprocess, state }: ProcessType, processState: ProcessStateType): string {
+    getStatusTooltip({ isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
         if (isArchived) {
-            return isSubprocess ? descriptionSubprocessArchived() : descriptionProcessArchived();
+            return isFragment ? descriptionFragmentArchived() : descriptionProcessArchived();
         }
 
-        if (isSubprocess) {
-            return descriptionSubprocess();
+        if (isFragment) {
+            return descriptionFragment();
         }
 
         return processState?.tooltip || state?.tooltip || unknownTooltip();
     }
 
-    getTransitionKey({ id, isArchived, isSubprocess, state }: ProcessType, processState: ProcessStateType): string {
-        if (isArchived || isSubprocess) {
+    getTransitionKey({ id, isArchived, isFragment, state }: ProcessType, processState: ProcessStateType): string {
+        if (isArchived || isFragment) {
             return `${id}`;
         }
         return `${id}-${processState?.icon || state?.icon || unknownIcon}`;

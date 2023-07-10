@@ -4,7 +4,7 @@ import HealthCheck from "../components/HealthCheck";
 import { ArchiveTabData } from "./Archive";
 import { darkTheme } from "./darkTheme";
 import { ProcessesTabData } from "./Processes";
-import { SubProcessesTabData } from "./SubProcesses";
+import { FragmentsTabData } from "./Fragments";
 import { Tabs } from "../components/tabs/Tabs";
 import { NkThemeProvider } from "./theme";
 
@@ -21,7 +21,7 @@ function ProcessTabs(props: ProcessTabsProps) {
     return (
         <NkThemeProvider theme={(outerTheme) => defaultsDeep(darkTheme, outerTheme)}>
             <ScenariosContext.Provider value={props}>
-                <Tabs tabs={[ProcessesTabData, SubProcessesTabData, ArchiveTabData]}>
+                <Tabs tabs={[ProcessesTabData, FragmentsTabData, ArchiveTabData]}>
                     <HealthCheck />
                 </Tabs>
             </ScenariosContext.Provider>

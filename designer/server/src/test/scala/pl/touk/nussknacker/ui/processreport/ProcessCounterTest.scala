@@ -6,10 +6,10 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{Filter, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.ui.api.helpers.{StubSubprocessRepository, TestCategories}
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
+import pl.touk.nussknacker.ui.api.helpers.{StubFragmentRepository, TestCategories}
+import pl.touk.nussknacker.ui.process.fragment.{FragmentDetails, FragmentRepository}
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
 //about actual values, only assigns them to nodes
@@ -17,7 +17,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
 
   import spel.Implicits._
 
-  private val defaultCounter = new ProcessCounter(new StubSubprocessRepository(Set()))
+  private val defaultCounter = new ProcessCounter(new StubFragmentRepository(Set()))
 
   test("compute counts for simple process") {
     val process = ScenarioBuilder
@@ -38,21 +38,21 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
 
   test("compute counts for branches") {
     val process = ScenarioBuilder.streaming("proc1").sources(
-        GraphBuilder
-          .source("source1", "source")
-          .branchEnd("branch1", "join1"),
-        GraphBuilder
-          .source("source2", "source")
-          .branchEnd("branch2", "join1"),
-        GraphBuilder
-          .join("join1", "union", None,
-            List(
-              "branch1" -> List(),
-              "branch2" -> List()
-            )
+      GraphBuilder
+        .source("source1", "source")
+        .branchEnd("branch1", "join1"),
+      GraphBuilder
+        .source("source2", "source")
+        .branchEnd("branch2", "join1"),
+      GraphBuilder
+        .join("join1", "union", None,
+          List(
+            "branch1" -> List(),
+            "branch2" -> List()
           )
-          .emptySink("end", "sink")
-      )
+        )
+        .emptySink("end", "sink")
+    )
     val result = defaultCounter.computeCounts(process, Map(
       "source1" -> RawCount(1, 0),
       "source2" -> RawCount(2, 0),
@@ -73,16 +73,16 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .streaming("test").parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
-      .subprocessOneOut("sub1", "subprocess1", "out1", "fragmentResult")
+      .fragmentOneOut("sub1", "fragment1", "out1", "fragmentResult")
       .emptySink("sink11", "")
 
-    val counter = new ProcessCounter(subprocessRepository(Set(
-      CanonicalProcess(MetaData("subprocess1", FragmentSpecificData()),
+    val counter = new ProcessCounter(fragmentRepository(Set(
+      CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
         List(
-          FlatNode(SubprocessInputDefinition("subInput1", List())),
+          FlatNode(FragmentInputDefinition("subInput1", List())),
           FlatNode(Filter("subFilter1", "")),
           FlatNode(Filter("subFilter2", "")),
-          FlatNode(SubprocessOutputDefinition("outId1", "out1", List.empty))), List.empty
+          FlatNode(FragmentOutputDefinition("outId1", "out1", List.empty))), List.empty
       )
     )))
 
@@ -102,12 +102,12 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
           "subFilter1" -> NodeCount(45, 4),
           "subFilter2" -> NodeCount(0, 0),
           "outId1" -> NodeCount(35, 5)
-      )),
+        )),
       "sink11" -> NodeCount(30, 10)
     )
   }
 
-  private def subprocessRepository(processes: Set[CanonicalProcess]): SubprocessRepository =
-    new StubSubprocessRepository(processes.map(c => SubprocessDetails(c, TestCategories.Category1)))
+  private def fragmentRepository(processes: Set[CanonicalProcess]): FragmentRepository =
+    new StubFragmentRepository(processes.map(c => FragmentDetails(c, TestCategories.Category1)))
 
 }

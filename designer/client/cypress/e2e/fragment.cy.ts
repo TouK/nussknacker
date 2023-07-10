@@ -41,7 +41,7 @@ describe("Fragment", () => {
         cy.layoutScenario();
 
         cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick");
-        cy.get("#nk-graph-subprocess [model-id='input']").should("be.visible");
+        cy.get("#nk-graph-fragment [model-id='input']").should("be.visible");
         cy.wait(750);
         cy.get("[data-testid=window]").matchImage();
 

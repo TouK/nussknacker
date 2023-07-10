@@ -25,7 +25,7 @@ object PrettyValidationErrors {
     error match {
       case ExpressionParserCompilationError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
         s"There is problem with expression in field $fieldName - it could not be parsed.", fieldName = fieldName)
-      case SubprocessParamClassLoadError(fieldName, refClazzName, _) =>
+      case FragmentParamClassLoadError(fieldName, refClazzName, _) =>
         node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
       case DuplicatedNodeIds(ids) => node("Two nodes cannot have same id", s"Duplicate node ids: ${ids.mkString(", ")}", errorType = NodeValidationErrorType.RenderNotAllowed)
       case ScenarioNameValidationError(message, description) => node(message, description
@@ -61,16 +61,16 @@ object PrettyValidationErrors {
       case NotSupportedExpressionLanguage(languageId, _) => node(s"Language $languageId is not supported", "Currently only SPEL expressions are supported")
       case MissingPart(id) => node("MissingPart", s"Node $id has missing part")
       case UnsupportedPart(id) => node("UnsupportedPart", s"Type of node $id is unsupported right now")
-      case UnknownSubprocess(id, nodeId) => node("Unknown fragment", s"Node $nodeId uses fragment $id which is missing")
-      case InvalidSubprocess(id, nodeId) => node("Invalid fragment", s"Node $nodeId uses fragment $id which is invalid")
+      case UnknownFragment(id, nodeId) => node("Unknown fragment", s"Node $nodeId uses fragment $id which is missing")
+      case InvalidFragment(id, nodeId) => node("Invalid fragment", s"Node $nodeId uses fragment $id which is invalid")
       case FatalUnknownError(message) => node("Unknown, fatal validation error", s"Fatal error: $message, please check configuration")
       case CannotCreateObjectError(message, nodeId) => node(s"Could not create $nodeId: $message", s"Could not create $nodeId: $message")
 
-      case UnresolvedSubprocess(id) => node("Unresolved fragment", s"fragment $id encountered, this should not happen")
+      case UnresolvedFragment(id) => node("Unresolved fragment", s"fragment $id encountered, this should not happen")
       case FragmentOutputNotDefined(id, _) => node(s"Output $id not defined", "Please check fragment definition")
       case UnknownFragmentOutput(id, _) => node(s"Unknown fragment output $id", "Please check fragment definition")
-      case DisablingManyOutputsSubprocess(id, _) => node(s"Cannot disable fragment $id. Has many outputs", "Please check fragment definition")
-      case DisablingNoOutputsSubprocess(id) => node(s"Cannot disable fragment $id. Hasn't outputs", "Please check fragment definition")
+      case DisablingManyOutputsFragment(id, _) => node(s"Cannot disable fragment $id. Has many outputs", "Please check fragment definition")
+      case DisablingNoOutputsFragment(id) => node(s"Cannot disable fragment $id. Hasn't outputs", "Please check fragment definition")
       case MissingRequiredProperty(fieldName, label, _) => missingRequiredProperty(typ, fieldName, label)
       case UnknownProperty(propertyName, _) => unknownProperty(typ, propertyName)
       case InvalidPropertyFixedValue(fieldName, label, value, values, _) => invalidPropertyFixedValue(typ, fieldName, label, value, values)
