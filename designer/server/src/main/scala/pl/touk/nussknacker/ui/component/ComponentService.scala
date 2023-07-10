@@ -148,7 +148,6 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
       .getOrElse(componentLinks)
   }
 
-  // TODO: We should log some errors when we find some differences between definition of components
   private def mergeSameComponentsAcrossProcessingTypes(components: Iterable[ComponentListElement]): List[ComponentListElement] = {
     val sameComponentsByComponentId = components.groupBy(_.id)
     sameComponentsByComponentId
@@ -157,6 +156,8 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
         case head :: Nil => head
         case components@(head :: _) =>
           val categories = components.flatMap(_.categories).toList.distinct.sorted
+          // We don't need to validate if deduplicated components has the same attributes, because it is already validated in ComponentsValidator
+          // during processing type data loading
           head.copy(categories = categories)
       }
       .toList
