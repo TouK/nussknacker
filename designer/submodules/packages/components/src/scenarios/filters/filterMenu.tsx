@@ -30,6 +30,9 @@ export function FilterMenu({ children, label, count }: PropsWithChildren<{ label
                     vertical: "top",
                     horizontal: "center",
                 }}
+                MenuListProps={{
+                    "aria-labelledby": "filter-menu",
+                }}
             >
                 {children}
             </Menu>
