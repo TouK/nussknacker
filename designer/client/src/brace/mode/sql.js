@@ -19,8 +19,8 @@ function quotedStrings(quotes, next = "pop", token = "string") {
 }
 
 const popState = (n = 1) => (state, stack) => {
-    const currentState = state
-    for (const i = n; i > 0; i--) {
+    let currentState = state
+    for (let i = n; i > 0; i--) {
         stack.shift()
         currentState = stack.shift() || "start"
     }
