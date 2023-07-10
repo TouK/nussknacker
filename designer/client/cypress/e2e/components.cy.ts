@@ -2,7 +2,7 @@ describe("Components list", () => {
     const seed = "components";
 
     const baseGroupComponents = 5;
-    const totalGroups = 8;
+    const totalGroups = 7;
     before(() => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
         cy.createTestProcess(seed, "testProcess2");
