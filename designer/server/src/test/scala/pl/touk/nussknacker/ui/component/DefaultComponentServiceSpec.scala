@@ -389,7 +389,13 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     forAll(testingData) { (user: LoggedUser, expectedComponents: List[ComponentListElement], possibleCategories: List[String]) =>
       val components = defaultComponentService.getComponentsList(user).futureValue
 
+      def counts(list: List[ComponentListElement]) = list.map(el => el.id -> el.usageCount).toMap
+
+      val returnedCounts = counts(components)
+      val expectedCounts = counts(expectedComponents)
       //we don't do exact matching, to avoid handling autoLoaded components here
+      returnedCounts.keySet should contain allElementsOf expectedCounts.keySet
+      returnedCounts should contain allElementsOf expectedCounts
       components should contain allElementsOf expectedComponents
 
       //Components should contain only user categories
