@@ -34,7 +34,7 @@ describe("Expression suggester", () => {
     });
 
     it("should display javadocs", () => {
-        cy.viewport(1440, 1200);
+        cy.viewport(1600, 1200);
         cy.visitNewProcess(seed, "variables");
         cy.get("[model-id=kafka-string]").trigger("dblclick");
         cy.get("[data-testid=window]").as("modal");
