@@ -10,7 +10,7 @@ import { InputWithFocus } from "../../withFocus";
 import { DescriptionField } from "./DescriptionField";
 import OutputParametersList from "./OutputParametersList";
 
-export function SubprocessInput({
+export function FragmentInput({
     fieldErrors,
     findAvailableVariables,
     isEditMode,

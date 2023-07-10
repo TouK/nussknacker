@@ -13,5 +13,5 @@ export function generateUUIDs(editedNode: NodeType, properties: string[]): NodeT
 }
 
 export function getNodeId(processToDisplay: Process, node: NodeType): string {
-    return processToDisplay.properties.isSubprocess ? node.id.replace(`${processToDisplay.id}-`, "") : node.id;
+    return processToDisplay.properties.isFragment ? node.id.replace(`${processToDisplay.id}-`, "") : node.id;
 }

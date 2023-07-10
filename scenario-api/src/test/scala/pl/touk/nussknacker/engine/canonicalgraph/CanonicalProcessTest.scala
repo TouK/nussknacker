@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.canonicalgraph
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Fragment, SwitchNode}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 
 import scala.language.implicitConversions
 
@@ -22,25 +22,25 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
 
   test("#withoutDisabledNodes when all nodes are enabled") {
     val withNodesEnabled = process(
-      List(source1, subprocess(List(sink1), isDisabled = false)))
+      List(source1, fragment(List(sink1), isDisabled = false)))
 
     withNodesEnabled.withoutDisabledNodes shouldBe withNodesEnabled
   }
 
   test("#withoutDisabledNodes with disabled fragment") {
-    val withDisabledSubprocess = process(
-      List(source1, subprocess(List(sink1), isDisabled = true)))
+    val withDisabledFragment = process(
+      List(source1, fragment(List(sink1), isDisabled = true)))
 
-    withDisabledSubprocess.withoutDisabledNodes shouldBe process(List(source1, sink1))
+    withDisabledFragment.withoutDisabledNodes shouldBe process(List(source1, sink1))
   }
 
   test("#withoutDisabledNodes with fragment with disabled fragment") {
-    val withSubprocessWithDisabledSubprocess = process(
+    val withFragmentWithDisabledFragment = process(
       List(
         source1,
-        subprocess(
+        fragment(
           output = List(
-            subprocess(
+            fragment(
               output = List(sink1),
               isDisabled = true
             )
@@ -50,10 +50,10 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
       )
     )
 
-    withSubprocessWithDisabledSubprocess.withoutDisabledNodes shouldBe process(
+    withFragmentWithDisabledFragment.withoutDisabledNodes shouldBe process(
       List(
         source1,
-        subprocess(
+        fragment(
           output = List(sink1),
           isDisabled = false
         )
@@ -62,12 +62,12 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
   }
 
   test("#withoutDisabledNodes with disabled fragment with disabled fragment") {
-    val withDisabledSubprocessWithDisabledSubprocess = process(
+    val withDisabledFragmentWithDisabledFragment = process(
       List(
         source1,
-        subprocess(
+        fragment(
           output = List(
-            subprocess(
+            fragment(
               output = List(sink1),
               isDisabled = true
             )
@@ -77,7 +77,7 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
       )
     )
 
-    withDisabledSubprocessWithDisabledSubprocess.withoutDisabledNodes shouldBe process(
+    withDisabledFragmentWithDisabledFragment.withoutDisabledNodes shouldBe process(
       List(source1, sink1)
     )
   }
@@ -128,9 +128,9 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
           data = Split("split1"),
           nexts = List(
             List(
-              subprocess(
+              fragment(
                 output = List(
-                  subprocess(
+                  fragment(
                     output = List(
                       sink1
                     ),
@@ -151,7 +151,7 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
           data = Split("split1"),
           nexts = List(
             List(
-              subprocess(
+              fragment(
                 output = List(sink1),
                 isDisabled = false
               )
@@ -163,11 +163,11 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
     )
   }
 
-  private def subprocess(output: List[CanonicalNode], isDisabled: Boolean) =
-    Subprocess(
-      SubprocessInput(
+  private def fragment(output: List[CanonicalNode], isDisabled: Boolean) =
+    Fragment(
+      FragmentInput(
         "sub1",
-        SubprocessRef("sub1", Nil, Map.empty),
+        FragmentRef("sub1", Nil, Map.empty),
         isDisabled = Some(isDisabled)
       ),
       Map("subOut" -> output)

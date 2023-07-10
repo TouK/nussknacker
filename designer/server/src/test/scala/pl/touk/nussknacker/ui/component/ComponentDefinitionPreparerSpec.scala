@@ -37,27 +37,27 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   }
 
   test("return objects sorted by label case insensitive") {
-    val groups = prepareGroupsOfNodes(List("foo","alaMaKota","BarFilter"))
-    groups.map(_.components.map(n=>n.label)) shouldBe List(
+    val groups = prepareGroupsOfNodes(List("foo", "alaMaKota", "BarFilter"))
+    groups.map(_.components.map(n => n.label)) shouldBe List(
       List("choice", "filter", "mapVariable", "split", "variable"),
       List("alaMaKota", "BarFilter", "foo")
     )
   }
 
   test("return edge types for fragment, filters and switches") {
-    val subprocessesDetails = TestFactory.prepareSampleSubprocessRepository.loadSubprocesses(Map.empty)
+    val fragmentsDetails = TestFactory.prepareSampleFragmentRepository.loadFragments(Map.empty)
 
     val edgeTypes = ComponentDefinitionPreparer.prepareEdgeTypes(
       processDefinition = ProcessTestData.processDefinition,
-      isSubprocess = false,
-      subprocessesDetails = subprocessesDetails
+      isFragment = false,
+      fragmentsDetails = fragmentsDetails
     )
 
     edgeTypes.toSet shouldBe Set(
       NodeEdges(NodeTypeId("Split"), List(), true, false),
       NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression.spel("true")), SwitchDefault), true, false),
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), false, false),
-      NodeEdges(NodeTypeId("SubprocessInput", Some("sub1")), List(SubprocessOutput("out1"), SubprocessOutput("out2")), false, false)
+      NodeEdges(NodeTypeId("FragmentInput", Some("sub1")), List(FragmentOutput("out1"), FragmentOutput("out2")), false, false)
     )
   }
 
@@ -96,7 +96,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     // 5 nodes from base + 3 custom nodes + 1 optional ending custom node
     baseComponents should have size (5 + 3 + 1)
     baseComponents.filter(n => n.`type` == ComponentType.Filter) should have size 1
-    baseComponents.filter(n => n.`type` ==  ComponentType.CustomNode) should have size 4
+    baseComponents.filter(n => n.`type` == ComponentType.CustomNode) should have size 4
 
     val fooNodes = groups.filter(_.name == ComponentGroupName("foo")).flatMap(_.components)
     fooNodes should have size 1
@@ -184,8 +184,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   private def prepareGroups(fixedConfig: Map[String, String], componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                             processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
-    val subprocessInputs = Map[String, FragmentObjectDefinition]()
-    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty, processCategoryService)
+    val fragmentInputs = Map[String, FragmentObjectDefinition]()
+    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, fragmentInputs, Set.empty, processCategoryService)
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
     val fixedComponentsConfig = fixedConfig.mapValuesNow(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
     val componentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
@@ -193,7 +193,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
       processDefinition = uiProcessDefinition,
-      isSubprocess = false,
+      isFragment = false,
       componentsConfig = componentsConfig,
       componentsGroupMapping = componentsGroupMapping,
       processCategoryService = processCategoryService,
@@ -208,9 +208,9 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
       processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty, processCategoryService),
-      isSubprocess = false,
+      isFragment = false,
       componentsConfig = Map(),
-      componentsGroupMapping =  Map(),
+      componentsGroupMapping = Map(),
       processCategoryService = processCategoryService,
       customTransformerAdditionalData = processDefinition.customStreamTransformers.mapValuesNow(_._2),
       TestProcessingTypes.Streaming

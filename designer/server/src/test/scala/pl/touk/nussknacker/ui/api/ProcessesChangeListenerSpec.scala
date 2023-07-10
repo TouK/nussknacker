@@ -35,7 +35,7 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
   }
 
   test("listen to process create") {
-    Post(s"/processes/${processName.value}/$TestCat?isSubprocess=false") ~> processesRouteWithAllPermissions ~> checkEventually {
+    Post(s"/processes/${processName.value}/$TestCat?isFragment=false") ~> processesRouteWithAllPermissions ~> checkEventually {
       processChangeListener.events.toArray.last should matchPattern { case OnSaved(_, VersionId(1L)) => }
     }
   }
@@ -103,8 +103,7 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
 
     cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe(validationPattern = ".*", Some("exampleDeploy"))), comment) ~> checkEventually {
       val head = processChangeListener.events.toArray.last
-      head should matchPattern
-      { case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Cancel) => }
+      head should matchPattern { case OnDeployActionSuccess(`processId`, VersionId(1L), Some(_), _, ProcessActionType.Cancel) => }
     }
   }
 

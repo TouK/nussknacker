@@ -91,9 +91,9 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
         [editedNode.id?.length, performNodeEdit, readOnly, t, theme.colors.accent],
     );
 
-    const openSubprocessButtonData: WindowButtonProps | null = useMemo(
+    const openFragmentButtonData: WindowButtonProps | null = useMemo(
         () =>
-            NodeUtils.nodeIsSubprocess(editedNode)
+            NodeUtils.nodeIsFragment(editedNode)
                 ? {
                       title: t("dialog.button.fragment.edit", "edit fragment"),
                       action: () => {
@@ -110,8 +110,8 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     );
 
     const buttons: WindowButtonProps[] = useMemo(
-        () => [openSubprocessButtonData, cancelButtonData, applyButtonData].filter(Boolean),
-        [applyButtonData, cancelButtonData, openSubprocessButtonData],
+        () => [openFragmentButtonData, cancelButtonData, applyButtonData].filter(Boolean),
+        [applyButtonData, cancelButtonData, openFragmentButtonData],
     );
 
     const components = useMemo(() => {

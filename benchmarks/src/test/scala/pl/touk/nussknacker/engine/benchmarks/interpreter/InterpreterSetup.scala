@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -24,17 +24,18 @@ import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 
-class InterpreterSetup[T:ClassTag] {
+class InterpreterSetup[T: ClassTag] {
 
-  def sourceInterpretation[F[_]:InterpreterShape](process: CanonicalProcess,
-                           services: Map[String, Service],
-                           listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
+  def sourceInterpretation[F[_] : InterpreterShape](process: CanonicalProcess,
+                                                    services: Map[String, Service],
+                                                    listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
     val compiledProcess = compile(services, process, listeners)
     val interpreter = compiledProcess.interpreter
     val parts = failOnErrors(compiledProcess.compile())
 
     def compileNode(part: ProcessPart) =
       failOnErrors(compiledProcess.subPartCompiler.compile(part.node, part.validationContext)(process.metaData).result)
+
     val compiled = compileNode(parts.sources.head)
     val shape = implicitly[InterpreterShape[F]]
     (initialCtx: Context, ec: ExecutionContext) =>
@@ -57,10 +58,10 @@ class InterpreterSetup[T:ClassTag] {
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(configCreator, getClass.getClassLoader,
       api.process.ProcessObjectDependencies(ConfigFactory.empty(), ObjectNamingProvider(getClass.getClassLoader)))
     val definitionsWithTypes = ModelDefinitionWithTypes(definitions)
-    val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty(), getClass.getClassLoader)
 
     ProcessCompilerData.prepare(process, definitionsWithTypes, new SimpleDictRegistry(Map.empty).toEngineRegistry,
-      subprocessDefinitionExtractor, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector,
+      fragmentDefinitionExtractor, listeners, getClass.getClassLoader, ProductionServiceInvocationCollector,
       ComponentUseCase.EngineRuntime, CustomProcessValidatorLoader.emptyCustomProcessValidator)
   }
 
@@ -70,7 +71,7 @@ class InterpreterSetup[T:ClassTag] {
   }
 
   class Source extends SourceFactory {
-    
+
     @MethodToInvoke
     def create(): api.process.Source = null
 

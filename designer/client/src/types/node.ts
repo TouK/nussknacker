@@ -1,6 +1,6 @@
 import { ReturnedType } from "./process";
 
-type Type = "Properties" | "SubprocessInput" | string;
+type Type = "Properties" | "FragmentInput" | string;
 
 export type LayoutData = { x: number; y: number };
 
@@ -15,7 +15,7 @@ export type BranchParametersTemplate = $TodoType;
 export type NodeType<F extends Field = Field> = {
     id: string;
     type: Type;
-    isSubprocess?: boolean;
+    isFragment?: boolean;
     isDisabled?: boolean;
     additionalFields?: {
         description: string;
@@ -49,7 +49,7 @@ export type NodeType<F extends Field = Field> = {
     [key: string]: any;
 };
 
-export type SubprocessNodeType = NodeType;
+export type FragmentNodeType = NodeType;
 
 export type Field = {
     name: string;

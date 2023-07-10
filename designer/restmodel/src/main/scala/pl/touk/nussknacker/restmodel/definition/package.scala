@@ -32,10 +32,10 @@ package object definition {
                                                                customStreamTransformers: Map[String, UIObjectDefinition],
                                                                globalVariables: Map[String, UIObjectDefinition],
                                                                typesInformation: Set[UIClazzDefinition],
-                                                               subprocessInputs: Map[String, UIFragmentObjectDefinition]) {
+                                                               fragmentInputs: Map[String, UIFragmentObjectDefinition]) {
     // skipping exceptionHandlerFactory
     val allDefinitions: Map[String, UIObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
-      customStreamTransformers ++ globalVariables ++ subprocessInputs.mapValuesNow(_.toUIObjectDefinition)
+      customStreamTransformers ++ globalVariables ++ fragmentInputs.mapValuesNow(_.toUIObjectDefinition)
   }
 
   @JsonCodec(encodeOnly = true) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, UIMethodInfo], staticMethods: Map[String, UIMethodInfo])
@@ -76,6 +76,7 @@ package object definition {
   @JsonCodec case class NodeEdges(nodeId: NodeTypeId, edges: List[EdgeType], canChooseNodes: Boolean, isForInputDefinition: Boolean)
 
   import pl.touk.nussknacker.engine.graph.NodeDataCodec._
+
   object ComponentTemplate {
     def create(`type`: ComponentType, node: NodeData, categories: List[String], branchParametersTemplate: List[evaluatedparam.Parameter] = List.empty): ComponentTemplate =
       ComponentTemplate(`type`, `type`.toString, node, categories, branchParametersTemplate)
@@ -96,6 +97,7 @@ package object definition {
 
   object UIParameter {
     @JsonCodec(decodeOnly = true) case class Expr(language: String, expression: String)
+
     implicit val defaultValueDecoder: Decoder[Expression] = (cursor: HCursor) => cursor.as[Expr] match {
       case Left(_) => cursor.as[String].map(Expression.spel)
       case Right(expr) => Right(Expression(expr.language, expr.expression))
@@ -107,6 +109,7 @@ package object definition {
   }
 
   object UICustomAction {
+
     import pl.touk.nussknacker.restmodel.codecs.URICodecs.{uriDecoder, uriEncoder}
 
     def apply(action: CustomAction): UICustomAction = UICustomAction(

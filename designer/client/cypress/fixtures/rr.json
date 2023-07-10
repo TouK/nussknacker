@@ -12,7 +12,7 @@
                 "outputSchema": "{}"
             }
         },
-        "subprocessVersions": {}
+        "fragmentVersions": {}
     },
     "nodes": [
         {

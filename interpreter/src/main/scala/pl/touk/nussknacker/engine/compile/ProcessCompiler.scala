@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompi
 import pl.touk.nussknacker.engine.compiledgraph.part.{PotentiallyStartPart, TypedEnd}
 import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.graph.node.{Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.split._
@@ -252,16 +252,16 @@ object ProcessValidator {
   def default(modelData: ModelData, categoryOpt: Option[String]): ProcessValidator = {
     default(
       categoryOpt.map(category => modelData.modelDefinitionWithTypes.filter(_.availableForCategory(category))).getOrElse(modelData.modelDefinitionWithTypes),
-      SubprocessComponentDefinitionExtractor(modelData),
+      FragmentComponentDefinitionExtractor(modelData),
       modelData.uiDictServices.dictRegistry,
       modelData.customProcessValidator,
       modelData.modelClassLoader.classLoader)
   }
 
-  def default(definitionWithTypes: ModelDefinitionWithTypes, subprocessDefinitionExtractor: SubprocessComponentDefinitionExtractor, dictRegistry: DictRegistry, customProcessValidator: CustomProcessValidator, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
+  def default(definitionWithTypes: ModelDefinitionWithTypes, fragmentDefinitionExtractor: FragmentComponentDefinitionExtractor, dictRegistry: DictRegistry, customProcessValidator: CustomProcessValidator, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
     import definitionWithTypes.modelDefinition
     val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, modelDefinition.expressionConfig, definitionWithTypes.typeDefinitions)
-    val nodeCompiler = new NodeCompiler(modelDefinition, subprocessDefinitionExtractor, expressionCompiler, classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
+    val nodeCompiler = new NodeCompiler(modelDefinition, fragmentDefinitionExtractor, expressionCompiler, classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
     val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
     new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(modelDefinition.expressionConfig), nodeCompiler, customProcessValidator)
   }

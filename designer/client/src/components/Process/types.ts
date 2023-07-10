@@ -43,7 +43,7 @@ export interface ProcessType {
     processId: number;
     processVersionId: number;
     isArchived: boolean;
-    isSubprocess: boolean;
+    isFragment: boolean;
     isLatestVersion: boolean;
     processCategory: string;
     processType: string;

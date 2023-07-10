@@ -6,8 +6,8 @@
             "color": "white"
         }
     },
-    "SubprocessInputDefinition": {
-        "name": "SubprocessInputDefinition",
+    "FragmentInputDefinition": {
+        "name": "FragmentInputDefinition",
         "styles": {
             "fill": "#2d8e54",
             "color": "white"
@@ -20,8 +20,8 @@
             "color": "white"
         }
     },
-    "SubprocessOutputDefinition": {
-        "name": "SubprocessOutputDefinition",
+    "FragmentOutputDefinition": {
+        "name": "FragmentOutputDefinition",
         "styles": {
             "fill": "#db4646",
             "color": "white"
@@ -62,8 +62,8 @@
             "color": "white"
         }
     },
-    "SubprocessInput": {
-        "name": "SubprocessInput",
+    "FragmentInput": {
+        "name": "FragmentInput",
         "styles": {
             "fill": "#805db2",
             "color": "white"

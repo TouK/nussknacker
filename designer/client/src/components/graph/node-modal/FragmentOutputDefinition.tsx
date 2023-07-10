@@ -12,7 +12,7 @@ interface Props<F extends Field> extends Omit<MapVariableProps<F>, "expressionTy
     isEditMode?: boolean;
 }
 
-function SubprocessOutputDefinition<F extends Field>(props: Props<F>): JSX.Element {
+function FragmentOutputDefinition<F extends Field>(props: Props<F>): JSX.Element {
     const { removeElement, addElement, variableTypes, isEditMode, ...passProps } = props;
     const { node, ...mapProps } = passProps;
     const readOnly = !isEditMode;
@@ -44,4 +44,4 @@ function SubprocessOutputDefinition<F extends Field>(props: Props<F>): JSX.Eleme
     );
 }
 
-export default SubprocessOutputDefinition;
+export default FragmentOutputDefinition;

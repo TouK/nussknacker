@@ -39,7 +39,7 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
 
     val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)
     maybeProcess.flatMap {
-      case Some(process) if process.isSubprocess =>
+      case Some(process) if process.isFragment =>
         actionError(CustomActionForbidden(createCustomAction(process), "Invoke custom action on fragment is forbidden."))
       case Some(process) if process.isArchived =>
         actionError(CustomActionForbidden(createCustomAction(process), "Invoke custom action on archived scenario is forbidden."))

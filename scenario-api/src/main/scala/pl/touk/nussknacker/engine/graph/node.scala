@@ -8,11 +8,11 @@ import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect.ClassTag
@@ -43,7 +43,7 @@ object node {
   case class FilterNode(data: Filter, nextTrue: Option[SubsequentNode], nextFalse: Option[SubsequentNode] = None) extends SubsequentNode
 
   //this should never occur in process to be run (unresolved)
-  case class SubprocessNode(data: SubprocessInput, nexts: Map[String, SubsequentNode]) extends SubsequentNode
+  case class FragmentNode(data: FragmentInput, nexts: Map[String, SubsequentNode]) extends SubsequentNode
 
   //defaultNext is deprecated, will be removed in future versions
   case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[SubsequentNode] = None) extends SubsequentNode
@@ -188,45 +188,45 @@ object node {
     override def parameters: List[Parameter] = ref.parameters
   }
 
-  // TODO: A better way of passing information regarding subprocess parameter definition
-  case class SubprocessInput(id: String,
-                             ref: SubprocessRef,
-                             additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
-                             isDisabled: Option[Boolean] = None,
-                             subprocessParams: Option[List[SubprocessParameter]] = None) extends OneOutputSubsequentNodeData with EndingNodeData with WithComponent with Disableable {
+  // TODO: A better way of passing information regarding fragment parameter definition
+  case class FragmentInput(id: String,
+                           ref: FragmentRef,
+                           additionalFields: Option[UserDefinedAdditionalNodeFields] = None,
+                           isDisabled: Option[Boolean] = None,
+                           fragmentParams: Option[List[FragmentParameter]] = None) extends OneOutputSubsequentNodeData with EndingNodeData with WithComponent with Disableable {
     override val componentId: String = ref.id
   }
 
-  //this is used after resolving subprocess, used for detecting when subprocess ends and context should change
-  case class SubprocessUsageOutput(id: String, outputName: String, outputVar: Option[SubprocessOutputVarDefinition], additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+  //this is used after resolving fragment, used for detecting when fragment ends and context should change
+  case class FragmentUsageOutput(id: String, outputName: String, outputVar: Option[FragmentOutputVarDefinition], additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends OneOutputSubsequentNodeData
 
-  @JsonCodec case class SubprocessOutputVarDefinition(name: String, fields: List[Field])
+  @JsonCodec case class FragmentOutputVarDefinition(name: String, fields: List[Field])
 
-  //this is used only in subprocess definition
-  case class SubprocessInputDefinition(id: String,
-                                       parameters: List[SubprocessParameter],
-                                       additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+  //this is used only in fragment definition
+  case class FragmentInputDefinition(id: String,
+                                     parameters: List[FragmentParameter],
+                                     additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends SourceNodeData with RealNodeData
 
-  //this is used only in subprocess definition
-  case class SubprocessOutputDefinition(id: String, outputName: String, fields: List[Field] = List.empty, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+  //this is used only in fragment definition
+  case class FragmentOutputDefinition(id: String, outputName: String, fields: List[Field] = List.empty, additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends EndingNodeData with RealNodeData
 
   //we don't use DefinitionExtractor.Parameter here, because this class should be serializable to json and Parameter has TypedResult which has *real* class inside
-  //TODO: probably should be able to handle class parameters or typed maps (i.e. use TypingResult inside SubprocessClazzRef)
+  //TODO: probably should be able to handle class parameters or typed maps (i.e. use TypingResult inside FragmentClazzRef)
   //shape of this data should probably change, currently we leave it for backward compatibility
-  object SubprocessInputDefinition {
+  object FragmentInputDefinition {
 
-    @JsonCodec case class SubprocessParameter(name: String, typ: SubprocessClazzRef)
+    @JsonCodec case class FragmentParameter(name: String, typ: FragmentClazzRef)
 
-    object SubprocessClazzRef {
+    object FragmentClazzRef {
 
-      def apply[T: ClassTag]: SubprocessClazzRef = SubprocessClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
+      def apply[T: ClassTag]: FragmentClazzRef = FragmentClazzRef(implicitly[ClassTag[T]].runtimeClass.getName)
 
     }
 
-    @JsonCodec case class SubprocessClazzRef(refClazzName: String) {
+    @JsonCodec case class FragmentClazzRef(refClazzName: String) {
 
       def toRuntimeClass(classLoader: ClassLoader): Try[Class[_]] =
         Try(ClassUtils.getClass(classLoader, refClazzName))
@@ -243,7 +243,7 @@ object node {
 
   def asCustomNode(nodeData: NodeData): Option[CustomNode] = nodeData.cast[CustomNode]
 
-  def asSubprocessInput(nodeData: NodeData): Option[SubprocessInput] = nodeData.cast[SubprocessInput]
+  def asFragmentInput(nodeData: NodeData): Option[FragmentInput] = nodeData.cast[FragmentInput]
 
   def asProcessor(nodeData: NodeData): Option[Processor] = nodeData.cast[Processor]
 

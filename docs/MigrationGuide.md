@@ -3,6 +3,12 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.11.0
+
+### Code API changes
+* [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility).
+  * `isSubprocess` query parameter is renamed to `isFragment`. `isSubprocess` will be removed in 1.12.0
+
 ## In version 1.10.0
 
 ### Code API changes

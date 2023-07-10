@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingPar
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, SubprocessResolver}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, FragmentResolver}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
@@ -37,7 +37,7 @@ import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecode
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
+import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.suggester.{CaretPosition2d, ExpressionSuggester}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -45,10 +45,10 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
-  */
+ * This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
+ */
 class NodesResources(val processRepository: FetchingProcessRepository[Future],
-                     subprocessRepository: SubprocessRepository,
+                     fragmentRepository: FragmentRepository,
                      typeToConfig: ProcessingTypeDataProvider[ModelData, _],
                      processValidation: ProcessValidation,
                      typeToExpressionSuggester: ProcessingTypeDataProvider[ExpressionSuggester, _],
@@ -74,7 +74,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
           implicit val requestDecoder: Decoder[NodeValidationRequest] = NodesResources.prepareNodeRequestDecoder(modelData)
           entity(as[NodeValidationRequest]) { nodeData =>
             complete {
-              nodeValidator.validate(nodeData, modelData, process.id, subprocessRepository)
+              nodeValidator.validate(nodeData, modelData, process.id, fragmentRepository)
             }
           }
         }
@@ -183,15 +183,15 @@ object NodesResources {
 }
 
 class NodeValidator {
-  def validate(nodeData: NodeValidationRequest, modelData: ModelData, processId: String, subprocessRepository: SubprocessRepository): NodeValidationResult = {
+  def validate(nodeData: NodeValidationRequest, modelData: ModelData, processId: String, fragmentRepository: FragmentRepository): NodeValidationResult = {
     implicit val metaData: MetaData = nodeData.processProperties.toMetaData(processId)
 
     val validationContext = prepareValidationContext(modelData)(nodeData.variableTypes)
     val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValuesNow(prepareValidationContext(modelData))
 
     val edges = nodeData.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to, e.edgeType))
-    val subprocessResolver = SubprocessResolver(k => subprocessRepository.get(k).map(_.canonical))
-    new NodeDataValidator(modelData, subprocessResolver).validate(nodeData.nodeData, validationContext, branchCtxs, edges) match {
+    val fragmentResolver = FragmentResolver(k => fragmentRepository.get(k).map(_.canonical))
+    new NodeDataValidator(modelData, fragmentResolver).validate(nodeData.nodeData, validationContext, branchCtxs, edges) match {
       case ValidationNotPerformed => NodeValidationResult(parameters = None, expressionType = None, validationErrors = Nil, validationPerformed = false)
       case ValidationPerformed(errors, parameters, expressionType) =>
         val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter))

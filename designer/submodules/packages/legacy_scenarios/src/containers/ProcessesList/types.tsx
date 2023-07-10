@@ -5,7 +5,7 @@ import { SearchItem } from "../TableFilters";
 import { StatusesType } from "nussknackerUi/HttpService";
 
 export type Queries = Partial<{
-    isSubprocess: boolean;
+    isFragment: boolean;
     isArchived: boolean;
     isDeployed: boolean;
 }>;

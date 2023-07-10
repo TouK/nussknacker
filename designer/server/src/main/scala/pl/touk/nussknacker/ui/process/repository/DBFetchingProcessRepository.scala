@@ -28,14 +28,14 @@ object DBFetchingProcessRepository {
 
 }
 
-abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) extends FetchingProcessRepository[F] with LazyLogging {
+abstract class DBFetchingProcessRepository[F[_] : Monad](val dbConfig: DbConfig) extends FetchingProcessRepository[F] with LazyLogging {
 
   import api._
 
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](query: FetchProcessesDetailsQuery)
                                                                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
-      query.isSubprocess.map(arg => process => process.isSubprocess === arg),
+      query.isFragment.map(arg => process => process.isFragment === arg),
       query.isArchived.map(arg => process => process.isArchived === arg),
       query.categories.map(arg => process => process.processCategory.inSet(arg)),
       query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
@@ -62,7 +62,8 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
         lastStateActionPerProcess.get(process.id),
         lastDeployedActionPerProcess.get(process.id),
         isLatestVersion = true
-      )}).map(_.toList)
+      )
+      }).map(_.toList)
   }
 
   private def fetchActionsOrEmpty[PS: ProcessShapeFetchStrategy](doFetch: => DBIO[Map[ProcessId, (ProcessActionEntityData, Option[CommentEntityData])]]): DBIO[Map[ProcessId, (ProcessActionEntityData, Option[CommentEntityData])]] = {
@@ -132,7 +133,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       process = process,
       processVersion = processVersion,
       lastActionData = actions.headOption,
-      lastStateActionData = actions.find{ case (entity, _) => StateActions.contains(entity.action) },
+      lastStateActionData = actions.find { case (entity, _) => StateActions.contains(entity.action) },
       lastDeployedActionData = actions.headOption.find(_._1.isDeployed),
       isLatestVersion = isLatestVersion,
       tags = tags,
@@ -157,7 +158,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
       isArchived = process.isArchived,
-      isSubprocess = process.isSubprocess,
+      isFragment = process.isFragment,
       description = process.description,
       processingType = process.processingType,
       processCategory = process.processCategory,

@@ -13,7 +13,7 @@ export function fetchVisualizationData(processName: ProcessId): ThunkAction {
             const { name, json, processingType } = fetchedProcessDetails;
             await dispatch(loadProcessToolbarsConfiguration(name));
             dispatch(displayProcessActivity(name));
-            await dispatch(fetchProcessDefinition(processingType, json.properties?.isSubprocess));
+            await dispatch(fetchProcessDefinition(processingType, json.properties?.isFragment));
             return fetchedProcessDetails;
         } catch (error) {
             dispatch(handleHTTPError(error));

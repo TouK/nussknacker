@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
+import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Future
@@ -87,7 +87,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   test("should hide node in hidden category") {
 
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model : ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator() {
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator() {
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map(
           "enricher" -> WithCategories(TestService),
@@ -102,7 +102,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   test("should be able to assign generic node to some category") {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model : ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator() {
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator() {
       override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
         Map(
           "someGenericNode" -> WithCategories(SampleGenericNodeTransformation).withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("someCategory"))))
@@ -117,12 +117,12 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   test("should override fragment's docsUrl from config with value from 'properties'") {
     val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
-    val model : ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
-    val fragment = ProcessTestData.sampleSubprocessOneOut
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
+    val fragment = ProcessTestData.sampleFragmentOneOut
     val docsUrl = "https://nussknacker.io/documentation/"
     val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.withTypeSpecificData(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
 
-    val processObjects = prepareUIProcessObjects(model, Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")))
+    val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragmentWithDocsUrl, "Category1")))
 
     processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
   }
@@ -132,20 +132,21 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
 
     val fragment = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
-    val processObjects = prepareUIProcessObjects(model, Set(SubprocessDetails(fragment, "Category1")))
+    val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")))
+
     processObjects.componentsConfig.get(fragment.id) shouldBe empty
   }
 
   private def prepareUIProcessObjects(model: ModelData,
-                                      subprocessesDetails: Set[SubprocessDetails]) = {
+                                      fragmentDetails: Set[FragmentDetails]) = {
     val staticObjectsDefinition = ToStaticObjectDefinitionTransformer.transformModel(model, initialData.create(_, Map.empty))
     UIProcessObjectsFactory.prepareUIProcessObjects(
       model,
       staticObjectsDefinition,
       mockDeploymentManager,
       TestFactory.user("userId"),
-      subprocessesDetails,
-      isSubprocess = false,
+      fragmentDetails,
+      isFragment = false,
       new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
       Map.empty,
       TestProcessingTypes.Streaming

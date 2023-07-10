@@ -1,5 +1,5 @@
 import React from "react";
-import { NodeValue } from "../../subprocess-input-definition/NodeValue";
+import { NodeValue } from "../../fragment-input-definition/NodeValue";
 import Input, { InputProps } from "../field/Input";
 
 interface MapKeyProps extends Omit<InputProps, "onChange"> {

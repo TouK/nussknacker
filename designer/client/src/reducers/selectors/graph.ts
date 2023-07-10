@@ -20,7 +20,7 @@ export const getProcessVersionId = createSelector(getFetchedProcessDetails, (d) 
 export const getProcessCategory = createSelector(getFetchedProcessDetails, (d) => d?.processCategory || "");
 
 export const isLatestProcessVersion = createSelector(getFetchedProcessDetails, (d) => d?.isLatestVersion);
-export const isSubprocess = createSelector(getProcessToDisplay, (p) => p.properties?.isSubprocess);
+export const isFragment = createSelector(getProcessToDisplay, (p) => p.properties?.isFragment);
 export const isArchived = createSelector(getFetchedProcessDetails, (p) => p?.isArchived);
 export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToSave(state) && !isProcessRenamed(state);
 export const hasError = createSelector(getProcessToDisplay, (p) => !ProcessUtils.hasNoErrors(p));
@@ -39,8 +39,8 @@ export const isProcessRenamed = createSelector(
 
 export const isSaveDisabled = createSelector([isPristine, isLatestProcessVersion], (pristine, latest) => pristine && latest);
 export const isDeployPossible = createSelector(
-    [isSaveDisabled, hasError, getProcessState, isSubprocess],
-    (saveDisabled, error, state, subprocess) => !subprocess && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
+    [isSaveDisabled, hasError, getProcessState, isFragment],
+    (saveDisabled, error, state, fragment) => !fragment && saveDisabled && !error && ProcessStateUtils.canDeploy(state),
 );
 export const isMigrationPossible = createSelector(
     [isSaveDisabled, hasError, getProcessState],
@@ -48,8 +48,8 @@ export const isMigrationPossible = createSelector(
 );
 export const isCancelPossible = createSelector(getProcessState, (state) => ProcessStateUtils.canCancel(state));
 export const isArchivePossible = createSelector(
-    [getProcessState, isSubprocess],
-    (state, isSubprocess) => isSubprocess || ProcessStateUtils.canArchive(state),
+    [getProcessState, isFragment],
+    (state, isFragment) => isFragment || ProcessStateUtils.canArchive(state),
 );
 export const getTestCapabilities = createSelector(getGraph, (g) => g.testCapabilities);
 export const getTestParameters = createSelector(getGraph, (g) => g.testFormParameters);

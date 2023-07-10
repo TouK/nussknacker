@@ -26,11 +26,11 @@ describe("process available variables finder", () => {
         });
     });
 
-    it("should find subprocess parameters as variables with its types", () => {
-        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", subprocess)("endEnriched");
+    it("should find fragment parameters as variables with its types", () => {
+        const availableVariables = ProcessUtils.findAvailableVariables(processDefinition, "Category1", fragment)("endEnriched");
         expect(availableVariables).toEqual({
             date: { refClazzName: "java.time.LocalDate" },
-            subprocessParam: { refClazzName: "java.lang.String" },
+            fragmentParam: { refClazzName: "java.lang.String" },
         });
     });
 
@@ -286,14 +286,14 @@ const processWithVariableTypes = {
     },
 };
 
-const subprocess = {
-    id: "subprocess1",
+const fragment = {
+    id: "fragment1",
     properties: { parallelism: 2 },
     nodes: [
         {
-            type: "SubprocessInputDefinition",
+            type: "FragmentInputDefinition",
             id: "start",
-            parameters: [{ name: "subprocessParam", typ: { refClazzName: "java.lang.String" } }],
+            parameters: [{ name: "fragmentParam", typ: { refClazzName: "java.lang.String" } }],
         },
         { type: "Filter", id: "filter1", expression: { language: "spel", expression: "#input.PATH != 'Anonymous'" } },
         {

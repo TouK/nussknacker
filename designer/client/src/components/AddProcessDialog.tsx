@@ -11,11 +11,11 @@ import { allValid, errorValidator } from "./graph/node-modal/editors/Validators"
 import { useNavigate } from "react-router-dom";
 
 interface AddProcessDialogProps extends WindowContentProps {
-    isSubprocess?: boolean;
+    isFragment?: boolean;
 }
 
 export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
-    const { isSubprocess, ...passProps } = props;
+    const { isFragment, ...passProps } = props;
     const nameValidators = useProcessNameValidators();
 
     const [value, setState] = useState({ processId: "", processCategory: "" });
@@ -33,7 +33,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         if (isValid) {
             const { processId, processCategory } = value;
             try {
-                await HttpService.createProcess(processId, processCategory, isSubprocess);
+                await HttpService.createProcess(processId, processCategory, isFragment);
                 passProps.close();
                 navigate(visualizationUrl(processId));
             } catch (error) {
@@ -45,7 +45,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
                 }
             }
         }
-    }, [isSubprocess, isValid, navigate, passProps, value]);
+    }, [isFragment, isValid, navigate, passProps, value]);
 
     const { t } = useTranslation();
     const buttons: WindowButtonProps[] = useMemo(

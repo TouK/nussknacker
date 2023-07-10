@@ -5,8 +5,8 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.evaluatedparam
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{Source, SubprocessInput, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.{Source, FragmentInput, FragmentInputDefinition}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
@@ -103,26 +103,26 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should migrate fragment and its usage within scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(7))
-    val subprocess = toValidatedDisplayable(sampleSubprocessOneOut)
+    val fragment = toValidatedDisplayable(sampleFragmentOneOut)
     val process =
       toValidatedDisplayable(ScenarioBuilder
         .streaming("fooProcess")
         .source("source", existingSourceFactory)
-        .subprocessOneOut("subprocess", subprocess.id, "output", "fragmentResult", "param1" -> "'foo'")
+        .fragmentOneOut("fragment", fragment.id, "output", "fragmentResult", "param1" -> "'foo'")
         .emptySink("sink", existingSinkFactory))
 
-    val results = testMigration.testMigrations(List(validatedToProcess(process)), List(validatedToProcess(subprocess)))
+    val results = testMigration.testMigrations(List(validatedToProcess(process)), List(validatedToProcess(fragment)))
 
     results should have size 2
-    val (subprocessMigrationResult, processMigrationResult) = (results.find(_.converted.id == subprocess.id).get, results.find(_.converted.id == process.id).get)
-    subprocessMigrationResult.shouldFail shouldBe false
+    val (fragmentMigrationResult, processMigrationResult) = (results.find(_.converted.id == fragment.id).get, results.find(_.converted.id == process.id).get)
+    fragmentMigrationResult.shouldFail shouldBe false
     processMigrationResult.shouldFail shouldBe false
-    getFirst[SubprocessInputDefinition](subprocessMigrationResult).parameters shouldBe List(SubprocessParameter("param42", SubprocessClazzRef[String]))
-    getFirst[SubprocessInput](processMigrationResult).ref.parameters shouldBe List(evaluatedparam.Parameter("param42", "'foo'"))
+    getFirst[FragmentInputDefinition](fragmentMigrationResult).parameters shouldBe List(FragmentParameter("param42", FragmentClazzRef[String]))
+    getFirst[FragmentInput](processMigrationResult).ref.parameters shouldBe List(evaluatedparam.Parameter("param42", "'foo'"))
   }
 
   test("should migrate scenario with fragment which does not require any migrations") {
-    val subprocess = toValidatedDisplayable(sampleSubprocessOneOut)
+    val fragment = toValidatedDisplayable(sampleFragmentOneOut)
 
     val testMigration = new TestModelMigrations(
       mapProcessingTypeDataProvider(Streaming -> new TestMigrations(8)),
@@ -133,10 +133,10 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
       toValidatedDisplayable(ScenarioBuilder
         .streaming("fooProcess")
         .source("source", existingSourceFactory)
-        .subprocessOneOut("subprocess", subprocess.id, "output", "fragmentResult", "param1" -> "'foo'")
+        .fragmentOneOut("fragment", fragment.id, "output", "fragmentResult", "param1" -> "'foo'")
         .emptySink("sink", existingSinkFactory))
 
-    val results = testMigration.testMigrations(List(validatedToProcess(process)), List(validatedToProcess(subprocess).copy(modelVersion = Some(10))))
+    val results = testMigration.testMigrations(List(validatedToProcess(process)), List(validatedToProcess(fragment).copy(modelVersion = Some(10))))
 
     val processMigrationResult = results.find(_.converted.id == process.id).get
     processMigrationResult.newErrors.hasErrors shouldBe false

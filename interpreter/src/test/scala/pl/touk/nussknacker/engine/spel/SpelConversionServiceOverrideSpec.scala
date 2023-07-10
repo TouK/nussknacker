@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
-import pl.touk.nussknacker.engine.definition.SubprocessComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -41,7 +41,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
 
   class MyProcessConfigCreator(spelCustomConversionsProviderOpt: Option[SpelConversionsProvider]) extends EmptyProcessConfigCreator {
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
-      Map("stringSource" -> WithCategories(SourceFactory.noParam[String](new  pl.touk.nussknacker.engine.api.process.Source {})))
+      Map("stringSource" -> WithCategories(SourceFactory.noParam[String](new pl.touk.nussknacker.engine.api.process.Source {})))
 
 
     override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = {
@@ -81,7 +81,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
   private def interpret(process: CanonicalProcess, spelCustomConversionsProviderOpt: Option[SpelConversionsProvider], inputValue: Any) = {
     val modelData = LocalModelData(ConfigFactory.empty(), new MyProcessConfigCreator(spelCustomConversionsProviderOpt))
     val compilerData = ProcessCompilerData.prepare(process, modelData.modelDefinitionWithTypes, modelData.engineDictRegistry,
-      SubprocessComponentDefinitionExtractor(modelData), Seq.empty, getClass.getClassLoader, ProductionServiceInvocationCollector,
+      FragmentComponentDefinitionExtractor(modelData), Seq.empty, getClass.getClassLoader, ProductionServiceInvocationCollector,
       ComponentUseCase.EngineRuntime, CustomProcessValidatorLoader.emptyCustomProcessValidator)
     val parts = compilerData.compile().value
     val source = parts.sources.head

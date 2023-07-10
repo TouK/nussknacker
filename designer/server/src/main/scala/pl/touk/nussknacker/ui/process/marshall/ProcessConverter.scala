@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.marshall
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.EdgeType
-import pl.touk.nussknacker.engine.graph.EdgeType.SubprocessOutput
+import pl.touk.nussknacker.engine.graph.EdgeType.FragmentOutput
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
@@ -28,7 +28,7 @@ object ProcessConverter {
     DisplayableProcess(process.metaData.id, props, nodes, edges, processingType, category)
   }
 
-  def findNodes(process: CanonicalProcess) : List[NodeData] = {
+  def findNodes(process: CanonicalProcess): List[NodeData] = {
     process.allStartNodes.toList.flatMap(branch => toGraphInner(branch)._1)
   }
 
@@ -59,16 +59,16 @@ object ProcessConverter {
         val edges = nextInner._2.flatten
         val connecting = nexts.flatMap(createNextEdge(data.id, _, None))
         (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
-      case canonicalnode.Subprocess(data, outputs) :: tail =>
+      case canonicalnode.Fragment(data, outputs) :: tail =>
         val (tailNodes, tailEdges) = toGraphInner(tail)
         val nextInner = outputs.values.toList.map(toGraphInner).unzip
         val nodes = nextInner._1.flatten
         val edges = nextInner._2.flatten
         val connecting = outputs
-          .flatMap{ case (name, outputEdges) => createNextEdge(data.id, outputEdges, Some(SubprocessOutput(name))) }.toList
+          .flatMap { case (name, outputEdges) => createNextEdge(data.id, outputEdges, Some(FragmentOutput(name))) }.toList
         (data :: nodes ::: tailNodes, connecting ::: edges ::: tailEdges)
       case Nil =>
-        (List(),List())
+        (List(), List())
     }
 
   private def createNextEdge(id: String, tail: List[CanonicalNode], edgeType: Option[EdgeType] = None): List[displayablenode.Edge] = {
@@ -120,10 +120,10 @@ object ProcessConverter {
       case (data: Split, _) =>
         val nexts = getEdges(data.id).map(unflattenEdgeEnd(data.id, _))
         canonicalnode.SplitNode(data, nexts) :: Nil
-      case (data: SubprocessInput, _) =>
+      case (data: FragmentInput, _) =>
         //TODO error handling?
-        val nexts = getEdges(data.id).map(e => e.edgeType.get.asInstanceOf[SubprocessOutput].name -> unflattenEdgeEnd(data.id, e)).toMap
-        canonicalnode.Subprocess(data, nexts) :: Nil
+        val nexts = getEdges(data.id).map(e => e.edgeType.get.asInstanceOf[FragmentOutput].name -> unflattenEdgeEnd(data.id, e)).toMap
+        canonicalnode.Fragment(data, nexts) :: Nil
       case (data: Join, Some(edgeConnectedToJoin)) =>
         // We are using "from" node's id as a branchId because for now branchExpressions are inside Join nodes and it is convenient
         // way to connect both two things.

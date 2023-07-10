@@ -19,8 +19,8 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{Processor, SubprocessInputDefinition, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
+import pl.touk.nussknacker.engine.graph.node.{Processor, FragmentInputDefinition, FragmentOutputDefinition}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.{ConfigWithUnresolvedVersion, spel}
@@ -88,7 +88,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   }
 
   test("ensure nodes config is properly parsed") {
-    Get("/api/processDefinitionData/streaming?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+    Get("/api/processDefinitionData/streaming?isFragment=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       val settingsJson = responseAs[Json].hcursor.downField("componentsConfig").focus.get
       val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).toOption.get
 
@@ -144,7 +144,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   }
 
   test("ensure additional properties config is properly applied") {
-    Get("/api/processDefinitionData/streaming?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+    Get("/api/processDefinitionData/streaming?isFragment=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       val settingsJson = responseAs[Json].hcursor.downField("additionalPropertiesConfig").focus.get
       val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
@@ -178,7 +178,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
   test("validate process additional properties") {
     val scenario = ProcessTestData.processWithInvalidAdditionalProperties
-    Post(s"/api/processes/${scenario.id}/Category1?isSubprocess=${scenario.metaData.isSubprocess}") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+    Post(s"/api/processes/${scenario.id}/Category1?isFragment=${scenario.metaData.isFragment}") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       Post("/api/processValidation", HttpEntity(ContentTypes.`application/json`, scenario.asJson.spaces2)) ~> addCredentials(credentials) ~> mainRoute ~> check {
         status shouldEqual StatusCodes.OK
         val entity = responseAs[String]
@@ -198,14 +198,14 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     val process = DisplayableProcess(
       id = processId,
       properties = ProcessProperties(FragmentSpecificData()),
-      nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
-        SubprocessOutputDefinition("output1", "out1")),
+      nodes = List(FragmentInputDefinition("input1", List(FragmentParameter("badParam", FragmentClazzRef("i.do.not.exist")))),
+        FragmentOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),
       processingType = TestProcessingTypes.Streaming,
       TestCategories.Category1
     )
 
-    Post(s"$endpoint/Category1?isSubprocess=true") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+    Post(s"$endpoint/Category1?isFragment=true") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
       Put(endpoint, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
@@ -256,6 +256,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     val processId = "test"
     val nodeUsingDynamicServiceId = "end"
+
     def processWithService(params: (String, Expression)*): CanonicalProcess = {
       ScenarioBuilder
         .streaming(processId)
@@ -284,6 +285,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
         parameters.map(_.flatMap(_.asObject).flatMap(_.apply("name")).flatMap(_.asString).toList)
       }
     }
+
     //we check that buildInfo does not change
     val beforeReload = generationTime
     val beforeReload2 = generationTime
@@ -308,7 +310,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     reloadModel()
 
-    val afterReload =  generationTime
+    val afterReload = generationTime
     beforeReload should not be afterReload
     //now parameter is known and required
     dynamicServiceParameters shouldBe Some(List(parameterUUID))
@@ -334,7 +336,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   }
 
   private def saveProcess(process: CanonicalProcess): ValidationResult = {
-    Post(s"/api/processes/${process.id}/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+    Post(s"/api/processes/${process.id}/Category1?isFragment=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
       updateProcess(process)
     }
@@ -351,7 +353,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   private def testProcess(process: CanonicalProcess, data: String): Json = {
     val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCategories.Category1)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> data, "processJson" -> displayableProcess.asJson.noSpaces)()
-    Post(s"/api/processManagement/test/${process.id}", multiPart)  ~> addCredentials(credentials) ~> mainRoute ~>  checkWithClue {
+    Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       responseAs[Json]
     }

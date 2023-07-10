@@ -26,11 +26,11 @@ function createTestProcessName(name?: string) {
     return cy.wrap(`${Cypress.env("processNamePrefix")}-${Date.now()}-${name}-test-process`);
 }
 
-function createProcess(name?: string, fixture?: string, category = "Category1", isSubprocess?: boolean) {
+function createProcess(name?: string, fixture?: string, category = "Category1", isFragment?: boolean) {
     return cy.createTestProcessName(name).then((processName) => {
         let url = `/api/processes/${processName}/${category}`;
-        if (isSubprocess) {
-            url += "?isSubprocess=true";
+        if (isFragment) {
+            url += "?isFragment=true";
         }
         cy.request({ method: "POST", url }).its("status").should("equal", 201);
         return fixture ? cy.importTestProcess(processName, fixture) : cy.wrap(processName);

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, Proce
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, SubprocessComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, FragmentComponentDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
@@ -63,10 +63,10 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
 
     val (definitionWithTypes, dictRegistry) = definitions(processObjectDependencies, userCodeClassLoader)
-    val subprocessDefinitionExtractor = SubprocessComponentDefinitionExtractor(processConfig, userCodeClassLoader)
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(processConfig, userCodeClassLoader)
     val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
-      ProcessCompilerData.prepare(process, definitionWithTypes, dictRegistry, subprocessDefinitionExtractor, listenersToUse,
+      ProcessCompilerData.prepare(process, definitionWithTypes, dictRegistry, fragmentDefinitionExtractor, listenersToUse,
         userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
 
     new FlinkProcessCompilerData(
@@ -103,7 +103,6 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
   }
 
 
-
   protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = defaults
 
   protected def exceptionHandler(metaData: MetaData,
@@ -114,6 +113,7 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
       case ComponentUseCase.TestRuntime =>
         new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader) {
           override def restartStrategy: RestartStrategies.RestartStrategyConfiguration = RestartStrategies.noRestart()
+
           override def handle(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = ()
         }
       case _ => new FlinkExceptionHandler(metaData, processObjectDependencies, listeners, classLoader)

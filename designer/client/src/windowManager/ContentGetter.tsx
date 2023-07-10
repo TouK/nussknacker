@@ -43,8 +43,8 @@ const GenerateDataAndTestDialog = loadable(() => import("../components/modals/Ge
 
 export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) => {
     switch (props.data.kind) {
-        case WindowKind.addSubProcess:
-            return <AddProcessDialog {...props} isSubprocess />;
+        case WindowKind.addFragment:
+            return <AddProcessDialog {...props} isFragment />;
         case WindowKind.addProcess:
             return <AddProcessDialog {...props} />;
         case WindowKind.saveProcess:

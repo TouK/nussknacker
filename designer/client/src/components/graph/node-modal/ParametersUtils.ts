@@ -32,7 +32,7 @@ const parametersPath = (node) => {
 };
 
 //We want to change parameters in node based on current node definition. This function can be used in
-//two cases: dynamic parameters handling and automatic node migrations (e.g. in subprocesses). Currently we use it only for dynamic parameters
+//two cases: dynamic parameters handling and automatic node migrations (e.g. in fragments). Currently we use it only for dynamic parameters
 export function adjustParameters(node: NodeType, parameterDefinitions: Array<UIParameter>): AdjustReturn {
     const path = parametersPath(node);
 

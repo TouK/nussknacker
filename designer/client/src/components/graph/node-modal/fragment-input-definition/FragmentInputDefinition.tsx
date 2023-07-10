@@ -13,7 +13,7 @@ interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
     isEditMode?: boolean;
 }
 
-export default function SubprocessInputDefinition(props: Props): JSX.Element {
+export default function FragmentInputDefinition(props: Props): JSX.Element {
     const { removeElement, addElement, ...passProps } = props;
     const { node, setProperty, isEditMode, showValidation } = passProps;
 

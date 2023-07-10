@@ -2,6 +2,7 @@
 
 1.11.0 (Not released yet)
 -------------------------
+* [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility)
 * [#4440](https://github.com/TouK/nussknacker/pull/4440) Improvement: Better exception info handling at KafkaExceptionInfo.inputEvent,
   from now we will return here JSON with all context variables (including context parent tree)
 * [#4452](https://github.com/TouK/nussknacker/pull/4452) Ace editor bump 1.4.12 -> 1.23.0

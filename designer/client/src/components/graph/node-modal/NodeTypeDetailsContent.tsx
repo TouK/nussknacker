@@ -17,11 +17,11 @@ import { nodeValidationDataClear, validateNodeData } from "../../../actions/nk";
 import NodeUtils from "../NodeUtils";
 import { Source } from "./source";
 import { Sink } from "./sink";
-import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition";
-import SubprocessOutputDefinition from "./SubprocessOutputDefinition";
+import FragmentInputDefinition from "./fragment-input-definition/FragmentInputDefinition";
+import FragmentOutputDefinition from "./FragmentOutputDefinition";
 import { Filter } from "./filter";
 import { EnricherProcessor } from "./enricherProcessor";
-import { SubprocessInput } from "./subprocessInput";
+import { FragmentInput } from "./fragmentInput";
 import { JoinCustomNode } from "./joinCustomNode";
 import { VariableBuilder } from "./variableBuilder";
 import { Switch } from "./switch";
@@ -177,9 +177,9 @@ export function NodeTypeDetailsContent({
                     showValidation={showValidation}
                 />
             );
-        case "SubprocessInputDefinition":
+        case "FragmentInputDefinition":
             return (
-                <SubprocessInputDefinition
+                <FragmentInputDefinition
                     addElement={addElement}
                     fieldErrors={fieldErrors}
                     isEditMode={isEditMode}
@@ -191,9 +191,9 @@ export function NodeTypeDetailsContent({
                     variableTypes={variableTypes}
                 />
             );
-        case "SubprocessOutputDefinition":
+        case "FragmentOutputDefinition":
             return (
-                <SubprocessOutputDefinition
+                <FragmentOutputDefinition
                     addElement={addElement}
                     fieldErrors={fieldErrors}
                     isEditMode={isEditMode}
@@ -236,9 +236,9 @@ export function NodeTypeDetailsContent({
                     showValidation={showValidation}
                 />
             );
-        case "SubprocessInput":
+        case "FragmentInput":
             return (
-                <SubprocessInput
+                <FragmentInput
                     fieldErrors={fieldErrors}
                     findAvailableVariables={findAvailableVariables}
                     isEditMode={isEditMode}

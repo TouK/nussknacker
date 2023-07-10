@@ -7,19 +7,17 @@ import styles from "./processesTable.styl";
 
 type Props = {
     allowAdd?: boolean;
-    isSubprocess?: boolean;
+    isFragment?: boolean;
 };
 
 export function ProcessTableTools(props: PropsWithChildren<Props>) {
-    const { isSubprocess, allowAdd } = props;
+    const { isFragment, allowAdd } = props;
 
     return (
         <div className={styles.tools}>
             <Group expand>{props.children}</Group>
             <Group>
-                {allowAdd && (
-                    <AddProcessButton className={cn(processesStyles.tableFilter, styles.filterButton)} isSubprocess={isSubprocess} />
-                )}
+                {allowAdd && <AddProcessButton className={cn(processesStyles.tableFilter, styles.filterButton)} isFragment={isFragment} />}
             </Group>
         </div>
     );

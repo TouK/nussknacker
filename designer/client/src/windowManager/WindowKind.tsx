@@ -5,7 +5,7 @@ export enum WindowKind {
     viewNode,
     editNode,
     addProcess,
-    addSubProcess,
+    addFragment,
     saveProcess,
     deployProcess,
     calculateCounts,

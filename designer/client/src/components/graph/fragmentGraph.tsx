@@ -5,17 +5,17 @@ import * as LayoutUtils from "../../reducers/layoutUtils";
 import GraphWrapped from "./GraphWrapped";
 import { injectNode, layoutChanged, nodeAdded, nodesConnected, nodesDisconnected, resetSelection, toggleSelection } from "../../actions/nk";
 
-const mapSubprocessState = (state, props) => ({
-    // TODO: for process its in redux, for subprocess here. find some consistent place
+const mapFragmentState = (state, props) => ({
+    // TODO: for process its in redux, for fragment here. find some consistent place
     layout: LayoutUtils.fromMeta(props.processToDisplay),
-    divId: `nk-graph-subprocess`,
+    divId: `nk-graph-fragment`,
     readonly: true,
-    isSubprocess: true,
+    isFragment: true,
     nodeSelectionEnabled: false,
 });
 
-export const SubProcessGraph = compose(
-    connect(mapSubprocessState, {
+export const fragmentGraph = compose(
+    connect(mapFragmentState, {
         nodesConnected,
         nodesDisconnected,
         layoutChanged,

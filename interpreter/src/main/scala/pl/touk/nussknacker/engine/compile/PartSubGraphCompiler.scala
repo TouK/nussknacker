@@ -74,9 +74,9 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           f1 = toCompilationResult(result.compiledObject, result.expressionTypingInfo),
           f2 = nexts.map(caseNode => compile(caseNode.node, contextAfter)).sequence,
           f3 = defaultNext.map(dn => compile(dn, contextAfter)).sequence) { case (_, (expr, caseExpressions), cases, defaultNext) =>
-            val compiledCases = caseExpressions.zip(cases).map(k => compiledgraph.node.Case(k._1, k._2))
-            compiledgraph.node.Switch(id, Applicative[Option].product(varName, expr), compiledCases, defaultNext)
-          }
+          val compiledCases = caseExpressions.zip(cases).map(k => compiledgraph.node.Case(k._1, k._2))
+          compiledgraph.node.Switch(id, Applicative[Option].product(varName, expr), compiledCases, defaultNext)
+        }
       case splittednode.EndingNode(data) => compileEndingNode(ctx, data)
 
     }
@@ -90,8 +90,8 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         compile(next, ctx).map(nwc => compiledgraph.node.Source(id, Some(ref.typ), nwc))
       case Join(id, _, _, _, _, _) =>
         compile(next, ctx).map(nwc => compiledgraph.node.Source(id, None, nwc))
-      case SubprocessInputDefinition(id, _, _) =>
-        //TODO: should we recognize we're compiling only subprocess?
+      case FragmentInputDefinition(id, _, _) =>
+        //TODO: should we recognize we're compiling only fragment?
         compile(next, ctx).map(nwc => compiledgraph.node.Source(id, None, nwc))
     }
   }
@@ -112,14 +112,14 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
       case CustomNode(id, _, nodeType, _, _) =>
         toCompilationResult(Valid(compiledgraph.node.EndingCustomNode(id, nodeType)), Map.empty, None)
 
-      //probably this shouldn't occur - otherwise we'd have empty subprocess?
-      case SubprocessInput(id, _, _, _, _) => toCompilationResult(Invalid(NonEmptyList.of(UnresolvedSubprocess(id))), Map.empty, None)
+      //probably this shouldn't occur - otherwise we'd have empty fragment?
+      case FragmentInput(id, _, _, _, _) => toCompilationResult(Invalid(NonEmptyList.of(UnresolvedFragment(id))), Map.empty, None)
 
-      case SubprocessOutputDefinition(id, outputName, List(), _) =>
+      case FragmentOutputDefinition(id, outputName, List(), _) =>
         //TODO: should we validate it's process?
-        //TODO: does it make sense to validate SubprocessOutput?
+        //TODO: does it make sense to validate FragmentOutput?
         toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, isDisabled = false)), Map.empty, None)
-      case SubprocessOutputDefinition(id, outputName, fields, _) =>
+      case FragmentOutputDefinition(id, outputName, fields, _) =>
         val NodeCompilationResult(typingInfo, parameters, ctxV, compiledFields, _) =
           nodeCompiler.compileFields(fields, ctx, outputVar = None)
         CompilationResult.map2(
@@ -182,17 +182,17 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           fa = compile(next, ctx))(
           f = compiledNext => compiledgraph.node.CustomNode(id, nodeType, compiledNext))
 
-      case subprocessInput: SubprocessInput =>
-        val NodeCompilationResult(typingInfo, parameters, newCtx, combinedValidParams, _) = nodeCompiler.compileSubprocessInput(subprocessInput, ctx)
+      case fragmentInput: FragmentInput =>
+        val NodeCompilationResult(typingInfo, parameters, newCtx, combinedValidParams, _) = nodeCompiler.compileFragmentInput(fragmentInput, ctx)
         CompilationResult.map2(toCompilationResult(combinedValidParams, typingInfo, parameters), compile(next, newCtx.getOrElse(ctx)))((params, next) =>
-          compiledgraph.node.FragmentUsageStart(subprocessInput.id, params, next))
+          compiledgraph.node.FragmentUsageStart(fragmentInput.id, params, next))
 
-      case SubprocessUsageOutput(id, outputName, None, _) =>
+      case FragmentUsageOutput(id, outputName, None, _) =>
         // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).
         val parentContext = ctx.popContextOrEmptyWithGlobals()
         compile(next, parentContext)
           .andThen(compiledNext => toCompilationResult(Valid(FragmentUsageEnd(id, None, compiledNext)), Map.empty, None))
-      case SubprocessUsageOutput(id, outputName, Some(outputVar), _) =>
+      case FragmentUsageOutput(id, outputName, Some(outputVar), _) =>
         val NodeCompilationResult(typingInfo, parameters, ctxWithSubOutV, compiledFields, typingResult) =
           nodeCompiler.compileFields(outputVar.fields, ctx, outputVar = None)
         // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).

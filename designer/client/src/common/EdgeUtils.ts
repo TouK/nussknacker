@@ -5,7 +5,7 @@ const EDITABLE_EDGES: string[] = [
     EdgeKind.switchDefault,
     EdgeKind.filterFalse,
     EdgeKind.filterTrue,
-    EdgeKind.subprocessOutput,
+    EdgeKind.fragmentOutput,
 ];
 
 export function isEdgeEditable(edge?: Edge): boolean {

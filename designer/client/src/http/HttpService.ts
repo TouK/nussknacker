@@ -40,7 +40,7 @@ export enum HealthState {
 export type FetchProcessQueryParams = Partial<{
     search: string;
     categories: string;
-    isSubprocess: boolean;
+    isFragment: boolean;
     isArchived: boolean;
     isDeployed: boolean;
 }>;
@@ -96,7 +96,7 @@ export type ComponentUsageType = {
     processId: string;
     nodesUsagesData: NodeUsageData[];
     isArchived: boolean;
-    isSubprocess: boolean;
+    isFragment: boolean;
     processCategory: string;
     modificationDate: Instant;
     modifiedBy: string;
@@ -175,9 +175,9 @@ class HttpService {
         return api.get<Map<string, string>>("/app/config/categoriesWithProcessingType");
     }
 
-    fetchProcessDefinitionData(processingType: string, isSubprocess: boolean) {
+    fetchProcessDefinitionData(processingType: string, isFragment: boolean) {
         const promise = api
-            .get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`)
+            .get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`)
             .then((response) => {
                 // This is a walk-around for having part of node template (branch parameters) outside of itself.
                 // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
@@ -543,8 +543,8 @@ class HttpService {
 
     //This method will return *FAILED* promise if save/validation fails with e.g. 400 (fatal validation error)
 
-    createProcess(processId: string, processCategory: string, isSubprocess = false) {
-        const promise = api.post(`/processes/${encodeURIComponent(processId)}/${processCategory}?isSubprocess=${isSubprocess}`);
+    createProcess(processId: string, processCategory: string, isFragment = false) {
+        const promise = api.post(`/processes/${encodeURIComponent(processId)}/${processCategory}?isFragment=${isFragment}`);
         promise.catch((error) => {
             if (error?.response?.status != 400)
                 this.#addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true);

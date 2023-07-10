@@ -45,11 +45,11 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] =
     BeMatcher(equal(
-        Option(ProcessAction(VersionId(versionId), fixedTime, user().username, ProcessActionType.Deploy, Option.empty, Option.empty, buildInfo))
-      ).matcher[Option[ProcessAction]]
+      Option(ProcessAction(VersionId(versionId), fixedTime, user().username, ProcessActionType.Deploy, Option.empty, Option.empty, buildInfo))
+    ).matcher[Option[ProcessAction]]
     ).compose[Option[ProcessAction]](_.map(_.copy(performedAt = fixedTime)))
 
-   test("process deployment should be visible in process history") {
+  test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> checkThatEventually {
       status shouldBe StatusCodes.OK
@@ -98,22 +98,22 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   test("can't deploy fragment") {
-    val id = createValidProcess(processName, TestCat, isSubprocess = true)
+    val id = createValidProcess(processName, TestCat, isFragment = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.subprocess(ProcessActionType.Deploy, processIdWithName).message
+      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processIdWithName).message
     }
   }
 
   test("can't cancel fragment") {
-    val id = createValidProcess(processName, TestCat, isSubprocess = true)
+    val id = createValidProcess(processName, TestCat, isFragment = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
       status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.subprocess(ProcessActionType.Deploy, processIdWithName).message
+      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processIdWithName).message
     }
   }
 
@@ -133,7 +133,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           val comments = responseAs[ProcessActivity].comments.sortBy(_.id)
           comments.map(_.content) shouldBe List(expectedDeployComment, expectedStopComment)
 
-          val firstCommentId::secondCommentId::Nil = comments.map(_.id)
+          val firstCommentId :: secondCommentId :: Nil = comments.map(_.id)
 
           Get(s"/processes/${SampleProcess.process.id}/deployments") ~> withAllPermissions(processesRoute) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
@@ -177,7 +177,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcess(processName) ~> check {
             decodeDetails.lastStateAction should not be None
-            decodeDetails.isCanceled shouldBe  true
+            decodeDetails.isCanceled shouldBe true
           }
         }
       }
@@ -293,13 +293,13 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
       status shouldEqual StatusCodes.OK
 
-      val ctx = responseAs[Json] .hcursor
-              .downField("results")
-              .downField("nodeResults")
-              .downField("endsuffix")
-              .downArray
-              .downField("context")
-              .downField("variables")
+      val ctx = responseAs[Json].hcursor
+        .downField("results")
+        .downField("nodeResults")
+        .downField("endsuffix")
+        .downArray
+        .downField("context")
+        .downField("variables")
 
       ctx
         .downField("output")
@@ -340,11 +340,11 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     import pl.touk.nussknacker.engine.spel.Implicits._
 
     val process = {
-        ScenarioBuilder
-          .streaming("sampleProcess")
-          .parallelism(1)
-          .source("startProcess", "csv-source")
-          .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'")
+      ScenarioBuilder
+        .streaming("sampleProcess")
+        .parallelism(1)
+        .source("startProcess", "csv-source")
+        .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'")
     }
     saveProcessAndAssertSuccess(process.id, process)
     val tooLargeTestDataContentList = List((1 to 50).mkString("\n"), (1 to 50000).mkString("-"))
@@ -407,8 +407,8 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     }
   }
 
-  test("should return 403 when execute custom action on subprocess") {
-    createEmptyProcess(SampleProcess.processName, isSubprocess = true)
+  test("should return 403 when execute custom action on fragment") {
+    createEmptyProcess(SampleProcess.processName, isFragment = true)
     customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
       status shouldBe StatusCodes.Forbidden
     }

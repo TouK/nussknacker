@@ -64,7 +64,7 @@ class ComponentResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fai
       process.processId shouldBe processId
       process.name shouldBe processName
       process.processCategory shouldBe TestCategories.Category1
-      process.isSubprocess shouldBe false
+      process.isFragment shouldBe false
     }
   }
 

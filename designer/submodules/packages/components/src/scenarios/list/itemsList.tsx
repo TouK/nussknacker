@@ -38,7 +38,7 @@ const ListRow = React.memo(function ListRow({ row, style }: { row: RowType; styl
                 disablePadding
                 sx={{ opacity }}
                 secondaryAction={
-                    !row.isSubprocess && (
+                    !row.isFragment && (
                         <IconButton component={ExternalLink} href={metricsHref(row.id)}>
                             <AssessmentIcon />
                         </IconButton>

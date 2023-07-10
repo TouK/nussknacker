@@ -46,7 +46,7 @@ export function Properties({
                 setProperty={setProperty}
                 additionalValidators={[errorValidator(fieldErrors || [], "id")]}
             />
-            {node.isSubprocess && (
+            {node.isFragment && (
                 <NodeField
                     isEditMode={isEditMode}
                     showValidation={showValidation}
