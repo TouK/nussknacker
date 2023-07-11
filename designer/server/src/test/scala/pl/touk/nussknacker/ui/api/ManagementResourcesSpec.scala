@@ -42,7 +42,6 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val processName: ProcessName = ProcessName(SampleProcess.process.id)
-  private val fixedTime = Instant.now()
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] = {
     BeMatcher[(ProcessActionType, VersionId)](equal((ProcessActionType.Deploy, VersionId(versionId))))
