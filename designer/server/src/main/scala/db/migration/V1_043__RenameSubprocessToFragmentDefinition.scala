@@ -17,40 +17,32 @@ object V1_043__RenameSubprocessToFragmentDefinition {
   private val newProperty = "fragmentParams"
 
   private[migration] def updateProcessJson(jsonProcess: Json): Option[Json] = {
-    val updatedMetadata = migrateMetadata(jsonProcess).getOrElse(jsonProcess)
-    val updateCanonicalNodes = (array: Json) => updateNodes(array, updateCanonicalNode)
-    updateField(updatedMetadata, "nodes", updateCanonicalNodes)
+    Option(updateField(jsonProcess, "nodes", updateCanonicalNodes))
   }
 
-  private def migrateMetadata(jsonProcess: Json): Option[Json] = {
-    jsonProcess.hcursor.downField("metaData").downField("additionalFields").downField("metaDataType")
-      .withFocus { typeSpecificDataType =>
-        typeSpecificDataType.asString match {
-          case Some("SubprocessSpecificData") => Json.fromString("FragmentSpecificData")
-          case _ => typeSpecificDataType
-        }
-      }
-  }.top
+  private def updateCanonicalNodes(array: Json): Json = {
+    updateNodes(array, json => updatePropertyKey(updateCanonicalNode(json)))
+  }
 
-  private def updateField(obj: Json, field: String, update: Json => Json): Option[Json] = {
-    (obj.hcursor downField field).success.flatMap(_.withFocus(update).top)
+  private def updateField(obj: Json, field: String, update: Json => Json): Json = {
+    (obj.hcursor downField field).success.flatMap(_.withFocus(update).top).getOrElse(obj)
   }
 
   private def updateNodes(array: Json, fun: Json => Json) = fromValues(array.asArray.getOrElse(List()).map(fun))
 
   private def updateCanonicalNode(node: Json): Json = {
-    updatePropertyKey(node).hcursor.downField("type")
-      .withFocus { nodeType =>
-        nodeType.asString match {
-          case Some("SubprocessInput") => Json.fromString("FragmentInput")
-          case Some("SubprocessOutput") => Json.fromString("FragmentOutput")
-          case Some("SubprocessOutputDefinition") => Json.fromString("FragmentOutputDefinition")
-          case Some("SubprocessInputDefinition") => Json.fromString("FragmentInputDefinition")
-          case _ => nodeType
-        }
-      }
-      .top
-      .getOrElse(node)
+    node.hcursor.downField("type").focus.flatMap(_.asString).getOrElse("") match {
+      case "SubprocessInput" => updateField(node, "type", _ => Json.fromString("FragmentInput"))
+      case "SubprocessOutput" => updateField(node, "type", _ => Json.fromString("FragmentOutput"))
+      case "SubprocessOutputDefinition" => updateField(node, "type", _ => Json.fromString("FragmentOutputDefinition"))
+      case "SubprocessInputDefinition" => updateField(node, "type", _ => Json.fromString("FragmentInputDefinition"))
+      case "Switch" =>
+        val updatedDefault = updateField(node, "defaultNext", updateCanonicalNodes)
+        updateField(updatedDefault, "nexts", updateNodes(_, updateField(_, "nodes", updateCanonicalNodes)))
+      case "Filter" => updateField(node, "nextFalse", updateCanonicalNodes)
+      case "Split" => updateField(node, "nexts", updateNodes(_, updateCanonicalNodes))
+      case _ => node
+    }
   }
 
   private def updatePropertyKey(node: Json): Json = {
