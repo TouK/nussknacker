@@ -482,6 +482,15 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
     spelTemplateSuggestionsFor("#{#hello} - #{  #AN  }", 0, "#{#hello} - #{  #AN".length) shouldBe List(
       suggestion("#ANOTHER", Typed[A]),
     )
+    spelTemplateSuggestionsFor("#{  #hello  } - #{#AN}", 0, "#{  #hello  } - #{#AN".length) shouldBe List(
+      suggestion("#ANOTHER", Typed[A]),
+    )
+    spelTemplateSuggestionsFor("#{  #hello  } - #{  #AN  }", 0, "#{  #hello  } - #{  #AN".length) shouldBe List(
+      suggestion("#ANOTHER", Typed[A]),
+    )
+    spelTemplateSuggestionsFor("#{\n#hello\n} - #{\n\t#AN  }", 3, "\t#AN".length) shouldBe List(
+      suggestion("#ANOTHER", Typed[A]),
+    )
   }
 
   test("should not suggest expressions outside #{}") {
