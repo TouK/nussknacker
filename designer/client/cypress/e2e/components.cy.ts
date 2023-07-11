@@ -142,7 +142,7 @@ describe("Components list", () => {
         cy.contains(/^≥ 1$/i).click();
         cy.get("body").click();
 
-        cy.get("[data-field=usageCount] a").should("have.length", 2).as("links");
+        cy.get("[data-field=usageCount] a").should("have.length", 4).as("links");
 
         // we are clicking filter component because it has many usages and we are able to test usages list expansion
         cy.get("@links")

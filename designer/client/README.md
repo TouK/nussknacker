@@ -146,7 +146,7 @@ NU_FE_CORE_URL=http://localhost:3000 npm start
 
 #### Using unified linux environment with update image snapshots mode enabled
 
-#### Analyzing webpack build budnle
+#### Analyzing webpack build bundle
 
 It helps to realize what's really inside your bundle and find out what modules make up the most of it's size
 
