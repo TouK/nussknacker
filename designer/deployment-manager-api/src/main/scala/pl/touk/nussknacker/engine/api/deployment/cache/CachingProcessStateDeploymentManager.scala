@@ -19,17 +19,17 @@ import scala.concurrent.duration._
 class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
                                            cacheTTL: FiniteDuration) extends DeploymentManager {
 
-  private val cache: AsyncCache[ProcessName, Option[StatusDetails]] = Caffeine.newBuilder()
+  private val cache: AsyncCache[ProcessName, List[StatusDetails]] = Caffeine.newBuilder()
     .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
-    .buildAsync[ProcessName, Option[StatusDetails]]
+    .buildAsync[ProcessName, List[StatusDetails]]
 
   override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
     delegate.getProcessState(name, lastStateAction)
 
-  override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]] = {
+  override def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     freshnessPolicy match {
       case DataFreshnessPolicy.Fresh =>
-        val resultFuture = delegate.getProcessState(name)
+        val resultFuture = delegate.getProcessStates(name)
         cache.put(name, resultFuture.map(_.value).toJava.toCompletableFuture)
         resultFuture
       case DataFreshnessPolicy.CanBeCached =>
@@ -37,7 +37,7 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
           .map(_.toScala.map(WithDataFreshnessStatus(_, cached = true)))
           .getOrElse {
             cache.get(name, (_, _) =>
-              delegate.getProcessState(name).map(_.value).toJava.toCompletableFuture
+              delegate.getProcessStates(name).map(_.value).toJava.toCompletableFuture
             ).toScala.map(WithDataFreshnessStatus(_, cached = false))
           }
     }

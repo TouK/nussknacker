@@ -47,10 +47,10 @@ trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { s
   protected def deployProcessAndWaitIfRunning(process: CanonicalProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
     deployProcess(process, processVersion, savepointPath)
     eventually {
-      val jobStatus = deploymentManager.getProcessState(ProcessName(process.id)).futureValue.value
-      logger.debug(s"Waiting for deploy: ${process.id}, $jobStatus")
+      val jobStatuses = deploymentManager.getProcessStates(ProcessName(process.id)).futureValue.value
+      logger.debug(s"Waiting for deploy: ${process.id}, $jobStatuses")
 
-      jobStatus.map(_.status).value shouldBe SimpleStateStatus.Running
+      jobStatuses.map(_.status) should contain (SimpleStateStatus.Running)
     }
   }
 
@@ -61,13 +61,13 @@ trait StreamingDockerTest extends DockerTest with Matchers with OptionValues { s
   protected def cancelProcess(processId: String): Unit = {
     deploymentManager.cancel(ProcessName(processId), user = userToAct).futureValue
     eventually {
-      val statusOpt = deploymentManager
-        .getProcessState(ProcessName(processId))
+      val statuses = deploymentManager
+        .getProcessStates(ProcessName(processId))
         .futureValue.value
-      val runningOrDurringCancelJobs = statusOpt
+      val runningOrDurringCancelJobs = statuses
         .filter(state => Set(SimpleStateStatus.Running, SimpleStateStatus.DuringCancel).contains(state.status))
 
-      logger.debug(s"waiting for jobs: $processId, $statusOpt")
+      logger.debug(s"waiting for jobs: $processId, $statuses")
       if (runningOrDurringCancelJobs.nonEmpty) {
         throw new IllegalStateException("Job still exists")
       }

@@ -194,12 +194,14 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
     }
   }
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = {
+  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
       deployments <- scenarioStateK8sClient.listSelected[ListResource[Deployment]](requirementForName(name)).map(_.items)
       pods <- scenarioStateK8sClient.listSelected[ListResource[Pod]](requirementForName(name)).map(_.items)
-    } yield mapper.findStatusForDeploymentsAndPods(deployments, pods)
+    } yield {
+      deployments.map(mapper.status(_, pods))
+    }
   }
 
   private def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, nussknackerInstanceName: Option[String])
