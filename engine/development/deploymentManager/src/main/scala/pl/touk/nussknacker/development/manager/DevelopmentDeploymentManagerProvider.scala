@@ -109,8 +109,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] =
-    Future.successful(memory.get(name))
+  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
+    Future.successful(memory.get(name).toList)
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
     Future.successful(SavepointResult(""))

@@ -93,16 +93,16 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
       } finally {
         manager.cancel(version.processName, DeploymentData.systemUser).futureValue
         eventually {
-          manager.getFreshProcessState(version.processName).futureValue shouldBe None
+          manager.getFreshProcessStates(version.processName).futureValue shouldBe List.empty
         }
       }
     }
 
     def waitForRunning(version: ProcessVersion) = {
       eventually {
-        val state = manager.getFreshProcessState(version.processName).futureValue
-        state.flatMap(_.version) shouldBe Some(version)
-        state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+        val state = manager.getFreshProcessStates(version.processName).futureValue
+        state.flatMap(_.version) shouldBe List(version)
+        state.map(_.status) shouldBe List(SimpleStateStatus.Running)
       }
     }
 

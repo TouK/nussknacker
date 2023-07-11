@@ -111,8 +111,9 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   }
 
   private def cancelIfJobPresent(processVersion: ProcessVersion, user: User): Future[Unit] = {
-    getProcessState(processVersion.processName)(DataFreshnessPolicy.Fresh)
+    getProcessStates(processVersion.processName)(DataFreshnessPolicy.Fresh)
       .map(_.value)
+      .map(InconsistentStateDetector.extractAtMostOneStatus)
       .map(_.isDefined)
       .flatMap(shouldStop => {
         if (shouldStop) {
@@ -138,29 +139,29 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
-  override def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]] = {
+  override def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     for {
-      delegateState <- delegate.getProcessState(name)
-      mergedStatus <- service.mergeStatusWithDeployments(name, delegateState.value)
-    } yield WithDataFreshnessStatus(mergedStatus, delegateState.cached)
+      delegateState <- delegate.getProcessStates(name)
+      mergedStatus <- service.mergeStatusWithDeployments(name, InconsistentStateDetector.extractAtMostOneStatus(delegateState.value))
+    } yield WithDataFreshnessStatus(mergedStatus.toList, delegateState.cached)
   }
 
   override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
     for {
-      statusWithFreshness <- getProcessState(name)
-      _ = logger.debug(s"Status for ${name.value}: $statusWithFreshness")
+      statusesWithFreshness <- getProcessStates(name)
+      _ = logger.debug(s"Statuses for ${name.value}: $statusesWithFreshness")
       actionAfterPostprocessOpt <- {
         delegate match {
           case postprocessing: PostprocessingProcessStatus =>
-            postprocessing.postprocess(name, statusWithFreshness.value)
+            postprocessing.postprocess(name, statusesWithFreshness.value)
           case _ => Future.successful(None)
         }
       }
-      engineStateResolvedWithLastAction = flattenStatus(actionAfterPostprocessOpt.orElse(lastStateAction), statusWithFreshness.value)
-    } yield statusWithFreshness.copy(value = processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
+      engineStateResolvedWithLastAction = flattenStatus(actionAfterPostprocessOpt.orElse(lastStateAction), statusesWithFreshness.value)
+    } yield statusesWithFreshness.copy(value = processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
   }
 
-  protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetailsOpt: Option[StatusDetails]): StatusDetails = {
+  protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetailsList: List[StatusDetails]): StatusDetails = {
     // InconsistentStateDetector is a little overkill here. It checks some things that won't happen in periodic case because scheduler
     // is in the same jvm as designer. Also we have some synchronization logic that makes those inconsistencies impossible.
     // After cleanup in scheduler mechanism, we should remove this
@@ -168,7 +169,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
       override protected def isFollowingDeployStatus(state: StatusDetails): Boolean = {
         IsFollowingDeployStatusDeterminer.isFollowingDeployStatus(state.status)
       }
-    }.resolve(statusDetailsOpt, lastStateAction)
+    }.resolve(statusDetailsList, lastStateAction)
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =

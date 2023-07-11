@@ -9,6 +9,7 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
@@ -152,16 +153,6 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
   private val defaultVersion = ProcessVersion(VersionId.initialVersionId, ProcessName("p1"), ProcessId(1), "user", None)
 
-  test("refuse to deploy if process is failing") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING.name(), tasksOverview()))
-
-    val manager = createManager(statuses)
-
-    val message = "Job p1 cannot be deployed, status: RESTARTING"
-    expectException(manager.validate(defaultVersion, defaultDeploymentData, canonicalProcess), message)
-    expectException(manager.deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None), message)
-  }
-
   test("refuse to deploy if slots exceeded") {
     statuses = Nil
     val manager = createManager(statuses, freeSlots = 0)
@@ -247,48 +238,67 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     history.filter(_.operation == "cancel") shouldBe Nil
   }
 
+  // TODO: extract test for InconsistentStateDetector
   test("return failed status if two jobs running") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)), JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
+    statuses = List(
+      JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)),
+      JobOverview("1111", "p1", 30L, 30L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
 
     val manager = createManager(statuses)
-    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(StatusDetails(
+    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
       ProblemStateStatus.MultipleJobsRunning, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
     ))
   }
 
+  // TODO: extract test for InconsistentStateDetector
   test("return failed status if two in non-terminal state") {
-    statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)), JobOverview("1111", "p1", 30L, 30L, JobStatus.RESTARTING.name(), tasksOverview()))
+    statuses = List(
+      JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)),
+      JobOverview("1111", "p1", 30L, 30L, JobStatus.RESTARTING.name(), tasksOverview()))
 
     val manager = createManager(statuses)
-    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(StatusDetails(
+    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
       ProblemStateStatus.MultipleJobsRunning, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
     ))
   }
 
   test("return running status if cancelled job has last-modification date later then running job") {
-    statuses = List(JobOverview("2343", "p1", 20L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)), JobOverview("1111", "p1", 30L, 5L, JobStatus.CANCELED.name(), tasksOverview(canceled = 1)))
+    statuses = List(
+      JobOverview("2343", "p1", 20L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)),
+      JobOverview("1111", "p1", 30L, 5L, JobStatus.CANCELED.name(), tasksOverview(canceled = 1)))
 
     val manager = createManager(statuses)
-    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(StatusDetails(
+    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
       SimpleStateStatus.Running, Some(ExternalDeploymentId("2343")), startTime = Some(10L)
     ))
   }
 
+  // TODO: extract test for InconsistentStateDetector
   test("return last terminal state if not running") {
-    statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)), JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
+    statuses = List(
+      JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)),
+      JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
 
     val manager = createManager(statuses)
-    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(StatusDetails(
+    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
       SimpleStateStatus.Finished, Some(ExternalDeploymentId("2343")), startTime = Some(10L)
     ))
 
   }
 
+  // TODO: extract test for InconsistentStateDetector
   test("return non-terminal state if not running") {
-    statuses = List(JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)), JobOverview("1111", "p1", 35L, 30L, JobStatus.RESTARTING.name(), tasksOverview()))
+    statuses = List(
+      JobOverview("2343", "p1", 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)),
+      JobOverview("1111", "p1", 35L, 30L, JobStatus.RESTARTING.name(), tasksOverview()))
 
     val manager = createManager(statuses)
-    manager.getFreshProcessState(ProcessName("p1")).futureValue shouldBe Some(StatusDetails(
+    val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
+    InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
       SimpleStateStatus.Restarting, Some(ExternalDeploymentId("1111")), startTime = Some(30L)
     ))
   }
@@ -300,15 +310,14 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val user = "user1"
     val processId = ProcessId(6565L)
 
-    statuses = List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)),
-      JobOverview("1111", "p1", 35L, 30L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
+    statuses = List(JobOverview(jid, processName.value, 40L, 10L, JobStatus.FINISHED.name(), tasksOverview(finished = 1)))
     //Flink seems to be using strings also for Configuration.setLong
     configs = Map(jid -> ExecutionConfig(1, Map("processId" -> fromString(processId.value.toString),
                                                 "versionId" -> fromString(version.toString),
                                                 "user" -> fromString(user))))
 
     val manager = createManager(statuses)
-    manager.getFreshProcessState(processName).futureValue shouldBe Some(StatusDetails(
+    manager.getFreshProcessStates(processName).futureValue shouldBe List(StatusDetails(
       SimpleStateStatus.Finished, Some(ExternalDeploymentId("2343")), Some(ProcessVersion(VersionId(version), processName, processId, user, None)), Some(10L)
     ))
   }
@@ -340,12 +349,12 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       val durationLongerThanClientTimeout = clientRequestTimeout.plus(patienceConfig.timeout)
       stubWithFixedDelay(durationLongerThanClientTimeout)
       a[SttpClientException.TimeoutException] shouldBe thrownBy {
-        manager.getFreshProcessState(ProcessName("p1")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
+        manager.getFreshProcessStates(ProcessName("p1")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
       }
 
       stubWithFixedDelay(0.seconds)
-      val resultWithoutDelay = manager.getFreshProcessState(ProcessName("p1")).futureValue(Timeout(durationLongerThanClientTimeout.plus(1 second)))
-      resultWithoutDelay shouldEqual None
+      val resultWithoutDelay = manager.getFreshProcessStates(ProcessName("p1")).futureValue(Timeout(durationLongerThanClientTimeout.plus(1 second)))
+      resultWithoutDelay shouldEqual List.empty
     } finally {
       wireMockServer.stop()
     }

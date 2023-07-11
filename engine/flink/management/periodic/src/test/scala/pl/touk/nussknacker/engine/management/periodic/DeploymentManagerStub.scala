@@ -37,15 +37,14 @@ class DeploymentManagerStub extends BaseDeploymentManager with PostprocessingPro
   override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
     Future.successful(WithDataFreshnessStatus(processStateDefinitionManager.processState(jobStatus.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed))), cached = false))
 
-  override def postprocess(name: ProcessName, statusDetailsOpt: Option[StatusDetails]): Future[Option[ProcessAction]] =
-    Future.successful(
-      for {
-        statusDetails <- statusDetailsOpt
-        if statusDetails.status == SimpleStateStatus.Finished
-      } yield ProcessAction(VersionId(-123), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Cancel, None, None, Map.empty)
-    )
+  override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = Future.successful(jobStatus.toList)
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = Future.successful(jobStatus)
+  override def postprocess(name: ProcessName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]] =
+    Future.successful(
+      statusDetailsList
+        .find(_.status == SimpleStateStatus.Finished)
+        .map(_ => ProcessAction(VersionId(-123), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Cancel, None, None, Map.empty))
+    )
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
 }

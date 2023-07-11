@@ -124,13 +124,15 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
     }
   }
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] = Future.successful {
-    deployments.get(name).map { interpreterData =>
-      StatusDetails(
-        status = interpreterData.scenarioDeployment.fold(ex => ProblemStateStatus(s"Scenario compilation errors"), _.status()),
-        deploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId)),
-        version = Some(interpreterData.processVersion))
-    }
+  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
+    Future.successful(
+      deployments.get(name).map { interpreterData =>
+        StatusDetails(
+          status = interpreterData.scenarioDeployment.fold(ex => ProblemStateStatus(s"Scenario compilation errors"), _.status()),
+          deploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId)),
+          version = Some(interpreterData.processVersion))
+      }.toList
+    )
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = EmbeddedProcessStateDefinitionManager

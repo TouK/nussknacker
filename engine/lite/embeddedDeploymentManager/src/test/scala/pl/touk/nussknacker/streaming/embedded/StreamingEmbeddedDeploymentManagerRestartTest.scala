@@ -30,14 +30,14 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     kafkaServer.kafkaServer.awaitShutdown()
 
     eventually {
-      val jobStatus = manager.getProcessState(name).futureValue.value
-      jobStatus.map(_.status) shouldBe Some(SimpleStateStatus.Restarting)
+      val jobStatuses = manager.getProcessStates(name).futureValue.value
+      jobStatuses.map(_.status) shouldBe List(SimpleStateStatus.Restarting)
     }
 
     kafkaServer.kafkaServer.startup()
 
     eventually {
-      manager.getProcessState(name).futureValue.value.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
     }
   }
 
