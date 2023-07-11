@@ -20,13 +20,33 @@ Below you can see how such file looks like.
 ```
 Each line of this file represents the next ongoing event and specify which source it targets with `sourceId` field. The json representation of the event is in `record` field.
 
+You could also use `generated` button to perform `generate file` and `from file` testing at once - without downloading locally and then uploading data to designer.
+
+## Testing using ad hoc form
+
+If you are unable to create data based on recent scenario executions, or it just seems convenient, you can manually provide data using the 'ad hoc' functionality.
+It will open a window with the fields that this scenario source expects.
+
+![alt_text](img/testScenario.png "Designer Test panel")
+
+The testing form will validate the types of fields you enter and prevent you from sending test requests that lack needed fields.
+You can run a test by pressing the "Test" button.
+
+The input form is generated differently for each source. 
+For request-response the form is generated based on input schema declared in properties. 
+As for kafka sources the form is generated based on avro or json schema obtained from a schema registry.
+
+If you are using custom source you can also easily implement your own method to generate this form. 
+
+If the scenario relies on sources that do not support the generation of a testing form, the `ad hoc` button will be disabled.
+
 ## Testing using events from file
 
 A scenario can be tested with events coming from a file; this can be very handy if several test passes on the same input events are needed before the scenario is deemed ready. Similarly, as with test data capture, this feature also works with multiple sources.
 All you need to do is to reuse file you already have from the `Test data capture` step or prepare such file manually e.g. for the **Request-Response** processing mode.
 
 Designer accepts the following formats of test records:
-- standard records that are generated using `generate` button and have `sourceId`, `record` and optional `timestamp` fields
+- standard records that are generated using `generate file` button and have `sourceId`, `record` and optional `timestamp` fields
 - simplified records that have only `record` JSON inlined. Simplified format can be helpful in **Request-Response**
   or when source records are persisted in logs and can be copied directly to the test file. Note, this format can be
   used only if the tested scenario has exactly one source.
