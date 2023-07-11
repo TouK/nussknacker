@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from "react";
-import ErrorBoundary2, { ErrorBoundaryProps } from "react-error-boundary";
+import { ErrorBoundary as ErrorBoundaryLibrary, ErrorBoundaryProps } from "react-error-boundary";
 import { css } from "@emotion/css";
 
 const styles = css`
@@ -57,5 +57,5 @@ const CrackedNut = ({ className }: { className?: string }) => (
 export const ErrorBoundaryFallbackComponent = () => <CrackedNut className={styles} />;
 
 export default function ErrorBoundary({ children, FallbackComponent }: PropsWithChildren<Partial<ErrorBoundaryProps>>): JSX.Element {
-    return <ErrorBoundary2 FallbackComponent={FallbackComponent || ErrorBoundaryFallbackComponent}>{children}</ErrorBoundary2>;
+    return <ErrorBoundaryLibrary FallbackComponent={FallbackComponent || ErrorBoundaryFallbackComponent}>{children}</ErrorBoundaryLibrary>;
 }

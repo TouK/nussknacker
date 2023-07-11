@@ -14,6 +14,7 @@ import { markBackendNotificationRead, updateBackendNotifications } from "../acti
 import { displayProcessActivity, loadProcessState } from "../actions/nk";
 import { getProcessId } from "../reducers/selectors/graph";
 import { loadProcessVersions } from "../actions/nk/loadProcessVersions";
+import { useChangeConnectionError } from "./ConnectionErrorProvider";
 
 function prepareNotification(backendNotification: BackendNotification, dispatch: Dispatch<any>) {
     const autoDismiss = backendNotification.type == "error" ? 0 : 10;
@@ -53,6 +54,8 @@ export function Notifications(): JSX.Element {
     const readNotifications = useSelector(getBackendNotifications);
     const reactNotifications = useSelector(getNotifications);
     const dispatch = useDispatch();
+    const { handleChangeConnectionError } = useChangeConnectionError();
+
     useEffect(() => HttpService.setNotificationActions(bindActionCreators(NotificationActions, dispatch)));
 
     const currentScenarioName = useSelector(getProcessId);
@@ -61,6 +64,7 @@ export function Notifications(): JSX.Element {
         const onlyUnreadPredicate = (be: BackendNotification) =>
             !readNotifications.processedNotificationIds.includes(be.id) && !reactNotifications.map((k) => k.uid).includes(be.id);
 
+        handleChangeConnectionError("NO_INTERNET_ACCESS");
         HttpService.loadBackendNotifications().then((notifications) => {
             dispatch(updateBackendNotifications(notifications.map((n) => n.id)));
             notifications.filter(onlyUnreadPredicate).forEach((beNotification) => {
@@ -73,7 +77,7 @@ export function Notifications(): JSX.Element {
                 handleRefresh(beNotification, currentScenarioName, dispatch);
             });
         });
-    }, [readNotifications]);
+    }, [currentScenarioName, dispatch, handleChangeConnectionError, reactNotifications, readNotifications.processedNotificationIds]);
     useInterval(refresh, { refreshTime: 2000, ignoreFirst: true });
 
     //noAnimation=false breaks onRemove somehow :/

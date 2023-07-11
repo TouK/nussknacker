@@ -1,6 +1,6 @@
 import React, { ComponentType, DetailedHTMLProps, HTMLAttributes } from "react";
 import loadable from "@loadable/component";
-import ErrorBoundary from "react-error-boundary";
+import { ErrorBoundary } from "react-error-boundary";
 import styled from "@emotion/styled";
 import { absoluteBePath } from "../common/UrlUtils";
 
@@ -46,7 +46,7 @@ export interface InlineSvgProps extends DetailedHTMLProps<HTMLAttributes<HTMLDiv
 }
 
 export const InlineSvg = ({ FallbackComponent, src, id, ...rest }: InlineSvgProps): JSX.Element => (
-    <ErrorBoundary FallbackComponent={FallbackComponent}>
+    <ErrorBoundary FallbackComponent={FallbackComponent as any}>
         <AsyncSvg src={src}>
             {(__html) => <Flex {...rest} dangerouslySetInnerHTML={{ __html: id ? __html.replace("<svg ", `<svg id="${id}"`) : __html }} />}
         </AsyncSvg>
