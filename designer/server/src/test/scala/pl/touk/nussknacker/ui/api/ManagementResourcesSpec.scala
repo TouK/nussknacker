@@ -27,6 +27,7 @@ import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 
@@ -43,11 +44,11 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   private val processName: ProcessName = ProcessName(SampleProcess.process.id)
   private val fixedTime = Instant.now()
 
-  private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] =
-    BeMatcher(equal(
-      Option(ProcessAction(VersionId(versionId), fixedTime, user().username, ProcessActionType.Deploy, Option.empty, Option.empty, buildInfo))
-    ).matcher[Option[ProcessAction]]
-    ).compose[Option[ProcessAction]](_.map(_.copy(performedAt = fixedTime)))
+  private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] = {
+    BeMatcher[(ProcessActionType, VersionId)](equal((ProcessActionType.Deploy, VersionId(versionId))))
+      .compose[ProcessAction](a => (a.action, a.processVersionId))
+      .compose[Option[ProcessAction]](opt => opt.value)
+  }
 
   test("process deployment should be visible in process history") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
@@ -138,9 +139,9 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           Get(s"/processes/${SampleProcess.process.id}/deployments") ~> withAllPermissions(processesRoute) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
             val curTime = Instant.now()
-            deploymentHistory.map(_.copy(performedAt = curTime)) shouldBe List(
-              ProcessAction(VersionId(2), curTime, user().username, ProcessActionType.Cancel, Some(secondCommentId), Some(expectedStopComment), Map()),
-              ProcessAction(VersionId(2), curTime, user().username, ProcessActionType.Deploy, Some(firstCommentId), Some(expectedDeployComment), TestFactory.buildInfo)
+            deploymentHistory.map(a => (a.processVersionId, a.user, a.action, a.commentId, a.comment, a.buildInfo)) shouldBe List(
+              (VersionId(2), user().username, ProcessActionType.Cancel, Some(secondCommentId), Some(expectedStopComment), Map()),
+              (VersionId(2), user().username, ProcessActionType.Deploy, Some(firstCommentId), Some(expectedDeployComment), TestFactory.buildInfo)
             )
           }
         }

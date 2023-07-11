@@ -14,7 +14,6 @@ import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
-import pl.touk.nussknacker.ui.db.entity.ProcessActionId
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -59,8 +58,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         val lastDeployAction = details.lastDeployedAction.get
         // TODO: what should be in name?
         val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
-        // TODO: Correct deploymentId from action id
-        val deploymentData = prepareDeploymentData(deployingUser, DeploymentId(""))
+        val deploymentData = prepareDeploymentData(deployingUser, DeploymentId(lastDeployAction.id.toString))
         val deployedScenarioDataTry = scenarioResolver.resolveScenario(details.json, details.processCategory).map { resolvedScenario =>
           DeployedScenarioData(details.toEngineProcessVersion, deploymentData, resolvedScenario)
         }
@@ -245,17 +243,17 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         getArchivedProcessState(processDetails)(manager)
       } else if (inProgressActionTypes.contains(ProcessActionType.Deploy)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringDeploy}")
-        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringDeploy))
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.DuringDeploy, None)))
       } else if (inProgressActionTypes.contains(ProcessActionType.Cancel)) {
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.DuringCancel}")
-        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.DuringCancel))
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.DuringCancel, None)))
       } else {
         processDetails.lastStateAction match {
           case Some(_) =>
             checkStateInDeploymentManager(manager, processDetails)
           case _ => //We assume that the process never deployed should have no state at the engine
             logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
-            DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
+            DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None)))
         }
       }
     }.getOrElse(DBIOAction.successful(SimpleProcessStateDefinitionManager.ErrorFailedToGet))
@@ -266,13 +264,13 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     processDetails.lastStateAction.map(_.action) match {
       case Some(Cancel) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
-        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.Canceled))
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.Canceled, None)))
       case Some(_) =>
         logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.ArchivedShouldBeCanceled}")
-        DBIOAction.successful(manager.processStateDefinitionManager.processState(ProblemStateStatus.ArchivedShouldBeCanceled))
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(ProblemStateStatus.ArchivedShouldBeCanceled, None)))
       case _ =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
-        DBIOAction.successful(manager.processStateDefinitionManager.processState(SimpleStateStatus.NotDeployed))
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None)))
     }
   }
 

@@ -247,7 +247,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val manager = createManager(statuses)
     val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
-      ProblemStateStatus.MultipleJobsRunning, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
+      ProblemStateStatus.MultipleJobsRunning, None, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RUNNING, 2343 - RUNNING")
     ))
   }
 
@@ -260,10 +260,11 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val manager = createManager(statuses)
     val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
-      ProblemStateStatus.MultipleJobsRunning, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
+      ProblemStateStatus.MultipleJobsRunning, None, Some(ExternalDeploymentId("1111")), startTime = Some(30L), errors = List("Expected one job, instead: 1111 - RESTARTING, 2343 - RUNNING")
     ))
   }
 
+  // TODO: extract test for InconsistentStateDetector
   test("return running status if cancelled job has last-modification date later then running job") {
     statuses = List(
       JobOverview("2343", "p1", 20L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)),
@@ -272,7 +273,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val manager = createManager(statuses)
     val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
-      SimpleStateStatus.Running, Some(ExternalDeploymentId("2343")), startTime = Some(10L)
+      SimpleStateStatus.Running, None, Some(ExternalDeploymentId("2343")), startTime = Some(10L)
     ))
   }
 
@@ -285,7 +286,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val manager = createManager(statuses)
     val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
-      SimpleStateStatus.Finished, Some(ExternalDeploymentId("2343")), startTime = Some(10L)
+      SimpleStateStatus.Finished, None, Some(ExternalDeploymentId("2343")), startTime = Some(10L)
     ))
 
   }
@@ -299,7 +300,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val manager = createManager(statuses)
     val returnedStatuses = manager.getFreshProcessStates(ProcessName("p1")).futureValue
     InconsistentStateDetector.extractAtMostOneStatus(returnedStatuses) shouldBe Some(StatusDetails(
-      SimpleStateStatus.Restarting, Some(ExternalDeploymentId("1111")), startTime = Some(30L)
+      SimpleStateStatus.Restarting, None, Some(ExternalDeploymentId("1111")), startTime = Some(30L)
     ))
   }
 
@@ -307,6 +308,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     val jid = "2343"
     val processName = ProcessName("p1")
     val version = 15L
+    val deploymentId = "789"
     val user = "user1"
     val processId = ProcessId(6565L)
 
@@ -314,11 +316,12 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     //Flink seems to be using strings also for Configuration.setLong
     configs = Map(jid -> ExecutionConfig(1, Map("processId" -> fromString(processId.value.toString),
                                                 "versionId" -> fromString(version.toString),
+                                                "deploymentId" -> fromString(deploymentId),
                                                 "user" -> fromString(user))))
 
     val manager = createManager(statuses)
     manager.getFreshProcessStates(processName).futureValue shouldBe List(StatusDetails(
-      SimpleStateStatus.Finished, Some(ExternalDeploymentId("2343")), Some(ProcessVersion(VersionId(version), processName, processId, user, None)), Some(10L)
+      SimpleStateStatus.Finished, Some(DeploymentId(deploymentId)), Some(ExternalDeploymentId("2343")), Some(ProcessVersion(VersionId(version), processName, processId, user, None)), Some(10L)
     ))
   }
 

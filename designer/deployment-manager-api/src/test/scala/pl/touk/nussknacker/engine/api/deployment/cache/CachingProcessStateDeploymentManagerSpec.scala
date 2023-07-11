@@ -61,7 +61,7 @@ class CachingProcessStateDeploymentManagerSpec extends AnyFunSuite with MockitoS
 
   implicit class DeploymentManagerOps(dm: DeploymentManager) {
     def getProcessStatesDeploymentIdNow(freshnessPolicy: DataFreshnessPolicy): WithDataFreshnessStatus[List[String]] =
-      dm.getProcessStates(ProcessName("foo"))(freshnessPolicy).futureValue.map(_.map(_.deploymentId.value.value))
+      dm.getProcessStates(ProcessName("foo"))(freshnessPolicy).futureValue.map(_.map(_.externalDeploymentId.value.value))
   }
 
   private def prepareDMReturningRandomStates = {
@@ -69,7 +69,8 @@ class CachingProcessStateDeploymentManagerSpec extends AnyFunSuite with MockitoS
     when(delegate.getProcessStates(any[ProcessName])(any[DataFreshnessPolicy])).thenAnswer { _: InvocationOnMock =>
       val randomState = StatusDetails(
         SimpleStateStatus.Running,
-        deploymentId = Some(ExternalDeploymentId(UUID.randomUUID().toString)))
+        deploymentId = None,
+        externalDeploymentId = Some(ExternalDeploymentId(UUID.randomUUID().toString)))
       Future.successful(WithDataFreshnessStatus(List(randomState), cached = false))
     }
     delegate

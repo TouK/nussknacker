@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.Proble
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.management.FlinkRestManager.JobDetails
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
 import sttp.client3._
@@ -34,17 +35,18 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     val preparedName = modelData.objectNaming.prepareName(name.value, modelData.processConfig, new NamingContext(FlinkUsageKey))
     client.findJobsByName(preparedName)
       .flatMap(jobs => Future.sequence(jobs
-        .map(job => withVersion(job.jid, name).map { version =>
+        .map(job => withJobDetails(job.jid, name).map { jobDetails =>
           //TODO: return error when there's no correct version in process
           //currently we're rather lax on this, so that this change is backward-compatible
           //we log debug here for now, since it's invoked v. often
-          if (version.isEmpty) {
-            logger.debug(s"No correct version in deployed scenario: ${job.name}")
+          if (jobDetails.isEmpty) {
+            logger.debug(s"No correct job details in deployed scenario: ${job.name}")
           }
           StatusDetails(
             mapJobStatus(job),
+            jobDetails.flatMap(_.deploymentId),
             Some(ExternalDeploymentId(job.jid)),
-            version = version,
+            version = jobDetails.map(_.version),
             startTime = Some(job.`start-time`),
             attributes = Option.empty,
             errors = List.empty
@@ -92,30 +94,32 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     config.waitForDuringDeployFinish.toEnabledConfig.map { config =>
       retry.Pause(config.maxChecks, config.delay).apply {
         getFreshProcessStates(processName).map { statuses =>
-          statuses.find(details => details.deploymentId.contains(deploymentId) && details.status == SimpleStateStatus.DuringDeploy).map(Left(_)).getOrElse(Right(()))
+          statuses.find(details => details.externalDeploymentId.contains(deploymentId) && details.status == SimpleStateStatus.DuringDeploy).map(Left(_)).getOrElse(Right(()))
         }
       }.map(_.getOrElse(throw new IllegalStateException("Deploy execution finished, but job is still in during deploy state on Flink")))
     }.getOrElse(Future.successful(()))
   }
 
   //TODO: cache by jobId?
-  private def withVersion(jobId: String, name: ProcessName): Future[Option[ProcessVersion]] = {
+  private def withJobDetails(jobId: String, name: ProcessName): Future[Option[JobDetails]] = {
     client.getJobConfig(jobId).map { executionConfig =>
       val userConfig = executionConfig.`user-config`
       for {
-        version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong)
+        version <- userConfig.get("versionId").flatMap(_.asString).map(_.toLong).map(VersionId(_))
         user <- userConfig.get("user").map(_.asString.getOrElse(""))
         modelVersion = userConfig.get("modelVersion").flatMap(_.asString).map(_.toInt)
-        processId = userConfig.get("processId").flatMap(_.asString).map(_.toLong).getOrElse(-1L)
+        processId = ProcessId(userConfig.get("processId").flatMap(_.asString).map(_.toLong).getOrElse(-1L))
+        deploymentId = userConfig.get("deploymentId").flatMap(_.asString).map(DeploymentId(_))
       } yield {
-        ProcessVersion(VersionId(version), name, ProcessId(processId), user, modelVersion)
+        val versionDetails = ProcessVersion(version, name, processId, user, modelVersion)
+        JobDetails(versionDetails, deploymentId)
       }
     }
   }
 
   override def cancel(processName: ProcessName, user: User): Future[Unit] = {
     def doCancel(details: StatusDetails) = {
-      cancel(details.deploymentId.getOrElse(throw new IllegalStateException("Error during cancelling scenario: returned status details has no external deployment id")))
+      cancel(details.externalDeploymentId.getOrElse(throw new IllegalStateException("Error during cancelling scenario: returned status details has no external deployment id")))
     }
 
     getFreshProcessStates(processName).map { statuses =>
@@ -156,5 +160,13 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   }
 
   override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
+
+}
+
+object FlinkRestManager {
+
+  // TODO: deploymentId is optional to handle situation when on Flink there is old version of runtime and in designer is the new one.
+  //       After fully deploy of new version it should be mandatory
+  private case class JobDetails(version: ProcessVersion, deploymentId: Option[DeploymentId])
 
 }

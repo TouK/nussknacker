@@ -42,7 +42,7 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
         SimpleStateStatus.NotDeployed
     }
 
-    Future.successful(WithDataFreshnessStatus(processStateDefinitionManager.processState(lastStateActionStatus), cached = false))
+    Future.successful(WithDataFreshnessStatus(processStateDefinitionManager.processState(StatusDetails(lastStateActionStatus, None)), cached = false))
   }
 
   override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =

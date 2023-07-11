@@ -304,6 +304,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): StatusDetails =
       StatusDetails(
         status = ScheduledStatus(processDeployment.runAt),
+        Some(DeploymentId(processDeployment.id.value.toString)),
         Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
         //TODO: this date should be passed/handled through attributes
@@ -315,6 +316,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     def createFailedProcessState(processDeployment: PeriodicProcessDeployment): StatusDetails =
       StatusDetails(
         status = ProblemStateStatus.Failed,
+        Some(DeploymentId(processDeployment.id.value.toString)),
         Some(ExternalDeploymentId("future")),
         version = Option(processDeployment.periodicProcess.processVersion),
         startTime = Option.empty,
