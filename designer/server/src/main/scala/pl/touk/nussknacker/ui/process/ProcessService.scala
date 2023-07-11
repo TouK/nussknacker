@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.ui.process
 
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessActionType, ProcessState}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType, ProcessState}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
@@ -68,6 +69,8 @@ trait ProcessService {
   def getFragmentsDetails(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[FragmentDetails]]
 
   def importProcess(processId: ProcessIdWithName, processData: String)(implicit user: LoggedUser): Future[XError[ValidatedDisplayableProcess]]
+
+  def getProcessActions(id: ProcessId): Future[List[ProcessAction]]
 }
 
 /**
@@ -271,6 +274,10 @@ class DBProcessService(deploymentService: DeploymentService,
           case Left(value) => Left(value)
         }
     )
+  }
+
+  override def getProcessActions(id: ProcessId): Future[List[ProcessAction]] = {
+    dbioRunner.runInTransaction(processActionRepository.getProcessActions(id))
   }
 
   private def toProcessResponse(processName: ProcessName, created: ProcessCreated): ProcessResponse =

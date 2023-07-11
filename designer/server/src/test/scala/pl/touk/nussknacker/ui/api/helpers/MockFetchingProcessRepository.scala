@@ -56,9 +56,6 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[Canonical
     getUserProcesses[Unit].map(_.find(p => p.processId == processId).map(_.processingType).get)
 
   //TODO: Implement
-  override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): Future[List[ProcessAction]] = ???
-
-  //TODO: Implement
   override def fetchProcessDetails(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessEntityData]] = ???
 
   private def getUserProcesses[PS: ProcessShapeFetchStrategy](implicit loggedUser: LoggedUser) = getProcesses[PS].map(_.filter(p =>

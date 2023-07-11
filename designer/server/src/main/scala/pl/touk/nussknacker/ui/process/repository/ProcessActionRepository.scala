@@ -5,11 +5,12 @@ import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionId, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData}
+import pl.touk.nussknacker.ui.db.entity.{CommentActions, CommentEntityData, ProcessActionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -26,6 +27,8 @@ import scala.language.higherKinds
 trait ProcessActionRepository[F[_]] {
   def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
   def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
+  def getProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]]
+  def getLastFinishedActionPerProcess(actions: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]]
 }
 
 object DbProcessActionRepository {
@@ -51,15 +54,15 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
                            performedAt: Instant, comment: Option[Comment], buildInfoProcessingType: Option[ProcessingType])
                           (implicit user: LoggedUser): F[Unit] = {
     run(for {
-      commentId <- newCommentAction(processId, processVersion, comment)
-      updated <- updateAction(actionId, processId, Some(processVersion), ProcessActionState.Finished, Some(performedAt), None, commentId)
+      comment <- newCommentAction(processId, processVersion, comment)
+      updated <- updateAction(actionId, processId, Some(processVersion), ProcessActionState.Finished, Some(performedAt), None, comment.map(_.id))
       _ <-
         if (updated) {
           DBIOAction.successful(())
         } else {
           // we have to revert action - in progress action was probably invalidated
           insertAction(Some(actionId), processId, Some(processVersion), actionType, ProcessActionState.Finished,
-            performedAt, Some(performedAt), None, commentId, buildInfoProcessingType)
+            performedAt, Some(performedAt), None, comment.map(_.id), buildInfoProcessingType)
         }
     } yield ())
   }
@@ -86,19 +89,19 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     run(processActionsTable.filter(a => a.id === actionId).delete.map(_ => ()))
   }
 
-  override def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[ProcessActionEntityData] =
+  override def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[ProcessAction] =
     addInstantAction(processId, processVersion, ProcessActionType.Archive, None, None)
 
-  override def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[ProcessActionEntityData] =
+  override def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[ProcessAction] =
     addInstantAction(processId, processVersion, ProcessActionType.UnArchive, None, None)
 
   def addInstantAction(processId: ProcessId, processVersion: VersionId, actionType: ProcessActionType, comment: Option[Comment], buildInfoProcessingType: Option[ProcessingType])
-                      (implicit user: LoggedUser): F[ProcessActionEntityData] = {
+                      (implicit user: LoggedUser): F[ProcessAction] = {
     val now = Instant.now()
     run(for {
-      commentId <- newCommentAction(processId, processVersion, comment)
-      result <- insertAction(None, processId, Some(processVersion), actionType, ProcessActionState.Finished, now, Some(now), None, commentId, buildInfoProcessingType)
-    } yield result)
+      comment <- newCommentAction(processId, processVersion, comment)
+      result <- insertAction(None, processId, Some(processVersion), actionType, ProcessActionState.Finished, now, Some(now), None, comment.map(_.id), buildInfoProcessingType)
+    } yield toProcessAction(result, comment))
   }
 
   private def insertAction(actionIdOpt: Option[ProcessActionId], processId: ProcessId, processVersion: Option[VersionId], actionType: ProcessActionType, state: ProcessActionState,
@@ -162,5 +165,45 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
   def deleteInProgressActions(): F[Unit] = {
     run(processActionsTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
+
+  override def getLastFinishedActionPerProcess(actions: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]] = {
+    val query = processActionsTable
+      .filter(_.state === ProcessActionState.Finished)
+      .groupBy(_.processId)
+      .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
+      .join(processActionsTable)
+      .on { case ((processId, maxPerformedAt), action) => action.processId === processId && action.state === ProcessActionState.Finished && action.performedAt === maxPerformedAt } //We fetch exactly this one  with max deployment
+      .map { case ((processId, _), action) => processId -> action }
+      .joinLeft(commentsTable)
+      .on { case ((_, action), comment) => action.commentId === comment.id }
+      .map { case ((processId, action), comment) => processId -> (action, comment) }
+
+    run(actions
+      .map(actions => query.filter { case (_, (entity, _)) => entity.action.inSet(actions) })
+      .getOrElse(query)
+      .result.map(_.toMap.mapValuesNow(toProcessAction)))
+  }
+
+  override def getProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]] =
+   run(processActionsTable
+      .filter(p => p.processId === processId && p.state === ProcessActionState.Finished)
+      .joinLeft(commentsTable)
+      .on { case (action, comment) => action.commentId === comment.id }
+      .map { case (action, comment) => (action, comment) }
+      .sortBy(_._1.performedAt.desc)
+      .result
+      .map(_.toList.map(toProcessAction)))
+
+  private def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
+    id = actionData._1.id,
+    processVersionId = actionData._1.processVersionId.getOrElse(throw new AssertionError(s"Process version not available for finished action: ${actionData._1}")),
+    performedAt = actionData._1.performedAtTime.getOrElse(throw new AssertionError(s"PerformedAt not available for finished action: ${actionData._1}")),
+    user = actionData._1.user,
+    action = actionData._1.action,
+    commentId = actionData._2.map(_.id),
+    comment = actionData._2.map(_.content),
+    buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
+  )
+
 
 }
