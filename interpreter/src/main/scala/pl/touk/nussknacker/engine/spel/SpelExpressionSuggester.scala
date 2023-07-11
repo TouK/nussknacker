@@ -5,7 +5,7 @@ import io.circe.generic.JsonCodec
 import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression, TemplateParserContext}
 import org.springframework.expression.spel.{SpelNode, SpelParserConfiguration}
 import org.springframework.expression.spel.ast.{Identifier, Indexer, Projection, PropertyOrFieldReference, QualifiedIdentifier, Selection, StringLiteral, TypeReference, VariableReference}
-import org.springframework.expression.spel.standard.SpelExpression
+import org.springframework.expression.spel.standard.{SpelExpression => SpringSpelExpression}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
@@ -173,19 +173,17 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
   private val parser = new NuTemplateAwareExpressionParser(new SpelParserConfiguration)
 
   def parse(input: String, language: String, position: Int, variables: Map[String, TypingResult]): Try[Option[(NuSpelNode, Int)]] = {
-    val rawExpression = if (language == Expression.Language.Spel) {
-      Try(parser.parseExpression(input, null))
-    } else if (language == Expression.Language.SpelTemplate) {
-      Try(parser.parseExpression(input, new TemplateParserContext()))
-    } else {
-      Failure(new IllegalArgumentException(s"Language $language is not supported"))
+    val rawExpression = language match {
+      case Expression.Language.Spel => Try(parser.parseExpression(input, null))
+      case Expression.Language.SpelTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
+      case _ => Failure(new IllegalArgumentException(s"Language $language is not supported"))
     }
     rawExpression.map { parsedExpressions =>
       parsedExpressions.find(e => e.start <= position && position <= e.end).flatMap { e =>
         e.expression match {
-          case s: SpelExpression =>
-            val collectedTypingResult = typer.doTypeExpression(e.expression, ValidationContext(variables))._2
-            Some(new NuSpelNode(s.getAST, collectedTypingResult), position - e.start)
+          case s: SpringSpelExpression =>
+            val collectedTypingResult = typer.doTypeExpression(s, ValidationContext(variables))._2
+            Some((new NuSpelNode(s.getAST, collectedTypingResult), position - e.start))
           case _ => None
         }
       }

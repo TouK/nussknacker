@@ -116,15 +116,15 @@ public class NuTemplateAwareExpressionParser {
 				String expr = expressionString.substring(prefixIndex + prefix.length(), suffixIndex);
 				// expr.trim() replaced with this code to calculate actual start and end (without leading/trailing spaces)
 				String exprStripLeading = expr.stripLeading();
-				String exprStripTrailing = exprStripLeading.stripTrailing();
+				String exprStripBoth = exprStripLeading.stripTrailing();
 				int leadingWhitespaces = expr.length() - exprStripLeading.length();
-				int trailingWhitespaces = exprStripLeading.length() - exprStripTrailing.length();
+				int trailingWhitespaces = exprStripLeading.length() - exprStripBoth.length();
 				if (expr.isEmpty()) {
 					throw new ParseException(expressionString, prefixIndex,
 							"No expression defined within delimiter '" + prefix + suffix +
 							"' at character " + prefixIndex);
 				}
-				expressions.add(new ExpressionWithPosition(doParseExpression(expr),prefixIndex + prefix.length() + leadingWhitespaces, suffixIndex + trailingWhitespaces));
+				expressions.add(new ExpressionWithPosition(doParseExpression(exprStripBoth),prefixIndex + prefix.length() + leadingWhitespaces, suffixIndex - trailingWhitespaces));
 				startIdx = suffixIndex + suffix.length();
 			}
 			else {
