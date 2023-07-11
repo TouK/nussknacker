@@ -143,7 +143,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       val savepointPath = deploymentManager.stop(ProcessName(processId), savepointDir = None, user = userToAct).map(_.path)
       eventually {
         val status = deploymentManager.getProcessState(ProcessName(processId)).futureValue
-        status.value.map(_.status) shouldBe Some(SimpleStateStatus.Finished)
+        status.value.map(_.status) shouldBe Some(SimpleStateStatus.Canceled)
       }
 
       deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))

@@ -9,6 +9,7 @@
 * [#4465](https://github.com/TouK/nussknacker/pull/4465) Faster loading of diagram editor (components panel) and components tab: Component's definition loaded once
 * [#4469](https://github.com/TouK/nussknacker/pull/4469) Faster loading of components tab: Component's usages fetched once instead of fetching for each processing type
 * [#4469](https://github.com/TouK/nussknacker/pull/4469) Faster loading of components tab: Don't fetch last actions
+* [#4481](https://github.com/TouK/nussknacker/pull/4481) Fix stopping processes with `/api/adminProcessManagement/stop/{processName}` endpoint on recent Flink versions
 
 1.10.0 (29 Jun 2023)
 -------------------------
