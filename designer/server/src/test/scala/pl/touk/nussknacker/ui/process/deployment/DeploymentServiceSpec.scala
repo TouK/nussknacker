@@ -248,7 +248,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
 
     val state = StatusDetails(SimpleStateStatus.Restarting, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 
-    deploymentManager.withProcessState(processName, Some(state)) {
+    deploymentManager.withProcessStates(processName, List(state)) {
       val state = deploymentService.getProcessState(ProcessIdWithName(id, processName)).futureValue
 
       state.status shouldBe SimpleStateStatus.Restarting

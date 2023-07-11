@@ -92,8 +92,6 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
   private val notDeployed = SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
 
   private def createServices(deploymentManager: DeploymentManager, processName: ProcessName) = {
-    when(deploymentManager.getProcessState(any[ProcessName])(any[DataFreshnessPolicy]))
-      .thenReturn(Future.successful(WithDataFreshnessStatus(Option.empty[StatusDetails], cached = false)))
     when(deploymentManager.getProcessState(any[ProcessName], any[Option[ProcessAction]])(any[DataFreshnessPolicy]))
       .thenReturn(Future.successful(WithDataFreshnessStatus(notDeployed, cached = false)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]

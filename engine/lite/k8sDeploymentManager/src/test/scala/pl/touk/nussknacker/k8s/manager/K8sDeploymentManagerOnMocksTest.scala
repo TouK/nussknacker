@@ -57,12 +57,12 @@ class K8sDeploymentManagerOnMocksTest extends AnyFunSuite with BeforeAndAfterAll
     val durationLongerThanClientTimeout = clientIdleTimeout.plus(patienceConfig.timeout)
     stubWithFixedDelay(durationLongerThanClientTimeout)
     a[TcpIdleTimeoutException] shouldBe thrownBy {
-      manager.getFreshProcessState(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
+      manager.getFreshProcessStates(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     }
 
     stubWithFixedDelay(0 seconds)
-    val result = manager.getFreshProcessState(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
-    result shouldEqual None
+    val result = manager.getFreshProcessStates(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
+    result shouldEqual List.empty
   }
 
   override protected def beforeAll(): Unit = {
