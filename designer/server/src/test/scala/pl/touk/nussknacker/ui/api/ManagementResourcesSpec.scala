@@ -46,7 +46,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] = {
     BeMatcher[(ProcessActionType, VersionId)](equal((ProcessActionType.Deploy, VersionId(versionId))))
-      .compose[ProcessAction](a => (a.action, a.processVersionId))
+      .compose[ProcessAction](a => (a.actionType, a.processVersionId))
       .compose[Option[ProcessAction]](opt => opt.value)
   }
 
@@ -139,7 +139,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           Get(s"/processes/${SampleProcess.process.id}/deployments") ~> withAllPermissions(processesRoute) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
             val curTime = Instant.now()
-            deploymentHistory.map(a => (a.processVersionId, a.user, a.action, a.commentId, a.comment, a.buildInfo)) shouldBe List(
+            deploymentHistory.map(a => (a.processVersionId, a.user, a.actionType, a.commentId, a.comment, a.buildInfo)) shouldBe List(
               (VersionId(2), user().username, ProcessActionType.Cancel, Some(secondCommentId), Some(expectedStopComment), Map()),
               (VersionId(2), user().username, ProcessActionType.Deploy, Some(firstCommentId), Some(expectedDeployComment), TestFactory.buildInfo)
             )
