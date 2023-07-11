@@ -151,9 +151,11 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
   }
 
   def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
+    // because of https://issues.apache.org/jira/browse/FLINK-28758 we can't use '/stop' endpoint,
+    // so jobs ends up in CANCELED state, not FINISHED - we should switch back when we get rid of old Kafka source
     val stopRequest = basicRequest
-      .post(flinkUrl.addPath("jobs", deploymentId.value, "stop"))
-      .body(StopRequest(targetDirectory = savepointDir, drain = false))
+      .post(flinkUrl.addPath("jobs", deploymentId.value, "savepoints"))
+      .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = true))
     processSavepointRequest(deploymentId, stopRequest, "stop scenario")
   }
 
