@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client3.testing.SttpBackendStub
-import sttp.client3.{Response, SttpBackend, SttpClientException}
+import sttp.client3.{Response, StringBody, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
 import java.net.NoRouteToHostException
@@ -91,15 +91,16 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         case (List("jobs", jobId), Method.PATCH) if acceptCancel =>
           history.append(HistoryEntry("cancel", Some(jobId)))
           ()
-        case (List("jobs", jobId, "savepoints"), Method.POST) if acceptSavepoint =>
-          history.append(HistoryEntry("makeSavepoint", Some(jobId)))
+        case (List("jobs", jobId, "savepoints"), Method.POST) if acceptSavepoint || acceptStop =>
+          val operation = req.body match {
+            case StringBody(s, _, _) if s.contains(""""cancel-job":true""") => "stop"
+            case _ => "makeSavepoint"
+          }
+          history.append(HistoryEntry(operation, Some(jobId)))
           SavepointTriggerResponse(`request-id` = savepointRequestId)
         case (List("jobs", jobId, "savepoints", `savepointRequestId`), Method.GET) if acceptSavepoint || acceptStop =>
           history.append(HistoryEntry("getSavepoints", Some(jobId)))
           buildFinishedSavepointResponse(savepointPath)
-        case (List("jobs", jobId, "stop"), Method.POST) if acceptStop =>
-          history.append(HistoryEntry("stop", Some(jobId)))
-          SavepointTriggerResponse(`request-id` = savepointRequestId)
         case (List("jars"), Method.GET) =>
           history.append(HistoryEntry("getJars", None))
           JarsResponse(files = Some(Nil))

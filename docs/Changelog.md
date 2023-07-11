@@ -11,6 +11,7 @@
 * [#4469](https://github.com/TouK/nussknacker/pull/4469) Faster loading of components tab: Component's usages fetched once instead of fetching for each processing type
 * [#4469](https://github.com/TouK/nussknacker/pull/4469) Faster loading of components tab: Don't fetch last actions
 * [#4353](https://github.com/TouK/nussknacker/pull/4353) Removed isCancelled/isDeployed flags based on `ProcessAction`, `ProcessAction.action` renamed to actionType. Trait `Process` is removed.
+* [#4488](https://github.com/TouK/nussknacker/pull/4488) Fix stopping processes with `/api/adminProcessManagement/stop/{processName}` endpoint on recent Flink versions
 
 1.10.0 (29 Jun 2023)
 -------------------------
