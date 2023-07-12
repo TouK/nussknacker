@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -45,7 +45,19 @@ class DeploymentManagerStub extends BaseDeploymentManager with PostprocessingPro
     Future.successful(
       statusDetailsList
         .find(_.status == SimpleStateStatus.Finished)
-        .map(_ => ProcessAction(ProcessActionId(UUID.randomUUID()), VersionId(-123), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Cancel, None, None, Map.empty))
+        .map(_ => ProcessAction(
+          id = ProcessActionId(UUID.randomUUID()),
+          processId = ProcessId(-234),
+          processVersionId = VersionId(-123),
+          user = "fooUser",
+          createdAt = Instant.ofEpochMilli(0),
+          performedAt = Instant.ofEpochMilli(0),
+          action = ProcessActionType.Cancel,
+          state = ProcessActionState.Finished,
+          failureMessage = None,
+          commentId = None,
+          comment = None,
+          buildInfo = Map.empty))
     )
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())

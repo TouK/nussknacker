@@ -277,7 +277,7 @@ class DBProcessService(deploymentService: DeploymentService,
   }
 
   override def getProcessActions(id: ProcessId): Future[List[ProcessAction]] = {
-    dbioRunner.runInTransaction(processActionRepository.getProcessActions(id))
+    dbioRunner.runInTransaction(processActionRepository.getFinishedProcessActions(id))
   }
 
   private def toProcessResponse(processName: ProcessName, created: ProcessCreated): ProcessResponse =

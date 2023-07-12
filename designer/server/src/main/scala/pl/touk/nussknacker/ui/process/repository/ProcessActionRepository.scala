@@ -27,7 +27,7 @@ import scala.language.higherKinds
 trait ProcessActionRepository[F[_]] {
   def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
   def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
-  def getProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]]
+  def getFinishedProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]]
   def getLastFinishedActionPerProcess(actions: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]]
 }
 
@@ -45,7 +45,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     val now = Instant.now()
     run(
       insertAction(None, processId, processVersion = processVersion, actionType = actionType, state = ProcessActionState.InProgress,
-      createdAt = now, performedAt = None, failure = None, commentId = None, buildInfoProcessingType = buildInfoProcessingType).map(_.id))
+        createdAt = now, performedAt = None, failure = None, commentId = None, buildInfoProcessingType = buildInfoProcessingType).map(_.id))
   }
 
   // We add comment during marking action as finished because we don't want to show this comment for in progress actions
@@ -101,7 +101,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     run(for {
       comment <- newCommentAction(processId, processVersion, comment)
       result <- insertAction(None, processId, Some(processVersion), actionType, ProcessActionState.Finished, now, Some(now), None, comment.map(_.id), buildInfoProcessingType)
-    } yield toProcessAction(result, comment))
+    } yield toFinishedProcessAction(result, comment))
   }
 
   private def insertAction(actionIdOpt: Option[ProcessActionId], processId: ProcessId, processVersion: Option[VersionId], actionType: ProcessActionType, state: ProcessActionState,
@@ -181,29 +181,30 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     run(actions
       .map(actions => query.filter { case (_, (entity, _)) => entity.action.inSet(actions) })
       .getOrElse(query)
-      .result.map(_.toMap.mapValuesNow(toProcessAction)))
+      .result.map(_.toMap.mapValuesNow(toFinishedProcessAction)))
   }
 
-  override def getProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]] =
+  override def getFinishedProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]] =
    run(processActionsTable
       .filter(p => p.processId === processId && p.state === ProcessActionState.Finished)
       .joinLeft(commentsTable)
       .on { case (action, comment) => action.commentId === comment.id }
-      .map { case (action, comment) => (action, comment) }
       .sortBy(_._1.performedAt.desc)
       .result
-      .map(_.toList.map(toProcessAction)))
+      .map(_.toList.map(toFinishedProcessAction)))
 
-  private def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
+  private def toFinishedProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
     id = actionData._1.id,
+    processId = actionData._1.processId,
     processVersionId = actionData._1.processVersionId.getOrElse(throw new AssertionError(s"Process version not available for finished action: ${actionData._1}")),
+    createdAt = actionData._1.createdAtTime,
     performedAt = actionData._1.performedAtTime.getOrElse(throw new AssertionError(s"PerformedAt not available for finished action: ${actionData._1}")),
     user = actionData._1.user,
     action = actionData._1.action,
+    state = actionData._1.state,
+    failureMessage = actionData._1.failureMessage,
     commentId = actionData._2.map(_.id),
     comment = actionData._2.map(_.content),
-    buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
-  )
-
+    buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty))
 
 }

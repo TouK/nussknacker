@@ -125,7 +125,7 @@ abstract class DBFetchingProcessRepository[F[_] : Monad](val dbConfig: DbConfig,
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
       processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](fetchProcessLatestVersionsQuery(id)(ProcessShapeFetchStrategy.NotFetch).result)
-      actions <- OptionT.liftF[DB, List[ProcessAction]](actionRepository.getProcessActions(id))
+      actions <- OptionT.liftF[DB, List[ProcessAction]](actionRepository.getFinishedProcessActions(id))
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
       process = process,

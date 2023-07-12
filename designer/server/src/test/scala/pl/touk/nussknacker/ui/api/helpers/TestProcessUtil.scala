@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import io.circe.{Encoder, Json}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
-import pl.touk.nussknacker.engine.graph.node.{NodeData, FragmentInputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, NodeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails._
@@ -100,10 +100,14 @@ object TestProcessUtil {
 
   def createProcessAction(action: ProcessActionType): ProcessAction = ProcessAction(
     id = ProcessActionId(UUID.randomUUID()),
+    processId = ProcessId(generateId()),
     processVersionId = VersionId(generateId()),
+    createdAt = Instant.now(),
     performedAt = Instant.now(),
     user = "user",
     actionType = action,
+    state = ProcessActionState.Finished,
+    failureMessage = None,
     commentId = None,
     comment = None,
     buildInfo = Map.empty
