@@ -2,14 +2,10 @@ package pl.touk.nussknacker.ui.processreport
 
 import cats.data.NonEmptyList
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.ProcessAdditionalFields
-import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.node.{BranchEndData, FragmentInputDefinition}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.process.fragment.FragmentRepository
-import shapeless.syntax.typeable._
 
 class ProcessCounter(fragmentRepository: FragmentRepository) {
 
@@ -35,8 +31,9 @@ class ProcessCounter(fragmentRepository: FragmentRepository) {
 
       nodes.flatMap {
         //TODO: this is a bit of a hack. Metric for fragment input is counted in node with fragment occurrence id...
-        case FlatNode(FragmentInputDefinition(id, _, _)) => Map(id -> nodeCountOption(None))
-        //BranchEndData is kind of artifical entity
+        //We want to count it though while testing fragments
+        case FlatNode(FragmentInputDefinition(id, _, _)) if !canonicalProcess.metaData.isFragment => Map(id -> nodeCountOption(None))
+        //BranchEndData is kind of artificial entity
         case FlatNode(BranchEndData(_)) => Map.empty[String, NodeCount]
         case FlatNode(node) => Map(node.id -> nodeCount(node.id))
         case FilterNode(node, nextFalse) => computeCountsSamePrefixes(nextFalse) + (node.id -> nodeCount(node.id))

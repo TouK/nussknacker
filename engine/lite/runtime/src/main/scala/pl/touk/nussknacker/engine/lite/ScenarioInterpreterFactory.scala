@@ -18,9 +18,10 @@ import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, FragmentComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, FragmentComponentDefinitionExtractor, LazyInterpreterDependencies}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{LiteSource, _}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -294,8 +295,15 @@ object ScenarioInterpreterFactory {
 
     private def compileSource(sourcePart: SourcePart): ValidatedNel[ProcessCompilationError, Input => ValidatedNel[ErrorType, Context]] = {
       val SourcePart(sourceObj, node, _, _, _) = sourcePart
-      val validatedSource = sourceObj match {
-        case s: LiteSource[Input@unchecked] => Valid(s)
+      val validatedSource = (sourceObj, node.data) match {
+        case (s: LiteSource[Input@unchecked], _) => Valid(s)
+        case (_: Source, f: FragmentInputDefinition) => Valid( //TODO no idea how to do it differently :/
+          new LiteSource[Input] {
+            override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): Input => ValidatedNel[ErrorType, Context] = {
+              input => Valid(Context(f.id, input.asInstanceOf[Map[String, Any]], None))
+            }
+          }
+        )
         case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
       }
       validatedSource.map { source =>

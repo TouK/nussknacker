@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTransformation, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExc
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, GenericNodeTransformationMethodDef, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, FragmentComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, FragmentComponentDefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.{DefaultExpressionId, branchParameterExpressionId}
@@ -98,8 +98,32 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           val defaultCtx = contextWithOnlyGlobalVariables.withVariable(VariableConstants.InputVariableName, Unknown, paramName = None)
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
-    case FragmentInputDefinition(_, params, _) =>
-      NodeCompilationResult(Map.empty, None, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)), Valid(new Source {}))
+    case frag@FragmentInputDefinition(id, params, _) =>
+      definitions.sourceFactories.get(id) match {
+        case Some(definition) =>
+          val parameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
+          val variables: Map[String, TypingResult] = parameters.map(a => a.name -> a.typ).toMap
+          val defaultContextTransformation =
+            Valid(contextWithOnlyGlobalVariables.copy(localVariables = contextWithOnlyGlobalVariables.globalVariables ++ variables))
+
+          compileObjectWithTransformation[Source](
+            parameters.map(a => evaluatedparam.Parameter(a.name, a.defaultValue.getOrElse(Expression.spel("")))),
+            Nil, Left(contextWithOnlyGlobalVariables), None, definition, _ => defaultContextTransformation
+          ).map(_._1)
+        case None =>
+          NodeCompilationResult(Map.empty, None, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)),
+            Valid(createSourceFromFragmentInputDefinition(frag)))
+      }
+
+  }
+
+  private def createSourceFromFragmentInputDefinition(fragmentInputDefinition: FragmentInputDefinition): Source = {
+    new Source with TestWithParametersSupport[Any] {
+      override def testParametersDefinition: List[Parameter] = {
+        fragmentDefinitionExtractor.extractParametersDefinition(fragmentInputDefinition).value
+      }
+      override def parametersToTestData(params: Map[String, AnyRef]): Any = params
+    }
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)
