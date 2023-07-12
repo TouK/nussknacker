@@ -302,7 +302,6 @@ class HttpService {
                 const msg = error.response.data.msg || error.response.data;
                 const result = { isSuccess: false, msg: msg };
                 if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
-
                 return result;
             });
     }
