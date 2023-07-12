@@ -34,7 +34,7 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
 
     def buildInfo: Rep[Option[String]] = column[Option[String]]("build_info")
 
-    def action: Rep[ProcessActionType] = column[ProcessActionType]("action")
+    def actionType: Rep[ProcessActionType] = column[ProcessActionType]("action_type")
 
     def state: Rep[ProcessActionState] = column[ProcessActionState]("state")
 
@@ -54,7 +54,7 @@ trait ProcessActionEntityFactory extends BaseEntityFactory {
       onDelete = ForeignKeyAction.SetNull
     )
 
-    def * : ProvenShape[ProcessActionEntityData] = (id, processId, processVersionId, user, createdAt, performedAt, action, state, failureMessage, commentId, buildInfo) <> (
+    def * : ProvenShape[ProcessActionEntityData] = (id, processId, processVersionId, user, createdAt, performedAt, actionType, state, failureMessage, commentId, buildInfo) <> (
       ProcessActionEntityData.apply _ tupled, ProcessActionEntityData.unapply
     )
   }

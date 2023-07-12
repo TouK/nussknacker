@@ -47,7 +47,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
       .map{ case ((processId, action), comment) => processId -> (action, comment) }
 
     actions
-      .map(actions => query.filter{case (_, (entity, _)) => entity.action.inSet(actions)})
+      .map(actions => query.filter{case (_, (entity, _)) => entity.actionType.inSet(actions)})
       .getOrElse(query)
   }
 
