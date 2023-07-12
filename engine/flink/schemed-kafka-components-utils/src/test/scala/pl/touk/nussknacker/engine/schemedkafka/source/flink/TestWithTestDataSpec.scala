@@ -89,6 +89,26 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   }
 
+  test("should handle fragment test parameters in test") {
+    val fragment = ScenarioBuilder
+      .fragment("fragment1", "in" -> classOf[String])
+      .filter("filter", "#in != 'stop'")
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
+
+    val parameterExpressions: Map[String, Expression] = Map(
+      "in" -> Expression("spel", "'some-text-id'")
+    )
+    val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
+    val results = run(fragment, scenarioTestData)
+
+    results.nodeResults("fragment1") shouldBe List(
+      NodeResult(ResultContext("fragment1-fragment1-0-0", Map("in" -> "some-text-id")))
+    )
+
+   // results.externalInvocationResults("fragmentEnd") shouldBe List(ExternalInvocationResult("fragment1", "fragmentEnd", "some-text-id"))
+    results.exceptions shouldBe empty
+  }
+
   private def registerSchema(topic: String) = {
     val subject = ConfluentUtils.topicSubject(topic, isKey = false)
     val parsedSchema = ConfluentUtils.convertToAvroSchema(Address.schema)

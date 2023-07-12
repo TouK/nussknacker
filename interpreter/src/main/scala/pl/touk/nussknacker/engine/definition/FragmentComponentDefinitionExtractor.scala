@@ -67,6 +67,12 @@ class FragmentComponentDefinitionExtractor(componentConfig: String => Option[Sin
       .mapWritten(_.map(data => FragmentParamClassLoadError(data.fieldName, data.refClazzName, nodeId.id)))
   }
 
+  def extractParametersDefinition(fragmentInputDefinition: FragmentInputDefinition): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
+    val config = componentConfig(fragmentInputDefinition.id).getOrElse(SingleComponentConfig.zero)
+    fragmentInputDefinition.parameters.map(toParameter(config)).sequence
+      .mapWritten(_.map(data => FragmentParamClassLoadError(data.fieldName, data.refClazzName, fragmentInputDefinition.id)))
+  }
+
   private def toParameter(componentConfig: SingleComponentConfig)(p: FragmentParameter): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {
     val paramName = p.name
     p.typ.toRuntimeClass(classLoader).map(Typed(_))
