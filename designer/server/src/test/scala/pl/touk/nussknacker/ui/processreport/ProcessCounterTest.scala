@@ -68,7 +68,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
     )
   }
 
-  test("compute counts for fragment") {
+  test("compute counts for scenario with fragment") {
     val process = ScenarioBuilder
       .streaming("test").parallelism(1)
       .source("source1", "")
@@ -104,6 +104,27 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
           "outId1" -> NodeCount(35, 5)
         )),
       "sink11" -> NodeCount(30, 10)
+    )
+  }
+
+  test("compute counts for fragment") {
+    val fragment = ScenarioBuilder
+      .fragment("fragment1", "in" -> classOf[String])
+      .filter("filter", "#in != 'stop'")
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
+
+    val counter = new ProcessCounter(fragmentRepository(Set()))
+
+    val computed = counter.computeCounts(fragment, Map(
+      "fragment1" -> RawCount(30, 0),
+      "filter" -> RawCount(20, 5),
+      "fragmentEnd" -> RawCount(15, 10)
+    ).get)
+
+    computed shouldBe Map(
+      "fragment1" -> NodeCount(30, 0),
+      "filter" -> NodeCount(20, 5),
+      "fragmentEnd" -> NodeCount(15, 10)
     )
   }
 

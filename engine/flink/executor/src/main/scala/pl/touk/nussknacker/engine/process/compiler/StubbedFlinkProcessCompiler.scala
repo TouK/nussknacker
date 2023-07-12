@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.graph.node.Source
+import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, Source}
 import shapeless.syntax.typeable._
 
 abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
@@ -42,12 +42,20 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
         sourceType -> stubbedDefinition
       }
 
+    def sourceDefForFragment(frag: FragmentInputDefinition): ObjectWithMethodDef = {
+      new StubbedFragmentInputDefinitionSource(processConfig, userCodeClassLoader).createSourceDefinition(frag)
+    }
+
+    val stubbedSourceForFragment: Seq[(String, ObjectWithMethodDef)] = process.allStartNodes.map(_.head.data).collect {
+      case frag: FragmentInputDefinition => frag.id -> prepareSourceFactory(sourceDefForFragment(frag), context)
+    }
+
     val stubbedServices = originalDefinition.services.mapValuesNow(prepareService(_, context))
 
     (ModelDefinitionWithTypes(
       originalDefinition
         .copy(
-          sourceFactories = originalDefinition.sourceFactories ++ stubbedSources,
+          sourceFactories = originalDefinition.sourceFactories ++ stubbedSources ++ stubbedSourceForFragment,
           services = stubbedServices)), originalDictRegistry)
   }
 
@@ -60,6 +68,7 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
 case class ComponentDefinitionContext(userCodeClassLoader: ClassLoader,
                                       originalDefinitionWithTypes: ModelDefinitionWithTypes,
                                       originalDictRegistry: EngineDictRegistry)
+
 abstract class StubbedComponentImplementationInvoker(original: ComponentImplementationInvoker,
                                                      originalReturnType: Option[TypingResult]) extends ComponentImplementationInvoker {
   def this(componentDefinitionWithImpl: ObjectWithMethodDef) =

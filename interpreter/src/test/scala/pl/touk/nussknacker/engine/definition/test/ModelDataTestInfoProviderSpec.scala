@@ -95,6 +95,11 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
     capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = true)
   }
 
+  test("should detect capabilities for fragment with valid input") {
+    val capabilities = testInfoProvider.getTestingCapabilities(createSimpleFragment())
+    capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false, canTestWithForm = true)
+  }
+
   test("should detect capabilities for scenario with multiple sources: at least one supports generating and testing") {
     val scenario = ScenarioBuilder
       .streaming("single source scenario")
@@ -267,6 +272,12 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
       .streaming("single source scenario")
       .source("source1", sourceComponentId, "par1" -> "'a'", "a" -> "42")
       .emptySink("end", "dead-end")
+  }
+
+  private def createSimpleFragment(): CanonicalProcess = {
+    ScenarioBuilder
+      .fragment("fragment1", "in" -> classOf[String])
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
   }
 
   private def createScenarioWithMultipleSources(): CanonicalProcess = {

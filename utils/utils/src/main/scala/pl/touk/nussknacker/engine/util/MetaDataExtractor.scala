@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util
 
-import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData, TypeSpecificData}
 
 import java.time._
 import java.time.format.DateTimeFormatter
@@ -10,6 +10,7 @@ object MetaDataExtractor {
 
   def extractTypeSpecificData[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): Either[Unit, T] = metaData.typeSpecificData match {
     case a: T => Right(a)
+    case _: FragmentSpecificData => Right(StreamMetaData().asInstanceOf[T]) //TODO just testing, handle it nicely...
     case _ => Left(())
   }
 
