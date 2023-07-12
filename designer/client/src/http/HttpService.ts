@@ -299,7 +299,11 @@ class HttpService {
                 return { isSuccess: res.data.isSuccess, msg: msg };
             })
             .catch((error) => {
-                return { isSuccess: false, msg: error.response.data.msg || error.response.data };
+                const msg = error.response.data.msg || error.response.data;
+                const result = { isSuccess: false, msg: msg };
+                if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
+
+                return result;
             });
     }
 
