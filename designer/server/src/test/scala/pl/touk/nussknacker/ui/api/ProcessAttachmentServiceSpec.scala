@@ -7,8 +7,7 @@ import akka.util.ByteString
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, VersionId}
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.db.entity.AttachmentEntityData
 import pl.touk.nussknacker.ui.process.repository.{DbProcessActivityRepository, ProcessActivityRepository}

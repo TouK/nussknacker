@@ -7,11 +7,11 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Depl
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy, StateActionsTypes}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
@@ -287,7 +287,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   private def getStateFromDeploymentManager(deploymentManager: DeploymentManager, processIdWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])
                                            (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
 
-    val state = deploymentManager.getProcessState(processIdWithName.name, lastStateAction).recover {
+    val state = deploymentManager.getProcessState(processIdWithName, lastStateAction).recover {
       case NonFatal(e) =>
         logger.warn(s"Failed to get status of ${processIdWithName.name}: ${e.getMessage}", e)
         failedToGetProcessState
@@ -304,7 +304,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     }.getOrElse(state)
   }
 
-  def markProcessFinishedIfLastActionDeploy(processingType: ProcessingType, processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
+  def markProcessFinishedIfLastActionDeploy(expectedProcessingType: ProcessingType, processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
     implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     logger.debug(s"About to mark process ${processName.value} as finished if last action was DEPLOY")
@@ -313,9 +313,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       processId <- existsOrFail(processIdOpt, ProcessNotFoundError(processName.value))
       processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId)
       processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.value.toString))
-      _ = if (!processDetails.processingType.equals(processingType)) {
-        throw new IllegalArgumentException(s"Invalid scenario processingType (expected ${processingType}, got ${processDetails.processingType})")
-      }
+      _ = validateExpectedProcessingType(expectedProcessingType, processDetails.processingType)
       cancelActionOpt <- {
         logger.debug(s"lastDeployedAction for ${processName.value}: ${processDetails.lastDeployedAction}")
         processDetails.lastDeployedAction.map { lastDeployedAction =>
@@ -329,6 +327,44 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         }.getOrElse(DBIOAction.successful(None))
       }
     } yield cancelActionOpt)
+  }
+
+  override def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(implicit ec: ExecutionContext): Future[Boolean] = {
+    logger.debug(s"About to mark action ${actionId.value} as finished execution")
+    dbioRunner.runInTransaction(actionRepository.getFinishedProcessAction(actionId).flatMap { actionOpt =>
+      DBIOAction.sequenceOption(actionOpt.map { action =>
+        doMarkActionExecutionFinished(action, processingType)
+      }).map(_.getOrElse(false))
+    })
+  }
+
+  private def doMarkActionExecutionFinished(action: ProcessAction, expectedProcessingType: ProcessingType)(implicit ec: ExecutionContext) = {
+    for {
+      _ <- validateExpectedProcessingType(expectedProcessingType, action.processId)
+      updateResult <- actionRepository.markFinishedActionAsExecutionFinished(action.id)
+    } yield updateResult
+  }
+
+  override def getLastStateAction(expectedProcessingType: ProcessingType, processId: ProcessId)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] = {
+    dbioRunner.run {
+      for {
+        _ <- validateExpectedProcessingType(expectedProcessingType, processId)
+        lastStateAction <- actionRepository.getFinishedProcessActions(processId, Some(StateActionsTypes))
+      } yield lastStateAction.headOption
+    }
+  }
+
+  private def validateExpectedProcessingType(expectedProcessingType: ProcessingType, processId: ProcessId)(implicit ec: ExecutionContext): DB[Unit] = {
+    implicit val user: NussknackerInternalUser.type = NussknackerInternalUser
+    processRepository.fetchProcessingType(processId).map { processingType =>
+      validateExpectedProcessingType(expectedProcessingType, processingType)
+    }
+  }
+
+  private def validateExpectedProcessingType(expectedProcessingType: ProcessingType, processingType: ProcessingType): Unit = {
+    if (processingType != expectedProcessingType) {
+      throw new IllegalArgumentException(s"Invalid scenario processingType (expected $expectedProcessingType, got $processingType)")
+    }
   }
 
   private lazy val failedToGetProcessState =

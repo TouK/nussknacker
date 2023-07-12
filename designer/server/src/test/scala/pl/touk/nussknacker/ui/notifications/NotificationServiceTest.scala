@@ -10,12 +10,11 @@ import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
@@ -59,7 +58,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     val processIdWithName = ProcessIdWithName(id, processName)
 
     val deploymentManager = mock[DeploymentManager]
-    val (deploymentService, notificationService) = createServices(deploymentManager, processName)
+    val (deploymentService, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser, after: Option[Instant] = None): List[Notification] = notificationService.notifications(after)(user, ctx).futureValue
 
@@ -90,8 +89,8 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
 
   private val notDeployed = SimpleProcessStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None))
 
-  private def createServices(deploymentManager: DeploymentManager, processName: ProcessName) = {
-    when(deploymentManager.getProcessState(any[ProcessName], any[Option[ProcessAction]])(any[DataFreshnessPolicy]))
+  private def createServices(deploymentManager: DeploymentManager) = {
+    when(deploymentManager.getProcessState(any[ProcessIdWithName], any[Option[ProcessAction]])(any[DataFreshnessPolicy]))
       .thenReturn(Future.successful(WithDataFreshnessStatus(notDeployed, cached = false)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])).thenReturn(Some(deploymentManager))

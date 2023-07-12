@@ -6,18 +6,18 @@ import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId, ProcessId => ApiProcessId}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId, ProcessId => ApiProcessId}
 import pl.touk.nussknacker.engine.api.{ProcessVersion => EngineProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.component.ScenarioComponentsUsages
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 import java.time.Instant
 
 object processdetails {
 
-  val StateActions: List[ProcessActionType] = List(Cancel, Deploy, Pause)
+  val StateActionsTypes: List[ProcessActionType] = List(Cancel, Deploy, Pause)
 
   object BasicProcess {
     def apply[ProcessShape](baseProcessDetails: BaseProcessDetails[ProcessShape]) = new BasicProcess(

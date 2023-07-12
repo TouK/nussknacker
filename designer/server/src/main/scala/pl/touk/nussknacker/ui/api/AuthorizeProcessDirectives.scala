@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.{Directive0, Directives}
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName

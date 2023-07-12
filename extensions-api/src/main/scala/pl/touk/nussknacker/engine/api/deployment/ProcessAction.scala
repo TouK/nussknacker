@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
@@ -11,11 +12,11 @@ import java.util.UUID
 
 @JsonCodec case class ProcessAction(id: ProcessActionId,
                                     processId: ProcessId,
-                                    // We use process action only for finished actions so processVersionId is always defined
+                                    // We use process action only for finished/execution finished actions so processVersionId is always defined
                                     processVersionId: VersionId,
                                     user: String,
                                     createdAt: Instant,
-                                    // We use process action only for finished actions so performedAt is always defined
+                                    // We use process action only for finished/execution finished actions so performedAt is always defined
                                     performedAt: Instant,
                                     actionType: ProcessActionType,
                                     state: ProcessActionState,
@@ -58,4 +59,9 @@ object ProcessActionState extends Enumeration {
   val InProgress: Value = Value("IN_PROGRESS")
   val Finished: Value = Value("FINISHED")
   val Failed: Value = Value("FAILED")
+  // This is a special marker state for long running actions which means that action execution is finished
+  // (not action request is finished but the whole execution is)
+  val ExecutionFinished: Value = Value("EXECUTION_FINISHED")
+
+  val FinishedStates: Set[ProcessActionState] = Set(Finished, ExecutionFinished)
 }

@@ -52,7 +52,7 @@ abstract class DBFetchingProcessRepository[F[_] : Monad](val dbConfig: DbConfig,
                                                                               isDeployed: Option[Boolean])(implicit loggedUser: LoggedUser, ec: ExecutionContext): DBIOAction[List[BaseProcessDetails[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {
       lastActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastFinishedActionPerProcess(None))
-      lastStateActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastFinishedActionPerProcess(Some(StateActions)))
+      lastStateActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastFinishedActionPerProcess(Some(StateActionsTypes)))
       lastDeployedActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastFinishedActionPerProcess(Some(List(ProcessActionType.Deploy))))
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
     } yield
@@ -125,13 +125,13 @@ abstract class DBFetchingProcessRepository[F[_] : Monad](val dbConfig: DbConfig,
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
       processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](fetchProcessLatestVersionsQuery(id)(ProcessShapeFetchStrategy.NotFetch).result)
-      actions <- OptionT.liftF[DB, List[ProcessAction]](actionRepository.getFinishedProcessActions(id))
+      actions <- OptionT.liftF[DB, List[ProcessAction]](actionRepository.getFinishedProcessActions(id, None))
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
       process = process,
       processVersion = processVersion,
       lastActionData = actions.headOption,
-      lastStateActionData = actions.find(a => StateActions.contains(a.actionType)),
+      lastStateActionData = actions.find(a => StateActionsTypes.contains(a.actionType)),
       lastDeployedActionData = actions.headOption.find(_.actionType == ProcessActionType.Deploy),
       isLatestVersion = isLatestVersion,
       tags = tags,

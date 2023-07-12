@@ -14,10 +14,9 @@ import org.scalatest.matchers.BeMatcher
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures

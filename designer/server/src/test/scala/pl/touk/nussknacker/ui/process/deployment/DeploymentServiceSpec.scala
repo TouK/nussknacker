@@ -10,10 +10,10 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Archive, Can
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeploymentManager, ProcessActionType, ProcessState, StateStatus, StatusDetails}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NussknackerAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
@@ -97,6 +97,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
   }
 
+  // FIXME: Make tests deploymentId aware to not use legacy method of marking deployment as finished
   test("Should mark finished process as finished") {
     val processName: ProcessName = generateProcessName
     val id: ProcessId = prepareDeployedProcess(processName).dbioActionValues
@@ -117,6 +118,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val processDetails = fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).dbioActionValues.value
     processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
     processDetails.lastDeployedAction shouldBe None
+    // FIXME: should be only one deploy but with execution finished state
     //one for deploy, one for cancel
     activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
   }

@@ -7,9 +7,9 @@ import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances._
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
