@@ -81,8 +81,8 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     const confirm = useCallback(async () => {
         await HttpService.customAction(processId, action.name, value).then((response) => {
             if (response.isSuccess) {
-                props.close();
                 dispatch(loadProcessState(processId));
+                props.close();
             } else {
                 setValidationError(response.msg);
             }
