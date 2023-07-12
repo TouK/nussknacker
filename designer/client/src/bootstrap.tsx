@@ -8,7 +8,6 @@ import "./i18n";
 import { StoreProvider } from "./store/provider";
 import rootRoutes from "./containers/RootRoutes";
 import { BASE_PATH } from "./config";
-import { ConnectionErrorProvider } from "./containers/ConnectionErrorProvider";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -18,17 +17,15 @@ const router = createBrowserRouter(rootRoutes, { basename: BASE_PATH.replace(/\/
 
 const Root = () => {
     return (
-        <ConnectionErrorProvider>
-            <ErrorBoundary>
-                <StoreProvider>
-                    <SettingsProvider>
-                        <NussknackerInitializer>
-                            <RouterProvider router={router} />
-                        </NussknackerInitializer>
-                    </SettingsProvider>
-                </StoreProvider>
-            </ErrorBoundary>
-        </ConnectionErrorProvider>
+        <ErrorBoundary>
+            <StoreProvider>
+                <SettingsProvider>
+                    <NussknackerInitializer>
+                        <RouterProvider router={router} />
+                    </NussknackerInitializer>
+                </SettingsProvider>
+            </StoreProvider>
+        </ErrorBoundary>
     );
 };
 

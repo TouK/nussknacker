@@ -64,7 +64,7 @@ export function Notifications(): JSX.Element {
         const onlyUnreadPredicate = (be: BackendNotification) =>
             !readNotifications.processedNotificationIds.includes(be.id) && !reactNotifications.map((k) => k.uid).includes(be.id);
 
-        handleChangeConnectionError("NO_INTERNET_ACCESS");
+        handleChangeConnectionError("NO_NETWORK_ACCESS");
         HttpService.loadBackendNotifications().then((notifications) => {
             dispatch(updateBackendNotifications(notifications.map((n) => n.id)));
             notifications.filter(onlyUnreadPredicate).forEach((beNotification) => {

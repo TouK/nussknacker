@@ -10,6 +10,7 @@ import { GlobalCSSVariables, NkThemeProvider } from "./theme";
 import { Notifications } from "./Notifications";
 import { UsageReportingImage } from "./UsageReportingImage";
 import { WindowManager } from "../windowManager";
+import { ConnectionErrorProvider } from "./ConnectionErrorProvider";
 
 export function NussknackerApp() {
     const loggedUser = useSelector(getLoggedUser);
@@ -21,30 +22,32 @@ export function NussknackerApp() {
     return (
         <NkThemeProvider>
             <GlobalCSSVariables />
-            <WindowManager
-                className={css({
-                    flex: 1,
-                    display: "flex",
-                })}
-            >
-                <div
-                    id="app-container"
+            <ConnectionErrorProvider>
+                <WindowManager
                     className={css({
                         flex: 1,
-                        display: "grid",
-                        gridTemplateRows: "auto 1fr",
-                        alignItems: "stretch",
+                        display: "flex",
                     })}
                 >
-                    <MenuBar />
-                    <main className={css({ overflow: "auto" })}>
-                        <Outlet />
-                    </main>
-                </div>
-            </WindowManager>
-            <Notifications />
-            <VersionInfo />
-            <UsageReportingImage />
+                    <div
+                        id="app-container"
+                        className={css({
+                            flex: 1,
+                            display: "grid",
+                            gridTemplateRows: "auto 1fr",
+                            alignItems: "stretch",
+                        })}
+                    >
+                        <MenuBar />
+                        <main className={css({ overflow: "auto" })}>
+                            <Outlet />
+                        </main>
+                    </div>
+                </WindowManager>
+                <Notifications />
+                <VersionInfo />
+                <UsageReportingImage />
+            </ConnectionErrorProvider>
         </NkThemeProvider>
     );
 }
