@@ -113,7 +113,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
       user = user.username, // TODO: it should be user.id not name
       createdAt = Timestamp.from(createdAt),
       performedAt = performedAt.map(Timestamp.from),
-      action = actionType,
+      actionType = actionType,
       state = state,
       failureMessage = failure,
       commentId = commentId,
