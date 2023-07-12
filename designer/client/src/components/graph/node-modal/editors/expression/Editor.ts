@@ -23,7 +23,7 @@ export type EditorProps = {
 };
 
 export type SimpleEditor<P extends EditorProps = EditorProps> = React.ComponentType<P> & {
-    switchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
+    isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
     switchableToHint: () => string;
     notSwitchableToHint: () => string;
 };

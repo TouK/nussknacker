@@ -79,7 +79,7 @@ export default function DurationEditor(props: Props): JSX.Element {
     );
 }
 
-DurationEditor.switchableTo = (expressionObj: ExpressionObj) =>
+DurationEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);
 
 DurationEditor.switchableToHint = () => i18next.t("editors.duration.switchableToHint", "Switch to basic mode");

@@ -42,7 +42,7 @@ export default function DualParameterEditor(props: Props): JSX.Element {
     const showSwitch = useMemo(() => props.showSwitch && SimpleEditor, [SimpleEditor, props.showSwitch]);
 
     const simpleEditorAllowsSwitch = useMemo(
-        () => SimpleEditor?.switchableTo(expressionObj, editorConfig.simpleEditor),
+        () => SimpleEditor?.isSwitchableTo(expressionObj, editorConfig.simpleEditor),
         [SimpleEditor, editorConfig.simpleEditor, expressionObj],
     );
 
