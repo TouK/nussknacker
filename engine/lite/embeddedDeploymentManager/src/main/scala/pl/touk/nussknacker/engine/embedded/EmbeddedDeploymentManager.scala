@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, ModelD
 import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
 import sttp.client3.SttpBackend
 
-import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -55,7 +54,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
 
 /*
-  FIXME: better synchronization - comment below isn't true anymore
+  FIXME: better synchronization - comment below isn't true anymore + make HA ready
   Currently we assume that all operations that modify state (i.e. deploy and cancel) are performed from
   ManagementActor, which provides synchronization. Hence, we ignore all synchronization issues, except for
   checking status, but for this @volatile on interpreters should suffice.
@@ -68,28 +67,31 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
   private val retrieveDeployedScenariosTimeout = 10.seconds
   @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = {
     val deployedScenarios = Await.result(processingTypeDeploymentService.getDeployedScenarios, retrieveDeployedScenariosTimeout)
-    deployedScenarios.map(data => deployScenario(data.processVersion, data.resolvedScenario, throwInterpreterRunExceptionsImmediately = false)._2).toMap
+    deployedScenarios.map(data => deployScenario(data.processVersion, data.deploymentData, data.resolvedScenario, throwInterpreterRunExceptionsImmediately = false)).toMap
   }
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    Future.successful(deployScenarioClosingOldIfNeeded(processVersion, canonicalProcess, throwInterpreterRunExceptionsImmediately = true))
+    Future.successful(deployScenarioClosingOldIfNeeded(processVersion, deploymentData, canonicalProcess, throwInterpreterRunExceptionsImmediately = true))
   }
 
   private def deployScenarioClosingOldIfNeeded(processVersion: ProcessVersion,
+                                               deploymentData: DeploymentData,
                                                parsedResolvedScenario: CanonicalProcess,
                                                throwInterpreterRunExceptionsImmediately: Boolean): Option[ExternalDeploymentId] = {
     deployments.get(processVersion.processName).collect { case ScenarioDeploymentData(_, processVersion, Success(oldVersion)) =>
       oldVersion.close()
       logger.debug(s"Closed already deployed scenario: $processVersion")
     }
-    val (deploymentId: String, deploymentEntry: (ProcessName, ScenarioDeploymentData)) = deployScenario(processVersion, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately)
+    val deploymentEntry: (ProcessName, ScenarioDeploymentData) = deployScenario(processVersion, deploymentData, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately)
     deployments += deploymentEntry
-    Some(ExternalDeploymentId(deploymentId))
+    Some(ExternalDeploymentId(deploymentEntry._2.deploymentId.value))
   }
 
-  private def deployScenario(processVersion: ProcessVersion, parsedResolvedScenario: CanonicalProcess,
+  private def deployScenario(processVersion: ProcessVersion,
+                             deploymentData: DeploymentData,
+                             parsedResolvedScenario: CanonicalProcess,
                              throwInterpreterRunExceptionsImmediately: Boolean) = {
 
     val interpreterTry = runInterpreter(processVersion, parsedResolvedScenario)
@@ -101,9 +103,7 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
       case Success(_) =>
         logger.debug(s"Deployed scenario $processVersion")
     }
-    val deploymentId = UUID.randomUUID().toString
-    val deploymentEntry = processVersion.processName -> ScenarioDeploymentData(deploymentId, processVersion, interpreterTry)
-    (deploymentId, deploymentEntry)
+    processVersion.processName -> ScenarioDeploymentData(deploymentData.deploymentId, processVersion, interpreterTry)
   }
 
   private def runInterpreter(processVersion: ProcessVersion, parsedResolvedScenario: CanonicalProcess) = {
@@ -129,7 +129,8 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
       deployments.get(name).map { interpreterData =>
         StatusDetails(
           status = interpreterData.scenarioDeployment.fold(ex => ProblemStateStatus(s"Scenario compilation errors"), _.status()),
-          deploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId)),
+          deploymentId = Some(interpreterData.deploymentId),
+          externalDeploymentId = Some(ExternalDeploymentId(interpreterData.deploymentId.value)),
           version = Some(interpreterData.processVersion))
       }.toList
     )
@@ -145,7 +146,7 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
 
   override protected def executionContext: ExecutionContext = ec
 
-  private case class ScenarioDeploymentData(deploymentId: String,
+  private case class ScenarioDeploymentData(deploymentId: DeploymentId,
                                             processVersion: ProcessVersion,
                                             scenarioDeployment: Try[Deployment])
 }

@@ -8,7 +8,7 @@ import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionType, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionId, ProcessActionType, StatusDetails}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -19,6 +19,8 @@ import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditional
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
+
+import java.util.UUID
 
 class PeriodicDeploymentManagerTest extends AnyFunSuite
   with Matchers
@@ -93,7 +95,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
         f.getAllowedActions(singleStatus) shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
     }
 
-    val deployAction = ProcessAction(VersionId(1), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Deploy, None, None, Map.empty)
+    val deployAction = ProcessAction(ProcessActionId(UUID.randomUUID()), VersionId(1), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Deploy, None, None, Map.empty)
     f.periodicDeploymentManager.getProcessState(processName, Some(deployAction)).futureValue.value.status shouldBe a[ScheduledStatus]
   }
 
@@ -116,7 +118,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
     f.periodicProcessService.deactivate(processName).futureValue
 
-    val deployAction = ProcessAction(VersionId(1), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Deploy, None, None, Map.empty)
+    val deployAction = ProcessAction(ProcessActionId(UUID.randomUUID()), VersionId(1), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Deploy, None, None, Map.empty)
     val state = f.periodicDeploymentManager.getProcessState(processName, Some(deployAction)).futureValue.value
 
     val status = state.status

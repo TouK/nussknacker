@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import io.circe.{Encoder, Json}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import java.time.Instant
+import java.util.UUID
 import scala.util.Random
 
 object TestProcessUtil {
@@ -98,6 +99,7 @@ object TestProcessUtil {
     DisplayableProcess(name, ProcessProperties(FragmentSpecificData()), nodes, Nil, processingType, category)
 
   def createProcessAction(action: ProcessActionType): ProcessAction = ProcessAction(
+    id = ProcessActionId(UUID.randomUUID()),
     processVersionId = VersionId(generateId()),
     performedAt = Instant.now(),
     user = "user",

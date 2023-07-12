@@ -56,7 +56,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     for {
       oldJob <- oldJobToStop(processVersion)
-      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.deploymentId))
+      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.externalDeploymentId))
     } yield ()
   }
 
@@ -65,7 +65,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
     val stoppingResult = for {
       oldJob <- OptionT(oldJobToStop(processVersion))
-      deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
+      deploymentId <- OptionT.fromOption[Future](oldJob.externalDeploymentId)
       maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, deploymentId, canonicalProcess))
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")
@@ -124,7 +124,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     val name = processName.value
     getFreshProcessStates(processName).flatMap { statuses =>
       val runningDeploymentIds = statuses.collect {
-        case StatusDetails(SimpleStateStatus.Running, Some(deploymentId), _, _, _, _) => deploymentId
+        case StatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _, _, _) => deploymentId
       }
       runningDeploymentIds match {
         case Nil =>

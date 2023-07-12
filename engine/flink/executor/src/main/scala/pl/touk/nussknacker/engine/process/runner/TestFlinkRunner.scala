@@ -17,9 +17,9 @@ import pl.touk.nussknacker.engine.testmode.TestRunId
 object TestFlinkRunner {
 
   def registerInEnvironmentWithModel(env: StreamExecutionEnvironment, modelData: ModelData)(scenario: CanonicalProcess,
-                                                                                                        deploymentData: DeploymentData = DeploymentData.empty,
-                                                                                                        version: ProcessVersion = ProcessVersion.empty,
-                                                                                                        testRunId: Option[TestRunId] = None): Unit = {
+                                                                                            deploymentData: DeploymentData = DeploymentData.empty,
+                                                                                            version: ProcessVersion = ProcessVersion.empty,
+                                                                                            testRunId: Option[TestRunId] = None): Unit = {
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
     registrar.register(env, scenario, version, deploymentData, testRunId)
   }

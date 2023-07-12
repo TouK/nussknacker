@@ -498,9 +498,9 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     )
 
     forAll(testingData) { (user: LoggedUser, componentId: ComponentId, expected: List[(BaseProcessDetails[_], List[NodeUsageData])]) =>
-      val result = defaultComponentService.getComponentUsages(componentId)(user).futureValue
+      val result = defaultComponentService.getComponentUsages(componentId)(user).futureValue.map(_.map(n => n.copy(nodesUsagesData = n.nodesUsagesData.sorted)))
       val componentProcesses = expected.map {
-        case (process, nodesUsagesData) => ComponentUsagesInScenario(process, nodesUsagesData)
+        case (process, nodesUsagesData) => ComponentUsagesInScenario(process, nodesUsagesData.sorted)
       }
       result shouldBe Right(componentProcesses)
     }
@@ -532,4 +532,9 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   private def bid(componentType: ComponentType): ComponentId =
     ComponentId.forBaseComponent(componentType)
+
+  private implicit def ordering: Ordering[NodeUsageData] = (x: NodeUsageData, y: NodeUsageData) => {
+    x.nodeId.compareTo(y.nodeId)
+  }
+
 }

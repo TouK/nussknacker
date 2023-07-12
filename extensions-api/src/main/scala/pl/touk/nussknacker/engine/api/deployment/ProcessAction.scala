@@ -6,8 +6,10 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.process.VersionId
 
 import java.time.Instant
+import java.util.UUID
 
-@JsonCodec case class ProcessAction(processVersionId: VersionId,
+@JsonCodec case class ProcessAction(id: ProcessActionId,
+                                    processVersionId: VersionId,
                                     performedAt: Instant,
                                     user: String,
                                     action: ProcessActionType,
@@ -16,6 +18,17 @@ import java.time.Instant
                                     buildInfo: Map[String, String]) {
   def isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
   def isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
+}
+
+final case class ProcessActionId(value: UUID) {
+  override def toString: String = value.toString
+}
+
+object ProcessActionId {
+
+  implicit val typeEncoder: Encoder[ProcessActionId] = Encoder.encodeUUID.contramap(_.value)
+  implicit val typeDecoder: Decoder[ProcessActionId] = Decoder.decodeUUID.map(ProcessActionId(_))
+
 }
 
 object ProcessActionType extends Enumeration {

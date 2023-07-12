@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -10,6 +10,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 
 import java.time.Instant
+import java.util.UUID
 
 object ComponentTestProcessData {
 
@@ -40,9 +41,9 @@ object ComponentTestProcessData {
   val CanceledFraudProcessName = "canceledFraudProcessName"
   val FraudProcessWithFragmentName = "fraudProcessWithFragment"
 
-  private val deployedAction = ProcessAction(initialVersionId, Instant.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)
-  private val canceledAction = ProcessAction(initialVersionId, Instant.now(), "user", ProcessActionType.Cancel, Option.empty, Option.empty, Map.empty)
-  private val archivedAction = ProcessAction(initialVersionId, Instant.now(), "user", ProcessActionType.Archive, Option.empty, Option.empty, Map.empty)
+  private val deployedAction = ProcessAction(ProcessActionId(UUID.randomUUID()), initialVersionId, Instant.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)
+  private val canceledAction = ProcessAction(ProcessActionId(UUID.randomUUID()), initialVersionId, Instant.now(), "user", ProcessActionType.Cancel, Option.empty, Option.empty, Map.empty)
+  private val archivedAction = ProcessAction(ProcessActionId(UUID.randomUUID()), initialVersionId, Instant.now(), "user", ProcessActionType.Archive, Option.empty, Option.empty, Map.empty)
 
   val MarketingProcess: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("marketingProcess", Streaming, SharedSourceConf, SharedSinkConf),

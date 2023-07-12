@@ -40,7 +40,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(implicit
     List(prepareProcessState(status, Some(ProcessVersion.empty)))
 
   private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): StatusDetails =
-    StatusDetails(status, Some(ExternalDeploymentId("1")), version)
+    StatusDetails(status, None, Some(ExternalDeploymentId("1")), version)
 
   override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
     Future {

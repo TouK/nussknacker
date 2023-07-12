@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import slick.ast.BaseTypedType
