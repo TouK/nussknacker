@@ -21,8 +21,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, TestFactory, WithHsqlDbTesting}
-import pl.touk.nussknacker.ui.db.entity.ProcessActionId
+import pl.touk.nussknacker.ui.api.helpers.{TestFactory, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentServiceImpl, ScenarioResolver}
@@ -89,7 +88,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     notificationsFor(userForFail).map(_.toRefresh) shouldBe Symbol("empty")
   }
 
-  private val notDeployed = SimpleProcessStateDefinitionManager.processState(SimpleStateStatus.NotDeployed)
+  private val notDeployed = SimpleProcessStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None))
 
   private def createServices(deploymentManager: DeploymentManager, processName: ProcessName) = {
     when(deploymentManager.getProcessState(any[ProcessName], any[Option[ProcessAction]])(any[DataFreshnessPolicy]))

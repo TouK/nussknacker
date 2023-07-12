@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, StatusDetails}
+import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 object InconsistentStateDetector extends InconsistentStateDetector
 
@@ -18,8 +19,8 @@ class InconsistentStateDetector extends LazyLogging {
       case (Right(Some(state)), _) if isFollowingDeployStatus(state) => handleFollowingDeployState(state, lastStateAction)
       case (Right(statusDetailsOpt), Some(action)) if action.isCanceled => handleCanceledState(statusDetailsOpt)
       case (Right(Some(state)), _) => handleState(state, lastStateAction)
-      case (Right(None), Some(_)) => StatusDetails(SimpleStateStatus.NotDeployed)
-      case (Right(None), None) => StatusDetails(SimpleStateStatus.NotDeployed)
+      case (Right(None), Some(a)) => StatusDetails(SimpleStateStatus.NotDeployed, Some(DeploymentId(a.id.toString)))
+      case (Right(None), None) => StatusDetails(SimpleStateStatus.NotDeployed, None)
     }
     logger.debug(s"Resolved $statusDetails , lastStateAction: $lastStateAction to status $status")
     status
@@ -38,7 +39,7 @@ class InconsistentStateDetector extends LazyLogging {
       case (_, firstNotFinished :: _ :: _) =>
         Left(firstNotFinished.copy(
           status = ProblemStateStatus.MultipleJobsRunning,
-          errors = List(s"Expected one job, instead: ${notFinalStatuses.map(details => details.deploymentId.map(_.value).getOrElse("missing") + " - " + details.status).mkString(", ")}")))
+          errors = List(s"Expected one job, instead: ${notFinalStatuses.map(details => details.externalDeploymentId.map(_.value).getOrElse("missing") + " - " + details.status).mkString(", ")}")))
       case (firstFinished :: _, Nil) => Right(Some(firstFinished))
     }
   }
@@ -52,14 +53,11 @@ class InconsistentStateDetector extends LazyLogging {
       case _ => statusDetails
     }
 
-  //Thise method handles some corner cases for canceled process -> with last action = Canceled
-  private def handleCanceledState(statusDetails: Option[StatusDetails]): StatusDetails =
-    statusDetails match {
-      case Some(state) => state.status match {
-        case _ => state
-      }
-      case None => StatusDetails(SimpleStateStatus.Canceled)
-    }
+  //This method handles some corner cases for canceled process -> with last action = Canceled
+  private def handleCanceledState(statusDetailsOpt: Option[StatusDetails]): StatusDetails =
+    statusDetailsOpt
+      // Missing deployment is fine for cancelled action as well because of retention of states
+      .getOrElse(StatusDetails(SimpleStateStatus.Canceled, None))
 
   private def handleRestartingState(statusDetails: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
     lastStateAction match {
@@ -97,7 +95,7 @@ class InconsistentStateDetector extends LazyLogging {
         }
       case None =>
         logger.debug(s"handleMismatchDeployedStateLastAction for empty statusDetails. Action.processVersionId: ${action.processVersionId}")
-        StatusDetails(ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user))
+        StatusDetails(ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user), None)
     }
 
   // Methods below are protected in case of other state machine implementation for a given DeploymentManager

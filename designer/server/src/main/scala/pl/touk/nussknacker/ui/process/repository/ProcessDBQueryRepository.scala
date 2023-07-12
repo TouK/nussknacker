@@ -108,12 +108,13 @@ object ProcessDBQueryRepository {
   )
 
   def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
+    id = actionData._1.id,
     processVersionId = actionData._1.processVersionId.getOrElse(throw new AssertionError(s"Process version not available for finished action: ${actionData._1}")),
     performedAt = actionData._1.performedAtTime.getOrElse(throw new AssertionError(s"PerformedAt not available for finished action: ${actionData._1}")),
     user = actionData._1.user,
     action = actionData._1.action,
     commentId = actionData._2.map(_.id),
-    comment = actionData._2.map((_.content)),
+    comment = actionData._2.map(_.content),
     buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
   )
 
