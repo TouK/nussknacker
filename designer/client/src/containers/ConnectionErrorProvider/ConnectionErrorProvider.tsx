@@ -19,7 +19,7 @@ export const ConnectionErrorProvider: FC<PropsWithChildren<unknown>> = ({ childr
             case "NO_NETWORK_ACCESS": {
                 return (
                     <ConnectionErrorContent
-                        headerText={"No internet access"}
+                        headerText={"No network access"}
                         contentText={
                             "We're sorry, but it appears that you don't have a network connection at the moment. Please check your network settings."
                         }
