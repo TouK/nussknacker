@@ -23,6 +23,7 @@ import skuber.networking.v1.Ingress
 import skuber.{ConfigMap, Event, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
 
 import scala.concurrent.Future
+import scala.util.Try
 import scala.util.control.NonFatal
 
 class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures with BeforeAndAfterAll {
@@ -88,7 +89,9 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
         action
       } catch {
         case NonFatal(ex) =>
-          printResourcesDetails()
+          Try(printResourcesDetails()).failed.foreach { ex =>
+            logger.warn("Failure during printResourcesDetails", ex)
+          }
           throw ex
       } finally {
         manager.cancel(version.processName, DeploymentData.systemUser).futureValue
@@ -115,7 +118,10 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
       logger.info("events:\n" + k8s.list[ListResource[Event]]().futureValue.items.mkString("\n"))
       pods.foreach { p =>
         logger.info(s"Printing logs for pod: ${p.name}")
-        k8s.getPodLogSource(p.name, LogQueryParams()).futureValue.runForeach(bs => println(bs.utf8String)).futureValue
+        // It looks like it is a common situation that waiting for logs take a longer time than patient config.
+        // I guess that for still running pods, it can wait forever. Even if futureValue failed, printing of logs would
+        // still be continued. Because of that, I silently ignore this error
+        Try(k8s.getPodLogSource(p.name, LogQueryParams()).futureValue.runForeach(bs => println(bs.utf8String)).futureValue)
         logger.info(s"Finished printing logs for pod: ${p.name}")
       }
     }
