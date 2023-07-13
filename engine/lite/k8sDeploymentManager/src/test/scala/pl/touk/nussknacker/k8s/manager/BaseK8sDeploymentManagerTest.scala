@@ -118,6 +118,9 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
       logger.info("events:\n" + k8s.list[ListResource[Event]]().futureValue.items.mkString("\n"))
       pods.foreach { p =>
         logger.info(s"Printing logs for pod: ${p.name}")
+        // It looks like it is a common situation that waiting for logs take a longer time than patient config.
+        // I guess that for still running pods, it can wait forever. Even if futureValue failed, printing of logs would
+        // still be continued. Because of that, I silently ignore this error
         Try(k8s.getPodLogSource(p.name, LogQueryParams()).futureValue.runForeach(bs => println(bs.utf8String)).futureValue)
         logger.info(s"Finished printing logs for pod: ${p.name}")
       }
