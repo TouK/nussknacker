@@ -1,22 +1,21 @@
-import { Box } from "@mui/material";
-import React, { PropsWithChildren } from "react";
+import { styled } from "@mui/material";
+import React from "react";
 import Highlighter from "react-highlight-words";
 
-function HighlightTag({ children }: PropsWithChildren<unknown>): JSX.Element {
-    return (
-        <Box component="strong" sx={{ color: "primary.main" }}>
-            {children}
-        </Box>
-    );
-}
-
-export function Highlight({ value, filterText }: { value?: string; filterText: string }): JSX.Element {
+function HighlightComponent({ value, filterText, className }: { value?: string; filterText: string; className?: string }): JSX.Element {
     return (
         <Highlighter
             autoEscape
+            className={className}
             textToHighlight={value.toString()}
             searchWords={filterText?.toString().trim().split(/\s/) || []}
-            highlightTag={HighlightTag}
+            highlightTag={"strong"}
         />
     );
 }
+
+export const Highlight = styled(HighlightComponent)(({ theme }) => ({
+    strong: {
+        color: theme.palette.primary.main,
+    },
+}));

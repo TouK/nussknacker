@@ -1,14 +1,30 @@
-import { ExternalLink, Highlight, nodeHref, fragmentNodeHref } from "../../common";
+import { createFilterRules, ExternalLink, fragmentNodeHref, Highlight, nodeHref, useFilterContext } from "../../common";
 import React, { memo, useCallback, useMemo } from "react";
 import { OpenInBrowser as LinkIcon } from "@mui/icons-material";
-import { Chip } from "@mui/material";
+import { Chip, styled } from "@mui/material";
 import { TruncateWrapper } from "../utils";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { NodeUsageData } from "nussknackerUi/HttpService";
+import { UsageWithStatus } from "../useComponentsQuery";
+import { UsagesFiltersModel } from "./usagesFiltersModel";
+import { nodeFilter } from "./usagesTable";
 
 const icon = <LinkIcon />;
 
-export const NodesCell = ({ filterText, ...props }: GridRenderCellParams & { filterText: string }): JSX.Element => {
+export function getNodeName({ fragmentNodeId, nodeId }: Pick<NodeUsageData, "fragmentNodeId" | "nodeId">): string {
+    return fragmentNodeId ? `${nodeId} ∈ ${fragmentNodeId}` : nodeId;
+}
+
+const nodesFilterRules = createFilterRules<NodeUsageData, UsagesFiltersModel>({
+    USAGE_TYPE: (row, value) => !value?.length || [].concat(value).some((f) => nodeFilter(f, row)),
+});
+
+export const NodesCell = ({
+    filterText,
+    ...props
+}: GridRenderCellParams<NodeUsageData[], UsageWithStatus> & {
+    filterText: string;
+}): JSX.Element => {
     const {
         value,
         row: { id },
@@ -16,55 +32,75 @@ export const NodesCell = ({ filterText, ...props }: GridRenderCellParams & { fil
     const filterSegments = useMemo(() => filterText?.toString().trim().split(/\s/) || [], [filterText]);
 
     const countMatches = useCallback(
-        (node: string) => filterSegments.filter((segment) => node.toString().includes(segment)).length,
+        (node: NodeUsageData) => filterSegments.filter((segment) => getNodeName(node).includes(segment)).length,
         [filterSegments],
     );
 
+    const { getFilter } = useFilterContext<UsagesFiltersModel>();
+    const filters = useMemo(
+        () =>
+            nodesFilterRules.map(
+                ({ key, rule }) =>
+                    (row) =>
+                        rule(row, getFilter(key)),
+            ),
+        [nodesFilterRules, getFilter],
+    );
+    const filtered = useMemo(() => value.filter((row) => filters.every((f) => f(row))), [value, filters]);
+
     const sorted = useMemo(
-        () => value.map((node: NodeUsageData) => [countMatches(node.nodeId), node.fragmentNodeId, node.nodeId]).sort(([a], [b]) => b - a),
-        [countMatches, value],
+        () =>
+            filtered
+                .map((node: NodeUsageData): [number, NodeUsageData] => [countMatches(node), node])
+                .sort((a, b) => {
+                    if (a[0] !== b[0]) {
+                        return b[0] - a[0];
+                    }
+                    return a[1].nodeId.localeCompare(b[1].nodeId);
+                }),
+        [countMatches, filtered],
     );
 
-    const elements = sorted.map(([match, fragmentNodeId, nodeId]) => (
-        <NodeChip
-            key={nodeId}
-            icon={icon}
-            nodeId={nodeId}
-            fragmentNodeId={fragmentNodeId}
-            filterText={filterText}
-            rowId={id}
-            matched={filterText ? match : -1}
-        />
+    const elements = sorted.map(([match, node]) => (
+        <NodeChip key={getNodeName(node)} icon={icon} node={node} filterText={filterText} rowId={id} matched={filterText ? match : -1} />
     ));
     return <TruncateWrapper {...props}>{elements}</TruncateWrapper>;
 };
 
+const HighlightNode = styled(Highlight)({
+    span: {
+        opacity: 0.8,
+    },
+    strong: {
+        color: "inherit",
+        fontSize: "110%",
+    },
+});
+
 const NodeChip = memo(function NodeChip({
     rowId,
-    nodeId,
-    fragmentNodeId,
+    node,
     filterText,
     matched,
     icon,
 }: {
     rowId: string;
-    nodeId: string;
-    fragmentNodeId?: string;
+    node: NodeUsageData;
     filterText: string;
     matched: number;
     icon: React.ReactElement;
 }) {
-    const nodeLabel: string = fragmentNodeId !== undefined ? fragmentNodeId + " / " + nodeId : nodeId;
-    const nodeLink: string = fragmentNodeId !== undefined ? fragmentNodeHref(rowId, fragmentNodeId, nodeId) : nodeHref(rowId, nodeId);
+    const { fragmentNodeId, nodeId }: NodeUsageData = node;
+    const nodeLabel: string = getNodeName(node);
+    const nodeLink: string = fragmentNodeId ? fragmentNodeHref(rowId, fragmentNodeId, nodeId) : nodeHref(rowId, nodeId);
     return (
         <Chip
             size="small"
             component={ExternalLink}
             href={nodeLink}
             tabIndex={0}
-            label={matched > 0 ? <Highlight value={nodeId} filterText={filterText} /> : nodeLabel}
+            label={matched > 0 ? <HighlightNode value={nodeLabel} filterText={filterText} /> : nodeLabel}
             color={matched !== 0 ? (fragmentNodeId ? "secondary" : "primary") : "default"}
-            variant={matched > 0 ? "outlined" : "filled"}
             icon={icon}
         />
     );

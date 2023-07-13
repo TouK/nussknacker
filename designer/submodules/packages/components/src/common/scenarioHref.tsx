@@ -17,17 +17,18 @@ export function scenarioHref(scenarioId: string): string {
     return nuHref("visualization", scenarioId);
 }
 
-export function nodeHref(scenarioId: string, nodeId: string): string {
+function scenarioWithNodesHref(scenarioId: string, nodeIds: string[]): string {
     // , and / allowed in nodeId
-    const nid = encodeURIComponent(encodeURIComponent(nodeId));
-    return urljoin(scenarioHref(scenarioId), `?nodeId=${nid}`);
+    const ids = nodeIds.map((nodeId: string): string => encodeURIComponent(encodeURIComponent(nodeId)));
+    return urljoin(scenarioHref(scenarioId), `?nodeId=${ids.join(",")}`);
+}
+
+export function nodeHref(scenarioId: string, nodeId: string): string {
+    return scenarioWithNodesHref(scenarioId, [nodeId]);
 }
 
 export function fragmentNodeHref(scenarioId: string, fragmentNodeId: string, nodeId: string): string {
-    const nid = encodeURIComponent(encodeURIComponent(nodeId));
-    const fid = encodeURIComponent(encodeURIComponent(fragmentNodeId));
-
-    return urljoin(scenarioHref(scenarioId), `?nodeId=${fid},${fid}-${nid}`);
+    return scenarioWithNodesHref(scenarioId, [fragmentNodeId, `${fragmentNodeId}-${nodeId}`]);
 }
 
 export function metricsHref(scenarioId: string): string {

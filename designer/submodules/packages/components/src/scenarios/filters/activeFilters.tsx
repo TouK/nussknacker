@@ -40,16 +40,18 @@ function getAvatar(name: keyof ScenariosFiltersModel, value?: string) {
     }
 }
 
-function getColor(name: keyof ScenariosFiltersModel) {
+export function getRandomColorByType(name: string) {
     return emphasize(new Chance(name).color({ format: "hex" }), 0.6);
 }
 
 export function ActiveFilters<F extends Record<string, any>>({
     activeKeys,
     getLabel,
+    getColor = getRandomColorByType,
 }: {
     activeKeys: (keyof F)[];
     getLabel?: (name: keyof F, value?: string | number) => string;
+    getColor?: (name: keyof F, value?: string | number) => string;
 }): JSX.Element {
     const { setFilter, getFilter } = useFilterContext<F>();
 
@@ -80,7 +82,7 @@ export function ActiveFilters<F extends Record<string, any>>({
             }}
         >
             {values.map(([name, value]) => {
-                const color = getColor(name);
+                const color = getColor(name, value);
                 return (
                     <React.Fragment key={name + value}>
                         <Chip
