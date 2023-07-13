@@ -1,4 +1,4 @@
-import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersValues } from "./usagesFiltersModel";
+import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersUsageType, UsagesFiltersValues } from "./usagesFiltersModel";
 import { useFilterContext } from "../../common";
 import { QuickFilter } from "../../scenarios/filters/quickFilter";
 import { FilterMenu } from "../../scenarios/filters/filterMenu";
@@ -20,9 +20,7 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<UsagesFiltersModel>();
 
-    const otherFilters: Array<keyof UsagesFiltersModel> = ["TYPE"];
-    const getTypeFilter = () => getFilter("TYPE", true);
-
+    const otherFilters: Array<keyof UsagesFiltersModel> = ["TYPE", "USAGE_TYPE"];
     return (
         <QuickFilter<UsagesFiltersModel> isLoading={isLoading} filter="TEXT">
             <Stack direction="row" spacing={1} p={1} alignItems="center" divider={<Divider orientation="vertical" flexItem />}>
@@ -45,7 +43,10 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         onChange={setFilter("CREATED_BY")}
                     />
                 </FilterMenu>
-                <FilterMenu label={t("table.filter.other", "Other")} count={getFilter("TYPE", true).length}>
+                <FilterMenu
+                    label={t("table.filter.other", "Other")}
+                    count={getFilter("TYPE", true).length + getFilter("USAGE_TYPE", true).length}
+                >
                     <OptionsStack
                         label={t("table.filter.other", "Other")}
                         options={otherFilters.map((name) => ({ name }))}
@@ -58,14 +59,27 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         <FilterListItem
                             color="default"
                             checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.SCENARIOS)}
-                            onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.SCENARIOS], getTypeFilter()))}
+                            onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.SCENARIOS], getFilter("TYPE", true)))}
                             label={t("table.filter.SHOW_SCENARIOS", "Show scenarios")}
                         />
                         <FilterListItem
                             color="default"
                             checked={getFilter("TYPE", true)?.includes(UsagesFiltersModelType.FRAGMENTS)}
-                            onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.FRAGMENTS], getTypeFilter()))}
+                            onChange={() => setFilter("TYPE", xor([UsagesFiltersModelType.FRAGMENTS], getFilter("TYPE", true)))}
                             label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
+                        />
+                        <Divider />
+                        <FilterListItem
+                            color="secondary"
+                            checked={getFilter("USAGE_TYPE", true)?.includes(UsagesFiltersUsageType.INDIRECT)}
+                            onChange={() => setFilter("USAGE_TYPE", xor([UsagesFiltersUsageType.INDIRECT], getFilter("USAGE_TYPE", true)))}
+                            label={t("table.filter.SHOW_INDIRECT", "Show indirect usage")}
+                        />
+                        <FilterListItem
+                            color="primary"
+                            checked={getFilter("USAGE_TYPE", true)?.includes(UsagesFiltersUsageType.STRAIGHT)}
+                            onChange={() => setFilter("USAGE_TYPE", xor([UsagesFiltersUsageType.STRAIGHT], getFilter("USAGE_TYPE", true)))}
+                            label={t("table.filter.SHOW_STRAIGHT", "Show straight usage")}
                         />
                     </OptionsStack>
                 </FilterMenu>
