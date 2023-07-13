@@ -4,7 +4,8 @@ export interface UsagesFiltersModel {
     TEXT?: string;
     CATEGORY?: string[];
     CREATED_BY?: string[];
-    TYPE: string[];
+    TYPE?: UsagesFiltersModelType[];
+    USAGE_TYPE?: UsagesFiltersUsageType[];
     STATUS?: string[];
 }
 
@@ -17,4 +18,9 @@ export interface UsagesFiltersValues {
 export enum UsagesFiltersModelType {
     SCENARIOS = "SCENARIOS",
     FRAGMENTS = "FRAGMENTS",
+}
+
+export enum UsagesFiltersUsageType {
+    INDIRECT = "INDIRECT",
+    STRAIGHT = "STRAIGHT",
 }
