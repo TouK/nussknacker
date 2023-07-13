@@ -250,7 +250,10 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       } else {
         processDetails.lastStateAction match {
           case Some(_) =>
-            checkStateInDeploymentManager(manager, processDetails)
+            DBIOAction.from(getStateFromDeploymentManager(manager, processDetails.idWithName, processDetails.lastStateAction)).map { statusWithFreshness =>
+              logger.debug(s"Status for: '${processDetails.name}' is: ${statusWithFreshness.value.status}, cached: ${statusWithFreshness.cached}, last status action: ${processDetails.lastStateAction.map(_.actionType)})")
+              statusWithFreshness.value
+            }
           case _ => //We assume that the process never deployed should have no state at the engine
             logger.debug(s"Status for never deployed: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
             DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None)))
@@ -261,7 +264,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   //We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
   private def getArchivedProcessState(processDetails: BaseProcessDetails[_])(implicit manager: DeploymentManager) = {
-    processDetails.lastStateAction.map(_.action) match {
+    processDetails.lastStateAction.map(_.actionType) match {
       case Some(Cancel) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.Canceled, None)))
@@ -271,16 +274,6 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       case _ =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.NotDeployed}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None)))
-    }
-  }
-
-  private def checkStateInDeploymentManager(deploymentManager: DeploymentManager, processDetails: BaseProcessDetails[_])
-                                           (implicit ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): DB[ProcessState] = {
-    for {
-      state <- DBIOAction.from(getStateFromDeploymentManager(deploymentManager, processDetails.idWithName, processDetails.lastStateAction))
-    } yield {
-      logger.debug(s"Status for: '${processDetails.name}' is: ${state.value.status} (from engine: ${state.value.status}, cached: ${state.cached}, last action: ${processDetails.lastAction.map(_.action)})")
-      state.value
     }
   }
 

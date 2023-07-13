@@ -113,7 +113,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
       user = user.username, // TODO: it should be user.id not name
       createdAt = Timestamp.from(createdAt),
       performedAt = performedAt.map(Timestamp.from),
-      action = actionType,
+      actionType = actionType,
       state = state,
       failureMessage = failure,
       commentId = commentId,
@@ -142,14 +142,14 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
   def getInProgressActionTypes(processId: ProcessId): F[Set[ProcessActionType]] = {
     val query = processActionsTable
       .filter(action => action.processId === processId && action.state === ProcessActionState.InProgress)
-      .map(_.action).distinct
+      .map(_.actionType).distinct
     run(query.result.map(_.toSet))
   }
 
   def getUserActionsAfter(user: LoggedUser, possibleActionTypes: Set[ProcessActionType], possibleStates: Set[ProcessActionState], limit: Instant): F[Seq[(ProcessActionEntityData, ProcessName)]] = {
     run(
       processActionsTable
-        .filter(a => a.user === user.username && a.state.inSet(possibleStates) && a.action.inSet(possibleActionTypes) && a.performedAt > Timestamp.from(limit))
+        .filter(a => a.user === user.username && a.state.inSet(possibleStates) && a.actionType.inSet(possibleActionTypes) && a.performedAt > Timestamp.from(limit))
         .join(processesTable).on((a, p) => p.id === a.processId)
         .map {
           case (a, p) => (a, p.name)

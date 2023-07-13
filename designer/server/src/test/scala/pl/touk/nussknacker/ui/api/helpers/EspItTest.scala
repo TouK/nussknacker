@@ -35,7 +35,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader}
+import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.fragment.DbFragmentRepository
@@ -46,6 +46,7 @@ import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 import slick.dbio.DBIOAction
 import _root_.sttp.client3.SttpBackend
 import _root_.sttp.client3.akkahttp.AkkaHttpBackend
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.definition.test.{ModelDataTestInfoProvider, TestInfoProvider}
 
 import java.net.URI
@@ -168,8 +169,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     typeToConfig = typeToConfig.mapValues(_.modelData)
   )
 
-  protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager
-
+  protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)(new ProcessingTypeDeploymentServiceStub(Nil))
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -417,7 +417,7 @@ object ProcessJson extends OptionValues {
       process.hcursor.downField("name").as[String].toOption.value,
       process.hcursor.downField("processId").as[Long].toOption.value,
       lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.value),
-      lastAction.map(_.hcursor.downField("action").as[String].toOption.value),
+      lastAction.map(_.hcursor.downField("actionType").as[String].toOption.value),
       state.map(StateJson(_)),
       process.hcursor.downField("processCategory").as[String].toOption.value,
       process.hcursor.downField("isArchived").as[Boolean].toOption.value,

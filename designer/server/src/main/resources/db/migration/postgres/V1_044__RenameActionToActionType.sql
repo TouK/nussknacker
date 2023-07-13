@@ -1,0 +1,1 @@
+ALTER TABLE "process_actions" RENAME COLUMN "action" TO "action_type";

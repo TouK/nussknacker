@@ -17,6 +17,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   was moved into `externalDeploymentId` field. `ProcessAction` has a new field - `id`. 
   `ProcessStateDefinitionManager.processState` variant of methods with multiple parameters was removed - you should
   use `ProcessStateDefinitionManager.processState(StatusDetails)` variant instead.
+* [#4353](https://github.com/TouK/nussknacker/pull/4353) Removed isCancelled/isDeployed flags based on `ProcessAction`, `ProcessAction.action` renamed to actionType. Trait `Process` is removed.
 
 ### REST API changes
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility).

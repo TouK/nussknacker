@@ -65,8 +65,6 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   private val archivedFragmentName = ProcessName("archived-fragment")
 
-  override protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)(new ProcessingTypeDeploymentServiceStub(Nil))
-
   test("should return list of process with state") {
     createDeployedProcess(processName)
     verifyProcessWithStateOnList(processName, Some(SimpleStateStatus.Running))
@@ -85,7 +83,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("return single process") {
     val processId = createDeployedProcess(processName)
 
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+    deploymentManager.withProcessRunning(processName) {
       forScenarioReturned(processName) { process =>
         process.processId shouldBe processId.value
         process.name shouldBe processName.value
@@ -128,7 +126,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("not allow to archive still running process") {
     createDeployedProcess(processName)
 
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+    deploymentManager.withProcessRunning(processName) {
       archiveProcess(processName) { status =>
         status shouldEqual StatusCodes.Conflict
       }
@@ -186,10 +184,12 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("should not allow to rename deployed process") {
     createDeployedProcess(processName)
-    val newName = ProcessName("ProcessChangedName")
+    deploymentManager.withProcessRunning(processName) {
+      val newName = ProcessName("ProcessChangedName")
 
-    renameProcess(processName, newName) { status =>
-      status shouldEqual StatusCodes.Conflict
+      renameProcess(processName, newName) { status =>
+        status shouldEqual StatusCodes.Conflict
+      }
     }
   }
 
@@ -210,7 +210,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createEmptyProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+    deploymentManager.withProcessRunning(processName) {
       renameProcess(processName, newName) { status =>
         status shouldEqual StatusCodes.Conflict
       }
@@ -823,7 +823,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("should return status for single deployed process") {
     createDeployedProcess(processName)
 
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+    deploymentManager.withProcessRunning(processName) {
       forScenarioStatus(processName) { (code, state) =>
         code shouldBe StatusCodes.OK
         state.name shouldBe SimpleStateStatus.Running.name
@@ -884,7 +884,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   private def verifyProcessWithStateOnList(expectedName: ProcessName, expectedStatus: Option[StateStatus]): Unit = {
-    deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Running) {
+    deploymentManager.withProcessRunning(processName) {
       forScenariosReturned(ProcessesQuery.empty) { processes =>
         val process = processes.find(_.name == expectedName.value).value
         process.state.map(_.name) shouldBe expectedStatus.map(_.name)

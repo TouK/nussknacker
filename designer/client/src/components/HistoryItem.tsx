@@ -61,7 +61,7 @@ export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: Hi
                 <br />
                 <HDate date={createDate} />
                 <br />
-                {isDeployed && <HDate date={actions.find((a) => a.action === ActionType.Deploy)?.performedAt} />}
+                {isDeployed && <HDate date={actions.find((a) => a.actionType === ActionType.Deploy)?.performedAt} />}
             </div>
             {isDeployed && <Badge className={badgeStyles} />}
         </li>

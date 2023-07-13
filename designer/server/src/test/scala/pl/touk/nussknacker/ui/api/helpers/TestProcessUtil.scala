@@ -103,7 +103,7 @@ object TestProcessUtil {
     processVersionId = VersionId(generateId()),
     performedAt = Instant.now(),
     user = "user",
-    action = action,
+    actionType = action,
     commentId = None,
     comment = None,
     buildInfo = Map.empty
