@@ -12,7 +12,6 @@ import {
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButtonProps } from "../../types";
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
-import _ from "lodash";
 import { TestFormParameters } from "../../../../common/TestResultUtils";
 import { testProcessWithParameters } from "../../../../actions/nk/displayTestResults";
 import { GenericActionParameters } from "../../../modals/GenericActionDialog";
@@ -20,6 +19,7 @@ import { Expression } from "../../../../types";
 import { SourceWithParametersTest } from "../../../../http/HttpService";
 import { getFindAvailableVariables } from "../../../graph/node-modal/NodeDetailsContent/selectors";
 import { displayTestCapabilities, fetchTestFormParameters } from "../../../../actions/nk";
+import { head, isEmpty } from "lodash";
 
 type Props = ToolbarButtonProps;
 
@@ -39,7 +39,7 @@ function TestWithFormButton(props: Props) {
 
     const [available, setAvailable] = useState(isAvailable);
     const [action, setAction] = useState(null);
-    const [selectedSource, setSelectedSource] = useState(_.head(testFormParameters)?.sourceId);
+    const [selectedSource, setSelectedSource] = useState(head(testFormParameters)?.sourceId);
     const [sourceParameters, setSourceParameters] = useState(updateParametersFromTestForm());
     const variableTypes = useMemo(() => findAvailableVariables?.(selectedSource), [findAvailableVariables, selectedSource]);
 
@@ -79,7 +79,7 @@ function TestWithFormButton(props: Props) {
     const onConfirmAction = useCallback(
         (paramValues) => {
             const parameters: { [paramName: string]: Expression } = sourceParameters[selectedSource].parameters
-                .filter((uiParam) => !_.isEmpty(paramValues[uiParam.name].expression))
+                .filter((uiParam) => !isEmpty(paramValues[uiParam.name].expression))
                 .reduce(
                     (obj, uiParam) => ({
                         ...obj,
@@ -108,7 +108,7 @@ function TestWithFormButton(props: Props) {
     //For now, we select first source and don't provide way to change it
     //Add support for multiple sources in next iteration (?)
     useEffect(() => {
-        setSelectedSource(_.head(testFormParameters)?.sourceId);
+        setSelectedSource(head(testFormParameters)?.sourceId);
         setSourceParameters(updateParametersFromTestForm());
     }, [testFormParameters]);
 

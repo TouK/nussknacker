@@ -60,7 +60,7 @@ describe("Components list", () => {
         filterByDefaultCategory();
         cy.get("[role=row]").should("have.length.greaterThan", 11);
         cy.contains(/^group$/i).click();
-        cy.get("[role=menuitem]").as("options");
+        cy.get("[role=menu]").find("li[role=menuitem]").as("options");
         cy.get("@options").should("have.lengthOf", totalGroups + 1);
         cy.get("@options").contains(/^base/i).click();
         cy.matchQuery("?CATEGORY=Default&GROUP=base");
@@ -142,16 +142,10 @@ describe("Components list", () => {
         cy.contains(/^≥ 1$/i).click();
         cy.get("body").click();
 
-        cy.get("[role=row] a")
-            // this number is two times larger than number of components with some usages because it handles also links to documentation
-            .should("have.length", 6)
-            .as("links");
+        cy.get("[role=row] a").should("have.length", 4).as("links");
 
         // we are clicking filter component because it has many usages and we are able to test usages list expansion
-        cy.get("@links")
-            .filter((i, e) => /^\d+$/.test(e.innerText))
-            .its(2)
-            .click();
+        cy.get("@links").its(2).click();
 
         // we are clicking "X more" on list of places of usages to test usages list expansion
         cy.contains("4 more").click();
@@ -185,7 +179,7 @@ describe("Components list", () => {
     function filterByBaseGroup() {
         cy.get("[role=row]", { timeout: 60000 }).should("have.length.greaterThan", 11);
         cy.contains(/^group$/i).click();
-        cy.get("[role=menuitem]").as("options");
+        cy.get("[role=menu]").find("li[role=menuitem]").as("options");
         cy.get("@options").should("have.lengthOf", totalGroups + 1);
         cy.get("@options").contains(/^base/i).click();
         cy.get("[role=row]").should("have.lengthOf", baseGroupComponents + 1);

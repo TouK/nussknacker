@@ -1,9 +1,8 @@
-import Adapter from "@wojtekmaj/enzyme-adapter-react-17";
-import Enzyme, { mount } from "enzyme";
 import React from "react";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store";
-import { ProcessHistoryComponent } from "../src/components/ProcessHistory"; //import redux-independent component
+import { ProcessHistoryComponent } from "../src/components/ProcessHistory";
+import { render, within } from "@testing-library/react";
 
 const mockStore = configureMockStore();
 jest.mock("../src/windowManager", () => ({
@@ -12,9 +11,15 @@ jest.mock("../src/windowManager", () => ({
     })),
 }));
 
+jest.mock("react-i18next", () => ({
+    useTranslation: () => ({
+        t: (key) => key,
+        i18n: { changeLanguage: () => {} },
+    }),
+}));
+
 describe("ProcessHistory suite", () => {
     it("should mark latest history entry as current and other as past", () => {
-        Enzyme.configure({ adapter: new Adapter() });
         //given
         const store = mockStore({
             graphReducer: {
@@ -24,25 +29,20 @@ describe("ProcessHistory suite", () => {
             },
         });
         //when
-        const mountedProcessHistory = mount(
+        const { container } = render(
             <Provider store={store}>
                 <ProcessHistoryComponent />,
             </Provider>,
         );
         //then
-        const currentProcessHistoryEntry = mountedProcessHistory.find(".current");
-        const pastHistoryEntries = mountedProcessHistory.find(".past");
+        const currentProcessHistoryEntry = container.getElementsByClassName("current");
+        const pastHistoryEntries = container.getElementsByClassName("past");
         expect(currentProcessHistoryEntry.length).toBe(1);
         expect(pastHistoryEntries.length).toBe(2);
-        expect(contains(currentProcessHistoryEntry.text(), "v3")).toBe(true);
-        expect(contains(pastHistoryEntries.at(0).text(), "v2")).toBe(true);
-        expect(contains(pastHistoryEntries.at(1).text(), "v1")).toBe(true);
+        expect(within(currentProcessHistoryEntry[0]).getByText(/v3/)).toBeInTheDocument();
+        expect(within(pastHistoryEntries[0]).getByText(/v2/)).toBeInTheDocument();
+        expect(within(pastHistoryEntries[1]).getByText(/v1/)).toBeInTheDocument();
     });
-
-    //for some reason es6 'String.includes' does not work in tests...
-    const contains = (str, con) => {
-        return str.substring(con) !== -1;
-    };
 
     const processEntry = (processVersionId) => {
         return {

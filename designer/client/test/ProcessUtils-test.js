@@ -1,5 +1,5 @@
 import ProcessUtils from "../src/common/ProcessUtils";
-import _ from "lodash";
+import { reject } from "lodash";
 
 const unknown = { display: "Unknown", params: [], type: "Unknown", refClazzName: "java.lang.Object" };
 
@@ -36,7 +36,7 @@ describe("process available variables finder", () => {
 
     it("should return only global variables for dangling node", () => {
         const danglingNodeId = "someFilterNode";
-        const newEdges = _.reject(process.edges, (edge) => {
+        const newEdges = reject(process.edges, (edge) => {
             return edge.from == danglingNodeId || edge.to == danglingNodeId;
         });
         const processWithDanglingNode = { ...process, ...{ edges: newEdges } };

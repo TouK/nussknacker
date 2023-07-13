@@ -3,10 +3,10 @@ import { ExpressionObj } from "../types";
 import { Validator } from "../../Validators";
 import "./timeRange.styl";
 import TimeRangeEditor from "./TimeRangeEditor";
-import _ from "lodash";
 import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import moment from "moment";
+import { isEmpty } from "lodash";
 
 export type Duration = {
     days: number;
@@ -80,7 +80,7 @@ export default function DurationEditor(props: Props): JSX.Element {
 }
 
 DurationEditor.switchableTo = (expressionObj: ExpressionObj) =>
-    SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || _.isEmpty(expressionObj.expression);
+    SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);
 
 DurationEditor.switchableToHint = () => i18next.t("editors.duration.switchableToHint", "Switch to basic mode");
 

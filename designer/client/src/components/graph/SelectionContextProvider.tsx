@@ -1,4 +1,3 @@
-import _ from "lodash";
 import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -21,8 +20,8 @@ import { useDocumentListeners } from "../../containers/useDocumentListeners";
 import { canModifySelectedNodes, getProcessCategory, getSelection, getSelectionState } from "../../reducers/selectors/graph";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
-import { useGraph } from "./GraphContext";
 import NodeUtils from "./NodeUtils";
+import { min } from "lodash";
 
 const hasTextSelection = () => !!window.getSelection().toString();
 
@@ -190,8 +189,8 @@ export default function SelectionContextProvider(
         const selection = parse(clipboardText);
         if (selection) {
             const { x, y } = props.pastePosition();
-            const minNodeX: number = _.min(selection.nodes.map((node) => node.additionalFields.layoutData.x));
-            const minNodeY: number = _.min(selection.nodes.map((node) => node.additionalFields.layoutData.y));
+            const minNodeX: number = min(selection.nodes.map((node) => node.additionalFields.layoutData.x));
+            const minNodeY: number = min(selection.nodes.map((node) => node.additionalFields.layoutData.y));
             const random = Math.floor(Math.random() * 20) + 1;
             const nodesWithPositions = selection.nodes.map((node) => ({
                 node,

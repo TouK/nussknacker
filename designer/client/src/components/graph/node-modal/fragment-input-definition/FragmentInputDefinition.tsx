@@ -1,5 +1,4 @@
 /* eslint-disable i18next/no-literal-string */
-import _ from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import ProcessUtils from "../../../../common/ProcessUtils";
@@ -8,6 +7,7 @@ import { Parameter } from "../../../../types";
 import { MapVariableProps } from "../MapVariable";
 import { NodeCommonDetailsDefinition } from "../NodeCommonDetailsDefinition";
 import FieldsSelect from "./FieldsSelect";
+import { find, head, orderBy } from "lodash";
 
 interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
     isEditMode?: boolean;
@@ -28,9 +28,9 @@ export default function FragmentInputDefinition(props: Props): JSX.Element {
         [definitionData?.processDefinition?.typesInformation],
     );
 
-    const orderedTypeOptions = useMemo(() => _.orderBy(typeOptions, (item) => [item.label, item.value], ["asc"]), [typeOptions]);
+    const orderedTypeOptions = useMemo(() => orderBy(typeOptions, (item) => [item.label, item.value], ["asc"]), [typeOptions]);
 
-    const defaultTypeOption = useMemo(() => _.find(typeOptions, { label: "String" }) || _.head(typeOptions), [typeOptions]);
+    const defaultTypeOption = useMemo(() => find(typeOptions, { label: "String" }) || head(typeOptions), [typeOptions]);
 
     const addField = useCallback(() => {
         addElement("parameters", { name: "", typ: { refClazzName: defaultTypeOption.value } } as Parameter);

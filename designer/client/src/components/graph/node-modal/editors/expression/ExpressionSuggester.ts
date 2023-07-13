@@ -1,7 +1,34 @@
-import _ from "lodash";
 import { ClassDefinition, TypingResult } from "../../../../../types";
 import HttpService from "../../../../../http/HttpService";
 import { ExpressionLang } from "./types";
+import {
+    concat,
+    dropWhile,
+    filter,
+    find,
+    first,
+    flatMap,
+    get,
+    has,
+    includes,
+    initial,
+    isEmpty,
+    isEqual,
+    keys,
+    last,
+    map,
+    mapKeys,
+    mapValues,
+    merge,
+    reduce,
+    some,
+    split,
+    startsWith,
+    sum,
+    tail,
+    take,
+    uniqWith,
+} from "lodash";
 
 // before indexer['last indexer key
 const INDEXER_REGEX = /^(.*)\['([^[]*)$/;
@@ -49,7 +76,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         private _processingType: string,
         private _httpService: Pick<typeof HttpService, "fetchDictLabelSuggestions">,
     ) {
-        this._variables = _.mapKeys(variables, (value, variableName) => {
+        this._variables = mapKeys(variables, (value, variableName) => {
             return `#${variableName}`;
         });
     }
@@ -68,13 +95,13 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
 
     _normalizeMultilineInputToSingleLine = (inputValue: string, caretPosition2d: CaretPosition2d): NormalizedInput => {
         const rows = inputValue?.split("\n") || [];
-        const trimmedRows = _.map(rows, (row) => {
-            const trimmedAtStartRow = _.dropWhile(row, (c) => c === " ").join("");
+        const trimmedRows = map(rows, (row) => {
+            const trimmedAtStartRow = dropWhile(row, (c) => c === " ").join("");
             return { trimmedAtStartRow: trimmedAtStartRow, trimmedCount: row.length - trimmedAtStartRow.length };
         });
-        const beforeCaretInputLength = _.sum(_.map(_.take(trimmedRows, caretPosition2d.row), (row) => row.trimmedAtStartRow.length));
+        const beforeCaretInputLength = sum(map(take(trimmedRows, caretPosition2d.row), (row) => row.trimmedAtStartRow.length));
         const normalizedCaretPosition = caretPosition2d.column - trimmedRows[caretPosition2d.row].trimmedCount + beforeCaretInputLength;
-        const normalizedInput = _.map(trimmedRows, (row) => row.trimmedAtStartRow).join("");
+        const normalizedInput = map(trimmedRows, (row) => row.trimmedAtStartRow).join("");
         return {
             normalizedInput: normalizedInput,
             normalizedCaretPosition: normalizedCaretPosition,
@@ -82,12 +109,12 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
     };
 
     _getSuggestions = (value: string, focusedClazz, variables: Record<string, any>): Promise<ExpressionSuggestion[]> => {
-        const variableNames = _.keys(variables);
-        const variableAlreadySelected = _.some(variableNames, (variable) => {
-            return _.includes(value, `${variable}.`) || _.includes(value, `${variable}['`);
+        const variableNames = keys(variables);
+        const variableAlreadySelected = some(variableNames, (variable) => {
+            return includes(value, `${variable}.`) || includes(value, `${variable}['`);
         });
-        const variableNotSelected = _.some(variableNames, (variable) => {
-            return _.startsWith(variable.toLowerCase(), value.toLowerCase());
+        const variableNotSelected = some(variableNames, (variable) => {
+            return startsWith(variable.toLowerCase(), value.toLowerCase());
         });
         if (variableAlreadySelected && focusedClazz) {
             const currentType = this._getTypeInfo(focusedClazz);
@@ -99,8 +126,8 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
             } else {
                 return this._getSuggestionsForDict(currentType.dict, inputValue);
             }
-        } else if (variableNotSelected && !_.isEmpty(value)) {
-            const allVariablesWithClazzRefs = _.map(variables, (val, key) => {
+        } else if (variableNotSelected && !isEmpty(value)) {
+            const allVariablesWithClazzRefs = map(variables, (val, key) => {
                 return { methodName: key, refClazz: val };
             });
             const result = this._filterSuggestionsForInput(allVariablesWithClazzRefs, value);
@@ -112,32 +139,32 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
 
     _getAllowedMethods(currentType) {
         if (currentType.union != null) {
-            const allMethods = _.flatMap(currentType.union, (subType) => this._getAllowedMethodsForClass(subType));
+            const allMethods = flatMap(currentType.union, (subType) => this._getAllowedMethodsForClass(subType));
             // TODO: compute union of extracted methods types
-            return _.uniqWith(allMethods, (typeA, typeB) => _.isEqual(typeA, typeB));
+            return uniqWith(allMethods, (typeA, typeB) => isEqual(typeA, typeB));
         } else {
             return this._getAllowedMethodsForClass(currentType);
         }
     }
 
     _getAllowedMethodsForClass(currentType) {
-        return _.map(currentType.methods, (val, key) => {
+        return map(currentType.methods, (val, key) => {
             return { ...val, methodName: key };
         });
     }
 
     _filterSuggestionsForInput = (variables, inputValue: string) => {
-        return _.filter(variables, (variable) => {
-            return _.includes(variable.methodName.toLowerCase(), inputValue.toLowerCase());
+        return filter(variables, (variable) => {
+            return includes(variable.methodName.toLowerCase(), inputValue.toLowerCase());
         });
     };
 
     _findRootClazz = (properties: string[], variables: Record<string, any>) => {
         const variableName = properties[0];
-        if (_.has(variables, variableName)) {
-            const variableClazzName = _.get(variables, variableName);
-            return _.reduce(
-                _.tail(properties),
+        if (has(variables, variableName)) {
+            const variableClazzName = get(variables, variableName);
+            return reduce(
+                tail(properties),
                 (currentParentClazz, prop) => {
                     const parentType = this._getTypeInfo(currentParentClazz);
                     return this._extractMethod(parentType, prop);
@@ -151,24 +178,24 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
 
     _extractMethod(type: TypingResult, prop: string) {
         if ("union" in type && type.union != null) {
-            const foundedTypes = _.filter(
-                _.map(type.union, (clazz) => this._extractMethodFromClass(clazz, prop)),
+            const foundedTypes = filter(
+                map(type.union, (clazz) => this._extractMethodFromClass(clazz, prop)),
                 (i) => i != null,
             );
             // TODO: compute union of extracted methods types
-            return _.first(foundedTypes) || { refClazzName: "" };
+            return first(foundedTypes) || { refClazzName: "" };
         } else {
             return this._extractMethodFromClass(type, prop) || { refClazzName: "" };
         }
     }
 
     _extractMethodFromClass(clazz, prop: string) {
-        return _.get(clazz.methods, `${prop}.refClazz`);
+        return get(clazz.methods, `${prop}.refClazz`);
     }
 
     _getTypeInfo = (type: TypingResult) => {
         if ("union" in type && type.union != null) {
-            const unionOfTypeInfos = _.map(type.union, (clazz) => this._getTypeInfoFromClass(clazz));
+            const unionOfTypeInfos = map(type.union, (clazz) => this._getTypeInfoFromClass(clazz));
             return {
                 union: unionOfTypeInfos,
             };
@@ -178,12 +205,12 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
     };
 
     _getTypeInfoFromClass = (clazz) => {
-        const methodsFromClass = _.mapValues(this._getMethodsFromGlobalTypeInfo(clazz), (m) => ({
+        const methodsFromClass = mapValues(this._getMethodsFromGlobalTypeInfo(clazz), (m) => ({
             ...m,
             fromClass: !!clazz.fields,
         }));
-        const methodsFromFields = _.mapValues(clazz.fields || [], (field) => ({ refClazz: field }));
-        const allMethods = _.merge(methodsFromFields, methodsFromClass);
+        const methodsFromFields = mapValues(clazz.fields || [], (field) => ({ refClazz: field }));
+        const allMethods = merge(methodsFromFields, methodsFromClass);
 
         return {
             ...clazz,
@@ -192,8 +219,8 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
     };
 
     _getMethodsFromGlobalTypeInfo = (clazz: TypingResult) => {
-        const foundData = _.find(this._typesInformation, { clazzName: { refClazzName: clazz.refClazzName } });
-        return !_.isEmpty(foundData) ? foundData.methods : [];
+        const foundData = find(this._typesInformation, { clazzName: { refClazzName: clazz.refClazzName } });
+        return !isEmpty(foundData) ? foundData.methods : [];
     };
 
     _focusedLastExpressionPartWithoutMethodParens = (expression: string, caretPosition: number) => {
@@ -215,7 +242,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         const valueCleaned = withoutNestedParenthesis.replace(/\(.*\)/, "");
         //handling ?. operator
         const withSafeNavigationIgnored = valueCleaned.replace(/\?\./g, ".");
-        return _.isEmpty(value) ? "" : `#${_.last(_.split(withSafeNavigationIgnored, "#"))}`;
+        return isEmpty(value) ? "" : `#${last(split(withSafeNavigationIgnored, "#"))}`;
     };
 
     _lastNonClosedParenthesisIndex = (value: string): number => {
@@ -230,11 +257,11 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
     };
 
     _justTypedProperty = (value: string): string => {
-        return _.last(this._dotSeparatedToProperties(value));
+        return last(this._dotSeparatedToProperties(value));
     };
 
     _alreadyTypedProperties = (value: string): string[] => {
-        return _.initial(this._dotSeparatedToProperties(value));
+        return initial(this._dotSeparatedToProperties(value));
     };
 
     _dotSeparatedToProperties = (value: string): string[] => {
@@ -243,21 +270,21 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
         if (indexerMatch) {
             return this._dotSeparatedToPropertiesIncludingLastIndexerKey(indexerMatch);
         } else {
-            return _.split(value, ".");
+            return split(value, ".");
         }
     };
 
     _dotSeparatedToPropertiesIncludingLastIndexerKey = (indexerMatch: RegExpMatchArray): string[] => {
         const beforeIndexer = indexerMatch[1];
         const indexerKey = indexerMatch[2];
-        const splittedProperties = _.split(beforeIndexer, ".");
-        return _.concat(splittedProperties, indexerKey);
+        const splittedProperties = split(beforeIndexer, ".");
+        return concat(splittedProperties, indexerKey);
     };
 
     _getAllVariables = (normalized: NormalizedInput): Record<string, any> => {
         const thisClazz = this._findProjectionOrSelectionRootClazz(normalized);
         const data = thisClazz ? { "#this": thisClazz } : {};
-        return _.merge(data, this._variables);
+        return merge(data, this._variables);
     };
 
     _findProjectionOrSelectionRootClazz = (normalized: NormalizedInput) => {
@@ -274,13 +301,13 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
 
     _getFirstParameterType = (typ) => {
         if ((typ || {}).union != null) {
-            const listOfFirstParams = _.filter(
-                _.map(typ.union, (element) => {
+            const listOfFirstParams = filter(
+                map(typ.union, (element) => {
                     return this._getFirstParameterType(element);
                 }),
                 (i) => i != null,
             );
-            if (_.isEmpty(listOfFirstParams)) {
+            if (isEmpty(listOfFirstParams)) {
                 return null;
             } else if (listOfFirstParams.length === 1) {
                 return listOfFirstParams[0];
@@ -320,7 +347,7 @@ export class RegexExpressionSuggester implements ExpressionSuggester {
 
     _getSuggestionsForDict = (typ, typedProperty): Promise<ExpressionSuggestion[]> => {
         return this._fetchDictLabelSuggestions(typ.id, typedProperty).then((result) =>
-            _.map(result.data, (entry) => {
+            map(result.data, (entry) => {
                 return {
                     methodName: entry.label,
                     refClazz: typ.valueType,
