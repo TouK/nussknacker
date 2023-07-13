@@ -19,16 +19,6 @@ object processdetails {
 
   val StateActions: List[ProcessActionType] = List(Cancel, Deploy, Pause)
 
-  sealed trait Process {
-    val lastAction: Option[ProcessAction]
-
-    def isDeployed: Boolean = !isNotDeployed && lastAction.exists(_.isDeployed)
-
-    def isCanceled: Boolean = !isNotDeployed && lastAction.exists(_.isCanceled)
-
-    def isNotDeployed: Boolean = lastAction.isEmpty
-  }
-
   object BasicProcess {
     def apply[ProcessShape](baseProcessDetails: BaseProcessDetails[ProcessShape]) = new BasicProcess(
       id = baseProcessDetails.id,
@@ -70,7 +60,7 @@ object processdetails {
                                      // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
                                      // After that it remains always defined.
                                      state: Option[ProcessState] = Option.empty
-                                    ) extends Process
+                                    )
 
   object BaseProcessDetails {
     //It's necessary to encode / decode ProcessState
@@ -104,7 +94,7 @@ object processdetails {
                                               // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
                                               // After that it remains always defined.
                                               state: Option[ProcessState] = Option.empty
-                                             ) extends Process {
+                                             ) {
     lazy val idWithName: ProcessIdWithName = ProcessIdWithName(processId, ProcessName(name))
 
     def mapProcess[NewShape](action: ProcessShape => NewShape): BaseProcessDetails[NewShape] = copy(json = action(json))
