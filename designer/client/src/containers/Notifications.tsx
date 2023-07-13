@@ -50,11 +50,7 @@ function handleRefresh(beNotification: BackendNotification, currentScenarioName,
     }
 }
 
-interface Props {
-    refreshTime?: number;
-}
-
-export function Notifications({ refreshTime = 2000 }: Props): JSX.Element {
+export function Notifications(): JSX.Element {
     const readNotifications = useSelector(getBackendNotifications);
     const reactNotifications = useSelector(getNotifications);
     const dispatch = useDispatch();
@@ -97,7 +93,7 @@ export function Notifications({ refreshTime = 2000 }: Props): JSX.Element {
             });
         });
     }, [currentScenarioName, dispatch, handleChangeConnectionError, reactNotifications, readNotifications.processedNotificationIds]);
-    useInterval(refresh, { refreshTime, ignoreFirst: true });
+    useInterval(refresh, { refreshTime: 2000, ignoreFirst: true });
 
     //noAnimation=false breaks onRemove somehow :/
     return <ReactNotifications notifications={reactNotifications} style={false} noAnimation={true} />;
