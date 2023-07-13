@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import React, { CSSProperties, MouseEventHandler, PropsWithChildren, useCallback, useState } from "react";
+import React, { CSSProperties, MouseEventHandler, PropsWithChildren, ReactNode, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 
 import Select from "react-select";
@@ -112,9 +112,9 @@ const Blanket = ({ onClick }: { onClick: MouseEventHandler }) =>
     );
 
 interface DropdownProps {
-    children: unknown;
-    isOpen: unknown;
-    target: unknown;
+    children: ReactNode;
+    isOpen: boolean;
+    target: ReactNode;
     onClose: MouseEventHandler;
     style: CSSProperties;
 }

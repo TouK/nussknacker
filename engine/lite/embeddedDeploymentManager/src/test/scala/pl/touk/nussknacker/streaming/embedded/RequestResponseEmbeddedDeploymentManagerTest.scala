@@ -90,7 +90,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
     fixture.deployScenario(scenario)
 
     eventually {
-      manager.getProcessState(name).futureValue.value.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
     }
 
     request.body("""{ productId: 15 }""").send(backend).body shouldBe Right("""{"transformed":15}""")
@@ -101,7 +101,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
 
     manager.cancel(name, User("a", "b")).futureValue
 
-    manager.getProcessState(name).futureValue.value shouldBe None
+    manager.getProcessStates(name).futureValue.value shouldBe List.empty
     request.body("""{ productId: 15 }""").send(backend).code shouldBe StatusCode.NotFound
   }
 

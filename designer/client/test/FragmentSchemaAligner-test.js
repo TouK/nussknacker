@@ -1,5 +1,5 @@
 import * as FragmentSchemaAligner from "../src/components/graph/FragmentSchemaAligner";
-import _ from "lodash";
+import { omit } from "lodash";
 
 const fragmentProcessDefinitionData = {
     componentGroups: [
@@ -48,7 +48,7 @@ describe("fragment schema aligner test", () => {
             { name: "param1", expression: { language: "spel", expression: "''" } },
             { name: "param2", expression: { language: "spel", expression: "'cde'" } },
         ]);
-        expect(_.omit(alignedFragment, "ref")).toEqual(_.omit(fragmentNode, "ref"));
+        expect(omit(alignedFragment, "ref")).toEqual(omit(fragmentNode, "ref"));
     });
 
     it("should not change anything if fragment is valid with schema", () => {

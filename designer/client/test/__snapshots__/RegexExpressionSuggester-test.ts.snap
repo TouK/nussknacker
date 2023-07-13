@@ -1,11 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`expression suggester handles negated parameters with projections and selections 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -14,10 +14,10 @@ Array [
 `;
 
 exports[`expression suggester should filter global variables suggestions 1`] = `
-Array [
-  Object {
+[
+  {
     "methodName": "#other",
-    "refClazz": Object {
+    "refClazz": {
       "display": "C",
       "refClazzName": "org.C",
     },
@@ -26,10 +26,10 @@ Array [
 `;
 
 exports[`expression suggester should filter uppercase global variables suggestions 1`] = `
-Array [
-  Object {
+[
+  {
     "methodName": "#ANOTHER",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
@@ -37,16 +37,16 @@ Array [
 ]
 `;
 
-exports[`expression suggester should not suggest anything for empty input 1`] = `Array []`;
+exports[`expression suggester should not suggest anything for empty input 1`] = `[]`;
 
-exports[`expression suggester should not suggest anything if suggestion already applied with space at the end 1`] = `Array []`;
+exports[`expression suggester should not suggest anything if suggestion already applied with space at the end 1`] = `[]`;
 
 exports[`expression suggester should omit whitespace formatting in suggest for multiline code #1 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "barB",
-    "refClazz": Object {
+    "refClazz": {
       "display": "B",
       "refClazzName": "org.B",
     },
@@ -55,11 +55,11 @@ Array [
 `;
 
 exports[`expression suggester should omit whitespace formatting in suggest for multiline code #2 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "bazC",
-    "refClazz": Object {
+    "refClazz": {
       "display": "C",
       "refClazzName": "org.C",
     },
@@ -68,11 +68,11 @@ Array [
 `;
 
 exports[`expression suggester should omit whitespace formatting in suggest for multiline code #3 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "barB",
-    "refClazz": Object {
+    "refClazz": {
       "display": "B",
       "refClazzName": "org.B",
     },
@@ -81,11 +81,11 @@ Array [
 `;
 
 exports[`expression suggester should omit whitespace formatting in suggest for multiline code #4 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "bazC",
-    "refClazz": Object {
+    "refClazz": {
       "display": "C",
       "refClazzName": "org.C",
     },
@@ -94,11 +94,11 @@ Array [
 `;
 
 exports[`expression suggester should omit whitespace formatting in suggest for multiline code #5 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "toUpperCase",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -107,11 +107,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest #this fields in projection after selection 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -120,11 +120,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest #this fields in projection on union of lists 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -133,11 +133,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest #this fields in simple projection 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -146,38 +146,38 @@ Array [
 `;
 
 exports[`expression suggester should suggest all global variables if # specified (multiline) 1`] = `
-Array [
-  Object {
+[
+  {
     "methodName": "#input",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
   },
-  Object {
+  {
     "methodName": "#other",
-    "refClazz": Object {
+    "refClazz": {
       "display": "C",
       "refClazzName": "org.C",
     },
   },
-  Object {
+  {
     "methodName": "#ANOTHER",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
   },
-  Object {
+  {
     "methodName": "#dynamicMap",
-    "refClazz": Object {
+    "refClazz": {
       "display": "Map",
-      "fields": Object {
-        "aField": Object {
+      "fields": {
+        "aField": {
           "display": "A",
           "refClazzName": "org.A",
         },
-        "intField": Object {
+        "intField": {
           "display": "Integer",
           "refClazzName": "java.lang.Integer",
         },
@@ -185,55 +185,55 @@ Array [
       "refClazzName": "java.util.Map",
     },
   },
-  Object {
+  {
     "methodName": "#listVar",
-    "refClazz": Object {
+    "refClazz": {
       "display": "WithList",
       "refClazzName": "org.WithList",
     },
   },
-  Object {
+  {
     "methodName": "#util",
-    "refClazz": Object {
+    "refClazz": {
       "display": "Util",
       "refClazzName": "org.Util",
     },
   },
-  Object {
+  {
     "methodName": "#union",
-    "refClazz": Object {
-      "union": Array [
-        Object {
+    "refClazz": {
+      "union": [
+        {
           "display": "A",
           "refClazzName": "org.A",
         },
-        Object {
+        {
           "display": "B",
           "refClazzName": "org.B",
         },
-        Object {
+        {
           "display": "AA",
           "refClazzName": "org.AA",
         },
       ],
     },
   },
-  Object {
+  {
     "methodName": "#unionOfLists",
-    "refClazz": Object {
-      "union": Array [
-        Object {
-          "params": Array [
-            Object {
+    "refClazz": {
+      "union": [
+        {
+          "params": [
+            {
               "display": "A",
               "refClazzName": "org.A",
             },
           ],
           "refClazz": "java.util.List",
         },
-        Object {
-          "params": Array [
-            Object {
+        {
+          "params": [
+            {
               "display": "B",
               "refClazzName": "org.B",
             },
@@ -243,12 +243,12 @@ Array [
       ],
     },
   },
-  Object {
+  {
     "methodName": "#dict",
-    "refClazz": Object {
-      "dict": Object {
+    "refClazz": {
+      "dict": {
         "id": "fooDict",
-        "valueType": Object {
+        "valueType": {
           "display": "A",
           "refClazzName": "org.A",
         },
@@ -259,38 +259,38 @@ Array [
 `;
 
 exports[`expression suggester should suggest all global variables if # specified 1`] = `
-Array [
-  Object {
+[
+  {
     "methodName": "#input",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
   },
-  Object {
+  {
     "methodName": "#other",
-    "refClazz": Object {
+    "refClazz": {
       "display": "C",
       "refClazzName": "org.C",
     },
   },
-  Object {
+  {
     "methodName": "#ANOTHER",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
   },
-  Object {
+  {
     "methodName": "#dynamicMap",
-    "refClazz": Object {
+    "refClazz": {
       "display": "Map",
-      "fields": Object {
-        "aField": Object {
+      "fields": {
+        "aField": {
           "display": "A",
           "refClazzName": "org.A",
         },
-        "intField": Object {
+        "intField": {
           "display": "Integer",
           "refClazzName": "java.lang.Integer",
         },
@@ -298,55 +298,55 @@ Array [
       "refClazzName": "java.util.Map",
     },
   },
-  Object {
+  {
     "methodName": "#listVar",
-    "refClazz": Object {
+    "refClazz": {
       "display": "WithList",
       "refClazzName": "org.WithList",
     },
   },
-  Object {
+  {
     "methodName": "#util",
-    "refClazz": Object {
+    "refClazz": {
       "display": "Util",
       "refClazzName": "org.Util",
     },
   },
-  Object {
+  {
     "methodName": "#union",
-    "refClazz": Object {
-      "union": Array [
-        Object {
+    "refClazz": {
+      "union": [
+        {
           "display": "A",
           "refClazzName": "org.A",
         },
-        Object {
+        {
           "display": "B",
           "refClazzName": "org.B",
         },
-        Object {
+        {
           "display": "AA",
           "refClazzName": "org.AA",
         },
       ],
     },
   },
-  Object {
+  {
     "methodName": "#unionOfLists",
-    "refClazz": Object {
-      "union": Array [
-        Object {
-          "params": Array [
-            Object {
+    "refClazz": {
+      "union": [
+        {
+          "params": [
+            {
               "display": "A",
               "refClazzName": "org.A",
             },
           ],
           "refClazz": "java.util.List",
         },
-        Object {
-          "params": Array [
-            Object {
+        {
+          "params": [
+            {
               "display": "B",
               "refClazzName": "org.B",
             },
@@ -356,12 +356,12 @@ Array [
       ],
     },
   },
-  Object {
+  {
     "methodName": "#dict",
-    "refClazz": Object {
-      "dict": Object {
+    "refClazz": {
+      "dict": {
         "id": "fooDict",
-        "valueType": Object {
+        "valueType": {
           "display": "A",
           "refClazzName": "org.A",
         },
@@ -372,19 +372,19 @@ Array [
 `;
 
 exports[`expression suggester should suggest dict variable methods 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "One",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
   },
-  Object {
+  {
     "fromClass": false,
     "methodName": "Two",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
@@ -393,11 +393,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest dict variable methods using indexer syntax 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
@@ -406,11 +406,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest dict variable methods using indexer syntax 2`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
@@ -419,11 +419,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest dict variable methods using indexer syntax 3`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
@@ -432,11 +432,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest dict variable methods using indexer syntax 4`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "Sentence with spaces and . dots",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
@@ -445,11 +445,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest embedded field in typed map 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -458,10 +458,10 @@ Array [
 `;
 
 exports[`expression suggester should suggest field in typed map 1`] = `
-Array [
-  Object {
+[
+  {
     "methodName": "intField",
-    "refClazz": Object {
+    "refClazz": {
       "display": "Integer",
       "refClazzName": "java.lang.Integer",
     },
@@ -470,11 +470,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest filtered global variable methods 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -483,11 +483,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest filtered global variable methods based not on beginning of the method 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -496,11 +496,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest for invocations with method parameters #1 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "quaxString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -509,11 +509,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest for invocations with method parameters #2 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "quaxString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -522,11 +522,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest for multiline code #1 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -535,11 +535,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest for multiline code #2 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "bazC",
-    "refClazz": Object {
+    "refClazz": {
       "display": "C",
       "refClazzName": "org.C",
     },
@@ -548,11 +548,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest for multiline code #3 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "barB",
-    "refClazz": Object {
+    "refClazz": {
       "display": "B",
       "refClazzName": "org.B",
     },
@@ -561,10 +561,10 @@ Array [
 `;
 
 exports[`expression suggester should suggest global variable 1`] = `
-Array [
-  Object {
+[
+  {
     "methodName": "#input",
-    "refClazz": Object {
+    "refClazz": {
       "display": "A",
       "refClazzName": "org.A",
     },
@@ -573,19 +573,19 @@ Array [
 `;
 
 exports[`expression suggester should suggest global variable methods 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
-  Object {
+  {
     "fromClass": false,
     "methodName": "barB",
-    "refClazz": Object {
+    "refClazz": {
       "display": "B",
       "refClazzName": "org.B",
     },
@@ -594,11 +594,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest in complex expression #1 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -607,11 +607,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest in complex expression #2 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "quaxString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -620,11 +620,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest in complex expression #3 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "toUpperCase",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -633,11 +633,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest methods for object returned from method 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "quaxString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -646,11 +646,11 @@ Array [
 `;
 
 exports[`expression suggester should suggest methods for object returned from method from union objects 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "quaxString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -659,35 +659,35 @@ Array [
 `;
 
 exports[`expression suggester should suggest methods for union objects 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "fooString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
   },
-  Object {
+  {
     "fromClass": false,
     "methodName": "barB",
-    "refClazz": Object {
+    "refClazz": {
       "display": "B",
       "refClazzName": "org.B",
     },
   },
-  Object {
+  {
     "fromClass": false,
     "methodName": "bazC",
-    "refClazz": Object {
+    "refClazz": {
       "display": "C",
       "refClazzName": "org.C",
     },
   },
-  Object {
+  {
     "fromClass": false,
     "methodName": "barB",
-    "refClazz": Object {
+    "refClazz": {
       "display": "C",
       "refClazzName": "org.C",
     },
@@ -696,11 +696,11 @@ Array [
 `;
 
 exports[`expression suggester should support nested method invocations 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "toUpperCase",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },
@@ -709,11 +709,11 @@ Array [
 `;
 
 exports[`expression suggester should support safe navigation 1`] = `
-Array [
-  Object {
+[
+  {
     "fromClass": false,
     "methodName": "quaxString",
-    "refClazz": Object {
+    "refClazz": {
       "display": "String",
       "refClazzName": "java.lang.String",
     },

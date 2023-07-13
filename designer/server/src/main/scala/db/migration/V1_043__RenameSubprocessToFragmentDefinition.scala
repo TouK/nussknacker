@@ -17,7 +17,9 @@ object V1_043__RenameSubprocessToFragmentDefinition {
   private val newProperty = "fragmentParams"
 
   private[migration] def updateProcessJson(jsonProcess: Json): Option[Json] = {
-    Option(updateField(jsonProcess, "nodes", updateCanonicalNodes))
+    val updatedNodes = updateField(jsonProcess, "nodes", updateCanonicalNodes)
+    val updateAdditionalBranches = updateField(updatedNodes, "additionalBranches", array => updateNodes(array, updateCanonicalNodes))
+    Option(updateAdditionalBranches)
   }
 
   private def updateCanonicalNodes(array: Json): Json = {

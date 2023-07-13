@@ -59,7 +59,8 @@
                     "classNamePrefix"
                 ]
             }
-        ]
+        ],
+        "react/prop-types": "off"
     },
     "overrides": [
         {
@@ -79,6 +80,6 @@
             "parserOptions": {
                 "project": "cypress/tsconfig.json"
             }
-        }
+        },
     ]
 }

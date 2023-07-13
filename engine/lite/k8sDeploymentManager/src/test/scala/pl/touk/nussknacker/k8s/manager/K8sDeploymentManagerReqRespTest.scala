@@ -138,9 +138,9 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
         // It can take a while on CI :/
         f.manager.deploy(secondVersionInfo, DeploymentData.empty, preparePingPongScenario(givenScenarioName, secondVersion), None).futureValue
         eventually {
-          val state = f.manager.getFreshProcessState(secondVersionInfo.processName).futureValue
-          state.flatMap(_.version).map(_.versionId.value).value shouldBe secondVersion
-          state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+          val state = f.manager.getFreshProcessStates(secondVersionInfo.processName).futureValue
+          state.flatMap(_.version).map(_.versionId.value) shouldBe List(secondVersion)
+          state.map(_.status) shouldBe List(SimpleStateStatus.Running)
         }
         val versionsAfterRedeploy = checkVersions()
         versionsAfterRedeploy shouldEqual Set(secondVersion)

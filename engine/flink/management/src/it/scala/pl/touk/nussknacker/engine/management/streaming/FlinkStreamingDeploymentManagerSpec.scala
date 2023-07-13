@@ -33,7 +33,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     deployProcessAndWaitIfRunning(process, version)
     try {
-      processVersion(ProcessName(processName)) shouldBe Some(version)
+      processVersion(ProcessName(processName)) shouldBe List(version)
     } finally {
       cancelProcess(processName)
     }
@@ -142,8 +142,8 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
       val savepointPath = deploymentManager.stop(ProcessName(processId), savepointDir = None, user = userToAct).map(_.path)
       eventually {
-        val status = deploymentManager.getProcessState(ProcessName(processId)).futureValue
-        status.value.map(_.status) shouldBe Some(SimpleStateStatus.Finished)
+        val status = deploymentManager.getProcessStates(ProcessName(processId)).futureValue
+        status.value.map(_.status) shouldBe List(SimpleStateStatus.Finished)
       }
 
       deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
@@ -211,6 +211,6 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       .take(count).toList
   }
 
-  private def processVersion(processId: ProcessName): Option[ProcessVersion] =
-    deploymentManager.getProcessState(processId).futureValue.value.flatMap(_.version)
+  private def processVersion(processId: ProcessName): List[ProcessVersion] =
+    deploymentManager.getProcessStates(processId).futureValue.value.flatMap(_.version)
 }

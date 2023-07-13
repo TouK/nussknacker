@@ -14,18 +14,18 @@ import scala.concurrent.Future
 trait DeploymentManagerInconsistentStateHandlerMixIn {
   self: DeploymentManager =>
   final override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
-    getProcessState(name).map(_.map(statusDetailsOpt => {
-      val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetailsOpt)
+    getProcessStates(name).map(_.map(statusDetails => {
+      val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetails)
       processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
     }))
 
   // This method is protected to make possible to override it with own logic handling different edge cases like
   // other state on engine than based on lastStateAction
-  protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetailsOpt: Option[StatusDetails]): StatusDetails = {
-    InconsistentStateDetector.resolve(statusDetailsOpt, lastStateAction)
+  protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetails: List[StatusDetails]): StatusDetails = {
+    InconsistentStateDetector.resolve(statusDetails, lastStateAction)
   }
-}
 
+}
 
 trait DeploymentManager extends AutoCloseable {
 
@@ -40,14 +40,12 @@ trait DeploymentManager extends AutoCloseable {
     */
   def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
+  // TODO: add cancel for given deployment id
   def cancel(name: ProcessName, user: User): Future[Unit]
 
   def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]]
 
-  /**
-    * Gets status from the engine
-    */
-  def getProcessState(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]]
+  def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]]
 
   /**
     * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
@@ -72,16 +70,15 @@ trait DeploymentManager extends AutoCloseable {
 // See comments in FlinkDeploymentManager
 trait PostprocessingProcessStatus { self: DeploymentManager =>
 
-  def postprocess(name: ProcessName, statusDetailsOpt: Option[StatusDetails]): Future[Option[ProcessAction]]
+  def postprocess(name: ProcessName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]]
 
 }
 
 trait AlwaysFreshProcessState { self: DeploymentManager =>
 
-  final override def getProcessState(name: ProcessName)
-                                    (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[Option[StatusDetails]]] =
-    getFreshProcessState(name).map(WithDataFreshnessStatus(_, cached = false))
+  final override def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
+    getFreshProcessStates(name).map(WithDataFreshnessStatus(_, cached = false))
 
-  protected def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]]
+  protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]]
 
 }

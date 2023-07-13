@@ -3,11 +3,25 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.11.0
+## In version 1.11.0 (Not released yet)
+
+### Code API changes
+* [#4295](https://github.com/TouK/nussknacker/pull/4295) `DeploymentManager.getProcessState(ProcessName)`
+  method now returns `List[StatusDetails]` instead of `Option[StatusDetails]`. If you are a consumer of this API and want
+  to have the same behavior as previously, you can use `InconsistentStateDetector.extractAtMostOneStatus` method for that.
+  Notice, that in the future visibility of this method may be changed into private.
+* [#4462](https://github.com/TouK/nussknacker/pull/4462) `StatusDetails.deploymentId` field changed type into`Option[DeploymentId]`.
+  It contains, internal designer's deployment id. It is used to assign deployment on runtime side with deployment action 
+  on designer side in periodic DM for purpose of correct status synchronization. If you want to make it filled, 
+  you should pass the correct value in `DeploymentData.deploymentId`. Current value of `deploymentId: Option[ExternalDeploymentId]`
+  was moved into `externalDeploymentId` field. `ProcessAction` has a new field - `id`. 
+  `ProcessStateDefinitionManager.processState` variant of methods with multiple parameters was removed - you should
+  use `ProcessStateDefinitionManager.processState(StatusDetails)` variant instead.
 
 ### REST API changes
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility).
   * `isSubprocess` query parameter is renamed to `isFragment`. `isSubprocess` will be removed in 1.12.0
+* [#4462](https://github.com/TouK/nussknacker/pull/4462) Process state API returns `externalDeploymentId` instead of `deploymentId`.
 
 ## In version 1.10.0
 

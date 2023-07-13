@@ -146,7 +146,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
     const expressionSuggester = useMemo(() => {
         // TODO: backend suggestions does not work well with SQL, so we use old regex suggestions
         if (backendCodeSuggestions && language != ExpressionLang.SQL) {
-            return new BackendExpressionSuggester(id, typesInformation, variableTypes, processingType, HttpService);
+            return new BackendExpressionSuggester(language, id, typesInformation, variableTypes, processingType, HttpService);
         } else {
             return new RegexExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);
         }

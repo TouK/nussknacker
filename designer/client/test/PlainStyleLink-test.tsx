@@ -1,9 +1,10 @@
-import Adapter from "@wojtekmaj/enzyme-adapter-react-17";
-import Enzyme, { mount } from "enzyme";
+//TODO: Temporary disable ts-check because of "TS1259: Module '"/Users/dawidpoliszak/Documents/repo/nussknacker/designer/client/node_modules/@types/react/ts5.0/index"' can only be default-imported using the 'esModuleInterop' flag" error
+// @ts-ignore
 import React from "react";
 import { MemoryRouter } from "react-router";
 import { isExternalUrl, PlainStyleLink } from "../src/containers/plainStyleLink";
-import { describe, expect } from "@jest/globals";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "@jest/globals";
 
 const Link = (props) => (
     <MemoryRouter>
@@ -12,8 +13,6 @@ const Link = (props) => (
 );
 
 describe("PlainStyleLink", () => {
-    Enzyme.configure({ adapter: new Adapter() });
-
     describe("isExternalUrl", () => {
         it("should pass http://", () => {
             expect(isExternalUrl("http://google.com")).toBeTruthy();
@@ -38,25 +37,19 @@ describe("PlainStyleLink", () => {
         });
     });
 
-    it("should support http://", () => {
-        expect(mount(<Link to={"http://google.com"} />).html()).toMatchSnapshot();
-    });
-    it("should support https://", () => {
-        expect(mount(<Link to={"https://google.com"} />).html()).toMatchSnapshot();
-    });
-    it("should support //", () => {
-        expect(mount(<Link to={"//google.com"} />).html()).toMatchSnapshot();
-    });
-    it("should support /", () => {
-        expect(mount(<Link to={"/google"} />).html()).toMatchSnapshot();
-    });
-    it("should suport ?", () => {
-        expect(mount(<Link to={"?google"} />).html()).toMatchSnapshot();
-    });
-    it("should support #", () => {
-        expect(mount(<Link to={"#google"} />).html()).toMatchSnapshot();
-    });
-    it("should support plain string", () => {
-        expect(mount(<Link to={"google"} />).html()).toMatchSnapshot();
+    it.each([
+        ["http://", "http://google.com", "http://google.com"],
+        ["https://", "https://google.com", "https://google.com"],
+        ["//", "//google", "//google"],
+        ["/", "/google", "/google"],
+        ["?", "?google", "/?google"],
+        ["#", "#google", "/#google"],
+        ["plain string", "google", "/google"],
+    ])("should support %s", (_, to, expected) => {
+        const { container } = render(<Link to={to} />);
+
+        //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
+        // @ts-ignore
+        expect(screen.getByRole("link")).toHaveAttribute("href", expected);
     });
 });

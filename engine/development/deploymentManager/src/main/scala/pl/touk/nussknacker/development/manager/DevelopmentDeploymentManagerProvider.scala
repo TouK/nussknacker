@@ -52,8 +52,9 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private val random = new scala.util.Random()
 
   implicit private class ProcessStateExpandable(processState: StatusDetails) {
-    def withStateStatus(stateStatus: StateStatus): StatusDetails =
-      StatusDetails(stateStatus, processState.deploymentId, processState.version, Some(System.currentTimeMillis()))
+    def withStateStatus(stateStatus: StateStatus): StatusDetails = {
+      StatusDetails(stateStatus, processState.deploymentId, processState.externalDeploymentId, processState.version, Some(System.currentTimeMillis()))
+    }
   }
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
@@ -83,7 +84,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
             case None => changeState(processVersion.processName, NotDeployed)
           }
         } else {
-          result.complete(Success(duringDeployStateStatus.deploymentId))
+          result.complete(Success(duringDeployStateStatus.externalDeploymentId))
           asyncChangeState(processVersion.processName, Running)
         }
       }
@@ -109,8 +110,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
-  override def getFreshProcessState(name: ProcessName): Future[Option[StatusDetails]] =
-    Future.successful(memory.get(name))
+  override protected def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] =
+    Future.successful(memory.get(name).toList)
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
     Future.successful(SavepointResult(""))
@@ -164,6 +165,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private def createAndSaveProcessState(stateStatus: StateStatus, processVersion: ProcessVersion): StatusDetails = {
     val processState = StatusDetails(
       stateStatus,
+      None,
       Some(ExternalDeploymentId(UUID.randomUUID().toString)),
       version = Some(processVersion),
       startTime = Some(System.currentTimeMillis()),

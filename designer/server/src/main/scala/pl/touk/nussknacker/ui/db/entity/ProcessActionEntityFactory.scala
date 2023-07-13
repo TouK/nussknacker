@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionId, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 
 import java.sql.Timestamp
 import java.time.Instant
-import java.util.UUID
 
 trait ProcessActionEntityFactory extends BaseEntityFactory {
 
@@ -75,8 +74,4 @@ case class ProcessActionEntityData(id: ProcessActionId,
 
   lazy val performedAtTime: Option[Instant] = performedAt.map(_.toInstant)
   lazy val isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
-}
-
-final case class ProcessActionId(value: UUID) {
-  override def toString: String = value.toString
 }

@@ -10,7 +10,7 @@ function HighlightTag({ children }: PropsWithChildren<unknown>): JSX.Element {
     );
 }
 
-export function Highlight({ value, filterText }: { value: string; filterText: string }): JSX.Element {
+export function Highlight({ value, filterText }: { value?: string; filterText: string }): JSX.Element {
     return (
         <Highlighter
             autoEscape

@@ -35,19 +35,28 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
       case duplicates => Some(
         StatusDetails(
           ProblemStateStatus.MultipleJobsRunning,
+          None,
           errors = List(s"Expected one deployment, instead: ${duplicates.map(_.metadata.name).mkString(", ")}")
         )
       )
     }
   }
 
-  private def status(deployment: Deployment, pods: List[Pod]): StatusDetails = {
+  private[manager] def status(deployment: Deployment, pods: List[Pod]): StatusDetails = {
     val (status, attrs, errors) = deployment.status match {
       case None => (SimpleStateStatus.DuringDeploy, None, Nil)
       case Some(status) => mapStatusWithPods(status, pods)
     }
     val startTime = deployment.metadata.creationTimestamp.map(_.toInstant.toEpochMilli)
-    StatusDetails(status, None, parseVersionAnnotation(deployment), startTime, attrs, errors)
+    StatusDetails(
+      status,
+      // TODO: return internal deploymentId, probably computed based on some hash to make sure that it will change only when something in scenario change
+      None,
+      None,
+      parseVersionAnnotation(deployment),
+      startTime,
+      attrs,
+      errors)
   }
 
   //TODO: should we add responses to status attributes?

@@ -13,7 +13,9 @@ module.exports = {
     moduleNameMapper: {
         "\\.(css|less|scss|sss|styl)$": "<rootDir>/node_modules/jest-css-modules",
         "\\.(svg)$": "<rootDir>/__mocks__/svgComponentMock",
+        uuid: require.resolve("uuid"),
     },
     testMatch: ["**/*test.[tj]s?(x)"],
     snapshotSerializers: ["@emotion/jest/serializer"],
+    setupFilesAfterEnv: ["<rootDir>/jest-setup.js"],
 };

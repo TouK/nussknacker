@@ -1,4 +1,4 @@
-import _, { concat, differenceWith, intersectionWith, zip } from "lodash";
+import { chain, concat, differenceWith, intersectionWith, zip } from "lodash";
 import React, { useEffect } from "react";
 import { NodeType, Parameter, ProcessDefinitionData } from "../../../types";
 
@@ -28,9 +28,10 @@ export default function ParameterList({
     setNodeState,
 }: ParameterListProps) {
     const nodeDefinitionByName = (node) =>
-        _(processDefinitionData.componentGroups)
+        chain(processDefinitionData.componentGroups)
             ?.flatMap((c) => c.components)
-            ?.find((n) => n.node.type === node.type && n.label === node.ref.id)?.node;
+            ?.find((n) => n.node.type === node.type && n.label === node.ref.id)
+            ?.value()?.node;
     const nodeId = savedNode.id;
     const savedParameters = nodeDefinitionParameters(savedNode);
     const definitionParameters = nodeDefinitionParameters(nodeDefinitionByName(savedNode));

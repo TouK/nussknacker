@@ -8,7 +8,7 @@ import PropertiesSvg from "../../../assets/img/properties.svg";
 import ReactDOM from "react-dom";
 import { InlineSvg } from "../../SvgDiv";
 
-let preloadedIndex = 0
+let preloadedIndex = 0;
 const preloadBeImage = memoize((src: string): string | null => {
     if (!src) {
         return null;
@@ -40,7 +40,7 @@ export const getComponentIconSrc: {
     return null;
 };
 
-interface Created extends ComponentIconParops {
+interface Created extends ComponentIconProps {
     processDefinition: ProcessDefinitionData;
 }
 
@@ -74,12 +74,12 @@ class Icon extends React.Component<Created> {
     }
 }
 
-interface ComponentIconParops {
+interface ComponentIconProps {
     node: NodeType;
     className?: string;
 }
 
-export const ComponentIcon = (props: ComponentIconParops) => {
+export const ComponentIcon = (props: ComponentIconProps) => {
     const processDefinitionData = useSelector(getProcessDefinitionData);
     return <Icon {...props} processDefinition={processDefinitionData} />;
 };

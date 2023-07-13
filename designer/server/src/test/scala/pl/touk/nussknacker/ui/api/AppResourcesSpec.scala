@@ -11,7 +11,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus, StatusDetails}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.version.BuildInfo
@@ -33,7 +33,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
   }
 
   private def processStatus(status: StateStatus): ProcessState =
-    SimpleProcessStateDefinitionManager.processState(status)
+    SimpleProcessStateDefinitionManager.processState(StatusDetails(status, None))
 
   private def prepareBasicAppResources(statuses: Map[ProcessName, StateStatus], withConfigExposed: Boolean = true) = {
     val deploymentService = new StubDeploymentService(statuses.mapValuesNow(processStatus))

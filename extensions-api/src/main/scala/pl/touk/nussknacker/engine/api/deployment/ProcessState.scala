@@ -4,7 +4,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.StateStatus.StatusName
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 
 import java.net.URI
 
@@ -22,7 +22,7 @@ import java.net.URI
   * @param tooltip Message displayed when mouse is hoovering over an icon (both scenarios and diagram panel).
   *                May contain longer, detailed status description.
   */
-@JsonCodec case class ProcessState(deploymentId: Option[ExternalDeploymentId],
+@JsonCodec case class ProcessState(externalDeploymentId: Option[ExternalDeploymentId],
                                    status: StateStatus,
                                    version: Option[ProcessVersion],
                                    allowedActions: List[ProcessActionType],
@@ -65,7 +65,8 @@ case class NoAttributesStateStatus(name: StatusName) extends StateStatus {
 }
 
 case class StatusDetails(status: StateStatus,
-                         deploymentId: Option[ExternalDeploymentId] = None,
+                         deploymentId: Option[DeploymentId],
+                         externalDeploymentId: Option[ExternalDeploymentId] = None,
                          version: Option[ProcessVersion] = None,
                          startTime: Option[Long] = None,
                          attributes: Option[Json] = None,

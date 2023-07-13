@@ -8,7 +8,7 @@ interface ImageWithFallbackProps extends DetailedHTMLProps<ImgHTMLAttributes<HTM
     FallbackComponent?: ComponentType;
 }
 
-function ImageWithFallback({ src, FallbackComponent, ...props }: PropsWithChildren<ImageWithFallbackProps>): JSX.Element {
+function ImageWithFallback({ src, FallbackComponent, ...props }: ImageWithFallbackProps): JSX.Element {
     const [error, setError] = useState(() => !src);
 
     useEffect(() => {

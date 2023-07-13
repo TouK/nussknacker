@@ -10,7 +10,7 @@ import { RootState } from "../reducers";
 import Date from "./common/Date";
 import { FocusOutline, InputWithFocus } from "./withFocus";
 import { getCapabilities } from "../reducers/selectors/other";
-import { addAttachment } from "../actions/nk/process";
+import { addAttachment } from "../actions/nk";
 import { getProcessId, getProcessVersionId } from "../reducers/selectors/graph";
 import { Attachment } from "../reducers/processActivity";
 
