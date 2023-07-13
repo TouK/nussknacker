@@ -45,6 +45,7 @@ trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
  */
 trait TestWithParametersSupport[+T] { self: Source =>
   //TODO add support for dynamic parameters
+  val canBeTestWithForm: Boolean = true
   def testParametersDefinition: List[Parameter]
   def parametersToTestData(params: Map[String, AnyRef]): T
 }

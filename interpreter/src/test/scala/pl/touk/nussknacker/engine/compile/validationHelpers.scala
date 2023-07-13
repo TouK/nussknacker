@@ -284,6 +284,21 @@ object validationHelpers {
     }
   }
 
+  class SourceWithTestParametersButDisabled extends GenericParametersSource {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source = {
+      new Source with SourceTestSupport[String] with TestWithParametersSupport[String] {
+
+        override val canBeTestWithForm: Boolean = false
+
+        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+
+        override def testParametersDefinition: List[Parameter] = Nil
+
+        override def parametersToTestData(params: Map[String, AnyRef]): String = ""
+      }
+    }
+  }
+
 
   object GenericParametersSink extends SinkFactory with GenericParameters[Sink] {
     protected def outputParameters(context: ValidationContext, dependencies: List[NodeDependencyValue], rest: List[(String, BaseDefinedParameter)])(implicit nodeId: NodeId): this.FinalResults = {

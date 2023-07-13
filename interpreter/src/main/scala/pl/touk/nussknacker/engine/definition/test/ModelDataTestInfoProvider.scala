@@ -40,9 +40,16 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       sourceObj <- prepareSourceObj(source)(metaData)
       canTest = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
-      canTestWithForm = sourceObj.isInstanceOf[TestWithParametersSupport[_]]
+      canTestWithForm = getTestWithFormCapability(sourceObj)
     } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData, canTestWithForm = canTestWithForm)
     testingCapabilities.getOrElse(TestingCapabilities.Disabled)
+  }
+
+  private def getTestWithFormCapability(source: process.Source): Boolean = {
+    source match {
+      case s: TestWithParametersSupport[_] => s.canBeTestWithForm
+      case _ => false
+    }
   }
 
   override def getTestParameters(scenario: CanonicalProcess): Map[String, List[Parameter]] = modelData.withThisAsContextClassLoader {

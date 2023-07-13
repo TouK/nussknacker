@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.test.{ScenarioTestJsonRecord, TestData, Te
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, StreamMetaData, process}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.validationHelpers.{GenericParametersSource, GenericParametersSourceNoGenerate, GenericParametersSourceNoTestSupport, SourceWithTestParameters}
+import pl.touk.nussknacker.engine.compile.validationHelpers.{GenericParametersSource, GenericParametersSourceNoGenerate, GenericParametersSourceNoTestSupport, SourceWithTestParameters, SourceWithTestParametersButDisabled}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -27,6 +27,7 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
         "genericSourceNoSupport" -> WithCategories(new GenericParametersSourceNoTestSupport),
         "genericSourceNoGenerate" -> WithCategories(new GenericParametersSourceNoGenerate),
         "genericSourceWithTestParameters" -> WithCategories(new SourceWithTestParameters),
+        "genericSourceWithTestParametersButDisabled" -> WithCategories(new SourceWithTestParametersButDisabled),
         "sourceEmptyTimestamp" -> WithCategories(SourceGeneratingEmptyTimestamp),
         "sourceGeneratingEmptyData" -> WithCategories(SourceGeneratingEmptyData),
       )
@@ -90,9 +91,14 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
     capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false, canTestWithForm = false)
   }
 
-  test("should detect capabilities: can create test view") {
+  test("should detect capabilities: can test with form") {
     val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource("genericSourceWithTestParameters"))
     capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = true)
+  }
+
+  test("should detect capabilities: override can test with form") {
+    val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource("genericSourceWithTestParametersButDisabled"))
+    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false, canTestWithForm = false)
   }
 
   test("should detect capabilities for scenario with multiple sources: at least one supports generating and testing") {

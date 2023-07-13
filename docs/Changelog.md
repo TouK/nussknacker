@@ -2,6 +2,7 @@
 
 1.11.0 (Not released yet)
 -------------------------
+* [#4491](https://github.com/TouK/nussknacker/pull/4491) Allow to override `canTestWithForm` in source extending `TestWithParametersSupport`
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility)
 * [#4440](https://github.com/TouK/nussknacker/pull/4440) Improvement: Better exception info handling at KafkaExceptionInfo.inputEvent,
   from now we will return here JSON with all context variables (including context parent tree)
