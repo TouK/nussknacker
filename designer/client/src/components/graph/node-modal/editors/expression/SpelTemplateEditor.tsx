@@ -10,7 +10,7 @@ const SpelTemplateEditor = (props: RawEditorProps) => {
             expression: expressionObj.expression,
             // Language is used for purpose of syntax highlighting. We don't have separate color theme for spel template -
             // only for spel. Because of that we have to override that.
-            language: ExpressionLang.SpEL,
+            language: ExpressionLang.SpELTemplate,
         }),
         [expressionObj],
     );
