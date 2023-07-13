@@ -1,11 +1,11 @@
-import React, { createContext, FC, PropsWithChildren, useContext, useState } from "react";
+import React, { createContext, FC, PropsWithChildren, useContext, useMemo, useState } from "react";
 import { Dialog } from "@mui/material";
 import { ConnectionErrorContent } from "./ConnectionErrorContent";
-import { CloudOff, Update, WifiOff } from "@mui/icons-material";
+import { CloudOff, WifiOff } from "@mui/icons-material";
 
 const ConnectionErrorContext = createContext<{ handleChangeConnectionError: (connectionError: ConnectionError) => void | null }>(null);
 
-type ConnectionError = "NO_NETWORK_ACCESS" | "NO_BACKEND_ACCESS" | "SOFTWARE_UPDATE";
+type ConnectionError = "NO_NETWORK_ACCESS" | "NO_BACKEND_ACCESS";
 
 export const ConnectionErrorProvider: FC<PropsWithChildren<unknown>> = ({ children }) => {
     const [connectionError, setConnectionError] = useState<ConnectionError | null>(null);
@@ -14,7 +14,7 @@ export const ConnectionErrorProvider: FC<PropsWithChildren<unknown>> = ({ childr
         setConnectionError(newConnectionError);
     };
 
-    const connectionErrorComponent = () => {
+    const connectionErrorComponent = useMemo(() => {
         switch (connectionError) {
             case "NO_NETWORK_ACCESS": {
                 return (
@@ -38,24 +38,16 @@ export const ConnectionErrorProvider: FC<PropsWithChildren<unknown>> = ({ childr
                     />
                 );
             }
-            case "SOFTWARE_UPDATE": {
-                return (
-                    <ConnectionErrorContent
-                        headerText={"Software update"}
-                        contentText={"Automatic software update is processing. The application should be available soon."}
-                        Icon={Update}
-                    />
-                );
-            }
             default:
                 return null;
         }
-    };
+    }, [connectionError]);
+
     return (
         <ConnectionErrorContext.Provider value={{ handleChangeConnectionError }}>
             {connectionErrorComponent && (
                 <Dialog maxWidth={"xs"} open={true}>
-                    {connectionErrorComponent()}
+                    {connectionErrorComponent}
                 </Dialog>
             )}
             {children}

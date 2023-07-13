@@ -3,13 +3,13 @@ import { AxiosError, AxiosResponse } from "axios";
 import FileSaver from "file-saver";
 import i18next from "i18next";
 import { Moment } from "moment";
-import { fetchTestFormParameters, SettingsData, ValidationData } from "../actions/nk";
+import { SettingsData, ValidationData } from "../actions/nk";
 import api from "../api";
 import { UserData } from "../common/models/User";
 import { ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, Process, ProcessDefinitionData, ProcessId, VariableTypes } from "../types";
+import { Expression, Process, ProcessDefinitionData, ProcessId } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -17,8 +17,6 @@ import { TestResults } from "../common/TestResultUtils";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
-import { UIValueParameter } from "../actions/nk/genericAction";
-import { testProcessWithParameters } from "../actions/nk/displayTestResults";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -123,12 +121,23 @@ class HttpService {
         this.#notificationActions = na;
     }
 
-    loadBackendNotifications(): Promise<BackendNotification[]> {
+    loadBackendNotifications(
+        onSuccess: () => void,
+        onError: (error: any, defaultErrorHandler: () => void) => void,
+    ): Promise<BackendNotification[]> {
         return api
             .get<BackendNotification[]>("/notifications")
-            .then((d) => d.data)
+            .then((d) => {
+                onSuccess();
+                return d.data;
+            })
             .catch((error) => {
-                this.#addError(i18next.t("notification.error.cannotFetchBackendNotifications", "Cannot fetch backend notification"), error);
+                onError(error, () => {
+                    this.#addError(
+                        i18next.t("notification.error.cannotFetchBackendNotifications", "Cannot fetch backend notification"),
+                        error,
+                    );
+                });
                 return [];
             });
     }

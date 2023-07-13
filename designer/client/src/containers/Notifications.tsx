@@ -14,7 +14,7 @@ import { markBackendNotificationRead, updateBackendNotifications } from "../acti
 import { displayProcessActivity, loadProcessState } from "../actions/nk";
 import { getProcessId } from "../reducers/selectors/graph";
 import { loadProcessVersions } from "../actions/nk/loadProcessVersions";
-import { useChangeConnectionError } from "./ConnectionErrorProvider";
+import { useChangeConnectionError } from "./connectionErrorProvider";
 
 function prepareNotification(backendNotification: BackendNotification, dispatch: Dispatch<any>) {
     const autoDismiss = backendNotification.type == "error" ? 0 : 10;
@@ -50,7 +50,11 @@ function handleRefresh(beNotification: BackendNotification, currentScenarioName,
     }
 }
 
-export function Notifications(): JSX.Element {
+interface Props {
+    refreshTime?: number;
+}
+
+export function Notifications({ refreshTime = 2000 }: Props): JSX.Element {
     const readNotifications = useSelector(getBackendNotifications);
     const reactNotifications = useSelector(getNotifications);
     const dispatch = useDispatch();
@@ -64,8 +68,23 @@ export function Notifications(): JSX.Element {
         const onlyUnreadPredicate = (be: BackendNotification) =>
             !readNotifications.processedNotificationIds.includes(be.id) && !reactNotifications.map((k) => k.uid).includes(be.id);
 
-        handleChangeConnectionError("NO_NETWORK_ACCESS");
-        HttpService.loadBackendNotifications().then((notifications) => {
+        HttpService.loadBackendNotifications(
+            () => {
+                handleChangeConnectionError(null);
+            },
+            (error, defaultErrorHandler) => {
+                const isNetworkAccess = navigator.onLine;
+                const possibleServerNotAvailableHttpStatuses = [502, 503, 504];
+
+                if (!isNetworkAccess) {
+                    handleChangeConnectionError("NO_NETWORK_ACCESS");
+                } else if (possibleServerNotAvailableHttpStatuses.some((status) => status === error.response.status)) {
+                    handleChangeConnectionError("NO_BACKEND_ACCESS");
+                } else {
+                    defaultErrorHandler();
+                }
+            },
+        ).then((notifications) => {
             dispatch(updateBackendNotifications(notifications.map((n) => n.id)));
             notifications.filter(onlyUnreadPredicate).forEach((beNotification) => {
                 if (beNotification.type) {
@@ -78,7 +97,7 @@ export function Notifications(): JSX.Element {
             });
         });
     }, [currentScenarioName, dispatch, handleChangeConnectionError, reactNotifications, readNotifications.processedNotificationIds]);
-    useInterval(refresh, { refreshTime: 2000, ignoreFirst: true });
+    useInterval(refresh, { refreshTime, ignoreFirst: true });
 
     //noAnimation=false breaks onRemove somehow :/
     return <ReactNotifications notifications={reactNotifications} style={false} noAnimation={true} />;

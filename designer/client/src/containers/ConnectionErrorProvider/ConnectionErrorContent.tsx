@@ -1,7 +1,7 @@
 import React, { FC } from "react";
 import { Box, SvgIconTypeMap, Typography } from "@mui/material";
-import { useTheme } from "@emotion/react";
 import { OverridableComponent } from "@mui/material/OverridableComponent";
+import { useMuiTheme } from "../useMuiTheme";
 
 interface Props {
     Icon: OverridableComponent<SvgIconTypeMap>;
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export const ConnectionErrorContent: FC<Props> = ({ Icon, headerText, contentText }) => {
-    const theme = useTheme();
+    const theme = useMuiTheme();
 
     return (
         <Box

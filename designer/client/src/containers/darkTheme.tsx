@@ -2,7 +2,6 @@ import vars from "../stylesheets/darkColors.styl";
 import { NkTheme, tintPrimary } from "./theme";
 import { defaultsDeep } from "lodash";
 import { defaultAppTheme } from "./defaultAppTheme";
-import { createTheme } from "@mui/material/styles";
 
 const { borderRadius } = vars;
 
@@ -51,7 +50,6 @@ const selectColors = {
 };
 
 export const darkTheme: NkTheme = defaultsDeep(
-    createTheme({}),
     {
         themeClass: vars.darkTheme,
         borderRadius: parseFloat(borderRadius),

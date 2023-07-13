@@ -1,5 +1,3 @@
-//TODO: Temporary disable ts-check because of "TS1259: Module '"/Users/dawidpoliszak/Documents/repo/nussknacker/designer/client/node_modules/@types/react/ts5.0/index"' can only be default-imported using the 'esModuleInterop' flag" error
-// @ts-ignore
 import React from "react";
 import { MemoryRouter } from "react-router";
 import { isExternalUrl, PlainStyleLink } from "../src/containers/plainStyleLink";
@@ -46,7 +44,7 @@ describe("PlainStyleLink", () => {
         ["#", "#google", "/#google"],
         ["plain string", "google", "/google"],
     ])("should support %s", (_, to, expected) => {
-        const { container } = render(<Link to={to} />);
+        render(<Link to={to} />);
 
         //TODO: Fix Jest types we need to import expect, but the types are not extended by @testing-library/jest-dom
         // @ts-ignore
