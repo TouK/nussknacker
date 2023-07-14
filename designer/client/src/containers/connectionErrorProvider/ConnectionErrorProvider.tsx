@@ -2,6 +2,7 @@ import React, { createContext, FC, PropsWithChildren, useContext, useMemo, useSt
 import { Dialog } from "@mui/material";
 import { ConnectionErrorContent } from "./ConnectionErrorContent";
 import { CloudOff, WifiOff } from "@mui/icons-material";
+import i18next from "i18next";
 
 const ConnectionErrorContext = createContext<{ handleChangeConnectionError: (connectionError: ConnectionError) => void | null }>(null);
 
@@ -19,10 +20,11 @@ export const ConnectionErrorProvider: FC<PropsWithChildren<unknown>> = ({ childr
             case "NO_NETWORK_ACCESS": {
                 return (
                     <ConnectionErrorContent
-                        headerText={"No network access"}
-                        contentText={
-                            "We're sorry, but it appears that you don't have a network connection at the moment. Please check your network settings."
-                        }
+                        headerText={i18next.t("connectionError.noNetworkAccess.header", "No network access")}
+                        contentText={i18next.t(
+                            "connectionError.noNetworkAccess.content",
+                            "We're sorry, but it appears that you don't have a network connection at the moment. Please check your network settings.",
+                        )}
                         Icon={WifiOff}
                     />
                 );
@@ -30,10 +32,11 @@ export const ConnectionErrorProvider: FC<PropsWithChildren<unknown>> = ({ childr
             case "NO_BACKEND_ACCESS": {
                 return (
                     <ConnectionErrorContent
-                        headerText={"Backend connection issue"}
-                        contentText={
-                            "We're experiencing difficulties connecting to the backend server at the moment. We kindly ask you to wait just a few moments while. we resolve the issue."
-                        }
+                        headerText={i18next.t("connectionError.noBackendAccess.header", "Backend connection issue")}
+                        contentText={i18next.t(
+                            "connectionError.noBackendAccess.content",
+                            "We're experiencing difficulties connecting to the backend server at the moment. We kindly ask you to wait just a few moments while. we resolve the issue.",
+                        )}
                         Icon={CloudOff}
                     />
                 );
