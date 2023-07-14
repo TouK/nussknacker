@@ -17,7 +17,7 @@ var numRe = exports.numRe = "\\-?(?:(?:[0-9]+(?:\\.[0-9]+)?)|(?:\\.[0-9]+))";
 var pseudoElements = exports.pseudoElements = "(\\:+)\\b(after|before|first-letter|first-line|moz-selection|selection)\\b";
 var pseudoClasses  = exports.pseudoClasses =  "(:)\\b(active|checked|disabled|empty|enabled|first-child|first-of-type|focus|hover|indeterminate|invalid|last-child|last-of-type|link|not|nth-child|nth-last-child|nth-last-of-type|nth-of-type|only-child|only-of-type|acequired|root|target|valid|visited)\\b";
 
-var CssHighlightRules = function() {
+var SpelHighlightRules = function() {
 
     var keywordMapper = this.createKeywordMapper({
         "support.function": supportFunction,
@@ -168,9 +168,9 @@ var CssHighlightRules = function() {
     this.normalizeRules();
 };
 
-oop.inherits(CssHighlightRules, TextHighlightRules);
+oop.inherits(SpelHighlightRules, TextHighlightRules);
 
-exports.CssHighlightRules = CssHighlightRules;
+exports.SpelHighlightRules = SpelHighlightRules;
 
 });
 
@@ -300,7 +300,7 @@ var propertyMap = {
     "-webkit-transform": {"rotate($00deg)": 1, "skew($00deg)": 1 }
 };
 
-var CssCompletions = function() {
+var SpelCompletions = function() {
 
 };
 
@@ -383,9 +383,9 @@ var CssCompletions = function() {
         });
     };
 
-}).call(CssCompletions.prototype);
+}).call(SpelCompletions.prototype);
 
-exports.CssCompletions = CssCompletions;
+exports.SpelCompletions = SpelCompletions;
 });
 
 ace.define("ace/mode/behaviour/css",["require","exports","module","ace/lib/oop","ace/mode/behaviour","ace/mode/behaviour/cstyle","ace/token_iterator"], function(acequire, exports, module) {
@@ -612,18 +612,18 @@ ace.define("ace/mode/spel",["require","exports","module","ace/lib/oop","ace/mode
 
 var oop = acequire("../lib/oop");
 var TextMode = acequire("./text").Mode;
-var CssHighlightRules = acequire("./spel_highlight_rules").CssHighlightRules;
+var SpelHighlightRules = acequire("./spel_highlight_rules").SpelHighlightRules;
 var MatchingBraceOutdent = acequire("./matching_brace_outdent").MatchingBraceOutdent;
 var WorkerClient = acequire("../worker/worker_client").WorkerClient;
-var CssCompletions = acequire("./spel_completions").CssCompletions;
+var SpelCompletions = acequire("./spel_completions").SpelCompletions;
 var CssBehaviour = acequire("./behaviour/css").CssBehaviour;
 var CStyleFoldMode = acequire("./folding/cstyle").FoldMode;
 
 var Mode = function() {
-    this.HighlightRules = CssHighlightRules;
+    this.HighlightRules = SpelHighlightRules;
     this.$outdent = new MatchingBraceOutdent();
     this.$behaviour = new CssBehaviour();
-    this.$completer = new CssCompletions();
+    this.$completer = new SpelCompletions();
     this.foldingRules = new CStyleFoldMode();
 };
 oop.inherits(Mode, TextMode);

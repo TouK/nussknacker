@@ -37,7 +37,7 @@ function isSqlTokenAllowed(iterator, modeId): boolean {
 
 function isSpelTokenAllowed(iterator, modeId): boolean {
     // We need to handle #dict['Label'], where Label is a string token
-    return modeId === "ace/mode/spel";
+    return modeId === "ace/mode/spel" || modeId === "ace/mode/spelTemplate";
 }
 
 interface InputProps {

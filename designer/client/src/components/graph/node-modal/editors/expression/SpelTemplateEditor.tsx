@@ -2,15 +2,14 @@ import React, { useMemo } from "react";
 import RawEditor, { RawEditorProps } from "./RawEditor";
 import { ExpressionLang } from "./types";
 
+//TODO add highlighting for opening and closing braces ('#{' and '}') in brace/mode/spelTemplate.js file
 const SpelTemplateEditor = (props: RawEditorProps) => {
     const { expressionObj, ...passProps } = props;
 
     const value = useMemo(
         () => ({
             expression: expressionObj.expression,
-            // Language is used for purpose of syntax highlighting. We don't have separate color theme for spel template -
-            // only for spel. Because of that we have to override that.
-            language: ExpressionLang.SpEL,
+            language: ExpressionLang.SpELTemplate,
         }),
         [expressionObj],
     );

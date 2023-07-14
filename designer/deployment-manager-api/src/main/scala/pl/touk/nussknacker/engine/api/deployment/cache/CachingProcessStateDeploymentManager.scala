@@ -85,7 +85,15 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
       val cacheTTL = cachingConfig.cacheTTL
         .getOrElse(throw new IllegalArgumentException(s"Invalid config: $this. If you want to enable processStateCaching, you have to define cacheTTL"))
       logger.debug(s"Wrapping DeploymentManager: $delegate with caching mechanism with TTL: $cacheTTL")
-      new CachingProcessStateDeploymentManager(delegate, cacheTTL)
+      delegate match {
+        case postprocessing: PostprocessingProcessStatus =>
+          new CachingProcessStateDeploymentManager(delegate, cacheTTL) with PostprocessingProcessStatus {
+            override def postprocess(name: ProcessName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]] =
+              postprocessing.postprocess(name, statusDetailsList)
+          }
+        case _ =>
+          new CachingProcessStateDeploymentManager(delegate, cacheTTL)
+      }
     } else {
       logger.debug(s"Skipping ProcessState caching for DeploymentManager: $delegate")
       delegate
