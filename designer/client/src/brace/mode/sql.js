@@ -33,7 +33,7 @@ ace.define("ace/mode/sql_highlight_rules", ["require", "exports", "module", "ace
 
     const oop = acequire("../lib/oop");
     const TextHighlightRules = acequire("./text_highlight_rules").TextHighlightRules;
-    const SpelHighlightRules = acequire("./spel_highlight_rules").CssHighlightRules;
+    const SpelHighlightRules = acequire("./spel_highlight_rules").SpelHighlightRules;
 
     const SqlHighlightRules = function () {
 
