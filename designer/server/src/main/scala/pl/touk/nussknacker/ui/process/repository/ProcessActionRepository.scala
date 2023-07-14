@@ -28,7 +28,7 @@ trait ProcessActionRepository[F[_]] {
   def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
   def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
   def getFinishedProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]]
-  def getLastFinishedActionPerProcess(actions: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]]
+  def getLastFinishedActionPerProcess(actionTypesOpt: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]]
 }
 
 object DbProcessActionRepository {
@@ -166,20 +166,20 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     run(processActionsTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
-  override def getLastFinishedActionPerProcess(actions: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]] = {
+  override def getLastFinishedActionPerProcess(actionTypesOpt: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]] = {
     val query = processActionsTable
       .filter(_.state === ProcessActionState.Finished)
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
       .join(processActionsTable)
-      .on { case ((processId, maxPerformedAt), action) => action.processId === processId && action.state === ProcessActionState.Finished && action.performedAt === maxPerformedAt } //We fetch exactly this one  with max deployment
+      .on { case ((processId, maxPerformedAt), action) => action.processId === processId && action.state === ProcessActionState.Finished && action.performedAt === maxPerformedAt } //We fetch exactly this one with max deployment
       .map { case ((processId, _), action) => processId -> action }
       .joinLeft(commentsTable)
       .on { case ((_, action), comment) => action.commentId === comment.id }
       .map { case ((processId, action), comment) => processId -> (action, comment) }
 
-    run(actions
-      .map(actions => query.filter { case (_, (entity, _)) => entity.action.inSet(actions) })
+    run(actionTypesOpt
+      .map(actionTypes => query.filter { case (_, (entity, _)) => entity.actionType.inSet(actionTypes) })
       .getOrElse(query)
       .result.map(_.toMap.mapValuesNow(toFinishedProcessAction)))
   }
@@ -200,7 +200,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     createdAt = actionData._1.createdAtTime,
     performedAt = actionData._1.performedAtTime.getOrElse(throw new AssertionError(s"PerformedAt not available for finished action: ${actionData._1}")),
     user = actionData._1.user,
-    action = actionData._1.action,
+    actionType = actionData._1.actionType,
     state = actionData._1.state,
     failureMessage = actionData._1.failureMessage,
     commentId = actionData._2.map(_.id),

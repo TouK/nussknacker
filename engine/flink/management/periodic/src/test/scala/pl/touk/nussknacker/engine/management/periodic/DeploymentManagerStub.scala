@@ -52,7 +52,7 @@ class DeploymentManagerStub extends BaseDeploymentManager with PostprocessingPro
           user = "fooUser",
           createdAt = Instant.ofEpochMilli(0),
           performedAt = Instant.ofEpochMilli(0),
-          action = ProcessActionType.Cancel,
+          actionType = ProcessActionType.Cancel,
           state = ProcessActionState.Finished,
           failureMessage = None,
           commentId = None,

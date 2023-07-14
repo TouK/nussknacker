@@ -54,7 +54,7 @@ object ComponentTestProcessData {
       user = "user",
       createdAt = Instant.now(),
       performedAt = Instant.now(),
-      action = actionType,
+      actionType = actionType,
       state = ProcessActionState.Finished,
       failureMessage = Option.empty,
       commentId = Option.empty,
