@@ -188,20 +188,17 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
   private def reqRespDeployConfig(port: Int, extraClasses: K8sExtraClasses, fallback: Config): K8sDeploymentManagerConfig = {
     val extraClassesVolume = "extra-classes"
+    val runtimeContainerConfig = baseRuntimeContainerConfig.withValue("volumeMounts", fromIterable(List(fromMap(Map(
+      "name" -> extraClassesVolume,
+      "mountPath" -> "/opt/nussknacker/components/common/extra"
+    ).asJava)).asJava)).root()
     val ficusConfig = baseDeployConfig("request-response")
       .withValue("servicePort", fromAnyRef(port))
       .withValue("k8sDeploymentConfig.spec.template.spec.volumes", fromIterable(List(fromMap(Map(
         "name" -> extraClassesVolume,
         "secret" -> ConfigFactory.parseMap(extraClasses.secretReferenceResourcePart).root()
       ).asJava)).asJava))
-      .withValue("k8sDeploymentConfig.spec.template.spec.containers", fromIterable(List(fromMap(Map(
-        "name" -> "runtime",
-        "volumeMounts" ->
-          fromIterable(List(fromMap(Map(
-            "name" -> extraClassesVolume,
-            "mountPath" -> "/opt/nussknacker/components/common/extra"
-          ).asJava)).asJava)
-      ).asJava)).asJava)).withFallback(fallback)
+      .withValue("k8sDeploymentConfig.spec.template.spec.containers", fromIterable(List(runtimeContainerConfig).asJava)).withFallback(fallback)
     K8sDeploymentManagerConfig.parse(ficusConfig)
   }
 

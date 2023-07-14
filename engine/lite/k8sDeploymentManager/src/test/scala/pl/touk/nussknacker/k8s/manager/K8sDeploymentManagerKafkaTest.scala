@@ -100,29 +100,21 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   }
 
   test("should deploy scenario with env, resources and replicas count from k8sDeploymentConfig") {
+    val runtimeContainerConfig = baseRuntimeContainerConfig
+      .withValue("env", fromIterable(List(fromMap(Map(
+          "name" -> "ENV_VARIABLE",
+          "value" -> "VALUE"
+      ).asJava)).asJava))
+      .withValue("resources", fromMap(Map(
+        "requests" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava),
+        "limits" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava)
+      ).asJava)).root()
     val f = createKafkaFixture(
       deployConfig = kafkaDeployConfig
         .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
         .withValue("k8sDeploymentConfig.spec.template.spec.containers",
           fromIterable(List(
-            fromMap(Map(
-              "name" -> "runtime",
-              "image" -> s"touk/nussknacker-lite-runtime-app:$dockerTag",
-              "env" -> fromIterable(List(
-                fromMap(
-                  Map(
-                    "name" -> "ENV_VARIABLE",
-                    "value" -> "VALUE"
-                  ).asJava
-                )
-              ).asJava),
-              "resources" -> fromMap(
-                Map(
-                  "requests" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava),
-                  "limits" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava)
-                ).asJava
-              )
-            ).asJava)
+            runtimeContainerConfig
           ).asJava)
         )
     )
@@ -232,27 +224,19 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
   test("should expose prometheus metrics") {
     val port = 8041
+    val runtimeContainerConfig = baseRuntimeContainerConfig
+      .withValue("env", fromIterable(List(fromMap(Map(
+        "name" -> "PROMETHEUS_METRICS_PORT",
+        "value" -> s"$port"
+      ).asJava)).asJava))
+      .withValue("ports", fromIterable(List(fromMap(Map(
+        "name" -> "prometheus",
+        "containerPort" -> port,
+        "protocol" -> "TCP"
+      ).asJava)).asJava)).root()
+
     val f = createKafkaFixture(deployConfig = kafkaDeployConfig
-      .withValue("k8sDeploymentConfig.spec.template.spec.containers",
-        fromIterable(List(
-          fromMap(Map(
-            "name" -> "runtime",
-            "env" -> fromIterable(List(fromMap(Map(
-              "name" -> "PROMETHEUS_METRICS_PORT",
-              "value" -> s"$port"
-            ).asJava
-            )
-            ).asJava),
-            "ports" -> fromIterable(List(fromMap(Map(
-              "name" -> "prometheus",
-              "containerPort" -> port,
-              "protocol" -> "TCP"
-            ).asJava)
-            ).asJava
-            )
-          ).asJava)
-        ).asJava)
-      ))
+      .withValue("k8sDeploymentConfig.spec.template.spec.containers", fromIterable(List(runtimeContainerConfig).asJava)))
 
     f.withRunningScenario {
       val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
@@ -284,7 +268,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
     assertNoGarbageLeft()
   }
 
-  private val kafkaDeployConfig: Config = baseDeployConfig("streaming")
+  private lazy val kafkaDeployConfig: Config = baseDeployConfig("streaming")
     .withValue(KafkaConfigProperties.bootstrapServersProperty("configExecutionOverrides.modelConfig.kafka"), fromAnyRef(s"${KafkaK8sSupport.kafkaServiceName}:9092"))
     .withValue(KafkaConfigProperties.property("configExecutionOverrides.modelConfig.kafka", "schema.registry.url"), fromAnyRef(s"http://${KafkaK8sSupport.srServiceName}:8081"))
   private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty
@@ -298,7 +282,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
     new K8sDeploymentManager(modelData, K8sDeploymentManagerConfig.parse(deployConfig), deployConfig)
   }
 
-  val defaultSchema = """{"type":"object","properties":{"message":{"type":"string"}}}"""
+  lazy val defaultSchema = """{"type":"object","properties":{"message":{"type":"string"}}}"""
 
   private def createKafkaFixture(modelData: LocalModelData = modelData, deployConfig: Config = kafkaDeployConfig, schema: String = defaultSchema) = {
     val seed = new Random().nextInt()
