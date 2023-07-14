@@ -3,9 +3,9 @@ package pl.touk.nussknacker.ui.component
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
-import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, Variable, CustomNode => CustomNodeType}
+import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, FragmentInputDefinition, FragmentOutputDefinition}
-import pl.touk.nussknacker.restmodel.component.{NodeId, NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.component.NodeUsageData.ScenarioUsageData
+import pl.touk.nussknacker.restmodel.component.{NodeUsageData, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
@@ -47,7 +47,19 @@ class ComponentsUsageHelperTest extends AnyFunSuite with Matchers with TableDriv
     .emptySink("sink", existingSinkFactory)
   private val processDetails1 = displayableToProcess(TestProcessUtil.toDisplayable(process1))
 
-  private val processDetails1ButDeployed = processDetails1.copy(lastAction = Option(ProcessAction(ProcessActionId(UUID.randomUUID()), VersionId.initialVersionId, Instant.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
+  private val processDetails1ButDeployed = processDetails1.copy(lastAction = Option(ProcessAction(
+    id = ProcessActionId(UUID.randomUUID()),
+    processId = processDetails1.processId,
+    processVersionId = VersionId.initialVersionId,
+    user = "user",
+    createdAt = Instant.now(),
+    performedAt = Instant.now(),
+    actionType = ProcessActionType.Deploy,
+    state = ProcessActionState.Finished,
+    failureMessage = Option.empty,
+    commentId = Option.empty,
+    comment = Option.empty,
+    buildInfo = Map.empty)))
 
   private val process2 = ScenarioBuilder
     .streaming("fooProcess2")

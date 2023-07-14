@@ -324,7 +324,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
           processChangeListener.handle(OnFinished(processDetails.processId, lastDeployedAction.processVersionId))
           actionRepository
             .addInstantAction(processDetails.processId, lastDeployedAction.processVersionId, ProcessActionType.Cancel, Some(finishedComment), None)
-            .map(a => Some(ProcessDBQueryRepository.toProcessAction((a, None))))
+            .map(Some(_))
 
         }.getOrElse(DBIOAction.successful(None))
       }
