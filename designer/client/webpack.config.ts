@@ -21,6 +21,7 @@ const isProd = process.env.NODE_ENV === "production";
 const entry = {
     main: path.resolve(__dirname, "./src/init.js"),
 };
+const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 
 const cssPreLoaders = [
     {
@@ -36,6 +37,7 @@ const cssPreLoaders = [
 const outputPath = path.join(process.cwd(), "dist");
 
 const mode = isProd ? "production" : "development";
+const isBundleReport = process.env.NODE_ENV === "bundleReport";
 const config: Configuration = {
     mode: mode,
     performance: {
@@ -56,6 +58,7 @@ const config: Configuration = {
         path: outputPath,
         filename: isProd ? "[contenthash].js" : "[name].js",
         assetModuleFilename: "assets/images/[name][hash][ext]",
+        clean: true,
     },
     devtool: isProd ? "hidden-source-map" : "eval-source-map",
     watchOptions: {
@@ -187,6 +190,7 @@ const config: Configuration = {
         }),
         isProd ? null : new ReactRefreshWebpackPlugin({ overlay: false }),
         new webpack.ProgressPlugin(progressBar),
+        isBundleReport ? new BundleAnalyzerPlugin() : null,
     ].filter(Boolean),
     module: {
         rules: [

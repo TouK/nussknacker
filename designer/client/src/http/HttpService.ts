@@ -262,10 +262,10 @@ class HttpService {
             .get<
                 {
                     performedAt: string;
-                    action: "UNARCHIVE" | "ARCHIVE" | "CANCEL" | "DEPLOY";
+                    actionType: "UNARCHIVE" | "ARCHIVE" | "CANCEL" | "DEPLOY";
                 }[]
             >(`/processes/${encodeURIComponent(processId)}/deployments`)
-            .then((res) => res.data.filter(({ action }) => action === "DEPLOY").map(({ performedAt }) => performedAt));
+            .then((res) => res.data.filter(({ actionType }) => actionType === "DEPLOY").map(({ performedAt }) => performedAt));
     }
 
     deploy(processId, comment?): Promise<{ isSuccess: boolean }> {

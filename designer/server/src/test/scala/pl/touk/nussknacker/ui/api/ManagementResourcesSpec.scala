@@ -42,11 +42,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val processName: ProcessName = ProcessName(SampleProcess.process.id)
-  private val fixedTime = Instant.now()
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] = {
     BeMatcher[(ProcessActionType, VersionId)](equal((ProcessActionType.Deploy, VersionId(versionId))))
-      .compose[ProcessAction](a => (a.action, a.processVersionId))
+      .compose[ProcessAction](a => (a.actionType, a.processVersionId))
       .compose[Option[ProcessAction]](opt => opt.value)
   }
 
@@ -123,7 +122,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> checkThatEventually {
       getProcess(processName) ~> check {
         val processDetails = responseAs[ProcessDetails]
-        processDetails.isDeployed shouldBe true
+        processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)) shouldBe true
       }
       cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))), comment = Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
@@ -139,7 +138,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           Get(s"/processes/${SampleProcess.process.id}/deployments") ~> withAllPermissions(processesRoute) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
             val curTime = Instant.now()
-            deploymentHistory.map(a => (a.processVersionId, a.user, a.action, a.commentId, a.comment, a.buildInfo)) shouldBe List(
+            deploymentHistory.map(a => (a.processVersionId, a.user, a.actionType, a.commentId, a.comment, a.buildInfo)) shouldBe List(
               (VersionId(2), user().username, ProcessActionType.Cancel, Some(secondCommentId), Some(expectedStopComment), Map()),
               (VersionId(2), user().username, ProcessActionType.Deploy, Some(firstCommentId), Some(expectedDeployComment), TestFactory.buildInfo)
             )
@@ -164,7 +163,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       getProcess(processName) ~> check {
         val processDetails = responseAs[ProcessDetails]
         processDetails.lastStateAction shouldBe deployedWithVersions(1)
-        processDetails.isDeployed shouldBe true
+        processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)) shouldBe true
       }
     }
   }
@@ -177,8 +176,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
         decodeDetails.lastStateAction shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
           getProcess(processName) ~> check {
-            decodeDetails.lastStateAction should not be None
-            decodeDetails.isCanceled shouldBe true
+            decodeDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Cancel)) shouldBe true
           }
         }
       }
@@ -270,17 +268,21 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("snapshots process") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    snapshot(SampleProcess.process.id) ~> check {
-      status shouldBe StatusCodes.OK
-      responseAs[String] shouldBe MockDeploymentManager.savepointPath
+    deploymentManager.withProcessRunning(ProcessName(SampleProcess.process.id)) {
+      snapshot(SampleProcess.process.id) ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[String] shouldBe MockDeploymentManager.savepointPath
+      }
     }
   }
 
   test("stops process") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    stop(SampleProcess.process.id) ~> check {
-      status shouldBe StatusCodes.OK
-      responseAs[String] shouldBe MockDeploymentManager.stopSavepointPath
+    deploymentManager.withProcessRunning(ProcessName(SampleProcess.process.id)) {
+      stop(SampleProcess.process.id) ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[String] shouldBe MockDeploymentManager.stopSavepointPath
+      }
     }
   }
 

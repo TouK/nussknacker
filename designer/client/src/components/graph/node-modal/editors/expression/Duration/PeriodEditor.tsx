@@ -3,9 +3,9 @@ import { Validator } from "../../Validators";
 import React, { useCallback, useMemo } from "react";
 import moment from "moment";
 import TimeRangeEditor from "./TimeRangeEditor";
-import _ from "lodash";
 import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
+import { isEmpty } from "lodash";
 
 export type Period = {
     years: number;
@@ -78,7 +78,7 @@ export default function PeriodEditor(props: Props): JSX.Element {
 }
 
 PeriodEditor.switchableTo = (expressionObj: ExpressionObj) =>
-    SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || _.isEmpty(expressionObj.expression);
+    SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);
 
 PeriodEditor.switchableToHint = () => i18next.t("editors.period.switchableToHint", "Switch to basic mode");
 

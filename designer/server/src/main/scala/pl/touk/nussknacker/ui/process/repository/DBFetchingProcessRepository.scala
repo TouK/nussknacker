@@ -133,7 +133,7 @@ abstract class DBFetchingProcessRepository[F[_] : Monad](val dbConfig: DbConfig)
       process = process,
       processVersion = processVersion,
       lastActionData = actions.headOption,
-      lastStateActionData = actions.find { case (entity, _) => StateActions.contains(entity.action) },
+      lastStateActionData = actions.find { case (entity, _) => StateActions.contains(entity.actionType) },
       lastDeployedActionData = actions.headOption.find(_._1.isDeployed),
       isLatestVersion = isLatestVersion,
       tags = tags,

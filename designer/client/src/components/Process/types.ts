@@ -22,7 +22,7 @@ export type BuildInfoType = {
 export type ProcessActionType = {
     performedAt: Instant;
     user: string;
-    action: ActionType;
+    actionType: ActionType;
     commentId?: number;
     comment?: string;
     buildInfo?: BuildInfoType;

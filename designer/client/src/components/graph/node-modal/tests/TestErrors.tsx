@@ -18,7 +18,9 @@ export default function TestErrors(): JSX.Element {
                     <NodeTip title={"Test case error"} icon={<TipsWarning />} />
                 </div>
                 <div className="node-value">
-                    <div className="node-error">{results.testResultsToShow.error}</div>
+                    <div className="node-error">
+                        <>{results.testResultsToShow.error}</>
+                    </div>
                 </div>
             </div>
         </NodeTableBody>

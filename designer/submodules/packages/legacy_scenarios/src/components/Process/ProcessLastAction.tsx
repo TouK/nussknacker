@@ -19,7 +19,7 @@ export default function ProcessLastAction(props: Props): JSX.Element {
 
         return (
             <span title={t("processLastAction.title", "Performed by {{user}} at {{performedAt}}.", { performedAt, user })}>
-                {lastAction.action}
+                {lastAction.actionType}
             </span>
         );
     };

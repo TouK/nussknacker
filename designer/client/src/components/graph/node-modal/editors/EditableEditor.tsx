@@ -63,8 +63,10 @@ function EditableEditorRow({
 }): JSX.Element {
     return (
         <div className={`${rowClassName ? rowClassName : " node-row"}`}>
-            {fieldLabel && renderFieldLabel?.(fieldLabel)}
-            <EditableEditor {...props} />
+            <>
+                {fieldLabel && renderFieldLabel?.(fieldLabel)}
+                <EditableEditor {...props} />
+            </>
         </div>
     );
 }

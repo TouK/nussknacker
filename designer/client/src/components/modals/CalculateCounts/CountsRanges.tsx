@@ -1,12 +1,13 @@
 import { css } from "@emotion/css";
 import moment, { Moment } from "moment";
 import React, { useEffect, useMemo, useState } from "react";
-import { TFunction, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useFeatureFlags } from "../../../common/featureFlags";
 import HttpService from "../../../http/HttpService";
 import { getProcessId } from "../../../reducers/selectors/graph";
 import { CountsRangesButtons, Range } from "./CountsRangesButtons";
+import { TFunction } from "i18next";
 
 function predefinedRanges(t: TFunction<string>): Range[] {
     const forDay = (name: string, moment: () => Moment): Range => ({
