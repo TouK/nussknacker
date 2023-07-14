@@ -59,7 +59,7 @@ export const useChangeConnectionError = () => {
     const context = useContext(ConnectionErrorContext);
 
     if (!context) {
-        throw new Error(`${useChangeConnectionError.name} was used outside of its ${ConnectionErrorContext.displayName} providerł`);
+        throw new Error(`${useChangeConnectionError.name} was used outside of its ${ConnectionErrorContext.displayName} provider`);
     }
 
     return { handleChangeConnectionError: context.handleChangeConnectionError };
