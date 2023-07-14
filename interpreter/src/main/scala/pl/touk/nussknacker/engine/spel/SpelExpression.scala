@@ -179,7 +179,15 @@ object SpelExpressionParser extends LazyLogging {
   //TODO: should we enable other prefixes/suffixes?
   object Template extends Flavour(GraphExpression.Language.SpelTemplate, Some(ParserContext.TEMPLATE_EXPRESSION))
 
-  object SqlTemplate extends Flavour(GraphExpression.Language.SqlSpelTemplate, None)
+  object SqlSpelTemplateParserContext extends ParserContext {
+    override def getExpressionPrefix: String = "#{"
+
+    override def isTemplate: Boolean = true
+
+    override def getExpressionSuffix: String = "}#"
+  }
+
+  object SqlTemplate extends Flavour(GraphExpression.Language.SqlSpelTemplate, Some(SqlSpelTemplateParserContext))
 
   private[spel] final val LazyValuesProviderVariableName: String = "$lazy"
   private[spel] final val LazyContextVariableName: String = "$lazyContext"

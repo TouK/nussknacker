@@ -44,7 +44,8 @@ object ExpressionCompiler {
       SpelExpressionParser.default(classLoader, expressionConfig, dictRegistry, optimizeCompilation, flavour, typeDefinitionSet)
     val defaultParsers = Seq(
       spelParser(SpelExpressionParser.Standard),
-      spelParser(SpelExpressionParser.Template))
+      spelParser(SpelExpressionParser.Template),
+      spelParser(SpelExpressionParser.SqlTemplate))
     val parsersSeq = defaultParsers ++ expressionConfig.languages.expressionParsers
     val parsers = parsersSeq.map(p => p.languageId -> p).toMap
     new ExpressionCompiler(parsers)

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.parameter.defaults
 
-import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, SpelTemplateParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.{ParameterEditor, SpelTemplateParameterEditor, SqlParameterEditor}
 import pl.touk.nussknacker.engine.api.typed.typing.SingleTypingResult
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
@@ -31,6 +31,6 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
   private def defaultStringExpression(editor: Option[ParameterEditor]): Expression =
     editor.collect { // TODO: maybe some better way to specify language like Parameter.language
       case SpelTemplateParameterEditor => Expression.spelTemplate("") // template not need to be wrapped in ''
-    }.getOrElse(Expression.spel("''"))
+    }.getOrElse(Expression.sqlSpelTemplate(""))
 
 }
