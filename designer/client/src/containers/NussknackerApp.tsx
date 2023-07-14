@@ -22,35 +22,37 @@ export function NussknackerApp() {
 
     return (
         <NkThemeProvider>
+            <GlobalCSSVariables />
+            <WindowManager
+                className={css({
+                    flex: 1,
+                    display: "flex",
+                })}
+            >
+                <div
+                    id="app-container"
+                    className={css({
+                        flex: 1,
+                        display: "grid",
+                        gridTemplateRows: "auto 1fr",
+                        alignItems: "stretch",
+                    })}
+                >
+                    <MenuBar />
+                    <main className={css({ overflow: "auto" })}>
+                        <Outlet />
+                    </main>
+                </div>
+            </WindowManager>
+
+            {/*TODO: Since we only listen to notifications, we can declare Theme this way, however, it's a problem with MuiThemeProvider and WindowManager styles, with dialog visibility, probably something with a z-index. It should be fixed when we remove stylus and refactor mui themes */}
             <MuiThemeProvider>
-                <GlobalCSSVariables />
                 <ConnectionErrorProvider>
-                    <WindowManager
-                        className={css({
-                            flex: 1,
-                            display: "flex",
-                        })}
-                    >
-                        <div
-                            id="app-container"
-                            className={css({
-                                flex: 1,
-                                display: "grid",
-                                gridTemplateRows: "auto 1fr",
-                                alignItems: "stretch",
-                            })}
-                        >
-                            <MenuBar />
-                            <main className={css({ overflow: "auto" })}>
-                                <Outlet />
-                            </main>
-                        </div>
-                    </WindowManager>
                     <Notifications />
-                    <VersionInfo />
-                    <UsageReportingImage />
                 </ConnectionErrorProvider>
             </MuiThemeProvider>
+            <VersionInfo />
+            <UsageReportingImage />
         </NkThemeProvider>
     );
 }
