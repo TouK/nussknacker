@@ -3,7 +3,9 @@ import { debounce } from "lodash";
 import React, { forwardRef, MouseEventHandler, useCallback, useMemo } from "react";
 import { useSizeWithRef } from "../../containers/hooks/useSize";
 
-type ContainerProps = React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
+interface ContainerProps extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
+    onResize?: (current: DOMRectReadOnly) => void;
+}
 
 export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(function GraphPaperContainer(
     { onClick, className, onResize, ...props },
