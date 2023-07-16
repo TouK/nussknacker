@@ -294,14 +294,15 @@ class HttpService {
         return api
             .post(`/processManagement/customAction/${encodeURIComponent(processId)}`, data)
             .then((res) => {
-                this.#addInfo(res.data.msg);
-                return { isSuccess: res.data.isSuccess };
+                const msg = res.data.msg;
+                this.#addInfo(msg);
+                return { isSuccess: res.data.isSuccess, msg: msg };
             })
             .catch((error) => {
                 const msg = error.response.data.msg || error.response.data;
-                return this.#addError(msg, error, false).then(() => {
-                    return { isSuccess: false };
-                });
+                const result = { isSuccess: false, msg: msg };
+                if (error?.response?.status != 400) return this.#addError(msg, error, false).then(() => result);
+                return result;
             });
     }
 

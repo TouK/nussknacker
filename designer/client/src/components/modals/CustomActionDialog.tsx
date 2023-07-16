@@ -14,6 +14,7 @@ import { ChangeableValue } from "../ChangeableValue";
 import { editors } from "../graph/node-modal/editors/expression/Editor";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
+import { ValidationLabel } from "../common/ValidationLabel";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -73,12 +74,19 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
     const processId = useSelector(getProcessId);
     const dispatch = useDispatch();
     const action = props.data.meta;
+    const [validationError, setValidationError] = useState("");
 
     const [value, setValue] = useState<UnknownRecord>();
 
     const confirm = useCallback(async () => {
-        await HttpService.customAction(processId, action.name, value).finally(() => dispatch(loadProcessState(processId)));
-        props.close();
+        await HttpService.customAction(processId, action.name, value).then((response) => {
+            if (response.isSuccess) {
+                dispatch(loadProcessState(processId));
+                props.close();
+            } else {
+                setValidationError(response.msg);
+            }
+        });
     }, [processId, action.name, value, props, dispatch]);
 
     const { t } = useTranslation();
@@ -94,6 +102,7 @@ export function CustomActionDialog(props: WindowContentProps<WindowKind, CustomA
         <WindowContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ padding: "1em", minWidth: 600 }))}>
                 <CustomActionForm action={action} value={value} onChange={setValue} />
+                <ValidationLabel type="ERROR">{validationError}</ValidationLabel>
             </div>
         </WindowContent>
     );
