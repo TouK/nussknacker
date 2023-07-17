@@ -88,35 +88,19 @@ function useAliasUsageHighlight(token = "alias") {
 }
 
 const SqlEditor: SimpleEditor<Props> = (props: Props) => {
-    const { expressionObj, onValueChange, className, formatter, ...passProps } = props;
-    const sqlFormatter = formatter == null ? typeFormatters[FormatterType.Sql] : formatter;
-
-    const valueChange = useCallback(
-        (value: string) => {
-            const encoded = sqlFormatter.encode(value);
-            if (encoded !== value) {
-                return onValueChange(encoded);
-            }
-        },
-        [onValueChange, sqlFormatter],
-    );
+    const { expressionObj, onValueChange, className, ...passProps } = props;
 
     const value = useMemo(
         () => ({
-            expression: sqlFormatter.decode(expressionObj.expression.trim()),
-            language: ExpressionLang.SQL,
+            expression: expressionObj.expression,
+            language: ExpressionLang.SQL, //FIXME this should SqlSpelTemplate, but highlighting does not work
         }),
-        [sqlFormatter, expressionObj],
+        [expressionObj],
     );
-
-    useEffect(() => {
-        valueChange(value.expression);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     const ref = useAliasUsageHighlight();
 
-    return <RawEditor {...passProps} ref={ref} onValueChange={valueChange} expressionObj={value} className={className} rows={6} />;
+    return <RawEditor {...passProps} ref={ref} onValueChange={onValueChange} expressionObj={value} className={className} rows={6} />;
 };
 
 SqlEditor.switchableTo = switchableTo;
