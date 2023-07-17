@@ -10,7 +10,9 @@ import { Validator } from "../Validators";
 
 type Props = {
     editorConfig: {
-        simpleEditor: { type: EditorType };
+        simpleEditor: {
+            type: EditorType;
+        };
         defaultMode: DualEditorMode;
     };
     expressionObj: ExpressionObj;
@@ -59,15 +61,21 @@ export default function DualParameterEditor(props: Props): JSX.Element {
         [displayRawEditor, readOnly, simpleEditorAllowsSwitch],
     );
 
-    const hint = useMemo(
-        () =>
-            readOnly
-                ? t("editors.default.hint", "Switching to basic mode is disabled. You are in read-only mode")
-                : simpleEditorAllowsSwitch
-                ? SimpleEditor?.switchableToHint()
-                : SimpleEditor?.notSwitchableToHint(),
-        [t, readOnly, SimpleEditor, simpleEditorAllowsSwitch],
-    );
+    const hint = useMemo(() => {
+        if (!displayRawEditor) {
+            return t("editors.raw.switchableToHint", "Switch to expression mode");
+        }
+
+        if (readOnly) {
+            return t("editors.default.hint", "Switching to basic mode is disabled. You are in read-only mode");
+        }
+
+        if (simpleEditorAllowsSwitch) {
+            return SimpleEditor?.switchableToHint();
+        }
+
+        return SimpleEditor?.notSwitchableToHint();
+    }, [displayRawEditor, readOnly, simpleEditorAllowsSwitch, SimpleEditor, t]);
 
     const editorProps = useMemo(
         () => ({

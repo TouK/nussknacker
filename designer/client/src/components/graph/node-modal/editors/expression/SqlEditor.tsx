@@ -7,7 +7,6 @@ import { SimpleEditor } from "./Editor";
 import { Formatter } from "./Formatter";
 import RawEditor, { RawEditorProps } from "./RawEditor";
 import { isSwitchableTo } from "./StringEditor";
-import { ExpressionLang } from "./types";
 import { EditorMode } from "./types";
 import { Ace } from "ace-builds";
 
