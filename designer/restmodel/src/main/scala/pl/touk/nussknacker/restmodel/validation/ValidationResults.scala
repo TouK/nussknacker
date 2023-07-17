@@ -3,12 +3,14 @@ package pl.touk.nussknacker.restmodel.validation
 import cats.implicits._
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.ConfiguredJsonCodec
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.expression.ExpressionTypingInfo
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.generics.TemplateValues
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object ValidationResults {
@@ -70,11 +72,18 @@ object ValidationResults {
 
   @JsonCodec case class ValidationWarnings(invalidNodes: Map[String, List[NodeValidationError]])
 
+  object NodeValidationError {
+    implicit val templateValuesDecoder: Decoder[TemplateValues] = deriveDecoder[TemplateValues]
+    implicit val templateValuesEncoder: Encoder[TemplateValues] = deriveEncoder[TemplateValues]
+  }
+
   @JsonCodec case class NodeValidationError(typ: String,
                                             message: String,
                                             description: String,
                                             fieldName: Option[String],
-                                            errorType: NodeValidationErrorType.Value)
+                                            errorType: NodeValidationErrorType.Value,
+                                            errorCode: Option[String] = None,
+                                            templateValues: Option[TemplateValues] = None)
 
   object ValidationErrors {
     val success: ValidationErrors = ValidationErrors(Map.empty, List(), List())

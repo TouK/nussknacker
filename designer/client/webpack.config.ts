@@ -161,6 +161,7 @@ const config: Configuration = {
         new CopyPlugin({
             patterns: [
                 { from: "translations", to: "assets/locales", noErrorOnMissing: true },
+                { from: "translations-custom", to: "assets/locales", noErrorOnMissing: true },
                 { from: "assets/img/icons/license", to: "license", noErrorOnMissing: true },
             ],
         }),

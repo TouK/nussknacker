@@ -5,6 +5,7 @@ import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.generics.TemplateValues
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -80,12 +81,19 @@ object ProcessCompilationError {
       NotSupportedExpressionLanguage(languageId, nodeId.id)
   }
 
-  case class ExpressionParserCompilationError(message: String, nodeId: String, fieldName: Option[String], originalExpr: String)
+  case class ExpressionParserCompilationError(message: String, nodeId: String, fieldName: Option[String], originalExpr: String, errorCode: Option[String], templateTypes: Option[TemplateValues])
     extends PartSubGraphCompilationError with InASingleNode
 
   object ExpressionParserCompilationError {
-    def apply(message: String, fieldName: Option[String], originalExpr: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      ExpressionParserCompilationError(message, nodeId.id, fieldName, originalExpr)
+    def apply(message: String, fieldName: Option[String], originalExpr: String, errorCode: Option[String] = None, templateValues: Option[TemplateValues] = None)(implicit nodeId: NodeId): PartSubGraphCompilationError =
+      ExpressionParserCompilationError(message, nodeId.id, fieldName, originalExpr, errorCode, templateValues)
+
+    def apply(message: String,
+              nodeId: String,
+              fieldName: Option[String],
+              originalExpr: String): ExpressionParserCompilationError = {
+      ExpressionParserCompilationError(message, nodeId, fieldName, originalExpr, None, None)
+    }
   }
 
   case class FragmentParamClassLoadError(fieldName: String, refClazzName: String, nodeId: String)

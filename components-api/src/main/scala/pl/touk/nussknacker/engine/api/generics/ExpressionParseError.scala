@@ -4,6 +4,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 trait ExpressionParseError {
   def message: String
+  def templateValues: Option[TemplateValues] = None
+  def errorCode: Option[String] = None
 }
 
 case class Signature(noVarArgs: List[TypingResult], varArg: Option[TypingResult]) {
@@ -16,3 +18,7 @@ case class Signature(noVarArgs: List[TypingResult], varArg: Option[TypingResult]
   }
 }
 
+case class TemplateValues(
+    stringValues: Map[String, String] = Map.empty,
+    typingResultValues: Map[String, TypingResult] = Map.empty
+)

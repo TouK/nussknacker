@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.NonEmptyList
 import org.springframework.expression.spel.SpelNode
-import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, Signature}
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, Signature, TemplateValues}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
 
 object SpelExpressionParseError {
@@ -160,8 +160,24 @@ object SpelExpressionParseError {
   trait OperatorError extends ExpressionParseError
 
   object OperatorError {
-    case class OperatorMismatchTypeError(operator: String, left: TypingResult, right: TypingResult) extends OperatorError {
-      override def message: String = s"Operator '$operator' used with mismatch types: ${left.display} and ${right.display}"
+    case class OperatorMismatchTypeError(operator: String,
+                                         left: TypingResult,
+                                         right: TypingResult) extends OperatorError {
+      override def message: String = s"Operator '$operator' used with mismatch types: ${left} and ${right.display}"
+
+      override def errorCode: Option[String] = Some("OPERATOR_MISMATCH_TYPE_ERROR")
+
+      override def templateValues: Option[TemplateValues] = {
+        Some(TemplateValues(
+          typingResultValues = Map(
+            "left" -> left,
+            "right" -> right
+          ),
+          stringValues = Map(
+            "operator" -> operator
+          )
+        ))
+      }
     }
 
     case class OperatorNonNumericError(operator: String, typ: TypingResult) extends OperatorError {

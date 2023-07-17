@@ -260,7 +260,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       validate(FragmentInput("frInput", FragmentRef("fragment1", List(Parameter("param1", "145")),
         Map("out1" -> "test1"))), ValidationContext.empty, outgoingEdges = List(OutgoingEdge("any", Some(FragmentOutput("out1")))))
     ) {
-      case ValidationPerformed(List(ExpressionParserCompilationError(expectedMsg, "frInput", Some("param1"), "145")), None, None) =>
+      case ValidationPerformed(List(ExpressionParserCompilationError(expectedMsg, "frInput", Some("param1"), "145", _, _)), None, None) =>
     }
   }
 
@@ -353,8 +353,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
       validate(Switch("switchId", Some("input"), Some("value1")), ValidationContext.empty, Map.empty, List(OutgoingEdge("caseTarget1", Some(NextSwitch("notExist")))))
     ) {
       case ValidationPerformed(List(
-      ExpressionParserCompilationError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input"),
-      ExpressionParserCompilationError("Non reference 'notExist' occurred. Maybe you missed '#' in front of it?", "switchId", Some("caseTarget1"), "notExist")
+      ExpressionParserCompilationError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input", _, _),
+      ExpressionParserCompilationError("Non reference 'notExist' occurred. Maybe you missed '#' in front of it?", "switchId", Some("caseTarget1"), "notExist", _, _)
       ), None, Some(Unknown)) =>
     }
   }

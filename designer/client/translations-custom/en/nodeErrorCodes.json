@@ -1,0 +1,6 @@
+{
+    "OPERATOR_MISMATCH_TYPE_ERROR": {
+        "simpleMessage": "Operator used with mismatched types.",
+        "messageTemplate": "Operator {{operator}} used with mismatched types: <left>{{left}}</left> and <right>{{right}}</right>."
+    }
+}

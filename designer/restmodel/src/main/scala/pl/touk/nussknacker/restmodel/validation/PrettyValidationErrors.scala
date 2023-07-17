@@ -3,6 +3,7 @@ package pl.touk.nussknacker.restmodel.validation
 import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
+import pl.touk.nussknacker.engine.api.generics.TemplateValues
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -13,18 +14,27 @@ object PrettyValidationErrors {
   def formatErrorMessage(error: ProcessCompilationError): NodeValidationError = {
     val typ = ReflectUtils.simpleNameWithoutSuffix(error.getClass)
 
-    def node(message: String,
-             description: String,
-             errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
-             fieldName: Option[String] = None): NodeValidationError
-    = NodeValidationError(typ, message, description, fieldName, errorType)
+    def node(
+        message: String,
+        description: String,
+        errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
+        fieldName: Option[String] = None,
+        errorCode: Option[String] = None,
+        templateValues: Option[TemplateValues] = None
+    ): NodeValidationError = NodeValidationError(typ, message, description, fieldName, errorType, errorCode, templateValues)
 
     def handleParameterValidationError(error: ParameterValidationError): NodeValidationError =
       node(error.message, error.description, fieldName = Some(error.paramName))
 
     error match {
-      case ExpressionParserCompilationError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
-        s"There is problem with expression in field $fieldName - it could not be parsed.", fieldName = fieldName)
+      case ExpressionParserCompilationError(message, _, fieldName, _, errorCode, templateValues) =>
+        node(
+          s"Failed to parse expression: $message",
+          s"There is problem with expression in field $fieldName - it could not be parsed.",
+          fieldName = fieldName,
+          errorCode = errorCode,
+          templateValues = templateValues
+        )
       case FragmentParamClassLoadError(fieldName, refClazzName, _) =>
         node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
       case DuplicatedNodeIds(ids) => node("Two nodes cannot have same id", s"Duplicate node ids: ${ids.mkString(", ")}", errorType = NodeValidationErrorType.RenderNotAllowed)

@@ -11,7 +11,7 @@ import urlJoin from "url-join";
 const i18n = i18next.use(intervalPlural).use(Backend).use(LanguageDetector).use(initReactI18next);
 
 i18n.init({
-    ns: "main",
+    ns: ["main", "nodeErrorCodes"],
     defaultNS: "main",
     fallbackLng: "en",
     backend: {

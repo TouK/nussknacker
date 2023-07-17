@@ -1,5 +1,6 @@
 import { chain, isEmpty } from "lodash";
 import i18next from "i18next";
+import { TypingResult } from "../../../../types";
 
 export enum ValidatorType {
     Frontend,
@@ -40,6 +41,8 @@ export type Validator = {
     description: () => string;
     handledErrorType: HandledErrorType;
     validatorType: ValidatorType;
+    templateValues?: () => TemplateValues;
+    errorCode?: () => string;
 };
 
 export type PossibleValue = {
@@ -52,7 +55,14 @@ export interface Error {
     message: string;
     description: string;
     typ: string;
+    templateValues?: TemplateValues;
+    errorCode?: string;
 }
+
+export type TemplateValues = {
+    stringValues: Record<string, string>;
+    typingResultValues: Record<string, TypingResult>;
+};
 
 export const errorValidator = (errors: Error[], fieldName: string): Validator => {
     const error = errors?.find((error) => error.fieldName === fieldName || error.fieldName === `$${fieldName}`);
@@ -62,6 +72,8 @@ export const errorValidator = (errors: Error[], fieldName: string): Validator =>
         description: () => error?.description,
         handledErrorType: error?.typ ? HandledErrorType[error?.typ] : HandledErrorType.ErrorValidator,
         validatorType: ValidatorType.Backend,
+        templateValues: () => error?.templateValues,
+        errorCode: () => error?.errorCode,
     };
 };
 

@@ -128,7 +128,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     val result = runner.runWithRequests(scenario) { _ => }
 
     result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _), Nil)) if message.startsWith("Bad expression type") =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _, _, _), Nil)) if message.startsWith("Bad expression type") =>
     }
   }
 

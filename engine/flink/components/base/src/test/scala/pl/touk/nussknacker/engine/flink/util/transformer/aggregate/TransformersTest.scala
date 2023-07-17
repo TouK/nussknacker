@@ -144,7 +144,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     val result = processValidator.validate(testProcess)
 
     inside(result.result) {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _, _, _), _)) =>
     }
   }
 

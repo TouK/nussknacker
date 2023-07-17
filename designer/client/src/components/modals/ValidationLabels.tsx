@@ -1,8 +1,10 @@
 import styled from "@emotion/styled";
 import { isEmpty } from "lodash";
-import React from "react";
+import React, { useMemo } from "react";
 import { LimitedValidationLabel } from "../common/ValidationLabel";
-import { Validator, withoutDuplications } from "../graph/node-modal/editors/Validators";
+import { TemplateValues, Validator, withoutDuplications } from "../graph/node-modal/editors/Validators";
+import { Trans } from "react-i18next";
+import i18n from "../../i18n";
 
 type Props = {
     validators: Array<Validator>;
@@ -13,6 +15,8 @@ type Props = {
 type ValidationError = {
     message: string;
     description: string;
+    templateValues: TemplateValues;
+    errorCode?: string;
 };
 
 const LabelsContainer = styled.div({
@@ -28,16 +32,27 @@ export default function ValidationLabels(props: Props) {
         .map((validator) => ({
             message: validator.message && validator.message(),
             description: validator.description && validator.description(),
+            templateValues: validator.templateValues && validator.templateValues(),
+            errorCode: validator.errorCode && validator.errorCode(),
         }));
 
     const isValid: boolean = isEmpty(validationErrors);
 
     const renderErrorLabels = () =>
         validationErrors.map((validationError) => {
+            const { errorCode, templateValues, message } = validationError;
+
+            const canRenderI18nTemplate = errorCode != null && templateValues != null;
+            // const canRenderI18nSimpleMessage =
+
             // we don't pass description as tooltip message until we make changes on the backend
             return (
-                <LimitedValidationLabel key={validationError.message} title={validationError.message} type="ERROR">
-                    {validationError.message}
+                <LimitedValidationLabel key={message} type="ERROR" title={message}>
+                    {canRenderI18nTemplate ? (
+                        <I18nTemplateLabel errorCode={errorCode} templateValues={validationError.templateValues} />
+                    ) : (
+                        i18n.t(`nodeErrorCodes:${validationError.errorCode}.simpleMessage`, message)
+                    )}
                 </LimitedValidationLabel>
             );
         });
@@ -53,4 +68,62 @@ export default function ValidationLabels(props: Props) {
             )}
         </LabelsContainer>
     );
+}
+
+type TemplateLabelProps = {
+    errorCode: string;
+    templateValues: TemplateValues;
+};
+
+function I18nTemplateLabel(props: TemplateLabelProps) {
+    const { errorCode, templateValues } = props;
+
+    // TODO: remove comment
+    // Template normally looks like this:
+    // const operatorMismatchTemplate = "Operator {{operator}} used with mismatched types: <left>{{left}}</left> and <right>{{right}}</right>";
+
+    const displayableTemplateValues = useMemo(() => {
+        return {
+            ...templateValues.stringValues,
+            ...Object.fromEntries(
+                Object.entries(templateValues.typingResultValues).map(([key, typingResult]) => {
+                    return [key, typingResult.display];
+                }),
+            ),
+        };
+    }, [templateValues]);
+
+    const templateComponents = useMemo(() => {
+        return Object.fromEntries(
+            Object.entries(templateValues.typingResultValues).map(([key, typingResult]) => {
+                const component = <span title={typingResult.display} />;
+                return [key, component];
+            }),
+        );
+    }, [templateValues]);
+
+    const canRender = useMemo(() => {
+        return (
+            i18n.exists(`nodeErrorCodes:${errorCode}.messageTemplate`) &&
+            validateTemplateInterpolation(
+                i18n.t(`nodeErrorCodes:${errorCode}.messageTemplate`),
+                Object.keys(displayableTemplateValues),
+                Object.keys(templateComponents),
+            )
+        );
+    }, [errorCode, displayableTemplateValues, templateComponents]);
+
+    return canRender ? (
+        <Trans
+            i18nKey={`nodeErrorCodes:${errorCode}.messageTemplate`}
+            values={displayableTemplateValues}
+            components={templateComponents}
+        ></Trans>
+    ) : null;
+}
+
+function validateTemplateInterpolation(template: string, valueNames: string[], componentNames: string[]): boolean {
+    const allValuesInterpolated = valueNames.every((name) => template.includes(`{{${name}}}`));
+    const allComponentsInterpolated = componentNames.every((name) => template.includes(`<${name}>`));
+    return allValuesInterpolated && allComponentsInterpolated;
 }

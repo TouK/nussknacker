@@ -65,7 +65,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("MissingRequiredProperty", _, _, Some(reqFieldName), NodeValidationErrorType.SaveAllowed)) =>
+      case List(NodeValidationError("MissingRequiredProperty", _, _, Some(reqFieldName), NodeValidationErrorType.SaveAllowed, _, _)) =>
     }
   }
 
@@ -80,7 +80,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
-        NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)
+        NodeValidationError("EmptyMandatoryParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed, _, _)
       ) =>
     }
   }
@@ -111,7 +111,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("MismatchParameter", _, _, Some("propRegExp"),  NodeValidationErrorType.SaveAllowed)) =>
+      case List(NodeValidationError("MismatchParameter", _, _, Some("propRegExp"),  NodeValidationErrorType.SaveAllowed, _, _)) =>
     }
   }
 
@@ -125,7 +125,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("InvalidIntegerLiteralParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed)) =>
+      case List(NodeValidationError("InvalidIntegerLiteralParameter", _, _, Some("propReq"), NodeValidationErrorType.SaveAllowed, _, _)) =>
     }
   }
 
@@ -135,7 +135,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("MissingRequiredProperty", _, _, Some(reqFieldName), NodeValidationErrorType.SaveAllowed)) =>
+      case List(NodeValidationError("MissingRequiredProperty", _, _, Some(reqFieldName), NodeValidationErrorType.SaveAllowed, _, _)) =>
     }
   }
 
@@ -150,8 +150,8 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
 
     result.errors.processPropertiesErrors should matchPattern {
       case List(
-      NodeValidationError("InvalidPropertyFixedValue", _, _, Some(optFixedFieldName), NodeValidationErrorType.SaveAllowed),
-      NodeValidationError("MissingRequiredProperty", _, _, Some(reqFieldName), NodeValidationErrorType.SaveAllowed)
+      NodeValidationError("InvalidPropertyFixedValue", _, _, Some(optFixedFieldName), NodeValidationErrorType.SaveAllowed, _, _),
+      NodeValidationError("MissingRequiredProperty", _, _, Some(reqFieldName), NodeValidationErrorType.SaveAllowed, _, _)
       ) =>
     }
   }
@@ -168,7 +168,7 @@ class AdditionalPropertiesValidatorTest extends AnyFunSuite with Matchers {
     val result = validator.validate(process)
 
     result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("UnknownProperty", _, _, Some(unknownProperty), NodeValidationErrorType.SaveAllowed)) =>
+      case List(NodeValidationError("UnknownProperty", _, _, Some(unknownProperty), NodeValidationErrorType.SaveAllowed, _, _)) =>
     }
   }
 }
