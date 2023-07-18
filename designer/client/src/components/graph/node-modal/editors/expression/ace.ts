@@ -7,6 +7,7 @@ import AceEditor from "react-ace";
 import "../../../../../brace/mode/spel";
 import "../../../../../brace/mode/spelTemplate";
 import "../../../../../brace/mode/sql";
+import "../../../../../brace/mode/sqlSpelTemplate";
 import "../../../../../brace/theme/nussknacker";
 
 export default AceEditor;
