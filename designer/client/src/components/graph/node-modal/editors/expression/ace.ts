@@ -5,6 +5,7 @@ import "ace-builds/src-noconflict/mode-jsx";
 import AceEditor from "react-ace";
 
 import "../../../../../brace/mode/spel";
+import "../../../../../brace/mode/spelTemplate";
 import "../../../../../brace/mode/sql";
 import "../../../../../brace/theme/nussknacker";
 

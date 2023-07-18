@@ -123,9 +123,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
 
     val dbioRunner = DBIOActionRunner(dbConfig)
-    val processRepository = DBFetchingProcessRepository.create(dbConfig)
+    val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
+    val processRepository = DBFetchingProcessRepository.create(dbConfig, actionRepository)
     // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-    val futureProcessRepository = DBFetchingProcessRepository.createFutureRespository(dbConfig)
+    val futureProcessRepository = DBFetchingProcessRepository.createFutureRespository(dbConfig, actionRepository)
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
     val notificationsConfig = resolvedConfig.as[NotificationConfig]("notifications")
@@ -133,7 +134,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       .loadListeners(getClass.getClassLoader, resolvedConfig, NussknackerServices(new PullProcessRepository(futureProcessRepository)))
 
     val scenarioResolver = new ScenarioResolver(fragmentResolver)
-    val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     val dmDispatcher = new DeploymentManagerDispatcher(managers, futureProcessRepository)
 
     deploymentService = new DeploymentServiceImpl(dmDispatcher, processRepository, actionRepository, dbioRunner,
@@ -147,7 +147,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val counter = new ProcessCounter(fragmentRepository)
 
-    Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment)
+    Initialization.init(modelData.mapValues(_.migrations), dbConfig, processRepository, environment)
 
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
