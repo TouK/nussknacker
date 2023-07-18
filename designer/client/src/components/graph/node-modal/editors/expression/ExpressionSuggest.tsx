@@ -37,7 +37,7 @@ function isSqlTokenAllowed(iterator, modeId): boolean {
 
 function isSpelTokenAllowed(iterator, modeId): boolean {
     // We need to handle #dict['Label'], where Label is a string token
-    return modeId === "ace/mode/spel" || modeId === "ace/mode/spelTemplate";
+    return modeId === "ace/mode/spel" || modeId === "ace/mode/spelTemplate" || modeId == "ace/mode/sqlSpelTemplate";
 }
 
 interface InputProps {
@@ -154,6 +154,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
     const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester));
     useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester]);
 
+    console.log(customAceEditorCompleter);
     const onChange = useCallback((value: string) => onValueChange(value), [onValueChange]);
     const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), []);
 
