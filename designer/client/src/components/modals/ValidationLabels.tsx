@@ -74,6 +74,14 @@ type TemplateLabelProps = {
     templateValues: TemplateValues;
 };
 
+const TemplatedType = styled.span({
+    fontWeight: "bold",
+    textDecoration: "underline",
+    "&:hover": {
+        color: "white",
+    },
+});
+
 function I18nTemplateLabel(props: TemplateLabelProps) {
     const { errorCode, templateValues } = props;
     const { i18n } = useTranslation();
@@ -93,7 +101,7 @@ function I18nTemplateLabel(props: TemplateLabelProps) {
     const templateComponents = useMemo(() => {
         return Object.fromEntries(
             Object.entries(templateValues.typingResultValues).map(([key, typingResult]) => {
-                const component = <span title={typingResult.display} />;
+                const component = <TemplatedType title={typingResult.type} />;
                 return [key, component];
             }),
         );
