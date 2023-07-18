@@ -3,8 +3,7 @@ import { isEmpty } from "lodash";
 import React, { useMemo } from "react";
 import { LimitedValidationLabel } from "../common/ValidationLabel";
 import { TemplateValues, Validator, withoutDuplications } from "../graph/node-modal/editors/Validators";
-import { Trans } from "react-i18next";
-import i18n from "../../i18n";
+import { Trans, useTranslation } from "react-i18next";
 
 type Props = {
     validators: Array<Validator>;
@@ -26,6 +25,7 @@ const LabelsContainer = styled.div({
 
 export default function ValidationLabels(props: Props) {
     const { validators, values, validationLabelInfo } = props;
+    const { t } = useTranslation();
 
     const validationErrors: ValidationError[] = withoutDuplications(validators)
         .filter((v) => !v.isValid(...values))
@@ -43,7 +43,6 @@ export default function ValidationLabels(props: Props) {
             const { errorCode, templateValues, message } = validationError;
 
             const canRenderI18nTemplate = errorCode != null && templateValues != null;
-            // const canRenderI18nSimpleMessage =
 
             // we don't pass description as tooltip message until we make changes on the backend
             return (
@@ -51,7 +50,7 @@ export default function ValidationLabels(props: Props) {
                     {canRenderI18nTemplate ? (
                         <I18nTemplateLabel errorCode={errorCode} templateValues={validationError.templateValues} />
                     ) : (
-                        i18n.t(`nodeErrorCodes:${validationError.errorCode}.simpleMessage`, message)
+                        t(`nodeErrorCodes:${validationError.errorCode}.simpleMessage`, message)
                     )}
                 </LimitedValidationLabel>
             );
@@ -77,10 +76,7 @@ type TemplateLabelProps = {
 
 function I18nTemplateLabel(props: TemplateLabelProps) {
     const { errorCode, templateValues } = props;
-
-    // TODO: remove comment
-    // Template normally looks like this:
-    // const operatorMismatchTemplate = "Operator {{operator}} used with mismatched types: <left>{{left}}</left> and <right>{{right}}</right>";
+    const { i18n } = useTranslation();
 
     const displayableTemplateValues = useMemo(() => {
         return {
@@ -93,6 +89,7 @@ function I18nTemplateLabel(props: TemplateLabelProps) {
         };
     }, [templateValues]);
 
+    // we create separate spans only for TypingResult values
     const templateComponents = useMemo(() => {
         return Object.fromEntries(
             Object.entries(templateValues.typingResultValues).map(([key, typingResult]) => {
@@ -102,16 +99,13 @@ function I18nTemplateLabel(props: TemplateLabelProps) {
         );
     }, [templateValues]);
 
-    const canRender = useMemo(() => {
-        return (
-            i18n.exists(`nodeErrorCodes:${errorCode}.messageTemplate`) &&
-            validateTemplateInterpolation(
-                i18n.t(`nodeErrorCodes:${errorCode}.messageTemplate`),
-                Object.keys(displayableTemplateValues),
-                Object.keys(templateComponents),
-            )
+    const canRender =
+        i18n.exists(`nodeErrorCodes:${errorCode}.messageTemplate`) &&
+        validateTemplateInterpolation(
+            i18n.t(`nodeErrorCodes:${errorCode}.messageTemplate`),
+            Object.keys(displayableTemplateValues),
+            Object.keys(templateComponents),
         );
-    }, [errorCode, displayableTemplateValues, templateComponents]);
 
     return canRender ? (
         <Trans
