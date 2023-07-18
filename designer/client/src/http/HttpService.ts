@@ -121,25 +121,10 @@ class HttpService {
         this.#notificationActions = na;
     }
 
-    loadBackendNotifications(
-        onSuccess: () => void,
-        onError: (error: any, defaultErrorHandler: () => void) => void,
-    ): Promise<BackendNotification[]> {
-        return api
-            .get<BackendNotification[]>("/notifications")
-            .then((d) => {
-                onSuccess();
-                return d.data;
-            })
-            .catch((error) => {
-                onError(error, () => {
-                    this.#addError(
-                        i18next.t("notification.error.cannotFetchBackendNotifications", "Cannot fetch backend notification"),
-                        error,
-                    );
-                });
-                return [];
-            });
+    loadBackendNotifications(): Promise<BackendNotification[]> {
+        return api.get<BackendNotification[]>("/notifications").then((d) => {
+            return d.data;
+        });
     }
 
     fetchHealthCheckProcessDeployment(): Promise<HealthCheckResponse> {
