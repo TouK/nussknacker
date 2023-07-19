@@ -8,7 +8,7 @@ object Expression {
   object Language {
     val Spel = "spel"
     val SpelTemplate = "spelTemplate"
-    val SqlSpelTemplate = "sqaSpelTemplate"
+    val SqlSpelTemplate = "sqlSpelTemplate"
   }
 
   def spel(expression: String): Expression = Expression(Language.Spel, expression)
