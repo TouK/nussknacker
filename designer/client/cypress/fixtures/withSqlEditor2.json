@@ -27,7 +27,7 @@
                         "name": "sql",
                         "expression": {
                             "language": "sqlSpelTemplate",
-                            "expression": "SELECT DISTINCT TO_CHAR(SYSDATE,''YYYY-MM-DD'') AS CHAR_DATE, A.CUSTOM_ID, C.DATE, CASE WHEN B.VALUE1 IS NULL THEN 0 ELSE\n(ROUND(B.VALUE1 / 1024 / 1024)) END AS DL_TOTAL_30D,\n\nFROM TOTAL.V_TOTAL_PROFILE as A\nLEFT JOIN TOTAL.V_TOTAL_PROFILE as B ON A.ID = B.ID\nLEFT JOIN TOTAL.V_TOTAL_EQUIPMENT as C ON to_number(A.VALUE) = C.VALUE\n\nWHERE 1=1 AND ((A.TYPE = ''GOLD'') OR (A.TYPE = ''SILVER'' AND A.AGE > 10)) AND A.IS_RUNNING = 1 AND A.CUSTOMER_ID IS NOT NULL\n\nSELECT DISTINCT u.id, SELECT(\n    SELECT * FROM user_data WHERE id = 1\n) as data FROM user as u WHERE u.id = 1 LAST u.id"
+                            "expression": "SELECT DISTINCT TO_CHAR(SYSDATE,'YYYY-MM-DD') AS CHAR_DATE, A.CUSTOM_ID, C.DATE, CASE WHEN B.VALUE1 IS NULL THEN 0 ELSE\n(ROUND(B.VALUE1 / 1024 / 1024)) END AS DL_TOTAL_30D,\n\nFROM TOTAL.V_TOTAL_PROFILE as A\nLEFT JOIN TOTAL.V_TOTAL_PROFILE as B ON A.ID = B.ID\nLEFT JOIN TOTAL.V_TOTAL_EQUIPMENT as C ON to_number(A.VALUE) = C.VALUE\n\nWHERE 1=1 AND ((A.TYPE = 'GOLD') OR (A.TYPE = 'SILVER' AND A.AGE > 10)) AND A.IS_RUNNING = 1 AND A.CUSTOMER_ID IS NOT NULL\n\nSELECT DISTINCT u.id, SELECT(\n    SELECT * FROM user_data WHERE id = 1\n) as data FROM user as u WHERE u.id = 1 LAST u.id"
                         }
                     }
                 ]
