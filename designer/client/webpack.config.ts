@@ -60,7 +60,7 @@ const config: Configuration = {
         assetModuleFilename: "assets/images/[name][hash][ext]",
         clean: true,
     },
-    devtool: isProd ? "hidden-source-map" : "eval-source-map",
+    devtool: isProd ? "source-map" : "eval-source-map",
     watchOptions: {
         ignored: /^(?!.*\/src\/).*$/,
     },
