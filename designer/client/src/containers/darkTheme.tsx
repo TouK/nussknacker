@@ -3,7 +3,7 @@ import { NkTheme, tintPrimary } from "./theme";
 import { defaultsDeep } from "lodash";
 import { defaultAppTheme } from "./defaultAppTheme";
 
-const { borderRadius, marginSize } = vars;
+const { borderRadius } = vars;
 
 const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
     // eslint-disable-next-line i18next/no-literal-string

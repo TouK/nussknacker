@@ -10,6 +10,8 @@ import { GlobalCSSVariables, NkThemeProvider } from "./theme";
 import { Notifications } from "./Notifications";
 import { UsageReportingImage } from "./UsageReportingImage";
 import { WindowManager } from "../windowManager";
+import { ConnectionErrorProvider } from "./connectionErrorProvider";
+import { MuiThemeProvider } from "./muiThemeProvider";
 
 export function NussknackerApp() {
     const loggedUser = useSelector(getLoggedUser);
@@ -42,7 +44,13 @@ export function NussknackerApp() {
                     </main>
                 </div>
             </WindowManager>
-            <Notifications />
+
+            {/*TODO: Since we only listen to notifications, we can declare Theme this way, however, it's a problem with MuiThemeProvider and WindowManager styles, with dialog visibility, probably something with a z-index. It should be fixed when we remove stylus and refactor mui themes */}
+            <MuiThemeProvider>
+                <ConnectionErrorProvider>
+                    <Notifications />
+                </ConnectionErrorProvider>
+            </MuiThemeProvider>
             <VersionInfo />
             <UsageReportingImage />
         </NkThemeProvider>

@@ -3,7 +3,7 @@ import Chainable = Cypress.Chainable;
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace Cypress {
-        interface Chainable<Subject = any> {
+        interface Chainable {
             createTestProcess: typeof createProcess;
             deleteTestProcess: typeof deleteTestProcess;
             getTestProcesses: typeof getTestProcesses;
