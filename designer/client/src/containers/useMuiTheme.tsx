@@ -4,6 +4,24 @@ import { useMemo } from "react";
 import { useNkTheme } from "./theme";
 import { Theme } from "@emotion/react";
 
+declare module "@mui/material/styles" {
+    interface Theme {
+        custom: {
+            ConnectionErrorModal: {
+                zIndex: number;
+            };
+        };
+    }
+    // allow configuration using `createTheme`
+    interface ThemeOptions {
+        custom?: {
+            ConnectionErrorModal?: {
+                zIndex: number;
+            };
+        };
+    }
+}
+
 // translate emotion (nk) theme to mui theme
 export function useMuiTheme(): MuiTheme & Theme {
     const { theme } = useNkTheme();
@@ -42,6 +60,11 @@ export function useMuiTheme(): MuiTheme & Theme {
                                         margin: 0,
                                     },
                                 },
+                            },
+                        },
+                        custom: {
+                            ConnectionErrorModal: {
+                                zIndex: 1600,
                             },
                         },
                     }),

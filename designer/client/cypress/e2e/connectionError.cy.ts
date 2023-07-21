@@ -36,7 +36,24 @@ describe("Connection error", () => {
             cy.contains(/Backend connection issue/).should("not.exist");
         };
 
+        const verifyNoBackendAccessWhenScenarioEditNodeModalOpens = () => {
+            cy.log("verify no backend access when scenario edit modal opens");
+            cy.visitNewProcess("no-backend", "filter");
+            cy.contains("svg", /filter/i).dblclick();
+            cy.intercept("/api/notifications", { statusCode: 502 });
+
+            cy.contains(/Backend connection issue/).should("be.visible");
+            cy.get("body").matchImage();
+
+            cy.intercept("/api/notifications", (req) => {
+                req.continue();
+            });
+
+            cy.contains(/Backend connection issue/).should("not.exist");
+        };
+
         verifyNoNetworkAccess();
         verifyNoBackendAccess();
+        verifyNoBackendAccessWhenScenarioEditNodeModalOpens();
     });
 });

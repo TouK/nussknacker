@@ -35,7 +35,7 @@ export const ConnectionErrorProvider: FC<PropsWithChildren<unknown>> = ({ childr
                         headerText={i18next.t("connectionError.noBackendAccess.header", "Backend connection issue")}
                         contentText={i18next.t(
                             "connectionError.noBackendAccess.content",
-                            "We're experiencing difficulties connecting to the backend server at the moment. We kindly ask you to wait just a few moments while. we resolve the issue.",
+                            "We're experiencing difficulties connecting to the backend server at the moment. We kindly ask you to wait just a few moments while we resolve the issue.",
                         )}
                         Icon={CloudOff}
                     />
@@ -49,7 +49,7 @@ export const ConnectionErrorProvider: FC<PropsWithChildren<unknown>> = ({ childr
     return (
         <ConnectionErrorContext.Provider value={{ handleChangeConnectionError }}>
             {connectionErrorComponent && (
-                <Dialog maxWidth={"xs"} open={true}>
+                <Dialog sx={(theme) => ({ zIndex: theme.custom.ConnectionErrorModal.zIndex })} maxWidth={"xs"} open={true}>
                     {connectionErrorComponent}
                 </Dialog>
             )}
