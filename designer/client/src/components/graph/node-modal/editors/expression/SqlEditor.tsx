@@ -89,31 +89,6 @@ function useAliasUsageHighlight(token = "alias") {
 
 const SqlEditor: SimpleEditor<Props> = (props: Props) => {
     const { expressionObj, onValueChange, className, ...passProps } = props;
-    // const sqlTemplateFormatter: Formatter = {
-    //     encode: (value) => {
-    //         return value;
-    //         //return "'" + value + "'";
-    //     },
-    //     decode: (value) => {
-    //         //return value.substring(1, value.length - 1);
-    //         return value;
-    //     },
-    // };
-
-    // const valueChange = useCallback(
-    //     (value) => {
-    //         const encoded = sqlTemplateFormatter.encode(value);
-    //         if (encoded !== value) {
-    //             return onValueChange(encoded);
-    //         }
-    //     },
-    //     [onValueChange, sqlTemplateFormatter],
-    // );
-
-    // useEffect(() => {
-    //     valueChange(value.expression);
-    // }, []);
-
     const value = useMemo(
         () => ({
             expression: expressionObj.expression,

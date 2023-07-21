@@ -184,7 +184,7 @@ object SpelExpressionParser extends LazyLogging {
 
     override def isTemplate: Boolean = true
 
-    override def getExpressionSuffix: String = "}#"
+    override def getExpressionSuffix: String = "}"
   }
 
   object SqlTemplate extends Flavour(GraphExpression.Language.SqlSpelTemplate, Some(SqlSpelTemplateParserContext))
