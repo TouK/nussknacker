@@ -23,7 +23,7 @@ function goOnline() {
     cy.log("**go online**")
         // go back to normal network behavior
         .then(() =>
-            cy.intercept("GET", "*", (req) => {
+            cy.intercept("*", (req) => {
                 req.continue();
             }),
         )

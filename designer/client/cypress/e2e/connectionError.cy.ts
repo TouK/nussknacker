@@ -1,4 +1,10 @@
 describe("Connection error", () => {
+    const NAME = "no-backend";
+
+    before(() => {
+        cy.deleteAllTestProcesses({ filter: NAME, force: true });
+    });
+
     beforeEach(() => {
         cy.viewport(1400, 1000);
         cy.visit("/");
@@ -38,7 +44,8 @@ describe("Connection error", () => {
 
         const verifyNoBackendAccessWhenScenarioEditNodeModalOpens = () => {
             cy.log("verify no backend access when scenario edit modal opens");
-            cy.visitNewProcess("no-backend", "filter");
+            cy.visitNewProcess(NAME, "filter");
+
             cy.contains("svg", /filter/i).dblclick();
             cy.intercept("/api/notifications", { statusCode: 502 });
 
