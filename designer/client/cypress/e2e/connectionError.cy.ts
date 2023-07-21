@@ -1,4 +1,10 @@
 describe("Connection error", () => {
+    const NAME = "no-backend";
+
+    before(() => {
+        cy.deleteAllTestProcesses({ filter: NAME, force: true });
+    });
+
     beforeEach(() => {
         cy.viewport(1400, 1000);
         cy.visit("/");
@@ -36,7 +42,25 @@ describe("Connection error", () => {
             cy.contains(/Backend connection issue/).should("not.exist");
         };
 
+        const verifyNoBackendAccessWhenScenarioEditNodeModalOpens = () => {
+            cy.log("verify no backend access when scenario edit modal opens");
+            cy.visitNewProcess(NAME, "filter");
+
+            cy.contains("svg", /filter/i).dblclick();
+            cy.intercept("/api/notifications", { statusCode: 502 });
+
+            cy.contains(/Backend connection issue/).should("be.visible");
+            cy.get("body").matchImage();
+
+            cy.intercept("/api/notifications", (req) => {
+                req.continue();
+            });
+
+            cy.contains(/Backend connection issue/).should("not.exist");
+        };
+
         verifyNoNetworkAccess();
         verifyNoBackendAccess();
+        verifyNoBackendAccessWhenScenarioEditNodeModalOpens();
     });
 });
