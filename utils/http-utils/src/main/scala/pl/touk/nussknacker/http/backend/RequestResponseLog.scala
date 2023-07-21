@@ -1,7 +1,6 @@
-package pl.touk.nussknacker.openapi.http.backend
+package pl.touk.nussknacker.http.backend
 
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import sttp.client3.{Request, Response, StringBody}
 import sttp.model.Header
 
@@ -10,7 +9,7 @@ case class RequestResponseLog(url: String,
                               method: Option[String],
                               headers: Map[String, List[String]],
                               body: Option[String],
-                              statusCode: Option[Int]) extends DisplayJsonWithEncoder[RequestResponseLog] {
+                              statusCode: Option[Int]) {
   def pretty: String = {
     Map(
       "url" -> url,

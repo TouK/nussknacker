@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.FileUtils
 import org.asynchttpclient.DefaultAsyncHttpClient
 import pl.touk.nussknacker.engine.util.ResourceLoader
-import pl.touk.nussknacker.openapi.http.backend.HttpClientConfig
+import pl.touk.nussknacker.http.backend.HttpClientConfig
 import pl.touk.nussknacker.openapi.parser.{ServiceParseError, SwaggerParser}
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend

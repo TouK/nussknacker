@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.openapi.http.backend
+package pl.touk.nussknacker.http.backend
 
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
