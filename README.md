@@ -65,8 +65,7 @@ with detailed instructions how to run Nussknacker with some of the older version
 - [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) - Repository with quick setup (docker-compose or helm) presenting typical usage of Nussknacker    
 - [nussknacker-sample-components](https://github.com/touk/nussknacker-sample-components) - Start here if you intend to create own Nussknacker components
 - [nussknacker-helm](https://github.com/TouK/nussknacker-helm) - Helm chart of the project                     
-- [nussknacker-flink-compatibility](https://github.com/TouK/nussknacker-flink-compatibility) - Toolbox providing backward compatibility for older Flink's versions    
-- [prinz-nussknacker](https://github.com/prinz-nussknacker/prinz) - Nussknacker integration with ML models and model registries - currently supports [mlflow](https://mlflow.org/), [PMML](http://dmg.org/pmml/v4-4-1/GeneralStructure.html) (via [JPMML](https://github.com/jpmml/jpmml-evaluator)) and [H2O Java models](https://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/index.html)
+- [nussknacker-flink-compatibility](https://github.com/TouK/nussknacker-flink-compatibility) - Toolbox providing backward compatibility for older Flink's versions
 - [nussknacker-benchmarks](https://github.com/TouK/nussknacker-benchmarks) - micro and e2e benchmarks visualization
 - [flink-scala-2.13](https://github.com/TouK/flink-scala-2.13) - our patch for Flink, required if you want use Nussknacker built with scala 2.13
                                                    

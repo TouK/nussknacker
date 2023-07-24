@@ -28,7 +28,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, Upda
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.RemoteUserName
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -133,7 +133,7 @@ class ProcessesResources(
         processId(processName) { processId =>
           complete {
             //FIXME: We should provide Deployment definition and return there all deployments, not actions..
-            processRepository.fetchProcessActions(processId.id)
+            processService.getProcessActions(processId.id)
           }
         }
       } ~ path("processes" / Segment) { processName =>

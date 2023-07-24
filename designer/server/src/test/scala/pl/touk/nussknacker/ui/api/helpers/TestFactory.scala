@@ -75,10 +75,10 @@ object TestFactory extends TestPermissions {
     newDBIOActionRunner(dummyDb)
 
   def newFutureFetchingProcessRepository(dbs: DbConfig) =
-    new DBFetchingProcessRepository[Future](dbs) with BasicRepository
+    new DBFetchingProcessRepository[Future](dbs, newActionProcessRepository(dbs)) with BasicRepository
 
   def newFetchingProcessRepository(dbs: DbConfig) =
-    new DBFetchingProcessRepository[DB](dbs) with DbioRepository
+    new DBFetchingProcessRepository[DB](dbs, newActionProcessRepository(dbs)) with DbioRepository
 
   def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
     new DBProcessRepository(dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
