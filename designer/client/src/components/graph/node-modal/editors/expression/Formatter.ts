@@ -1,9 +1,7 @@
-import { flow } from "lodash";
+import { flow, startsWith } from "lodash";
 import moment from "moment";
 import { Duration } from "./Duration/DurationEditor";
 import { Period } from "./Duration/PeriodEditor";
-import { escapeQuotes, getQuotationMark, quote, simplifyQuotes } from "./SpelQuotesUtils";
-import { concatsToTemplates, templatesToConcats, unescapeTemplates } from "./TemplatesUtils";
 import { CronExpression } from "./Cron/CronEditor";
 
 export type Formatter = {
@@ -22,14 +20,16 @@ export enum FormatterType {
     DateTime = "java.time.LocalDateTime",
 }
 
-export const stringSpelFormatter: Formatter = {
-    encode: (value) => {
-        const qm = getQuotationMark(value);
-        return flow([escapeQuotes(qm), templatesToConcats(qm), unescapeTemplates, quote(qm), simplifyQuotes(qm)])(value);
-    },
-    decode: (value) => {
-        return concatsToTemplates(value);
-    },
+const defaultQuotationMark = "'";
+const valueQuotationMark = (value) => value.charAt(0);
+
+const valueStartsWithQuotationMark = (value) => startsWith(value, '"') || startsWith(value, "'");
+
+const quotationMark = (value) => (valueStartsWithQuotationMark(value) ? valueQuotationMark(value) : defaultQuotationMark);
+
+const stringSpelFormatter: Formatter = {
+    encode: (value) => quotationMark(value) + value + quotationMark(value),
+    decode: (value) => value.substring(1, value.length - 1),
 };
 
 const spelDurationFormatter: Formatter = {

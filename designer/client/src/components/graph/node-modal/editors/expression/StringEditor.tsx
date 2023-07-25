@@ -5,7 +5,6 @@ import { Formatter, FormatterType, typeFormatters } from "./Formatter";
 import i18next from "i18next";
 import { ExpressionLang, ExpressionObj } from "./types";
 import { isQuoted } from "./SpelQuotesUtils";
-import { splitConcats } from "./TemplatesUtils";
 
 type Props = {
     expressionObj: $TodoType;
@@ -13,7 +12,9 @@ type Props = {
     className: string;
     formatter: Formatter;
 };
-
+const splitConcats = (value: string) => {
+    return value.split(/\s*\+\s*/gm);
+};
 const StringEditor: SimpleEditor<Props> = (props: Props) => {
     const { expressionObj, onValueChange, formatter, ...passProps } = props;
     const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter;
