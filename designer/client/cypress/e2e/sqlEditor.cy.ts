@@ -16,7 +16,6 @@ describe("Sql editor", () => {
         cy.get("[model-id=sql-source]").should("be.visible").trigger("dblclick");
         cy.get("[data-testid=window]").should("be.visible");
         cy.get("#ace-editor").should("not.have.class", "tokenizer-working").parent().matchImage({ maxDiffThreshold });
-        //cy.get("[title='Switch to basic mode']").trigger("click");
         cy.get("[data-testid=window]").matchImage();
     });
 

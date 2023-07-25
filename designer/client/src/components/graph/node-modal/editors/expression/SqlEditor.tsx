@@ -92,7 +92,7 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
     const value = useMemo(
         () => ({
             expression: expressionObj.expression,
-            language: ExpressionLang.SqlSpELTemplate,
+            language: ExpressionLang.SQL,
         }),
         [expressionObj],
     );

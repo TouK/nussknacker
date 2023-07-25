@@ -144,7 +144,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
     const [editorFocused, setEditorFocused] = useState(false);
 
     const expressionSuggester = useMemo(() => {
-        if (backendCodeSuggestions) {
+        if (backendCodeSuggestions && language != ExpressionLang.SQL) {
             return new BackendExpressionSuggester(language, id, typesInformation, variableTypes, processingType, HttpService);
         } else {
             return new RegexExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);
