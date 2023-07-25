@@ -153,7 +153,7 @@ ace.define("ace/mode/sql_highlight_rules", ["require", "exports", "module", "ace
                 push: [
                     {
                         token: "spel.end",
-                        regex: /\}/,
+                        regex: /\}#/,
                         next: "pop",
                     },
                     {include: "spel-start"},
