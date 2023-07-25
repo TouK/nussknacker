@@ -158,7 +158,7 @@ describe("Components list", () => {
         cy.createTestProcess(`${seed}_xxx`, "testProcess2");
 
         cy.visit("/components/usages/filter");
-
+        cy.get("[data-testid=OpenInNewIcon]").should("have.length.greaterThan", 1);
         cy.get("input[type=text]").type("8 xxx");
         cy.matchQuery("?TEXT=8+xxx");
         cy.contains(/^filter 8$/).should("be.visible");
