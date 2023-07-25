@@ -20,7 +20,6 @@ export enum FormatterType {
     Time = "java.time.LocalTime",
     Date = "java.time.LocalDate",
     DateTime = "java.time.LocalDateTime",
-    Sql = "java.lang.String", // for now same as String
 }
 
 export const stringSpelFormatter: Formatter = {
