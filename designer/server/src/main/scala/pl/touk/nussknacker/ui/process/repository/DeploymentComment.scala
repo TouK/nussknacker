@@ -54,12 +54,12 @@ case class CommentValidationError(message: String) extends Exception(message)
 
 object CommentValidationError {
   def apply(comment: String, deploymentCommentSettings: DeploymentCommentSettings): CommentValidationError = {
-    new CommentValidationError(s"Bad comment format '$comment'. " +
-      (deploymentCommentSettings.exampleComment match {
-        case Some(exampleComment) =>
-          s"Example comment: $exampleComment."
-        case None =>
-          s"Validation pattern: ${deploymentCommentSettings.validationPattern}"
-      }))
+    val suffix = deploymentCommentSettings.exampleComment match {
+      case Some(exampleComment) =>
+        s"Example comment: $exampleComment."
+      case None =>
+        s"Validation pattern: ${deploymentCommentSettings.validationPattern}"
+    }
+    new CommentValidationError(s"Bad comment format '$comment'. " + suffix)
   }
 }
