@@ -72,6 +72,7 @@ case class ProcessActionEntityData(id: ProcessActionId,
                                    commentId: Option[Long],
                                    buildInfo: Option[String]) {
 
+  lazy val createdAtTime: Instant = createdAt.toInstant
   lazy val performedAtTime: Option[Instant] = performedAt.map(_.toInstant)
   lazy val isDeployed: Boolean = actionType.equals(ProcessActionType.Deploy)
 }

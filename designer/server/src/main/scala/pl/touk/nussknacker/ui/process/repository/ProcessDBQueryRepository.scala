@@ -31,34 +31,6 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
       .filter(_.processId === processId)
       .sortBy(_.id.desc)
 
-  protected def fetchLastDeployedActionPerProcessQuery: Query[(api.Rep[ProcessId], (ProcessActionEntityFactory#ProcessActionEntity, api.Rep[Option[CommentEntityFactory#CommentEntity]])), (ProcessId, (ProcessActionEntityData, Option[CommentEntityData])), Seq] =
-    fetchLastFinishedActionPerProcessQuery(Some(List(ProcessActionType.Deploy)))
-
-  protected def fetchLastFinishedActionPerProcessQuery(actions: Option[List[ProcessActionType]]): Query[(Rep[ProcessId], (ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]])), (ProcessId, (ProcessActionEntityData, Option[CommentEntityData])), Seq] = {
-    val query = processActionsTable
-      .filter(_.state === ProcessActionState.Finished)
-      .groupBy(_.processId)
-      .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
-      .join(processActionsTable)
-      .on { case ((processId, maxPerformedAt), action) => action.processId === processId && action.state === ProcessActionState.Finished && action.performedAt === maxPerformedAt } //We fetch exactly this one  with max deployment
-      .map { case ((processId, _), action) => processId -> action }
-      .joinLeft(commentsTable)
-      .on { case ((_, action), comment) => action.commentId === comment.id }
-      .map{ case ((processId, action), comment) => processId -> (action, comment) }
-
-    actions
-      .map(actions => query.filter{case (_, (entity, _)) => entity.actionType.inSet(actions)})
-      .getOrElse(query)
-  }
-
-  protected def fetchProcessLatestFinishedActionsQuery(processId: ProcessId): Query[(ProcessActionEntityFactory#ProcessActionEntity, Rep[Option[CommentEntityFactory#CommentEntity]]), (ProcessActionEntityData, Option[CommentEntityData]), Seq] =
-    processActionsTable
-      .filter(p => p.processId === processId && p.state === ProcessActionState.Finished)
-      .joinLeft(commentsTable)
-      .on { case (action, comment) => action.commentId === comment.id }
-      .map{ case (action, comment) => (action, comment) }
-      .sortBy(_._1.performedAt.desc)
-
   protected def fetchLatestProcessesQuery(query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
                                           lastDeployedActionPerProcess: Set[ProcessId],
                                           isDeployed: Option[Boolean])(implicit fetchShape: ProcessShapeFetchStrategy[_], loggedUser: LoggedUser): Query[(((Rep[ProcessId], Rep[Option[Timestamp]]), ProcessVersionEntityFactory#BaseProcessVersionEntity), ProcessEntityFactory#ProcessEntity), (((ProcessId, Option[Timestamp]), ProcessVersionEntityData), ProcessEntityData), Seq] =
@@ -99,23 +71,12 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
 
 object ProcessDBQueryRepository {
 
-  def toProcessVersion(versionData: ProcessVersionEntityData, actions: List[(ProcessActionEntityData, Option[CommentEntityData])]): ProcessVersion = ProcessVersion(
+  def toProcessVersion(versionData: ProcessVersionEntityData, actions: List[ProcessAction]): ProcessVersion = ProcessVersion(
     processVersionId = versionData.id,
     createDate = versionData.createDate.toInstant,
     modelVersion = versionData.modelVersion,
     user = versionData.user,
-    actions = actions.map(toProcessAction)
-  )
-
-  def toProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
-    id = actionData._1.id,
-    processVersionId = actionData._1.processVersionId.getOrElse(throw new AssertionError(s"Process version not available for finished action: ${actionData._1}")),
-    performedAt = actionData._1.performedAtTime.getOrElse(throw new AssertionError(s"PerformedAt not available for finished action: ${actionData._1}")),
-    user = actionData._1.user,
-    actionType = actionData._1.actionType,
-    commentId = actionData._2.map(_.id),
-    comment = actionData._2.map(_.content),
-    buildInfo = actionData._1.buildInfo.flatMap(BuildInfo.parseJson).getOrElse(BuildInfo.empty)
+    actions = actions
   )
 
   case class ProcessNotFoundError(id: String) extends Exception(s"No scenario $id found") with NotFoundError

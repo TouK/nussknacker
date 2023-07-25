@@ -8,7 +8,7 @@ import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionId, ProcessActionType, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType, StatusDetails}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditional
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
-
 import java.util.UUID
 
 class PeriodicDeploymentManagerTest extends AnyFunSuite
@@ -95,7 +94,19 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
         f.getAllowedActions(singleStatus) shouldBe List(ProcessActionType.Cancel, ProcessActionType.Deploy)
     }
 
-    val deployAction = ProcessAction(ProcessActionId(UUID.randomUUID()), VersionId(1), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Deploy, None, None, Map.empty)
+    val deployAction = ProcessAction(
+      id = ProcessActionId(UUID.randomUUID()),
+      processId = ProcessId(2),
+      processVersionId = VersionId(1),
+      user = "fooUser",
+      createdAt = Instant.ofEpochMilli(0),
+      performedAt = Instant.ofEpochMilli(0),
+      actionType = ProcessActionType.Deploy,
+      state = ProcessActionState.Finished,
+      failureMessage = None,
+      commentId = None,
+      comment = None,
+      buildInfo = Map.empty)
     f.periodicDeploymentManager.getProcessState(processName, Some(deployAction)).futureValue.value.status shouldBe a[ScheduledStatus]
   }
 
@@ -118,7 +129,20 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
     f.periodicProcessService.deactivate(processName).futureValue
 
-    val deployAction = ProcessAction(ProcessActionId(UUID.randomUUID()), VersionId(1), Instant.ofEpochMilli(0), "fooUser", ProcessActionType.Deploy, None, None, Map.empty)
+    // Warning: don't remove type declaration because it causes compilation error in scala 2.12
+    val deployAction: ProcessAction = ProcessAction(
+      id = ProcessActionId(UUID.randomUUID()),
+      processId = ProcessId(2),
+      processVersionId = VersionId(1),
+      user = "fooUser",
+      createdAt = Instant.ofEpochMilli(0),
+      performedAt = Instant.ofEpochMilli(0),
+      actionType = ProcessActionType.Deploy,
+      state = ProcessActionState.Finished,
+      failureMessage = None,
+      commentId = None,
+      comment = None,
+      buildInfo = Map.empty)
     val state = f.periodicDeploymentManager.getProcessState(processName, Some(deployAction)).futureValue.value
 
     val status = state.status

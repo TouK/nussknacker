@@ -56,11 +56,11 @@ trait CommentActions {
   }
 
   def newCommentAction(processId: ProcessId, processVersionId: => VersionId, comment: Option[Comment])
-                      (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Option[Long]] = {
+                      (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Option[CommentEntityData]] = {
     comment match {
       case Some(c) if c.value.nonEmpty => for {
         newId <- nextIdAction
-        _ <- commentsTable += CommentEntityData(
+        entityData = CommentEntityData(
           id = newId,
           processId = processId,
           processVersionId = processVersionId,
@@ -68,7 +68,8 @@ trait CommentActions {
           user = loggedUser.username,
           createDate = Timestamp.from(Instant.now())
         )
-      } yield Some(newId)
+        _ <- commentsTable += entityData
+      } yield Some(entityData)
       case _ => DBIO.successful(None)
     }
   }

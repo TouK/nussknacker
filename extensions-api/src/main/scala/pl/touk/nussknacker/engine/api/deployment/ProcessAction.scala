@@ -2,17 +2,24 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 
 import java.time.Instant
 import java.util.UUID
 
 @JsonCodec case class ProcessAction(id: ProcessActionId,
+                                    processId: ProcessId,
+                                    // We use process action only for finished actions so processVersionId is always defined
                                     processVersionId: VersionId,
-                                    performedAt: Instant,
                                     user: String,
+                                    createdAt: Instant,
+                                    // We use process action only for finished actions so performedAt is always defined
+                                    performedAt: Instant,
                                     actionType: ProcessActionType,
+                                    state: ProcessActionState,
+                                    failureMessage: Option[String],
                                     commentId: Option[Long],
                                     comment: Option[String],
                                     buildInfo: Map[String, String])

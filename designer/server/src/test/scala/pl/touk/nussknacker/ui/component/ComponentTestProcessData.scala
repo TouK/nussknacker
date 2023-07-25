@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.component
 
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionType}
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
@@ -41,9 +42,24 @@ object ComponentTestProcessData {
   val CanceledFraudProcessName = "canceledFraudProcessName"
   val FraudProcessWithFragmentName = "fraudProcessWithFragment"
 
-  private val deployedAction = ProcessAction(ProcessActionId(UUID.randomUUID()), initialVersionId, Instant.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)
-  private val canceledAction = ProcessAction(ProcessActionId(UUID.randomUUID()), initialVersionId, Instant.now(), "user", ProcessActionType.Cancel, Option.empty, Option.empty, Map.empty)
-  private val archivedAction = ProcessAction(ProcessActionId(UUID.randomUUID()), initialVersionId, Instant.now(), "user", ProcessActionType.Archive, Option.empty, Option.empty, Map.empty)
+  private val deployedAction = prepareTestAction(ProcessActionType.Deploy)
+  private val canceledAction = prepareTestAction(ProcessActionType.Cancel)
+  private val archivedAction = prepareTestAction(ProcessActionType.Archive)
+
+  private def prepareTestAction(actionType: ProcessActionType) =
+    ProcessAction(
+      id = ProcessActionId(UUID.randomUUID()),
+      processId = ProcessId(123),
+      processVersionId = initialVersionId,
+      user = "user",
+      createdAt = Instant.now(),
+      performedAt = Instant.now(),
+      actionType = actionType,
+      state = ProcessActionState.Finished,
+      failureMessage = Option.empty,
+      commentId = Option.empty,
+      comment = Option.empty,
+      buildInfo = Map.empty)
 
   val MarketingProcess: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("marketingProcess", Streaming, SharedSourceConf, SharedSinkConf),

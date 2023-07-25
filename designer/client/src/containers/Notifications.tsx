@@ -14,6 +14,8 @@ import { markBackendNotificationRead, updateBackendNotifications } from "../acti
 import { displayProcessActivity, loadProcessState } from "../actions/nk";
 import { getProcessId } from "../reducers/selectors/graph";
 import { loadProcessVersions } from "../actions/nk/loadProcessVersions";
+import { useChangeConnectionError } from "./connectionErrorProvider";
+import i18next from "i18next";
 
 function prepareNotification(backendNotification: BackendNotification, dispatch: Dispatch<any>) {
     const autoDismiss = backendNotification.type == "error" ? 0 : 10;
@@ -53,6 +55,8 @@ export function Notifications(): JSX.Element {
     const readNotifications = useSelector(getBackendNotifications);
     const reactNotifications = useSelector(getNotifications);
     const dispatch = useDispatch();
+    const { handleChangeConnectionError } = useChangeConnectionError();
+
     useEffect(() => HttpService.setNotificationActions(bindActionCreators(NotificationActions, dispatch)));
 
     const currentScenarioName = useSelector(getProcessId);
@@ -61,19 +65,41 @@ export function Notifications(): JSX.Element {
         const onlyUnreadPredicate = (be: BackendNotification) =>
             !readNotifications.processedNotificationIds.includes(be.id) && !reactNotifications.map((k) => k.uid).includes(be.id);
 
-        HttpService.loadBackendNotifications().then((notifications) => {
-            dispatch(updateBackendNotifications(notifications.map((n) => n.id)));
-            notifications.filter(onlyUnreadPredicate).forEach((beNotification) => {
-                if (beNotification.type) {
-                    dispatch(prepareNotification(beNotification, dispatch));
+        HttpService.loadBackendNotifications()
+            .then((notifications) => {
+                handleChangeConnectionError(null);
+                dispatch(updateBackendNotifications(notifications.map((n) => n.id)));
+                notifications.filter(onlyUnreadPredicate).forEach((beNotification) => {
+                    if (beNotification.type) {
+                        dispatch(prepareNotification(beNotification, dispatch));
+                    } else {
+                        //if we don't display notification, we assume that it's already processes
+                        dispatch(markBackendNotificationRead(beNotification.id));
+                    }
+                    handleRefresh(beNotification, currentScenarioName, dispatch);
+                });
+            })
+            .catch((error) => {
+                const isNetworkAccess = navigator.onLine;
+                const possibleServerNotAvailableHttpStatuses = [502, 503, 504];
+
+                if (!isNetworkAccess) {
+                    handleChangeConnectionError("NO_NETWORK_ACCESS");
+                } else if (possibleServerNotAvailableHttpStatuses.some((status) => status === error.response.status)) {
+                    handleChangeConnectionError("NO_BACKEND_ACCESS");
                 } else {
-                    //if we don't display notification, we assume that it's already processes
-                    dispatch(markBackendNotificationRead(beNotification.id));
+                    const errorResponseData = error?.response?.data || error.message;
+
+                    dispatch(
+                        NotificationActions.error(
+                            i18next.t("notification.error.cannotFetchBackendNotifications", "Cannot fetch backend notification"),
+                            errorResponseData,
+                            true,
+                        ),
+                    );
                 }
-                handleRefresh(beNotification, currentScenarioName, dispatch);
             });
-        });
-    }, [readNotifications]);
+    }, [currentScenarioName, dispatch, handleChangeConnectionError, reactNotifications, readNotifications.processedNotificationIds]);
     useInterval(refresh, { refreshTime: 2000, ignoreFirst: true });
 
     //noAnimation=false breaks onRemove somehow :/

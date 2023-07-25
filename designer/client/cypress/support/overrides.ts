@@ -16,7 +16,7 @@ declare global {
             updateSnapshotsOnFail?: boolean;
         }
 
-        interface Chainable<Subject> {
+        interface Chainable {
             matchImage(options?: Cypress.MatchImageOptionsExtended): Chainable<MatchImageReturn>;
         }
     }
