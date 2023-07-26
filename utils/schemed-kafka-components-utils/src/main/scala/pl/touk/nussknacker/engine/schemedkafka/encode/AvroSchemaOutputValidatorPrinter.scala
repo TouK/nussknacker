@@ -43,7 +43,7 @@ object AvroSchemaOutputValidatorPrinter {
           .getFields
           .asScala
           .map(f => s"${f.name()}: ${print(f.schema())}")
-          .mkString("{", ", ", "}")
+          .mkString("Record{", ", ", "}")
       case Schema.Type.ARRAY =>
         s"List[${print(schema.getElementType)}]"
       case Schema.Type.MAP =>

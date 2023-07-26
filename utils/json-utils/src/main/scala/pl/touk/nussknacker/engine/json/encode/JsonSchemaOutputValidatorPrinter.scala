@@ -24,7 +24,7 @@ class JsonSchemaOutputValidatorPrinter(parentSchema: Schema) {
       s"Map[String, ${valuesType}]"
     case s: ObjectSchema => s.getPropertySchemas.asScala.map {
       case (name, fieldSchema) => s"$name:${print(fieldSchema)}"
-    }.mkString("{", ", ", "}")
+    }.mkString("Record{", ", ", "}")
     case _ => printSchemaType(schema)
   }
 
