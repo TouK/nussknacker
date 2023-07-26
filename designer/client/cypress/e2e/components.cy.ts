@@ -185,6 +185,7 @@ describe("Components list", () => {
         cy.contains(/^save$/i).click();
         cy.contains(/^ok$/i).click();
 
+        cy.viewport(1400, 500);
         cy.visit("/components/usages/filter");
 
         cy.contains(/^other$/i).click();
@@ -211,6 +212,7 @@ describe("Components list", () => {
         cy.get("body").click(0, 0);
         cy.get("input[type=text]").type("xxx");
         cy.matchQuery("?TEXT=xxx");
+        cy.viewport(1600, 500);
         cy.wait(500); //ensure "loading" mask is hidden
         cy.get("#app-container>main").matchImage();
     });
