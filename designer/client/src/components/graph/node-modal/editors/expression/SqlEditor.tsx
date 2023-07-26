@@ -4,10 +4,10 @@ import { debounce, flatMap, uniq } from "lodash";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactAce from "react-ace/lib/ace";
 import { SimpleEditor } from "./Editor";
-import { Formatter, FormatterType, typeFormatters } from "./Formatter";
+import { Formatter } from "./Formatter";
 import RawEditor, { RawEditorProps } from "./RawEditor";
 import { switchableTo } from "./StringEditor";
-import { ExpressionLang } from "./types";
+import { EditorMode } from "./types";
 import { Ace } from "ace-builds";
 
 interface SyntaxMode extends Ace.SyntaxMode {
@@ -92,7 +92,15 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
     const ref = useAliasUsageHighlight();
 
     return (
-        <RawEditor {...passProps} ref={ref} onValueChange={onValueChange} expressionObj={expressionObj} className={className} rows={6} />
+        <RawEditor
+            {...passProps}
+            ref={ref}
+            onValueChange={onValueChange}
+            expressionObj={expressionObj}
+            className={className}
+            rows={6}
+            editorMode={EditorMode.SQL}
+        />
     );
 };
 

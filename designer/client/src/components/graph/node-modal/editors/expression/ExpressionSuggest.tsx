@@ -13,7 +13,7 @@ import { allValid, Validator } from "../Validators";
 import AceEditor from "./AceWithSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import ReactAce from "react-ace/lib/ace";
-import { ExpressionLang } from "./types";
+import { EditorMode, ExpressionLang } from "./types";
 import type { Ace } from "ace-builds";
 
 const { TokenIterator } = ace.require("ace/token_iterator");
@@ -49,6 +49,7 @@ interface InputProps {
     ref: React.Ref<ReactAce>;
     className: string;
     cols: number;
+    editorMode?: EditorMode;
 }
 
 interface Props {
@@ -58,6 +59,7 @@ interface Props {
     showValidation?: boolean;
     isMarked?: boolean;
     variableTypes: Record<string, unknown>;
+    editorMode?: EditorMode;
 }
 
 interface Editor extends Ace.Editor {

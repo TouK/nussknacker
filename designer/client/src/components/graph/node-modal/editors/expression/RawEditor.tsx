@@ -3,7 +3,7 @@ import React, { ForwardedRef, forwardRef, useMemo } from "react";
 import ReactAce from "react-ace/lib/ace";
 import ExpressionSuggest from "./ExpressionSuggest";
 import { VariableTypes } from "../../../../../types";
-import { ExpressionObj } from "./types";
+import { EditorMode, ExpressionObj } from "./types";
 import { Validator } from "../Validators";
 
 export type RawEditorProps = {
@@ -18,6 +18,7 @@ export type RawEditorProps = {
     className: string;
     variableTypes: VariableTypes;
     validationLabelInfo?: string;
+    editorMode?: EditorMode;
 };
 
 const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) {
@@ -33,6 +34,7 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
         className,
         variableTypes,
         validationLabelInfo,
+        editorMode,
     } = props;
 
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
@@ -49,8 +51,9 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
             onValueChange: onValueChange,
             readOnly: readOnly,
             ref: forwardedRef,
+            editorMode: editorMode,
         }),
-        [rows, cols, className1, value, language, onValueChange, readOnly, forwardedRef],
+        [rows, cols, className1, value, language, onValueChange, readOnly, forwardedRef, editorMode],
     );
 
     return (
@@ -62,6 +65,7 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
                 isMarked={isMarked}
                 showValidation={showValidation}
                 validationLabelInfo={validationLabelInfo}
+                editorMode={editorMode}
             />
         </div>
     );
