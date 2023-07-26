@@ -24,6 +24,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `isSubprocess` query parameter is renamed to `isFragment`. `isSubprocess` will be removed in 1.12.0
 * [#4462](https://github.com/TouK/nussknacker/pull/4462) Process state API returns `externalDeploymentId` instead of `deploymentId`.
 
+### Other changes
+* [#4514](https://github.com/TouK/nussknacker/pull/4514) `AkkaHttpBackend` in designer is replaced by `AsyncHttpClientFutureBackend`.
+  To use custom http client configuration use `ahc.properties` file and make sure it is available in the classpath.
+
 ## In version 1.10.0
 
 ### Code API changes
