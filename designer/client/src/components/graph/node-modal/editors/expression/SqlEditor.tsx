@@ -89,17 +89,11 @@ function useAliasUsageHighlight(token = "alias") {
 
 const SqlEditor: SimpleEditor<Props> = (props: Props) => {
     const { expressionObj, onValueChange, className, ...passProps } = props;
-    const value = useMemo(
-        () => ({
-            expression: expressionObj.expression,
-            language: ExpressionLang.SQL,
-        }),
-        [expressionObj],
-    );
-
     const ref = useAliasUsageHighlight();
 
-    return <RawEditor {...passProps} ref={ref} onValueChange={onValueChange} expressionObj={value} className={className} rows={6} />;
+    return (
+        <RawEditor {...passProps} ref={ref} onValueChange={onValueChange} expressionObj={expressionObj} className={className} rows={6} />
+    );
 };
 
 SqlEditor.switchableTo = switchableTo;

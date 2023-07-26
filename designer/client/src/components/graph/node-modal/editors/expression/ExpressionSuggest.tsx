@@ -25,7 +25,7 @@ const { TokenIterator } = ace.require("ace/token_iterator");
 const identifierRegexpsWithoutDot = [/[#a-zA-Z0-9-_]/];
 
 function isSqlTokenAllowed(iterator, modeId): boolean {
-    if (modeId === "ace/mode/sql") {
+    if (modeId === "ace/mode/sql" || modeId === "ace/mode/sqlSpelTemplate") {
         let token = iterator.getCurrentToken();
         while (token && token.type !== "spel.start" && token.type !== "spel.end") {
             token = iterator.stepBackward();
@@ -144,7 +144,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
     const [editorFocused, setEditorFocused] = useState(false);
 
     const expressionSuggester = useMemo(() => {
-        if (backendCodeSuggestions && language != ExpressionLang.SQL) {
+        if (backendCodeSuggestions) {
             return new BackendExpressionSuggester(language, id, typesInformation, variableTypes, processingType, HttpService);
         } else {
             return new RegexExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);

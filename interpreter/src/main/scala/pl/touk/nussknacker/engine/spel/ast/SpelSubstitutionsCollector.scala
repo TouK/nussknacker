@@ -18,7 +18,8 @@ class SpelSubstitutionsCollector(typeForNode: SpelNode => Option[TypingResult],
   override def collectSubstitutions(expression: Expression): List[ExpressionSubstitution] = {
     // TODO: handle other languages, especially spel template
     if ((expression.language != Expression.Language.Spel &&
-         expression.language != Expression.Language.SpelTemplate) || StringUtils.isBlank(expression.expression))
+         expression.language != Expression.Language.SpelTemplate &&
+         expression.language != Expression.Language.SqlSpelTemplate) || StringUtils.isBlank(expression.expression))
       List.empty
     else
       collectSubstitutions(expression.expression)
