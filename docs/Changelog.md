@@ -12,6 +12,9 @@
 * [#4469](https://github.com/TouK/nussknacker/pull/4469) Faster loading of components tab: Don't fetch last actions
 * [#4353](https://github.com/TouK/nussknacker/pull/4353) Removed isCancelled/isDeployed flags based on `ProcessAction`, `ProcessAction.action` renamed to actionType. Trait `Process` is removed.
 * [#4488](https://github.com/TouK/nussknacker/pull/4488) Fix stopping processes with `/api/adminProcessManagement/stop/{processName}` endpoint on recent Flink versions
+* [#4517](https://github.com/TouK/nussknacker/pull/4517) Improvement: Better readability of types display:
+  * values of primitive types are now displayed in parentheses - previous `String{val}` is now `String(val)`
+  * values of record types are now displayed with `Record` prefix - previous `{key: String{val}}` is now `Record{key: String(val)}`
 
 1.10.0 (29 Jun 2023)
 -------------------------
