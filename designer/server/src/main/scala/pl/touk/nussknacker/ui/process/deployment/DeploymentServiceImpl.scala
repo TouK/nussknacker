@@ -58,7 +58,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         val lastDeployAction = details.lastDeployedAction.get
         // TODO: what should be in name?
         val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
-        val deploymentData = prepareDeploymentData(deployingUser, DeploymentId(lastDeployAction.id.toString))
+        val deploymentData = prepareDeploymentData(deployingUser, DeploymentId.fromActionId(lastDeployAction.id))
         val deployedScenarioDataTry = scenarioResolver.resolveScenario(details.json, details.processCategory).map { resolvedScenario =>
           DeployedScenarioData(details.toEngineProcessVersion, deploymentData, resolvedScenario)
         }
@@ -115,7 +115,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
       deploymentManager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
       // TODO: scenario was already resolved during validation - use it here
       resolvedCanonicalProcess <- Future.fromTry(scenarioResolver.resolveScenario(processDetails.json, processDetails.processCategory))
-      deploymentData = prepareDeploymentData(user.toManagerUser, DeploymentId(actionId.value.toString))
+      deploymentData = prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId))
       _ <- deploymentManager.validate(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
     } yield DeployedScenarioData(processDetails.toEngineProcessVersion, deploymentData, resolvedCanonicalProcess)
   }
@@ -330,7 +330,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   }
 
   override def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(implicit ec: ExecutionContext): Future[Boolean] = {
-    logger.debug(s"About to mark action ${actionId.value} as finished execution")
+    logger.debug(s"About to mark action ${actionId.value} as execution finished")
     dbioRunner.runInTransaction(actionRepository.getFinishedProcessAction(actionId).flatMap { actionOpt =>
       DBIOAction.sequenceOption(actionOpt.map { action =>
         doMarkActionExecutionFinished(action, processingType)

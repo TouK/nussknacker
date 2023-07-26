@@ -8,13 +8,14 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.{FlinkDeploymentManager, FlinkStreamingDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import shapeless.syntax.typeable.typeableOps
 import sttp.client3.SttpBackend
 
+import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -36,16 +37,19 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(implicit
     this(SimpleStateStatus.NotDeployed)(new ProcessingTypeDeploymentServiceStub(Nil))
   }
 
-  private def prepareProcessState(status: StateStatus): List[StatusDetails] =
-    List(prepareProcessState(status, Some(ProcessVersion.empty)))
+  private def prepareProcessState(status: StateStatus, deploymentId: DeploymentId): List[StatusDetails] =
+    List(prepareProcessState(status, deploymentId, Some(ProcessVersion.empty)))
 
-  private def prepareProcessState(status: StateStatus, version: Option[ProcessVersion]): StatusDetails =
-    StatusDetails(status, None, Some(ExternalDeploymentId("1")), version)
+  private def prepareProcessState(status: StateStatus, deploymentId: DeploymentId, version: Option[ProcessVersion]): StatusDetails =
+    StatusDetails(status, Some(deploymentId), Some(ExternalDeploymentId("1")), version)
+
+  // Pass correct deploymentId
+  private def fallbackDeploymentId = DeploymentId(UUID.randomUUID().toString)
 
   override def getFreshProcessStates(name: ProcessName): Future[List[StatusDetails]] = {
     Future {
       Thread.sleep(delayBeforeStateReturn.toMillis)
-      managerProcessStates.getOrDefault(name, prepareProcessState(defaultProcessStateStatus))
+      managerProcessStates.getOrDefault(name, prepareProcessState(defaultProcessStateStatus, fallbackDeploymentId))
     }
   }
 
@@ -128,16 +132,16 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(implicit
     withProcessStateStatus(processName, SimpleStateStatus.Running)(action)
   }
 
-  def withProcessFinished[T](processName: ProcessName)(action: => T): T = {
-    withProcessStateStatus(processName, SimpleStateStatus.Finished)(action)
+  def withProcessFinished[T](processName: ProcessName, deploymentId: DeploymentId = fallbackDeploymentId)(action: => T): T = {
+    withProcessStateStatus(processName, SimpleStateStatus.Finished, deploymentId)(action)
   }
 
-  def withProcessStateStatus[T](processName: ProcessName, status: StateStatus)(action: => T): T = {
-    withProcessStates(processName, prepareProcessState(status))(action)
+  def withProcessStateStatus[T](processName: ProcessName, status: StateStatus, deploymentId: DeploymentId = fallbackDeploymentId)(action: => T): T = {
+    withProcessStates(processName, prepareProcessState(status, deploymentId))(action)
   }
 
   def withProcessStateVersion[T](processName: ProcessName, status: StateStatus, version: Option[ProcessVersion])(action: => T): T = {
-    withProcessStates(processName, List(prepareProcessState(status, version)))(action)
+    withProcessStates(processName, List(prepareProcessState(status, fallbackDeploymentId, version)))(action)
   }
 
   def withEmptyProcessState[T](processName: ProcessName)(action: => T): T = {

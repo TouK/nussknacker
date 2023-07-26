@@ -4,20 +4,19 @@ import cats.data.OptionT
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
+import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
-import ModelData._
-import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
 
-import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)
@@ -43,12 +42,12 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   //There is small problem here: if no one invokes process status for long time, Flink can remove process from history
   // - then it 's gone, not finished.
   //TODO: it should be checked periodically instead of checking on each getProcessState invocation
-  // (consider moving `markProcessFinishedIfLastActionDeploy` to InconsistentStateDetector as one "detectAndResolveAndFixStatus")
+  // (consider moving marking finished deployments to InconsistentStateDetector as one "detectAndResolveAndFixStatus")
   override def postprocess(idWithName: ProcessIdWithName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]] = {
-    val allDeploymentIdsDefined = Option(statusDetailsList.map(details => details.deploymentId.map(id => (id, details.status))))
+    val allDeploymentIdsAsCorrectActionIds = Option(statusDetailsList.map(details => details.deploymentId.flatMap(_.toActionIdOpt).map(id => (id, details.status))))
       .filter(_.forall(_.isDefined))
       .map(_.flatten)
-    allDeploymentIdsDefined
+    allDeploymentIdsAsCorrectActionIds
       .map(markEachFinishedDeploymentAsExecutionFinishedAndReturnLastStateAction(idWithName, _))
       .getOrElse {
         legacyMarkProcessFinished(idWithName.name, statusDetailsList)
@@ -68,13 +67,11 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   }
 
   private def markEachFinishedDeploymentAsExecutionFinishedAndReturnLastStateAction(idWithName: ProcessIdWithName,
-                                                                                    deployments: List[(DeploymentId, StateStatus)]): Future[Option[ProcessAction]] = {
-    val finishedDeploymentIds = deployments.collect {
+                                                                                    deploymentActionStatuses: List[(ProcessActionId, StateStatus)]): Future[Option[ProcessAction]] = {
+    val finishedDeploymentActionsIds = deploymentActionStatuses.collect {
       case (id, SimpleStateStatus.Finished) => id
     }
-    Future.sequence(finishedDeploymentIds.map { deploymentId =>
-      deploymentService.markActionExecutionFinished(ProcessActionId(UUID.fromString(deploymentId.value)))
-    }).flatMap { markingResult =>
+    Future.sequence(finishedDeploymentActionsIds.map(deploymentService.markActionExecutionFinished)).flatMap { markingResult =>
       Option(markingResult).filter(_.contains(true)).map { _ =>
         deploymentService.getLastStateAction(idWithName.id)
       }.getOrElse(Future.successful(None))

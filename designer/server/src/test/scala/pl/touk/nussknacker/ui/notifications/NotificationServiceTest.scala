@@ -99,7 +99,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, config, clock)
     val deploymentService = new DeploymentServiceImpl(managerDispatcher, processRepository, actionRepository, dbioRunner, mock[ProcessValidation], mock[ScenarioResolver], mock[ProcessChangeListener], None, clock) {
       override protected def validateBeforeDeploy(processDetails: processdetails.BaseProcessDetails[CanonicalProcess], actionId: ProcessActionId)(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
-        Future.successful(DeployedScenarioData(processDetails.toEngineProcessVersion, prepareDeploymentData(user.toManagerUser, DeploymentId(actionId.toString)), processDetails.json))
+        Future.successful(DeployedScenarioData(processDetails.toEngineProcessVersion, prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId)), processDetails.json))
       }
     }
     (deploymentService, notificationService)

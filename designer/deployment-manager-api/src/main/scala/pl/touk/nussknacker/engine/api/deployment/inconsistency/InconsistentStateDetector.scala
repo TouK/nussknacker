@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.deployment.inconsistency
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType, StatusDetails}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ProcessActionType, StatusDetails}
 import pl.touk.nussknacker.engine.deployment.DeploymentId
 
 object InconsistentStateDetector extends InconsistentStateDetector
@@ -15,11 +15,14 @@ class InconsistentStateDetector extends LazyLogging {
       case (Left(state), _) => state
       case (Right(Some(state)), _) if shouldAlwaysReturnStatus(state) => state
       case (Right(Some(state)), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastStateAction)
-      case (Right(statusDetailsOpt), Some(action)) if action.actionType.equals(ProcessActionType.Deploy) => handleMismatchDeployedStateLastAction(statusDetailsOpt, action)
+      case (Right(statusDetailsOpt), Some(action)) if action.actionType.equals(ProcessActionType.Deploy) && action.state == ProcessActionState.ExecutionFinished =>
+        handleLastActionFinishedDeploy(statusDetailsOpt, action)
+      case (Right(statusDetailsOpt), Some(action)) if action.actionType.equals(ProcessActionType.Deploy) =>
+        handleLastActionDeploy(statusDetailsOpt, action)
       case (Right(Some(state)), _) if isFollowingDeployStatus(state) => handleFollowingDeployState(state, lastStateAction)
       case (Right(statusDetailsOpt), Some(action)) if action.actionType.equals(ProcessActionType.Cancel) => handleCanceledState(statusDetailsOpt)
       case (Right(Some(state)), _) => handleState(state, lastStateAction)
-      case (Right(None), Some(a)) => StatusDetails(SimpleStateStatus.NotDeployed, Some(DeploymentId(a.id.toString)))
+      case (Right(None), Some(a)) => StatusDetails(SimpleStateStatus.NotDeployed, Some(DeploymentId.fromActionId(a.id)))
       case (Right(None), None) => StatusDetails(SimpleStateStatus.NotDeployed, None)
     }
     logger.debug(s"Resolved $statusDetails , lastStateAction: $lastStateAction to status $status")
@@ -76,13 +79,22 @@ class InconsistentStateDetector extends LazyLogging {
         statusDetails.copy(status = ProblemStateStatus.shouldNotBeRunning(false))
     }
 
+  private def handleLastActionFinishedDeploy(statusDetailsOpt: Option[StatusDetails], action: ProcessAction): StatusDetails =
+    statusDetailsOpt match {
+      case Some(state) =>
+        state
+      case None =>
+        // Some engines like Flink have jobs retention. Because of that we restore finished state. See FlinkDeploymentManager.postprocess
+        StatusDetails(SimpleStateStatus.Finished, Some(DeploymentId.fromActionId(action.id)))
+    }
+
   //This method handles some corner cases for deployed action mismatch state version
-  private def handleMismatchDeployedStateLastAction(statusDetails: Option[StatusDetails], action: ProcessAction): StatusDetails =
-    statusDetails match {
+  private def handleLastActionDeploy(statusDetailsOpt: Option[StatusDetails], action: ProcessAction): StatusDetails =
+    statusDetailsOpt match {
       case Some(state) =>
         state.version match {
           case _ if !isFollowingDeployStatus(state) && !isFinishedStatus(state) =>
-            logger.debug(s"handleMismatchDeployedStateLastAction: is not following deploy status nor finished, but it should be. $state")
+            logger.debug(s"handleLastActionDeploy: is not following deploy status nor finished, but it should be. $state")
             state.copy(status = ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user))
           case Some(ver) if ver.versionId != action.processVersionId =>
             state.copy(status = ProblemStateStatus.mismatchDeployedVersion(ver.versionId, action.processVersionId, action.user))
@@ -94,7 +106,7 @@ class InconsistentStateDetector extends LazyLogging {
             state.copy(status = ProblemStateStatus.Failed) //Generic error in other cases
         }
       case None =>
-        logger.debug(s"handleMismatchDeployedStateLastAction for empty statusDetails. Action.processVersionId: ${action.processVersionId}")
+        logger.debug(s"handleLastActionDeploy for empty statusDetails. Action.processVersionId: ${action.processVersionId}")
         StatusDetails(ProblemStateStatus.shouldBeRunning(action.processVersionId, action.user), None)
     }
 
