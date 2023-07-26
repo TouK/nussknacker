@@ -17,7 +17,7 @@ import java.time.Instant
 
 object processdetails {
 
-  val StateActionsTypes: List[ProcessActionType] = List(Cancel, Deploy, Pause)
+  val StateActionsTypes: Set[ProcessActionType] = Set(Cancel, Deploy, Pause)
 
   object BasicProcess {
     def apply[ProcessShape](baseProcessDetails: BaseProcessDetails[ProcessShape]) = new BasicProcess(

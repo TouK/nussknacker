@@ -87,6 +87,37 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     notificationsFor(userForFail).map(_.toRefresh) shouldBe Symbol("empty")
   }
 
+  test("should refresh after action execution finished") {
+    val processName = ProcessName("process-execution-finished")
+    val id = saveSampleProcess(processName)
+    val processIdWithName = ProcessIdWithName(id, processName)
+
+    val deploymentManager = mock[DeploymentManager]
+    val (deploymentService, notificationService) = createServices(deploymentManager)
+
+    var passedDeploymentId = Option.empty[DeploymentId]
+    def deployProcess(givenDeployResult: Try[Option[ExternalDeploymentId]], user: LoggedUser): Option[ExternalDeploymentId] = {
+      when(deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])).thenAnswer { invocation =>
+        passedDeploymentId = Some(invocation.getArgument[DeploymentData](1).deploymentId)
+        Future.fromTry(givenDeployResult)
+      }
+      when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
+      deploymentService.deployProcessAsync(processIdWithName, None, None)(user, ctx).flatten.futureValue
+    }
+
+    val user = TestFactory.adminUser("fooUser", "fooUser")
+    deployProcess(Success(None), user)
+    val notificationsAfterDeploy = notificationService.notifications(None)(user, ctx).futureValue
+    notificationsAfterDeploy should have length 1
+    val deployNotificationId = notificationsAfterDeploy.head.id
+
+    deploymentService.markActionExecutionFinished(Streaming, passedDeploymentId.value.toActionIdOpt.value).futureValue
+    val notificationAfterExecutionFinished = notificationService.notifications(None)(user, ctx).futureValue
+    // old notification about deployment is replaced by notification about deployment execution finished which has other id
+    notificationAfterExecutionFinished should have length 1
+    notificationAfterExecutionFinished.head.id should not equal deployNotificationId
+  }
+
   private val notDeployed = SimpleProcessStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None))
 
   private def createServices(deploymentManager: DeploymentManager) = {

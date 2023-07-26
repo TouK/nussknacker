@@ -28,8 +28,9 @@ trait ProcessActionRepository[F[_]] {
   def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
   def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
   def getFinishedProcessAction(actionId: ProcessActionId)(implicit ec: ExecutionContext): F[Option[ProcessAction]]
-  def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[List[ProcessActionType]])(implicit ec: ExecutionContext): F[List[ProcessAction]]
-  def getLastFinishedActionPerProcess(actionTypesOpt: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]]
+  def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[Set[ProcessActionType]])(implicit ec: ExecutionContext): F[List[ProcessAction]]
+  def getLastActionPerProcess(actionState: Set[ProcessActionState],
+                              actionTypesOpt: Option[Set[ProcessActionType]]): F[Map[ProcessId, ProcessAction]]
 }
 
 object DbProcessActionRepository {
@@ -174,13 +175,14 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     run(processActionsTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
-  override def getLastFinishedActionPerProcess(actionTypesOpt: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]] = {
+  override def getLastActionPerProcess(actionState: Set[ProcessActionState],
+                                       actionTypesOpt: Option[Set[ProcessActionType]]): F[Map[ProcessId, ProcessAction]] = {
     val query = processActionsTable
-      .filter(_.state.inSet(ProcessActionState.FinishedStates))
+      .filter(_.state.inSet(actionState))
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
       .join(processActionsTable)
-      .on { case ((processId, maxPerformedAt), action) => action.processId === processId && action.state.inSet(ProcessActionState.FinishedStates) && action.performedAt === maxPerformedAt } //We fetch exactly this one with max deployment
+      .on { case ((processId, maxPerformedAt), action) => action.processId === processId && action.state.inSet(actionState) && action.performedAt === maxPerformedAt } //We fetch exactly this one with max deployment
       .map { case ((processId, _), action) => processId -> action }
       .joinLeft(commentsTable)
       .on { case ((_, action), comment) => action.commentId === comment.id }
@@ -199,7 +201,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
       .on { case (action, comment) => action.commentId === comment.id }
       .result.headOption.map(_.map(toFinishedProcessAction)))
 
-  override def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[List[ProcessActionType]])(implicit ec: ExecutionContext): F[List[ProcessAction]] = {
+  override def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[Set[ProcessActionType]])(implicit ec: ExecutionContext): F[List[ProcessAction]] = {
     val query = processActionsTable
       .filter(p => p.processId === processId && p.state.inSet(ProcessActionState.FinishedStates))
       .joinLeft(commentsTable)

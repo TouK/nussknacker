@@ -118,7 +118,8 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     val lastStateAction = processDetails.lastStateAction.value
     lastStateAction.actionType shouldBe ProcessActionType.Deploy
     lastStateAction.state shouldBe ProcessActionState.ExecutionFinished
-    processDetails.lastDeployedAction.value shouldEqual lastStateAction
+    // we want to hide finished deploys
+    processDetails.lastDeployedAction shouldBe empty
     activityRepository.findActivity(ProcessIdWithName(processId, processName)).futureValue.comments should have length 1
 
     deploymentManager.withEmptyProcessState(processName) {

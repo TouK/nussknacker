@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.notifications
 
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
@@ -23,6 +23,12 @@ object Notification {
   def actionFinishedNotification(id: String, actionType: ProcessActionType, name: ProcessName): Notification = {
     // We don't want to display this notification, because user already see that status icon was changed
     Notification(id, Some(name), s"${displayableActionName(actionType)} finished", None, List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state))
+  }
+
+  def actionExecutionFinishedNotification(id: String, actionType: ProcessActionType, name: ProcessName): Notification = {
+    // We don't want to display this notification, because user already see that status icon was changed
+    // Also we want to distinguish between finished and execution finished to make sure that refresh will happen after execution finished
+    Notification(id + "-" + ProcessActionState.ExecutionFinished, Some(name), s"${displayableActionName(actionType)} execution finished", None, List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state))
   }
 
   private def displayableActionName(actionType: ProcessActionType): String =

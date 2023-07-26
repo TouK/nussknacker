@@ -28,8 +28,10 @@ class NotificationServiceImpl(actionRepository: DbProcessActionRepository[DB], d
       Set(ProcessActionType.Deploy, ProcessActionType.Cancel),
       ProcessActionState.FinishedStates + ProcessActionState.Failed,
       limit)).map(_.map {
-      case (ProcessActionEntityData(id, _, _, _, _, _, actionType, state, _, _, _), processName) if ProcessActionState.FinishedStates.contains(state)  =>
+      case (ProcessActionEntityData(id, _, _, _, _, _, actionType, ProcessActionState.Finished, _, _, _), processName) =>
         Notification.actionFinishedNotification(id.toString, actionType, processName)
+      case (ProcessActionEntityData(id, _, _, _, _, _, actionType, ProcessActionState.ExecutionFinished, _, _, _), processName) =>
+        Notification.actionExecutionFinishedNotification(id.toString, actionType, processName)
       case (ProcessActionEntityData(id, _, _, _, _, _, actionType, ProcessActionState.Failed, failureMessageOpt, _, _), processName) =>
         Notification.actionFailedNotification(id.toString, actionType, processName, failureMessageOpt)
       case (a, processName) =>
