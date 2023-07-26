@@ -27,7 +27,7 @@ const valueStartsWithQuotationMark = (value) => startsWith(value, '"') || starts
 
 const quotationMark = (value) => (valueStartsWithQuotationMark(value) ? valueQuotationMark(value) : defaultQuotationMark);
 
-const stringSpelFormatter: Formatter = {
+export const stringSpelFormatter: Formatter = {
     encode: (value) => quotationMark(value) + value + quotationMark(value),
     decode: (value) => value.substring(1, value.length - 1),
 };
