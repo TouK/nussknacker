@@ -12,7 +12,7 @@ import { nodeFilter } from "./usagesTable";
 const icon = <LinkIcon />;
 
 export function getNodeName({ fragmentNodeId, nodeId }: Pick<NodeUsageData, "fragmentNodeId" | "nodeId">): string {
-    return fragmentNodeId ? `${nodeId} ∈ ${fragmentNodeId}` : nodeId;
+    return fragmentNodeId ? `${nodeId} ❮${fragmentNodeId}❯` : nodeId;
 }
 
 const nodesFilterRules = createFilterRules<NodeUsageData, UsagesFiltersModel>({
