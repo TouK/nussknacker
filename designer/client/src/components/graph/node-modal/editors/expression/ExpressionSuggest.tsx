@@ -25,7 +25,7 @@ const { TokenIterator } = ace.require("ace/token_iterator");
 const identifierRegexpsWithoutDot = [/[#a-zA-Z0-9-_]/];
 
 function isSqlTokenAllowed(iterator, modeId): boolean {
-    if (modeId === "ace/mode/sql" || modeId === "ace/mode/sqlSpelTemplate") {
+    if (modeId === "ace/mode/sql") {
         let token = iterator.getCurrentToken();
         while (token && token.type !== "spel.start" && token.type !== "spel.end") {
             token = iterator.stepBackward();
