@@ -14,7 +14,7 @@ export function nodeFilter(f, u: NodeUsageData) {
     switch (f) {
         case UsagesFiltersUsageType.INDIRECT:
             return u.fragmentNodeId;
-        case UsagesFiltersUsageType.STRAIGHT:
+        case UsagesFiltersUsageType.DIRECT:
             return !u.fragmentNodeId;
     }
     return false;
