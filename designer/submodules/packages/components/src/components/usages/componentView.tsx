@@ -5,7 +5,7 @@ import { useComponentUsagesWithStatus } from "../useComponentsQuery";
 import { FiltersContextProvider, useFilterContext } from "../../common";
 import { Breadcrumbs } from "./breadcrumbs";
 import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersUsageType, UsagesFiltersValues } from "./usagesFiltersModel";
-import { ActiveFilters, getRandomColorByType } from "../../scenarios/filters/activeFilters";
+import { ActiveFilters, getColorForName } from "../../scenarios/filters/activeFilters";
 import { sortBy, uniq } from "lodash";
 import { useStatusDefinitions, useUserQuery } from "../../scenarios/useScenariosQuery";
 import { FiltersPart } from "./filtersPart";
@@ -60,7 +60,7 @@ function Component(): JSX.Element {
                         case UsagesFiltersUsageType.INDIRECT:
                             return t("table.filter.INDIRECT", "Indirect usage");
                         case UsagesFiltersUsageType.STRAIGHT:
-                            return t("table.filter.STRAIGHT", "Straight usage");
+                            return t("table.filter.DIRECT", "Direct usage");
                     }
                     break;
                 case "STATUS":
@@ -88,7 +88,7 @@ function Component(): JSX.Element {
                             return theme.palette.primary.main;
                     }
             }
-            return getRandomColorByType(type);
+            return getColorForName(type);
         },
         [theme.palette.primary.main, theme.palette.secondary.main],
     );

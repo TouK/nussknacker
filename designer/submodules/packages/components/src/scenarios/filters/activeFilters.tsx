@@ -40,14 +40,14 @@ function getAvatar(name: keyof ScenariosFiltersModel, value?: string) {
     }
 }
 
-export function getRandomColorByType(name: string) {
+export function getColorForName(name: string) {
     return emphasize(new Chance(name).color({ format: "hex" }), 0.6);
 }
 
 export function ActiveFilters<F extends Record<string, any>>({
     activeKeys,
     getLabel,
-    getColor = getRandomColorByType,
+    getColor = getColorForName,
 }: {
     activeKeys: (keyof F)[];
     getLabel?: (name: keyof F, value?: string | number) => string;
