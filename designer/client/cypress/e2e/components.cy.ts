@@ -192,13 +192,13 @@ describe("Components list", () => {
         cy.get("[role=menu]").find("li[role=menuitem]").as("options");
 
         cy.get("@options")
-            .contains(/straight/i)
+            .contains(/\sdirect/i)
             .click();
         cy.wait(500); //ensure "loading" mask is hidden
         cy.get("#app-container>main").matchImage();
 
         cy.get("@options")
-            .contains(/straight/i)
+            .contains(/\sdirect/i)
             .click();
         cy.get("@options")
             .contains(/indirect/i)
