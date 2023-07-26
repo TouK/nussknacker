@@ -22,5 +22,5 @@ export enum UsagesFiltersModelType {
 
 export enum UsagesFiltersUsageType {
     INDIRECT = "INDIRECT",
-    STRAIGHT = "STRAIGHT",
+    DIRECT = "DIRECT",
 }
