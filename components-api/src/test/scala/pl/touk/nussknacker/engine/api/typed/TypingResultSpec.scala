@@ -253,14 +253,14 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
   }
 
   test("should not display too long data") {
-    Typed.fromInstance("1234.1234.12").display shouldBe "String{1234.1234.12}"
-    Typed.fromInstance("1234.1234.1234").display shouldBe "String{1234.1234.1234}"
-    Typed.fromInstance("1234.1234.1234.1").display shouldBe "String{1234.1234.12...}"
+    Typed.fromInstance("1234.1234.12").display shouldBe "String(1234.1234.12)"
+    Typed.fromInstance("1234.1234.1234").display shouldBe "String(1234.1234.1234)"
+    Typed.fromInstance("1234.1234.1234.1").display shouldBe "String(1234.1234.12...)"
   }
 
   test("should display fields in order") {
     for (keys <- List("a", "b", "c", "d").permutations) {
-      typeMap(keys.map(_ -> Typed[String]): _*).display shouldBe "{a: String, b: String, c: String, d: String}"
+      typeMap(keys.map(_ -> Typed[String]): _*).display shouldBe "Record{a: String, b: String, c: String, d: String}"
     }
   }
 
