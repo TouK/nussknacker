@@ -77,9 +77,9 @@ export function FiltersPart({ isLoading, filterableValues }: FiltersPartProps): 
                         />
                         <FilterListItem
                             color="primary"
-                            checked={getFilter("USAGE_TYPE", true)?.includes(UsagesFiltersUsageType.STRAIGHT)}
-                            onChange={() => setFilter("USAGE_TYPE", xor([UsagesFiltersUsageType.STRAIGHT], getFilter("USAGE_TYPE", true)))}
-                            label={t("table.filter.SHOW_STRAIGHT", "Show straight usage")}
+                            checked={getFilter("USAGE_TYPE", true)?.includes(UsagesFiltersUsageType.DIRECT)}
+                            onChange={() => setFilter("USAGE_TYPE", xor([UsagesFiltersUsageType.DIRECT], getFilter("USAGE_TYPE", true)))}
+                            label={t("table.filter.SHOW_DIRECT", "Show direct usage")}
                         />
                     </OptionsStack>
                 </FilterMenu>

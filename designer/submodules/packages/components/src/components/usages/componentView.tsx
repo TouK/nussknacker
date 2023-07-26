@@ -84,7 +84,7 @@ function Component(): JSX.Element {
                     switch (value) {
                         case UsagesFiltersUsageType.INDIRECT:
                             return theme.palette.secondary.main;
-                        case UsagesFiltersUsageType.STRAIGHT:
+                        case UsagesFiltersUsageType.DIRECT:
                             return theme.palette.primary.main;
                     }
             }
