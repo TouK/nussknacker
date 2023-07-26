@@ -59,7 +59,7 @@ function Component(): JSX.Element {
                     switch (value) {
                         case UsagesFiltersUsageType.INDIRECT:
                             return t("table.filter.INDIRECT", "Indirect usage");
-                        case UsagesFiltersUsageType.STRAIGHT:
+                        case UsagesFiltersUsageType.DIRECT:
                             return t("table.filter.DIRECT", "Direct usage");
                     }
                     break;
