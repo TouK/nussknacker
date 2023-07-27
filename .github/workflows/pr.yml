@@ -303,7 +303,7 @@ jobs:
 
   slowTests:
     name: SlowTests
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: [ build, setup ]
     strategy:
       matrix:
@@ -317,57 +317,49 @@ jobs:
         uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      # On self-hosted runners, docker can have some obsolete containers. Because of that, we clean them all
-      - name: Clean all docker containers
-        shell: bash
-        run: |
-          c=$(docker ps -q)
-          [[ $c ]] && docker kill $c || echo "No container run"
-          c=$(docker ps -aq)
-          [[ $c ]] && docker rm $c
       - uses: actions/checkout@v3
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:1.11.0.17
+      - name: Cache ivy packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.cache/coursier
+            ~/.sbt
+          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
+          restore-keys: sbt
       - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
         shell: bash
         run:  tar xfz target.tgz
-      # We create /home/gh/.local/bin and make it available in PATH for purpose of k3d installation without sudo
-      - name: Prepare k3d prerequisites
-        shell: bash
-        run: |
-          mkdir -p /home/gh/.local/bin
-          curl -sL "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" -o /home/gh/.local/bin/kubectl
-          chmod +x /home/gh/.local/bin/kubectl
-          echo "PATH=$PATH:/home/gh/.local/bin" >> $GITHUB_ENV
       # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
-      - uses: AbsaOSS/k3d-action@v2.4.0
-        env:
-          PROJECT_ROOT: ${{ github.workspace }}
-          USE_SUDO: false
-          K3D_INSTALL_DIR: /home/gh/.local/bin
-        with:
-          cluster-name: "k3s-default"
-          k3d-version: "v5.4.9" # change with caution, there was some problem with 500 exit codes after some upgrade
-          args: >-
-            --config=.k3d/single-cluster.yml
-            --trace
+#      - uses: AbsaOSS/k3d-action@v2.4.0
+#        env:
+#          PROJECT_ROOT: ${{ github.workspace }}
+#        with:
+#          cluster-name: "k3s-default"
+#          k3d-version: "v5.4.9" # default version - change with caution, there was some problem with 500 exit codes for after upgrade
+#          args: >-
+#            --config=.k3d/single-cluster.yml
+#            --trace
       - name: Slow tests
         env:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         shell: bash
-        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
-      - name: docker logs
-        if: success() || failure()
-        run: |
-          docker logs k3d-k3s-default-server-0
-          docker logs k3d-k3s-default-agent-0
-          docker logs k3d-k3s-default-serverlb
+#        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
+        run: ./ciRunSbt.sh designer/Slow/test schemedKafkaComponentsUtils/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
+#      - name: docker logs
+#        if: success() || failure()
+#        run: |
+#          docker logs k3d-k3s-default-server-0
+#          docker logs k3d-k3s-default-agent-0
+#          docker logs k3d-k3s-default-serverlb
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v3
