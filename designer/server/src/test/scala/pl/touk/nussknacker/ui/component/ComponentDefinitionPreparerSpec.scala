@@ -185,7 +185,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
                             processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val fragmentInputs = Map[String, FragmentObjectDefinition]()
-    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, fragmentInputs, processCategoryService)
+    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, fragmentInputs, Set.empty, processCategoryService)
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
     val fixedComponentsConfig = fixedConfig.mapValuesNow(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
     val componentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
@@ -207,7 +207,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s))
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
-      processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), processCategoryService),
+      processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty, processCategoryService),
       isFragment = false,
       componentsConfig = Map(),
       componentsGroupMapping = Map(),

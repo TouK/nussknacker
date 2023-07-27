@@ -43,7 +43,9 @@ object UIProcessObjectsFactory {
 
     //FIXME: how to handle dynamic configuration of fragments??
     val fragmentInputs = extractFragmentInputs(fragmentsDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
-    val uiProcessDefinition = createUIProcessDefinition(staticObjectsDefinition, fragmentInputs, processCategoryService)
+    val uiClazzDefinitions = modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition)
+    val uiProcessDefinition = createUIProcessDefinition(staticObjectsDefinition, fragmentInputs,
+      uiClazzDefinitions, processCategoryService)
 
     val customTransformerAdditionalData = staticObjectsDefinition.customStreamTransformers.mapValuesNow(_._2)
 
@@ -144,6 +146,7 @@ object UIProcessObjectsFactory {
 
   def createUIProcessDefinition(processDefinition: ProcessDefinition[ObjectDefinition],
                                 fragmentInputs: Map[String, FragmentObjectDefinition],
+                                types: Set[UIClazzDefinition],
                                 processCategoryService: ProcessCategoryService): UIProcessDefinition = {
     def createUIObjectDef(objDef: ObjectDefinition) = createUIObjectDefinition(objDef, processCategoryService)
 
@@ -157,6 +160,7 @@ object UIProcessObjectsFactory {
       fragmentInputs = fragmentInputs.mapValuesNow(createUIFragmentObjectDef),
       customStreamTransformers = transformed.customStreamTransformers.mapValuesNow(_._1),
       globalVariables = transformed.expressionConfig.globalVariables,
+      typesInformation = types
     )
   }
 
