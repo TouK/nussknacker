@@ -6,12 +6,14 @@ import AceEditor from "./ace";
 import { ICommand } from "react-ace/lib/types";
 import type { Ace } from "ace-builds";
 import { trimStart } from "lodash";
+import { EditorMode } from "./types";
 
 export interface AceWrapperProps extends Pick<IAceEditorProps, "value" | "onChange" | "onFocus" | "onBlur" | "wrapEnabled"> {
     inputProps: {
         language: string;
         readOnly?: boolean;
         rows?: number;
+        editorMode?: EditorMode;
     };
     customAceEditorCompleter?;
     showLineNumbers?: boolean;
@@ -97,7 +99,7 @@ export default forwardRef(function AceWrapper(
     { inputProps, customAceEditorCompleter, showLineNumbers, wrapEnabled = true, commands = [], ...props }: AceWrapperProps,
     ref: ForwardedRef<ReactAce>,
 ): JSX.Element {
-    const { language, readOnly, rows = 1 } = inputProps;
+    const { language, readOnly, rows = 1, editorMode } = inputProps;
 
     const DEFAULT_COMMANDS = useMemo<AceKeyCommand[]>(
         () => [
@@ -124,7 +126,7 @@ export default forwardRef(function AceWrapper(
         <AceEditor
             {...props}
             ref={ref}
-            mode={language}
+            mode={editorMode ? editorMode.valueOf() : language}
             width={"100%"}
             minLines={rows}
             maxLines={512}

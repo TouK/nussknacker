@@ -11,10 +11,6 @@ import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 object SqlSource extends SourceFactory {
 
   @MethodToInvoke
-  def source(@ParamName("sql")
-             @DualEditor(
-               simpleEditor = new SimpleEditor(`type` = SimpleEditorType.SQL_EDITOR),
-               defaultMode = DualEditorMode.SIMPLE
-             )  sql: String) =
+  def source(@ParamName("sql") @SimpleEditor(`type` = SimpleEditorType.SQL_EDITOR) sql: String) =
     new CollectionSource[Any](List.empty, None, Unknown)(TypeInformation.of(classOf[Any]))
 }

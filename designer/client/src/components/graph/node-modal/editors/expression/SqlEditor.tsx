@@ -4,10 +4,10 @@ import { debounce, flatMap, uniq } from "lodash";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactAce from "react-ace/lib/ace";
 import { SimpleEditor } from "./Editor";
-import { Formatter, FormatterType, typeFormatters } from "./Formatter";
+import { Formatter } from "./Formatter";
 import RawEditor, { RawEditorProps } from "./RawEditor";
 import { switchableTo } from "./StringEditor";
-import { ExpressionLang } from "./types";
+import { EditorMode } from "./types";
 import { Ace } from "ace-builds";
 
 interface SyntaxMode extends Ace.SyntaxMode {
@@ -88,35 +88,20 @@ function useAliasUsageHighlight(token = "alias") {
 }
 
 const SqlEditor: SimpleEditor<Props> = (props: Props) => {
-    const { expressionObj, onValueChange, className, formatter, ...passProps } = props;
-    const sqlFormatter = formatter == null ? typeFormatters[FormatterType.Sql] : formatter;
-
-    const valueChange = useCallback(
-        (value: string) => {
-            const encoded = sqlFormatter.encode(value);
-            if (encoded !== value) {
-                return onValueChange(encoded);
-            }
-        },
-        [onValueChange, sqlFormatter],
-    );
-
-    const value = useMemo(
-        () => ({
-            expression: sqlFormatter.decode(expressionObj.expression.trim()),
-            language: ExpressionLang.SQL,
-        }),
-        [sqlFormatter, expressionObj],
-    );
-
-    useEffect(() => {
-        valueChange(value.expression);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
+    const { expressionObj, onValueChange, className, ...passProps } = props;
     const ref = useAliasUsageHighlight();
 
-    return <RawEditor {...passProps} ref={ref} onValueChange={valueChange} expressionObj={value} className={className} rows={6} />;
+    return (
+        <RawEditor
+            {...passProps}
+            ref={ref}
+            onValueChange={onValueChange}
+            expressionObj={expressionObj}
+            className={className}
+            rows={6}
+            editorMode={EditorMode.SQL}
+        />
+    );
 };
 
 SqlEditor.switchableTo = switchableTo;

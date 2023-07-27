@@ -1,6 +1,6 @@
 import ace from "ace-builds/src-noconflict/ace";
 import { isEmpty, map, overSome } from "lodash";
-import React, { ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getFeatureSettings, getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
 import { getProcessToDisplay } from "../../../../../reducers/selectors/graph";
@@ -13,7 +13,7 @@ import { allValid, Validator } from "../Validators";
 import AceEditor from "./AceWithSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import ReactAce from "react-ace/lib/ace";
-import { ExpressionLang } from "./types";
+import { EditorMode, ExpressionLang } from "./types";
 import type { Ace } from "ace-builds";
 
 const { TokenIterator } = ace.require("ace/token_iterator");
@@ -49,6 +49,7 @@ interface InputProps {
     ref: React.Ref<ReactAce>;
     className: string;
     cols: number;
+    editorMode?: EditorMode;
 }
 
 interface Props {
@@ -58,6 +59,7 @@ interface Props {
     showValidation?: boolean;
     isMarked?: boolean;
     variableTypes: Record<string, unknown>;
+    editorMode?: EditorMode;
 }
 
 interface Editor extends Ace.Editor {
@@ -144,8 +146,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
     const [editorFocused, setEditorFocused] = useState(false);
 
     const expressionSuggester = useMemo(() => {
-        // TODO: backend suggestions does not work well with SQL, so we use old regex suggestions
-        if (backendCodeSuggestions && language != ExpressionLang.SQL) {
+        if (backendCodeSuggestions) {
             return new BackendExpressionSuggester(language, id, typesInformation, variableTypes, processingType, HttpService);
         } else {
             return new RegexExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);
