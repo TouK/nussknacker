@@ -23,9 +23,8 @@ class SpelSubstitutionsCollector(typeForNode: SpelNode => Option[TypingResult],
       List.empty
   }
 
-  private[engine] def collectSubstitutions(expression: String): List[ExpressionSubstitution] = {
+  private[engine] def collectSubstitutions(expression: String): List[ExpressionSubstitution] =
     collectSubstitutions(parser.parseRaw(expression).getAST, Nil, Nil)._2
-  }
 
   private def collectSubstitutions(headNode: SpelNode, typedLowerLevels: List[TypedTreeLevel],
                                    typedSameLevelUntilSelf: List[OptionallyTypedNode]): (OptionallyTypedNode, List[ExpressionSubstitution]) = {
