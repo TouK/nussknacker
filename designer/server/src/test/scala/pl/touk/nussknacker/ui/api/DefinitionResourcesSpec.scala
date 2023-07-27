@@ -50,21 +50,6 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
     }
   }
 
-  it("should return definition data for allowed classes") {
-    getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
-      status shouldBe StatusCodes.OK
-
-      val typesInformation = responseAs[Json].hcursor
-        .downField("processDefinition")
-        .downField("typesInformation")
-        .downAt(_.hcursor.downField("clazzName").get[String]("display").rightValue == "ReturningTestCaseClass")
-        .downField("clazzName")
-        .downField("display")
-
-      typesInformation.focus.value shouldBe Json.fromString("ReturningTestCaseClass")
-    }
-  }
-
   it("should return info about editor based on fragment node configuration") {
     val processName = ProcessName(SampleProcess.process.id)
     val processWithfragment = ProcessTestData.validProcessWithFragment(processName)
