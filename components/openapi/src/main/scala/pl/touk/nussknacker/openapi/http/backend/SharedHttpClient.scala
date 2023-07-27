@@ -4,6 +4,7 @@ import org.asynchttpclient.{AsyncHttpClient, DefaultAsyncHttpClient}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.util.sharedservice.{SharedService, SharedServiceHolder}
+import pl.touk.nussknacker.http.backend.{HttpBackendProvider, HttpClientConfig}
 import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 

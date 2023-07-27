@@ -9,11 +9,12 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParametersAndReturnType, TimeMeasuringService}
+import pl.touk.nussknacker.http.backend.{FixedAsyncHttpClientBackendProvider, HttpBackendProvider, HttpClientConfig, LoggingAndCollectingSttpBackend}
 import pl.touk.nussknacker.openapi.SwaggerService
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricherCreator.determineInvocationBaseUrl
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
-import pl.touk.nussknacker.openapi.http.backend._
+import pl.touk.nussknacker.openapi.http.backend.SharedHttpClientBackendProvider
 import sttp.client3.SttpBackend
 import sttp.model.StatusCode
 

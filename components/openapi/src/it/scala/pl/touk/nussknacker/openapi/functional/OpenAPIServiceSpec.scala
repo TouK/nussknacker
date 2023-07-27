@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
+import pl.touk.nussknacker.http.backend.FixedAsyncHttpClientBackendProvider
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
-import pl.touk.nussknacker.openapi.http.backend.FixedAsyncHttpClientBackendProvider
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig}
 import pl.touk.nussknacker.test.PatientScalaFutures

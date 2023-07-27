@@ -3,7 +3,7 @@ package pl.touk.nussknacker.openapi
 import com.typesafe.config.Config
 import io.swagger.v3.oas.models.PathItem.HttpMethod
 import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
-import pl.touk.nussknacker.openapi.http.backend.{DefaultHttpClientConfig, HttpClientConfig}
+import pl.touk.nussknacker.http.backend.{DefaultHttpClientConfig, HttpClientConfig}
 import sttp.model.StatusCode
 
 import java.net.URL

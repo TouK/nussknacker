@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.openapi.http.backend
+package pl.touk.nussknacker.http.backend
 
 import net.ceedubs.ficus.readers.ValueReader
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
-import pl.touk.nussknacker.openapi.http.backend.HttpClientConfig.EffectiveHttpClientConfig
+import pl.touk.nussknacker.http.backend.HttpClientConfig.EffectiveHttpClientConfig
 import sttp.client3.SttpBackendOptions
 
 import scala.concurrent.duration._

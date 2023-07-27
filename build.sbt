@@ -1387,6 +1387,9 @@ lazy val httpUtils = (project in utils("http-utils")).
         "com.softwaremill.sttp.client3" %% "core" % sttpV,
         "com.softwaremill.sttp.client3" %% "json-common" % sttpV,
         "com.softwaremill.sttp.client3" %% "circe" % sttpV,
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV excludeAll (
+          ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
+          ),
       )
     }
   ).dependsOn(componentsApi % Provided, testUtils % "test")

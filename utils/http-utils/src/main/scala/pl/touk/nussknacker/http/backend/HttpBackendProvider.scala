@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.openapi.http.backend
+package pl.touk.nussknacker.http.backend
 
 import org.asynchttpclient.AsyncHttpClient
 import pl.touk.nussknacker.engine.api.Lifecycle
