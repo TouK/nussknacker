@@ -31,7 +31,6 @@ package object definition {
                                                                sinkFactories: Map[String, UIObjectDefinition],
                                                                customStreamTransformers: Map[String, UIObjectDefinition],
                                                                globalVariables: Map[String, UIObjectDefinition],
-                                                               typesInformation: Set[UIClazzDefinition],
                                                                fragmentInputs: Map[String, UIFragmentObjectDefinition]) {
     // skipping exceptionHandlerFactory
     val allDefinitions: Map[String, UIObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
