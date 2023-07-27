@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getFeatureSettings, getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
 import { getProcessToDisplay } from "../../../../../reducers/selectors/graph";
-import { BackendExpressionSuggester, ExpressionSuggester, RegexExpressionSuggester } from "./ExpressionSuggester";
+import { BackendExpressionSuggester, ExpressionSuggester } from "./ExpressionSuggester";
 import HttpService from "../../../../../http/HttpService";
 import ProcessUtils from "../../../../../common/ProcessUtils";
 import ReactDOMServer from "react-dom/server";
@@ -137,21 +137,14 @@ function ExpressionSuggest(props: Props): JSX.Element {
 
     const definitionData = useSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
-    const processDefinitionData = dataResolved ? definitionData : { processDefinition: { typesInformation: [] } };
-    const typesInformation = processDefinitionData.processDefinition.typesInformation;
     const { id, processingType } = useSelector(getProcessToDisplay);
-    const { backendCodeSuggestions } = useSelector(getFeatureSettings);
 
     const { value, onValueChange, language } = inputProps;
     const [editorFocused, setEditorFocused] = useState(false);
 
     const expressionSuggester = useMemo(() => {
-        if (backendCodeSuggestions) {
-            return new BackendExpressionSuggester(language, id, typesInformation, variableTypes, processingType, HttpService);
-        } else {
-            return new RegexExpressionSuggester(typesInformation, variableTypes, processingType, HttpService);
-        }
-    }, [id, processingType, typesInformation, variableTypes, backendCodeSuggestions, language]);
+        return new BackendExpressionSuggester(language, id, variableTypes, processingType, HttpService);
+    }, [id, processingType, variableTypes, language]);
 
     const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester));
     useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester]);
