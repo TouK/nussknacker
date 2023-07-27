@@ -323,7 +323,8 @@ jobs:
         run: |
           c=$(docker ps -q)
           [[ $c ]] && docker kill $c || echo "No container run"
-          docker rm $(docker ps -aq)
+          c=$(docker ps -aq)
+          [[ $c ]] && docker rm $c
       - uses: actions/checkout@v3
       - uses: coursier/setup-action@v1
         with:
