@@ -6,10 +6,11 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, FragmentInputDefinition, FragmentUsageOutput, FragmentOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, FragmentInputDefinition, FragmentOutputDefinition, FragmentUsageOutput, NodeData, Source, Split}
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect._
+import scala.util.control.NonFatal
 
 /**
  * Rewrites data of each node in process without changing the structure of process graph.
@@ -153,8 +154,14 @@ trait ExpressionRewriter {
     rewriteExpressionInternal(e, DefaultExpressionId)
 
   private def rewriteExpressionInternal(e: Expression, expressionId: String)
-                                       (implicit metaData: MetaData, nodeId: NodeId): Expression =
-    rewriteExpression(e)(ExpressionIdWithMetaData(metaData, NodeExpressionId(nodeId, expressionId)))
+                                       (implicit metaData: MetaData, nodeId: NodeId): Expression = {
+    try {
+      rewriteExpression(e)(ExpressionIdWithMetaData(metaData, NodeExpressionId(nodeId, expressionId)))
+    } catch {
+      case NonFatal(ex) =>
+        throw new IllegalArgumentException(s"Exception during expression rewriting: $e, with id: $expressionId in node: $nodeId in process: ${metaData.id}", ex)
+    }
+  }
 
   protected def rewriteExpression(e: Expression)(implicit expressionIdWithMetaData: ExpressionIdWithMetaData): Expression
 

@@ -4,32 +4,27 @@ import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.StringUtils
-import org.springframework.core.convert.ConversionService
 import org.springframework.expression._
-import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
+import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression, TemplateParserContext}
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, LabelsDictTyper}
 import pl.touk.nussknacker.engine.expression.NullExpression
-import pl.touk.nussknacker.engine.functionUtils.CollectionUtils
 import pl.touk.nussknacker.engine.graph.expression.{Expression => GraphExpression}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionCompilationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.{TypeDefinitionSet, api}
 
-import java.time.{LocalDate, LocalDateTime}
-import java.util
 import scala.util.control.NonFatal
 
 /**
@@ -179,13 +174,7 @@ object SpelExpressionParser extends LazyLogging {
   //TODO: should we enable other prefixes/suffixes?
   object Template extends Flavour(GraphExpression.Language.SpelTemplate, Some(ParserContext.TEMPLATE_EXPRESSION))
 
-  object SqlSpelTemplateParserContext extends ParserContext {
-    override def getExpressionPrefix: String = "#{"
-
-    override def isTemplate: Boolean = true
-
-    override def getExpressionSuffix: String = "}#"
-  }
+  object SqlSpelTemplateParserContext extends TemplateParserContext("#{", "}#")
 
   object SqlTemplate extends Flavour(GraphExpression.Language.SqlSpelTemplate, Some(SqlSpelTemplateParserContext))
 
