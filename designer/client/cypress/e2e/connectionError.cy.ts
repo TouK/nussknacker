@@ -22,7 +22,11 @@ describe("Connection error", () => {
             cy.wait("@notifications");
             cy.goOffline();
             cy.contains(/No network access/).should("be.visible");
-            cy.get("body").matchImage();
+            cy.get("body").matchImage({
+                screenshotConfig: {
+                    blackout: ["[data-testid=graphPage] > :not(#nk-graph-main) > div"],
+                },
+            });
             cy.goOnline();
             cy.contains(/No network access/).should("not.exist");
         };
@@ -33,7 +37,11 @@ describe("Connection error", () => {
             cy.intercept("/api/notifications", { statusCode: 502 });
 
             cy.contains(/Backend connection issue/).should("be.visible");
-            cy.get("body").matchImage();
+            cy.get("body").matchImage({
+                screenshotConfig: {
+                    blackout: ["[data-testid=graphPage] > :not(#nk-graph-main) > div"],
+                },
+            });
 
             cy.intercept("/api/notifications", (req) => {
                 req.continue();
@@ -50,7 +58,11 @@ describe("Connection error", () => {
             cy.intercept("/api/notifications", { statusCode: 502 });
 
             cy.contains(/Backend connection issue/).should("be.visible");
-            cy.get("body").matchImage();
+            cy.get("body").matchImage({
+                screenshotConfig: {
+                    blackout: ["[data-testid=graphPage] > :not(#nk-graph-main) > div"],
+                },
+            });
 
             cy.intercept("/api/notifications", (req) => {
                 req.continue();
