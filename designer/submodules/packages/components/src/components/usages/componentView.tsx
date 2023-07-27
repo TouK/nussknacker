@@ -4,12 +4,13 @@ import { UsagesTable } from "./usagesTable";
 import { useComponentUsagesWithStatus } from "../useComponentsQuery";
 import { FiltersContextProvider, useFilterContext } from "../../common";
 import { Breadcrumbs } from "./breadcrumbs";
-import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersValues } from "./usagesFiltersModel";
-import { ActiveFilters } from "../../scenarios/filters/activeFilters";
+import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersUsageType, UsagesFiltersValues } from "./usagesFiltersModel";
+import { ActiveFilters, getColorForName } from "../../scenarios/filters/activeFilters";
 import { sortBy, uniq } from "lodash";
 import { useStatusDefinitions, useUserQuery } from "../../scenarios/useScenariosQuery";
 import { FiltersPart } from "./filtersPart";
 import { useTranslation } from "react-i18next";
+import { useTheme } from "@mui/material";
 
 export function ComponentView(): JSX.Element {
     return (
@@ -54,6 +55,14 @@ function Component(): JSX.Element {
                             return t("table.filter.SCENARIOS", "Scenarios");
                     }
                     break;
+                case "USAGE_TYPE":
+                    switch (value) {
+                        case UsagesFiltersUsageType.INDIRECT:
+                            return t("table.filter.INDIRECT", "Indirect usage");
+                        case UsagesFiltersUsageType.DIRECT:
+                            return t("table.filter.DIRECT", "Direct usage");
+                    }
+                    break;
                 case "STATUS":
                     return t("table.filter.status." + value, statusFilterLabels[value]);
             }
@@ -67,11 +76,32 @@ function Component(): JSX.Element {
         [statusFilterLabels, t],
     );
 
+    const theme = useTheme();
+    const getColor = useCallback(
+        (type, value) => {
+            switch (type) {
+                case "USAGE_TYPE":
+                    switch (value) {
+                        case UsagesFiltersUsageType.INDIRECT:
+                            return theme.palette.secondary.main;
+                        case UsagesFiltersUsageType.DIRECT:
+                            return theme.palette.primary.main;
+                    }
+            }
+            return getColorForName(type);
+        },
+        [theme.palette.primary.main, theme.palette.secondary.main],
+    );
+
     return (
         <>
             <Breadcrumbs />
             <FiltersPart isLoading={isLoading} filterableValues={filterableValues} />
-            <ActiveFilters<UsagesFiltersModel> getLabel={getLabel} activeKeys={activeKeys.filter((k) => k !== "TEXT")} />
+            <ActiveFilters<UsagesFiltersModel>
+                getLabel={getLabel}
+                getColor={getColor}
+                activeKeys={activeKeys.filter((k) => k !== "TEXT")}
+            />
             <UsagesTable data={data} isLoading={isLoading} />
         </>
     );
