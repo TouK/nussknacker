@@ -2,18 +2,19 @@ package pl.touk.nussknacker.engine.spel
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
-import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression, TemplateParserContext}
-import org.springframework.expression.spel.{SpelNode, SpelParserConfiguration}
-import org.springframework.expression.spel.ast.{Identifier, Indexer, Projection, PropertyOrFieldReference, QualifiedIdentifier, Selection, StringLiteral, TypeReference, VariableReference}
+import org.springframework.expression.common.TemplateParserContext
+import org.springframework.expression.spel.ast._
 import org.springframework.expression.spel.standard.{SpelExpression => SpringSpelExpression}
+import org.springframework.expression.spel.{SpelNode, SpelParserConfiguration}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.UiDictServices
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypedDict, TypedObjectTypingResult, TypedObjectWithValue, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ExpressionDefinition
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.LabelsDictTyper
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser.SqlSpelTemplateParserContext
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.spel.ast.SpelAst.SpelNodeId
 import pl.touk.nussknacker.engine.spel.parser.NuTemplateAwareExpressionParser
@@ -176,7 +177,7 @@ private class NuSpelNodeParser(typer: Typer) extends LazyLogging {
     val rawExpression = language match {
       case Expression.Language.Spel => Try(parser.parseExpression(input, null))
       case Expression.Language.SpelTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
-      case Expression.Language.SqlSpelTemplate => Try(parser.parseExpression(input, new TemplateParserContext()))
+      case Expression.Language.SqlSpelTemplate => Try(parser.parseExpression(input, SqlSpelTemplateParserContext))
       case _ => Failure(new IllegalArgumentException(s"Language $language is not supported"))
     }
     rawExpression.map { parsedExpressions =>

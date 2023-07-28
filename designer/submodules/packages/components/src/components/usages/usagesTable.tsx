@@ -1,15 +1,24 @@
-import type { ComponentUsageType } from "nussknackerUi/HttpService";
+import type { ComponentUsageType, NodeUsageData } from "nussknackerUi/HttpService";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScenarioCell } from "./scenarioCell";
 import { Columns, TableViewData, TableWrapper } from "../tableWrapper";
 import { createFilterRules, Highlight, useFilterContext } from "../../common";
-import { NodesCell } from "./nodesCell";
-import { UsagesFiltersModel } from "./usagesFiltersModel";
+import { getNodeName, NodesCell } from "./nodesCell";
+import { UsagesFiltersModel, UsagesFiltersModelType, UsagesFiltersUsageType } from "./usagesFiltersModel";
 import { useDebouncedValue } from "rooks";
 import { FilterLinkCell } from "../cellRenderers";
 import { UsageWithStatus } from "../useComponentsQuery";
-import { ScenariosFiltersModelType } from "../../scenarios/filters/scenariosFiltersModel";
+
+export function nodeFilter(f, u: NodeUsageData) {
+    switch (f) {
+        case UsagesFiltersUsageType.INDIRECT:
+            return u.fragmentNodeId;
+        case UsagesFiltersUsageType.DIRECT:
+            return !u.fragmentNodeId;
+    }
+    return false;
+}
 
 export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element {
     const { data = [], isLoading } = props;
@@ -110,20 +119,31 @@ export function UsagesTable(props: TableViewData<UsageWithStatus>): JSX.Element 
                         return columns
                             .filter((value) => visibleColumns[value.field])
                             .filter((value) => !["processCategory", "createdBy", "modifiedBy"].includes(value.field))
-                            .map(({ field }) => row[field]?.toString().toLowerCase())
+                            .map(({ field }) => {
+                                switch (field) {
+                                    case "nodesUsagesData":
+                                        return row[field]?.map(getNodeName).toString().toLowerCase();
+                                    default:
+                                        return row[field]?.toString().toLowerCase();
+                                }
+                            })
                             .filter(Boolean)
                             .some((value) => value.includes(segment.toLowerCase()));
                     });
                 },
                 TYPE: (row, value) =>
                     !value?.length ||
-                    []
-                        .concat(value)
-                        .some(
-                            (f) =>
-                                (f === ScenariosFiltersModelType.SCENARIOS && !row.isFragment) ||
-                                (f === ScenariosFiltersModelType.FRAGMENTS && row.isFragment),
-                        ),
+                    [].concat(value).some((f) => {
+                        switch (f) {
+                            case UsagesFiltersModelType.SCENARIOS:
+                                return !row.isFragment;
+                            case UsagesFiltersModelType.FRAGMENTS:
+                                return row.isFragment;
+                        }
+                        return false;
+                    }),
+                USAGE_TYPE: (row, value) =>
+                    !value?.length || [].concat(value).some((f) => row.nodesUsagesData.some((u) => nodeFilter(f, u))),
                 STATUS: (row, filter) => !filter?.length || [].concat(filter).some((f) => row.state?.status?.name.includes(f)),
             }),
         [columns, visibleColumns],

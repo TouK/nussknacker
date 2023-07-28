@@ -49,7 +49,10 @@ describe("Components list", () => {
 
     it("should allow filtering by name with multiple words", () => {
         filterByDefaultCategory();
-        cy.get("[placeholder='Search...']").type("fo ea", { force: true, delay: 100 });
+        cy.get("[placeholder='Search...']").type("fo ea", {
+            force: true,
+            delay: 100,
+        });
         cy.contains(/^for-each$/i).should("be.visible");
         cy.get("[role=row]").should("have.lengthOf", 2);
         cy.matchQuery("?CATEGORY=Default&NAME=fo+ea");
@@ -167,6 +170,51 @@ describe("Components list", () => {
         cy.get("#app-container>main").matchImage({
             screenshotConfig: { clip: { x: 0, y: 0, width: 1400, height: 300 } },
         });
+    });
+
+    it("should filter usage types", () => {
+        cy.createTestFragment(`${seed}_xxx`, "fragmentWithFilter");
+        cy.visitNewProcess(`${seed}_yyy`, "testProcess2");
+        cy.contains("fragments").should("be.visible").click();
+        cy.contains(`${seed}_xxx`).last().should("be.visible").drag("#nk-graph-main", {
+            x: 800,
+            y: 600,
+            position: "right",
+            force: true,
+        });
+        cy.contains(/^save$/i).click();
+        cy.contains(/^ok$/i).click();
+
+        cy.viewport(1400, 500);
+        cy.visit("/components/usages/filter");
+
+        cy.contains(/^other$/i).click();
+        cy.get("[role=menu]").find("li[role=menuitem]").as("options");
+
+        cy.get("@options")
+            .contains(/\sdirect/i)
+            .click();
+        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get("#app-container>main").matchImage();
+
+        cy.get("@options")
+            .contains(/\sdirect/i)
+            .click();
+        cy.get("@options")
+            .contains(/indirect/i)
+            .click();
+        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get("#app-container>main").matchImage();
+
+        cy.get("@options")
+            .contains(/indirect/i)
+            .click();
+        cy.get("body").click(0, 0);
+        cy.get("input[type=text]").type("xxx");
+        cy.matchQuery("?TEXT=xxx");
+        cy.viewport(1600, 500);
+        cy.wait(500); //ensure "loading" mask is hidden
+        cy.get("#app-container>main").matchImage();
     });
 
     function filterByDefaultCategory() {

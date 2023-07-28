@@ -4,7 +4,6 @@ import { CellLink } from "../cellRenderers";
 import { ExternalLink, Highlight, scenarioHref } from "../../common";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { ScenarioAvatar } from "../../scenarios/list/scenarioAvatar";
-import { ProcessType } from "nussknackerUi/components/Process/types";
 import Stack from "@mui/material/Stack";
 
 export function ScenarioCell({ filterText, ...props }: GridRenderCellParams & { filterText: string }): JSX.Element {
