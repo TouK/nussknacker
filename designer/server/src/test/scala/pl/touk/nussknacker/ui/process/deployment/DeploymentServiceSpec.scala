@@ -126,6 +126,9 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
       val stateAfterJobRetention = deploymentService.getProcessState(ProcessIdWithName(processId, processName)).futureValue
       stateAfterJobRetention.status shouldBe SimpleStateStatus.Finished
     }
+
+    archiveProcess(processId).dbioActionValues
+    deploymentService.getProcessState(ProcessIdWithName(processId, processName)).futureValue.status shouldBe SimpleStateStatus.Finished
   }
 
   test("Should finish deployment only after DeploymentManager finishes") {
@@ -555,9 +558,13 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   private def prepareArchivedProcess(processName: ProcessName, actionType: Option[ProcessActionType]): DB[(ProcessId, Option[ProcessActionId])] =
     for {
       (processId, actionIdOpt) <- prepareProcessWithAction(processName, actionType)
-      _ <- writeProcessRepository.archive(processId = processId, isArchived = true)
-      _ <- actionRepository.markProcessAsArchived(processId = processId, initialVersionId)
+      _ <- archiveProcess(processId)
     } yield (processId, actionIdOpt)
+
+  private def archiveProcess(processId: ProcessId): DB[_] = {
+    writeProcessRepository.archive(processId = processId, isArchived = true)
+      .flatMap(_ => actionRepository.markProcessAsArchived(processId = processId, initialVersionId))
+  }
 
   private def prepareProcessWithAction(processName: ProcessName, actionType: Option[ProcessActionType]): DB[(ProcessId, Option[ProcessActionId])] = {
     for {

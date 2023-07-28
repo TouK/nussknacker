@@ -264,10 +264,13 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   //We assume that checking the state for archived doesn't make sense, and we compute the state based on the last state action
   private def getArchivedProcessState(processDetails: BaseProcessDetails[_])(implicit manager: DeploymentManager) = {
-    processDetails.lastStateAction.map(_.actionType) match {
-      case Some(Cancel) =>
+    processDetails.lastStateAction.map(a => (a.actionType, a.state)) match {
+      case Some((Cancel, _)) =>
         logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Canceled}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.Canceled, None)))
+      case Some((Deploy, ProcessActionState.ExecutionFinished)) =>
+        logger.debug(s"Status for: '${processDetails.name}' is: ${SimpleStateStatus.Finished} ")
+        DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.Finished, None)))
       case Some(_) =>
         logger.warn(s"Status for: '${processDetails.name}' is: ${ProblemStateStatus.ArchivedShouldBeCanceled}")
         DBIOAction.successful(manager.processStateDefinitionManager.processState(StatusDetails(ProblemStateStatus.ArchivedShouldBeCanceled, None)))
