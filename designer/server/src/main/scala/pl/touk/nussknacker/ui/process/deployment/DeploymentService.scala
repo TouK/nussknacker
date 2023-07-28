@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeployedScenarioData, ProcessAction, ProcessState}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeployedScenarioData, ProcessAction, ProcessActionId, ProcessState}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -26,7 +26,15 @@ trait DeploymentService extends ProcessStateService {
                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Unit]
   def invalidateInProgressActions(): Unit
 
+  // TODO: This method is for backward compatibility. Remove it after switching all Flink jobs into mandatory deploymentId in StatusDetails
   def markProcessFinishedIfLastActionDeploy(processingType: ProcessingType, processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]]
+
+  // Marks action execution finished. Returns true if update has some effect
+  def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(implicit ec: ExecutionContext): Future[Boolean]
+
+  def getLastStateAction(processingType: ProcessingType, processId: ProcessId)
+                        (implicit ec: ExecutionContext): Future[Option[ProcessAction]]
+
 }
 
 trait ProcessStateService {

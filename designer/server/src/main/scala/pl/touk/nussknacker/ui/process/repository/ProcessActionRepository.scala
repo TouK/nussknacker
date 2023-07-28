@@ -27,8 +27,10 @@ import scala.language.higherKinds
 trait ProcessActionRepository[F[_]] {
   def markProcessAsArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
   def markProcessAsUnArchived(processId: ProcessId, processVersion: VersionId)(implicit user: LoggedUser): F[_]
-  def getFinishedProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]]
-  def getLastFinishedActionPerProcess(actionTypesOpt: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]]
+  def getFinishedProcessAction(actionId: ProcessActionId)(implicit ec: ExecutionContext): F[Option[ProcessAction]]
+  def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[Set[ProcessActionType]])(implicit ec: ExecutionContext): F[List[ProcessAction]]
+  def getLastActionPerProcess(actionState: Set[ProcessActionState],
+                              actionTypesOpt: Option[Set[ProcessActionType]]): F[Map[ProcessId, ProcessAction]]
 }
 
 object DbProcessActionRepository {
@@ -55,7 +57,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
                           (implicit user: LoggedUser): F[Unit] = {
     run(for {
       comment <- newCommentAction(processId, processVersion, comment)
-      updated <- updateAction(actionId, processId, Some(processVersion), ProcessActionState.Finished, Some(performedAt), None, comment.map(_.id))
+      updated <- updateAction(actionId, ProcessActionState.Finished, Some(performedAt), None, comment.map(_.id))
       _ <-
         if (updated) {
           DBIOAction.successful(())
@@ -73,7 +75,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
                         (implicit user: LoggedUser): F[Unit] = {
     val failureMessageOpt = Option(failureMessage).map(_.take(1022)) // crop to not overflow column size)
     run(for {
-      updated <- updateAction(actionId, processId, processVersion, ProcessActionState.Failed, Some(performedAt), failureMessageOpt, None)
+      updated <- updateAction(actionId, ProcessActionState.Failed, Some(performedAt), failureMessageOpt, None)
       _ <-
         if (updated) {
           DBIOAction.successful(())
@@ -83,6 +85,13 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
             performedAt, Some(performedAt), failureMessageOpt, None, buildInfoProcessingType)
         }
     } yield ())
+  }
+
+  def markFinishedActionAsExecutionFinished(actionId: ProcessActionId): F[Boolean] = {
+    run(processActionsTable.filter(a => a.id === actionId && a.state === ProcessActionState.Finished)
+      .map(_.state)
+      .update(ProcessActionState.ExecutionFinished)
+      .map(_ == 1))
   }
 
   def removeAction(actionId: ProcessActionId): F[Unit] = {
@@ -128,7 +137,7 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     }
   }
 
-  private def updateAction(actionId: ProcessActionId, processId: ProcessId, processVersion: Option[VersionId], state: ProcessActionState,
+  private def updateAction(actionId: ProcessActionId, state: ProcessActionState,
                            performedAt: Option[Instant], failure: Option[String], commentId: Option[Long]): DB[Boolean] = {
     for {
       updateCount <- processActionsTable.filter(_.id === actionId)
@@ -166,13 +175,14 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
     run(processActionsTable.filter(_.state === ProcessActionState.InProgress).delete.map(_ => ()))
   }
 
-  override def getLastFinishedActionPerProcess(actionTypesOpt: Option[List[ProcessActionType]]): F[Map[ProcessId, ProcessAction]] = {
+  override def getLastActionPerProcess(actionState: Set[ProcessActionState],
+                                       actionTypesOpt: Option[Set[ProcessActionType]]): F[Map[ProcessId, ProcessAction]] = {
     val query = processActionsTable
-      .filter(_.state === ProcessActionState.Finished)
+      .filter(_.state.inSet(actionState))
       .groupBy(_.processId)
       .map { case (processId, group) => (processId, group.map(_.performedAt).max) }
       .join(processActionsTable)
-      .on { case ((processId, maxPerformedAt), action) => action.processId === processId && action.state === ProcessActionState.Finished && action.performedAt === maxPerformedAt } //We fetch exactly this one with max deployment
+      .on { case ((processId, maxPerformedAt), action) => action.processId === processId && action.state.inSet(actionState) && action.performedAt === maxPerformedAt } //We fetch exactly this one with max deployment
       .map { case ((processId, _), action) => processId -> action }
       .joinLeft(commentsTable)
       .on { case ((_, action), comment) => action.commentId === comment.id }
@@ -184,14 +194,25 @@ extends Repository[F] with EspTables with CommentActions with ProcessActionRepos
       .result.map(_.toMap.mapValuesNow(toFinishedProcessAction)))
   }
 
-  override def getFinishedProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]] =
-   run(processActionsTable
-      .filter(p => p.processId === processId && p.state === ProcessActionState.Finished)
+  override def getFinishedProcessAction(actionId: ProcessActionId)(implicit ec: ExecutionContext): F[Option[ProcessAction]] =
+    run(processActionsTable
+      .filter(a => a.id === actionId && a.state.inSet(ProcessActionState.FinishedStates))
+      .joinLeft(commentsTable)
+      .on { case (action, comment) => action.commentId === comment.id }
+      .result.headOption.map(_.map(toFinishedProcessAction)))
+
+  override def getFinishedProcessActions(processId: ProcessId, actionTypesOpt: Option[Set[ProcessActionType]])(implicit ec: ExecutionContext): F[List[ProcessAction]] = {
+    val query = processActionsTable
+      .filter(p => p.processId === processId && p.state.inSet(ProcessActionState.FinishedStates))
       .joinLeft(commentsTable)
       .on { case (action, comment) => action.commentId === comment.id }
       .sortBy(_._1.performedAt.desc)
+    run(actionTypesOpt
+      .map(actionTypes => query.filter { case (entity, _) => entity.actionType.inSet(actionTypes) })
+      .getOrElse(query)
       .result
       .map(_.toList.map(toFinishedProcessAction)))
+  }
 
   private def toFinishedProcessAction(actionData: (ProcessActionEntityData, Option[CommentEntityData])): ProcessAction = ProcessAction(
     id = actionData._1.id,

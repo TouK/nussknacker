@@ -26,10 +26,12 @@ class NotificationServiceImpl(actionRepository: DbProcessActionRepository[DB], d
     val limit = notificationsAfter.map(maxInstant(_, limitBasedOnConfig)).getOrElse(limitBasedOnConfig)
     dbioRunner.run(actionRepository.getUserActionsAfter(user,
       Set(ProcessActionType.Deploy, ProcessActionType.Cancel),
-      Set(ProcessActionState.Failed, ProcessActionState.Finished),
+      ProcessActionState.FinishedStates + ProcessActionState.Failed,
       limit)).map(_.map {
       case (ProcessActionEntityData(id, _, _, _, _, _, actionType, ProcessActionState.Finished, _, _, _), processName) =>
         Notification.actionFinishedNotification(id.toString, actionType, processName)
+      case (ProcessActionEntityData(id, _, _, _, _, _, actionType, ProcessActionState.ExecutionFinished, _, _, _), processName) =>
+        Notification.actionExecutionFinishedNotification(id.toString, actionType, processName)
       case (ProcessActionEntityData(id, _, _, _, _, _, actionType, ProcessActionState.Failed, failureMessageOpt, _, _), processName) =>
         Notification.actionFailedNotification(id.toString, actionType, processName, failureMessageOpt)
       case (a, processName) =>

@@ -18,6 +18,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   `ProcessStateDefinitionManager.processState` variant of methods with multiple parameters was removed - you should
   use `ProcessStateDefinitionManager.processState(StatusDetails)` variant instead.
 * [#4353](https://github.com/TouK/nussknacker/pull/4353) Removed isCancelled/isDeployed flags based on `ProcessAction`, `ProcessAction.action` renamed to actionType. Trait `Process` is removed.
+* [#4484](https://github.com/TouK/nussknacker/pull/4484) `ProcessIdWithName` moved from package `pl.touk.nussknacker.restmodel.process` to `pl.touk.nussknacker.engine.api.process`
+  `DeploymentManager.getProcessState(ProcessName, Option[ProcessAction])` method now takes `ProcessIdWithName` as an argument instead of `ProcessName`. 
+  The same with `PostprocessingProcessStatus.postprocess`.
 
 ### REST API changes
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility).

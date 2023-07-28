@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeployedScenarioData, ProcessAction, ProcessState}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeployedScenarioData, ProcessAction, ProcessActionId, ProcessState}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
@@ -34,4 +34,11 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
 
   override def markProcessFinishedIfLastActionDeploy(processingType: ProcessingType, processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] =
     Future.successful(None)
+
+  override def markActionExecutionFinished(processingType: ProcessingType, actionId: ProcessActionId)(implicit ec: ExecutionContext): Future[Boolean] =
+    Future.successful(false)
+
+  override def getLastStateAction(processingType: ProcessingType, processId: ProcessId)(implicit ec: ExecutionContext): Future[Option[ProcessAction]] =
+    Future.successful(None)
+
 }

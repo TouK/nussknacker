@@ -5,7 +5,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -23,8 +23,8 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
     .expireAfterWrite(java.time.Duration.ofMillis(cacheTTL.toMillis))
     .buildAsync[ProcessName, List[StatusDetails]]
 
-  override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
-    delegate.getProcessState(name, lastStateAction)
+  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
+    delegate.getProcessState(idWithName, lastStateAction)
 
   override def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
     freshnessPolicy match {
@@ -88,8 +88,8 @@ object CachingProcessStateDeploymentManager extends LazyLogging {
       delegate match {
         case postprocessing: PostprocessingProcessStatus =>
           new CachingProcessStateDeploymentManager(delegate, cacheTTL) with PostprocessingProcessStatus {
-            override def postprocess(name: ProcessName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]] =
-              postprocessing.postprocess(name, statusDetailsList)
+            override def postprocess(idWithName: ProcessIdWithName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]] =
+              postprocessing.postprocess(idWithName, statusDetailsList)
           }
         case _ =>
           new CachingProcessStateDeploymentManager(delegate, cacheTTL)

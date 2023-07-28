@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralIntegerValidator, MinimalNumberValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -32,7 +32,7 @@ class DeploymentManagerStub extends DeploymentManager with AlwaysFreshProcessSta
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
   //We map lastStateAction to state to avoid some corner/blocking cases with the deleting/canceling scenario on tests..
-  override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
+  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
     val lastStateActionStatus = lastStateAction match {
       case Some(action) if action.actionType.equals(ProcessActionType.Deploy) =>
         SimpleStateStatus.Running

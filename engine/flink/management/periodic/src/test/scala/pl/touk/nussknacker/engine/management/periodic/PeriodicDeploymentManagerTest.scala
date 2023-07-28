@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessAction, ProcessActionId, ProcessActionState, ProcessActionType, StatusDetails}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
@@ -36,7 +36,9 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val processName = ProcessName("test1")
-  private val processVersion = ProcessVersion(versionId = VersionId(42L), processName = processName, processId = ProcessId(1), user = "test user", modelVersion = None)
+  private val processId = ProcessId(1)
+  private val idWithName = ProcessIdWithName(processId, processName)
+  private val processVersion = ProcessVersion(versionId = VersionId(42L), processName = processName, processId = processId, user = "test user", modelVersion = None)
 
   class Fixture(executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()) {
     val repository = new db.InMemPeriodicProcessesRepository(processingType = "testProcessingType")
@@ -96,7 +98,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
 
     val deployAction = ProcessAction(
       id = ProcessActionId(UUID.randomUUID()),
-      processId = ProcessId(2),
+      processId = processId,
       processVersionId = VersionId(1),
       user = "fooUser",
       createdAt = Instant.ofEpochMilli(0),
@@ -107,7 +109,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
       commentId = None,
       comment = None,
       buildInfo = Map.empty)
-    f.periodicDeploymentManager.getProcessState(processName, Some(deployAction)).futureValue.value.status shouldBe a[ScheduledStatus]
+    f.periodicDeploymentManager.getProcessState(idWithName, Some(deployAction)).futureValue.value.status shouldBe a[ScheduledStatus]
   }
 
   test("getProcessState - should be scheduled when scenario scheduled and job finished on Flink") {
@@ -124,15 +126,15 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
 
   test("getProcessState - should be finished when scenario finished and job finished on Flink") {
     val f = new Fixture
-    val processId = f.repository.addOnlyProcess(processName, CronScheduleProperty("0 0 0 1 1 ? 1970"))
-    f.repository.addOnlyDeployment(processId, PeriodicProcessDeploymentStatus.Finished, LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC))
+    val periodicProcessId = f.repository.addOnlyProcess(processName, CronScheduleProperty("0 0 0 1 1 ? 1970"))
+    f.repository.addOnlyDeployment(periodicProcessId, PeriodicProcessDeploymentStatus.Finished, LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC))
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
     f.periodicProcessService.deactivate(processName).futureValue
 
     // Warning: don't remove type declaration because it causes compilation error in scala 2.12
     val deployAction: ProcessAction = ProcessAction(
       id = ProcessActionId(UUID.randomUUID()),
-      processId = ProcessId(2),
+      processId = processId,
       processVersionId = VersionId(1),
       user = "fooUser",
       createdAt = Instant.ofEpochMilli(0),
@@ -143,7 +145,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
       commentId = None,
       comment = None,
       buildInfo = Map.empty)
-    val state = f.periodicDeploymentManager.getProcessState(processName, Some(deployAction)).futureValue.value
+    val state = f.periodicDeploymentManager.getProcessState(idWithName, Some(deployAction)).futureValue.value
 
     val status = state.status
     status shouldBe SimpleStateStatus.Finished

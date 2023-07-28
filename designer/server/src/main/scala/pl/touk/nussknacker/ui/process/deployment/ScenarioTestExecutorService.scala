@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.ui.process.deployment
 
+import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}

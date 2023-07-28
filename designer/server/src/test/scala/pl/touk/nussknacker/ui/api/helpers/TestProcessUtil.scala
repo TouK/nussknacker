@@ -71,7 +71,7 @@ object TestProcessUtil {
       tags = List(),
       lastAction = lastAction.map(createProcessAction),
       lastStateAction = lastAction.collect {
-        case action if StateActions.contains(action) => createProcessAction(action)
+        case action if StateActionsTypes.contains(action) => createProcessAction(action)
       },
       lastDeployedAction = lastAction.collect {
         case Deploy => createProcessAction(Deploy)

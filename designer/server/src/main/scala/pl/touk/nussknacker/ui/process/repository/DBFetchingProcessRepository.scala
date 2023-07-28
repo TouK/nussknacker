@@ -5,7 +5,7 @@ import cats.data.OptionT
 import cats.instances.future._
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.{DB, _}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionState, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails._
@@ -51,9 +51,10 @@ abstract class DBFetchingProcessRepository[F[_] : Monad](val dbConfig: DbConfig,
   private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
                                                                               isDeployed: Option[Boolean])(implicit loggedUser: LoggedUser, ec: ExecutionContext): DBIOAction[List[BaseProcessDetails[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {
-      lastActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastFinishedActionPerProcess(None))
-      lastStateActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastFinishedActionPerProcess(Some(StateActions)))
-      lastDeployedActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastFinishedActionPerProcess(Some(List(ProcessActionType.Deploy))))
+      lastActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastActionPerProcess(ProcessActionState.FinishedStates, None))
+      lastStateActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastActionPerProcess(ProcessActionState.FinishedStates, Some(StateActionsTypes)))
+      // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
+      lastDeployedActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastActionPerProcess(Set(ProcessActionState.Finished), Some(Set(ProcessActionType.Deploy))))
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
     } yield
       latestProcesses.map { case ((_, processVersion), process) => createFullDetails(
@@ -125,14 +126,15 @@ abstract class DBFetchingProcessRepository[F[_] : Monad](val dbConfig: DbConfig,
     for {
       process <- OptionT[DB, ProcessEntityData](processTableFilteredByUser.filter(_.id === id).result.headOption)
       processVersions <- OptionT.liftF[DB, Seq[ProcessVersionEntityData]](fetchProcessLatestVersionsQuery(id)(ProcessShapeFetchStrategy.NotFetch).result)
-      actions <- OptionT.liftF[DB, List[ProcessAction]](actionRepository.getFinishedProcessActions(id))
+      actions <- OptionT.liftF[DB, List[ProcessAction]](actionRepository.getFinishedProcessActions(id, None))
       tags <- OptionT.liftF[DB, Seq[TagsEntityData]](tagsTable.filter(_.processId === process.id).result)
     } yield createFullDetails(
       process = process,
       processVersion = processVersion,
       lastActionData = actions.headOption,
-      lastStateActionData = actions.find(a => StateActions.contains(a.actionType)),
-      lastDeployedActionData = actions.headOption.find(_.actionType == ProcessActionType.Deploy),
+      lastStateActionData = actions.find(a => StateActionsTypes.contains(a.actionType)),
+      // for last deploy action we are not interested in ExecutionFinished deploys - we don't want to show them in the history
+      lastDeployedActionData = actions.headOption.filter(a => a.actionType == ProcessActionType.Deploy && a.state == ProcessActionState.Finished),
       isLatestVersion = isLatestVersion,
       tags = tags,
       history = processVersions.map(

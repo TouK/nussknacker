@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.process.deployment
 
 import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository

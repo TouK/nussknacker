@@ -3,10 +3,10 @@ package pl.touk.nussknacker.ui.process
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
+import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures

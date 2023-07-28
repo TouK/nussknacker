@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.deployment
 
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -13,8 +13,8 @@ import scala.concurrent.Future
 
 trait DeploymentManagerInconsistentStateHandlerMixIn {
   self: DeploymentManager =>
-  final override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
-    getProcessStates(name).map(_.map(statusDetails => {
+  final override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] =
+    getProcessStates(idWithName.name).map(_.map(statusDetails => {
       val engineStateResolvedWithLastAction = flattenStatus(lastStateAction, statusDetails)
       processStateDefinitionManager.processState(engineStateResolvedWithLastAction)
     }))
@@ -50,7 +50,7 @@ trait DeploymentManager extends AutoCloseable {
   /**
     * Gets status from engine, resolves possible inconsistency with lastAction and formats status using `ProcessStateDefinitionManager`
     */
-  def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]]
+  def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]]
 
   def processStateDefinitionManager: ProcessStateDefinitionManager
 
@@ -70,7 +70,7 @@ trait DeploymentManager extends AutoCloseable {
 // See comments in FlinkDeploymentManager
 trait PostprocessingProcessStatus { self: DeploymentManager =>
 
-  def postprocess(name: ProcessName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]]
+  def postprocess(idWithName: ProcessIdWithName, statusDetailsList: List[StatusDetails]): Future[Option[ProcessAction]]
 
 }
 

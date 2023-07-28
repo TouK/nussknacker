@@ -10,12 +10,11 @@ import org.scalatestplus.mockito.MockitoSugar
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory}
@@ -59,7 +58,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     val processIdWithName = ProcessIdWithName(id, processName)
 
     val deploymentManager = mock[DeploymentManager]
-    val (deploymentService, notificationService) = createServices(deploymentManager, processName)
+    val (deploymentService, notificationService) = createServices(deploymentManager)
 
     def notificationsFor(user: LoggedUser, after: Option[Instant] = None): List[Notification] = notificationService.notifications(after)(user, ctx).futureValue
 
@@ -88,10 +87,41 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     notificationsFor(userForFail).map(_.toRefresh) shouldBe Symbol("empty")
   }
 
+  test("should refresh after action execution finished") {
+    val processName = ProcessName("process-execution-finished")
+    val id = saveSampleProcess(processName)
+    val processIdWithName = ProcessIdWithName(id, processName)
+
+    val deploymentManager = mock[DeploymentManager]
+    val (deploymentService, notificationService) = createServices(deploymentManager)
+
+    var passedDeploymentId = Option.empty[DeploymentId]
+    def deployProcess(givenDeployResult: Try[Option[ExternalDeploymentId]], user: LoggedUser): Option[ExternalDeploymentId] = {
+      when(deploymentManager.deploy(any[ProcessVersion], any[DeploymentData], any[CanonicalProcess], any[Option[String]])).thenAnswer { invocation =>
+        passedDeploymentId = Some(invocation.getArgument[DeploymentData](1).deploymentId)
+        Future.fromTry(givenDeployResult)
+      }
+      when(deploymentManager.processStateDefinitionManager).thenReturn(SimpleProcessStateDefinitionManager)
+      deploymentService.deployProcessAsync(processIdWithName, None, None)(user, ctx).flatten.futureValue
+    }
+
+    val user = TestFactory.adminUser("fooUser", "fooUser")
+    deployProcess(Success(None), user)
+    val notificationsAfterDeploy = notificationService.notifications(None)(user, ctx).futureValue
+    notificationsAfterDeploy should have length 1
+    val deployNotificationId = notificationsAfterDeploy.head.id
+
+    deploymentService.markActionExecutionFinished(Streaming, passedDeploymentId.value.toActionIdOpt.value).futureValue
+    val notificationAfterExecutionFinished = notificationService.notifications(None)(user, ctx).futureValue
+    // old notification about deployment is replaced by notification about deployment execution finished which has other id
+    notificationAfterExecutionFinished should have length 1
+    notificationAfterExecutionFinished.head.id should not equal deployNotificationId
+  }
+
   private val notDeployed = SimpleProcessStateDefinitionManager.processState(StatusDetails(SimpleStateStatus.NotDeployed, None))
 
-  private def createServices(deploymentManager: DeploymentManager, processName: ProcessName) = {
-    when(deploymentManager.getProcessState(any[ProcessName], any[Option[ProcessAction]])(any[DataFreshnessPolicy]))
+  private def createServices(deploymentManager: DeploymentManager) = {
+    when(deploymentManager.getProcessState(any[ProcessIdWithName], any[Option[ProcessAction]])(any[DataFreshnessPolicy]))
       .thenReturn(Future.successful(WithDataFreshnessStatus(notDeployed, cached = false)))
     val managerDispatcher = mock[DeploymentManagerDispatcher]
     when(managerDispatcher.deploymentManager(any[String])).thenReturn(Some(deploymentManager))
@@ -100,7 +130,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     val notificationService = new NotificationServiceImpl(actionRepository, dbioRunner, config, clock)
     val deploymentService = new DeploymentServiceImpl(managerDispatcher, processRepository, actionRepository, dbioRunner, mock[ProcessValidation], mock[ScenarioResolver], mock[ProcessChangeListener], None, clock) {
       override protected def validateBeforeDeploy(processDetails: processdetails.BaseProcessDetails[CanonicalProcess], actionId: ProcessActionId)(implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
-        Future.successful(DeployedScenarioData(processDetails.toEngineProcessVersion, prepareDeploymentData(user.toManagerUser, DeploymentId(actionId.toString)), processDetails.json))
+        Future.successful(DeployedScenarioData(processDetails.toEngineProcessVersion, prepareDeploymentData(user.toManagerUser, DeploymentId.fromActionId(actionId)), processDetails.json))
       }
     }
     (deploymentService, notificationService)

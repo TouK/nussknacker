@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -146,14 +146,14 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     } yield WithDataFreshnessStatus(mergedStatus.toList, delegateState.cached)
   }
 
-  override def getProcessState(name: ProcessName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
+  override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
     for {
-      statusesWithFreshness <- getProcessStates(name)
-      _ = logger.debug(s"Statuses for ${name.value}: $statusesWithFreshness")
+      statusesWithFreshness <- getProcessStates(idWithName.name)
+      _ = logger.debug(s"Statuses for ${idWithName.name}: $statusesWithFreshness")
       actionAfterPostprocessOpt <- {
         delegate match {
           case postprocessing: PostprocessingProcessStatus =>
-            postprocessing.postprocess(name, statusesWithFreshness.value)
+            postprocessing.postprocess(idWithName, statusesWithFreshness.value)
           case _ => Future.successful(None)
         }
       }
