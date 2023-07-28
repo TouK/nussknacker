@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -146,36 +147,24 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
   override def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    for {
-      delegateState <- delegate.getProcessStates(name)
-      mergedStatus <- service.mergeStatusWithDeployments(name, InconsistentStateDetector.extractAtMostOneStatus(delegateState.value))
-    } yield WithDataFreshnessStatus(mergedStatus.toList, delegateState.cached)
+    delegate.getProcessStates(name)
   }
 
+  // getProcessStates(ProcessName) has logic that is cached so most of computation we do inside this method
   override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
-    for {
-      statusesWithFreshness <- getProcessStates(idWithName.name)
-      _ = logger.debug(s"Statuses for ${idWithName.name}: $statusesWithFreshness")
-      actionAfterPostprocessOpt <- {
-        delegate match {
-          case postprocessing: PostprocessingProcessStatus =>
-            postprocessing.postprocess(idWithName, statusesWithFreshness.value)
-          case _ => Future.successful(None)
-        }
-      }
-      engineStateResolvedWithLastAction = flattenStatus(actionAfterPostprocessOpt.orElse(lastStateAction), statusesWithFreshness.value)
-    } yield statusesWithFreshness.copy(value = processStateDefinitionManager.processState(engineStateResolvedWithLastAction))
+    getProcessStatusDetails(idWithName.name).map { statusesWithFreshness =>
+      statusesWithFreshness.copy(value = processStateDefinitionManager.processState(statusesWithFreshness.value))
+    }
   }
 
-  protected def flattenStatus(lastStateAction: Option[ProcessAction], statusDetailsList: List[StatusDetails]): StatusDetails = {
-    // InconsistentStateDetector is a little overkill here. It checks some things that won't happen in periodic case because scheduler
-    // is in the same jvm as designer. Also we have some synchronization logic that makes those inconsistencies impossible.
-    // After cleanup in scheduler mechanism, we should remove this
-    new InconsistentStateDetector {
-      override protected def isFollowingDeployStatus(state: StatusDetails): Boolean = {
-        IsFollowingDeployStatusDeterminer.isFollowingDeployStatus(state.status)
-      }
-    }.resolve(statusDetailsList, lastStateAction)
+  def getProcessStatusDetails(name: ProcessName)
+                             (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[StatusDetails]] = {
+    for {
+      statusesWithFreshness <- getProcessStates(name)
+      _ = logger.debug(s"Statuses for $name: $statusesWithFreshness")
+      mergedStatus <- service.mergeStatusWithDeployments(name, InconsistentStateDetector.extractAtMostOneStatus(statusesWithFreshness.value))
+      resultStatus = mergedStatus.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed, None))
+    } yield statusesWithFreshness.copy(value = resultStatus)
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
