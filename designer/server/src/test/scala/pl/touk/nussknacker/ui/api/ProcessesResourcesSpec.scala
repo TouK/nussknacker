@@ -102,7 +102,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     Get(s"/processes/${SampleSpelTemplateProcess.processName.value}") ~> routeWithRead ~> check {
       val newProcessDetails = responseAs[ValidatedProcessDetails]
       newProcessDetails.processVersionId shouldBe VersionId.initialVersionId
+
       responseAs[String] should include("validationResult")
+      responseAs[String] should not include "ExpressionParserCompilationError"
     }
   }
 
