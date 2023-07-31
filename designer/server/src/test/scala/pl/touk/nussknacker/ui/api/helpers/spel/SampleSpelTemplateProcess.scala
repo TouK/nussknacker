@@ -24,8 +24,10 @@ object SampleSpelTemplateProcess {
   }
 
   private def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
+    val endMessage = "#test #{#input} #test \n#{\"abc\".toString + {1,2,3}.toString + \"abc\"}\n#test\n#{\"ab{}c\"}"
+
     GraphBuilder
-      .buildVariable("message" + idSuffix, "output", "message" -> spelTemplate("#test #{#input} #test \n#{\"abc\".toString + {1,2,3}.toString + \"abc\"}\n#test\n#{\"ab{}c\"}"))
+      .buildVariable("message" + idSuffix, "output", "message" -> spelTemplate(endMessage))
       .emptySink("end" + idSuffix, "kafka-string", TopicParamName -> spelTemplate("end.topic"), SinkValueParamName -> spelTemplate("#output"))
   }
 }
