@@ -6,11 +6,9 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression.{spel, spelTemplate}
 import pl.touk.nussknacker.engine.graph.node.SubsequentNode
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.engine.speltemplate
 
 object SampleSpelTemplateProcess {
 
-  import speltemplate.Implicits._
 
   val processName: ProcessName = ProcessName(this.getClass.getName)
 
