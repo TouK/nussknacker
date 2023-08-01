@@ -6,7 +6,6 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentStateDetector
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -112,11 +111,11 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   }
 
   private def cancelIfJobPresent(processVersion: ProcessVersion, user: User): Future[Unit] = {
-    getProcessStates(processVersion.processName)(DataFreshnessPolicy.Fresh)
+
+    delegate.getProcessStates(processVersion.processName)(DataFreshnessPolicy.Fresh)
       .map(_.value)
-      .map(InconsistentStateDetector.extractAtMostOneStatus)
       .flatMap(service.mergeStatusWithDeployments(processVersion.processName, _))
-      .map(_.isDefined)
+      .map(sd => !Set(SimpleStateStatus.Canceled, SimpleStateStatus.Finished, SimpleStateStatus.NotDeployed).contains(sd.status)) // FIXME: base on sth else
       .flatMap(shouldStop => {
         if (shouldStop) {
           logger.info(s"Scenario ${processVersion.processName} is running or scheduled. Cancelling before reschedule")
@@ -148,24 +147,22 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
   override def getProcessStates(name: ProcessName)(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] = {
-    delegate.getProcessStates(name)
+    throw new IllegalAccessException("PeriodicDeploymentManager.getProcessStates is not meant to be run directly - should be used getProcessState instead")
   }
 
-  // getProcessStates(ProcessName) has logic that is cached so most of computation we do inside this method
   override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
-    getProcessStatusDetails(idWithName.name).map { statusesWithFreshness =>
+    getFlattenStatusDetails(idWithName.name).map { statusesWithFreshness =>
       statusesWithFreshness.copy(value = processStateDefinitionManager.processState(statusesWithFreshness.value))
     }
   }
 
-  def getProcessStatusDetails(name: ProcessName)
+  def getFlattenStatusDetails(name: ProcessName)
                              (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[StatusDetails]] = {
     for {
-      statusesWithFreshness <- getProcessStates(name)
+      statusesWithFreshness <- delegate.getProcessStates(name)
       _ = logger.debug(s"Statuses for $name: $statusesWithFreshness")
-      mergedStatus <- service.mergeStatusWithDeployments(name, InconsistentStateDetector.extractAtMostOneStatus(statusesWithFreshness.value))
-      resultStatus = mergedStatus.getOrElse(StatusDetails(SimpleStateStatus.NotDeployed, None))
-    } yield statusesWithFreshness.copy(value = resultStatus)
+      mergedStatus <- service.mergeStatusWithDeployments(name, statusesWithFreshness.value)
+    } yield statusesWithFreshness.copy(value = mergedStatus)
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =

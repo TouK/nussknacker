@@ -69,7 +69,7 @@ trait PeriodicProcessesRepository {
   def create(deploymentWithJarData: DeploymentWithJarData,
              scheduleProperty: ScheduleProperty): Action[PeriodicProcess]
 
-  def getLatestDeploymentForEachSchedule(processName: ProcessName): Action[Seq[PeriodicProcessDeployment]]
+  def getLatestDeploymentForActiveSchedules(processName: ProcessName): Action[Seq[PeriodicProcessDeployment]]
 
   def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]]
 
@@ -195,15 +195,15 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     update.map(_ => ())
   }
 
-  override def getLatestDeploymentForEachSchedule(processName: ProcessName): Action[Seq[PeriodicProcessDeployment]] = {
+  override def getLatestDeploymentForActiveSchedules(processName: ProcessName): Action[Seq[PeriodicProcessDeployment]] = {
     val activeDeployments = activePeriodicProcessWithDeploymentQuery
       .filter { case (p, _) => p.processName === processName.value }
-    val latestRunAtForEachDeployment = activeDeployments
+    val latestRunAtForActiveSchedules = activeDeployments
       .groupBy { case (_, deployment) => deployment.scheduleName }
       .map { case (scheduleName, group) =>
         (scheduleName, group.map { case (_, deployment) => deployment.runAt }.max)
       }
-    latestRunAtForEachDeployment
+    latestRunAtForActiveSchedules
       .join(activeDeployments)
       .on { case ((scheduleName, runAt), deployment) =>
         //this is SQL, so we have to handle None separately :)

@@ -29,7 +29,9 @@ case class PeriodicProcessDeploymentState(deployedAt: Option[LocalDateTime],
                                      completedAt: Option[LocalDateTime],
                                      status: PeriodicProcessDeploymentStatus)
 
-case class PeriodicProcessDeploymentId(value: Long) extends AnyVal with MappedTo[Long]
+case class PeriodicProcessDeploymentId(value: Long) extends AnyVal with MappedTo[Long] {
+  override def toString: String = value.toString
+}
 
 object PeriodicProcessDeploymentStatus extends Enumeration {
   type PeriodicProcessDeploymentStatus = Value

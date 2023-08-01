@@ -114,8 +114,8 @@ class PeriodicProcessServiceTest extends AnyFunSuite
 
   test("handleFinished - should reschedule for finished Flink job") {
     val f = new Fixture
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
+    val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -130,8 +130,8 @@ class PeriodicProcessServiceTest extends AnyFunSuite
 
   test("handleFinished - should deactivate process if there are no future schedules") {
     val f = new Fixture
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed, scheduleProperty = cronInPast)
-    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished)
+    val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed, scheduleProperty = cronInPast)
+    f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Finished, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -186,8 +186,8 @@ class PeriodicProcessServiceTest extends AnyFunSuite
 
   test("handleFinished - should mark as failed for failed Flink job") {
     val f = new Fixture
-    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
-    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed)
+    val deploymentId = f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed)
+    f.delegateDeploymentManagerStub.setStateStatus(ProblemStateStatus.Failed, Some(deploymentId))
 
     f.periodicProcessService.handleFinished.futureValue
 
@@ -265,7 +265,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
         f.repository.addOnlyDeployment(periodicProcessId, status = status, runAt = now.plusDays(index), scheduleName = Some(schedule))
       }
 
-      val deployment = f.periodicProcessService.getLatestDeployment(processName).futureValue.value
+      val deployment = f.periodicProcessService.getLatestDeploymentForActiveSchedules(processName).futureValue.value
 
       deployment.state.status shouldBe expectedStatus
       deployment.scheduleName shouldBe Some(expectedScheduleName)
