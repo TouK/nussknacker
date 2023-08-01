@@ -36,7 +36,7 @@ class DatabaseLookupEnricherWithCacheTest extends BaseHsqlQueryEnricherTest {
       dependencies = Nil,
       finalState = Some(state)
     )
-    returnType(service, state).display shouldBe "List[{ID: Integer, NAME: String}]"
+    returnType(service, state).display shouldBe "List[Record{ID: Integer, NAME: String}]"
     val resultF = invoker.invokeService(Map(DatabaseLookupEnricher.KeyValueParamName -> 1L))
     val result = Await.result(resultF, 5 seconds).asInstanceOf[java.util.List[TypedMap]].asScala.toList
     result shouldBe List(

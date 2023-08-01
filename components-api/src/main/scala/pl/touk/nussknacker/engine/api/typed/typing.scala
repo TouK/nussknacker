@@ -62,7 +62,7 @@ object typing {
     override def withoutValue: TypedObjectTypingResult =
       TypedObjectTypingResult(fields.mapValuesNow(_.withoutValue), objType, additionalInfo)
 
-    override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.toList.sorted.mkString("{", ", ", "}")
+    override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.toList.sorted.mkString("Record{", ", ", "}")
   }
 
   case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
@@ -111,7 +111,7 @@ object typing {
       val shortenedDataString =
         if (dataString.length <= maxDataDisplaySize) dataString
         else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
-      s"${underlying.display}{$shortenedDataString}"
+      s"${underlying.display}($shortenedDataString)"
     }
   }
 

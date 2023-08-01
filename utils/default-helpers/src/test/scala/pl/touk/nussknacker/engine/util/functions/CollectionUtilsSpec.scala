@@ -23,10 +23,10 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
       ("#COLLECTION.concat({1}, {2.1})", "List[Number]"),
       ("#COLLECTION.concat({1.0}, {2.1})", "List[Double]"),
       ("#COLLECTION.concat({1}, {'a'})", "List[Unknown]"),
-      ("#COLLECTION.concat({{:}}, {{:}})", "List[{}]"),
-      ("#COLLECTION.concat({{key: 1}}, {{key: 2}})", "List[{key: Integer}]"),
+      ("#COLLECTION.concat({{:}}, {{:}})", "List[Record{}]"),
+      ("#COLLECTION.concat({{key: 1}}, {{key: 2}})", "List[Record{key: Integer}]"),
       ("#COLLECTION.concat({{key: 1}}, {{key: 'a'}})", "List[Unknown]"),
-      ("#COLLECTION.concat({{key1: 1}}, {{key2: 'a'}})", "List[{key1: Integer, key2: String}]"),
+      ("#COLLECTION.concat({{key1: 1}}, {{key2: 'a'}})", "List[Record{key1: Integer, key2: String}]"),
       ("#COLLECTION.concat({#unknownMap},{#unknownMap})", "List[Map[Unknown,Unknown]]"),
       ("#COLLECTION.concat({{key:1}},{#unknownMap})", "List[Map[Unknown,Unknown]]"),
     ).forEvery { (expression, expected) =>
@@ -48,18 +48,18 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
     Table(
       ("expression", "expected"),
-      ("#COLLECTION.merge({a:4,c:2,b:3,d:1},{f:'rr',e:'5'})", "{a: Integer{4}, b: Integer{3}, c: Integer{2}, d: Integer{1}, e: String{5}, f: String{rr}}"),
-      ("#COLLECTION.merge({a:4},{e:'5',f:'rr'})", "{a: Integer{4}, e: String{5}, f: String{rr}}"),
-      ("#COLLECTION.merge({a:4,b:3,c:2,d:1},{e:'5'})", "{a: Integer{4}, b: Integer{3}, c: Integer{2}, d: Integer{1}, e: String{5}}"),
-      ("#COLLECTION.merge({a:{innerA:10}},{b:{innerB:10}})", "{a: {innerA: Integer{10}}, b: {innerB: Integer{10}}}"),
-      ("#COLLECTION.merge({a:{innerA:{10,20}}},{b:{innerB:{20}}})", "{a: {innerA: List[Integer]}, b: {innerB: List[Integer{20}]}}"),
-      ("#COLLECTION.merge({a:4,b:3},{a:'5'})", "{a: String{5}, b: Integer{3}}"),
+      ("#COLLECTION.merge({a:4,c:2,b:3,d:1},{f:'rr',e:'5'})", "Record{a: Integer(4), b: Integer(3), c: Integer(2), d: Integer(1), e: String(5), f: String(rr)}"),
+      ("#COLLECTION.merge({a:4},{e:'5',f:'rr'})", "Record{a: Integer(4), e: String(5), f: String(rr)}"),
+      ("#COLLECTION.merge({a:4,b:3,c:2,d:1},{e:'5'})", "Record{a: Integer(4), b: Integer(3), c: Integer(2), d: Integer(1), e: String(5)}"),
+      ("#COLLECTION.merge({a:{innerA:10}},{b:{innerB:10}})", "Record{a: Record{innerA: Integer(10)}, b: Record{innerB: Integer(10)}}"),
+      ("#COLLECTION.merge({a:{innerA:{10,20}}},{b:{innerB:{20}}})", "Record{a: Record{innerA: List[Integer]}, b: Record{innerB: List[Integer(20)]}}"),
+      ("#COLLECTION.merge({a:4,b:3},{a:'5'})", "Record{a: String(5), b: Integer(3)}"),
       ("#COLLECTION.merge(#unknownMap,{a:'5'})", "Map[Unknown,Unknown]"),
       ("#COLLECTION.merge(#unknownMap,#unknownMap)", "Map[Unknown,Unknown]"),
       ("#COLLECTION.merge({a:'5'},#unknownMap)", "Map[Unknown,Unknown]"),
       ("#COLLECTION.merge(#stringMap,{a:'5'})", "Map[String,Unknown]"),
-      ("#COLLECTION.merge(#typedMap,{a:'5'})", "{a: String{5}, key: Integer{20}}"),
-      ("#COLLECTION.merge({b:'50'}, #typedMap)", "{b: String{50}, key: Integer{20}}"),
+      ("#COLLECTION.merge(#typedMap,{a:'5'})", "Record{a: String(5), key: Integer(20)}"),
+      ("#COLLECTION.merge({b:'50'}, #typedMap)", "Record{b: String(50), key: Integer(20)}"),
     ).forEvery { (expression, expected) =>
       evaluateType(expression, types = types) shouldBe expected.valid
     }
@@ -92,7 +92,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluateAny("#COLLECTION.slice({1, 2, 3}, -2, 0)") shouldBe List.empty.asJava
     evaluateAny("#COLLECTION.slice({1, 2, 3}, -2, 1)") shouldBe List(1).asJava
 
-    evaluateType("#COLLECTION.slice({{a: 1}}, -2, 1)") shouldBe "List[{a: Integer}]".valid
+    evaluateType("#COLLECTION.slice({{a: 1}}, -2, 1)") shouldBe "List[Record{a: Integer}]".valid
   }
 
   test("sum for given empty list should return 0.0 (Double) - we are not able to determine the expected type for an empty list") {
@@ -256,7 +256,7 @@ class CollectionUtilsSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
     evaluateType("#COLLECTION.flatten({{'1'},{'2', '3'},{'3'}})") shouldBe "List[String]".valid
     evaluateType("#COLLECTION.flatten({{1},{2},{3}})") shouldBe "List[Integer]".valid
     evaluateType("#COLLECTION.flatten({{{a:1},{b:2}},{{c:3},{d:4}}})") shouldBe
-      "List[{a: Integer{1}, b: Integer{2}, c: Integer{3}, d: Integer{4}}]".valid
+      "List[Record{a: Integer(1), b: Integer(2), c: Integer(3), d: Integer(4)}]".valid
   }
 
   test("should throw if elements are not comparable") {
