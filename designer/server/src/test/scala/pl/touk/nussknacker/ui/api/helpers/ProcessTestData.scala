@@ -32,7 +32,7 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 object ProcessTestData {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.Implicits._
   import KafkaFactory._
 
   val existingSourceFactory = "barSource"
