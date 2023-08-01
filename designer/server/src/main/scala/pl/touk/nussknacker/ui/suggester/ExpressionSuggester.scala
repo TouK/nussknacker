@@ -19,7 +19,7 @@ class ExpressionSuggester(expressionConfig: ExpressionDefinition[_], typeDefinit
                            (implicit ec: ExecutionContext): Future[List[ExpressionSuggestion]] = {
     expression.language match {
       // currently we only support Spel and SpelTemplate expressions
-      case Language.Spel | Language.SpelTemplate | Language.SqlSpelTemplate => spelExpressionSuggester.expressionSuggestions(expression, caretPosition2d.normalizedCaretPosition(expression.expression), variables)
+      case Language.Spel | Language.SpelTemplate => spelExpressionSuggester.expressionSuggestions(expression, caretPosition2d.normalizedCaretPosition(expression.expression), variables)
       case _ => Future.successful(Nil)
     }
   }
