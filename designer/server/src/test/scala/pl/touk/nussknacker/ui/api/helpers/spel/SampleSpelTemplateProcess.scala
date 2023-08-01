@@ -19,10 +19,10 @@ object SampleSpelTemplateProcess {
       .streaming(processName.value)
       .parallelism(1)
       .source("startProcess", "csv-source")
-      .to(endWithMessage())
+      .to(endWithMessage)
   }
 
-  private def endWithMessage(): SubsequentNode = {
+  private def endWithMessage: SubsequentNode = {
     val idSuffix = "suffix"
     val endMessage = "#test #{#input} #test \n#{\"abc\".toString + {1,2,3}.toString + \"abc\"}\n#test\n#{\"ab{}c\"}"
 
