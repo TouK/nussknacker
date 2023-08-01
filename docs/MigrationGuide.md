@@ -21,6 +21,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4484](https://github.com/TouK/nussknacker/pull/4484) `ProcessIdWithName` moved from package `pl.touk.nussknacker.restmodel.process` to `pl.touk.nussknacker.engine.api.process`
   `DeploymentManager.getProcessState(ProcessName, Option[ProcessAction])` method now takes `ProcessIdWithName` as an argument instead of `ProcessName`. 
   The same with `PostprocessingProcessStatus.postprocess`.
+* [#4540](https://github.com/TouK/nussknacker/pull/4540) Improvement: Allow to select a field from OIDC JWT to represent the username: 
+  Currently you have to fill `usernameFieldName` in `authentication` configuration to proper map username in auth user. Before 
+  this change we use `preferred_username` with fallback to `nickname`.
 
 ### REST API changes
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility).

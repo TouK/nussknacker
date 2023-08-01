@@ -13,6 +13,7 @@ class OidcAuthenticationProvider extends AuthenticationProvider {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.authenticationConfigPath
+  import net.ceedubs.ficus.readers.EnumerationReader._
 
   def name: String = "Oidc"
 

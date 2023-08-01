@@ -5,6 +5,7 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.{Decoder, Json}
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, getUserUsername}
+import pl.touk.nussknacker.ui.security.oauth2.UsernameFieldName.UsernameFieldName
 
 import java.time.{Instant, LocalDate}
 
@@ -72,10 +73,23 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
     val userRoles = profile.roles ++ getUserRoles(userIdentity ,configuration)
     val username =
       getUserUsername(userIdentity, configuration)
-        .orElse(profile.preferredUsername)
-        .orElse(profile.nickname)
+        .orElse(getUsername(profile, configuration))
         .getOrElse(userIdentity)
 
     AuthenticatedUser(id = userIdentity, username = username, userRoles)
   }
+
+  private def getUsername(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration) =
+    configuration.usernameFieldName match {
+      case Some(UsernameFieldName.PreferredUsername) =>
+        profile.preferredUsername
+      case Some(UsernameFieldName.GivenName) =>
+        profile.givenName
+      case Some(UsernameFieldName.Nickname) =>
+        profile.nickname
+      case Some(UsernameFieldName.Name) =>
+        profile.name
+      case _ =>
+        None
+    }
 }

@@ -15,6 +15,7 @@
 * [#4517](https://github.com/TouK/nussknacker/pull/4517) Improvement: Better readability of types display:
   * values of primitive types are now displayed in parentheses - previous `String{val}` is now `String(val)`
   * values of record types are now displayed with `Record` prefix - previous `{key: String{val}}` is now `Record{key: String(val)}`
+* [#4540](https://github.com/TouK/nussknacker/pull/4540) Improvement: Allow to select a field from OIDC JWT to represent the username
 
 1.10.0 (29 Jun 2023)
 -------------------------
