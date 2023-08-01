@@ -101,8 +101,6 @@ object ProcessTestData {
 
   val validProcessWithEmptySpelExpr: CanonicalProcess = validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
 
-  val validProcessWithEmptySpelTemplateExpr: CanonicalProcess = validProcessWithParam("fooProcess", "expression" -> Expression.spelTemplate("#{#meta.processName}"))
-
   val validDisplayableProcess: ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
 
   val validProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
