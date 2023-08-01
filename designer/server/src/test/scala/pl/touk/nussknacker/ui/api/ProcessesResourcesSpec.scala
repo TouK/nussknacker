@@ -26,6 +26,7 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.api.helpers.spel._
 import pl.touk.nussknacker.ui.config.processtoolbar.ProcessToolbarsConfigProvider
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarPanelTypeConfig.{CreatorPanel, ProcessInfoPanel, TipsPanel}
@@ -92,6 +93,18 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
         process.state.map(_.description) shouldBe Some(SimpleProcessStateDefinitionManager.statusDescription(SimpleStateStatus.Running))
         process.state.map(_.icon) shouldBe Some(SimpleProcessStateDefinitionManager.statusIcon(SimpleStateStatus.Running))
       }
+    }
+  }
+
+  test("spel template expression is validated properly") {
+    createDeployedProcessFromProcess(SampleSpelTemplateProcess.process)
+
+    Get(s"/processes/${SampleSpelTemplateProcess.processName.value}") ~> routeWithRead ~> check {
+      val newProcessDetails = responseAs[ValidatedProcessDetails]
+      newProcessDetails.processVersionId shouldBe VersionId.initialVersionId
+
+      responseAs[String] should include("validationResult")
+      responseAs[String] should not include "ExpressionParserCompilationError"
     }
   }
 
@@ -553,7 +566,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("return details of process with empty expression") {
-    saveProcess(processName, ProcessTestData.validProcessWithEmptyExpr, TestCat) {
+    saveProcess(processName, ProcessTestData.validProcessWithEmptySpelExpr, TestCat) {
       Get(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[String] should include(processName.value)
@@ -649,6 +662,8 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       Unmarshal(response).to[ValidatedProcessDetails].failed.futureValue shouldBe a[DecodingFailure]
     }
   }
+
+
 
   test("perform idempotent process save") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, ProcessTestData.validProcess)

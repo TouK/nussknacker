@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
-import pl.touk.nussknacker.engine.{MetaDataInitializer, spel}
+import pl.touk.nussknacker.engine.MetaDataInitializer
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
@@ -32,7 +32,7 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 object ProcessTestData {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.Implicits._
   import KafkaFactory._
 
   val existingSourceFactory = "barSource"
@@ -99,7 +99,7 @@ object ProcessTestData {
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")
 
-  val validProcessWithEmptyExpr: CanonicalProcess = validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
+  val validProcessWithEmptySpelExpr: CanonicalProcess = validProcessWithParam("fooProcess", "expression" -> Expression.spel(""))
 
   val validDisplayableProcess: ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
 
