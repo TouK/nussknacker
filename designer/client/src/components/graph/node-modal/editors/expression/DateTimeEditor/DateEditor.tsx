@@ -22,4 +22,4 @@ export function DateEditor(props: Omit<DatepickerEditorProps, "dateFormat" | "ex
 DateEditor.switchableToHint = () => i18next.t("editors.LocalDate.switchableToHint", "Switch to basic mode");
 DateEditor.notSwitchableToHint = () =>
     i18next.t("editors.LocalDate.notSwitchableToHint", "Expression must be valid date to switch to basic mode");
-DateEditor.switchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);
+DateEditor.isSwitchableTo = (expressionObj: ExpressionObj) => isParseable(expressionObj) || isEmpty(expressionObj.expression);

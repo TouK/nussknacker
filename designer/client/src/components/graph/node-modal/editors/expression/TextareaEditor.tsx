@@ -1,4 +1,3 @@
-import { UnknownFunction } from "../../../../../types/common";
 import { Formatter, FormatterType, typeFormatters } from "./Formatter";
 import { SimpleEditor } from "./Editor";
 import i18next from "i18next";
@@ -37,7 +36,7 @@ const parseable = (expressionObj) => {
     return stringPattern.test(expression) && language === ExpressionLang.SpEL;
 };
 
-TextareaEditor.switchableTo = (expressionObj) => parseable(expressionObj);
+TextareaEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj);
 TextareaEditor.switchableToHint = () => i18next.t("editors.textarea.switchableToHint", "Switch to basic mode");
 TextareaEditor.notSwitchableToHint = () =>
     i18next.t(
