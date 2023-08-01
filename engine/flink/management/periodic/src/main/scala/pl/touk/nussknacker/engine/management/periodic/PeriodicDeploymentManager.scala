@@ -115,6 +115,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     getProcessStates(processVersion.processName)(DataFreshnessPolicy.Fresh)
       .map(_.value)
       .map(InconsistentStateDetector.extractAtMostOneStatus)
+      .flatMap(service.mergeStatusWithDeployments(processVersion.processName, _))
       .map(_.isDefined)
       .flatMap(shouldStop => {
         if (shouldStop) {
