@@ -6,7 +6,7 @@ import ReactAce from "react-ace/lib/ace";
 import { SimpleEditor } from "./Editor";
 import { Formatter } from "./Formatter";
 import RawEditor, { RawEditorProps } from "./RawEditor";
-import { switchableTo } from "./StringEditor";
+import { isSwitchableTo } from "./StringEditor";
 import { EditorMode } from "./types";
 import { Ace } from "ace-builds";
 
@@ -104,7 +104,7 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
     );
 };
 
-SqlEditor.switchableTo = switchableTo;
+SqlEditor.isSwitchableTo = isSwitchableTo;
 SqlEditor.switchableToHint = () => i18next.t("editors.textarea.switchableToHint", "Switch to basic mode");
 SqlEditor.notSwitchableToHint = () =>
     i18next.t(

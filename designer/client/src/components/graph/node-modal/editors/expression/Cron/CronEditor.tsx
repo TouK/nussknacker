@@ -99,7 +99,7 @@ export default function CronEditor(props: Props) {
     );
 }
 
-CronEditor.switchableTo = (expressionObj: ExpressionObj) =>
+CronEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     spelFormatters[FormatterType.Cron].decode(expressionObj.expression) != null || expressionObj.expression === "";
 
 CronEditor.switchableToHint = () => i18next.t("editors.cron.switchableToHint", "Switch to basic mode");

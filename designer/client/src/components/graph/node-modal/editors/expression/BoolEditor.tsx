@@ -45,7 +45,7 @@ const BoolEditor: SimpleEditor<Props> = (props: Props) => {
 
 export default BoolEditor;
 
-BoolEditor.switchableTo = (expressionObj) => parseable(expressionObj) || isEmpty(expressionObj.expression);
+BoolEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj) || isEmpty(expressionObj.expression);
 BoolEditor.switchableToHint = () => i18next.t("editors.bool.switchableToHint", "Switch to basic mode");
 BoolEditor.notSwitchableToHint = () =>
     i18next.t("editors.bool.notSwitchableToHint", "Expression must be equal to true or false to switch to basic mode");

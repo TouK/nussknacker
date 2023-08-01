@@ -29,11 +29,11 @@ const StringEditor: SimpleEditor<Props> = (props: Props) => {
     );
 };
 
-export const switchableTo = ({ expression, language }: ExpressionObj) => {
+export const isSwitchableTo = ({ expression, language }: ExpressionObj): boolean => {
     return language === ExpressionLang.SpEL && splitConcats(expression.trim()).some(isQuoted);
 };
 
-StringEditor.switchableTo = switchableTo;
+StringEditor.isSwitchableTo = isSwitchableTo;
 StringEditor.switchableToHint = () => i18next.t("editors.string.switchableToHint", "Switch to basic mode");
 StringEditor.notSwitchableToHint = () =>
     i18next.t(
