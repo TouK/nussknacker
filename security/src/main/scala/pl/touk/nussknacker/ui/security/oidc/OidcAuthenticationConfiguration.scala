@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.security.oidc
 
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.config.URIExtensions
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.OIDC
 import pl.touk.nussknacker.ui.security.oauth2.UsernameClaim.UsernameClaim
@@ -81,4 +82,18 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
     .getOrElse(throw new NoSuchElementException("A jwksUri must provided or OIDC Discovery available"))
 
   private def resolveAgainstIssuer(uri: URI): URI  = issuer.withTrailingSlash.resolve(uri)
+}
+
+object OidcAuthenticationConfiguration {
+
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+  import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.authenticationConfigPath
+  import net.ceedubs.ficus.readers.EnumerationReader._
+
+  def create(config: Config): OidcAuthenticationConfiguration =
+    config.as[OidcAuthenticationConfiguration](authenticationConfigPath)
+
+  def createWithDiscovery(config: Config)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OidcAuthenticationConfiguration =
+    create(config).withDiscovery
 }

@@ -7,13 +7,7 @@ import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
 class OidcAuthenticationProvider extends AuthenticationProvider {
-
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
-  import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.authenticationConfigPath
-  import net.ceedubs.ficus.readers.EnumerationReader._
 
   def name: String = "Oidc"
 
@@ -21,7 +15,7 @@ class OidcAuthenticationProvider extends AuthenticationProvider {
     new OidcAuthenticationResources(
       name,
       realm,
-      config.as[OidcAuthenticationConfiguration](authenticationConfigPath).withDiscovery
+      OidcAuthenticationConfiguration.createWithDiscovery(config)
     )
   }
 }

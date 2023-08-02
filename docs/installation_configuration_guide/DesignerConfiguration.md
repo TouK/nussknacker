@@ -316,8 +316,10 @@ The role names in the `usersFile` should match the roles defined in the Auth0 te
 - Open MS Azure Portal: https://portal.azure.com/
 - Go to Azure Active Directory Service
 - Register new app: AAD Service -> App registrations -> New registration
+- Add auth platform: AAD Service -> App registrations -> Your App -> Authentication -> Add a platform
 - Register app roles: AAD Service -> App registrations -> Your App -> App roles -> Create app role
 - Add client secret: AAD Service -> App registrations -> Your App -> Certificates & secrets -> New client secret
+- Configure users roles: Enterprise applications -> Your App -> Users and groups -> Add user/group
 
 In Nussknacker's configuration file add the following `authentication` section:
 ```hocon

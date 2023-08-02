@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 
 import java.util.UUID
 
-class OpenIdConnectProfileTest extends AnyFunSuite with Matchers  with TableDrivenPropertyChecks {
+class OpenIdConnectProfileTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   import UsernameClaim._
 
