@@ -21,9 +21,11 @@ trait FlinkStubbedRunner {
 
   protected def configuration: Configuration
 
-  protected def createEnv : StreamExecutionEnvironment =
-    StreamExecutionEnvironment.createLocalEnvironment(
-      MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](process.metaData).parallelism.getOrElse(1), configuration)
+  protected val defaultParallelism: Int = 1
+
+  protected def parallelism: Int = if(process.metaData.isFragment) defaultParallelism else MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](process.metaData).parallelism.getOrElse(defaultParallelism)
+
+  protected def createEnv : StreamExecutionEnvironment = StreamExecutionEnvironment.createLocalEnvironment(parallelism, configuration)
 
   //we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
   protected def execute[T](env: StreamExecutionEnvironment, savepointRestoreSettings: SavepointRestoreSettings) : Unit = {

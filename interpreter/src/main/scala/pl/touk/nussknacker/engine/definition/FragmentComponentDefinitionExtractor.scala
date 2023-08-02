@@ -62,15 +62,18 @@ class FragmentComponentDefinitionExtractor(componentConfig: String => Option[Sin
   }
 
   def extractParametersDefinition(fragmentInput: FragmentInput)(implicit nodeId: NodeId): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
-    val config = componentConfig(fragmentInput.ref.id).getOrElse(SingleComponentConfig.zero)
-    fragmentInput.fragmentParams.get.map(toParameter(config)).sequence
-      .mapWritten(_.map(data => FragmentParamClassLoadError(data.fieldName, data.refClazzName, nodeId.id)))
+    val parameters = fragmentInput.fragmentParams.getOrElse(Nil)
+    extractFragmentParametersDefinition(fragmentInput.ref.id, parameters)
   }
 
   def extractParametersDefinition(fragmentInputDefinition: FragmentInputDefinition): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
-    val config = componentConfig(fragmentInputDefinition.id).getOrElse(SingleComponentConfig.zero)
-    fragmentInputDefinition.parameters.map(toParameter(config)).sequence
-      .mapWritten(_.map(data => FragmentParamClassLoadError(data.fieldName, data.refClazzName, fragmentInputDefinition.id)))
+    extractFragmentParametersDefinition(fragmentInputDefinition.id, fragmentInputDefinition.parameters)(NodeId(fragmentInputDefinition.id))
+  }
+
+  private def extractFragmentParametersDefinition(componentId: String, parameters: List[FragmentParameter])(implicit nodeId: NodeId): Writer[List[PartSubGraphCompilationError], List[Parameter]] = {
+    val config = componentConfig(componentId).getOrElse(SingleComponentConfig.zero)
+    parameters.map(toParameter(config)).sequence
+      .mapWritten(_.map(data => FragmentParamClassLoadError(data.fieldName, data.refClazzName, nodeId.id)))
   }
 
   private def toParameter(componentConfig: SingleComponentConfig)(p: FragmentParameter): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {

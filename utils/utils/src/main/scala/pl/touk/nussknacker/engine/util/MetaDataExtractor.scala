@@ -10,7 +10,6 @@ object MetaDataExtractor {
 
   def extractTypeSpecificData[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): Either[Unit, T] = metaData.typeSpecificData match {
     case a: T => Right(a)
-    case _: FragmentSpecificData => Right(StreamMetaData().asInstanceOf[T]) //TODO just testing, handle it nicely...
     case _ => Left(())
   }
 

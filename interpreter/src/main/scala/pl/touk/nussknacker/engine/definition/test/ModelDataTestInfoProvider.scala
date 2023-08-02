@@ -27,7 +27,6 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   private lazy val nodeCompiler = new NodeCompiler(modelData.modelDefinition, fragmentComponentDefinitionExtractor, expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, ComponentUseCase.TestDataGeneration)
 
   override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = {
-    logger.info(s"${collectAllSources(scenario)}")
     collectAllSources(scenario).map(getTestingCapabilities(_, scenario.metaData)) match {
       case Nil => TestingCapabilities.Disabled
       case s => s.reduce((tc1, tc2) => TestingCapabilities(
