@@ -4,6 +4,7 @@ import { get } from "lodash";
 import React from "react";
 import { useDiffMark } from "./PathsToMark";
 import { NodeType } from "../../../types";
+import { NodeData } from "../../../newTypes/displayableProcess";
 
 type NodeFieldProps<N extends string, V> = {
     autoFocus?: boolean;
@@ -12,10 +13,10 @@ type NodeFieldProps<N extends string, V> = {
     fieldProperty: N;
     fieldType: FieldType;
     isEditMode?: boolean;
-    node: NodeType;
+    node: NodeData;
     readonly?: boolean;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: <K extends keyof NodeData>(property: K, newValue: NodeData[K], defaultValue?: NodeData[K]) => void;
     showValidation?: boolean;
     validators?: Validator[];
 };

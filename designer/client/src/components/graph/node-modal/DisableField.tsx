@@ -3,15 +3,16 @@ import React from "react";
 import { NodeField } from "./NodeField";
 import { NodeType } from "../../../types";
 import { Validator } from "./editors/Validators";
+import { NodeData } from "../../../newTypes/displayableProcess";
 
 interface DisableFieldProps {
     autoFocus?: boolean;
     defaultValue?: string;
     isEditMode?: boolean;
-    node: NodeType;
+    node: NodeData;
     readonly?: boolean;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: <K extends keyof NodeData>(property: K, newValue: NodeData[K], defaultValue?: NodeData[K]) => void;
     showValidation?: boolean;
     validators?: Validator[];
 }

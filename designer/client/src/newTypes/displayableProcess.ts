@@ -112,7 +112,7 @@ export type Edge = {
     edgeType?: EdgeTypeTaggedUnion;
 };
 
-type NodeData = NodeDataTaggedUnion;
+export type NodeData = NodeDataTaggedUnion;
 
 type DisplayableProcess = {
     id: string;

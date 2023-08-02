@@ -8,13 +8,14 @@ import { EditorType } from "./Editor";
 import { NodeResultsForContext } from "../../../../../common/TestResultUtils";
 import { useDiffMark } from "../../PathsToMark";
 import { get } from "lodash";
+import { NodeData } from "../../../../../newTypes/displayableProcess";
 
 type Props = {
     fieldName: string;
     fieldLabel: string;
     exprPath: string;
     isEditMode: boolean;
-    editedNode: NodeType;
+    editedNode: NodeData;
     showValidation: boolean;
     showSwitch: boolean;
     parameterDefinition: UIParameter;

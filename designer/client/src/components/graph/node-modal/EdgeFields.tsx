@@ -62,20 +62,53 @@ export function EdgeFields(props: Props): JSX.Element {
 
     const freeInputs = useMemo(() => uniq(freeNodes.concat(targetNodes).map((n) => n.id)), [freeNodes, targetNodes]);
 
-    const onValueChange = useCallback(
-        (expression) =>
-            setEdge((e) => ({
-                ...e,
-                edgeType: {
-                    ...e.edgeType,
-                    condition: {
-                        ...e.edgeType?.condition,
-                        expression,
-                    },
-                },
-            })),
-        [],
-    );
+    const onExpressionChange = useCallback((expression: string) => {
+        setEdge((e) => ({
+            ...e,
+            edgeType:
+                e.edgeType.type !== EdgeKind.switchNext
+                    ? e.edgeType
+                    : {
+                          ...e.edgeType,
+                          condition: {
+                              ...e.edgeType?.condition,
+                              expression,
+                          },
+                      },
+        }));
+    }, []);
+
+    const onTypeChange = useCallback((nextType: EdgeKind) => {
+        setEdge(({ from, to, edgeType }) => {
+            switch (nextType) {
+                case EdgeKind.switchNext:
+                    return {
+                        from,
+                        to,
+                        edgeType: {
+                            type: nextType,
+                            condition: edgeType.type === nextType ? edgeType.condition : { language: ExpressionLang.SpEL, expression: "" },
+                        },
+                    };
+                case EdgeKind.fragmentOutput:
+                    return {
+                        from,
+                        to,
+                        edgeType: { type: nextType, name: edgeType.type === nextType ? edgeType.name : "" },
+                    };
+                default:
+                    return {
+                        from,
+                        to,
+                        edgeType: { type: nextType },
+                    };
+            }
+        });
+    }, []);
+
+    const onTargetChange = useCallback((event) => {
+        setEdge((edge) => ({ ...edge, to: event.target.value }));
+    }, []);
 
     function getValueEditor() {
         if (edge.edgeType.type === EdgeKind.switchNext) {
@@ -89,7 +122,7 @@ export function EdgeFields(props: Props): JSX.Element {
                         language: edge.edgeType.condition?.language || ExpressionLang.SpEL,
                     }}
                     readOnly={readOnly}
-                    onValueChange={onValueChange}
+                    onValueChange={onExpressionChange}
                     validators={validators}
                     showValidation
                 />
@@ -116,17 +149,7 @@ export function EdgeFields(props: Props): JSX.Element {
         >
             {showType ? (
                 <NodeValue>
-                    <EdgeTypeSelect
-                        readOnly={readOnly || types.length < 2}
-                        edge={edge}
-                        onChange={(type) =>
-                            setEdge(({ edgeType: { condition, ...edgeType }, ...edge }) => ({
-                                ...edge,
-                                edgeType: type === EdgeKind.switchNext ? { ...edgeType, type, condition } : { ...edgeType, type },
-                            }))
-                        }
-                        options={types}
-                    />
+                    <EdgeTypeSelect readOnly={readOnly || types.length < 2} edge={edge} onChange={onTypeChange} options={types} />
                 </NodeValue>
             ) : null}
             <NodeValue className={css({ gridArea: !showType && "field" })}>
@@ -138,7 +161,7 @@ export function EdgeFields(props: Props): JSX.Element {
                     }
                     className="node-input"
                     value={edge.to}
-                    onChange={(event) => setEdge((edge) => ({ ...edge, to: event.target.value }))}
+                    onChange={onTargetChange}
                     disabled={readOnly || !freeInputs.length}
                 >
                     {readOnly ? (

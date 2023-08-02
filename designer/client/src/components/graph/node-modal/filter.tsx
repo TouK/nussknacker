@@ -1,4 +1,4 @@
-import { Edge, EdgeKind, NodeType, NodeValidationError, UIParameter } from "../../../types";
+import { Edge, EdgeKind, NodeValidationError, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useDiffMark } from "./PathsToMark";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
@@ -8,6 +8,7 @@ import { DisableField } from "./DisableField";
 import { EdgesDndComponent } from "./EdgesDndComponent";
 import { DescriptionField } from "./DescriptionField";
 import React from "react";
+import { NodeData } from "../../../newTypes/displayableProcess";
 
 export function Filter({
     edges,
@@ -26,11 +27,11 @@ export function Filter({
     fieldErrors?: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
-    node: NodeType;
+    node: NodeData;
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
     setEditedEdges: (edges: Edge[]) => void;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: <K extends keyof NodeData>(property: K, newValue: NodeData[K], defaultValue?: NodeData[K]) => void;
     showSwitch?: boolean;
     showValidation?: boolean;
 }): JSX.Element {

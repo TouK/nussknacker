@@ -5,6 +5,7 @@ import { mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/
 import { alignFragmentWithSchema } from "../../components/graph/FragmentSchemaAligner";
 import { Edge, NodeType, Process } from "../../types";
 import { ThunkAction } from "../reduxTypes";
+import { NodeData } from "../../newTypes/displayableProcess";
 
 function alignFragmentsNodeWithSchema(process, processDefinitionData) {
     return {
@@ -40,7 +41,7 @@ export function calculateProcessAfterChange(
                     ? { ...e, to }
                     : {
                           ...e,
-                          to: "",
+                          to: "" as NodeData["id"],
                       },
             );
             changedProcess = replaceNodeOutputEdges(process, processDefinitionData, filtered, before.id);

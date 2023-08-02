@@ -4,6 +4,7 @@ import { findParamDefinitionByName } from "./FieldLabel";
 import React from "react";
 import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import ProcessUtils from "../../../common/ProcessUtils";
+import { NodeData } from "../../../newTypes/displayableProcess";
 
 //this is for "static" fields like expressions in filters, switches etc.
 export function StaticExpressionField({
@@ -22,10 +23,10 @@ export function StaticExpressionField({
     fieldLabel: string;
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
-    node: NodeType;
+    node: NodeData;
     parameterDefinitions: UIParameter[];
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: <K extends keyof NodeData>(property: K, newValue: NodeData[K], defaultValue?: NodeData[K]) => void;
     showSwitch?: boolean;
     showValidation?: boolean;
 }): JSX.Element {

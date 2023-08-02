@@ -11,6 +11,8 @@ import NodeUtils from "../NodeUtils";
 import BranchParameters from "./BranchParameters";
 import { ParameterExpressionField } from "./ParameterExpressionField";
 import { DescriptionField } from "./DescriptionField";
+import { Join } from "../../../newTypes/processDefinitionData";
+import { NodeData } from "../../../newTypes/displayableProcess";
 
 export function JoinCustomNode({
     fieldErrors,
@@ -27,11 +29,11 @@ export function JoinCustomNode({
     fieldErrors?: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;
-    node: NodeType;
+    node: NodeData & Join;
     parameterDefinitions: UIParameter[];
     processDefinitionData?: ProcessDefinitionData;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty: <K extends keyof NodeData>(property: K, newValue: NodeData[K], defaultValue?: NodeData[K]) => void;
     showSwitch?: boolean;
     showValidation?: boolean;
 }): JSX.Element {
@@ -63,7 +65,7 @@ export function JoinCustomNode({
                     validators={[errorValidator(fieldErrors || [], "outputVar")]}
                 />
             )}
-            {NodeUtils.nodeIsJoin(node) && (
+            {node.type === "Join" && (
                 <BranchParameters
                     node={node}
                     showValidation={showValidation}

@@ -6,10 +6,11 @@ import { ValidationResult } from "./validation";
 import { ComponentGroup, SingleComponentConfig } from "./component";
 import { ProcessingType } from "../actions/nk";
 import { AdditionalPropertyConfig } from "../components/graph/node-modal/AdditionalProperty";
+import { NodeData } from "../newTypes/displayableProcess";
 
 export type Process = {
     id: string;
-    nodes: NodeType[];
+    nodes: NodeData[];
     edges: Edge[];
     properties: PropertiesType;
     validationResult: ValidationResult;

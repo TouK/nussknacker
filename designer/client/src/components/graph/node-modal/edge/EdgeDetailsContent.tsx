@@ -3,12 +3,13 @@ import { Edge, EdgeKind, EdgeType } from "../../../../types";
 import BaseModalContent from "../BaseModalContent";
 import EditableEditor from "../editors/EditableEditor";
 import { useDiffMark } from "../PathsToMark";
+import { Expression } from "../../../../newTypes/processDefinitionData";
 
 interface Props {
     edge: Edge;
     readOnly?: boolean;
     changeEdgeTypeValue: (type: EdgeType["type"]) => void;
-    changeEdgeTypeCondition: (condition: EdgeType["condition"]["expression"]) => void;
+    changeEdgeTypeCondition: (condition: Expression["expression"]) => void;
     showValidation?: boolean;
     showSwitch?: boolean;
     variableTypes;

@@ -3,17 +3,17 @@ import { flatten, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, transfor
 import {
     GlobalVariables,
     NodeId,
-    NodeObjectTypeDefinition,
     NodeResults,
-    NodeType,
     Process,
     ProcessDefinition,
     ReturnedType,
-    TypingResult,
     UIParameter,
     ValidationResult,
     VariableTypes,
 } from "../types";
+import { NodeData, ValidatedDisplayableProcess } from "../newTypes/displayableProcess";
+import { UIObjectDefinition, UIProcessDefinition } from "../newTypes/processDefinitionData";
+import { TypingResult } from "../newTypes/typingResult";
 
 class ProcessUtils {
     nothingToSave = (state): boolean => {
@@ -135,7 +135,11 @@ class ProcessUtils {
 
     getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes;
 
-    _findVariablesDeclaredBeforeNode = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): VariableTypes => {
+    _findVariablesDeclaredBeforeNode = (
+        nodeId: NodeData["id"],
+        process: ValidatedDisplayableProcess,
+        processDefinition: UIProcessDefinition,
+    ): VariableTypes => {
         const previousNodes = this._findPreviousNodes(nodeId, process);
         const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
             return this._findVariablesDefinedInProcess(nodeId, process, processDefinition);
@@ -150,10 +154,10 @@ class ProcessUtils {
     };
 
     _findVariablesDefinedInProcess = (
-        nodeId: NodeId,
-        process: Process,
-        processDefinition: ProcessDefinition,
-    ): Record<string, ReturnedType>[] => {
+        nodeId: NodeData["id"],
+        process: ValidatedDisplayableProcess,
+        processDefinition: UIProcessDefinition,
+    ) => {
         const node = process.nodes.find((node) => node.id === nodeId);
         const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition);
         const clazzName = nodeObjectTypeDefinition?.returnType;
@@ -187,8 +191,7 @@ class ProcessUtils {
         }
     };
 
-    //TODO: this should be done without these switches..
-    findNodeObjectTypeDefinition = (node: NodeType, processDefinition: ProcessDefinition): NodeObjectTypeDefinition => {
+    findNodeObjectTypeDefinition = (node: NodeData, processDefinition: UIProcessDefinition): UIObjectDefinition => {
         if (node) {
             const nodeDefinitionId = this.findNodeDefinitionId(node);
             switch (node.type) {
@@ -212,13 +215,13 @@ class ProcessUtils {
             }
         }
         return {
-            parameters: null,
-            returnType: null,
+            parameters: [],
+            categories: [],
+            componentConfig: {},
         };
     };
 
-    //TODO: this should be done without these switches..
-    findNodeDefinitionId = (node: NodeType): string | null => {
+    findNodeDefinitionId = (node: NodeData): string | null => {
         switch (node?.type) {
             case "Source":
             case "Sink": {
@@ -258,7 +261,7 @@ class ProcessUtils {
 
     humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null;
 
-    _findPreviousNodes = (nodeId: NodeId, process: Process): NodeId[] => {
+    _findPreviousNodes = (nodeId: NodeData["id"], process: ValidatedDisplayableProcess): NodeData["id"][] => {
         const nodeEdge = process.edges.find((edge) => edge.to === nodeId);
         if (isEmpty(nodeEdge)) {
             return [];

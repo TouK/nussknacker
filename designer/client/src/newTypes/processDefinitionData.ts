@@ -49,7 +49,7 @@ type Disableable = {
     isDisabled?: boolean;
 };
 
-type Expression = ExpressionObj;
+export type Expression = ExpressionObj;
 
 type Parameter = {
     name: string;
@@ -75,7 +75,7 @@ type BranchParameters = {
     parameters: Parameter[];
 };
 
-type Join = CustomNodeData & {
+export type Join = CustomNodeData & {
     branchParameters: BranchParameters[];
 };
 

@@ -10,6 +10,7 @@ import NodeUtils from "../NodeUtils";
 import { EdgeTypeOption } from "./EdgeTypeSelect";
 import { Error, errorValidator, mandatoryValueValidator } from "./editors/Validators";
 import { defaultsDeep } from "lodash";
+import { NodeData } from "../../../newTypes/displayableProcess";
 
 interface EdgeType extends Partial<EdgeTypeOption> {
     value: EdgeKind;
@@ -18,7 +19,7 @@ interface EdgeType extends Partial<EdgeTypeOption> {
 }
 
 interface Props {
-    nodeId: string;
+    nodeId: NodeData["id"];
     label: string;
     value?: Edge[];
     onChange?: (edges: Edge[]) => void;
@@ -51,13 +52,15 @@ function getDefaultEdgeType(kind: EdgeKind): Edge["edgeType"] {
                     language: ExpressionLang.SpEL,
                 },
             };
+        case EdgeKind.fragmentOutput:
+            return { type: kind, name: "" };
         default:
             return { type: kind };
     }
 }
 
 function getDefaultEdge(kind: EdgeKind): Edge {
-    return { from: "", to: "", edgeType: getDefaultEdgeType(kind) };
+    return { from: null, to: null, edgeType: getDefaultEdgeType(kind) };
 }
 
 function withDefaults<T extends Edge>(edge: Partial<T>): T {
@@ -92,11 +95,11 @@ export function EdgesDndComponent(props: Props): JSX.Element {
 
     const addEdge = useCallback(() => {
         const [{ value: type }] = availableTypes;
-        setEdges((edges) => edges.concat(withFakeId(withDefaults({ from: nodeId, edgeType: { type } }))));
+        setEdges((edges) => edges.concat(withFakeId({ ...getDefaultEdge(type), from: nodeId })));
     }, [availableTypes, nodeId]);
 
     useEffect(() => {
-        onChange?.(edges?.map((e) => ({ ...e, to: e._id || e.to })));
+        onChange?.(edges?.map((e) => ({ ...e, to: (e._id as typeof nodeId) || e.to })));
     }, [edges, onChange]);
 
     const edgeItems = useMemo(() => {

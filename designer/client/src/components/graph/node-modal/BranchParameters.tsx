@@ -4,9 +4,11 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { NodeType, UIParameter } from "../../../types";
 import { Error } from "./editors/Validators";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
+import { NodeData } from "../../../newTypes/displayableProcess";
+import { Join } from "../../../newTypes/processDefinitionData";
 
 export interface BranchParametersProps {
-    node: NodeType;
+    node: NodeData & Join;
     parameterDefinitions: UIParameter[];
     errors: Error[];
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;

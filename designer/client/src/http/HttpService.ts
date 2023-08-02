@@ -9,7 +9,7 @@ import { UserData } from "../common/models/User";
 import { ProcessActionType, ProcessStateType, ProcessType, ProcessVersionId, StatusDefinitionType } from "../components/Process/types";
 import { ToolbarsConfig } from "../components/toolbarSettings/types";
 import { AuthenticationSettings } from "../reducers/settings";
-import { Expression, Process, ProcessDefinitionData, ProcessId } from "../types";
+import { Expression, Process, ProcessId } from "../types";
 import { Instant, WithId } from "../types/common";
 import { BackendNotification } from "../containers/Notifications";
 import { ProcessCounts } from "../reducers/graph";
@@ -17,6 +17,8 @@ import { TestResults } from "../common/TestResultUtils";
 import { AdditionalInfo } from "../components/graph/node-modal/NodeAdditionalInfoBox";
 import { withoutHackOfEmptyEdges } from "../components/graph/GraphPartialsInTS/EdgeUtils";
 import { CaretPosition2d, ExpressionSuggestion } from "../components/graph/node-modal/editors/expression/ExpressionSuggester";
+import { UIProcessObjects } from "../newTypes/processDefinitionData";
+import { TypedProcessType } from "../newTypes/displayableProcess";
 
 type HealthCheckProcessDeploymentType = {
     status: string;
@@ -170,19 +172,17 @@ class HttpService {
     }
 
     fetchProcessDefinitionData(processingType: string, isFragment: boolean) {
-        const promise = api
-            .get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`)
-            .then((response) => {
-                // This is a walk-around for having part of node template (branch parameters) outside of itself.
-                // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
-                response.data.componentGroups.forEach((group) => {
-                    group.components.forEach((component) => {
-                        component.node.branchParametersTemplate = component.branchParametersTemplate;
-                    });
+        const promise = api.get<UIProcessObjects>(`/processDefinitionData/${processingType}?isFragment=${isFragment}`).then((response) => {
+            // This is a walk-around for having part of node template (branch parameters) outside of itself.
+            // See note in DefinitionPreparer on backend side. // TODO remove it after API refactor
+            response.data.componentGroups.forEach((group) => {
+                group.components.forEach((component) => {
+                    component.node.branchParametersTemplate = component.branchParametersTemplate;
                 });
-
-                return response;
             });
+
+            return response;
+        });
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true),
         );
@@ -216,7 +216,7 @@ class HttpService {
     fetchProcessDetails(processId: ProcessId, versionId?: ProcessVersionId) {
         const id = encodeURIComponent(processId);
         const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`;
-        return api.get<ProcessType>(url);
+        return api.get<TypedProcessType>(url);
     }
 
     fetchProcessesStates() {

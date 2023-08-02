@@ -5,12 +5,13 @@ import { useDiffMark } from "./PathsToMark";
 import { NodeType } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessNodesIds } from "../../../reducers/selectors/graph";
+import { NodeData } from "../../../newTypes/displayableProcess";
 
 interface IdFieldProps {
     isEditMode?: boolean;
-    node: NodeType;
+    node: NodeData;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    setProperty?: <K extends string, V>(property: K, newValue: V, defaultValue?: V) => void;
     showValidation?: boolean;
     additionalValidators?: Validator[];
 }
