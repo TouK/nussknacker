@@ -14,6 +14,7 @@ object NodeComponentInfoExtractor {
     node match {
       case source: Source => NodeComponentInfo(node.id, source.ref.getOrElse("source"), ComponentType.Source)
       case sink: Sink => NodeComponentInfo(node.id, sink.ref, ComponentType.Sink)
+      case _: FragmentOutput => NodeComponentInfo.forBaseNode(node.id, ComponentType.Sink)
       case _: Filter => NodeComponentInfo.forBaseNode(node.id, ComponentType.Filter)
       case _: SplitNode => NodeComponentInfo.forBaseNode(node.id, ComponentType.Split)
       case _: Switch => NodeComponentInfo.forBaseNode(node.id, ComponentType.Switch)

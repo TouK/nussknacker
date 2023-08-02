@@ -247,7 +247,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, R
       })
       val asyncExecutionContextPreparer = processWithDeps.asyncExecutionContextPreparer
       val metaData = processWithDeps.metaData
-      val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
+      val streamMetaData = if(metaData.isFragment) StreamMetaData() else MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](metaData)
 
       val configParameters = globalParameters.flatMap(_.configParameters)
       val useIOMonad = configParameters.flatMap(_.useIOMonadInInterpreter).getOrElse(true)
