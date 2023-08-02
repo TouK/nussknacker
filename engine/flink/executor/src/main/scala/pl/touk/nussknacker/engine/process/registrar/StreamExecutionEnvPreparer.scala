@@ -31,13 +31,13 @@ trait StreamExecutionEnvPreparer {
 
 class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfig],
                                         rocksDBStateBackendConfig: Option[RocksDBStateBackendConfig],
-                                       executionConfigPreparer: ExecutionConfigPreparer) extends StreamExecutionEnvPreparer with LazyLogging {
+                                        executionConfigPreparer: ExecutionConfigPreparer) extends StreamExecutionEnvPreparer with LazyLogging {
 
   override def preRegistration(env: StreamExecutionEnvironment, processWithDeps: FlinkProcessCompilerData, deploymentData: DeploymentData): Unit = {
 
     executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.jobData, deploymentData)
 
-    val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](processWithDeps.metaData)
+    val streamMetaData = if(processWithDeps.metaData.isFragment) StreamMetaData() else MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](processWithDeps.metaData)
     env.setRestartStrategy(processWithDeps.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
 
@@ -89,6 +89,6 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
   * and make DefaultStreamExecutionEnvPreparer usable with older Flink versions.
   * Otherwise, during class initialization, ClassNotFound/MethodNotFound exception are thrown
   * */
-  private def wrapInLambda[T](obj: ()=>T): T = obj()
+  private def wrapInLambda[T](obj: () => T): T = obj()
 }
 

@@ -267,6 +267,8 @@ object ScenarioInterpreterFactory {
         case er: EndReference =>
           //FIXME: do we need it at all
           monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, null.asInstanceOf[Res]))))
+        case fer: FragmentEndReference =>
+          monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(fer.nodeId, ir.finalContext, fer.declaredVariables.asInstanceOf[Res]))))
         case _: DeadEndReference =>
           monad.pure[ResultType[PartResult]](Writer.value(Nil))
         case r: JoinReference =>
@@ -297,19 +299,22 @@ object ScenarioInterpreterFactory {
       val SourcePart(sourceObj, node, _, _, _) = sourcePart
       val validatedSource = (sourceObj, node.data) match {
         case (s: LiteSource[Input@unchecked], _) => Valid(s)
-        case (_: Source, f: FragmentInputDefinition) => Valid( //TODO no idea how to do it differently :/
-          new LiteSource[Input] {
-            override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): Input => ValidatedNel[ErrorType, Context] = {
-              input => Valid(Context(f.id, input.asInstanceOf[Map[String, Any]], None))
-            }
-          }
-        )
+        //Used only in fragment testing, when FragmentInputDefinition is available
+        case (_: Source, fragmentInputDef: FragmentInputDefinition) if componentUseCase == ComponentUseCase.TestRuntime => sourceForFragmentInputTestng(fragmentInputDef)
         case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
       }
       validatedSource.map { source =>
         source.createTransformation(customComponentContext(node.id))
       }
     }
+
+    private def sourceForFragmentInputTestng(fragmentInputDef: FragmentInputDefinition): Valid[LiteSource[Input]] = Valid(
+      new LiteSource[Input] {
+        override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): Input => ValidatedNel[ErrorType, Context] = {
+          input => Valid(Context(fragmentInputDef.id, input.asInstanceOf[Map[String, Any]], None))
+        }
+      }
+    )
 
     private def compileJoinTransformer(customNodePart: CustomNodePart): CompilationResult[JoinDataBatch => InterpreterOutputType] = {
       val CustomNodePart(transformerObj, node, _, validationContext, parts, _) = customNodePart

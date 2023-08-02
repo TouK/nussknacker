@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
-import pl.touk.nussknacker.engine.api.expression.Expression
+import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
+
 
 object node {
 
@@ -15,6 +16,8 @@ object node {
   case class Source(id: String, ref: Option[String], next: Next) extends Node
 
   case class Sink(id: String, ref: String, isDisabled: Boolean) extends Node
+
+  case class FragmentOutput(id: String, fields: Map[String, TypedExpression], isDisabled: Boolean) extends Node
 
   case class BranchEnd(definition: BranchEndDefinition) extends Node {
     override def id: String = definition.artificialNodeId
@@ -51,9 +54,11 @@ object node {
   sealed trait Next {
     def id: String
   }
+
   case class NextNode(node: Node) extends Next {
     def id = node.id
   }
+
   case class PartRef(id: String) extends Next
 
 }

@@ -117,8 +117,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     results.nodeResults("fragment1") shouldBe List(
       NodeResult(ResultContext("fragment1", Map("in" -> "some-text-id")))
     )
-    //TODO - why FragmentOutputDefinition is not handled well in tests? :(
-    results.externalInvocationResults("fragmentEnd") shouldBe List(ExternalInvocationResult("fragment1", "fragmentEnd", "some-text-id"))
+    results.externalInvocationResults("fragmentEnd") shouldBe List(ExternalInvocationResult("fragment1", "fragmentEnd", Map("out" -> "some-text-id")))
     results.exceptions shouldBe empty
   }
 
