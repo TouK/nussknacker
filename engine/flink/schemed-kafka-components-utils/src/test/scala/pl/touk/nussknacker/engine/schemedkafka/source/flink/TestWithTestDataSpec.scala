@@ -105,7 +105,7 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       NodeResult(ResultContext("fragment1-fragment1-0-0", Map("in" -> "some-text-id")))
     )
 
-   // results.externalInvocationResults("fragmentEnd") shouldBe List(ExternalInvocationResult("fragment1", "fragmentEnd", "some-text-id"))
+    results.invocationResults("fragmentEnd") shouldBe List(ExpressionInvocationResult("fragment1-fragment1-0-0", "out", "some-text-id"))
     results.exceptions shouldBe empty
   }
 

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -122,6 +122,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       override def testParametersDefinition: List[Parameter] = {
         fragmentDefinitionExtractor.extractParametersDefinition(fragmentInputDefinition).value
       }
+
       override def parametersToTestData(params: Map[String, AnyRef]): Any = params
     }
   }
@@ -205,6 +206,19 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
     NodeCompilationResult(expressionTypingInfos, None, expressionCompilation.map(_.validationContext).getOrElse(Valid(ctx)),
       objExpression.product(objCases), expressionCompilation.flatMap(_.expressionType))
+  }
+
+  def fieldToTypedExpression(fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
+                             ctx: ValidationContext)
+                            (implicit nodeId: NodeId): Map[String, TypedExpression] = {
+    fields.map { field =>
+      objectParametersExpressionCompiler
+        .compile(field.expression, Some(field.name), ctx, Unknown)
+        .map(typedExpr => field.name -> typedExpr)
+    }
+      .sequence
+      .map(_.toMap)
+      .valueOr(Map.empty) //TODO error handling
   }
 
   def compileFields(fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
@@ -458,11 +472,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 
   private def validateGenericTransformer(eitherSingleOrJoin: GenericValidationContext,
-                                            parameters: List[evaluatedparam.Parameter],
-                                            branchParameters: List[BranchParameters],
-                                            outputVar: Option[String],
-                                            genericDefinition: GenericNodeTransformationMethodDef)
-                                           (implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
+                                         parameters: List[evaluatedparam.Parameter],
+                                         branchParameters: List[BranchParameters],
+                                         outputVar: Option[String],
+                                         genericDefinition: GenericNodeTransformationMethodDef)
+                                        (implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
     (genericDefinition.obj, eitherSingleOrJoin) match {
       case (single: SingleInputGenericNodeTransformation[_], Left(singleCtx)) =>
         nodeValidator.validateNode(single, parameters, branchParameters, outputVar, genericDefinition.componentConfig)(singleCtx)
