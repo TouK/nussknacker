@@ -4,7 +4,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.{Decoder, Json}
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
-import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, getUserUsername}
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, usernameBasedOnUsersConfiguration}
 import pl.touk.nussknacker.ui.security.oauth2.UsernameFieldName.UsernameFieldName
 
 import java.time.{Instant, LocalDate}
@@ -71,16 +71,8 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
   def getAuthenticatedUser(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration): AuthenticatedUser = {
     val userIdentity = profile.subject.getOrElse(throw new IllegalStateException("Missing user identity"))
     val userRoles = profile.roles ++ getUserRoles(userIdentity ,configuration)
-    val username =
-      getUserUsername(userIdentity, configuration)
-        .orElse(getUsername(profile, configuration))
-        .getOrElse(userIdentity)
 
-    AuthenticatedUser(id = userIdentity, username = username, userRoles)
-  }
-
-  private def getUsername(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration) =
-    configuration.usernameFieldName match {
+    val usernameFieldFromConfiguration = configuration.usernameFieldName match {
       case Some(UsernameFieldName.PreferredUsername) =>
         profile.preferredUsername
       case Some(UsernameFieldName.GivenName) =>
@@ -92,4 +84,14 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
       case _ =>
         None
     }
+
+    val username =
+      usernameBasedOnUsersConfiguration(userIdentity, configuration)
+        .orElse(usernameFieldFromConfiguration)
+        .orElse(profile.preferredUsername) // backward compatibility
+        .orElse(profile.nickname) // backward compatibility
+        .getOrElse(userIdentity)
+
+    AuthenticatedUser(id = userIdentity, username = username, userRoles)
+  }
 }
