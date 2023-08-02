@@ -55,7 +55,9 @@ class OpenIdConnectProfileTest extends AnyFunSuite with Matchers  with TableDriv
 
     val data = Table(
       ("config", "profile", "result"),
-      (config, profile, expected),
+      (config, profile.copy(preferredUsername = None, nickname = None), expected),
+      (config, profile, expected.copy(username = preferredUsername)), //back compatibility
+      (config, profile.copy(preferredUsername = None), expected.copy(username = nickname)), //back compatibility
       (config, profile.copy(subject = Some(adminIdentifier)), expected.copy(id = adminIdentifier, username = "Adminek")),
       (config.copy(usernameFieldName = Some(PreferredUsername)), profile, expected.copy(username = preferredUsername)),
       (config.copy(usernameFieldName = Some(GivenName)), profile, expected.copy(username = givenName)),

@@ -72,7 +72,7 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
     val userIdentity = profile.subject.getOrElse(throw new IllegalStateException("Missing user identity"))
     val userRoles = profile.roles ++ getUserRoles(userIdentity ,configuration)
 
-    val usernameFieldFromConfiguration = configuration.usernameFieldName match {
+    val usernameBasedOnProfileAndConfiguration = configuration.usernameFieldName match {
       case Some(UsernameFieldName.PreferredUsername) =>
         profile.preferredUsername
       case Some(UsernameFieldName.GivenName) =>
@@ -87,7 +87,7 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
 
     val username =
       usernameBasedOnUsersConfiguration(userIdentity, configuration)
-        .orElse(usernameFieldFromConfiguration)
+        .orElse(usernameBasedOnProfileAndConfiguration)
         .orElse(profile.preferredUsername) // backward compatibility
         .orElse(profile.nickname) // backward compatibility
         .getOrElse(userIdentity)
