@@ -311,6 +311,32 @@ authentication: {
 
 The role names in the `usersFile` should match the roles defined in the Auth0 tenant.
 
+#### MS Azure Active Directory sample configuration
+
+- Open MS Azure Portal: https://portal.azure.com/
+- Go to Azure Active Directory Service
+- Register new app: AAD Service -> App registrations -> New registration
+- Register app roles: AAD Service -> App registrations -> Your App -> App roles -> Create app role
+- Add client secret: AAD Service -> App registrations -> Your App -> Certificates & secrets -> New client secret
+
+In Nussknacker's configuration file add the following `authentication` section:
+```hocon
+authentication: {
+  method: "Oidc"
+  issuer: "https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0"
+  clientSecret: <the value of App registrations -> Your App -> Certificates & secrets -> Your created secret value>
+  clientId: <the value of App registrations -> Your App -> Overview -> Application (client) ID>
+  usernameFieldName: "name" # Here MS AAD returns at JWT full user name 
+  rolesClaims: ["roles"] # Here MS AAD returns at JWT information about assigned roles
+  usersFile: "conf/users.conf"
+}
+```
+
+The value of YOUR_TENANT_ID you can find at App registrations -> Your App -> Directory (tenant) ID. More information about
+the API you can find at https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0/.well-known/openid-configuration.
+
+The role names in the `usersFile` should match the roles defined in MS AAD App registrations -> Your App -> App roles.
+
 ### OAuth2 security module
 
 #### Generic configuration
@@ -345,6 +371,7 @@ authentication: {
     scope: ${?OAUTH2_SCOPE}
     audience: ${?OAUTH2_AUDIENCE}
   }
+  usernameFieldName: ${?OAUTH2_USERNAME_FIELD_NAME}
   headers {
     Accept: ${?AUTHENTICATION_HEADERS_ACCEPT}
   }
