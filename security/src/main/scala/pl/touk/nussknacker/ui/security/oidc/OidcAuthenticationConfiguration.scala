@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.security.oidc
 
 import pl.touk.nussknacker.engine.util.config.URIExtensions
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.OIDC
-import pl.touk.nussknacker.ui.security.oauth2.UsernameFieldName.UsernameFieldName
+import pl.touk.nussknacker.ui.security.oauth2.UsernameClaim.UsernameClaim
 import pl.touk.nussknacker.ui.security.oauth2.{JwtConfiguration, OAuth2Configuration, TokenCookieConfig}
 import sttp.client3.SttpBackend
 import sttp.model.MediaType
@@ -30,7 +30,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
                                            jwksUri: Option[URI] = None,
                                            rolesClaims: Option[List[String]] = None,
                                            tokenCookie: Option[TokenCookieConfig] = None,
-                                           usernameFieldName: Option[UsernameFieldName] = None,
+                                           usernameClaim: Option[UsernameClaim] = None,
                                            accessTokenIsJwt: Boolean = false,
                                           ) extends URIExtensions {
 
@@ -64,7 +64,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
     accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString(),
     anonymousUserRole = anonymousUserRole,
     tokenCookie = tokenCookie,
-    usernameFieldName = usernameFieldName
+    usernameClaim = usernameClaim
   )
 
   def withDiscovery(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OidcAuthenticationConfiguration = {

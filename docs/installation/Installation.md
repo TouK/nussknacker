@@ -124,7 +124,7 @@ In the table below there are all environment variables used in Nussknacker image
 | OAUTH2_RESPONSE_TYPE                            | string  | code               |
 | OAUTH2_SCOPE                                    | string  | read:user          |
 | OAUTH2_AUDIENCE                                 | string  |                    |
-| OAUTH2_USERNAME_FIELD_NAME                      | string  |                    |
+| OAUTH2_USERNAME_CLAIM                           | string  |                    |
 
 ## Binary package installation
 

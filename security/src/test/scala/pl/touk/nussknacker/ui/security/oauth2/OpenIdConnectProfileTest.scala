@@ -10,7 +10,7 @@ import java.util.UUID
 
 class OpenIdConnectProfileTest extends AnyFunSuite with Matchers  with TableDrivenPropertyChecks {
 
-  import UsernameFieldName._
+  import UsernameClaim._
 
   private val config = OAuth2Configuration.create(ConfigFactory.parseResources("oidc.conf"))
 
@@ -59,10 +59,10 @@ class OpenIdConnectProfileTest extends AnyFunSuite with Matchers  with TableDriv
       (config, profile, expected.copy(username = preferredUsername)), //back compatibility
       (config, profile.copy(preferredUsername = None), expected.copy(username = nickname)), //back compatibility
       (config, profile.copy(subject = Some(adminIdentifier)), expected.copy(id = adminIdentifier, username = "Adminek")),
-      (config.copy(usernameFieldName = Some(PreferredUsername)), profile, expected.copy(username = preferredUsername)),
-      (config.copy(usernameFieldName = Some(GivenName)), profile, expected.copy(username = givenName)),
-      (config.copy(usernameFieldName = Some(Nickname)), profile, expected.copy(username = nickname)),
-      (config.copy(usernameFieldName = Some(Name)), profile, expected.copy(username = name)),
+      (config.copy(usernameClaim = Some(PreferredUsername)), profile, expected.copy(username = preferredUsername)),
+      (config.copy(usernameClaim = Some(GivenName)), profile, expected.copy(username = givenName)),
+      (config.copy(usernameClaim = Some(Nickname)), profile, expected.copy(username = nickname)),
+      (config.copy(usernameClaim = Some(Name)), profile, expected.copy(username = name)),
     )
 
     forAll(data){ (config, profile,  expected) =>

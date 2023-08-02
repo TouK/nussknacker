@@ -5,7 +5,6 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.{Decoder, Json}
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, usernameBasedOnUsersConfiguration}
-import pl.touk.nussknacker.ui.security.oauth2.UsernameFieldName.UsernameFieldName
 
 import java.time.{Instant, LocalDate}
 
@@ -72,14 +71,14 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
     val userIdentity = profile.subject.getOrElse(throw new IllegalStateException("Missing user identity"))
     val userRoles = profile.roles ++ getUserRoles(userIdentity ,configuration)
 
-    val usernameBasedOnProfileAndConfiguration = configuration.usernameFieldName match {
-      case Some(UsernameFieldName.PreferredUsername) =>
+    val usernameBasedOnConfigurationClaim = configuration.usernameClaim match {
+      case Some(UsernameClaim.PreferredUsername) =>
         profile.preferredUsername
-      case Some(UsernameFieldName.GivenName) =>
+      case Some(UsernameClaim.GivenName) =>
         profile.givenName
-      case Some(UsernameFieldName.Nickname) =>
+      case Some(UsernameClaim.Nickname) =>
         profile.nickname
-      case Some(UsernameFieldName.Name) =>
+      case Some(UsernameClaim.Name) =>
         profile.name
       case _ =>
         None
@@ -87,7 +86,7 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
 
     val username =
       usernameBasedOnUsersConfiguration(userIdentity, configuration)
-        .orElse(usernameBasedOnProfileAndConfiguration)
+        .orElse(usernameBasedOnConfigurationClaim)
         .orElse(profile.preferredUsername) // backward compatibility
         .orElse(profile.nickname) // backward compatibility
         .getOrElse(userIdentity)

@@ -7,7 +7,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.security.oauth2.UsernameFieldName.UsernameFieldName
 import pl.touk.nussknacker.ui.security.oidc.{OidcAuthenticationConfiguration, OidcService}
 import sttp.client3.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client3.{SttpBackend, _}
@@ -83,7 +82,7 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       clientSecret = Some(realmClientSecret),
       redirectUri = Some(URI.create("http://localhost:1234")),
       rolesClaims = Some(List("http://namespace/roles", "http://other.namespace/roles")),
-      usernameFieldName = Some(UsernameFieldName.PreferredUsername),
+      usernameClaim = Some(UsernameClaim.PreferredUsername),
       accessTokenIsJwt = true,
     ).withDiscovery
 }

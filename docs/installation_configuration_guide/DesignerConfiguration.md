@@ -270,7 +270,7 @@ You can select this authentication method by setting the `authentication.method`
 | authentication.tokenCookie.name      | auxiliary   | string         |                             | name of cookie to store access token                                                                                                                                                                                                                    |
 | authentication.tokenCookie.path      | auxiliary   | string         |                             | path of access token cookie                                                                                                                                                                                                                             |
 | authentication.tokenCookie.domain    | auxiliary   | string         |                             | domain of access token cookie                                                                                                                                                                                                                           |
-| authentication.usernameFieldName     | optional    | string         |                             | The OIDC field from JWT which be mapped to the username at Nussknacker authorized user object. Available options: `preferred_username`, `given_name`, `nickname`, `name`. By default, username is represented by the `sub` (identifier) field from JWT. |
+| authentication.usernameClaim         | optional    | string         |                             | The OIDC claim from JWT which be mapped to the username at Nussknacker authorized user object. Available options: `preferred_username`, `given_name`, `nickname`, `name`. By default, username is represented by the `sub` (identifier) claim from JWT. |
 | authentication.accessTokenIsJwt      | optional    | boolean        | false                       | OIDC spec allows different formats for `access token` e.g. `JWT`, `reference tokens`, `SAML assertion` or even custom implementations. Since `JWT` is most popular one, we provide dedicated support for it. Set to true if you use such format.        |
 
 #### Auth0 sample configuration
@@ -326,7 +326,7 @@ authentication: {
   issuer: "https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0"
   clientSecret: <the value of App registrations -> Your App -> Certificates & secrets -> Your created secret value>
   clientId: <the value of App registrations -> Your App -> Overview -> Application (client) ID>
-  usernameFieldName: "name" # Here MS AAD returns at JWT full user name 
+  usernameClaim: "name" # Here MS AAD returns at JWT full user name 
   rolesClaims: ["roles"] # Here MS AAD returns at JWT information about assigned roles
   usersFile: "conf/users.conf"
 }
@@ -371,7 +371,7 @@ authentication: {
     scope: ${?OAUTH2_SCOPE}
     audience: ${?OAUTH2_AUDIENCE}
   }
-  usernameFieldName: ${?OAUTH2_USERNAME_FIELD_NAME}
+  usernameClaim: ${?OAUTH2_USERNAME_CLAIM}
   headers {
     Accept: ${?AUTHENTICATION_HEADERS_ACCEPT}
   }

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.util.config.FicusReaders.forDecoder
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, FrontendStrategySettings}
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
-import pl.touk.nussknacker.ui.security.oauth2.UsernameFieldName.UsernameFieldName
+import pl.touk.nussknacker.ui.security.oauth2.UsernameClaim.UsernameClaim
 import sttp.model.{HeaderNames, MediaType, Uri}
 
 import java.net.URI
@@ -36,7 +36,7 @@ case class OAuth2Configuration(usersFile: URI,
                                anonymousUserRole: Option[String] = None,
                                tokenCookie: Option[TokenCookieConfig] = None,
                                overrideFrontendAuthenticationStrategy: Option[FrontendStrategySettings] = None,
-                               usernameFieldName: Option[UsernameFieldName] = None,
+                               usernameClaim: Option[UsernameClaim] = None,
                               ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 
@@ -74,12 +74,12 @@ object ProfileFormat extends Enumeration {
   val OIDC = Value("oidc")
 }
 
-object UsernameFieldName extends Enumeration {
-  type UsernameFieldName = Value
-  val PreferredUsername: UsernameFieldName = Value("preferred_username")
-  val GivenName: UsernameFieldName = Value("given_name")
-  val Nickname: UsernameFieldName = Value("nickname")
-  val Name: UsernameFieldName = Value("name")
+object UsernameClaim extends Enumeration {
+  type UsernameClaim = Value
+  val PreferredUsername: UsernameClaim = Value("preferred_username")
+  val GivenName: UsernameClaim = Value("given_name")
+  val Nickname: UsernameClaim = Value("nickname")
+  val Name: UsernameClaim = Value("name")
 }
 
 trait JwtConfiguration {
