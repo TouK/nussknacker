@@ -311,4 +311,36 @@ describe("Process", () => {
             .parent()
             .matchImage({ screenshotConfig: { padding: 16 } });
     });
+
+    it("should validate process on nodes paste", () => {
+        cy.visitNewProcess(seed, "filter");
+        cy.viewport(1500, 800);
+        cy.layoutScenario();
+
+        const pasteNewNodeToScenario = () => {
+            cy.contains("svg", /filter/i).click();
+            cy.contains("button", "copy").click();
+            cy.contains("button", "paste").click();
+            cy.contains("Loose nodes: filter (copy 1)").should("be.visible");
+        };
+
+        const copyAndPasteWholeScenario = () => {
+            cy.get("#nk-graph-main").type("{ctrl}a");
+            cy.contains("button", "copy").click();
+            cy.contains("button", "delete").click();
+            cy.contains("Loose nodes: filter (copy 1)").should("not.exist");
+            cy.contains("button", "paste").click();
+            cy.contains("Loose nodes: filter (copy 1)").should("be.visible");
+        };
+
+        pasteNewNodeToScenario();
+        copyAndPasteWholeScenario();
+
+        // Center diagram before the screen to have all nodes visible
+        cy.contains("button", "layout").click();
+        cy.getNode("filter")
+            .click()
+            .parent()
+            .matchImage({ screenshotConfig: { padding: 16 } });
+    });
 });
