@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.security.oidc
 
+import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.util.config.URIExtensions
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.OIDC
+import pl.touk.nussknacker.ui.security.oauth2.UsernameClaim.UsernameClaim
 import pl.touk.nussknacker.ui.security.oauth2.{JwtConfiguration, OAuth2Configuration, TokenCookieConfig}
 import sttp.client3.SttpBackend
 import sttp.model.MediaType
@@ -29,6 +31,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
                                            jwksUri: Option[URI] = None,
                                            rolesClaims: Option[List[String]] = None,
                                            tokenCookie: Option[TokenCookieConfig] = None,
+                                           usernameClaim: Option[UsernameClaim] = None,
                                            accessTokenIsJwt: Boolean = false,
                                           ) extends URIExtensions {
 
@@ -61,7 +64,8 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
     accessTokenParams = Map("grant_type" -> "authorization_code"),
     accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString(),
     anonymousUserRole = anonymousUserRole,
-    tokenCookie = tokenCookie
+    tokenCookie = tokenCookie,
+    usernameClaim = usernameClaim
   )
 
   def withDiscovery(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OidcAuthenticationConfiguration = {
@@ -78,4 +82,18 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
     .getOrElse(throw new NoSuchElementException("A jwksUri must provided or OIDC Discovery available"))
 
   private def resolveAgainstIssuer(uri: URI): URI  = issuer.withTrailingSlash.resolve(uri)
+}
+
+object OidcAuthenticationConfiguration {
+
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+  import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.authenticationConfigPath
+  import net.ceedubs.ficus.readers.EnumerationReader._
+
+  def create(config: Config): OidcAuthenticationConfiguration =
+    config.as[OidcAuthenticationConfiguration](authenticationConfigPath)
+
+  def createWithDiscovery(config: Config)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OidcAuthenticationConfiguration =
+    create(config).withDiscovery
 }
