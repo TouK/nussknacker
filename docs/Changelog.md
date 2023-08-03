@@ -3,6 +3,7 @@
 1.12.0 (Not released yet)
 -------------------------
 * [#4561](https://github.com/TouK/nussknacker/pull/4561) Improvement: Users are not requrired at OAuth2 config file
+* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow to test fragments using ad hoc testing. 
 
 1.11.0 (Not released yet)
 -------------------------

@@ -118,11 +118,11 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
       case FragmentOutputDefinition(id, _, List(), _) =>
         //TODO: should we validate it's process?
         //TODO: does it make sense to validate FragmentOutput?
-        toCompilationResult(Valid(compiledgraph.node.FragmentOutput(id, Map.empty, isDisabled = false)), Map.empty, None)
+        toCompilationResult(Valid(compiledgraph.node.EndingFragmentDefinition(id, Map.empty, isDisabled = false)), Map.empty, None)
       case FragmentOutputDefinition(id, _, fields, _) =>
         val fieldTypedExpressions = nodeCompiler.fieldToTypedExpression(fields, ctx)
         toCompilationResult(
-          fieldTypedExpressions.map(typedExpressions => compiledgraph.node.FragmentOutput(id, typedExpressions, isDisabled = false)),
+          fieldTypedExpressions.map(typedExpressions => compiledgraph.node.EndingFragmentDefinition(id, typedExpressions, isDisabled = false)),
           expressionsTypingInfo = Map.empty,
           parameters = None
         )
