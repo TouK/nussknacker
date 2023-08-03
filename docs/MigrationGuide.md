@@ -3,6 +3,17 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.12.0 (Not released yet)
+
+### Code API changes
+
+### REST API changes
+
+### Other changes
+* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow to test fragments using ad hoc testing.
+  By default, NU enables that feature but if you have some custom `processToolbarConfig` settings then
+  You would like to remove `hidden: { fragment: true }` flag for `type: "test-with-form"`, `type: "test-counts"` and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
+
 ## In version 1.11.0 (Not released yet)
 
 ### Code API changes

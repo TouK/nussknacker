@@ -1,5 +1,9 @@
 # Changelog
 
+1.12.0 (Not released yet)
+-------------------------
+* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow to test fragments using ad hoc testing. 
+
 1.11.0 (Not released yet)
 -------------------------
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility)

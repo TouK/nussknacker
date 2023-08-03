@@ -17,8 +17,6 @@ object node {
 
   case class Sink(id: String, ref: String, isDisabled: Boolean) extends Node
 
-  case class FragmentOutput(id: String, fields: Map[String, TypedExpression], isDisabled: Boolean) extends Node
-
   case class BranchEnd(definition: BranchEndDefinition) extends Node {
     override def id: String = definition.artificialNodeId
   }
@@ -42,6 +40,8 @@ object node {
   case class CustomNode(id: String, ref: String, next: Next) extends Node
 
   case class EndingCustomNode(id: String, ref: String) extends Node
+
+  case class EndingFragmentDefinition(id: String, fieldsWithExpression: Map[String, TypedExpression], isDisabled: Boolean) extends Node
 
   case class FragmentUsageStart(id: String, params: List[Parameter], next: Next) extends Node
 
