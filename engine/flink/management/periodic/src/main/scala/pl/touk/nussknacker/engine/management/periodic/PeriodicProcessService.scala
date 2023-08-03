@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.engine.management.periodic.PeriodicStateStatus.{ScheduledStatus, WaitingForScheduleStatus}
 import pl.touk.nussknacker.engine.management.periodic.db.PeriodicProcessesRepository
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.{Deployed, FailedOnDeploy, PeriodicProcessDeploymentStatus, RetryingDeploy}
-import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcessDeployment, PeriodicProcessDeploymentStatus}
+import pl.touk.nussknacker.engine.management.periodic.model.{DeploymentWithJarData, PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentStatus, ScheduleData, ScheduleDeploymentData, ScheduleId}
 import pl.touk.nussknacker.engine.management.periodic.service._
 
 import java.time.chrono.ChronoLocalDateTime
@@ -230,7 +230,8 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   def deactivate(processName: ProcessName): Future[Unit] = for {
     statuses <- delegateDeploymentManager.getProcessStates(processName)(DataFreshnessPolicy.Fresh)
     status = InconsistentStateDetector.extractAtMostOneStatus(statuses.value)
-    maybePeriodicDeployment <- getLatestDeploymentForActiveSchedules(processName)
+
+    maybePeriodicDeployment <- getLatestDeploymentForActiveSchedulesOld(processName)
     actionResult <- maybePeriodicDeployment match {
       case Some(periodicDeployment) => handleFinishedAction(periodicDeployment, status)
         .flatMap(_ => deactivateAction(processName))
@@ -301,7 +302,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   }
 
   def mergeStatusWithDeployments(name: ProcessName, originalStatuses: List[StatusDetails]): Future[StatusDetails] = {
-    getLatestDeploymentForActiveSchedules(name).map { maybeProcessDeployment =>
+    getLatestDeploymentForActiveSchedulesOld(name).map { maybeProcessDeployment =>
       maybeProcessDeployment.map { processDeployment =>
         processDeployment.state.status match {
           case PeriodicProcessDeploymentStatus.Scheduled => createScheduledProcessState(processDeployment)
@@ -365,10 +366,24 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     statuses.find(_.deploymentId.contains(DeploymentId(processDeployment.id.toString)))
   }
 
+  // TODO: use it for process state displaying
+  def getLatestDeploymentsForLatestSchedules(processName: ProcessName, inactiveProcessesMaxCount: Int, deploymentsPerScheduleMaxCount: Int): Future[Map[ScheduleId, ScheduleData]] = {
+    (for {
+      activeSchedulesResult <- scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount)
+      inactiveSchedulesResult <- scheduledProcessesRepository.getLatestDeploymentsForLatestInactiveSchedules(processName, inactiveProcessesMaxCount, deploymentsPerScheduleMaxCount)
+    } yield activeSchedulesResult ++ inactiveSchedulesResult).run
+  }
+
+  // FIXME: This method shouldn't be used - latest active schedule is important only for presentation results
+  def getLatestDeploymentForActiveSchedulesOld(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
+    getLatestDeploymentForActiveSchedules(processName).map(pickMostImportantDeployment)
+  }
+
+  // TODO: use it for process in other places where getLatestDeploymentForActiveSchedulesOld was used
+  def getLatestDeploymentForActiveSchedules(processName: ProcessName): Future[Map[ScheduleId, ScheduleData]] =
+    scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount = 1).run
 
   /**
-   * @Important: this method has to be public because it can be used by dedicated process manager
-   *
    * Returns latest deployment. It can be in any status (consult [[PeriodicProcessDeploymentStatus]]).
    * For multiple schedules only single schedule is returned in the following order:
    * <ol>
@@ -381,23 +396,25 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
    * should be deactivated earlier.
    * </ol>
    */
-  def getLatestDeploymentForActiveSchedules(processName: ProcessName): Future[Option[PeriodicProcessDeployment]] = {
-    scheduledProcessesRepository.getLatestDeploymentForActiveSchedules(processName)
-      .map(_.sortBy(_.runAt)).run
-      .map { deployments =>
-        logger.debug("Found deployments: {}", deployments.map(_.display))
+  def pickMostImportantDeployment(schedules: Map[ScheduleId, ScheduleData]): Option[PeriodicProcessDeployment] = {
+    val deployments = schedules.toList.flatMap {
+      case (scheduleId, scheduleData) =>
+        scheduleData.latestDeployments.map(_.toProcessDeployment(scheduleData.process, scheduleId.scheduleName))
+    }.sortBy(_.runAt)
+    logger.debug("Found deployments: {}", deployments.map(_.display))
 
-        def first(status: PeriodicProcessDeploymentStatus) =
-          deployments.find(_.state.status == status)
+    def first(status: PeriodicProcessDeploymentStatus) =
+      deployments.find(_.state.status == status)
 
-        def last(status: PeriodicProcessDeploymentStatus) =
-          deployments.reverse.find(_.state.status == status)
+    def last(status: PeriodicProcessDeploymentStatus) =
+      deployments.reverse.find(_.state.status == status)
 
-        first(PeriodicProcessDeploymentStatus.Deployed)
-          .orElse(last(PeriodicProcessDeploymentStatus.Failed))
-          .orElse(first(PeriodicProcessDeploymentStatus.Scheduled))
-          .orElse(last(PeriodicProcessDeploymentStatus.Finished))
-      }
+    first(PeriodicProcessDeploymentStatus.Deployed)
+      .orElse(last(PeriodicProcessDeploymentStatus.Failed))
+      .orElse(first(PeriodicProcessDeploymentStatus.Scheduled))
+      .orElse(last(PeriodicProcessDeploymentStatus.Finished))
   }
+
+
 
 }

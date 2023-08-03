@@ -93,12 +93,12 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
     service.schedule(cronEvery4Hours, ProcessVersion.empty.copy(processName = every4HoursProcessName), sampleProcess).futureValue
     otherProcessingTypeService.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = otherProcessName), sampleProcess).futureValue
 
-    val processScheduled = service.getLatestDeploymentForActiveSchedules(processName).futureValue.get
+    val processScheduled = service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue.value
 
     processScheduled.periodicProcess.processVersion.processName shouldBe processName
     processScheduled.state shouldBe PeriodicProcessDeploymentState(None, None, PeriodicProcessDeploymentStatus.Scheduled)
     processScheduled.runAt shouldBe localTime(expectedScheduleTime)
-    service.getLatestDeploymentForActiveSchedules(otherProcessName).futureValue shouldBe Symbol("empty")
+    service.getLatestDeploymentForActiveSchedulesOld(otherProcessName).futureValue shouldBe Symbol("empty")
 
     currentTime = timeToTriggerCheck
     
@@ -108,7 +108,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
     service.deploy(toDeploy).futureValue
     otherProcessingTypeService.deploy(otherProcessingTypeService.findToBeDeployed.futureValue.loneElement).futureValue
 
-    val processDeployed = service.getLatestDeploymentForActiveSchedules(processName).futureValue.get
+    val processDeployed = service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue.value
     processDeployed.id shouldBe processScheduled.id
     processDeployed.state shouldBe PeriodicProcessDeploymentState(Some(LocalDateTime.now(fixedClock(timeToTriggerCheck))), None, PeriodicProcessDeploymentStatus.Deployed)
     processDeployed.runAt shouldBe localTime(expectedScheduleTime)
@@ -119,7 +119,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
     toDeployAfterFinish.map(_.periodicProcess.processVersion.processName) should contain only every30MinutesProcessName
     service.deactivate(processName).futureValue
-    service.getLatestDeploymentForActiveSchedules(processName).futureValue shouldBe None
+    service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue shouldBe None
   }
 
   test("should redeploy scenarios that failed on deploy") {
@@ -166,7 +166,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
       "scheduleMinute10" -> CronScheduleProperty("0 1 * * * ?"))),
       ProcessVersion.empty.copy(processName = ProcessName("other")), sampleProcess).futureValue
 
-    val processScheduled = service.getLatestDeploymentForActiveSchedules(processName).futureValue.get
+    val processScheduled = service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue.value
 
     processScheduled.periodicProcess.processVersion.processName shouldBe processName
     processScheduled.scheduleName shouldBe Some("scheduleMinute5")
@@ -184,7 +184,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
     toDeploy.last.scheduleName shouldBe Some("scheduleMinute10")
 
     service.deactivate(processName).futureValue
-    service.getLatestDeploymentForActiveSchedules(processName).futureValue shouldBe None
+    service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue shouldBe None
   }
 
   test("should wait until other schedule finishes, before deploying next schedule") {
@@ -233,7 +233,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
       "schedule2" -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule2))))),
       ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
 
-    val latestDeploymentSchedule1 = service.getLatestDeploymentForActiveSchedules(processName).futureValue.value
+    val latestDeploymentSchedule1 = service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue.value
     latestDeploymentSchedule1.scheduleName.value shouldBe "schedule1"
     latestDeploymentSchedule1.runAt shouldBe localTime(timeToTriggerSchedule1)
 
@@ -244,13 +244,13 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
 
     service.deploy(toDeployOnSchedule1).futureValue
 
-    service.getLatestDeploymentForActiveSchedules(processName).futureValue.value.state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
+    service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue.value.state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
 
     service.handleFinished.futureValue
 
     val toDeployAfterFinishSchedule1 = service.findToBeDeployed.futureValue
     toDeployAfterFinishSchedule1 should have length 0
-    val latestDeploymentSchedule2 = service.getLatestDeploymentForActiveSchedules(processName).futureValue.value
+    val latestDeploymentSchedule2 = service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue.value
     latestDeploymentSchedule2.scheduleName.value shouldBe "schedule2"
     latestDeploymentSchedule2.runAt shouldBe localTime(timeToTriggerSchedule2)
     latestDeploymentSchedule2.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
@@ -262,11 +262,11 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
 
     service.deploy(toDeployOnSchedule2).futureValue
 
-    service.getLatestDeploymentForActiveSchedules(processName).futureValue.value.state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
+    service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue.value.state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
 
     service.handleFinished.futureValue
 
-    service.getLatestDeploymentForActiveSchedules(processName).futureValue shouldBe None
+    service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue shouldBe None
   }
 
   test("should handle failed event handler") {
@@ -320,7 +320,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
     //this one is cyclically called by RescheduleActor
     service.handleFinished.futureValue
 
-    val processDeployed = service.getLatestDeploymentForActiveSchedules(processName).futureValue.get
+    val processDeployed = service.getLatestDeploymentForActiveSchedulesOld(processName).futureValue.value
     processDeployed.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
   }
 

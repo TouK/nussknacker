@@ -323,6 +323,7 @@ val akkaHttpV = "10.2.10"
 val akkaManagementV = "1.1.4"
 val akkaHttpCirceV = "1.39.2"
 val slickV = "3.4.1"
+val slickPgV = "0.21.1"
 val hikariCpV = "5.0.1"
 val hsqldbV = "2.7.2"
 val postgresV = "42.6.0"
@@ -597,6 +598,7 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
         "org.typelevel" %% "cats-core" % catsV % "provided",
         "com.typesafe.slick" %% "slick" % slickV % "provided",
         "com.typesafe.slick" %% "slick-hikaricp" % slickV % "provided, test",
+        "com.github.tminglei" %% "slick-pg" % slickPgV,
         "org.hsqldb" % "hsqldb" % hsqldbV % "test",
         "org.flywaydb" % "flyway-core" % flywayV % "provided",
         "com.cronutils" % "cron-utils" % cronParserV,

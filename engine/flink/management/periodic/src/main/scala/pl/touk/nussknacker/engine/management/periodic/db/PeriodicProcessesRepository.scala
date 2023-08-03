@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
 import cats.Monad
+import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser.decode
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.model._
-import pl.touk.nussknacker.engine.management.periodic._
-import slick.dbio
+import slick.{dbio, lifted}
 import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
@@ -30,16 +31,20 @@ object PeriodicProcessesRepository {
       processDeploymentEntity.scheduleName,
       processDeploymentEntity.retriesLeft,
       processDeploymentEntity.nextRetryAt,
-      PeriodicProcessDeploymentState(
-        processDeploymentEntity.deployedAt,
-        processDeploymentEntity.completedAt,
-        processDeploymentEntity.status
-      )
+      createPeriodicDeploymentState(processDeploymentEntity)
+    )
+  }
+
+  def createPeriodicDeploymentState(processDeploymentEntity: PeriodicProcessDeploymentEntity): PeriodicProcessDeploymentState = {
+    PeriodicProcessDeploymentState(
+      processDeploymentEntity.deployedAt,
+      processDeploymentEntity.completedAt,
+      processDeploymentEntity.status
     )
   }
 
   def createPeriodicProcess(processEntity: PeriodicProcessEntity): PeriodicProcess = {
-    val processVersion = ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = processEntity.processName)
+    val processVersion = createProcessVersion(processEntity)
     val scheduleProperty = decode[ScheduleProperty](processEntity.scheduleProperty).fold(e => throw new IllegalArgumentException(e), identity)
     PeriodicProcess(processEntity.id, model.DeploymentWithJarData(
       processVersion = processVersion,
@@ -49,7 +54,9 @@ object PeriodicProcessesRepository {
     ), scheduleProperty, processEntity.active, processEntity.createdAt)
   }
 
-
+  private def createProcessVersion(processEntity: PeriodicProcessEntity): ProcessVersion = {
+    ProcessVersion.empty.copy(versionId = processEntity.processVersionId, processName = processEntity.processName)
+  }
 }
 
 trait PeriodicProcessesRepository {
@@ -69,7 +76,9 @@ trait PeriodicProcessesRepository {
   def create(deploymentWithJarData: DeploymentWithJarData,
              scheduleProperty: ScheduleProperty): Action[PeriodicProcess]
 
-  def getLatestDeploymentForActiveSchedules(processName: ProcessName): Action[Seq[PeriodicProcessDeployment]]
+  def getLatestDeploymentsForActiveSchedules(processName: ProcessName, deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]]
+
+  def getLatestDeploymentsForLatestInactiveSchedules(processName: ProcessName, inactiveProcessesMaxCount: Int, deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]]
 
   def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]]
 
@@ -105,6 +114,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     with PeriodicProcessDeploymentsTableFactory with LazyLogging {
 
   import io.circe.syntax._
+  import pl.touk.nussknacker.engine.util.Implicits._
 
   type Action[T] = DBIOActionInstances.DB[T]
 
@@ -195,22 +205,75 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     update.map(_ => ())
   }
 
-  override def getLatestDeploymentForActiveSchedules(processName: ProcessName): Action[Seq[PeriodicProcessDeployment]] = {
-    val activeDeployments = activePeriodicProcessWithDeploymentQuery
-      .filter { case (p, _) => p.processName === processName.value }
-    val latestRunAtForActiveSchedules = activeDeployments
-      .groupBy { case (_, deployment) => deployment.scheduleName }
-      .map { case (scheduleName, group) =>
-        (scheduleName, group.map { case (_, deployment) => deployment.runAt }.max)
-      }
-    latestRunAtForActiveSchedules
-      .join(activeDeployments)
-      .on { case ((scheduleName, runAt), deployment) =>
-        //this is SQL, so we have to handle None separately :)
-        (scheduleName === deployment._2.scheduleName || (scheduleName.isEmpty && deployment._2.scheduleName.isEmpty)) && runAt === deployment._2.runAt }
-      .map(_._2)
-      .result
-      .map(_.map((PeriodicProcessesRepository.createPeriodicProcessDeployment _).tupled))
+  override def getLatestDeploymentsForActiveSchedules(processName: ProcessName, deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]] = {
+    val activeProcessesQuery = PeriodicProcesses.filter(_.active === true)
+    getLatestDeploymentsForEachSchedule(activeProcessesQuery, processName, deploymentsPerScheduleMaxCount)
+  }
+
+  override def getLatestDeploymentsForLatestInactiveSchedules(processName: ProcessName, inactiveProcessesMaxCount: Int, deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]] = {
+    val filteredProcessesQuery = PeriodicProcesses
+      .filter(_.active === false)
+      .sortBy(_.createdAt.desc)
+      .take(inactiveProcessesMaxCount)
+    getLatestDeploymentsForEachSchedule(filteredProcessesQuery, processName, deploymentsPerScheduleMaxCount)
+  }
+
+  private def getLatestDeploymentsForEachSchedule(periodicProcessesQuery: Query[PeriodicProcessesTable, PeriodicProcessEntity, Seq],
+                                                  processName: ProcessName,
+                                                  deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]] = {
+    val filteredPeriodicProcessQuery = periodicProcessesQuery.filter(p => p.processingType === processingType && p.processName === processName.value)
+    val latestDeploymentsForSchedules = profile match {
+      case postgresProfile: ExPostgresProfile =>
+        getLatestDeploymentsForEachSchedulePostgres(filteredPeriodicProcessQuery, deploymentsPerScheduleMaxCount)
+      case _ =>
+        getLatestDeploymentsForEachScheduleJdbcGeneric(filteredPeriodicProcessQuery, deploymentsPerScheduleMaxCount)
+    }
+    latestDeploymentsForSchedules.map(_.map {
+      case (process, deployment) =>
+        val scheduleId = ScheduleId(process.id, deployment.scheduleName)
+        val scheduleDataWithoutDeployment = (scheduleId, PeriodicProcessesRepository.createPeriodicProcess(process))
+        val scheduleDeployment = ScheduleDeploymentData(deployment)
+        (scheduleDataWithoutDeployment, scheduleDeployment)
+    }.toList.toGroupedMap.toList.map {
+      case ((scheduleId, process), deployments) =>
+        scheduleId -> ScheduleData(process, deployments)
+    }.toMap)
+  }
+
+  // TODO: test for postgres implementation
+  private def getLatestDeploymentsForEachSchedulePostgres(periodicProcessesQuery: Query[PeriodicProcessesTable, PeriodicProcessEntity, Seq],
+                                                          deploymentsPerScheduleMaxCount: Int): Action[Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]] = {
+    // To effectively limit deployments to given count for each schedule in one query, we use window functions in slick
+    import ExPostgresProfile.api._
+    import com.github.tminglei.slickpg.window.PgWindowFuncSupport.WindowFunctions._
+
+    val deploymentsForProcesses = periodicProcessesQuery join PeriodicProcessDeployments on (_.id === _.periodicProcessId)
+    deploymentsForProcesses.map {
+      case (process, deployment) =>
+        (rank() :: Over.partitionBy((deployment.periodicProcessId, deployment.scheduleName)).sortBy(deployment.runAt.desc), process, deployment)
+    }.filter(_._1 <= deploymentsPerScheduleMaxCount.longValue()).map {
+      case (_, process, deployment) =>
+        (process, deployment)
+    }.result
+  }
+
+  private def getLatestDeploymentsForEachScheduleJdbcGeneric(periodicProcessesQuery: Query[PeriodicProcessesTable, PeriodicProcessEntity, Seq],
+                                                             deploymentsPerScheduleMaxCount: Int): Action[Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]] = {
+    for {
+      processes <- periodicProcessesQuery.result
+      schedulesForProcesses <-
+        DBIO.sequence(processes.map { process =>
+          PeriodicProcessDeployments.filter(_.periodicProcessId === process.id).map(_.scheduleName).distinct.result.map(_.map((process, _)))
+        }).map(_.flatten)
+      deploymentsForSchedules <-
+        DBIO.sequence(schedulesForProcesses.map {
+          case (process, scheduleName) =>
+            PeriodicProcessDeployments
+              // In SQL when you compare nulls, you will get always false
+              .filter(deployment => deployment.periodicProcessId === process.id && (deployment.scheduleName === scheduleName || deployment.scheduleName.isEmpty && scheduleName.isEmpty))
+              .sortBy(_.runAt.desc).take(deploymentsPerScheduleMaxCount).result.map(_.map((process, _)))
+        }).map(_.flatten)
+    } yield deploymentsForSchedules
   }
 
   override def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime, deployMaxRetries: Int): Action[PeriodicProcessDeployment] = {
@@ -253,8 +316,8 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
   }
 
   private def activePeriodicProcessWithDeploymentQuery = {
-    (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
-      .filter { case (p, _) => p.active === true && p.processingType === processingType }
+    (PeriodicProcesses.filter(p => p.active === true && p.processingType === processingType)
+        join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
   }
 
   private def createPeriodicProcessDeployment(all: Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]): Seq[PeriodicProcessDeployment] =

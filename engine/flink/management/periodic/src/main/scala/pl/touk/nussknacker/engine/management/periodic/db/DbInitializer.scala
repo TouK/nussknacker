@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
+import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
@@ -44,7 +45,7 @@ object DbInitializer extends LazyLogging {
 
   private def chooseDbProfile(dbUrl: String): JdbcProfile = {
     dbUrl match {
-      case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => PostgresProfile
+      case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => ExPostgresProfile
       case _ => HsqldbProfile
     }
   }

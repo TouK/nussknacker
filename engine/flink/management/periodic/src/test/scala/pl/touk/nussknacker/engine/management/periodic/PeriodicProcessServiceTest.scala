@@ -265,7 +265,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
         f.repository.addOnlyDeployment(periodicProcessId, status = status, runAt = now.plusDays(index), scheduleName = Some(schedule))
       }
 
-      val deployment = f.periodicProcessService.getLatestDeploymentForActiveSchedules(processName).futureValue.value
+      val deployment = f.periodicProcessService.getLatestDeploymentForActiveSchedulesOld(processName).futureValue.value
 
       deployment.state.status shouldBe expectedStatus
       deployment.scheduleName shouldBe Some(expectedScheduleName)

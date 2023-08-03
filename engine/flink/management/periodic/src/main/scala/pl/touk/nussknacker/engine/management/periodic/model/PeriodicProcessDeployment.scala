@@ -6,6 +6,7 @@ import slick.lifted.MappedTo
 
 import java.time.{Clock, LocalDateTime}
 
+// TODO: We should separate schedules concept from deployments - fully switch to ScheduleData and ScheduleDeploymentData
 case class PeriodicProcessDeployment(id: PeriodicProcessDeploymentId,
                                      periodicProcess: PeriodicProcess,
                                      runAt: LocalDateTime,
@@ -26,8 +27,8 @@ case class PeriodicProcessDeployment(id: PeriodicProcessDeploymentId,
 }
 
 case class PeriodicProcessDeploymentState(deployedAt: Option[LocalDateTime],
-                                     completedAt: Option[LocalDateTime],
-                                     status: PeriodicProcessDeploymentStatus)
+                                          completedAt: Option[LocalDateTime],
+                                          status: PeriodicProcessDeploymentStatus)
 
 case class PeriodicProcessDeploymentId(value: Long) extends AnyVal with MappedTo[Long] {
   override def toString: String = value.toString
