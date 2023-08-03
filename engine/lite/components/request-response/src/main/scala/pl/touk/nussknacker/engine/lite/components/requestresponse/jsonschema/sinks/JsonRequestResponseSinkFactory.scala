@@ -36,7 +36,6 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
   def rawParamStep()(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(parameters = rawModeParam :: Nil, state = None)
-
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
