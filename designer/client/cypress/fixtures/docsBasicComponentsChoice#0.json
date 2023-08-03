@@ -1,0 +1,148 @@
+{
+    "metaData": {
+        "id": "First-Choice",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "source",
+            "ref": {
+                "typ": "periodic",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": ""
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "{color: 'green'}"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 360,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "defaultNext": [],
+            "nexts": [
+                {
+                    "expression": {
+                        "language": "spel",
+                        "expression": "#input.color == 'blue'"
+                    },
+                    "nodes": [
+                        {
+                            "id": "blue sink",
+                            "ref": {
+                                "typ": "dead-end",
+                                "parameters": []
+                            },
+                            "endResult": null,
+                            "isDisabled": null,
+                            "additionalFields": {
+                                "description": null,
+                                "layoutData": {
+                                    "x": 360,
+                                    "y": 360
+                                }
+                            },
+                            "type": "Sink"
+                        }
+                    ]
+                },
+                {
+                    "expression": {
+                        "language": "spel",
+                        "expression": "#input.color == 'green'"
+                    },
+                    "nodes": [
+                        {
+                            "id": "green sink",
+                            "ref": {
+                                "typ": "dead-end",
+                                "parameters": []
+                            },
+                            "endResult": null,
+                            "isDisabled": null,
+                            "additionalFields": {
+                                "description": null,
+                                "layoutData": {
+                                    "x": 720,
+                                    "y": 360
+                                }
+                            },
+                            "type": "Sink"
+                        }
+                    ]
+                },
+                {
+                    "expression": {
+                        "language": "spel",
+                        "expression": "true"
+                    },
+                    "nodes": [
+                        {
+                            "id": "sink for others",
+                            "ref": {
+                                "typ": "dead-end",
+                                "parameters": []
+                            },
+                            "endResult": null,
+                            "isDisabled": null,
+                            "additionalFields": {
+                                "description": null,
+                                "layoutData": {
+                                    "x": 0,
+                                    "y": 360
+                                }
+                            },
+                            "type": "Sink"
+                        }
+                    ]
+                }
+            ],
+            "id": "choice",
+            "expression": null,
+            "exprVal": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 360,
+                    "y": 180
+                }
+            },
+            "type": "Switch"
+        }
+    ],
+    "additionalBranches": []
+}
