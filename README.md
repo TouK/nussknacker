@@ -78,4 +78,3 @@ There you can also find out how to build and run development version of Nussknac
 ## License
 
 **Nussknacker** is published under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
-
