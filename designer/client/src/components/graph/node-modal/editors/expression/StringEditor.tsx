@@ -5,12 +5,15 @@ import { Formatter, FormatterType, typeFormatters } from "./Formatter";
 import i18next from "i18next";
 import { ExpressionLang, ExpressionObj } from "./types";
 import { isQuoted } from "./SpelQuotesUtils";
+import { Validator } from "../Validators";
 
 type Props = {
     expressionObj: $TodoType;
     onValueChange: (value: string) => void;
     className: string;
     formatter: Formatter;
+    validators: Validator[];
+    showValidation: boolean;
 };
 const splitConcats = (value: string) => {
     return value.split(/\s*\+\s*/gm);

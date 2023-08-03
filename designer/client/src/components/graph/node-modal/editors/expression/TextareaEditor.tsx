@@ -4,12 +4,15 @@ import i18next from "i18next";
 import React from "react";
 import Textarea from "../field/Textarea";
 import { ExpressionLang } from "./types";
+import { Validator } from "../Validators";
 
 type Props = {
     expressionObj: $TodoType;
     onValueChange: (value: string) => void;
     className: string;
     formatter: Formatter;
+    validators: Validator[];
+    showValidation: boolean;
 };
 
 const TextareaEditor: SimpleEditor<Props> = (props: Props) => {

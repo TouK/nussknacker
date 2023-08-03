@@ -34,39 +34,38 @@ function getOptions(
     }));
 }
 
-export default class FixedValuesEditor extends React.Component<Props> {
-    public static isSwitchableTo = (expressionObj: ExpressionObj, editorConfig) =>
-        editorConfig.possibleValues.map((v) => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression);
-    public static switchableToHint = () => "Switch to basic mode";
-    public static notSwitchableToHint = () => "Expression must be one of the predefined values to switch to basic mode";
-
-    currentOption(expressionObj: ExpressionObj, options: Option[]): Option {
+export function FixedValuesEditor({ expressionObj, readOnly, onValueChange, className, showValidation, validators, editorConfig }: Props) {
+    const getCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
         return (
             (expressionObj && options.find((option) => option.value === expressionObj.expression)) || // current value with label taken from options
             (expressionObj && { value: expressionObj.expression, label: expressionObj.expression }) || // current value is no longer valid option? Show it anyway, let user know. Validation should take care
             null
         ); // just leave undefined and let the user explicitly select one
-    }
+    };
 
-    render() {
-        const { expressionObj, readOnly, onValueChange, className, showValidation, validators, editorConfig } = this.props;
-        const options = getOptions(editorConfig.possibleValues);
-        const currentOption = this.currentOption(expressionObj, options);
+    const options = getOptions(editorConfig.possibleValues);
+    const currentOption = getCurrentOption(expressionObj, options);
 
-        return (
-            <div className={`node-value-select ${className}`}>
-                <Creatable
-                    classNamePrefix={styles.nodeValueSelect}
-                    value={currentOption}
-                    onChange={(newValue) => onValueChange(newValue.value)}
-                    options={options}
-                    isDisabled={readOnly}
-                    formatCreateLabel={(x) => x}
-                    menuPortalTarget={document.body}
-                    createOptionPosition={"first"}
-                />
-                {showValidation && <ValidationLabels validators={validators} values={[currentOption.value]} />}
-            </div>
-        );
-    }
+    return (
+        <div className={`node-value-select ${className}`}>
+            <Creatable
+                classNamePrefix={styles.nodeValueSelect}
+                value={currentOption}
+                onChange={(newValue) => onValueChange(newValue.value)}
+                options={options}
+                isDisabled={readOnly}
+                formatCreateLabel={(x) => x}
+                menuPortalTarget={document.body}
+                createOptionPosition={"first"}
+            />
+            {showValidation && <ValidationLabels validators={validators} values={[currentOption.value]} />}
+        </div>
+    );
 }
+
+FixedValuesEditor.isSwitchableTo = (expressionObj: ExpressionObj, editorConfig) =>
+    editorConfig.possibleValues.map((v) => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression);
+FixedValuesEditor.switchableToHint = () => "Switch to basic mode";
+FixedValuesEditor.notSwitchableToHint = () => "Expression must be one of the predefined values to switch to basic mode";
+
+export default FixedValuesEditor;
