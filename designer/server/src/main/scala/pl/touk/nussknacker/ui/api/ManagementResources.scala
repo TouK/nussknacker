@@ -97,7 +97,7 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
 
-  case class ValidationError(message: String) extends Exception(message) with BadRequestError
+  case class ValidationError(message: String) extends Exception(message) with BadRequestErro
 
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
     entity(as[Option[String]]).flatMap{ comment =>
@@ -238,15 +238,17 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
               }
             }
           } ~
+          handleExceptions({/*https://doc.akka.io/docs/akka-http/current/routing-dsl/exception-handling.html*/
+          })
           path("customAction" / Segment) { processName =>
             (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
               val params = req.params.getOrElse(Map.empty)
               complete {
                 customActionInvokerService.invokeCustomAction(req.actionName, process, params)
                   .flatMap {
-                    case res@Right(_) =>
+                    case res@_ =>
                       toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
-                    case res@Left(err) =>
+                    case Failure(ex) =>
                       val response = toHttpResponse(CustomActionResponse(res)) _
                       err match {
                         case _: CustomActionFailure => response(StatusCodes.InternalServerError)

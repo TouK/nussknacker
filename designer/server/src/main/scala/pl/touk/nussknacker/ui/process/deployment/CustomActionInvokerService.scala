@@ -15,8 +15,8 @@ import scala.concurrent.{ExecutionContext, Future}
 trait CustomActionInvokerService {
 
   def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
-                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]]
-
+                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[CustomActionResult]
+  def actionError(error: CustomActionError): Future[Nothing] = Future.failed(error)
 }
 
 // TODO: move this logic to DeploymentService - thanks to it, we will be able to:
@@ -27,7 +27,7 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
                                      dispatcher: DeploymentManagerDispatcher,
                                      processStateService: ProcessStateService) extends CustomActionInvokerService {
   override def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
-                                 (implicit user: LoggedUser, ec: ExecutionContext): Future[Either[CustomActionError, CustomActionResult]] = {
+                                 (implicit user: LoggedUser, ec: ExecutionContext): Future[CustomActionResult] = {
 
     def createCustomAction(process: BaseProcessDetails[_]) =
       engine.api.deployment.CustomActionRequest(
@@ -62,8 +62,4 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
         Future.failed(ProcessNotFoundError(id.id.value.toString))
     }
   }
-
-  //FIXME: change returning successful to failed..
-  private def actionError(error: CustomActionError) = Future.successful(Left(error))
-
 }

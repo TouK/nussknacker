@@ -121,28 +121,27 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   override def customActions: List[CustomAction] = customActionStatusMapping.keys.toList
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(
-      customActions
-        .find(_.name.equals(actionRequest.name))
-        .map(customAction => {
-          val processName = actionRequest.processVersion.processName
-          val statusDetails = memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
+  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[CustomActionResult] =
+    customActions
+      .find(_.name.equals(actionRequest.name))
+      .map(customAction => {
+        val processName = actionRequest.processVersion.processName
+        val statusDetails = memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
 
-          if (customAction.allowedStateStatusNames.contains(statusDetails.status.name)) {
-            customActionStatusMapping
-              .get(customAction)
-              .map { status =>
-                asyncChangeState(processName, status)
-                Right(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
-              }
-              .getOrElse(Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
-          } else {
-            Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name))
-          }
-        })
-        .getOrElse(Left(CustomActionNotImplemented(actionRequest)))
-    )
+        if (customAction.allowedStateStatusNames.contains(statusDetails.status.name)) {
+          customActionStatusMapping
+            .get(customAction)
+            .map { status =>
+              asyncChangeState(processName, status)
+              Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
+            }
+            .getOrElse(Future.failed(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
+        } else {
+          Future.failed(CustomActionInvalidStatus(actionRequest, statusDetails.status.name))
+        }
+      })
+      .getOrElse(Future.failed(CustomActionNotImplemented(actionRequest)))
+
 
   override def close(): Unit = {}
 

@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.definition.ParameterEditor
 import pl.touk.nussknacker.engine.deployment.User
 
 import java.net.URI
+import scala.concurrent.Future
 
 /*
 This is an experimental version, API will change in the future.
