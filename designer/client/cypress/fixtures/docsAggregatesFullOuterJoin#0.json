@@ -1,0 +1,206 @@
+{
+    "metaData": {
+        "id": "First-Full_Outer-Join",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "subscriber alerts",
+            "ref": {
+                "typ": "periodic",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": ""
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "{cliendId: 'sdsds', receivedAmount: 12132131, sentAmount: 1221}"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "definition": {
+                "id": "subscriber alerts",
+                "joinId": "full-outer-join"
+            },
+            "type": "BranchEndData"
+        }
+    ],
+    "additionalBranches": [
+        [
+            {
+                "id": "audit - all events",
+                "ref": {
+                    "typ": "periodic",
+                    "parameters": [
+                        {
+                            "name": "period",
+                            "expression": {
+                                "language": "spel",
+                                "expression": "T(java.time.Duration).parse('PT1M')"
+                            }
+                        },
+                        {
+                            "name": "count",
+                            "expression": {
+                                "language": "spel",
+                                "expression": ""
+                            }
+                        },
+                        {
+                            "name": "value",
+                            "expression": {
+                                "language": "spel",
+                                "expression": "{cliendId: 'sdsds', receivedAmount: 121212, sentAmount: 1221}"
+                            }
+                        }
+                    ]
+                },
+                "additionalFields": {
+                    "description": null,
+                    "layoutData": {
+                        "x": 360,
+                        "y": 0
+                    }
+                },
+                "type": "Source"
+            },
+            {
+                "definition": {
+                    "id": "audit - all events",
+                    "joinId": "full-outer-join"
+                },
+                "type": "BranchEndData"
+            }
+        ],
+        [
+            {
+                "id": "full-outer-join",
+                "outputVar": "outputVar",
+                "nodeType": "full-outer-join",
+                "parameters": [
+                    {
+                        "name": "windowLength",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('P1D')"
+                        }
+                    }
+                ],
+                "branchParameters": [
+                    {
+                        "branchId": "subscriber alerts",
+                        "parameters": [
+                            {
+                                "name": "key",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "#input.cliendId"
+                                }
+                            },
+                            {
+                                "name": "aggregator",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "#AGG.sum"
+                                }
+                            },
+                            {
+                                "name": "aggregateBy",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "#input.receivedAmount"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "branchId": "audit - all events",
+                        "parameters": [
+                            {
+                                "name": "key",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "#input.cliendId"
+                                }
+                            },
+                            {
+                                "name": "aggregator",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "#AGG.sum"
+                                }
+                            },
+                            {
+                                "name": "aggregateBy",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "#input.sentAmount"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "additionalFields": {
+                    "description": "We will get results like:\n{\"key\": \"135\", \"received_transactions\": 2500, \"sent_transactions\": 1000}",
+                    "layoutData": {
+                        "x": 180,
+                        "y": 180
+                    }
+                },
+                "type": "Join"
+            },
+            {
+                "id": "tracked subscriber operations",
+                "ref": {
+                    "typ": "dead-end",
+                    "parameters": []
+                },
+                "endResult": null,
+                "isDisabled": null,
+                "additionalFields": {
+                    "description": null,
+                    "layoutData": {
+                        "x": 180,
+                        "y": 360
+                    }
+                },
+                "type": "Sink"
+            }
+        ]
+    ]
+}
