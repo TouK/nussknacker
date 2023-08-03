@@ -4,7 +4,6 @@
     "version": "0.1.0-SNAPSHOT",
     "author": "",
     "devDependencies": {
-        "@applitools/eyes-cypress": "3.34.1",
         "@babel/cli": "7.20.7",
         "@babel/plugin-transform-runtime": "7.17.0",
         "@babel/preset-env": "7.16.11",
