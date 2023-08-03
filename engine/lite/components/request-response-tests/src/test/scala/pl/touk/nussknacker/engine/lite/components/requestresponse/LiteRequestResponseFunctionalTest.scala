@@ -321,7 +321,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     val testData = Table(
       ("sinkSchema", "sinkFields", "result"),
       (objectWithNestedPatternPropertiesSchema, Map("field" -> "{'foo_int': 1}"), Valid(obj("field" -> obj("foo_int" -> fromInt(1))))),
-      (objectWithNestedPatternPropertiesSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String{1}' expected: 'Long'")),
+      (objectWithNestedPatternPropertiesSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String(1)' expected: 'Long'")),
     )
 
     forAll(testData) {  (sinkSchema: Schema, sinkFields: Map[String, String], expected: Validated[_, Json]) =>

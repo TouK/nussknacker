@@ -14,7 +14,7 @@ type Props = {
 };
 
 export default class JsonEditor extends React.Component<Props, { value: string }> {
-    static switchableTo = (expressionObj) => true;
+    static isSwitchableTo = (expressionObj) => true;
     static switchableToHint = () => "TODO";
     static notSwitchableToHint = () => "TODO";
 

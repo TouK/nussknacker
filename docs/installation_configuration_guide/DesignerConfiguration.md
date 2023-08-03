@@ -254,23 +254,24 @@ and provider discovery. The only supported flow is the authorization code flow w
 
 You can select this authentication method by setting the `authentication.method` parameter to `Oidc`
 
-| Parameter name                       | Importance  | Type           | Default value               | Description                                                                                                                                                                                                                                      |
-|--------------------------------------|-------------|----------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| authentication.issuer                | required    | url            |                             | OpenID Provider's location                                                                                                                                                                                                                       |
-| authentication.clientId              | required    | string         |                             | Client identifier valid at the authorization server                                                                                                                                                                                              |
-| authentication.clientSecret          | required    | string         |                             | Secret corresponding to the client identifier at the authorization server                                                                                                                                                                        |
-| authentication.audience              | recommended | string         |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                                                                                                                                                       |
-| authentication.rolesClaims           | recommended | list of string |                             | Name of the field in the ID token which contains list of user roles. This list supplements roles defined in the `usersFile`                                                                                                                      |
-| authentication.redirectUri           | optional    | url            | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                                                                                                                                                       |
-| authentication.scope                 | optional    | string         | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                                                                                                                                                      |
-| authentication.authorizationEndpoint | auxiliary   | url or path    | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider                                                                                                                                                |
-| authentication.tokenEndpoint         | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                         |
-| authentication.userinfoEndpoint      | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                         |
-| authentication.jwksUri               | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                         |
-| authentication.tokenCookie.name      | auxiliary   | string         |                             | name of cookie to store access token                                                                                                                                                                                                             |
-| authentication.tokenCookie.path      | auxiliary   | string         |                             | path of access token cookie                                                                                                                                                                                                                      |
-| authentication.tokenCookie.domain    | auxiliary   | string         |                             | domain of access token cookie                                                                                                                                                                                                                    |
-| authentication.accessTokenIsJwt      | optional    | boolean        | false                       | OIDC spec allows different formats for `access token` e.g. `JWT`, `reference tokens`, `SAML assertion` or even custom implementations. Since `JWT` is most popular one, we provide dedicated support for it. Set to true if you use such format. |
+| Parameter name                       | Importance  | Type           | Default value               | Description                                                                                                                                                                                                                                             |
+|--------------------------------------|-------------|----------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| authentication.issuer                | required    | url            |                             | OpenID Provider's location                                                                                                                                                                                                                              |
+| authentication.clientId              | required    | string         |                             | Client identifier valid at the authorization server                                                                                                                                                                                                     |
+| authentication.clientSecret          | required    | string         |                             | Secret corresponding to the client identifier at the authorization server                                                                                                                                                                               |
+| authentication.audience              | recommended | string         |                             | Required `aud` claim value of an access token that is assumed to be a JWT.                                                                                                                                                                              |
+| authentication.rolesClaims           | recommended | list of string |                             | Name of the field in the ID token which contains list of user roles. This list supplements roles defined in the `usersFile`                                                                                                                             |
+| authentication.redirectUri           | optional    | url            | inferred from UI's location | Callback URL to which a user is redirected after successful authentication                                                                                                                                                                              |
+| authentication.scope                 | optional    | string         | `openid profile`            | Scope parameter's value sent to the authorization endpoint.                                                                                                                                                                                             |
+| authentication.authorizationEndpoint | auxiliary   | url or path    | discovered                  | Absolute URL or path relative to `Issuer` overriding the value retrieved from the OpenID Provider                                                                                                                                                       |
+| authentication.tokenEndpoint         | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                                |
+| authentication.userinfoEndpoint      | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                                |
+| authentication.jwksUri               | auxiliary   | url or path    | discovered                  | as above                                                                                                                                                                                                                                                |
+| authentication.tokenCookie.name      | auxiliary   | string         |                             | name of cookie to store access token                                                                                                                                                                                                                    |
+| authentication.tokenCookie.path      | auxiliary   | string         |                             | path of access token cookie                                                                                                                                                                                                                             |
+| authentication.tokenCookie.domain    | auxiliary   | string         |                             | domain of access token cookie                                                                                                                                                                                                                           |
+| authentication.usernameClaim         | optional    | string         |                             | The OIDC claim from JWT which be mapped to the username at Nussknacker authorized user object. Available options: `preferred_username`, `given_name`, `nickname`, `name`. By default, username is represented by the `sub` (identifier) claim from JWT. |
+| authentication.accessTokenIsJwt      | optional    | boolean        | false                       | OIDC spec allows different formats for `access token` e.g. `JWT`, `reference tokens`, `SAML assertion` or even custom implementations. Since `JWT` is most popular one, we provide dedicated support for it. Set to true if you use such format.        |
 
 #### Auth0 sample configuration
 
@@ -310,6 +311,34 @@ authentication: {
 
 The role names in the `usersFile` should match the roles defined in the Auth0 tenant.
 
+#### MS Azure Active Directory sample configuration
+
+- Open MS Azure Portal: https://portal.azure.com/
+- Go to Azure Active Directory Service
+- Register new app: AAD Service -> App registrations -> New registration
+- Add auth platform: AAD Service -> App registrations -> Your App -> Authentication -> Add a platform
+- Register app roles: AAD Service -> App registrations -> Your App -> App roles -> Create app role
+- Add client secret: AAD Service -> App registrations -> Your App -> Certificates & secrets -> New client secret
+- Configure users roles: Enterprise applications -> Your App -> Users and groups -> Add user/group
+
+In Nussknacker's configuration file add the following `authentication` section:
+```hocon
+authentication: {
+  method: "Oidc"
+  issuer: "https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0"
+  clientSecret: <the value of App registrations -> Your App -> Certificates & secrets -> Your created secret value>
+  clientId: <the value of App registrations -> Your App -> Overview -> Application (client) ID>
+  usernameClaim: "name" # Here MS AAD returns at JWT full user name 
+  rolesClaims: ["roles"] # Here MS AAD returns at JWT information about assigned roles
+  usersFile: "conf/users.conf"
+}
+```
+
+The value of YOUR_TENANT_ID you can find at App registrations -> Your App -> Directory (tenant) ID. More information about
+the API you can find at https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0/.well-known/openid-configuration.
+
+The role names in the `usersFile` should match the roles defined in MS AAD App registrations -> Your App -> App roles.
+
 ### OAuth2 security module
 
 #### Generic configuration
@@ -344,6 +373,7 @@ authentication: {
     scope: ${?OAUTH2_SCOPE}
     audience: ${?OAUTH2_AUDIENCE}
   }
+  usernameClaim: ${?OAUTH2_USERNAME_CLAIM}
   headers {
     Accept: ${?AUTHENTICATION_HEADERS_ACCEPT}
   }

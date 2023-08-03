@@ -1,5 +1,5 @@
 import HttpService from "../../http/HttpService";
-import { Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData, ValidationResult } from "../../types";
+import { Edge, EdgeType, NodeId, NodeType, ProcessDefinitionData, ValidationResult } from "../../types";
 import { Action, ThunkAction, ThunkDispatch } from "../reduxTypes";
 import { RootState } from "../../reducers";
 import { layoutChanged, Position } from "./ui/layout";
@@ -141,6 +141,12 @@ export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edge
         });
         dispatch(layoutChanged());
         batchGroupBy.end();
+    };
+}
+
+export function nodesValidation(): ThunkAction {
+    return (dispatch, getState) => {
+        debouncedValidate(dispatch, getState);
     };
 }
 

@@ -236,7 +236,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
     val errors = validationResult2.swap.toOption.value.toList
     errors should have size 1
     errors.head should matchPattern {
-      case ExpressionParserCompilationError(message, _, _, _) if message.startsWith("There is no property 'field22' in type: {field1: String, field2: String}") =>
+      case ExpressionParserCompilationError(message, _, _, _) if message.startsWith("There is no property 'field22' in type: Record{field1: String, field2: String}") =>
     }
   }
 

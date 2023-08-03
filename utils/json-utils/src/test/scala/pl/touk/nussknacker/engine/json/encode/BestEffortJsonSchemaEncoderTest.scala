@@ -398,7 +398,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     encoder.encodeWithJsonValidation(Collections.singletonMap("field", "aa"), schema, None) shouldBe Symbol("valid")
     encoder.encodeWithJsonValidation(Collections.singletonMap("field", 11), schema, None) shouldBe Symbol("valid")
     encoder.encodeWithJsonValidation(Collections.singletonMap("field",
-      Collections.emptyMap()), schema, None) shouldBe invalid("Not expected type: {} for field: 'field' with schema: {\"anyOf\":[{\"anyOf\":[]},{\"type\":\"string\"},{\"type\":\"integer\"}]}.")
+      Collections.emptyMap()), schema, None) shouldBe invalid("Not expected type: Record{} for field: 'field' with schema: {\"anyOf\":[{\"anyOf\":[]},{\"type\":\"string\"},{\"type\":\"integer\"}]}.")
 
   }
 

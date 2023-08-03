@@ -5,11 +5,10 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SubsequentNode
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.engine.spel
 
 object SampleProcess {
 
-  import spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.Implicits._
 
   val processName: ProcessName = ProcessName(this.getClass.getName)
 

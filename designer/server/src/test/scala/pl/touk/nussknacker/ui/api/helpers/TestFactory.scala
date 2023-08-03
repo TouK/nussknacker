@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
-import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -51,7 +51,9 @@ object TestFactory extends TestPermissions {
   val flinkProcessValidation: ProcessValidation = ProcessTestData.processValidation.withFragmentResolver(sampleResolver)
     .withAdditionalPropertiesConfig(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> FlinkStreamingPropertiesConfig.properties))
 
-  val processResolving = new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
+  val processResolving = new UIProcessResolving(processValidation,
+    mapProcessingTypeDataProvider(
+      TestProcessingTypes.Streaming -> ProcessDictSubstitutor(new SimpleDictRegistry(Map.empty))))
 
   val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
 

@@ -382,6 +382,13 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     } yield id).futureValue
   }
 
+  protected def createDeployedProcessFromProcess(process: CanonicalProcess, category: String = TestCat): ProcessId = {
+    (for {
+      id <- Future(createProcess(process, category, processingType = Streaming))
+      _ <- prepareDeploy(id)
+    } yield id).futureValue
+  }
+
   protected def createDeployedCanceledProcess(processName: ProcessName, category: String = TestCat): ProcessId = {
     (for {
       id <- prepareValidProcess(processName, category, isFragment = false)

@@ -31,7 +31,7 @@ protected object TypeRelatedParameterValueDeterminer extends ParameterDefaultVal
   private def defaultStringExpression(editor: Option[ParameterEditor]): Expression =
     editor.collect { // TODO: maybe some better way to specify language like Parameter.language
       case SpelTemplateParameterEditor => Expression.spelTemplate("") // template not need to be wrapped in ''
-      case SqlParameterEditor => Expression.sqlSpelTemplate("")
+      case SqlParameterEditor => Expression.spelTemplate("")
     }.getOrElse(Expression.spel("''"))
 
 }

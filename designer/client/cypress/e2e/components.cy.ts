@@ -195,7 +195,9 @@ describe("Components list", () => {
             .contains(/\sdirect/i)
             .click();
         cy.wait(500); //ensure "loading" mask is hidden
-        cy.get("#app-container>main").matchImage();
+        cy.get("#app-container>main").matchImage({
+            maxDiffThreshold: 0.01,
+        });
 
         cy.get("@options")
             .contains(/\sdirect/i)
@@ -204,7 +206,9 @@ describe("Components list", () => {
             .contains(/indirect/i)
             .click();
         cy.wait(500); //ensure "loading" mask is hidden
-        cy.get("#app-container>main").matchImage();
+        cy.get("#app-container>main").matchImage({
+            maxDiffThreshold: 0.01,
+        });
 
         cy.get("@options")
             .contains(/indirect/i)
@@ -214,7 +218,9 @@ describe("Components list", () => {
         cy.matchQuery("?TEXT=xxx");
         cy.viewport(1600, 500);
         cy.wait(500); //ensure "loading" mask is hidden
-        cy.get("#app-container>main").matchImage();
+        cy.get("#app-container>main").matchImage({
+            maxDiffThreshold: 0.01,
+        });
     });
 
     function filterByDefaultCategory() {

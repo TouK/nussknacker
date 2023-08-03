@@ -77,7 +77,7 @@ export default function PeriodEditor(props: Props): JSX.Element {
     );
 }
 
-PeriodEditor.switchableTo = (expressionObj: ExpressionObj) =>
+PeriodEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);
 
 PeriodEditor.switchableToHint = () => i18next.t("editors.period.switchableToHint", "Switch to basic mode");

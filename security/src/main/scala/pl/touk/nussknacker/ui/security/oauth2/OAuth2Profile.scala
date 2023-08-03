@@ -13,7 +13,7 @@ object OAuth2Profile {
       .map(_.roles ++ defaults)
       .getOrElse(defaults)
 
-  def getUserUsername(identity: String, configuration: OAuth2Configuration): Option[String] =
+  def usernameBasedOnUsersConfiguration(identity: String, configuration: OAuth2Configuration): Option[String] =
     configuration.findUserById(identity).flatMap(_.username)
 
   private implicit class RichOAuth2Configuration(c: OAuth2Configuration) {
