@@ -1,0 +1,90 @@
+{
+    "metaData": {
+        "id": "First-Variable",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "input Kafka topic with json content",
+            "ref": {
+                "typ": "periodic",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": ""
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "{color: 'red'}"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "My first variable declaration",
+            "varName": "myFirstVariable",
+            "value": {
+                "language": "spel",
+                "expression": "#input"
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 180
+                }
+            },
+            "type": "Variable"
+        },
+        {
+            "id": "output Kafka topic with json content",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 360
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": []
+}
