@@ -17,6 +17,7 @@ import JsonEditor from "./JsonEditor";
 import { DualParameterEditor } from "./DualParameterEditor";
 import { SpelTemplateEditor } from "./SpelTemplateEditor";
 import { Formatter } from "./Formatter";
+import { VariableTypes } from "../../../../../types";
 
 export type EditorProps = {
     onValueChange: (value: string) => void;
@@ -26,15 +27,17 @@ export type EditorProps = {
     validators?: Validator[];
     formatter?: Formatter;
     expressionInfo?: string;
-    expressionObj?: any;
+    expressionObj?: ExpressionObj;
     readOnly?: boolean;
-    showSwitch?: any;
-    showValidation?: any;
-    variableTypes?: any;
-    values?: any;
+    showSwitch?: boolean;
+    showValidation?: boolean;
+    variableTypes?: VariableTypes;
+    values?: string[];
 };
 
-export type SimpleEditor<P extends EditorProps = EditorProps> = React.ComponentType<P & EditorProps> | ForwardRefExoticComponent<P>;
+export type SimpleEditor<P extends EditorProps = EditorProps> =
+    | React.ComponentType<P & EditorProps>
+    | ForwardRefExoticComponent<P & EditorProps>;
 
 export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P> & {
     isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
