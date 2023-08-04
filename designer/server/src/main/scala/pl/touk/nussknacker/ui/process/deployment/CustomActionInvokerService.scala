@@ -12,11 +12,11 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
 
+
 trait CustomActionInvokerService {
 
   def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
                         (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[CustomActionResult]
-  def actionError(error: CustomActionError): Future[Nothing] = Future.failed(error)
 }
 
 // TODO: move this logic to DeploymentService - thanks to it, we will be able to:
@@ -40,9 +40,9 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
     val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)
     maybeProcess.flatMap {
       case Some(process) if process.isFragment =>
-        actionError(CustomActionForbidden(createCustomAction(process), "Invoke custom action on fragment is forbidden."))
+        Future.failed(CustomActionForbidden(createCustomAction(process), "Invoke custom action on fragment is forbidden."))
       case Some(process) if process.isArchived =>
-        actionError(CustomActionForbidden(createCustomAction(process), "Invoke custom action on archived scenario is forbidden."))
+        Future.failed(CustomActionForbidden(createCustomAction(process), "Invoke custom action on archived scenario is forbidden."))
       case Some(process) =>
         val actionReq = createCustomAction(process)
         val manager = dispatcher.deploymentManagerUnsafe(process.processingType)
@@ -53,10 +53,10 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
               if (customAction.allowedStateStatusNames.contains(status.status.name)) {
                 manager.invokeCustomAction(actionReq, process.json)
               } else
-                actionError(CustomActionInvalidStatus(actionReq, status.status.name))
+                Future.failed(CustomActionInvalidStatus(actionReq, status.status.name))
             }
           case None =>
-            actionError(CustomActionNonExisting(actionReq))
+            Future.failed(CustomActionNonExisting(actionReq))
         }
       case _ =>
         Future.failed(ProcessNotFoundError(id.id.value.toString))
