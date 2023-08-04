@@ -1,11 +1,11 @@
 import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
-import { HandledErrorType } from "../../src/components/graph/node-modal/editors/Validators";
 import { jest } from "@jest/globals";
-import RawEditor from "../../src/components/graph/node-modal/editors/expression/RawEditor";
+import { RawEditor } from "../../src/components/graph/node-modal/editors/expression/RawEditor";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
+import { mockValidators, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -34,16 +34,8 @@ describe(RawEditor.name, () => {
                     readOnly={false}
                     className={""}
                     isMarked={false}
-                    onValueChange={jest.fn()}
-                    validators={[
-                        {
-                            description: () => "HandledErrorType.EmptyMandatoryParameter",
-                            handledErrorType: HandledErrorType.EmptyMandatoryParameter,
-                            validatorType: 0,
-                            isValid: () => false,
-                            message: () => "validation error",
-                        },
-                    ]}
+                    onValueChange={mockValueChange}
+                    validators={mockValidators}
                     expressionObj={{ language: "spel", expression: "test" }}
                     showValidation={true}
                     variableTypes={{}}

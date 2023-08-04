@@ -9,7 +9,7 @@ import { getProcessId } from "../../reducers/selectors/graph";
 import { CustomAction } from "../../types";
 import { UnknownRecord } from "../../types/common";
 import { WindowContent } from "../../windowManager";
-import { WindowKind } from "../../windowManager/WindowKind";
+import { WindowKind } from "../../windowManager";
 import { ChangeableValue } from "../ChangeableValue";
 import { editors } from "../graph/node-modal/editors/expression/Editor";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";

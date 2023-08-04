@@ -1,10 +1,10 @@
 import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
-import { HandledErrorType } from "../../src/components/graph/node-modal/editors/Validators";
 import { jest } from "@jest/globals";
-import DualParameterEditor from "../../src/components/graph/node-modal/editors/expression/DualParameterEditor";
+import { DualParameterEditor } from "../../src/components/graph/node-modal/editors/expression/DualParameterEditor";
 import { DualEditorMode, EditorType } from "../../src/components/graph/node-modal/editors/expression/Editor";
+import { mockValidators, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -15,16 +15,8 @@ describe(DualParameterEditor.name, () => {
                 readOnly={false}
                 className={""}
                 isMarked={false}
-                onValueChange={jest.fn()}
-                validators={[
-                    {
-                        description: () => "HandledErrorType.EmptyMandatoryParameter",
-                        handledErrorType: HandledErrorType.EmptyMandatoryParameter,
-                        validatorType: 0,
-                        isValid: () => false,
-                        message: () => "validation error",
-                    },
-                ]}
+                onValueChange={mockValueChange}
+                validators={mockValidators}
                 editorConfig={{
                     simpleEditor: { type: EditorType.CRON_EDITOR },
                     defaultMode: DualEditorMode.SIMPLE,

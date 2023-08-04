@@ -6,6 +6,7 @@ import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import { isEmpty } from "lodash";
+import { ExtendedEditor } from "../Editor";
 
 export type Period = {
     years: number;
@@ -32,7 +33,7 @@ const NONE_PERIOD = {
     days: () => null,
 };
 
-export default function PeriodEditor(props: Props): JSX.Element {
+export const PeriodEditor: ExtendedEditor<Props> = (props: Props) => {
     const { expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
 
     const periodFormatter = useMemo(() => (formatter == null ? typeFormatters[FormatterType.Period] : formatter), [formatter]);
@@ -52,7 +53,7 @@ export default function PeriodEditor(props: Props): JSX.Element {
     const decode = useCallback(
         (expression: string): Period => {
             const result = periodFormatter.decode(expression);
-            const period = result == null ? NONE_PERIOD : moment.duration(result);
+            const period = result == null || typeof result !== "string" ? NONE_PERIOD : moment.duration(result);
             return {
                 years: period.years(),
                 months: period.months(),
@@ -75,7 +76,7 @@ export default function PeriodEditor(props: Props): JSX.Element {
             isMarked={isMarked}
         />
     );
-}
+};
 
 PeriodEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_PERIOD_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);

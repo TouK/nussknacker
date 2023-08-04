@@ -21,7 +21,7 @@ export type RawEditorProps = {
     editorMode?: EditorMode;
 };
 
-const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) {
+const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
     const {
         expressionObj,
         validators,
@@ -69,6 +69,6 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
             />
         </div>
     );
-});
+};
 
-export default RawEditor;
+export const RawEditor = forwardRef(RawEditorComponent);

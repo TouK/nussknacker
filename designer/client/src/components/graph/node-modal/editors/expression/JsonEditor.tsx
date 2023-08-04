@@ -4,6 +4,7 @@ import AceEditor from "./ace";
 import { ExpressionObj } from "./types";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { Validator } from "../Validators";
+import { SimpleEditor } from "./Editor";
 
 type Props = {
     expressionObj: ExpressionObj;
@@ -13,7 +14,7 @@ type Props = {
     validators: Validator[];
 };
 
-function JsonEditor({ onValueChange, className, expressionObj, validators, showValidation }: Props) {
+export const JsonEditor: SimpleEditor<Props> = ({ onValueChange, className, expressionObj, validators, showValidation }: Props) => {
     const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
 
     const onChange = (newValue: string) => {
@@ -52,10 +53,6 @@ function JsonEditor({ onValueChange, className, expressionObj, validators, showV
             {showValidation && <ValidationLabels validators={validators} values={[value]} />}
         </div>
     );
-}
-
-JsonEditor.isSwitchableTo = () => true;
-JsonEditor.switchableToHint = () => "TODO";
-JsonEditor.notSwitchableToHint = () => "TODO";
+};
 
 export default JsonEditor;

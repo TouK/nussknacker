@@ -14,7 +14,7 @@ export enum JavaTimeTypes {
     LOCAL_DATE_TIME = "LocalDateTime",
 }
 
-export type DatepickerEditorProps = {
+export interface DatepickerEditorProps {
     expressionObj: ExpressionObj;
     readOnly: boolean;
     className: string;
@@ -27,7 +27,7 @@ export type DatepickerEditorProps = {
     momentFormat: string;
     dateFormat?: string;
     timeFormat?: string;
-};
+}
 
 export function DatepickerEditor(props: DatepickerEditorProps) {
     const {

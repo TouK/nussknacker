@@ -7,6 +7,7 @@ import i18next from "i18next";
 import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import moment from "moment";
 import { isEmpty } from "lodash";
+import { ExtendedEditor } from "../Editor";
 
 export type Duration = {
     days: number;
@@ -33,7 +34,7 @@ const NONE_DURATION = {
     minutes: () => null,
 };
 
-export default function DurationEditor(props: Props): JSX.Element {
+export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
     const { expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
 
     const durationFormatter = useMemo(() => (formatter == null ? typeFormatters[FormatterType.Duration] : formatter), [formatter]);
@@ -54,7 +55,10 @@ export default function DurationEditor(props: Props): JSX.Element {
     const decode = useCallback(
         (expression: string): Duration => {
             const decodeExecResult = durationFormatter.decode(expression);
-            const duration = decodeExecResult == null ? NONE_DURATION : moment.duration(decodeExecResult);
+            console.log("decodeExecResult", decodeExecResult);
+
+            const duration =
+                decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);
             return {
                 days: duration.days(),
                 hours: duration.hours(),
@@ -77,7 +81,7 @@ export default function DurationEditor(props: Props): JSX.Element {
             isMarked={isMarked}
         />
     );
-}
+};
 
 DurationEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     SPEL_DURATION_SWITCHABLE_TO_REGEX.test(expressionObj.expression) || isEmpty(expressionObj.expression);

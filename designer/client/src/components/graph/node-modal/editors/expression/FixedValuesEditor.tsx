@@ -5,6 +5,7 @@ import ValidationLabels from "../../../../modals/ValidationLabels";
 import { Validator } from "../Validators";
 import { ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
+import { ExtendedEditor } from "./Editor";
 
 type Props = {
     editorConfig: $TodoType;
@@ -34,7 +35,15 @@ function getOptions(
     }));
 }
 
-export function FixedValuesEditor({ expressionObj, readOnly, onValueChange, className, showValidation, validators, editorConfig }: Props) {
+export const FixedValuesEditor: ExtendedEditor<Props> = ({
+    expressionObj,
+    readOnly,
+    onValueChange,
+    className,
+    showValidation,
+    validators,
+    editorConfig,
+}: Props) => {
     const getCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
         return (
             (expressionObj && options.find((option) => option.value === expressionObj.expression)) || // current value with label taken from options
@@ -61,11 +70,9 @@ export function FixedValuesEditor({ expressionObj, readOnly, onValueChange, clas
             {showValidation && <ValidationLabels validators={validators} values={[currentOption.value]} />}
         </div>
     );
-}
+};
 
 FixedValuesEditor.isSwitchableTo = (expressionObj: ExpressionObj, editorConfig) =>
     editorConfig.possibleValues.map((v) => v.expression).includes(expressionObj.expression) || isEmpty(expressionObj.expression);
 FixedValuesEditor.switchableToHint = () => "Switch to basic mode";
 FixedValuesEditor.notSwitchableToHint = () => "Expression must be one of the predefined values to switch to basic mode";
-
-export default FixedValuesEditor;

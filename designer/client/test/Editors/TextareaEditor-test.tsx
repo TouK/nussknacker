@@ -1,9 +1,8 @@
 import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
-import { jest } from "@jest/globals";
-import { HandledErrorType } from "../../src/components/graph/node-modal/editors/Validators";
-import TextareaEditor from "../../src/components/graph/node-modal/editors/expression/TextareaEditor";
+import { TextareaEditor } from "../../src/components/graph/node-modal/editors/expression/TextareaEditor";
+import { mockFormatter, mockValidators } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -14,16 +13,8 @@ describe(TextareaEditor.name, () => {
                 className={""}
                 onValueChange={jest.fn()}
                 expressionObj={{ language: "spel", expression: "" }}
-                formatter={{ encode: jest.fn(() => "test"), decode: jest.fn() }}
-                validators={[
-                    {
-                        description: () => "HandledErrorType.EmptyMandatoryParameter",
-                        handledErrorType: HandledErrorType.EmptyMandatoryParameter,
-                        validatorType: 0,
-                        isValid: () => false,
-                        message: () => "validation error",
-                    },
-                ]}
+                formatter={mockFormatter}
+                validators={mockValidators}
                 showValidation={true}
             />,
         );

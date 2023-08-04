@@ -1,16 +1,15 @@
 import i18next from "i18next";
 import { isEmpty } from "lodash";
 import React from "react";
-import FixedValuesEditor from "./FixedValuesEditor";
+import { FixedValuesEditor } from "./FixedValuesEditor";
 import { ExpressionLang, ExpressionObj } from "./types";
-import { SimpleEditor } from "./Editor";
+import { ExtendedEditor } from "./Editor";
 
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
     readOnly: boolean;
     className: string;
-    values?: $TodoType;
 };
 
 const SUPPORTED_LANGUAGE = ExpressionLang.SpEL;
@@ -23,7 +22,7 @@ const parseable = (expressionObj) => {
     return (expression === "true" || expression === "false") && language === SUPPORTED_LANGUAGE;
 };
 
-const BoolEditor: SimpleEditor<Props> = (props: Props) => {
+export const BoolEditor: ExtendedEditor<Props> = (props: Props) => {
     const { expressionObj, readOnly, onValueChange, className } = props;
 
     const trueValue = { expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true") };
@@ -42,8 +41,6 @@ const BoolEditor: SimpleEditor<Props> = (props: Props) => {
         />
     );
 };
-
-export default BoolEditor;
 
 BoolEditor.isSwitchableTo = (expressionObj) => parseable(expressionObj) || isEmpty(expressionObj.expression);
 BoolEditor.switchableToHint = () => i18next.t("editors.bool.switchableToHint", "Switch to basic mode");

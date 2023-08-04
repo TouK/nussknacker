@@ -1,9 +1,9 @@
 import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
-import { HandledErrorType } from "../../src/components/graph/node-modal/editors/Validators";
 import { jest } from "@jest/globals";
-import FixedValuesEditor from "../../src/components/graph/node-modal/editors/expression/FixedValuesEditor";
+import { FixedValuesEditor } from "../../src/components/graph/node-modal/editors/expression/FixedValuesEditor";
+import { mockValidators, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -12,16 +12,8 @@ describe(FixedValuesEditor.name, () => {
         render(
             <FixedValuesEditor
                 readOnly={false}
-                onValueChange={jest.fn()}
-                validators={[
-                    {
-                        description: () => "HandledErrorType.EmptyMandatoryParameter",
-                        handledErrorType: HandledErrorType.EmptyMandatoryParameter,
-                        validatorType: 0,
-                        isValid: () => false,
-                        message: () => "validation error",
-                    },
-                ]}
+                onValueChange={mockValueChange}
+                validators={mockValidators}
                 editorConfig={{
                     possibleValues: [],
                 }}

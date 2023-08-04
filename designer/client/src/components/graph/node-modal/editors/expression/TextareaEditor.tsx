@@ -1,5 +1,5 @@
 import { Formatter, FormatterType, typeFormatters } from "./Formatter";
-import { SimpleEditor } from "./Editor";
+import { ExtendedEditor } from "./Editor";
 import i18next from "i18next";
 import React from "react";
 import Textarea from "../field/Textarea";
@@ -15,7 +15,7 @@ type Props = {
     showValidation: boolean;
 };
 
-const TextareaEditor: SimpleEditor<Props> = (props: Props) => {
+export const TextareaEditor: ExtendedEditor<Props> = (props: Props) => {
     const { expressionObj, onValueChange, className, formatter } = props;
     const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter;
 
@@ -23,7 +23,7 @@ const TextareaEditor: SimpleEditor<Props> = (props: Props) => {
         <Textarea
             {...props}
             onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
-            value={stringFormatter.decode(expressionObj.expression)}
+            value={stringFormatter.decode(expressionObj.expression) as string}
             formattedValue={expressionObj.expression}
             className={className}
         />
@@ -46,5 +46,3 @@ TextareaEditor.notSwitchableToHint = () =>
         "editors.textarea.notSwitchableToHint",
         "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
     );
-
-export default TextareaEditor;

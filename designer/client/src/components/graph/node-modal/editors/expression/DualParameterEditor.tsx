@@ -1,7 +1,7 @@
-import { DualEditorMode, editors, EditorType, SimpleEditor } from "./Editor";
+import { DualEditorMode, editors, EditorType, isExtendedEditor, SimpleEditor } from "./Editor";
 import React, { useCallback, useMemo, useState } from "react";
 import { ExpressionObj } from "./types";
-import RawEditor from "./RawEditor";
+import { RawEditor } from "./RawEditor";
 import { VariableTypes } from "../../../../../types";
 import { css } from "@emotion/css";
 import { RawEditorIcon, SimpleEditorIcon, SwitchButton } from "./SwitchButton";
@@ -28,23 +28,16 @@ type Props = {
     showSwitch?: boolean;
 };
 
-export default function DualParameterEditor(props: Props): JSX.Element {
+export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
     const { editorConfig, readOnly, valueClassName, expressionObj } = props;
     const { t } = useTranslation();
 
-    const SimpleEditor = useMemo(
-        () =>
-            editors[editorConfig.simpleEditor.type] as SimpleEditor<{
-                onValueChange: (value: string) => void;
-                editorConfig?: unknown;
-            }>,
-        [editorConfig.simpleEditor.type],
-    );
+    const SimpleEditor = useMemo(() => editors[editorConfig.simpleEditor.type], [editorConfig.simpleEditor.type]);
 
     const showSwitch = useMemo(() => props.showSwitch && SimpleEditor, [SimpleEditor, props.showSwitch]);
 
     const simpleEditorAllowsSwitch = useMemo(
-        () => SimpleEditor?.isSwitchableTo(expressionObj, editorConfig.simpleEditor),
+        () => isExtendedEditor(SimpleEditor) && SimpleEditor.isSwitchableTo(expressionObj, editorConfig.simpleEditor),
         [SimpleEditor, editorConfig.simpleEditor, expressionObj],
     );
 
@@ -68,6 +61,10 @@ export default function DualParameterEditor(props: Props): JSX.Element {
 
         if (readOnly) {
             return t("editors.default.hint", "Switching to basic mode is disabled. You are in read-only mode");
+        }
+
+        if (!isExtendedEditor(SimpleEditor)) {
+            return;
         }
 
         if (simpleEditorAllowsSwitch) {
@@ -101,4 +98,4 @@ export default function DualParameterEditor(props: Props): JSX.Element {
             ) : null}
         </div>
     );
-}
+};

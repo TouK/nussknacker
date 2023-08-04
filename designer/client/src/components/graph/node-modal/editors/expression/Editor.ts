@@ -1,40 +1,56 @@
-import BoolEditor from "./BoolEditor";
-import RawEditor from "./RawEditor";
-import SqlEditor from "./SqlEditor";
-import StringEditor from "./StringEditor";
-import FixedValuesEditor from "./FixedValuesEditor";
+import { BoolEditor } from "./BoolEditor";
+import { RawEditor } from "./RawEditor";
+import { SqlEditor } from "./SqlEditor";
+import { StringEditor } from "./StringEditor";
+import { FixedValuesEditor } from "./FixedValuesEditor";
 import { concat, isEmpty, omit } from "lodash";
 import { ExpressionObj } from "./types";
-import React from "react";
+import React, { ForwardRefExoticComponent } from "react";
 import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
 
 import { Error, errorValidator, mandatoryValueValidator, Validator, validators } from "../Validators";
-import DurationEditor from "./Duration/DurationEditor";
-import PeriodEditor from "./Duration/PeriodEditor";
-import CronEditor from "./Cron/CronEditor";
-import TextareaEditor from "./TextareaEditor";
+import { DurationEditor } from "./Duration/DurationEditor";
+import { PeriodEditor } from "./Duration/PeriodEditor";
+import { CronEditor } from "./Cron/CronEditor";
+import { TextareaEditor } from "./TextareaEditor";
 import JsonEditor from "./JsonEditor";
-import DualParameterEditor from "./DualParameterEditor";
-import SpelTemplateEditor from "./SpelTemplateEditor";
+import { DualParameterEditor } from "./DualParameterEditor";
+import { SpelTemplateEditor } from "./SpelTemplateEditor";
+import { Formatter } from "./Formatter";
 
 export type EditorProps = {
     onValueChange: (value: string) => void;
     type?: EditorType;
+    editorConfig?: Record<string, unknown>;
+    className?: string;
+    validators?: Validator[];
+    formatter?: Formatter;
+    expressionInfo?: string;
+    expressionObj?: any;
+    readOnly?: boolean;
+    showSwitch?: any;
+    showValidation?: any;
+    variableTypes?: any;
+    values?: any;
 };
 
-export type SimpleEditor<P extends EditorProps = EditorProps> = React.ComponentType<P> & {
+export type SimpleEditor<P extends EditorProps = EditorProps> = React.ComponentType<P & EditorProps> | ForwardRefExoticComponent<P>;
+
+export type ExtendedEditor<P extends EditorProps = EditorProps> = SimpleEditor<P> & {
     isSwitchableTo: (expressionObj: ExpressionObj, editorConfig) => boolean;
     switchableToHint: () => string;
     notSwitchableToHint: () => string;
 };
 
-/* eslint-enable i18next/no-literal-string */
+export function isExtendedEditor(editor: SimpleEditor | ExtendedEditor): editor is ExtendedEditor {
+    return (editor as ExtendedEditor).isSwitchableTo !== undefined;
+}
+
 export enum DualEditorMode {
     SIMPLE = "SIMPLE",
     RAW = "RAW",
 }
 
-/* eslint-disable i18next/no-literal-string */
 export enum EditorType {
     RAW_PARAMETER_EDITOR = "RawParameterEditor",
     BOOL_PARAMETER_EDITOR = "BoolParameterEditor",
@@ -82,7 +98,7 @@ export const simpleEditorValidators = (
     return concat(configuredValidators, validatorFromErrorsForFieldName, validatorFromErrorsForFieldLabel);
 };
 
-export const editors = {
+export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.BOOL_PARAMETER_EDITOR]: BoolEditor,
     [EditorType.CRON_EDITOR]: CronEditor,
     [EditorType.DATE]: DateEditor,

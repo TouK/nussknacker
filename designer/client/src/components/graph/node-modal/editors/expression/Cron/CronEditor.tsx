@@ -7,13 +7,14 @@ import Input from "../../field/Input";
 import "./cronEditorStyle.styl";
 import i18next from "i18next";
 import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../Formatter";
+import { ExtendedEditor } from "../Editor";
 
 export type CronExpression = string;
 
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    validators: Array<Validator>;
+    validators: Validator[];
     showValidation?: boolean;
     readOnly: boolean;
     isMarked: boolean;
@@ -26,7 +27,7 @@ type Props = {
 // when expression is empty - this component sets some default cron value and trigger onValueChange - we don't want that
 const NOT_EXISTING_CRON_EXPRESSION = "-1 -1 -1 -1 -1 -1 -1";
 
-export default function CronEditor(props: Props) {
+export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     const node = useRef(null);
 
     const { expressionObj, validators, isMarked, onValueChange, showValidation, readOnly, formatter } = props;
@@ -39,7 +40,7 @@ export default function CronEditor(props: Props) {
 
     function decode(expression: string): CronExpression {
         const result = cronFormatter.decode(expression);
-        return result == null ? "" : result;
+        return result == null || typeof result !== "string" ? "" : result;
     }
 
     const [value, setValue] = useState(decode(expressionObj.expression));
@@ -97,7 +98,7 @@ export default function CronEditor(props: Props) {
             )}
         </div>
     );
-}
+};
 
 CronEditor.isSwitchableTo = (expressionObj: ExpressionObj) =>
     spelFormatters[FormatterType.Cron].decode(expressionObj.expression) != null || expressionObj.expression === "";

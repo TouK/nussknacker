@@ -1,6 +1,6 @@
 import React from "react";
 import Input from "../field/Input";
-import { SimpleEditor } from "./Editor";
+import { ExtendedEditor } from "./Editor";
 import { Formatter, FormatterType, typeFormatters } from "./Formatter";
 import i18next from "i18next";
 import { ExpressionLang, ExpressionObj } from "./types";
@@ -18,7 +18,7 @@ type Props = {
 const splitConcats = (value: string) => {
     return value.split(/\s*\+\s*/gm);
 };
-const StringEditor: SimpleEditor<Props> = (props: Props) => {
+export const StringEditor: ExtendedEditor<Props> = (props: Props) => {
     const { expressionObj, onValueChange, formatter, ...passProps } = props;
     const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter;
 
@@ -26,7 +26,7 @@ const StringEditor: SimpleEditor<Props> = (props: Props) => {
         <Input
             {...passProps}
             onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
-            value={stringFormatter.decode(expressionObj.expression)}
+            value={stringFormatter.decode(expressionObj.expression) as string}
             formattedValue={expressionObj.expression}
         />
     );
@@ -43,5 +43,3 @@ StringEditor.notSwitchableToHint = () =>
         "editors.string.notSwitchableToHint",
         "Expression must be a string literal i.e. text surrounded by quotation marks to switch to basic mode",
     );
-
-export default StringEditor;

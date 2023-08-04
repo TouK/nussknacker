@@ -2,8 +2,8 @@ import React from "react";
 
 import { render, screen } from "@testing-library/react";
 import { jest } from "@jest/globals";
-import StringEditor from "../../src/components/graph/node-modal/editors/expression/StringEditor";
-import { HandledErrorType } from "../../src/components/graph/node-modal/editors/Validators";
+import { StringEditor } from "../../src/components/graph/node-modal/editors/expression/StringEditor";
+import { mockFormatter, mockValidators, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -12,18 +12,10 @@ describe(StringEditor.name, () => {
         render(
             <StringEditor
                 className={""}
-                onValueChange={jest.fn()}
+                onValueChange={mockValueChange}
                 expressionObj={{ language: "spel", expression: "" }}
-                formatter={{ encode: jest.fn(() => "test"), decode: jest.fn() }}
-                validators={[
-                    {
-                        description: () => "HandledErrorType.EmptyMandatoryParameter",
-                        handledErrorType: HandledErrorType.EmptyMandatoryParameter,
-                        validatorType: 0,
-                        isValid: () => false,
-                        message: () => "validation error",
-                    },
-                ]}
+                formatter={mockFormatter}
+                validators={mockValidators}
                 showValidation={true}
             />,
         );
