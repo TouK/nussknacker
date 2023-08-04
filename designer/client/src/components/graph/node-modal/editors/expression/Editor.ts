@@ -24,15 +24,14 @@ export type EditorProps = {
     type?: EditorType;
     editorConfig?: Record<string, unknown>;
     className?: string;
-    validators?: Validator[];
+    validators: Validator[];
     formatter?: Formatter;
     expressionInfo?: string;
     expressionObj?: ExpressionObj;
     readOnly?: boolean;
     showSwitch?: boolean;
-    showValidation?: boolean;
+    showValidation: boolean;
     variableTypes?: VariableTypes;
-    values?: string[];
 };
 
 export type SimpleEditor<P extends EditorProps = EditorProps> =

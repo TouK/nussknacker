@@ -19,9 +19,9 @@ type Props = {
     readOnly?: boolean;
     valueClassName?: string;
 
-    validators?: Validator[];
-    isMarked?: boolean;
-    showValidation?: boolean;
+    validators: Validator[];
+    isMarked: boolean;
+    showValidation: boolean;
     onValueChange: (value: string) => void;
     className: string;
     variableTypes: VariableTypes;
@@ -32,13 +32,13 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
     const { editorConfig, readOnly, valueClassName, expressionObj } = props;
     const { t } = useTranslation();
 
-    const SimpleEditor = useMemo(() => editors[editorConfig.simpleEditor.type], [editorConfig.simpleEditor.type]);
+    const Editor = useMemo(() => editors[editorConfig.simpleEditor.type], [editorConfig.simpleEditor.type]);
 
-    const showSwitch = useMemo(() => props.showSwitch && SimpleEditor, [SimpleEditor, props.showSwitch]);
+    const showSwitch = useMemo(() => props.showSwitch && Editor, [Editor, props.showSwitch]);
 
     const simpleEditorAllowsSwitch = useMemo(
-        () => isExtendedEditor(SimpleEditor) && SimpleEditor.isSwitchableTo(expressionObj, editorConfig.simpleEditor),
-        [SimpleEditor, editorConfig.simpleEditor, expressionObj],
+        () => isExtendedEditor(Editor) && Editor.isSwitchableTo(expressionObj, editorConfig.simpleEditor),
+        [Editor, editorConfig.simpleEditor, expressionObj],
     );
 
     const initialDisplaySimple = useMemo(
@@ -63,16 +63,16 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
             return t("editors.default.hint", "Switching to basic mode is disabled. You are in read-only mode");
         }
 
-        if (!isExtendedEditor(SimpleEditor)) {
+        if (!isExtendedEditor(Editor)) {
             return;
         }
 
         if (simpleEditorAllowsSwitch) {
-            return SimpleEditor?.switchableToHint();
+            return Editor?.switchableToHint();
         }
 
-        return SimpleEditor?.notSwitchableToHint();
-    }, [displayRawEditor, readOnly, simpleEditorAllowsSwitch, SimpleEditor, t]);
+        return Editor?.notSwitchableToHint();
+    }, [displayRawEditor, readOnly, simpleEditorAllowsSwitch, Editor, t]);
 
     const editorProps = useMemo(
         () => ({
@@ -90,7 +90,7 @@ export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
                 gap: 5,
             })}
         >
-            {displayRawEditor ? <RawEditor {...editorProps} /> : <SimpleEditor {...editorProps} editorConfig={editorConfig.simpleEditor} />}
+            {displayRawEditor ? <RawEditor {...editorProps} /> : <Editor {...editorProps} editorConfig={editorConfig.simpleEditor} />}
             {showSwitch ? (
                 <SwitchButton onClick={toggleRawEditor} disabled={disabled} title={hint}>
                     {displayRawEditor ? <SimpleEditorIcon type={editorConfig.simpleEditor.type} /> : <RawEditorIcon />}

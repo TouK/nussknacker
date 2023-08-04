@@ -56,7 +56,6 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                             expressionInfo={null}
                             onValueChange={setParam(fieldName)}
                             expressionObj={{ language: ExpressionLang.String, expression: state[fieldName] }}
-                            values={[]}
                             readOnly={false}
                             key={fieldName}
                             showSwitch={false}

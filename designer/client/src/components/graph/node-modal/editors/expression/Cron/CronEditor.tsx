@@ -15,11 +15,9 @@ type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
     validators: Validator[];
-    showValidation?: boolean;
+    showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
-    editorFocused: boolean;
-    className: string;
     formatter: Formatter;
 };
 

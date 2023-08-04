@@ -28,7 +28,6 @@ export default function AdditionalProperty(props: Props) {
     const { showSwitch, showValidation, propertyName, propertyConfig, propertyErrors, editedNode, onChange, renderFieldLabel, readOnly } =
         props;
 
-    const values = propertyConfig.values?.map((value) => ({ expression: value, label: value }));
     const propertyPath = `additionalFields.properties.${propertyName}`;
     const current = get(editedNode, propertyPath) || "";
     const expressionObj = { expression: current, value: current, language: ExpressionLang.String };
@@ -44,7 +43,6 @@ export default function AdditionalProperty(props: Props) {
             onValueChange={onValueChange}
             expressionObj={expressionObj}
             renderFieldLabel={renderFieldLabel}
-            values={values}
             readOnly={readOnly}
             key={propertyName}
             showSwitch={showSwitch}

@@ -17,8 +17,8 @@ export type Period = {
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    validators: Array<Validator>;
-    showValidation?: boolean;
+    validators: Validator[];
+    showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
     editorConfig: $TodoType;

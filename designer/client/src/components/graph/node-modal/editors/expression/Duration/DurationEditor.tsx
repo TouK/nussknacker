@@ -18,8 +18,8 @@ export type Duration = {
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    validators: Array<Validator>;
-    showValidation?: boolean;
+    validators: Validator[];
+    showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
     editorConfig: $TodoType;
@@ -55,7 +55,6 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
     const decode = useCallback(
         (expression: string): Duration => {
             const decodeExecResult = durationFormatter.decode(expression);
-            console.log("decodeExecResult", decodeExecResult);
 
             const duration =
                 decodeExecResult == null || typeof decodeExecResult !== "string" ? NONE_DURATION : moment.duration(decodeExecResult);

@@ -8,9 +8,9 @@ import { Validator } from "../Validators";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
-    validators?: Validator[];
+    validators: Validator[];
     isMarked?: boolean;
-    showValidation?: boolean;
+    showValidation: boolean;
     readOnly?: boolean;
     onValueChange: (value: string) => void;
     rows?: number;

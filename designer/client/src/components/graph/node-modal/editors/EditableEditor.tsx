@@ -15,7 +15,6 @@ interface Props {
     readOnly?: boolean;
     valueClassName?: string;
     param?: ParamType;
-    values?: Array<$TodoType>;
     fieldName?: string;
     isMarked?: boolean;
     showValidation?: boolean;

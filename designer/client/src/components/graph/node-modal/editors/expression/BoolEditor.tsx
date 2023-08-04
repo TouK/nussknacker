@@ -4,12 +4,15 @@ import React from "react";
 import { FixedValuesEditor } from "./FixedValuesEditor";
 import { ExpressionLang, ExpressionObj } from "./types";
 import { ExtendedEditor } from "./Editor";
+import { Validator } from "../Validators";
 
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
     readOnly: boolean;
     className: string;
+    validators: Validator[];
+    showValidation: boolean;
 };
 
 const SUPPORTED_LANGUAGE = ExpressionLang.SpEL;
@@ -22,9 +25,14 @@ const parseable = (expressionObj) => {
     return (expression === "true" || expression === "false") && language === SUPPORTED_LANGUAGE;
 };
 
-export const BoolEditor: ExtendedEditor<Props> = (props: Props) => {
-    const { expressionObj, readOnly, onValueChange, className } = props;
-
+export const BoolEditor: ExtendedEditor<Props> = ({
+    expressionObj,
+    readOnly,
+    onValueChange,
+    className,
+    validators = [],
+    showValidation = true,
+}: Props) => {
     const trueValue = { expression: TRUE_EXPRESSION, label: i18next.t("common.true", "true") };
     const falseValue = { expression: FALSE_EXPRESSION, label: i18next.t("common.false", "false") };
     const editorConfig = { possibleValues: [trueValue, falseValue] };
@@ -36,8 +44,8 @@ export const BoolEditor: ExtendedEditor<Props> = (props: Props) => {
             onValueChange={onValueChange}
             readOnly={readOnly}
             className={className}
-            validators={[]}
-            showValidation={true}
+            validators={validators}
+            showValidation={showValidation}
         />
     );
 };

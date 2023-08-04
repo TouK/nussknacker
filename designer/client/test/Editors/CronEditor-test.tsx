@@ -16,7 +16,6 @@ describe(CronEditor.name, () => {
                 isMarked={false}
                 onValueChange={mockValueChange}
                 validators={mockValidators}
-                editorFocused={false}
                 expressionObj={{ language: "spel", expression: "" }}
                 formatter={mockFormatter}
                 showValidation={true}
