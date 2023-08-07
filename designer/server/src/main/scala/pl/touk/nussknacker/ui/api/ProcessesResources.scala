@@ -18,7 +18,7 @@ import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ProcessShapeFetchStrategy, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.Error.XError
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.api.EspErrorToHttp._
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery

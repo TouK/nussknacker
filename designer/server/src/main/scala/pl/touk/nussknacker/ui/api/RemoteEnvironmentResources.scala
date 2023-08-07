@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import cats.instances.either._
 import cats.instances.list._
 import cats.syntax.traverse._
-import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.Error
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
@@ -17,7 +17,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.Error.XError
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -71,7 +71,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
 
 
   private def compareProcesses(processes: List[ProcessDetails])(implicit ec: ExecutionContext, user: LoggedUser)
-    : Future[Either[EspError, EnvironmentComparisonResult]] = {
+    : Future[Either[Error, EnvironmentComparisonResult]] = {
     val results = Future.sequence(processes.map(p => compareOneProcess(p.json)))
     results.map { comparisonResult =>
       comparisonResult.sequence[XError, ProcessDifference]
@@ -81,7 +81,7 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
   }
 
   private def withProcess[T:Encoder](processId: ProcessId, version: VersionId,
-                                     fun: (DisplayableProcess, String) => Future[Either[EspError, T]])(implicit user: LoggedUser) = {
+                                     fun: (DisplayableProcess, String) => Future[Either[Error, T]])(implicit user: LoggedUser) = {
     processRepository.fetchProcessDetailsForId[DisplayableProcess](processId, version).map {
       _.map{ details => (details.json, details.processCategory)}
     }.flatMap {
@@ -91,10 +91,10 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
   }
 
   private def compareOneProcess(process: DisplayableProcess)(implicit ec: ExecutionContext, user: LoggedUser)
-    : Future[Either[EspError, ProcessDifference]]= {
+    : Future[Either[Error, ProcessDifference]]= {
     remoteEnvironment.compare(process, None).map {
       case Right(differences) => Right(ProcessDifference(process.id, presentOnOther = true, differences))
-      case Left(RemoteEnvironmentCommunicationError(StatusCodes.NotFound, _)) => Right(ProcessDifference(process.id, presentOnOther = false, Map()))
+      case Left(RemoteEnvironmentCommunicationError(Some(StatusCodes.NotFound), _)) => Right(ProcessDifference(process.id, presentOnOther = false, Map()))
       case Left(error) => Left(error)
     }
   }

@@ -34,7 +34,7 @@ case class CustomActionRequest(name: String,
 
 case class CustomActionResult(req: CustomActionRequest, msg: String)
 
-abstract class CustomActionError extends Exception with Error {
+abstract class CustomActionError extends Exception /*with Error*/ {
   def request: CustomActionRequest
 
   def msg: String
@@ -43,22 +43,24 @@ abstract class CustomActionError extends Exception with Error {
 }
 
 case class CustomActionFailure(request: CustomActionRequest, msg: String) extends CustomActionError {
-  override val statusCode: Option[StatusCode] = Some(StatusCodes.InternalServerError)
+//  override val statusCode: Option[StatusCode] = Some(StatusCodes.InternalServerError)
 }
 
 case class CustomActionInvalidStatus(request: CustomActionRequest, stateStatusName: String) extends CustomActionError {
   override val msg: String = s"Scenario status: $stateStatusName is not allowed for action ${request.name}"
-  override val statusCode: Option[StatusCode] = Some(StatusCodes.Forbidden)
+//  override val statusCode: Option[StatusCode] = Some(StatusCodes.Forbidden)
 }
 
 case class CustomActionNotImplemented(request: CustomActionRequest) extends CustomActionError {
   override val msg: String = s"${request.name} is not implemented"
-  override val statusCode: Option[StatusCode] = Some(StatusCodes.NotImplemented)
+//  override val statusCode: Option[StatusCode] = Some(StatusCodes.NotImplemented)
 }
 
 case class CustomActionNonExisting(request: CustomActionRequest) extends CustomActionError {
   override val msg: String = s"${request.name} is not existing"
-  override val statusCode: Option[StatusCode] = Some(StatusCodes.NotFound)
+//  override val statusCode: Option[StatusCode] = Some(StatusCodes.NotFound)
 }
 
-case class CustomActionForbidden(request: CustomActionRequest, msg: String) extends CustomActionError
+case class CustomActionForbidden(request: CustomActionRequest, msg: String) extends CustomActionError {
+  //  override val statusCode: Option[StatusCode] = Some(StatusCodes.Forbidden)
+}

@@ -244,7 +244,7 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
               val params = req.params.getOrElse(Map.empty)
               complete {
                 customActionInvokerService.invokeCustomAction(req.actionName, process, params)
-                  .flatMap{res: CustomActionResult => toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)}
+                  .flatMap { res: CustomActionResult => toHttpResponse(CustomActionResponse(res))(StatusCodes.OK) }
                   .recover(EspErrorToHttp.errorToHttp)
               }
             }

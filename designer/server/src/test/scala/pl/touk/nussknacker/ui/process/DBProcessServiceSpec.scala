@@ -10,8 +10,8 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Validat
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.EspError
-import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.Error
+import pl.touk.nussknacker.ui.Error.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
@@ -136,7 +136,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   private def convertBasicProcessToFragmentDetails(process: ProcessDetails) =
     FragmentDetails(ProcessConverter.fromDisplayable(process.json), process.processCategory)
 
-  private def importSuccess(displayableProcess: DisplayableProcess): Right[EspError, ValidatedDisplayableProcess] = {
+  private def importSuccess(displayableProcess: DisplayableProcess): Right[Error, ValidatedDisplayableProcess] = {
     val meta = MetaVariables.typingResult(displayableProcess.metaData)
 
     val nodeResults = Map(
