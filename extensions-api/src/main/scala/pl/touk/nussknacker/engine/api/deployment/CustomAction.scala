@@ -34,7 +34,7 @@ case class CustomActionRequest(name: String,
 
 case class CustomActionResult(req: CustomActionRequest, msg: String)
 
-sealed trait CustomActionError extends Error {
+abstract class CustomActionError extends Exception with Error {
   def request: CustomActionRequest
 
   def msg: String
