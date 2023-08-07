@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.restmodel
 
+import io.circe.Json
 import io.circe.parser.parse
 import io.circe.syntax._
 import org.scalatest.funsuite.AnyFunSuite
@@ -15,7 +16,7 @@ class ProcessDetailsCodecSpec extends AnyFunSuite with Matchers {
 
   private val isFragment: Boolean = true
 
-  private val baseProcessDetailsWithSubprocess: String =
+  private def baseProcessDetailsWithSubprocess(isFragmentFieldName: String): String =
     s"""{
       |  "id" : "My process",
       |  "name" : "My process",
@@ -24,7 +25,6 @@ class ProcessDetailsCodecSpec extends AnyFunSuite with Matchers {
       |  "isLatestVersion" : true,
       |  "description" : "My fancy description",
       |  "isArchived" : false,
-      |  "isFragment" : false,
       |  "processingType" : "streaming",
       |  "processCategory" : "Category1",
       |  "modificationDate" : "2023-08-07T10:57:33.986223Z",
@@ -53,14 +53,23 @@ class ProcessDetailsCodecSpec extends AnyFunSuite with Matchers {
       |    "category" : "Category1"
       |  },
       |  "history" : [],
-      |  "isSubprocess" : $isFragment
+      |  "$isFragmentFieldName" : $isFragment
       |}""".stripMargin
 
-  test("decode BaseProcessDetails with isSubprocess") {
-    val validJson = parse(baseProcessDetailsWithSubprocess).toOption.get
-    val baseProcessDetails = validJson.as[BaseProcessDetails[DisplayableProcess]].toOption
+  private def compareIsFragmentField(json: Json): Unit = {
+    val baseProcessDetails = json.as[BaseProcessDetails[DisplayableProcess]].toOption
     baseProcessDetails shouldBe Symbol("defined")
     baseProcessDetails.get.isFragment shouldBe isFragment
+  }
+
+  test("decode BaseProcessDetails with isSubprocess") {
+    val validJson = parse(baseProcessDetailsWithSubprocess("isSubprocess")).toOption.get
+    compareIsFragmentField(validJson)
+  }
+
+  test("decode BaseProcessDetails with isFragment") {
+    val validJson = parse(baseProcessDetailsWithSubprocess("isFragment")).toOption.get
+    compareIsFragmentField(validJson)
   }
 
   test("encode BaseProcessDetails to json object with isSubprocess field") {
