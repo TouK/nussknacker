@@ -88,7 +88,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   override def create(designerConfig: ConfigWithUnresolvedVersion, dbConfig: DbConfig, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
 
-    implicit val sttpBackend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend.usingConfig(new DefaultAsyncHttpClientConfig.Builder().build())
+    implicit val sttpBackend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend.usingConfigBuilder(identity)
 
     val resolvedConfig = designerConfig.resolved
     val environment = resolvedConfig.getString("environment")
