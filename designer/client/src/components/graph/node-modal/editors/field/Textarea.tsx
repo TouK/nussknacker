@@ -1,26 +1,39 @@
 import classNames from "classnames";
-import { allValid } from "../Validators";
+import { allValid, Validator } from "../Validators";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import PropTypes from "prop-types";
-import React from "react";
+import React, { ChangeEvent, FC } from "react";
 import { TextAreaWithFocus } from "../../../../withFocus";
 
-export default function Textarea(props) {
-    const {
-        isMarked,
-        showValidation,
-        className,
-        placeholder,
-        autoFocus,
-        onChange,
-        value,
-        validators,
-        readOnly,
-        formattedValue,
-        inputClassName,
-        onFocus,
-    } = props;
+interface Props {
+    isMarked: boolean;
+    value: string;
+    readOnly: boolean;
+    autoFocus: boolean;
+    showValidation: boolean;
+    validators: Validator[];
+    onChange: (e: ChangeEvent<{ value: string }>) => void;
+    placeholder: string;
+    formattedValue: string;
+    className: string;
+    type: string;
+    inputClassName: string;
+    onFocus: () => void;
+}
 
+export const Textarea: FC<Props> = ({
+    isMarked,
+    showValidation,
+    className,
+    placeholder,
+    autoFocus,
+    onChange,
+    value,
+    validators,
+    readOnly,
+    formattedValue,
+    inputClassName,
+    onFocus,
+}) => {
     return (
         <div className={className}>
             <div className={isMarked ? " marked" : ""}>
@@ -44,22 +57,4 @@ export default function Textarea(props) {
             {showValidation && <ValidationLabels validators={validators} values={[formattedValue ? formattedValue : value]} />}
         </div>
     );
-}
-
-Textarea.propTypes = {
-    isMarked: PropTypes.bool,
-    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    readOnly: PropTypes.bool,
-    autoFocus: PropTypes.bool,
-    showValidation: PropTypes.bool,
-    validators: PropTypes.array,
-    onChange: PropTypes.func,
-    placeholder: PropTypes.string,
-    formattedValue: PropTypes.string,
-    className: PropTypes.string,
-    type: PropTypes.string,
-    inputClassName: PropTypes.string,
-    onFocus: PropTypes.func,
 };
-
-Textarea.defaultProps = {};

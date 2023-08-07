@@ -1,31 +1,59 @@
 import { Formatter, FormatterType, typeFormatters } from "./Formatter";
-import { ExtendedEditor } from "./Editor";
+import { EditorType, ExtendedEditor } from "./Editor";
 import i18next from "i18next";
 import React from "react";
-import Textarea from "../field/Textarea";
+import { Textarea } from "../field/Textarea";
 import { ExpressionLang } from "./types";
 import { Validator } from "../Validators";
 
 type Props = {
     expressionObj: $TodoType;
     onValueChange: (value: string) => void;
+    onFocus: () => void;
     className: string;
+    inputClassName: string;
     formatter: Formatter;
     validators: Validator[];
     showValidation: boolean;
+    isMarked: boolean;
+    autoFocus: boolean;
+    placeholder: string;
+    readOnly: boolean;
+    type: EditorType;
 };
 
-export const TextareaEditor: ExtendedEditor<Props> = (props: Props) => {
-    const { expressionObj, onValueChange, className, formatter } = props;
+export const TextareaEditor: ExtendedEditor<Props> = ({
+    expressionObj,
+    onValueChange,
+    onFocus,
+    className,
+    inputClassName,
+    formatter,
+    isMarked,
+    autoFocus,
+    validators,
+    showValidation,
+    placeholder,
+    readOnly,
+    type,
+}: Props) => {
     const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter;
 
     return (
         <Textarea
-            {...props}
+            isMarked={isMarked}
+            validators={validators}
+            showValidation={showValidation}
             onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
             value={stringFormatter.decode(expressionObj.expression) as string}
             formattedValue={expressionObj.expression}
             className={className}
+            autoFocus={autoFocus}
+            inputClassName={inputClassName}
+            onFocus={onFocus}
+            placeholder={placeholder}
+            readOnly={readOnly}
+            type={type}
         />
     );
 };
