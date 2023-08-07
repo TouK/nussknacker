@@ -244,21 +244,8 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
               val params = req.params.getOrElse(Map.empty)
               complete {
                 customActionInvokerService.invokeCustomAction(req.actionName, process, params)
-                  .transformWith {
-                    case Success(res) =>
-                      toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
-                    case Failure(err: CustomActionError) =>
-                      val response = toHttpResponse(CustomActionResponse(err)) _
-                      err match {
-                        case _: CustomActionFailure => response(StatusCodes.InternalServerError)
-                        case _: CustomActionInvalidStatus => response(StatusCodes.Forbidden)
-                        case _: CustomActionForbidden => response(StatusCodes.Forbidden)
-                        case _: CustomActionNotImplemented => response(StatusCodes.NotImplemented)
-                        case _: CustomActionNonExisting => response(StatusCodes.NotFound)
-                      }
-                    case Failure(err) =>
-                      toHttpResponse(err.getMessage)(StatusCodes.InternalServerError)
-                  }
+                  .flatMap{res: CustomActionResult => toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)}
+                  .recover(EspErrorToHttp.errorToHttp)
               }
             }
           }
