@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel
 
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import io.circe.{Decoder, Encoder}
+import io.circe.{ACursor, Decoder, Encoder, Json, JsonObject}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, Pause, ProcessActionType}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessState}
@@ -19,7 +19,25 @@ object processdetails {
 
   val StateActionsTypes: Set[ProcessActionType] = Set(Cancel, Deploy, Pause)
 
+  //TODO needed for compatibility, could be removed in NU 1.12
+  private def handleBothIsFragmentIsSubprocessInDecoder(aCursor: ACursor): ACursor = {
+    aCursor.withFocus(_.mapObject { jsonObject =>
+      val isFragment = jsonObject("isSubprocess").orElse(jsonObject("isFragment")).flatMap(_.asBoolean).getOrElse(throw new IllegalArgumentException("Missing any of [.isSubprocess, .isFragment] fields"))
+      jsonObject.add("isFragment", Json.fromBoolean(isFragment))
+    })
+  }
+
+  private def handleBothIsFragmentIsSubprocessInEncoder(jsonObject: JsonObject): JsonObject = {
+    val isFragment = jsonObject("isFragment").flatMap(_.asBoolean).getOrElse(throw new IllegalArgumentException("Missing field .isFragment"))
+    jsonObject.add("isSubprocess", Json.fromBoolean(isFragment))
+  }
+
   object BasicProcess {
+
+    implicit def encoder: Encoder[BasicProcess] = deriveConfiguredEncoder[BasicProcess].mapJsonObject(handleBothIsFragmentIsSubprocessInEncoder)
+
+    implicit def decoder: Decoder[BasicProcess] = deriveConfiguredDecoder[BasicProcess].prepare(handleBothIsFragmentIsSubprocessInDecoder)
+
     def apply[ProcessShape](baseProcessDetails: BaseProcessDetails[ProcessShape]) = new BasicProcess(
       id = baseProcessDetails.id,
       name = ProcessName(baseProcessDetails.name),
@@ -41,32 +59,32 @@ object processdetails {
     )
   }
 
-  @JsonCodec case class BasicProcess(id: String,
-                                     name: ProcessName,
-                                     processId: ApiProcessId,
-                                     processVersionId: VersionId,
-                                     isArchived: Boolean,
-                                     isFragment: Boolean,
-                                     processCategory: String,
-                                     processingType: ProcessingType,
-                                     modificationDate: Instant,
-                                     modifiedAt: Instant,
-                                     modifiedBy: String,
-                                     createdAt: Instant,
-                                     createdBy: String,
-                                     lastAction: Option[ProcessAction],
-                                     lastStateAction: Option[ProcessAction],
-                                     lastDeployedAction: Option[ProcessAction],
-                                     // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
-                                     // After that it remains always defined.
-                                     state: Option[ProcessState] = Option.empty
-                                    )
+  case class BasicProcess(id: String,
+                          name: ProcessName,
+                          processId: ApiProcessId,
+                          processVersionId: VersionId,
+                          isArchived: Boolean,
+                          isFragment: Boolean,
+                          processCategory: String,
+                          processingType: ProcessingType,
+                          modificationDate: Instant,
+                          modifiedAt: Instant,
+                          modifiedBy: String,
+                          createdAt: Instant,
+                          createdBy: String,
+                          lastAction: Option[ProcessAction],
+                          lastStateAction: Option[ProcessAction],
+                          lastDeployedAction: Option[ProcessAction],
+                          // "State" is empty only for a while - just after fetching from DB, after that it is is filled by state computed based on DeploymentManager state.
+                          // After that it remains always defined.
+                          state: Option[ProcessState] = Option.empty
+                         )
 
   object BaseProcessDetails {
     //It's necessary to encode / decode ProcessState
-    implicit def encoder[T](implicit shape: Encoder[T]): Encoder[BaseProcessDetails[T]] = deriveConfiguredEncoder
+    implicit def encoder[T](implicit shape: Encoder[T]): Encoder[BaseProcessDetails[T]] = deriveConfiguredEncoder[BaseProcessDetails[T]].mapJsonObject(handleBothIsFragmentIsSubprocessInEncoder)
 
-    implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveConfiguredDecoder
+    implicit def decoder[T](implicit shape: Decoder[T]): Decoder[BaseProcessDetails[T]] = deriveConfiguredDecoder[BaseProcessDetails[T]].prepare(handleBothIsFragmentIsSubprocessInDecoder)
   }
 
   case class BaseProcessDetails[ProcessShape](id: String, //It temporary holds the name of process, because it's used everywhere in GUI - TODO: change type to ProcessId and explicitly use processName
