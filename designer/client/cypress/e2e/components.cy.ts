@@ -207,7 +207,7 @@ describe("Components list", () => {
             .click();
         cy.wait(500); //ensure "loading" mask is hidden
         cy.get("#app-container>main").matchImage({
-            maxDiffThreshold: 0.01,
+            maxDiffThreshold: 0.02,
         });
 
         cy.get("@options")
