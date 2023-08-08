@@ -14,4 +14,4 @@ case class DeadEndReference(nodeId: String) extends EndingReference
 
 case class EndReference(nodeId: String) extends EndingReference
 
-case class FragmentEndReference(nodeId: String, declaredVariables: Map[String, Any]) extends EndingReference
+case class FragmentEndReference(nodeId: String, outputFields: Map[String, Any]) extends EndingReference

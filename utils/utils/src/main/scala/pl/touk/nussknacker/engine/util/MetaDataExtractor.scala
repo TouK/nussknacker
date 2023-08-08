@@ -13,8 +13,8 @@ object MetaDataExtractor {
     case _ => Left(())
   }
 
-  def extractTypeSpecificDataOrFail[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): T
-  = extractTypeSpecificData(metaData).fold(_ => throw new IllegalArgumentException("Wrong scenario type"), identity)
+  def extractTypeSpecificDataOrDefault[T <: TypeSpecificData](metaData: MetaData, default: T)(implicit classTag: ClassTag[T]): T
+  = extractTypeSpecificData(metaData).fold(_ => default, identity)
 
   def extractProperty(metaData: MetaData, property: String): Option[String] =
     metaData.additionalFields.properties.get(property)

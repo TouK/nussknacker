@@ -37,7 +37,7 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
 
     executionConfigPreparer.prepareExecutionConfig(env.getConfig)(processWithDeps.jobData, deploymentData)
 
-    val streamMetaData = if(processWithDeps.metaData.isFragment) StreamMetaData() else MetaDataExtractor.extractTypeSpecificDataOrFail[StreamMetaData](processWithDeps.metaData)
+    val streamMetaData = MetaDataExtractor.extractTypeSpecificDataOrDefault[StreamMetaData](processWithDeps.metaData, StreamMetaData())
     env.setRestartStrategy(processWithDeps.restartStrategy)
     streamMetaData.parallelism.foreach(env.setParallelism)
 

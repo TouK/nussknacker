@@ -268,7 +268,7 @@ object ScenarioInterpreterFactory {
           //FIXME: do we need it at all
           monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, null.asInstanceOf[Res]))))
         case fer: FragmentEndReference =>
-          monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(fer.nodeId, ir.finalContext, fer.declaredVariables.asInstanceOf[Res]))))
+          monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(fer.nodeId, ir.finalContext, fer.outputFields.asInstanceOf[Res]))))
         case _: DeadEndReference =>
           monad.pure[ResultType[PartResult]](Writer.value(Nil))
         case r: JoinReference =>

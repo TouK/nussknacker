@@ -75,7 +75,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   private def prepareTestDataGenerators(scenario: CanonicalProcess): List[(NodeId, TestDataGenerator)] = {
     for {
       source <- collectAllSources(scenario)
-      sourceObj <- prepareSourceObj(source)(scenario.metaData, NodeId(scenario.id))
+      sourceObj <- prepareSourceObj(source)(scenario.metaData, NodeId(source.id))
       testDataGenerator <- sourceObj.cast[TestDataGenerator]
     } yield (NodeId(source.id), testDataGenerator)
   }
