@@ -32,15 +32,33 @@ object ProcessAction {
   implicit val decodeProcessAction: Decoder[ProcessAction] = new Decoder[ProcessAction] {
     override def apply(c: HCursor): Result[ProcessAction] =
       for {
-        id               <- c.downField("id").as[ProcessActionId].orElse(Right(ProcessActionId(UUID.randomUUID())))
-        processId        <- c.downField("processId").as[ProcessId].orElse(Right(ProcessId(Random.nextLong())))
+        id               <- c.downField("id").as[ProcessActionId] match {
+                              case Left(_) => Right(ProcessActionId(UUID.randomUUID()))
+                              case Right(id) => Right(id)
+                            }
+        processId        <- c.downField("processId").as[ProcessId] match {
+                              case Left(_) => Right(ProcessId(Random.nextLong()))
+                              case Right(processId) => Right(processId)
+                            }
         processVersionId <- c.downField("processVersionId").as[VersionId]
         user             <- c.downField("user").as[String]
-        createdAt        <- c.downField("createdAt").as[Instant].orElse(Right(Instant.now()))
+        createdAt        <- c.downField("createdAt").as[Instant] match {
+                              case Left(_) => Right(Instant.now())
+                              case Right(createdAt) => Right(createdAt)
+                            }
         performedAt      <- c.downField("performedAt").as[Instant]
-        actionType       <- c.downField("actionType").as[ProcessActionType].orElse(c.downField("action").as[ProcessActionType])
-        state            <- c.downField("state").as[ProcessActionState].orElse(Right(ProcessActionState.InProgress))
-        failureMessage   <- c.downField("failureMessage").as[Option[String]].orElse(Right(None))
+        actionType       <- c.downField("actionType").as[ProcessActionType] match {
+                              case Left(_) => c.downField("action").as[ProcessActionType]
+                              case Right(actionType) => Right(actionType)
+                            }
+        state            <- c.downField("state").as[ProcessActionState] match {
+                              case Left(_) => Right(ProcessActionState.InProgress)
+                              case Right(state) => Right(state)
+                            }
+        failureMessage   <- c.downField("failureMessage").as[Option[String]] match {
+                              case Left(_) => Right(None)
+                              case Right(failureMessage) => Right(failureMessage)
+                            }
         commentId        <- c.downField("commentId").as[Option[Long]]
         comment          <- c.downField("comment").as[Option[String]]
         buildInfo        <- c.downField("buildInfo").as[Map[String, String]]
