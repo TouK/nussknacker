@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import io.circe.{Decoder, Encoder}
+import io.circe.Decoder.Result
+import io.circe.{Decoder, Encoder, HCursor}
 import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto.deriveEncoder
 import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
@@ -9,8 +11,9 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 
 import java.time.Instant
 import java.util.UUID
+import scala.util.Random
 
-@JsonCodec case class ProcessAction(id: ProcessActionId,
+case class ProcessAction(id: ProcessActionId,
                                     processId: ProcessId,
                                     // We use process action only for finished/execution finished actions so processVersionId is always defined
                                     processVersionId: VersionId,
@@ -24,6 +27,28 @@ import java.util.UUID
                                     commentId: Option[Long],
                                     comment: Option[String],
                                     buildInfo: Map[String, String])
+
+object ProcessAction {
+  implicit val decodeProcessAction: Decoder[ProcessAction] = new Decoder[ProcessAction] {
+    override def apply(c: HCursor): Result[ProcessAction] =
+      for {
+        id               <- c.downField("id").as[ProcessActionId].orElse(Right(ProcessActionId(UUID.randomUUID())))
+        processId        <- c.downField("processId").as[ProcessId].orElse(Right(ProcessId(Random.nextLong())))
+        processVersionId <- c.downField("processVersionId").as[VersionId]
+        user             <- c.downField("user").as[String]
+        createdAt        <- c.downField("createdAt").as[Instant].orElse(Right(Instant.now()))
+        performedAt      <- c.downField("performedAt").as[Instant]
+        actionType       <- c.downField("actionType").as[ProcessActionType].orElse(c.downField("action").as[ProcessActionType])
+        state            <- c.downField("state").as[ProcessActionState].orElse(Right(ProcessActionState.InProgress))
+        failureMessage   <- c.downField("failureMessage").as[Option[String]].orElse(Right(None))
+        commentId        <- c.downField("commentId").as[Option[Long]]
+        comment          <- c.downField("comment").as[Option[String]]
+        buildInfo        <- c.downField("buildInfo").as[Map[String, String]]
+      } yield ProcessAction(id, processId, processVersionId, user, createdAt, performedAt, actionType, state, failureMessage, commentId, comment, buildInfo)
+  }
+
+  implicit val encodeProcessAction: Encoder[ProcessAction] = deriveEncoder
+}
 
 final case class ProcessActionId(value: UUID) {
   override def toString: String = value.toString
