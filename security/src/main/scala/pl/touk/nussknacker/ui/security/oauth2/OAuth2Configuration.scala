@@ -5,6 +5,7 @@ import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.util.Implicits.SourceIsReleasable
 import pl.touk.nussknacker.engine.util.config.FicusReaders.forDecoder
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
+import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigUser
 import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, FrontendStrategySettings}
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.ProfileFormat
 import pl.touk.nussknacker.ui.security.oauth2.UsernameClaim.UsernameClaim
@@ -39,6 +40,8 @@ case class OAuth2Configuration(usersFile: URI,
                                usernameClaim: Option[UsernameClaim] = None,
                               ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
+
+  override lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsersOrEmptyList(userConfig)
 
   def authorizeUrl: Option[URI] = Option(
     Uri(authorizeUri)

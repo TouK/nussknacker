@@ -28,7 +28,7 @@ object AuthenticationConfiguration {
   val rulesConfigurationPath = "rules"
 
   def getUsers(config: Config): List[ConfigUser] = config.as[List[ConfigUser]](usersConfigurationPath)
-
+  def getUsersOrEmptyList(config: Config): List[ConfigUser] = config.as[Option[List[ConfigUser]]](usersConfigurationPath).getOrElse(Nil)
   def getRules(usersFile: URI): List[ConfigRule] = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader).as[List[ConfigRule]](rulesConfigurationPath)
   def getRules(config: Config): List[ConfigRule] = getRules(config.as[URI](usersConfigPath))
 
