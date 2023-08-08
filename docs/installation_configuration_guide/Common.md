@@ -7,6 +7,10 @@ sidebar_position: 1
 The Docker image and the binary distribution contain minimal working [configuration file](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf), which is designed as a base for further customizations using 
 additional configuration files. 
 This file is not used by the [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker), which prepares its own config file. 
+
+The location and name of the configuration file is defined by the CONFIG_FILE environment variable. Consult [Basic environment variables](../installation/Installation.md#basic-environment-variables) for information on how this variable is resolved. 
+
+For K8s based installation consult [Nussknacker Helm chart documentation](https://artifacthub.io/packages/helm/touk/nussknacker) for details of K8s specific configuration. 
 ## Configuration areas
 
 Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
