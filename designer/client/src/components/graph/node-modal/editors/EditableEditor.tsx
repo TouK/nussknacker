@@ -1,12 +1,11 @@
 import { isEmpty } from "lodash";
 import React, { useMemo } from "react";
-import { VariableTypes } from "../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../types";
 import { UnknownFunction } from "../../../../types/common";
-import { editors, EditorType, simpleEditorValidators } from "./expression/Editor";
+import { editors, EditorType, ExtendedEditor, SimpleEditor } from "./expression/Editor";
 import { spelFormatters } from "./expression/Formatter";
 import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
-import { Error, Validator } from "./Validators";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -17,34 +16,33 @@ interface Props {
     param?: ParamType;
     fieldName?: string;
     isMarked?: boolean;
-    showValidation?: boolean;
+    showValidation: boolean;
     onValueChange: (value: string) => void;
-    errors?: Error[];
+    fieldErrors: NodeValidationError[];
     variableTypes: VariableTypes;
     validationLabelInfo?: string;
-    validators?: Validator[];
 }
 
 export function EditableEditor(props: Props): JSX.Element {
-    const { expressionObj, valueClassName, param, fieldLabel, errors, fieldName, validationLabelInfo, validators = [] } = props;
+    const { expressionObj, valueClassName, param, fieldName, validationLabelInfo, fieldErrors = [] } = props;
 
     const editorType = useMemo(() => (isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type), [param]);
 
-    const Editor = useMemo(() => editors[editorType], [editorType]);
+    const Editor: SimpleEditor | ExtendedEditor = useMemo(() => editors[editorType], [editorType]);
 
-    const mergedValidators = validators.concat(simpleEditorValidators(param, errors, fieldName, fieldLabel));
-
+    console.log("fieldName", fieldName);
     const formatter = useMemo(
         () => (expressionObj.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null),
         [expressionObj.language, param?.typ?.refClazzName],
     );
 
+    const validationErrorsForField = fieldErrors.filter((error) => error.fieldName === fieldName);
     return (
         <Editor
             {...props}
             editorConfig={param?.editor}
             className={`${valueClassName ? valueClassName : "node-value"}`}
-            validators={mergedValidators}
+            fieldErrors={validationErrorsForField}
             formatter={formatter}
             expressionInfo={validationLabelInfo}
         />

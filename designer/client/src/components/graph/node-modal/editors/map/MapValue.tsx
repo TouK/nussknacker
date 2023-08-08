@@ -1,13 +1,13 @@
 import { isEqual } from "lodash";
 import React from "react";
-import { Expression, VariableTypes } from "../../../../../types";
+import { Expression, NodeValidationError, VariableTypes } from "../../../../../types";
 import { NodeValue } from "../../fragment-input-definition/NodeValue";
 import EditableEditor from "../EditableEditor";
-import { Error, Validator } from "../Validators";
+import { Validator } from "../Validators";
 
 interface MapValueProps {
     value: Expression;
-    errors?: Array<Error>;
+    fieldErrors?: NodeValidationError[];
     variableTypes: VariableTypes;
     onChange?: (value: unknown) => void;
     validators?: Validator[];
@@ -15,15 +15,17 @@ interface MapValueProps {
     readOnly?: boolean;
     isMarked?: boolean;
     validationLabelInfo?: string;
+    fieldName: string;
 }
 
 export default React.memo(function MapValue(props: MapValueProps): JSX.Element {
-    const { value, isMarked, showValidation, readOnly, onChange, errors, variableTypes, validationLabelInfo } = props;
+    const { value, isMarked, showValidation, readOnly, onChange, fieldErrors, variableTypes, validationLabelInfo, fieldName } = props;
 
+    console.log("field errors", fieldErrors);
     return (
         <NodeValue className="field">
             <EditableEditor
-                errors={errors}
+                fieldErrors={fieldErrors}
                 isMarked={isMarked}
                 readOnly={readOnly}
                 showValidation={showValidation}
@@ -33,6 +35,7 @@ export default React.memo(function MapValue(props: MapValueProps): JSX.Element {
                 valueClassName={" "}
                 variableTypes={variableTypes}
                 validationLabelInfo={validationLabelInfo}
+                fieldName={fieldName}
             />
         </NodeValue>
     );

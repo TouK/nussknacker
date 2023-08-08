@@ -50,7 +50,7 @@ export function ParameterExpressionField({
                 node.id,
                 parameterDefinitions?.find((p) => p.name === parameter.name),
             )}
-            errors={fieldErrors || []}
+            fieldErrors={fieldErrors || []}
         />
     );
 }

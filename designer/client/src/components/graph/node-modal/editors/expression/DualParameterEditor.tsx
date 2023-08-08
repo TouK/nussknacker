@@ -1,12 +1,11 @@
-import { DualEditorMode, editors, EditorType, isExtendedEditor, SimpleEditor } from "./Editor";
+import { DualEditorMode, editors, EditorType, ExtendedEditor, isExtendedEditor, SimpleEditor } from "./Editor";
 import React, { useCallback, useMemo, useState } from "react";
 import { ExpressionObj } from "./types";
 import { RawEditor } from "./RawEditor";
-import { VariableTypes } from "../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../types";
 import { css } from "@emotion/css";
 import { RawEditorIcon, SimpleEditorIcon, SwitchButton } from "./SwitchButton";
 import { useTranslation } from "react-i18next";
-import { Validator } from "../Validators";
 
 type Props = {
     editorConfig: {
@@ -19,8 +18,8 @@ type Props = {
     readOnly?: boolean;
     valueClassName?: string;
 
-    validators: Validator[];
-    isMarked: boolean;
+    fieldErrors: NodeValidationError[];
+    isMarked?: boolean;
     showValidation: boolean;
     onValueChange: (value: string) => void;
     className: string;
@@ -29,10 +28,11 @@ type Props = {
 };
 
 export const DualParameterEditor: SimpleEditor<Props> = (props: Props) => {
+    console.log("DualParameterEditor fieldErrors", props.fieldErrors);
     const { editorConfig, readOnly, valueClassName, expressionObj } = props;
     const { t } = useTranslation();
 
-    const Editor = useMemo(() => editors[editorConfig.simpleEditor.type], [editorConfig.simpleEditor.type]);
+    const Editor: SimpleEditor | ExtendedEditor = useMemo(() => editors[editorConfig.simpleEditor.type], [editorConfig.simpleEditor.type]);
 
     const showSwitch = useMemo(() => props.showSwitch && Editor, [Editor, props.showSwitch]);
 

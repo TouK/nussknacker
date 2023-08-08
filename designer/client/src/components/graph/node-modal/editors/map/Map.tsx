@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Field, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
+import { Field, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../../../types";
 import { FieldsRow } from "../../fragment-input-definition/FieldsRow";
 import { Items } from "../../fragment-input-definition/Items";
 import { NodeRowFields } from "../../fragment-input-definition/NodeRowFields";
-import { Error, mandatoryValueValidator, uniqueListValueValidator, Validator } from "../Validators";
+import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../Validators";
 import MapKey from "./MapKey";
 import MapValue from "./MapValue";
 import { isEqual } from "lodash";
@@ -14,7 +14,7 @@ export interface MapCommonProps {
     readOnly?: boolean;
     showValidation: boolean;
     variableTypes: VariableTypes;
-    fieldErrors: Error[];
+    fieldErrors: NodeValidationError[];
 }
 
 interface MapProps<F extends Field> extends MapCommonProps {
@@ -25,8 +25,6 @@ interface MapProps<F extends Field> extends MapCommonProps {
     removeField: (namespace: string, index: number) => void;
     expressionType?: Partial<TypedObjectTypingResult>;
 }
-
-export type TypedField = Field & { typeInfo: string };
 
 export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
     const { label, setProperty, addField, removeField, namespace, readOnly, showValidation, fieldErrors, variableTypes, expressionType } =
@@ -53,6 +51,9 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
     const Item = useCallback(
         ({ index, item, validators }: { index: number; item; validators: Validator[] }) => {
             const path = `${namespace}[${index}]`;
+            console.log("variableTypes", variableTypes);
+            const expressionValidators = [mandatoryValueValidator];
+
             return (
                 <FieldsRow index={index}>
                     <MapKey
@@ -61,7 +62,15 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
                         isMarked={isMarked(`${path}.name`)}
                         onChange={(value) => setProperty(`${path}.name`, value)}
                         value={item.name}
-                        validators={validators}
+                        fieldErrors={validators
+                            .filter((validator) => !validator.isValid(item.name))
+                            .map((validator) => ({
+                                message: validator.message(),
+                                typ: "",
+                                description: validator.description(),
+                                fieldName: item.name,
+                                errorType: "SaveAllowed",
+                            }))}
                     />
                     <MapValue
                         readOnly={readOnly}
@@ -70,14 +79,23 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
                         onChange={(value) => setProperty(`${path}.expression.expression`, value)}
                         validationLabelInfo={item.typeInfo}
                         value={item.expression}
-                        errors={fieldErrors}
+                        fieldErrors={expressionValidators
+                            .filter((validator) => !validator.isValid(item.expression.expression))
+                            .map((validator) => ({
+                                message: validator.message(),
+                                typ: "",
+                                description: validator.description(),
+                                fieldName: `expression-${index}`,
+                                errorType: "SaveAllowed",
+                            }))}
+                        fieldName={`expression-${index}`}
                         variableTypes={variableTypes}
                     />
                 </FieldsRow>
             );
         },
         // "variableTypes" ignored for reason
-        [isMarked, namespace, setProperty, readOnly, showValidation],
+        [namespace, readOnly, showValidation, isMarked, fieldErrors, variableTypes, setProperty],
     );
 
     const items = useMemo(

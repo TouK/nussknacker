@@ -69,7 +69,7 @@ export function JoinCustomNode({
                     showValidation={showValidation}
                     showSwitch={showSwitch}
                     isEditMode={isEditMode}
-                    errors={fieldErrors || []}
+                    fieldErrors={fieldErrors || []}
                     parameterDefinitions={parameterDefinitions}
                     setNodeDataAt={setProperty}
                     testResultsToShow={testResultsState.testResultsToShow}

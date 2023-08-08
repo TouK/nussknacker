@@ -1,5 +1,4 @@
 import { ExpressionObj } from "../types";
-import { Validator } from "../../Validators";
 import React, { useEffect, useRef, useState } from "react";
 import Cron from "react-cron-generator";
 import "react-cron-generator/dist/cron-builder.css";
@@ -8,13 +7,14 @@ import "./cronEditorStyle.styl";
 import i18next from "i18next";
 import { Formatter, FormatterType, spelFormatters, typeFormatters } from "../Formatter";
 import { ExtendedEditor } from "../Editor";
+import { NodeValidationError } from "src/types";
 
 export type CronExpression = string;
 
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    validators: Validator[];
+    fieldErrors: NodeValidationError[];
     showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
@@ -28,7 +28,7 @@ const NOT_EXISTING_CRON_EXPRESSION = "-1 -1 -1 -1 -1 -1 -1";
 export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
     const node = useRef(null);
 
-    const { expressionObj, validators, isMarked, onValueChange, showValidation, readOnly, formatter } = props;
+    const { expressionObj, fieldErrors, isMarked, onValueChange, showValidation, readOnly, formatter } = props;
 
     const cronFormatter = formatter == null ? typeFormatters[FormatterType.Cron] : formatter;
 
@@ -76,8 +76,7 @@ export const CronEditor: ExtendedEditor<Props> = (props: Props) => {
         <div ref={node} className={"cron-editor-container"}>
             <Input
                 value={value}
-                formattedValue={expressionObj.expression}
-                validators={validators}
+                fieldErrors={fieldErrors}
                 isMarked={isMarked}
                 onFocus={onInputFocus}
                 showValidation={showValidation}

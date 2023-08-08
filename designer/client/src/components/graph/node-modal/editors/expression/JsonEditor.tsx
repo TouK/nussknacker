@@ -3,18 +3,18 @@ import React, { useState } from "react";
 import AceEditor from "./ace";
 import { ExpressionObj } from "./types";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { Validator } from "../Validators";
 import { SimpleEditor } from "./Editor";
+import { NodeValidationError } from "../../../../../types";
 
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
     className: string;
     showValidation: boolean;
-    validators: Validator[];
+    fieldErrors: NodeValidationError[];
 };
 
-export const JsonEditor: SimpleEditor<Props> = ({ onValueChange, className, expressionObj, validators, showValidation }: Props) => {
+export const JsonEditor: SimpleEditor<Props> = ({ onValueChange, className, expressionObj, fieldErrors, showValidation }: Props) => {
     const [value, setValue] = useState(expressionObj.expression.replace(/^["'](.*)["']$/, ""));
 
     const onChange = (newValue: string) => {
@@ -50,7 +50,7 @@ export const JsonEditor: SimpleEditor<Props> = ({ onValueChange, className, expr
                     tabSize: 2,
                 }}
             />
-            {showValidation && <ValidationLabels validators={validators} values={[value]} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 };

@@ -4,10 +4,10 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { getProcessId } from "../../reducers/selectors/graph";
-import { Expression, UIParameter, VariableTypes } from "../../types";
+import { Expression, NodeValidationError, UIParameter, VariableTypes } from "../../types";
 import { WindowContent } from "../../windowManager";
 import { WindowKind } from "../../windowManager";
-import { editors, simpleEditorValidators } from "../graph/node-modal/editors/expression/Editor";
+import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
 import { NodeTable, NodeTableBody } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ContentSize } from "../graph/node-modal/node/ContentSize";
 import { FieldLabel } from "../graph/node-modal/FieldLabel";
@@ -16,6 +16,7 @@ import { getProcessProperties } from "../graph/node-modal/NodeDetailsContent/sel
 import { getGenericActionValidation } from "../../reducers/selectors/genericActionState";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { spelFormatters } from "../graph/node-modal/editors/expression/Formatter";
+import { isEmpty } from "lodash";
 
 export type GenericActionLayout = {
     name: string;
@@ -38,18 +39,16 @@ interface GenericAction extends GenericActionParameters {
 
 interface GenericActionDialogProps {
     action: GenericAction;
-    setIsValid: (boolean) => void;
+    fieldErrors: NodeValidationError[];
     value: { [p: string]: Expression };
     setValue: (value: ((prevState: { [p: string]: Expression }) => { [p: string]: Expression }) | { [p: string]: Expression }) => void;
 }
 
 function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
-    const { value, setValue, action, setIsValid } = props;
+    const { value, setValue, action, fieldErrors } = props;
     const dispatch = useDispatch();
-    const validationResult = useSelector(getGenericActionValidation);
     const processId = useSelector(getProcessId);
     const processProperties = useSelector(getProcessProperties);
-    const [validators, setValidators] = useState({});
     const setParam = useCallback(
         (name: string) => (value: any) => {
             action.onParamUpdate(name)(value);
@@ -57,19 +56,6 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
         },
         [dispatch, value],
     );
-
-    useEffect(() => {
-        const parameterValidators = action?.parameters.reduce((object, uiParam) => {
-            const paramValidators = simpleEditorValidators(uiParam, validationResult.validationErrors, uiParam.name, uiParam.name);
-            return { ...object, [uiParam.name]: paramValidators };
-        }, {});
-        const areParamsValid = Object.keys(parameterValidators).reduce(
-            (a, name) => a && parameterValidators[name].every((v) => v.isValid(value[name].expression)),
-            true,
-        );
-        setIsValid(areParamsValid);
-        setValidators(parameterValidators);
-    }, [value, validationResult, dispatch, setValue]);
 
     useEffect(() => {
         dispatch(
@@ -94,7 +80,7 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                 <NodeTable>
                     <NodeTableBody>
                         {(action?.parameters || []).map((param) => {
-                            const Editor = editors[param.editor.type];
+                            const Editor: SimpleEditor | ExtendedEditor = editors[param.editor.type];
                             const fieldName = param.name;
                             const formatter =
                                 param.defaultValue.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null;
@@ -104,18 +90,16 @@ function GenericActionForm(props: GenericActionDialogProps): JSX.Element {
                                     <Editor
                                         editorConfig={param?.editor}
                                         className={"node-value"}
-                                        validators={validators[fieldName] || []}
+                                        fieldErrors={fieldErrors}
                                         formatter={formatter}
                                         expressionInfo={null}
                                         onValueChange={setParam(fieldName)}
                                         expressionObj={value[fieldName]}
-                                        values={[]}
                                         readOnly={false}
                                         key={fieldName}
                                         showSwitch={true}
                                         showValidation={true}
                                         variableTypes={action.variableTypes}
-                                        errors={{}}
                                     />
                                 </div>
                             );
@@ -140,12 +124,14 @@ export function GenericActionDialog(props: WindowContentProps<WindowKind, Generi
             {},
         ),
     );
-    const [isValid, setIsValid] = useState(false);
+    const { validationErrors } = useSelector(getGenericActionValidation);
+    const isValid = isEmpty(validationErrors);
 
     const confirm = useCallback(async () => {
         action.onConfirmAction(value);
         props.close();
     }, [processId, action.layout.name, value, props]);
+
     const cancelText = action.layout.cancelText ? action.layout.cancelText : "cancel";
     const confirmText = action.layout.confirmText ? action.layout.confirmText : "confirm";
     const buttons: WindowButtonProps[] = useMemo(
@@ -153,13 +139,13 @@ export function GenericActionDialog(props: WindowContentProps<WindowKind, Generi
             { title: t(`dialog.generic.button.${cancelText}`, cancelText), action: () => props.close() },
             { title: t(`dialog.generic.button.${confirmText}`, confirmText), action: () => confirm(), disabled: !isValid },
         ],
-        [confirm, props, t],
+        [cancelText, confirm, confirmText, isValid, props, t],
     );
 
     return (
         <WindowContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ padding: "1em", minWidth: 600 }))}>
-                <GenericActionForm action={action} setIsValid={setIsValid} value={value} setValue={setValue} />
+                <GenericActionForm action={action} fieldErrors={validationErrors} value={value} setValue={setValue} />
             </div>
         </WindowContent>
     );

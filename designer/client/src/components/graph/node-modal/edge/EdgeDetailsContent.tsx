@@ -56,6 +56,7 @@ export default function EdgeDetailsContent(props: Props): JSX.Element | null {
                         showValidation={showValidation}
                         showSwitch={showSwitch}
                         onValueChange={changeEdgeTypeCondition}
+                        fieldErrors={[]}
                     />
                 </BaseModalContent>
             );

@@ -1,14 +1,13 @@
 import React from "react";
 import ExpressionField from "./editors/expression/ExpressionField";
 import ProcessUtils from "../../../common/ProcessUtils";
-import { NodeType, UIParameter } from "../../../types";
-import { Error } from "./editors/Validators";
+import { NodeType, NodeValidationError, UIParameter } from "../../../types";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
 
 export interface BranchParametersProps {
     node: NodeType;
     parameterDefinitions: UIParameter[];
-    errors: Error[];
+    fieldErrors: NodeValidationError[];
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     findAvailableVariables: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     testResultsToShow: NodeResultsForContext;
@@ -20,7 +19,7 @@ export interface BranchParametersProps {
 export default function BranchParameters({
     node,
     showValidation,
-    errors,
+    fieldErrors,
     showSwitch,
     isEditMode,
     parameterDefinitions,
@@ -30,6 +29,8 @@ export default function BranchParameters({
 }: BranchParametersProps): JSX.Element {
     //TODO: maybe we can rely only on node?
     const branchParameters = parameterDefinitions?.filter((p) => p.branchParam);
+
+    console.log("BranchParameters", fieldErrors);
     return (
         <>
             {branchParameters?.map((param) => {
@@ -75,7 +76,7 @@ export default function BranchParameters({
                                                     testResultsToShow={testResultsToShow}
                                                     renderFieldLabel={() => false}
                                                     variableTypes={variables}
-                                                    errors={errors}
+                                                    fieldErrors={fieldErrors}
                                                 />
                                             </div>
                                         </div>

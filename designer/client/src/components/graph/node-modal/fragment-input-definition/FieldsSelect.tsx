@@ -2,12 +2,12 @@ import { isEqual } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { Parameter } from "../../../../types";
 import MapKey from "../editors/map/MapKey";
-import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 import { DndItems } from "./DndItems";
 import { FieldsRow } from "./FieldsRow";
 import { NodeRowFields } from "./NodeRowFields";
 import { TypeSelect } from "./TypeSelect";
 import { useDiffMark } from "../PathsToMark";
+import { mandatoryValueValidator, uniqueListValueValidator, Validator } from "../editors/Validators";
 
 export interface Option {
     value: string;
@@ -51,7 +51,15 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
                         isMarked={isMarked(`${path}.name`)}
                         onChange={(value) => onChange(`${path}.name`, value)}
                         value={item.name}
-                        validators={validators}
+                        fieldErrors={validators
+                            .filter((validator) => !validator.isValid(item.name))
+                            .map((validator) => ({
+                                message: validator.message(),
+                                typ: "",
+                                description: validator.description(),
+                                fieldName: item.name,
+                                errorType: "SaveAllowed",
+                            }))}
                     />
                     <TypeSelect
                         readOnly={readOnly}

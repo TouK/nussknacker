@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo } from "react";
 import { ExpressionObj } from "../types";
-import { Validator } from "../../Validators";
 import "./timeRange.styl";
 import TimeRangeEditor from "./TimeRangeEditor";
 import i18next from "i18next";
@@ -8,6 +7,7 @@ import { Formatter, FormatterType, typeFormatters } from "../Formatter";
 import moment from "moment";
 import { isEmpty } from "lodash";
 import { ExtendedEditor } from "../Editor";
+import { NodeValidationError } from "src/types";
 
 export type Duration = {
     days: number;
@@ -18,7 +18,7 @@ export type Duration = {
 type Props = {
     expressionObj: ExpressionObj;
     onValueChange: (value: string) => void;
-    validators: Validator[];
+    fieldErrors: NodeValidationError[];
     showValidation: boolean;
     readOnly: boolean;
     isMarked: boolean;
@@ -35,7 +35,7 @@ const NONE_DURATION = {
 };
 
 export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
-    const { expressionObj, onValueChange, validators, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
+    const { expressionObj, onValueChange, fieldErrors, showValidation, readOnly, isMarked, editorConfig, formatter } = props;
 
     const durationFormatter = useMemo(() => (formatter == null ? typeFormatters[FormatterType.Duration] : formatter), [formatter]);
 
@@ -75,7 +75,7 @@ export const DurationEditor: ExtendedEditor<Props> = (props: Props) => {
             editorConfig={editorConfig}
             readOnly={readOnly}
             showValidation={showValidation}
-            validators={validators}
+            fieldErrors={fieldErrors}
             expression={expressionObj.expression}
             isMarked={isMarked}
         />

@@ -7,7 +7,7 @@ import "ace-builds/src-noconflict/ext-language_tools";
 import { SqlEditor } from "../../src/components/graph/node-modal/editors/expression/SqlEditor";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
-import { mockFormatter, mockValidators, mockValueChange } from "./helpers";
+import { mockErrors, mockFormatter, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -36,7 +36,7 @@ describe(SqlEditor.name, () => {
                     readOnly={false}
                     isMarked={false}
                     onValueChange={mockValueChange}
-                    validators={mockValidators}
+                    fieldErrors={mockErrors}
                     expressionObj={{ language: "spel", expression: "" }}
                     showValidation={true}
                     className={""}

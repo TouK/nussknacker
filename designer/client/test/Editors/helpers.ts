@@ -1,14 +1,14 @@
 import { jest } from "@jest/globals";
-import { HandledErrorType } from "../../src/components/graph/node-modal/editors/Validators";
+import { NodeValidationError } from "../../src/types";
 
 export const mockFormatter = { encode: jest.fn(() => "test"), decode: jest.fn(() => "test") };
-export const mockValidators = [
+export const mockErrors: NodeValidationError[] = [
     {
-        description: () => "HandledErrorType.EmptyMandatoryParameter",
-        handledErrorType: HandledErrorType.EmptyMandatoryParameter,
-        validatorType: 0,
-        isValid: () => false,
-        message: () => "validation error",
+        description: "HandledErrorType.EmptyMandatoryParameter",
+        message: "validation error",
+        typ: "EmptyMandatoryParameter",
+        errorType: "SaveAllowed",
+        fieldName: "name",
     },
 ];
 export const mockValueChange = jest.fn();

@@ -3,7 +3,7 @@ import * as React from "react";
 import { render, screen } from "@testing-library/react";
 import { jest } from "@jest/globals";
 import { DateTimeEditor } from "../../src/components/graph/node-modal/editors/expression/DateTimeEditor";
-import { mockFormatter, mockValidators, mockValueChange } from "./helpers";
+import { mockFormatter, mockErrors, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 jest.mock("react-i18next", () => ({
@@ -22,7 +22,7 @@ describe(DateTimeEditor.name, () => {
                 className={""}
                 isMarked={false}
                 onValueChange={mockValueChange}
-                validators={mockValidators}
+                fieldErrors={mockErrors}
                 editorFocused={false}
                 expressionObj={{ language: "spel", expression: "" }}
                 formatter={mockFormatter}

@@ -37,7 +37,7 @@ describe("test validation labels", () => {
             //when
             render(
                 <I18nextProvider i18n={i18n}>
-                    <ValidationLabels validators={validators} values={[""]} />
+                    <ValidationLabels fieldErrors={[]} />
                 </I18nextProvider>,
             );
 

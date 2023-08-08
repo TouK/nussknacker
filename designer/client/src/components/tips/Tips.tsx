@@ -45,7 +45,7 @@ export default function Tips(): JSX.Element {
                             />
                         }
                         {!ProcessUtils.hasNoErrors(currentProcess) && (
-                            <Errors errors={errors} showDetails={showDetails} currentProcess={currentProcess} />
+                            <Errors fieldErrors={errors} showDetails={showDetails} currentProcess={currentProcess} />
                         )}
                         {!ProcessUtils.hasNoWarnings(currentProcess) && (
                             <Warnings

@@ -3,7 +3,7 @@ import * as React from "react";
 import { render, screen } from "@testing-library/react";
 import { jest } from "@jest/globals";
 import { FixedValuesEditor } from "../../src/components/graph/node-modal/editors/expression/FixedValuesEditor";
-import { mockValidators, mockValueChange } from "./helpers";
+import { mockErrors, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -13,7 +13,7 @@ describe(FixedValuesEditor.name, () => {
             <FixedValuesEditor
                 readOnly={false}
                 onValueChange={mockValueChange}
-                validators={mockValidators}
+                fieldErrors={mockErrors}
                 editorConfig={{
                     possibleValues: [],
                 }}

@@ -37,10 +37,10 @@ export type AdditionalPropertiesConfig = Record<string, AdditionalPropertyConfig
 
 //"ReturnType" is builtin type alias
 export interface ReturnedType {
-    display: string;
-    type: string;
+    display: string; //TODO: Check if we need this type required
+    type: string; //TODO: Check if we need this type required
     refClazzName: string;
-    params: [];
+    params: []; //TODO: Check if we need this type required
 }
 
 export interface NodeObjectTypeDefinition {

@@ -3,12 +3,10 @@ import { RawEditor } from "./RawEditor";
 import { SqlEditor } from "./SqlEditor";
 import { StringEditor } from "./StringEditor";
 import { FixedValuesEditor } from "./FixedValuesEditor";
-import { concat, isEmpty, omit } from "lodash";
 import { ExpressionObj } from "./types";
 import React, { ForwardRefExoticComponent } from "react";
 import { DateEditor, DateTimeEditor, TimeEditor } from "./DateTimeEditor";
 
-import { Error, errorValidator, mandatoryValueValidator, Validator, validators } from "../Validators";
 import { DurationEditor } from "./Duration/DurationEditor";
 import { PeriodEditor } from "./Duration/PeriodEditor";
 import { CronEditor } from "./Cron/CronEditor";
@@ -17,14 +15,14 @@ import JsonEditor from "./JsonEditor";
 import { DualParameterEditor } from "./DualParameterEditor";
 import { SpelTemplateEditor } from "./SpelTemplateEditor";
 import { Formatter } from "./Formatter";
-import { VariableTypes } from "../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../types";
 
 export type EditorProps = {
-    onValueChange: (value: string) => void;
+    onValueChange?: (value: string) => void;
     type?: EditorType;
     editorConfig?: Record<string, unknown>;
     className?: string;
-    validators: Validator[];
+    fieldErrors: NodeValidationError[];
     formatter?: Formatter;
     expressionInfo?: string;
     expressionObj?: ExpressionObj;
@@ -70,35 +68,6 @@ export enum EditorType {
     SQL_PARAMETER_EDITOR = "SqlParameterEditor",
     SPEL_TEMPLATE_PARAMETER_EDITOR = "SpelTemplateParameterEditor",
 }
-
-const configureValidators = (paramConfig: $TodoType): Array<Validator> => {
-    //It's for special nodes like Filter, Switch, etc.. These nodes don't have params and all fields are required
-    if (paramConfig == null) {
-        return [mandatoryValueValidator];
-    }
-
-    //Try to create validators with args - all configuration is from BE. It's dynamic mapping
-    return (paramConfig.validators || [])
-        .map((v) => ({ fun: validators[v.type], args: omit(v, ["type"]) }))
-        .filter((v) => v.fun != null)
-        .map((v) => v.fun(v.args));
-};
-
-export const simpleEditorValidators = (
-    paramConfig: $TodoType,
-    errors: Error[],
-    fieldName: string,
-    fieldLabel: string,
-): Array<Validator> => {
-    const configuredValidators = configureValidators(paramConfig);
-    // Identifier or field is in one of places: fieldName or fieldLabel. Because of this we need to collect errors from both of them.
-    // Especially for branch fields, "common" branch parameter identifier is in fieldLabel and identifier for specific branch is in fieldName.
-    // We want to handle both error types: common branch parameter errors and errors for specific branch.
-    const validatorFromErrorsForFieldName = fieldName == null || isEmpty(errors) ? [] : [errorValidator(errors, fieldName)];
-    const validatorFromErrorsForFieldLabel =
-        fieldLabel == null || fieldLabel == fieldName || isEmpty(errors) ? [] : [errorValidator(errors, fieldLabel)];
-    return concat(configuredValidators, validatorFromErrorsForFieldName, validatorFromErrorsForFieldLabel);
-};
 
 export const editors: Record<EditorType, SimpleEditor | ExtendedEditor> = {
     [EditorType.BOOL_PARAMETER_EDITOR]: BoolEditor,

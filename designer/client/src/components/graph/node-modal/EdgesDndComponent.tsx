@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { getProcessToDisplay } from "../../../reducers/selectors/graph";
-import { Edge, EdgeKind, VariableTypes } from "../../../types";
+import { Edge, EdgeKind, NodeValidationError, VariableTypes } from "../../../types";
 import { NodeRowFields } from "./fragment-input-definition/NodeRowFields";
 import { DndItems } from "./fragment-input-definition/DndItems";
 import { EdgeFields } from "./EdgeFields";
@@ -10,6 +10,7 @@ import NodeUtils from "../NodeUtils";
 import { EdgeTypeOption } from "./EdgeTypeSelect";
 import { Error, errorValidator, mandatoryValueValidator } from "./editors/Validators";
 import { defaultsDeep } from "lodash";
+import { ValidationError } from "../../modals/ValidationLabels";
 
 interface EdgeType extends Partial<EdgeTypeOption> {
     value: EdgeKind;
@@ -26,7 +27,7 @@ interface Props {
     edgeTypes: EdgeType[];
     ordered?: boolean;
     variableTypes?: VariableTypes;
-    fieldErrors?: Error[];
+    fieldErrors?: NodeValidationError[];
 }
 
 export type WithTempId<T> = T & { _id?: string };
@@ -117,12 +118,12 @@ export function EdgesDndComponent(props: Props): JSX.Element {
                         edges={array}
                         types={types}
                         variableTypes={variableTypes}
-                        validators={[mandatoryValueValidator, errorValidator(fieldErrors, edge._id || edge.to)]}
+                        fieldErrors={fieldErrors}
                     />
                 ),
             };
         });
-    }, [edgeTypes, edges, readOnly, replaceEdge, variableTypes, fieldErrors]);
+    }, [edgeTypes, edges, fieldErrors, readOnly, replaceEdge, variableTypes]);
 
     const namespace = `edges`;
 

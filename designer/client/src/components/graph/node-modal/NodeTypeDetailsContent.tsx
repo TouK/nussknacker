@@ -148,6 +148,7 @@ export function NodeTypeDetailsContent({
         });
     }, [adjustNode, setEditedNode]);
 
+    console.log("works", NodeUtils.nodeType(node), fieldErrors);
     switch (NodeUtils.nodeType(node)) {
         case "Source":
             return (

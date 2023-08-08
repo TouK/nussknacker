@@ -56,7 +56,7 @@ function GenerateTestDataDialog(props: WindowContentProps): JSX.Element {
                     })}
                     autoFocus
                 />
-                <ValidationLabels validators={validators} values={[testSampleSize]} />
+                <ValidationLabels fieldErrors={[]} />
             </div>
         </PromptContent>
     );

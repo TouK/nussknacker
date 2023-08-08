@@ -67,7 +67,7 @@ export function Properties({
                     showValidation={showValidation}
                     propertyName={propName}
                     propertyConfig={propConfig}
-                    propertyErrors={fieldErrors || []}
+                    fieldErrors={fieldErrors || []}
                     onChange={setProperty}
                     renderFieldLabel={renderFieldLabel}
                     editedNode={node}

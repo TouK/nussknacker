@@ -1,9 +1,8 @@
 import React, { useCallback } from "react";
-import { Error, errorValidator, mandatoryValueValidator } from "./editors/Validators";
 import EditableEditor from "./editors/EditableEditor";
 import LabeledInput from "./editors/field/LabeledInput";
 import LabeledTextarea from "./editors/field/LabeledTextarea";
-import { NodeType, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes } from "../../../types";
+import { NodeType, NodeValidationError, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes } from "../../../types";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { useDiffMark } from "./PathsToMark";
 import { useSelector } from "react-redux";
@@ -23,10 +22,10 @@ interface Props {
     node: NodeType;
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation: boolean;
+    fieldErrors: NodeValidationError[];
     showSwitch?: boolean;
     variableTypes: VariableTypes;
     renderFieldLabel: (paramName: string) => JSX.Element;
-    fieldErrors?: Error[];
 }
 
 export default function Variable({
@@ -62,7 +61,7 @@ export default function Variable({
                 isMarked={isMarked("varName")}
                 readOnly={readOnly}
                 showValidation={showValidation}
-                validators={[mandatoryValueValidator, errorValidator(fieldErrors, "varName")]}
+                fieldErrors={fieldErrors}
             >
                 {renderFieldLabel("Variable Name")}
             </LabeledInput>
@@ -75,7 +74,7 @@ export default function Variable({
                 readOnly={readOnly}
                 showValidation={showValidation}
                 showSwitch={false}
-                errors={fieldErrors}
+                fieldErrors={fieldErrors}
                 variableTypes={variableTypes}
                 validationLabelInfo={inferredVariableType}
             />
@@ -85,6 +84,7 @@ export default function Variable({
                 isMarked={isMarked("additionalFields.description")}
                 readOnly={readOnly}
                 className={"node-input"}
+                fieldErrors={fieldErrors}
             >
                 {renderFieldLabel("Description")}
             </LabeledTextarea>

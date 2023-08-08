@@ -1,8 +1,7 @@
 import React, { PropsWithChildren, useCallback } from "react";
-import { Field, NodeType } from "../../../types";
+import { Field, NodeType, NodeValidationError } from "../../../types";
 import LabeledInput from "./editors/field/LabeledInput";
 import LabeledTextarea from "./editors/field/LabeledTextarea";
-import { Error, errorValidator, mandatoryValueValidator } from "./editors/Validators";
 import { NodeTableBody } from "./NodeDetailsContent/NodeTable";
 import { useDiffMark } from "./PathsToMark";
 
@@ -12,7 +11,7 @@ export interface NodeDetailsProps<F extends Field> {
     readOnly?: boolean;
     showValidation: boolean;
     renderFieldLabel: (label: string) => React.ReactNode;
-    fieldErrors: Error[];
+    fieldErrors: NodeValidationError[];
 }
 
 interface NodeCommonDetailsDefinitionProps<F extends Field> extends PropsWithChildren<NodeDetailsProps<F>> {
@@ -40,7 +39,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                 isMarked={isMarked("id")}
                 readOnly={readOnly}
                 showValidation={showValidation}
-                validators={[mandatoryValueValidator]}
+                fieldErrors={fieldErrors}
             >
                 {renderFieldLabel("Name")}
             </LabeledInput>
@@ -52,7 +51,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({ children, ...prop
                     isMarked={isMarked(outputField)}
                     readOnly={readOnly}
                     showValidation={showValidation}
-                    validators={[mandatoryValueValidator, errorValidator(fieldErrors, outputField)]}
+                    fieldErrors={fieldErrors}
                 >
                     {renderFieldLabel(outputName)}
                 </LabeledInput>

@@ -11,7 +11,7 @@ import { UnknownRecord } from "../../types/common";
 import { WindowContent } from "../../windowManager";
 import { WindowKind } from "../../windowManager";
 import { ChangeableValue } from "../ChangeableValue";
-import { editors } from "../graph/node-modal/editors/expression/Editor";
+import { editors, ExtendedEditor, SimpleEditor } from "../graph/node-modal/editors/expression/Editor";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ValidationLabel } from "../common/ValidationLabel";
@@ -37,11 +37,12 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
 
     useEffect(() => onChange(state), [onChange, state]);
 
+    console.log("props check", props);
     return (
         <NodeTable>
             {(action?.parameters || []).map((param) => {
                 const editorType = param.editor.type;
-                const Editor = editors[editorType];
+                const Editor: SimpleEditor | ExtendedEditor = editors[editorType];
                 const fieldName = param.name;
                 return (
                     <div className={"node-row"} key={param.name}>
@@ -51,7 +52,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                         <Editor
                             editorConfig={param?.editor}
                             className={"node-value"}
-                            validators={[]}
+                            fieldErrors={[]}
                             formatter={null}
                             expressionInfo={null}
                             onValueChange={setParam(fieldName)}

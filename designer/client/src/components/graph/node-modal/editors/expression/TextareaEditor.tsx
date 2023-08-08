@@ -4,22 +4,22 @@ import i18next from "i18next";
 import React from "react";
 import { Textarea } from "../field/Textarea";
 import { ExpressionLang } from "./types";
-import { Validator } from "../Validators";
+import { NodeValidationError } from "src/types";
 
 type Props = {
-    expressionObj: $TodoType;
-    onValueChange: (value: string) => void;
-    onFocus: () => void;
-    className: string;
-    inputClassName: string;
-    formatter: Formatter;
-    validators: Validator[];
+    expressionObj?: $TodoType;
+    onValueChange?: (value: string) => void;
+    onFocus?: () => void;
+    className?: string;
+    inputClassName?: string;
+    formatter?: Formatter;
+    fieldErrors: NodeValidationError[];
     showValidation: boolean;
-    isMarked: boolean;
-    autoFocus: boolean;
-    placeholder: string;
-    readOnly: boolean;
-    type: EditorType;
+    isMarked?: boolean;
+    autoFocus?: boolean;
+    placeholder?: string;
+    readOnly?: boolean;
+    type?: EditorType;
 };
 
 export const TextareaEditor: ExtendedEditor<Props> = ({
@@ -31,7 +31,7 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
     formatter,
     isMarked,
     autoFocus,
-    validators,
+    fieldErrors,
     showValidation,
     placeholder,
     readOnly,
@@ -42,7 +42,7 @@ export const TextareaEditor: ExtendedEditor<Props> = ({
     return (
         <Textarea
             isMarked={isMarked}
-            validators={validators}
+            fieldErrors={fieldErrors}
             showValidation={showValidation}
             onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
             value={stringFormatter.decode(expressionObj.expression) as string}

@@ -50,7 +50,7 @@ export function AddProcessForm({ nameValidators, value, onChange }: AddProcessFo
                                 value={value.processId}
                                 onChange={(e) => onFieldChange("processId", e.target.value)}
                             />
-                            <ValidationLabels validators={nameValidators} values={[value.processId]} />
+                            <ValidationLabels fieldErrors={[]} />
                         </div>
                     </div>
                     <div className="node-row">

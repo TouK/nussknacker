@@ -28,6 +28,7 @@ export function VariableBuilder({
 }): JSX.Element {
     const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id));
 
+    console.log("map variable");
     return (
         <MapVariable
             renderFieldLabel={renderFieldLabel}

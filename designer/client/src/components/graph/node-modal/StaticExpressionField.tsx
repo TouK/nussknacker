@@ -46,7 +46,7 @@ export function StaticExpressionField({
             testResultsToShow={testResultsState.testResultsToShow}
             renderFieldLabel={renderFieldLabel}
             variableTypes={findAvailableVariables(node.id, undefined)}
-            errors={fieldErrors || []}
+            fieldErrors={fieldErrors || []}
         />
     );
 }

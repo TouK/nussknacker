@@ -1,10 +1,8 @@
-/* eslint-disable i18next/no-literal-string */
 import React, { useCallback } from "react";
-import { Field, NodeType, TypedObjectTypingResult, VariableTypes } from "../../../types";
+import { Field, NodeType, NodeValidationError, TypedObjectTypingResult, VariableTypes } from "../../../types";
 import { ExpressionLang } from "./editors/expression/types";
 import Map from "./editors/map/Map";
 import { NodeCommonDetailsDefinition } from "./NodeCommonDetailsDefinition";
-import { Error } from "./editors/Validators";
 
 export interface MapVariableProps<F extends Field> {
     node: NodeType<F>;
@@ -12,7 +10,7 @@ export interface MapVariableProps<F extends Field> {
     readOnly?: boolean;
     showValidation: boolean;
     renderFieldLabel: (label: string) => React.ReactNode;
-    fieldErrors: Error[];
+    fieldErrors: NodeValidationError[];
     removeElement: (namespace: string, ix: number) => void;
     addElement: (property: string, element: F) => void;
     variableTypes: VariableTypes;
@@ -20,7 +18,7 @@ export interface MapVariableProps<F extends Field> {
 }
 
 function MapVariable<F extends Field>(props: MapVariableProps<F>): JSX.Element {
-    const { removeElement, addElement, variableTypes, expressionType, ...passProps } = props;
+    const { removeElement, addElement, variableTypes, expressionType, fieldErrors, ...passProps } = props;
     const { node, ...mapProps } = passProps;
 
     const addField = useCallback(
@@ -32,9 +30,10 @@ function MapVariable<F extends Field>(props: MapVariableProps<F>): JSX.Element {
     );
 
     return (
-        <NodeCommonDetailsDefinition {...props} outputName="Variable Name" outputField="varName">
+        <NodeCommonDetailsDefinition {...props} fieldErrors={fieldErrors} outputName="Variable Name" outputField="varName">
             <Map
                 {...mapProps}
+                fieldErrors={fieldErrors}
                 label="Fields"
                 namespace="fields"
                 fields={node.fields}

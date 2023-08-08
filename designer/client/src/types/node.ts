@@ -53,13 +53,14 @@ export type FragmentNodeType = NodeType;
 
 export type Field = {
     name: string;
-    expression: Expression;
+    expression?: Expression;
 };
 
 export interface Parameter {
     name: string;
-    expression: Expression;
+    expression?: Expression; //TODO: Check if we need this type
     typ?: ReturnedType;
+    uuid?: string;
 }
 
 export interface Expression {

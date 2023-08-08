@@ -5,11 +5,11 @@ import { TextAreaWithFocus, TextAreaWithFocusProps } from "../../../../withFocus
 import { LabeledInputProps } from "./LabeledInput";
 
 export interface LabeledTextareaProps
-    extends Pick<LabeledInputProps, "value" | "isMarked" | "children" | "showValidation" | "validators">,
+    extends Pick<LabeledInputProps, "value" | "isMarked" | "children" | "showValidation" | "fieldErrors">,
         Pick<TextAreaWithFocusProps, "className" | "autoFocus" | "onChange" | "readOnly" | "cols" | "rows"> {}
 
 export default function LabeledTextarea(props: LabeledTextareaProps): JSX.Element {
-    const { value, className, isMarked, rows = 1, cols = 50, children, showValidation, validators, ...passProps } = props;
+    const { value, className, isMarked, rows = 1, cols = 50, children, showValidation, fieldErrors, ...passProps } = props;
 
     const lineEndPattern = /\r\n|\r|\n/;
 
@@ -24,7 +24,7 @@ export default function LabeledTextarea(props: LabeledTextareaProps): JSX.Elemen
                     className={className}
                     value={value}
                 />
-                {showValidation && <ValidationLabels validators={validators} values={[value]} />}
+                {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
             </div>
         </div>
     );

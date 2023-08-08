@@ -7,7 +7,7 @@ import { concat, difference, isEmpty } from "lodash";
 import { NodeType, Process, ValidationErrors } from "../../types";
 
 interface Props {
-    errors: ValidationErrors;
+    fieldErrors: ValidationErrors;
     showDetails: (event: SyntheticEvent, details: NodeType) => void;
     currentProcess: Process;
 }
@@ -15,7 +15,7 @@ interface Props {
 export default class Errors extends React.Component<Props> {
     render() {
         const {
-            errors = {
+            fieldErrors = {
                 globalErrors: [],
                 invalidNodes: {},
                 processPropertiesErrors: [],
@@ -23,8 +23,8 @@ export default class Errors extends React.Component<Props> {
         } = this.props;
         return (
             <div key={uuid4()} className={"error-tips"}>
-                {this.headerIcon(errors)}
-                {this.errorTips(errors)}
+                {this.headerIcon(fieldErrors)}
+                {this.errorTips(fieldErrors)}
             </div>
         );
     }

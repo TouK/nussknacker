@@ -5,6 +5,7 @@ import React, { useCallback, useMemo } from "react";
 import { ExpressionLang } from "./editors/expression/types";
 import { errorValidator, PossibleValue } from "./editors/Validators";
 import { NodeValidationError } from "../../../types";
+import { ValidationError } from "../../modals/ValidationLabels";
 
 export interface AdditionalPropertyConfig {
     editor: any;
@@ -17,21 +18,20 @@ interface Props {
     showValidation: boolean;
     propertyName: string;
     propertyConfig: AdditionalPropertyConfig;
-    propertyErrors: NodeValidationError[];
     editedNode: any;
     onChange: UnknownFunction;
     renderFieldLabel: UnknownFunction;
     readOnly: boolean;
+    fieldErrors: NodeValidationError[];
 }
 
 export default function AdditionalProperty(props: Props) {
-    const { showSwitch, showValidation, propertyName, propertyConfig, propertyErrors, editedNode, onChange, renderFieldLabel, readOnly } =
+    const { showSwitch, showValidation, propertyName, propertyConfig, fieldErrors, editedNode, onChange, renderFieldLabel, readOnly } =
         props;
 
     const propertyPath = `additionalFields.properties.${propertyName}`;
     const current = get(editedNode, propertyPath) || "";
     const expressionObj = { expression: current, value: current, language: ExpressionLang.String };
-    const validators = useMemo(() => [errorValidator(propertyErrors, propertyName)], [propertyErrors, propertyName]);
 
     const onValueChange = useCallback((newValue) => onChange(propertyPath, newValue), [onChange, propertyName]);
 
@@ -49,7 +49,7 @@ export default function AdditionalProperty(props: Props) {
             showValidation={showValidation}
             //AdditionalProperties do not use any variables
             variableTypes={{}}
-            validators={validators}
+            fieldErrors={fieldErrors}
         />
     );
 }

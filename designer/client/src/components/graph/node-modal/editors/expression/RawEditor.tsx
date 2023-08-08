@@ -2,13 +2,12 @@ import cn from "classnames";
 import React, { ForwardedRef, forwardRef, useMemo } from "react";
 import ReactAce from "react-ace/lib/ace";
 import ExpressionSuggest from "./ExpressionSuggest";
-import { VariableTypes } from "../../../../../types";
+import { NodeValidationError, VariableTypes } from "../../../../../types";
 import { EditorMode, ExpressionObj } from "./types";
-import { Validator } from "../Validators";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
-    validators: Validator[];
+    fieldErrors: NodeValidationError[];
     isMarked?: boolean;
     showValidation: boolean;
     readOnly?: boolean;
@@ -24,7 +23,7 @@ export type RawEditorProps = {
 const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<ReactAce>) => {
     const {
         expressionObj,
-        validators,
+        fieldErrors,
         isMarked,
         showValidation,
         readOnly,
@@ -61,7 +60,7 @@ const RawEditorComponent = (props: RawEditorProps, forwardedRef: ForwardedRef<Re
             <ExpressionSuggest
                 inputProps={inputProps}
                 variableTypes={variableTypes}
-                validators={validators}
+                fieldErrors={fieldErrors}
                 isMarked={isMarked}
                 showValidation={showValidation}
                 validationLabelInfo={validationLabelInfo}

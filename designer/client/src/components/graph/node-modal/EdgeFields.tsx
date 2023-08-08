@@ -1,4 +1,4 @@
-import { Edge, EdgeKind, VariableTypes } from "../../../types";
+import { Edge, EdgeKind, NodeValidationError, VariableTypes } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessToDisplay } from "../../../reducers/selectors/graph";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -11,7 +11,6 @@ import { SelectWithFocus } from "../../withFocus";
 import NodeUtils from "../NodeUtils";
 import { uniq } from "lodash";
 import { ExpressionLang } from "./editors/expression/types";
-import { Validator } from "./editors/Validators";
 import { getProcessDefinitionData } from "../../../reducers/selectors/settings";
 import { useTranslation } from "react-i18next";
 
@@ -23,12 +22,12 @@ interface Props {
     edges: Edge[];
     types?: EdgeTypeOption[];
     variableTypes?: VariableTypes;
-    validators?: Validator[];
+    fieldErrors?: NodeValidationError[];
 }
 
 export function EdgeFields(props: Props): JSX.Element {
     const { t } = useTranslation();
-    const { readOnly, value, index, onChange, edges, types, variableTypes, validators = [] } = props;
+    const { readOnly, value, index, onChange, edges, types, variableTypes, fieldErrors = [] } = props;
     const process = useSelector(getProcessToDisplay);
     const processDefinitionData = useSelector(getProcessDefinitionData);
 
@@ -90,7 +89,7 @@ export function EdgeFields(props: Props): JSX.Element {
                     }}
                     readOnly={readOnly}
                     onValueChange={onValueChange}
-                    validators={validators}
+                    fieldErrors={fieldErrors}
                     showValidation
                 />
             );

@@ -2,15 +2,17 @@ import styled from "@emotion/styled";
 import { isEmpty } from "lodash";
 import React from "react";
 import { LimitedValidationLabel } from "../common/ValidationLabel";
-import { Validator, withoutDuplications } from "../graph/node-modal/editors/Validators";
+import { NodeValidationError } from "../../types";
 
 type Props = {
-    validators: Array<Validator>;
-    values: Array<string>;
+    fieldErrors: NodeValidationError[];
     validationLabelInfo?: string;
 };
 
-type ValidationError = {
+export type ValidationError = {
+    errorType: string;
+    fieldName: string;
+    typ: string;
     message: string;
     description: string;
 };
@@ -21,19 +23,12 @@ const LabelsContainer = styled.div({
 });
 
 export default function ValidationLabels(props: Props) {
-    const { validators, values, validationLabelInfo } = props;
+    const { fieldErrors, validationLabelInfo } = props;
 
-    const validationErrors: ValidationError[] = withoutDuplications(validators)
-        .filter((v) => !v.isValid(...values))
-        .map((validator) => ({
-            message: validator.message && validator.message(),
-            description: validator.description && validator.description(),
-        }));
-
-    const isValid: boolean = isEmpty(validationErrors);
+    const isValid: boolean = isEmpty(fieldErrors);
 
     const renderErrorLabels = () =>
-        validationErrors.map((validationError) => {
+        fieldErrors.map((validationError) => {
             // we don't pass description as tooltip message until we make changes on the backend
             return (
                 <LimitedValidationLabel key={validationError.message} title={validationError.message} type="ERROR">

@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Period } from "./PeriodEditor";
 import TimeRangeSection from "./TimeRangeSection";
-import { Validator } from "../../Validators";
 import { TimeRange } from "./TimeRangeComponent";
 import { Duration } from "./DurationEditor";
+import { NodeValidationError } from "../../../../../../types";
 
 type Props = {
     encode: (value: Duration | Period) => string;
@@ -12,13 +12,13 @@ type Props = {
     editorConfig: $TodoType;
     readOnly: boolean;
     showValidation: boolean;
-    validators: Array<Validator>;
+    fieldErrors: NodeValidationError[];
     expression: string;
     isMarked: boolean;
 };
 
 export default function TimeRangeEditor(props: Props): JSX.Element {
-    const { encode, decode, onValueChange, editorConfig, readOnly, showValidation, validators, expression, isMarked } = props;
+    const { encode, decode, onValueChange, editorConfig, readOnly, showValidation, fieldErrors, expression, isMarked } = props;
 
     const components = editorConfig.timeRangeComponents as Array<TimeRange>;
     const [value, setValue] = useState(() => decode(expression));
@@ -46,7 +46,7 @@ export default function TimeRangeEditor(props: Props): JSX.Element {
             onComponentValueChange={onComponentChange}
             readOnly={readOnly}
             showValidation={showValidation}
-            validators={validators}
+            fieldErrors={fieldErrors}
             value={value}
             expression={expression}
             isMarked={isMarked}

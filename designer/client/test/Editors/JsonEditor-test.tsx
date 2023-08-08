@@ -5,7 +5,7 @@ import { render, screen } from "@testing-library/react";
 import { jest } from "@jest/globals";
 import { JsonEditor } from "../../src/components/graph/node-modal/editors/expression/JsonEditor";
 import "ace-builds/src-noconflict/ext-language_tools";
-import { mockValidators, mockValueChange } from "./helpers";
+import { mockErrors, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -14,7 +14,7 @@ describe(JsonEditor.name, () => {
         render(
             <JsonEditor
                 onValueChange={mockValueChange}
-                validators={mockValidators}
+                fieldErrors={mockErrors}
                 expressionObj={{ language: "spel", expression: "" }}
                 showValidation={true}
                 className={""}

@@ -1,8 +1,9 @@
 import classNames from "classnames";
-import { allValid, Validator } from "../Validators";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import React, { ChangeEvent, FC } from "react";
 import { TextAreaWithFocus } from "../../../../withFocus";
+import { isEmpty } from "lodash";
+import { NodeValidationError } from "../../../../../types";
 
 interface Props {
     isMarked: boolean;
@@ -10,7 +11,7 @@ interface Props {
     readOnly: boolean;
     autoFocus: boolean;
     showValidation: boolean;
-    validators: Validator[];
+    fieldErrors: NodeValidationError[];
     onChange: (e: ChangeEvent<{ value: string }>) => void;
     placeholder: string;
     formattedValue: string;
@@ -28,9 +29,8 @@ export const Textarea: FC<Props> = ({
     autoFocus,
     onChange,
     value,
-    validators,
+    fieldErrors,
     readOnly,
-    formattedValue,
     inputClassName,
     onFocus,
 }) => {
@@ -43,9 +43,7 @@ export const Textarea: FC<Props> = ({
                         readOnly={readOnly}
                         placeholder={placeholder}
                         className={classNames([
-                            !showValidation || allValid(validators, [formattedValue ? formattedValue : value])
-                                ? "node-input"
-                                : "node-input node-input-with-error",
+                            !showValidation || isEmpty(fieldErrors) ? "node-input" : "node-input node-input-with-error",
                             inputClassName,
                         ])}
                         value={value || ""}
@@ -54,7 +52,7 @@ export const Textarea: FC<Props> = ({
                     />
                 }
             </div>
-            {showValidation && <ValidationLabels validators={validators} values={[formattedValue ? formattedValue : value]} />}
+            {showValidation && <ValidationLabels fieldErrors={[]} />}
         </div>
     );
 };

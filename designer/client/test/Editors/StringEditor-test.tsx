@@ -1,9 +1,9 @@
-import React from "react";
+import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
 import { jest } from "@jest/globals";
 import { StringEditor } from "../../src/components/graph/node-modal/editors/expression/StringEditor";
-import { mockFormatter, mockValidators, mockValueChange } from "./helpers";
+import { mockErrors, mockFormatter, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -15,7 +15,7 @@ describe(StringEditor.name, () => {
                 onValueChange={mockValueChange}
                 expressionObj={{ language: "spel", expression: "" }}
                 formatter={mockFormatter}
-                validators={mockValidators}
+                fieldErrors={mockErrors}
                 showValidation={true}
             />,
         );

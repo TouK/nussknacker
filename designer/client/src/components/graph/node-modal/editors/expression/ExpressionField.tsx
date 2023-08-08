@@ -1,9 +1,8 @@
 import React, { useCallback } from "react";
-import { NodeType, UIParameter, VariableTypes } from "../../../../../types";
+import { NodeType, NodeValidationError, UIParameter, VariableTypes } from "../../../../../types";
 import { UnknownFunction } from "../../../../../types/common";
 import ExpressionTestResults from "../../tests/ExpressionTestResults";
 import EditableEditor from "../EditableEditor";
-import { Error } from "../Validators";
 import { EditorType } from "./Editor";
 import { NodeResultsForContext } from "../../../../../common/TestResultUtils";
 import { useDiffMark } from "../../PathsToMark";
@@ -21,7 +20,7 @@ type Props = {
     setNodeDataAt: <T>(propToMutate: string, newValue: T, defaultValue?: T) => void;
     testResultsToShow: NodeResultsForContext;
     renderFieldLabel: UnknownFunction;
-    errors: Array<Error>;
+    fieldErrors: NodeValidationError[];
     variableTypes: VariableTypes;
 };
 
@@ -38,7 +37,7 @@ function ExpressionField(props: Props): JSX.Element {
         setNodeDataAt,
         testResultsToShow,
         renderFieldLabel,
-        errors,
+        fieldErrors,
         variableTypes,
     } = props;
     const [isMarked] = useDiffMark();
@@ -61,7 +60,7 @@ function ExpressionField(props: Props): JSX.Element {
                 showSwitch={showSwitch}
                 readOnly={readOnly}
                 onValueChange={onValueChange}
-                errors={errors}
+                fieldErrors={fieldErrors}
                 variableTypes={variableTypes}
                 showValidation={showValidation}
             />
@@ -82,7 +81,7 @@ function ExpressionField(props: Props): JSX.Element {
                 readOnly={readOnly}
                 variableTypes={variableTypes}
                 onValueChange={onValueChange}
-                errors={errors}
+                fieldErrors={fieldErrors}
             />
         </ExpressionTestResults>
     );

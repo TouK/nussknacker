@@ -2,10 +2,10 @@ import React from "react";
 import Creatable from "react-select/creatable";
 import styles from "../../../../../stylesheets/select.styl";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { Validator } from "../Validators";
 import { ExpressionObj } from "./types";
 import { isEmpty } from "lodash";
 import { ExtendedEditor } from "./Editor";
+import { NodeValidationError } from "../../../../../types";
 
 type Props = {
     editorConfig: $TodoType;
@@ -15,7 +15,7 @@ type Props = {
     className: string;
     param?: $TodoType;
     showValidation: boolean;
-    validators: Array<Validator>;
+    fieldErrors: NodeValidationError[];
 };
 
 interface Option {
@@ -41,7 +41,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = ({
     onValueChange,
     className,
     showValidation,
-    validators,
+    fieldErrors,
     editorConfig,
 }: Props) => {
     const getCurrentOption = (expressionObj: ExpressionObj, options: Option[]): Option => {
@@ -67,7 +67,7 @@ export const FixedValuesEditor: ExtendedEditor<Props> = ({
                 menuPortalTarget={document.body}
                 createOptionPosition={"first"}
             />
-            {showValidation && <ValidationLabels validators={validators} values={[currentOption.value]} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} />}
         </div>
     );
 };

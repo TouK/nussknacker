@@ -2,19 +2,19 @@ import ace from "ace-builds/src-noconflict/ace";
 import { isEmpty, map, overSome } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { getFeatureSettings, getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
 import { getProcessToDisplay } from "../../../../../reducers/selectors/graph";
 import { BackendExpressionSuggester, ExpressionSuggester } from "./ExpressionSuggester";
 import HttpService from "../../../../../http/HttpService";
 import ProcessUtils from "../../../../../common/ProcessUtils";
 import ReactDOMServer from "react-dom/server";
 import cn from "classnames";
-import { allValid, Validator } from "../Validators";
 import AceEditor from "./AceWithSettings";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import ReactAce from "react-ace/lib/ace";
 import { EditorMode, ExpressionLang } from "./types";
 import type { Ace } from "ace-builds";
+import { NodeValidationError } from "../../../../../types";
 
 const { TokenIterator } = ace.require("ace/token_iterator");
 
@@ -54,7 +54,7 @@ interface InputProps {
 
 interface Props {
     inputProps: InputProps;
-    validators: Validator[];
+    fieldErrors: NodeValidationError[];
     validationLabelInfo: string;
     showValidation?: boolean;
     isMarked?: boolean;
@@ -133,7 +133,7 @@ class CustomAceEditorCompleter implements Ace.Completer {
 }
 
 function ExpressionSuggest(props: Props): JSX.Element {
-    const { isMarked, showValidation, inputProps, validators, variableTypes, validationLabelInfo } = props;
+    const { isMarked, showValidation, inputProps, fieldErrors, variableTypes, validationLabelInfo } = props;
 
     const definitionData = useSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
@@ -152,12 +152,13 @@ function ExpressionSuggest(props: Props): JSX.Element {
     const onChange = useCallback((value: string) => onValueChange(value), [onValueChange]);
     const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), []);
 
+    console.log("firldErrors", fieldErrors);
     return dataResolved ? (
         <>
             <div
                 className={cn([
                     "row-ace-editor",
-                    showValidation && !allValid(validators, [value]) && "node-input-with-error",
+                    showValidation && !isEmpty(fieldErrors) && "node-input-with-error",
                     isMarked && "marked",
                     editorFocused && "focused",
                     inputProps.readOnly && "read-only",
@@ -173,7 +174,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
                     customAceEditorCompleter={customAceEditorCompleter}
                 />
             </div>
-            {showValidation && <ValidationLabels validators={validators} values={[value]} validationLabelInfo={validationLabelInfo} />}
+            {showValidation && <ValidationLabels fieldErrors={fieldErrors} validationLabelInfo={validationLabelInfo} />}
         </>
     ) : null;
 }

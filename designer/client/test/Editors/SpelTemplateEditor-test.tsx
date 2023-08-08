@@ -7,7 +7,7 @@ import "ace-builds/src-noconflict/ext-language_tools";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store/lib";
 import { SpelTemplateEditor } from "../../src/components/graph/node-modal/editors/expression/SpelTemplateEditor";
-import { mockValidators, mockValueChange } from "./helpers";
+import { mockErrors, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -36,7 +36,7 @@ describe(SpelTemplateEditor.name, () => {
                     readOnly={false}
                     isMarked={false}
                     onValueChange={mockValueChange}
-                    validators={mockValidators}
+                    fieldErrors={mockErrors}
                     expressionObj={{ language: "spel", expression: "" }}
                     showValidation={true}
                     className={""}

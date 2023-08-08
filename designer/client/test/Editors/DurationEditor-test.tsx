@@ -5,7 +5,7 @@ import { jest } from "@jest/globals";
 import { DualEditorMode, EditorType } from "../../src/components/graph/node-modal/editors/expression/Editor";
 import { DurationEditor } from "../../src/components/graph/node-modal/editors/expression/Duration/DurationEditor";
 import { TimeRange } from "../../src/components/graph/node-modal/editors/expression/Duration/TimeRangeComponent";
-import { mockFormatter, mockValidators, mockValueChange } from "./helpers";
+import { mockFormatter, mockErrors, mockValueChange } from "./helpers";
 
 jest.mock("../../src/containers/theme");
 
@@ -16,7 +16,7 @@ describe(DurationEditor.name, () => {
                 readOnly={false}
                 isMarked={false}
                 onValueChange={mockValueChange}
-                validators={mockValidators}
+                fieldErrors={mockErrors}
                 editorConfig={{
                     simpleEditor: { type: EditorType.CRON_EDITOR },
                     defaultMode: DualEditorMode.SIMPLE,
