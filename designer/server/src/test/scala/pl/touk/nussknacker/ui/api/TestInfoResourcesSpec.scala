@@ -17,10 +17,10 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
+import pl.touk.nussknacker.ui.api.helpers.{NuItTest, ProcessTestData}
 
 class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
-  with EspItTest with PatientScalaFutures with EitherValuesDetailedMessage {
+  with NuItTest with PatientScalaFutures with EitherValuesDetailedMessage {
 
   private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
 
