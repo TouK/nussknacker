@@ -28,17 +28,18 @@ case class ProcessAction(id: ProcessActionId,
                                     comment: Option[String],
                                     buildInfo: Map[String, String])
 
+//TODO  remove it in NU 1.12 and restore @JsonCodec
 object ProcessAction {
   //custom decoder for compatibility reasons
   implicit val decodeProcessAction: Decoder[ProcessAction] = new Decoder[ProcessAction] {
     override def apply(c: HCursor): Result[ProcessAction] =
       for {
         id               <- c.downField("id").as[ProcessActionId] match {
-                              case Left(_) => Right(ProcessActionId(UUID.randomUUID()))
+                              case Left(_) => Right(ProcessActionId(new UUID(0, 0)))
                               case Right(id) => Right(id)
                             }
         processId        <- c.downField("processId").as[ProcessId] match {
-                              case Left(_) => Right(ProcessId(Random.nextLong()))
+                              case Left(_) => Right(ProcessId(0L))
                               case Right(processId) => Right(processId)
                             }
         processVersionId <- c.downField("processVersionId").as[VersionId]
