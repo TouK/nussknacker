@@ -19,6 +19,11 @@ class ProcessActionSpec extends AnyFunSuite with Matchers {
     val inputJSON = "{\"processVersionId\":82,\"performedAt\":\"2020-12-04T07:58:35.111Z\",\"user\":\"admin\",\"action\":\"CANCEL\",\"commentId\":null,\"comment\":null,\"buildInfo\":{}}"
     val decodedProcessAction = decode[ProcessAction](inputJSON)
 
+    val stateE = decodedProcessAction.map(_.state)
+    val failureMessageE = decodedProcessAction.map(_.failureMessage)
+
     decodedProcessAction.isRight shouldBe true
+    stateE shouldBe Right(ProcessActionState.InProgress)
+    failureMessageE shouldBe Right(None)
   }
 }
