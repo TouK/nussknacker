@@ -19,8 +19,8 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
   def espErrorToHttp(error: Error): HttpResponse = HttpResponse(status = error.statusCode.getOrElse(StatusCodes.InternalServerError), entity = error.getMessage)
 
   def errorToHttp : PartialFunction[Throwable, HttpResponse] = {
-    case e:Error => espErrorToHttp(e)
-    case ex:IllegalArgumentException =>
+    case e: Error => espErrorToHttp(e)
+    case ex: IllegalArgumentException =>
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
       HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
     case ex =>
