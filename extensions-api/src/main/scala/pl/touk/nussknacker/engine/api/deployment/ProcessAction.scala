@@ -35,16 +35,19 @@ object ProcessAction {
     override def apply(c: HCursor): Result[ProcessAction] =
       for {
         id               <- c.downField("id").as[ProcessActionId] match {
+                              //dummy UUID for backward compatibility
                               case Left(_) => Right(ProcessActionId(new UUID(0, 0)))
                               case Right(id) => Right(id)
                             }
         processId        <- c.downField("processId").as[ProcessId] match {
+                              //dummy value for backeard compatibility
                               case Left(_) => Right(ProcessId(0L))
                               case Right(processId) => Right(processId)
                             }
         processVersionId <- c.downField("processVersionId").as[VersionId]
         user             <- c.downField("user").as[String]
         createdAt        <- c.downField("createdAt").as[Instant] match {
+                              //dummy value for backward compatibility
                               case Left(_) => Right(Instant.now())
                               case Right(createdAt) => Right(createdAt)
                             }
@@ -54,6 +57,7 @@ object ProcessAction {
                               case Right(actionType) => Right(actionType)
                             }
         state            <- c.downField("state").as[ProcessActionState] match {
+                              //dummy value for backward compatibility
                               case Left(_) => Right(ProcessActionState.InProgress)
                               case Right(state) => Right(state)
                             }
