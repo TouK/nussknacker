@@ -29,6 +29,7 @@ case class ProcessAction(id: ProcessActionId,
                                     buildInfo: Map[String, String])
 
 object ProcessAction {
+  //custom decoder for compatibility reasons
   implicit val decodeProcessAction: Decoder[ProcessAction] = new Decoder[ProcessAction] {
     override def apply(c: HCursor): Result[ProcessAction] =
       for {
@@ -65,7 +66,7 @@ object ProcessAction {
       } yield ProcessAction(id, processId, processVersionId, user, createdAt, performedAt, actionType, state, failureMessage, commentId, comment, buildInfo)
   }
 
-  implicit val encodeProcessAction: Encoder[ProcessAction] = deriveEncoder
+  implicit val encodeProcessAction: Encoder[ProcessAction] = deriveEncoder[ProcessAction]
 }
 
 final case class ProcessActionId(value: UUID) {
