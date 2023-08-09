@@ -10,7 +10,7 @@ This file is not used by the [Helm chart](https://artifacthub.io/packages/helm/t
 
 The location and name of the configuration file is defined by the CONFIG_FILE environment variable. Consult [Basic environment variables](../installation/Installation.md#basic-environment-variables) for information on how this variable is resolved. 
 
-For K8s based installation consult [Nussknacker Helm chart documentation](https://artifacthub.io/packages/helm/touk/nussknacker) for details of K8s specific configuration. 
+Details of K8s based configuration can be found in  [Nussknacker Helm chart documentation](https://artifacthub.io/packages/helm/touk/nussknacker). 
 ## Configuration areas
 
 Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
