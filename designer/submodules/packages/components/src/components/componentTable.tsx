@@ -54,13 +54,17 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                 getActions: ({ row }) =>
                     row.links.map((link, i) => (
                         <GridActionsCellItem
+                            // From @mui/x-data-grid:5.10.0 version it's a problem with a type definition, but we are able to pass component prop
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            component={ExternalLink}
                             key={link.id}
                             icon={<NuIcon src={link.icon} title={link.title} sx={{ fontSize: "1.5rem", verticalAlign: "middle" }} />}
                             label={link.title}
                             showInMenu={i > 0}
-                        >
-                            <ExternalLink href={link.url} target="_blank"></ExternalLink>
-                        </GridActionsCellItem>
+                            href={link.url}
+                            target="_blank"
+                        ></GridActionsCellItem>
                     )),
             },
         ],
