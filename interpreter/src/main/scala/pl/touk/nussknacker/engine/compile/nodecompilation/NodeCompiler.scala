@@ -103,13 +103,9 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
         case Some(definition) =>
           val parameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
           val variables: Map[String, TypingResult] = parameters.map(a => a.name -> a.typ).toMap
-          val defaultContextTransformation =
-            Valid(contextWithOnlyGlobalVariables.copy(localVariables = contextWithOnlyGlobalVariables.globalVariables ++ variables))
+          val validationContext = Valid(contextWithOnlyGlobalVariables.copy(localVariables = contextWithOnlyGlobalVariables.globalVariables ++ variables))
 
-          compileObjectWithTransformation[Source](
-            parameters.map(a => evaluatedparam.Parameter(a.name, a.defaultValue.getOrElse(Expression.spel("")))),
-            Nil, Left(contextWithOnlyGlobalVariables), None, definition, _ => defaultContextTransformation
-          ).map(_._1)
+          compileObjectWithTransformation[Source](Nil, Nil, Left(contextWithOnlyGlobalVariables), None, definition, _ => validationContext).map(_._1)
         case None =>
           NodeCompilationResult(Map.empty, None, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)),
             Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource()))
