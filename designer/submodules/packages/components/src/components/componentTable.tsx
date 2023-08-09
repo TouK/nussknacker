@@ -55,12 +55,14 @@ export function ComponentTable(props: TableViewData<ComponentType>): JSX.Element
                     row.links.map((link, i) => (
                         <GridActionsCellItem
                             key={link.id}
-                            icon={<NuIcon src={link.icon} title={link.title} sx={{ fontSize: "1.5rem", verticalAlign: "middle" }} />}
+                            icon={
+                                <ExternalLink key={link.id} href={link.url} target="_blank">
+                                    <NuIcon src={link.icon} title={link.title} sx={{ fontSize: "1.5rem", verticalAlign: "middle" }} />
+                                </ExternalLink>
+                            }
                             label={link.title}
                             showInMenu={i > 0}
-                        >
-                            <ExternalLink href={link.url} target="_blank"></ExternalLink>
-                        </GridActionsCellItem>
+                        ></GridActionsCellItem>
                     )),
             },
         ],
