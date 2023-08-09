@@ -9,10 +9,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.EspItTest
+import pl.touk.nussknacker.ui.api.helpers.NuItTest
 
 class UsersResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with EspItTest with PatientScalaFutures {
+  with Matchers with NuItTest with PatientScalaFutures {
 
   private val usersRoute = new UserResources(processCategoryService)
 
