@@ -169,14 +169,7 @@ describe("Process", () => {
             cy.reload();
             cy.viewport("macbook-15");
 
-            // deploy scenario
-            cy.contains(/^deploy$/i).click();
-            cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
-            cy.get("[data-testid=window] textarea").click().type("issues/123");
-            cy.contains(/^ok$/i).should("be.enabled").click();
-            cy.wait(["@deploy", "@fetch"], { timeout: 20000, log: true }).each((res) => {
-                cy.wrap(res).its("response.statusCode").should("eq", 200);
-            });
+            deployScenario();
 
             cy.contains(/^counts$/i).click();
             cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
@@ -200,10 +193,38 @@ describe("Process", () => {
                 .contains(/^cancel$/i)
                 .click();
 
-            // cancel deployed scenario
-            cy.contains(/^cancel$/i).click();
-            cy.get("[data-testid=window] textarea").click().type("issues/123");
-            cy.contains(/^ok$/i).should("be.enabled").click();
+            cancelScenario();
+
+            deployScenario();
+            cancelScenario();
+            deployScenario();
+            cancelScenario();
+
+            cy.contains(/^counts$/i).click();
+            cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
+            cy.contains(/^select more...$/i)
+                .should("be.visible")
+                .click();
+            cy.get("[data-testid=window]").matchImage();
+            cy.get("[data-testid=window]")
+                .contains(/^cancel$/i)
+                .click();
+
+            function deployScenario() {
+                cy.contains(/^deploy$/i).click();
+                cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
+                cy.get("[data-testid=window] textarea").click().type("issues/123");
+                cy.contains(/^ok$/i).should("be.enabled").click();
+                cy.wait(["@deploy", "@fetch"], { timeout: 20000, log: true }).each((res) => {
+                    cy.wrap(res).its("response.statusCode").should("eq", 200);
+                });
+            }
+
+            function cancelScenario() {
+                cy.contains(/^cancel$/i).click();
+                cy.get("[data-testid=window] textarea").click().type("issues/123");
+                cy.contains(/^ok$/i).should("be.enabled").click();
+            }
         });
 
         it("should display some node details in modal", () => {
