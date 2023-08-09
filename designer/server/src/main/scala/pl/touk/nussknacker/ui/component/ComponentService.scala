@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.Componen
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario, ScenarioComponentsUsages}
 import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.Error.XError
+import pl.touk.nussknacker.ui.ResponseError.XError
 import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.component.DefaultComponentService.{getComponentDoc, getComponentIcon}
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor.ComponentLinksConfig
@@ -164,4 +164,6 @@ class DefaultComponentService private(componentLinksConfig: ComponentLinksConfig
   }
 }
 
-private case class ComponentNotFoundError(componentId: ComponentId) extends Exception(s"Component $componentId not exist.") with NotFoundError
+private case class ComponentNotFoundError(componentId: ComponentId) extends NotFoundError {
+  override val message: String = s"Component $componentId not exist."
+}

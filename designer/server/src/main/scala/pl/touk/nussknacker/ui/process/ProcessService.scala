@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.ui.Error
-import pl.touk.nussknacker.ui.Error.XError
+import pl.touk.nussknacker.ui.ResponseError
+import pl.touk.nussknacker.ui.ResponseError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
@@ -319,7 +319,7 @@ class DBProcessService(deploymentService: DeploymentService,
       }
     }
 
-  private def withProcessingType[T](category: String)(callback: ProcessingType => Future[Either[Error, T]]): Future[Either[Error, T]] =
+  private def withProcessingType[T](category: String)(callback: ProcessingType => Future[Either[ResponseError, T]]): Future[Either[ResponseError, T]] =
     processCategoryService.getTypeForCategory(category) match {
       case Some(processingType) =>
         callback(processingType)

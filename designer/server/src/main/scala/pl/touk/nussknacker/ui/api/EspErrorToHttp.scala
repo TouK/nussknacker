@@ -16,10 +16,10 @@ import scala.util.control.NonFatal
 
 object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
 
-  def espErrorToHttp(error: Error): HttpResponse = HttpResponse(status = error.statusCode.getOrElse(StatusCodes.InternalServerError), entity = error.getMessage)
+  def espErrorToHttp(error: ResponseError): HttpResponse = HttpResponse(status = error.statusCode.getOrElse(StatusCodes.InternalServerError), entity = error.getMessage)
 
   def errorToHttp : PartialFunction[Throwable, HttpResponse] = {
-    case e: Error => espErrorToHttp(e)
+    case e: ResponseError => espErrorToHttp(e)
     case ex: IllegalArgumentException =>
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
       HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
@@ -35,12 +35,12 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
     }
   }
 
-  def toResponseEither[T: Encoder](either: Either[Error, T]): ToResponseMarshallable = either match {
+  def toResponseEither[T: Encoder](either: Either[ResponseError, T]): ToResponseMarshallable = either match {
     case Right(t) => t
     case Left(err) => espErrorToHttp(err)
   }
 
-  def toResponseEither[T: Encoder](either: Either[Error, T], okStatus: StatusCode): HttpResponse = {
+  def toResponseEither[T: Encoder](either: Either[ResponseError, T], okStatus: StatusCode): HttpResponse = {
     import io.circe.syntax._
 
     either match {
@@ -51,7 +51,7 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
     }
   }
 
-  def toResponse(okStatus: StatusCode)(xor: Either[Error, Unit]): HttpResponse = xor match {
+  def toResponse(okStatus: StatusCode)(xor: Either[ResponseError, Unit]): HttpResponse = xor match {
     case Left(error) => espErrorToHttp(error)
     case Right(_) => HttpResponse(status = okStatus)
   }

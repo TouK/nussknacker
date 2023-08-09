@@ -17,7 +17,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Validat
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.restmodel.processdetails.ProcessVersion
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.Error
+import pl.touk.nussknacker.ui.ResponseError
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
@@ -145,20 +145,20 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
     var migrateInvocations = List[DisplayableProcess]()
     var compareInvocations = List[DisplayableProcess]()
 
-    override def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[Error, Unit]] = {
+    override def migrate(localProcess: DisplayableProcess, category: String)(implicit ec: ExecutionContext, user: LoggedUser): Future[Either[ResponseError, Unit]] = {
       migrateInvocations = localProcess :: migrateInvocations
       Future.successful(Right(()))
     }
 
-    override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext) : Future[Either[Error, Map[String, ProcessComparator.Difference]]]= {
+    override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext) : Future[Either[ResponseError, Map[String, ProcessComparator.Difference]]]= {
       compareInvocations = localProcess :: compareInvocations
-      Future.successful(mockDifferences.get(localProcess.id).fold[Either[Error, Map[String, ProcessComparator.Difference]]](Left(RemoteEnvironmentCommunicationError(Option(StatusCodes.NotFound), "")))
+      Future.successful(mockDifferences.get(localProcess.id).fold[Either[ResponseError, Map[String, ProcessComparator.Difference]]](Left(RemoteEnvironmentCommunicationError(Option(StatusCodes.NotFound), "")))
         (diffs => Right(diffs)))
     }
 
     override def processVersions(processName: ProcessName)(implicit ec: ExecutionContext): Future[List[ProcessVersion]] = Future.successful(List())
 
-    override def testMigration(processToInclude: processdetails.BasicProcess => Boolean)(implicit ec: ExecutionContext): Future[Either[Error, List[TestMigrationResult]]] = {
+    override def testMigration(processToInclude: processdetails.BasicProcess => Boolean)(implicit ec: ExecutionContext): Future[Either[ResponseError, List[TestMigrationResult]]] = {
       Future.successful(Right(testMigrationResults))
     }
 

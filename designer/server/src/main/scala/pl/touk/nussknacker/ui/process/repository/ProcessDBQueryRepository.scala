@@ -79,17 +79,19 @@ object ProcessDBQueryRepository {
     actions = actions
   )
 
-  case class ProcessNotFoundError(id: String) extends Exception(s"No scenario $id found") with NotFoundError
+  case class ProcessNotFoundError(id: String) extends NotFoundError {
+    override val message: String = s"No scenario $id found"
+  }
 
   case class ProcessAlreadyExists(id: String) extends BadRequestError {
-    def getMessage = s"Scenario $id already exists"
+    override val message: String = s"Scenario $id already exists"
   }
 
   case class ProcessAlreadyDeployed(id: String) extends BadRequestError {
-    def getMessage = s"Scenario $id is already deployed"
+    override val message: String = s"Scenario $id is already deployed"
   }
 
   case class InvalidProcessJson(rawJson: String) extends BadRequestError {
-    def getMessage = s"Invalid raw json string: $rawJson"
+    override val message: String = s"Invalid raw json string: $rawJson"
   }
 }

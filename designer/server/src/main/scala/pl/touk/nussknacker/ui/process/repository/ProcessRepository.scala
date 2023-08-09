@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, Pro
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
-import pl.touk.nussknacker.ui.Error
-import pl.touk.nussknacker.ui.Error._
+import pl.touk.nussknacker.ui.ResponseError
+import pl.touk.nussknacker.ui.ResponseError._
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -158,7 +158,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       })
 
     //TODO: why EitherT.right doesn't infere properly here?
-    def rightT[T](value: DB[T]): EitherT[DB, Error, T] = EitherT[DB, Error, T](value.map(Right(_)))
+    def rightT[T](value: DB[T]): EitherT[DB, ResponseError, T] = EitherT[DB, ResponseError, T](value.map(Right(_)))
 
     val insertAction = for {
       _ <- rightT(logDebug(s"Updating scenario $processId by user $userName"))
@@ -166,7 +166,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       process <- EitherT.fromEither[DB](Either.fromOption(maybeProcess, ProcessNotFoundError(processId.value.toString)))
       latestProcessVersion <- rightT(fetchProcessLatestVersionsQuery(processId)(ProcessShapeFetchStrategy.FetchDisplayable).result.headOption)
       newProcessVersion <- EitherT.fromEither(versionToInsert(latestProcessVersion, process.processingType))
-      _ <- EitherT.right[Error](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
+      _ <- EitherT.right[ResponseError](newProcessVersion.map(processVersionsTable += _).getOrElse(dbMonad.pure(0)))
     } yield ProcessUpdated(process.id, oldVersion = latestProcessVersion.map(_.id), newVersion = newProcessVersion.map(_.id))
     insertAction.value
   }
