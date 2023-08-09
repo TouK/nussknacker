@@ -41,7 +41,7 @@ object node {
 
   case class EndingCustomNode(id: String, ref: String) extends Node
 
-  case class EndingFragmentDefinition(id: String, fieldsWithExpression: Map[String, TypedExpression], isDisabled: Boolean) extends Node
+  case class FragmentOutput(id: String, fieldsWithExpression: Map[String, TypedExpression], isDisabled: Boolean) extends Node
 
   case class FragmentUsageStart(id: String, params: List[Parameter], next: Next) extends Node
 

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source, TestWit
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, ProcessObjectFactory}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, ProcessObjectFactory, StubbedFragmentInputTestSource}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, GenericNodeTransformationMethodDef, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -112,19 +112,8 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           ).map(_._1)
         case None =>
           NodeCompilationResult(Map.empty, None, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)),
-            Valid(createSourceFromFragmentInputDefinition(frag)))
+            Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource()))
       }
-
-  }
-
-  private def createSourceFromFragmentInputDefinition(fragmentInputDefinition: FragmentInputDefinition): Source = {
-    new Source with TestWithParametersSupport[Any] {
-      override def testParametersDefinition: List[Parameter] = {
-        fragmentDefinitionExtractor.extractParametersDefinition(fragmentInputDefinition).value
-      }
-
-      override def parametersToTestData(params: Map[String, AnyRef]): Any = params
-    }
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)

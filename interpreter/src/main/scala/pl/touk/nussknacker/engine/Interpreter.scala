@@ -58,7 +58,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     node match {
       // We do not invoke listener 'nodeEntered' here for nodes which are wrapped in PartRef by ProcessSplitter.
       // These are handled in interpretNext method
-      case CustomNode(_, _, _) | EndingCustomNode(_, _) | Sink(_, _, _) | EndingFragmentDefinition(_, _, _) =>
+      case CustomNode(_, _, _) | EndingCustomNode(_, _) | Sink(_, _, _) | FragmentOutput(_, _, _) =>
       case _ => listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     }
     node match {
@@ -103,9 +103,9 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         }
       case EndingProcessor(id, _, true) =>
         monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
-      case EndingFragmentDefinition(id, _, true) =>
+      case FragmentOutput(id, _, true) =>
         monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, Map.empty), ctx))))
-      case EndingFragmentDefinition(id, fieldsWithExpression, false) =>
+      case FragmentOutput(id, fieldsWithExpression, false) =>
         val fields = fieldsWithExpression.map(a => a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value)
         val newCtx = ctx.withVariables(fields)
         listeners.foreach(_.nodeEntered(node.id, newCtx, metaData))

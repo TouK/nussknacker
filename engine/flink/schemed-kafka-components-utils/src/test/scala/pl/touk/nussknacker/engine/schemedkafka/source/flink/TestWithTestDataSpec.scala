@@ -79,8 +79,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#input.city + '-' + #input.street")
 
     val parameterExpressions: Map[String, Expression] = Map(
-      "city" -> Expression("spel", "'Lublin'"),
-      "street" -> Expression("spel", "'Lipowa'"),
+      "city" -> Expression.spel("'Lublin'"),
+      "street" -> Expression.spel("'Lipowa'"),
     )
     val scenarioTestData = ScenarioTestData("start", parameterExpressions)
 
@@ -96,7 +96,7 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
 
     val parameterExpressions: Map[String, Expression] = Map(
-      "in" -> Expression("spel", "'some-text-id'")
+      "in" -> Expression.spel("'some-text-id'")
     )
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results = run(fragment, scenarioTestData)
