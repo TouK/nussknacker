@@ -41,7 +41,7 @@ case class OAuth2Configuration(usersFile: URI,
                               ) extends AuthenticationConfiguration {
   override def name: String = OAuth2Configuration.name
 
-  override lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsersOrEmptyList(userConfig)
+  override lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig).getOrElse(Nil)
 
   def authorizeUrl: Option[URI] = Option(
     Uri(authorizeUri)
