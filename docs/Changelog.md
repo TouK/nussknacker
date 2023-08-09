@@ -1,5 +1,9 @@
 # Changelog
 
+1.12.0 (Not released yet)
+-------------------------
+* [#4561](https://github.com/TouK/nussknacker/pull/4561) Improvement: Users are not requrired at OAuth2 config file
+
 1.11.0 (Not released yet)
 -------------------------
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility)

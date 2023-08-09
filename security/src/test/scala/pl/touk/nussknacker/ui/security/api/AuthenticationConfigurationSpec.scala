@@ -5,8 +5,11 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.util.ResourceLoader
 import pl.touk.nussknacker.engine.util.cache.CacheConfig
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
+import pl.touk.nussknacker.ui.security.oauth2.OAuth2Configuration
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 
 import scala.concurrent.duration._
 
@@ -41,5 +44,14 @@ class AuthenticationConfigurationSpec extends AnyFlatSpec with Matchers with Sca
     val authConfig = BasicAuthenticationConfiguration.create(config)
     authConfig.cachingHashesOrDefault.isEnabled shouldBe true
     authConfig.cachingHashesOrDefault.toCacheConfig.value shouldEqual CacheConfig(expireAfterAccess = Some(10.minutes))
+  }
+
+  it should "parse oidc config with no users" in {
+    val config = ConfigFactory.parseString(ResourceLoader.load("/oidc.conf")).withValue(
+      "authentication.usersFile", fromAnyRef("./src/test/resources/oauth2-no-users.conf")
+    )
+
+    val authConfig = OAuth2Configuration.create(config)
+    authConfig.users shouldBe List()
   }
 }
