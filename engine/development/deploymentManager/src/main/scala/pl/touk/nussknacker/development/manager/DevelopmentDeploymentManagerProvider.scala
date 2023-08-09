@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.development.manager.DevelopmentStateStatus.{AfterRunningStatus, PreparingResourcesStatus, TestStatus}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.StringParameterEditor
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -38,7 +39,9 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
 
-  private val customActionAfterRunning = CustomAction(AfterRunningStatus.name, List(Running.name))
+  private val customActionAfterRunningParameter = "name"
+
+  private val customActionAfterRunning = CustomAction(AfterRunningStatus.name, List(Running.name), List(CustomActionParameter(customActionAfterRunningParameter, StringParameterEditor)))
   private val customActionPreparingResources = CustomAction(PreparingResourcesStatus.name, List(NotDeployed.name, Canceled.name))
   private val customActionTest = CustomAction(TestStatus.name, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
 
@@ -122,25 +125,27 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   override def customActions: List[CustomAction] = customActionStatusMapping.keys.toList
 
   override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[CustomActionResult] =
-    customActions
-      .find(_.name.equals(actionRequest.name))
-      .map(customAction => {
-        val processName = actionRequest.processVersion.processName
-        val statusDetails = memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
+    actionRequest.name match { //TODO validate parameters, log action result - todo think about better ways of parameter auto validation
+      case customActionAfterRunning.name if invalidCustomActionAfterRunningParameters(actionRequest) =>
+        Future.failed(CustomActionFailure(actionRequest, s"${customActionAfterRunningParameter} parameter is empty"))
+      case _ => Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
+    }
 
-        if (customAction.allowedStateStatusNames.contains(statusDetails.status.name)) {
-          customActionStatusMapping
-            .get(customAction)
-            .map { status =>
-              asyncChangeState(processName, status)
-              Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
-            }
-            .getOrElse(Future.failed(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
-        } else {
-          Future.failed(CustomActionInvalidStatus(actionRequest, statusDetails.status.name))
-        }
-      })
-      .getOrElse(Future.failed(CustomActionNotImplemented(actionRequest)))
+  private def invalidCustomActionAfterRunningParameters(actionRequest: CustomActionRequest): Boolean = !actionRequest.params.get(customActionAfterRunningParameter).exists(_.trim.nonEmpty)
+
+
+  private def simulateActionStateTransitions(actionRequest: CustomActionRequest, customAction: CustomAction): Future[CustomActionResult] = {
+    val processName = actionRequest.processVersion.processName
+    val statusDetails = memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion)) //unnecessary
+
+    customActionStatusMapping
+      .get(customAction)
+      .map { state =>
+        asyncChangeState(processName, state) //pokazanie jakiejś zmienności stanu
+        Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
+      }
+      .getOrElse(Future.failed(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
+  }
 
 
   override def close(): Unit = {}
@@ -181,7 +186,6 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 }
 
 class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
-
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
@@ -193,5 +197,4 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
     Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None)) ++ FlinkStreamingPropertiesConfig.properties
 
   override def name: String = "development-tests"
-
 }
