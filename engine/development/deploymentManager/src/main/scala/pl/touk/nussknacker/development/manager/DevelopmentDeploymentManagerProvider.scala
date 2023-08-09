@@ -133,21 +133,6 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   private def invalidCustomActionAfterRunningParameters(actionRequest: CustomActionRequest): Boolean = !actionRequest.params.get(customActionAfterRunningParameter).exists(_.trim.nonEmpty)
 
-
-  private def simulateActionStateTransitions(actionRequest: CustomActionRequest, customAction: CustomAction): Future[CustomActionResult] = {
-    val processName = actionRequest.processVersion.processName
-    val statusDetails = memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion)) //unnecessary
-
-    customActionStatusMapping
-      .get(customAction)
-      .map { state =>
-        asyncChangeState(processName, state) //pokazanie jakiejś zmienności stanu
-        Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
-      }
-      .getOrElse(Future.failed(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
-  }
-
-
   override def close(): Unit = {}
 
   private def changeState(name: ProcessName, stateStatus: StateStatus): Unit =
