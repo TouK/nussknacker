@@ -88,7 +88,8 @@ const Menu = (props: PropsWithChildren<unknown>) => (
     <div
         style={{
             position: "absolute",
-            left: "1em",
+            left: "10px",
+            right: "10px",
             bottom: "1em",
         }}
         {...props}
