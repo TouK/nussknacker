@@ -114,10 +114,9 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results = sample.test(fragment, scenarioTestData)
 
-    results.nodeResults("fragment1") shouldBe List(
-      NodeResult(ResultContext("fragment1", Map("in" -> "some-text-id")))
-    )
-    results.externalInvocationResults("fragmentEnd") shouldBe List(ExternalInvocationResult("fragment1", "fragmentEnd", Map("out" -> "some-text-id")))
+    results.nodeResults("fragment1") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> "some-text-id"))))
+    results.nodeResults("fragmentEnd") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> "some-text-id", "out" -> "some-text-id"))))
+    results.invocationResults("fragmentEnd") shouldBe List(ExpressionInvocationResult("fragment1", "out", "some-text-id"))
     results.exceptions shouldBe empty
   }
 

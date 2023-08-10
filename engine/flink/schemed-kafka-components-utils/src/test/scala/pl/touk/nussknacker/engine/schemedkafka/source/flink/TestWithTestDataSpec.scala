@@ -101,10 +101,8 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
     val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
     val results = run(fragment, scenarioTestData)
 
-    results.nodeResults("fragment1") shouldBe List(
-      NodeResult(ResultContext("fragment1-fragment1-0-0", Map("in" -> "some-text-id")))
-    )
-
+    results.nodeResults("fragment1") shouldBe List(NodeResult(ResultContext("fragment1-fragment1-0-0", Map("in" -> "some-text-id"))))
+    results.nodeResults("fragmentEnd") shouldBe List(NodeResult(ResultContext("fragment1-fragment1-0-0", Map("in" -> "some-text-id", "out" -> "some-text-id"))))
     results.invocationResults("fragmentEnd") shouldBe List(ExpressionInvocationResult("fragment1-fragment1-0-0", "out", "some-text-id"))
     results.exceptions shouldBe empty
   }
