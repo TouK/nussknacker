@@ -62,8 +62,11 @@ const prepareNotifications =
         const { processedNotificationIds } = getBackendNotifications(state);
         const reactNotifications = getNotifications(state);
 
-        const onlyUnreadPredicate = ({ id }: BackendNotification) =>
-            !processedNotificationIds.includes(id) && !reactNotifications.map(({ uid }) => uid).includes(id);
+        const onlyUnreadPredicate = ({ id }: BackendNotification) => {
+            const isProcessed = processedNotificationIds.includes(id);
+            const isDisplayed = reactNotifications.some(({ uid }) => uid === id);
+            return !isProcessed && !isDisplayed;
+        };
 
         notifications.filter(onlyUnreadPredicate).forEach((notification) => {
             dispatch(prepareNotification(notification));
@@ -117,12 +120,14 @@ export function Notifications(): JSX.Element {
     return <ReactNotifications notifications={reactNotifications} style={false} noAnimation={true} />;
 }
 
+type NotificationType = "info" | "error" | "success";
+
+type DataToRefresh = "versions" | "activity" | "state";
+
 export type BackendNotification = {
     id: string;
-    type?: "info" | "error" | "success";
+    type?: NotificationType;
     message?: string;
     toRefresh: DataToRefresh[];
     scenarioName?: string;
 };
-
-export type DataToRefresh = "versions" | "activity" | "state";
