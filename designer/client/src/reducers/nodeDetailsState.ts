@@ -1,20 +1,29 @@
 import { Action } from "../actions/reduxTypes";
 import { NodeValidationError, TypingResult, UIParameter } from "../types";
+import { omit } from "lodash";
 
-export type NodeDetailsState = {
-    parameters?: UIParameter[];
-    expressionType?: TypingResult;
-    validationErrors: NodeValidationError[];
-    validationPerformed: boolean;
-};
+export type NodeDetailsState = Record<
+    string,
+    {
+        parameters?: UIParameter[];
+        expressionType?: TypingResult;
+        validationErrors: NodeValidationError[];
+        validationPerformed: boolean;
+    }
+>;
 
-const initialState: NodeDetailsState = {
-    validationErrors: [],
-    validationPerformed: false,
-};
-
-export function reducer(state: NodeDetailsState = initialState, action: Action): NodeDetailsState {
+export function reducer(state: NodeDetailsState = {}, action: Action): NodeDetailsState {
     switch (action.type) {
+        case "NODE_DETAILS_OPENED": {
+            const { nodeId } = action;
+            return {
+                ...state,
+                [nodeId]: {
+                    validationErrors: [],
+                    validationPerformed: false,
+                },
+            };
+        }
         case "NODE_VALIDATION_UPDATED": {
             const { validationData, nodeId } = action;
             return {
@@ -28,9 +37,8 @@ export function reducer(state: NodeDetailsState = initialState, action: Action):
                 },
             };
         }
-        //TODO: do we need to react on other actions?
-        case "NODE_VALIDATION_CLEAR":
-            return initialState;
+        case "NODE_DETAILS_CLOSED":
+            return omit(state, action.nodeId);
         default:
             return state;
     }

@@ -13,7 +13,7 @@ import { adjustParameters } from "./ParametersUtils";
 import { generateUUIDs } from "./nodeUtils";
 import { FieldLabel } from "./FieldLabel";
 import { cloneDeep, isEqual, set } from "lodash";
-import { nodeValidationDataClear, validateNodeData } from "../../../actions/nk";
+import { nodeDetailsClosed, nodeDetailsOpened, validateNodeData } from "../../../actions/nk";
 import NodeUtils from "../NodeUtils";
 import { Source } from "./source";
 import { Sink } from "./sink";
@@ -123,7 +123,10 @@ export function NodeTypeDetailsContent({
     );
 
     useEffect(() => {
-        dispatch(nodeValidationDataClear(node.id));
+        dispatch(nodeDetailsOpened(node.id));
+        return () => {
+            dispatch(nodeDetailsClosed(node.id));
+        };
     }, [dispatch, node.id]);
 
     useEffect(() => {

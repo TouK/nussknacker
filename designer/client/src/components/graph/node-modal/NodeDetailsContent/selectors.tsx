@@ -17,10 +17,10 @@ const getNodeResults = createSelector(getProcessToDisplay, (process) => ProcessU
 export const getFindAvailableBranchVariables = createSelector(getNodeResults, (nodeResults) =>
     ProcessUtils.findVariablesForBranches(nodeResults),
 );
-const getNodeResult = createSelector(getNodeResults, (s) => (nodeId) => s?.[nodeId]);
-const getNodeDetails = createDeepEqualSelector(
+const getNodeResult = createSelector(getNodeResults, (s) => (nodeId: string) => s?.[nodeId]);
+export const getNodeDetails = createDeepEqualSelector(
     (state: RootState) => state.nodeDetails,
-    (nodeDetails) => (nodeId) => nodeDetails[nodeId],
+    (nodeDetails) => (nodeId: string) => nodeDetails[nodeId],
 );
 
 export const getValidationPerformed = createSelector(
@@ -34,12 +34,19 @@ export const getDetailsParameters = createSelector(getNodeDetails, (nodeDetails)
     const parameters = nodeDetails(nodeId)?.parameters;
     return parameters || null;
 });
-export const getResultParameters = createSelector(getNodeResult, (nodeResult) => (nodeId) => nodeResult(nodeId)?.parameters || null);
-export const getExpressionType = createSelector(getNodeDetails, (nodeDetails) => (nodeId) => nodeDetails(nodeId)?.expressionType);
-export const getNodeTypingInfo = createSelector(getNodeResult, (nodeResult) => (nodeId) => nodeResult(nodeId)?.typingInfo);
-export const getNodeExpressionType = createSelector(getExpressionType, getNodeTypingInfo, (expressionType, nodeTypingInfo) => (nodeId) => ({
-    fields: expressionType(nodeId)?.fields || nodeTypingInfo(nodeId),
-}));
+export const getResultParameters = createSelector(
+    getNodeResult,
+    (nodeResult) => (nodeId: string) => nodeResult(nodeId)?.parameters || null,
+);
+export const getExpressionType = createSelector(getNodeDetails, (nodeDetails) => (nodeId: string) => nodeDetails(nodeId)?.expressionType);
+export const getNodeTypingInfo = createSelector(getNodeResult, (nodeResult) => (nodeId: string) => nodeResult(nodeId)?.typingInfo);
+export const getNodeExpressionType = createSelector(getExpressionType, getNodeTypingInfo, (expressionType, nodeTypingInfo) => (nodeId) => {
+    const type = expressionType(nodeId);
+    return {
+        // FIXME: TypingResult is broken
+        fields: (type && "fields" in type && type.fields) || nodeTypingInfo(nodeId),
+    };
+});
 export const getProcessProperties = createSelector(getProcessToDisplay, (s) => s.properties);
 export const getProcessId = createSelector(getProcessToDisplay, (s) => s.id);
 export const getCurrentErrors = createSelector(
