@@ -122,15 +122,17 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     try {
       val queryMetaData = dbMetaDataProvider.getQueryMetaData(query)
       val queryArgParams = toParameters(queryMetaData.dbParameterMetaData)
-      NextParameters(
-        parameters = queryArgParams,
-        state = Some(TransformationState(
-          query = query,
-          argsCount = queryArgParams.size,
-          tableDef = queryMetaData.tableDefinition,
-          strategy = QueryResultStrategy(strategyName).get)
-        )
+      val state = Some(TransformationState(
+        query = query,
+        argsCount = queryArgParams.size,
+        tableDef = queryMetaData.tableDefinition,
+        strategy = QueryResultStrategy(strategyName).get)
       )
+      if (queryArgParams.isEmpty) {
+        FinalResults(finalContext = context, state = state)
+      } else {
+        NextParameters(parameters = queryArgParams, state = state)
+      }
     } catch {
       case e: SQLException =>
         val error = CustomNodeError(messageFromSQLException(query, e), Some(DatabaseQueryEnricher.QueryParamName))
