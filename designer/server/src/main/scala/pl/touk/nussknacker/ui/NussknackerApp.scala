@@ -12,14 +12,12 @@ import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSett
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
-import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ProcessingTypeData}
-import pl.touk.nussknacker.http.backend.FixedAsyncHttpClientBackendProvider
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
@@ -33,15 +31,15 @@ import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
+import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
-import pl.touk.nussknacker.ui.statistics.{UsageStatisticsReportsSettings, UsageStatisticsReportsSettingsDeterminer}
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
@@ -85,9 +83,9 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     new RepositoryGauges(metricsRegistry, config.getDuration("repositoryGaugesCacheDuration"), processRepository).prepareGauges()
   }
 
-  override def create(designerConfig: ConfigWithUnresolvedVersion, dbConfig: DbConfig, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
+  override def create(designerConfig: ConfigWithUnresolvedVersion, dbConfig: DbConfig, metricsRegistry: MetricRegistry)
+                     (implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
-
     implicit val sttpBackend: SttpBackend[Future, Any] = AsyncHttpClientFutureBackend.usingConfigBuilder(identity)
 
     val resolvedConfig = designerConfig.resolved
@@ -231,15 +229,43 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val usageStatisticsReportsSettingsDeterminer = UsageStatisticsReportsSettingsDeterminer(usageStatisticsReportsConfig, typeToConfig.mapValues(_.usageStatistics))
 
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
+    val settingsResources = new SettingsResources(
+      featureTogglesConfig,
+      authenticationResources.name,
+      analyticsConfig,
+      usageStatisticsReportsSettingsDeterminer.determineSettings()
+    )
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, authenticationResources.name, analyticsConfig, usageStatisticsReportsSettingsDeterminer.determineSettings()).publicRoute(),
+      settingsResources.publicRoute(),
       appResources.publicRoute(),
       authenticationResources.routeWithPathPrefix,
     )
 
+    val route = createAppRoute(
+      resolvedConfig = resolvedConfig,
+      apiResourcesWithAuthentication = apiResourcesWithAuthentication,
+      apiResourcesWithoutAuthentication = apiResourcesWithoutAuthentication,
+      processCategoryService = processCategoryService,
+      developmentMode = featureTogglesConfig.development
+    )
+
+    val sttpClosable: AutoCloseable = () => sttpBackend.close()
+    (route, typeToConfig.all.values.toList ++ countsReporter.toList :+ sttpClosable)
+  }
+
+  private def createAppRoute(resolvedConfig: Config,
+                             apiResourcesWithAuthentication: List[RouteWithUser],
+                             apiResourcesWithoutAuthentication: List[Route],
+                             processCategoryService: ProcessCategoryService,
+                             developmentMode: Boolean) // todo: fixme
+                            (implicit executionContext: ExecutionContext,
+                             sttpBacked: SttpBackend[Future, Any]): Route = {
+    val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader)
+    val authorizationRules = AuthenticationConfiguration.getRules(resolvedConfig)
+
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(resolvedConfig.getString("http.publicPath"))
-    val route = WithDirectives(CorsSupport.cors(featureTogglesConfig.development), SecurityHeadersSupport(), OptionsMethodSupport()) {
+    WithDirectives(CorsSupport.cors(developmentMode), SecurityHeadersSupport(), OptionsMethodSupport()) {
       pathPrefixTest(!"api") {
         webResources.route
       } ~ pathPrefix("api") {
@@ -254,8 +280,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       }
     }
 
-    val sttpClosable: AutoCloseable = () => sttpBackend.close()
-    (route, typeToConfig.all.values.toList ++ countsReporter.toList :+ sttpClosable)
   }
 
   //by default, we use InfluxCountsReporterCreator
@@ -309,7 +333,6 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
 
     //JmxReporter does not allocate resources, safe to close
     JmxReporter.forRegistry(metricsRegistry).build().start()
-
 
     val bindingResultF = SslConfigParser.sslEnabled(config.resolved) match {
       case Some(keyStoreConfig) =>

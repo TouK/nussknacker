@@ -132,11 +132,12 @@ class AppResourcesSpec
   }
 
   test("it should return build info without authentication") {
+    val creatorWithBuildInfo = new EmptyProcessConfigCreator {
+      override def buildInfo(): Map[String, String] = Map("fromModel" -> "value1")
+    }
     val modelData = LocalModelData(
       inputConfig = ConfigFactory.empty(),
-      configCreator = new EmptyProcessConfigCreator {
-        override def buildInfo(): Map[String, String] = Map("fromModel" -> "value1")
-      }
+      configCreator = creatorWithBuildInfo
     )
     val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
     val resources = prepareBasicAppResources(
@@ -146,11 +147,12 @@ class AppResourcesSpec
       withConfigExposed = false
     )
 
-    val result = Get("/app/buildInfo") ~> withoutPermissions(resources)
+    val expectedEntity = (BuildInfo.toMap.mapValuesNow(_.toString) ++ globalConfig).mapValuesNow(_.asJson) +
+      ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)
 
-    result ~> check {
+    Get("/app/buildInfo") ~> withoutPermissions(resources) ~> check {
       status shouldBe StatusCodes.OK
-      entityAs[Map[String, Json]] shouldBe (BuildInfo.toMap.mapValuesNow(_.toString) ++ globalConfig).mapValuesNow(_.asJson) + ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)
+      entityAs[Map[String, Json]] shouldBe (expectedEntity)
     }
   }
 
