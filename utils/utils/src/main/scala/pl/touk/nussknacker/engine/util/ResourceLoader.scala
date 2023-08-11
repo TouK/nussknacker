@@ -9,7 +9,10 @@ import java.nio.file.Path
 object ResourceLoader {
 
   def load(path: String): String =
-    IOUtils.resourceToString(path, StandardCharsets.UTF_8)
+    IOUtils.resourceToString(path, StandardCharsets.UTF_8, getClass.getClassLoader)
+
+  def load(path: String, classLoader: ClassLoader): String =
+    IOUtils.resourceToString(path, StandardCharsets.UTF_8, classLoader)
 
   def load(path: Path): String =
     load(path.toFile)

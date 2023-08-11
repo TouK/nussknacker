@@ -4,6 +4,7 @@ import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
+import pl.touk.nussknacker.engine.api.definition.ParameterImplicits
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
@@ -31,15 +32,17 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](timestampAssigner: Option[Timesta
                                                extractTimestampFromField: String => SerializableTimestampAssigner[ConsumerRecord[K, V]] )
   extends FlinkKafkaSourceImplFactory[K, V](timestampAssigner) {
 
+  import ParameterImplicits._
+
   override def createSource(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Any,
                             preparedTopics: List[PreparedKafkaTopic], kafkaConfig: KafkaConfig,
                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
                             formatter: RecordFormatter,
                             contextInitializer: ContextInitializer[ConsumerRecord[K, V]],
                             testParametersInfo: KafkaTestParametersInfo): Source = {
-    extractDelayInMillis(params) match {
+    DelayParameter.extract[java.lang.Long](params) match {
       case millis if millis > 0 =>
-        val timestampFieldName = extractTimestampField(params)
+        val timestampFieldName = TimestampFieldParameter.extract[String](params)
         val timestampAssignerWithExtract: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] =
           Option(timestampFieldName).map(fieldName =>
             prepareTimestampAssigner(kafkaConfig, extractTimestampFromField(fieldName))

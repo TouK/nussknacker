@@ -6,6 +6,11 @@
 * [#4555](https://github.com/TouK/nussknacker/pull/4555) Remove: Back compatibility for encoding/decoding UIParameter
 * [#4561](https://github.com/TouK/nussknacker/pull/4561) Improvement: Users are not requrired at OAuth2 config file
 * [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad hoc testing. 
+* [#4572](https://github.com/TouK/nussknacker/pull/4572) The package of improvements:
+    - make the properties of the `FlinkStreamingPropertiesConfig` public, so that they can be reused
+    - introduce the `ParameterImplicits`, the fast way to extract parameter's value
+    - introduce the `CaseClassTypeInfoFactory`, a generic factory for creating `CaseClassTypeInfo`
+    - allow passing classLoader at `ResourceLoader.load`
 
 1.11.0 (Not released yet)
 -------------------------

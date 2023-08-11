@@ -89,11 +89,6 @@ trait KafkaUniversalComponentTransformer[T] extends SingleInputGenericNodeTransf
     params(topicParamName).asInstanceOf[String]
   )
 
-  protected def extractVersionOption(params: Map[String, Any]): SchemaVersionOption = {
-    val optionName = params(KafkaUniversalComponentTransformer.SchemaVersionParamName).asInstanceOf[String]
-    SchemaVersionOption.byName(optionName)
-  }
-
   protected def prepareTopic(topic: String): PreparedKafkaTopic =
     KafkaComponentsUtils.prepareKafkaTopic(topic, processObjectDependencies)
 
