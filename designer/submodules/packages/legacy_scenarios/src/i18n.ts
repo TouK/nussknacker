@@ -39,6 +39,9 @@ i18n.init({
             return value;
         },
     },
+    react: {
+        useSuspense: false,
+    },
 });
 
 export default i18n;

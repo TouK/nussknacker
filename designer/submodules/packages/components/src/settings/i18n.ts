@@ -32,6 +32,9 @@ i18n.init({
     defaultNS: "main",
     fallbackLng: "en",
     supportedLngs: ["en"],
+    react: {
+        useSuspense: false,
+    },
 });
 
 i18n.services.formatter.add("relativeDate", (value, lng, options) => {
