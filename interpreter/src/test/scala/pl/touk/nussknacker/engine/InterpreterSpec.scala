@@ -114,6 +114,8 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       //we handle it on other level
       case _: EndReference =>
         null
+      case _: FragmentEndReference =>
+        null
       case _: DeadEndReference =>
         throw new IllegalStateException("Shouldn't happen")
       case _: JoinReference =>

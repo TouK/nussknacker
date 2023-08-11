@@ -245,6 +245,8 @@ object node {
 
   def asFragmentInput(nodeData: NodeData): Option[FragmentInput] = nodeData.cast[FragmentInput]
 
+  def asFragmentInputDefinition(nodeData: NodeData): Option[FragmentInputDefinition] = nodeData.cast[FragmentInputDefinition]
+
   def asProcessor(nodeData: NodeData): Option[Processor] = nodeData.cast[Processor]
 
 

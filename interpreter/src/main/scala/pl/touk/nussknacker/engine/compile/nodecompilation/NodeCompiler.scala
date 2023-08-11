@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -10,15 +10,15 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTransformation, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, ProcessObjectFactory}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, ProcessObjectFactory, StubbedFragmentInputTestSource}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{FinalStateValue, GenericNodeTransformationMethodDef, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, ProcessDefinitionExtractor, FragmentComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{DefaultServiceInvoker, FragmentComponentDefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId.{DefaultExpressionId, branchParameterExpressionId}
@@ -98,8 +98,18 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
           val defaultCtx = contextWithOnlyGlobalVariables.withVariable(VariableConstants.InputVariableName, Unknown, paramName = None)
           NodeCompilationResult(Map.empty, None, defaultCtx, error)
       }
-    case FragmentInputDefinition(_, params, _) =>
-      NodeCompilationResult(Map.empty, None, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)), Valid(new Source {}))
+    case frag@FragmentInputDefinition(id, params, _) =>
+      definitions.sourceFactories.get(id) match {
+        case Some(definition) =>
+          val parameters = fragmentDefinitionExtractor.extractParametersDefinition(frag).value
+          val variables: Map[String, TypingResult] = parameters.map(a => a.name -> a.typ).toMap
+          val validationContext = Valid(contextWithOnlyGlobalVariables.copy(localVariables = contextWithOnlyGlobalVariables.globalVariables ++ variables))
+
+          compileObjectWithTransformation[Source](Nil, Nil, Left(contextWithOnlyGlobalVariables), None, definition, _ => validationContext).map(_._1)
+        case None =>
+          NodeCompilationResult(Map.empty, None, Valid(contextWithOnlyGlobalVariables.copy(localVariables = params.map(p => p.name -> loadFromParameter(p)).toMap)),
+            Valid(new StubbedFragmentInputTestSource(frag, fragmentDefinitionExtractor).createSource()))
+      }
   }
 
   def compileCustomNodeObject(data: CustomNodeData, ctx: GenericValidationContext, ending: Boolean)
@@ -182,6 +192,16 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(expressionTypingInfos, None, expressionCompilation.map(_.validationContext).getOrElse(Valid(ctx)),
       objExpression.product(objCases), expressionCompilation.flatMap(_.expressionType))
   }
+
+  def fieldToTypedExpression(fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
+                             ctx: ValidationContext)
+                            (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Map[String, TypedExpression]] = {
+    fields.map { field =>
+      objectParametersExpressionCompiler
+        .compile(field.expression, Some(field.name), ctx, Unknown)
+        .map(typedExpr => field.name -> typedExpr)
+    }
+  }.sequence.map(_.toMap)
 
   def compileFields(fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
                     ctx: ValidationContext,
@@ -434,11 +454,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 
   private def validateGenericTransformer(eitherSingleOrJoin: GenericValidationContext,
-                                            parameters: List[evaluatedparam.Parameter],
-                                            branchParameters: List[BranchParameters],
-                                            outputVar: Option[String],
-                                            genericDefinition: GenericNodeTransformationMethodDef)
-                                           (implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
+                                         parameters: List[evaluatedparam.Parameter],
+                                         branchParameters: List[BranchParameters],
+                                         outputVar: Option[String],
+                                         genericDefinition: GenericNodeTransformationMethodDef)
+                                        (implicit metaData: MetaData, nodeId: NodeId): ValidatedNel[ProcessCompilationError, TransformationResult] =
     (genericDefinition.obj, eitherSingleOrJoin) match {
       case (single: SingleInputGenericNodeTransformation[_], Left(singleCtx)) =>
         nodeValidator.validateNode(single, parameters, branchParameters, outputVar, genericDefinition.componentConfig)(singleCtx)

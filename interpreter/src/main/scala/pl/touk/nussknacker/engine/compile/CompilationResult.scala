@@ -43,7 +43,7 @@ case class CompilationResult[+Result](typing: Map[String, NodeTypingInfo],
 
   def parametersInNodes: Map[String, List[Parameter]] = typing.mapValuesNow(_.parameters).collect {
     case (k, Some(v)) => (k, v)
-  }.toMap
+  }
 
 }
 

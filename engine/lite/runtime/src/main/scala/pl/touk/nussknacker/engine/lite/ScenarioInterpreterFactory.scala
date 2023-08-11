@@ -18,9 +18,10 @@ import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
-import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, FragmentComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, FragmentComponentDefinitionExtractor, LazyInterpreterDependencies}
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{LiteSource, _}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -266,6 +267,8 @@ object ScenarioInterpreterFactory {
         case er: EndReference =>
           //FIXME: do we need it at all
           monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, null.asInstanceOf[Res]))))
+        case fer: FragmentEndReference =>
+          monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(fer.nodeId, ir.finalContext, fer.outputFields.asInstanceOf[Res]))))
         case _: DeadEndReference =>
           monad.pure[ResultType[PartResult]](Writer.value(Nil))
         case r: JoinReference =>
@@ -294,14 +297,24 @@ object ScenarioInterpreterFactory {
 
     private def compileSource(sourcePart: SourcePart): ValidatedNel[ProcessCompilationError, Input => ValidatedNel[ErrorType, Context]] = {
       val SourcePart(sourceObj, node, _, _, _) = sourcePart
-      val validatedSource = sourceObj match {
-        case s: LiteSource[Input@unchecked] => Valid(s)
+      val validatedSource = (sourceObj, node.data) match {
+        case (s: LiteSource[Input@unchecked], _) => Valid(s)
+        //Used only in fragment testing, when FragmentInputDefinition is available
+        case (_: Source, fragmentInputDef: FragmentInputDefinition) if componentUseCase == ComponentUseCase.TestRuntime => sourceForFragmentInputTestng(fragmentInputDef)
         case _ => Invalid(NonEmptyList.of(UnsupportedPart(node.id)))
       }
       validatedSource.map { source =>
         source.createTransformation(customComponentContext(node.id))
       }
     }
+
+    private def sourceForFragmentInputTestng(fragmentInputDef: FragmentInputDefinition): Valid[LiteSource[Input]] = Valid(
+      new LiteSource[Input] {
+        override def createTransformation[F[_] : Monad](evaluateLazyParameter: CustomComponentContext[F]): Input => ValidatedNel[ErrorType, Context] = {
+          input => Valid(Context(fragmentInputDef.id, input.asInstanceOf[Map[String, Any]], None))
+        }
+      }
+    )
 
     private def compileJoinTransformer(customNodePart: CustomNodePart): CompilationResult[JoinDataBatch => InterpreterOutputType] = {
       val CustomNodePart(transformerObj, node, _, validationContext, parts, _) = customNodePart

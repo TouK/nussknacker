@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.util
 
-import pl.touk.nussknacker.engine.api.{MetaData, TypeSpecificData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData, TypeSpecificData}
 
 import java.time._
 import java.time.format.DateTimeFormatter
@@ -13,8 +13,8 @@ object MetaDataExtractor {
     case _ => Left(())
   }
 
-  def extractTypeSpecificDataOrFail[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): T
-  = extractTypeSpecificData(metaData).fold(_ => throw new IllegalArgumentException("Wrong scenario type"), identity)
+  def extractTypeSpecificDataOrDefault[T <: TypeSpecificData](metaData: MetaData, default: T)(implicit classTag: ClassTag[T]): T
+  = extractTypeSpecificData(metaData).fold(_ => default, identity)
 
   def extractProperty(metaData: MetaData, property: String): Option[String] =
     metaData.additionalFields.properties.get(property)
