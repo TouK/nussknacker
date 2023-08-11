@@ -14,6 +14,7 @@ import { NodeDetailsActions } from "./nk/nodeDetails";
 import { NotificationActions } from "./nk/notifications";
 import { DisplayTestResultsDetailsAction } from "./nk/displayTestResults";
 import { LoadProcessVersionsAction } from "./nk/loadProcessVersions";
+import { GenericActionActions } from "./nk/genericAction";
 
 type TypedAction =
     | HandleHTTPErrorAction
@@ -30,7 +31,8 @@ type TypedAction =
     | NotificationActions
     | DisplayTestResultsDetailsAction
     | DisplayProcessCountsAction
-    | LoadProcessVersionsAction;
+    | LoadProcessVersionsAction
+    | GenericActionActions;
 
 interface UntypedAction extends AnyAction {
     type: Exclude<ActionTypes, TypedAction["type"]>;
