@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.kafka.exception
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SimpleRecord
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 
 import java.util.Date
 
@@ -48,23 +47,17 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id) {
+      val consumed = kafkaClient.consumeLastMessage[KafkaExceptionInfo](topicName)
+      consumed.key() shouldBe "testProcess-shouldFail"
 
-      val consumer = kafkaClient.createConsumer()
-      val consumed = consumer.consume(topicName).head
-      new String(consumed.key()) shouldBe "testProcess-shouldFail"
-
-      val decoded = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](consumed.message())
-      decoded.nodeId shouldBe Some("shouldFail")
-      decoded.processName shouldBe "testProcess"
-      decoded.message shouldBe Some("Expression [1/{0, 1}[0] != 10] evaluation failed, message: / by zero")
-      decoded.exceptionInput shouldBe Some("1/{0, 1}[0] != 10")
-      decoded.additionalData shouldBe Map("configurableKey" -> "sampleValue")
-
+      consumed.message().nodeId shouldBe Some("shouldFail")
+      consumed.message().processName shouldBe "testProcess"
+      consumed.message().message shouldBe Some("Expression [1/{0, 1}[0] != 10] evaluation failed, message: / by zero")
+      consumed.message().exceptionInput shouldBe Some("1/{0, 1}[0] != 10")
+      consumed.message().additionalData shouldBe Map("configurableKey" -> "sampleValue")
     }
-    
 
   }
-
 
 }
 

@@ -2,10 +2,8 @@ package pl.touk.nussknacker.engine.lite.kafka
 
 import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -29,8 +27,8 @@ class NuKafkaRuntimeDockerJsonTest extends AnyFunSuite with BaseNuKafkaRuntimeDo
   test("json ping-pong should work") {
     kafkaClient.sendMessage(fixture.inputTopic, NuKafkaRuntimeTestSamples.jsonPingMessage).futureValue
     try {
-      val messages = kafkaClient.createConsumer().consume(fixture.outputTopic, secondsToWait = 60).take(1).map(rec => new String(rec.message())).toList
-      messages shouldBe List(NuKafkaRuntimeTestSamples.jsonPingMessage)
+      val message = kafkaClient.consumeLastStrMessage(fixture.outputTopic).message()
+      message shouldBe NuKafkaRuntimeTestSamples.jsonPingMessage
     } finally {
       consumeFirstError shouldBe empty
     }

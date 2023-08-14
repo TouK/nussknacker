@@ -6,13 +6,11 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.scalatest.{BeforeAndAfterAll, TestSuite, TryValues}
 import org.testcontainers.containers.{Network, GenericContainer => JavaGenericContainer}
 import org.testcontainers.utility.DockerImageName
-import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils._
-import scala.collection.compat.immutable.LazyList
 
 import java.io.File
 import java.util.concurrent.TimeoutException
@@ -79,14 +77,10 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
   protected def mappedRuntimeApiPort: Int = runtimeContainer.mappedPort(runtimeApiPort)
 
   protected def consumeFirstError: Option[KeyMessage[String, KafkaExceptionInfo]] = {
-    Try(errorConsumer(secondsToWait = 1).take(1).headOption).recover {
+    Try(kafkaClient.consumeMessages[KafkaExceptionInfo](fixture.errorTopic, 1).headOption).recover {
       case _: TimeoutException => None
     }
   }.success.value
-
-  protected def errorConsumer(secondsToWait: Int): LazyList[KeyMessage[String, KafkaExceptionInfo]] = kafkaClient.createConsumer()
-    .consume(fixture.errorTopic, secondsToWait = secondsToWait)
-    .map(km => KeyMessage(new String(km.key()), CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](km.message()), km.timestamp))
 
   override protected def afterAll(): Unit = {
     kafkaClient.shutdown()

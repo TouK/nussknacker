@@ -9,7 +9,6 @@ import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor5}
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.kafka.serialization
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
@@ -39,7 +38,6 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
       (avroSetup, Some(PaymentV1.schema), PaymentV1.record, PaymentV1.record, "simple.from-subject-version"),
       (jsonSetup, None, PaymentV1.record, encode(PaymentV1.exampleData), "json.simple.from-record"),
       (jsonSetup, Some(PaymentV1.schema), PaymentV1.record, encode(PaymentV1.exampleData), "json.simple.from-subject-version")
-
     )
 
     runSerializationTest(table, version, schemas)
@@ -113,13 +111,12 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
 
       providerSetup.pushMessage(serializer, givenObj, topicConfig.output)
 
-      if(schemaForWrite.isDefined)
-        kafkaClient.createConsumer()
-          .consumeWithConsumerRecord(topicConfig.output).take(1)
-          .foreach(_.headers().toArray.map(_.key()) should contain (ValueSchemaIdHeaderName))
+      if(schemaForWrite.isDefined) {
+        kafkaClient.consumeLastRawMessage(topicConfig.output).headers().toArray.map(_.key()) should contain (ValueSchemaIdHeaderName)
+        kafkaClient.closeConsumers() //We have to 'clear offsets', because providerSetup.consumeAndVerifyMessage will not fetch data from the beginning
+      }
 
       providerSetup.consumeAndVerifyMessage(topicConfig.output, expectedObj)
-
     }
 
   private def pushMessage(kafkaSerializer: serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {

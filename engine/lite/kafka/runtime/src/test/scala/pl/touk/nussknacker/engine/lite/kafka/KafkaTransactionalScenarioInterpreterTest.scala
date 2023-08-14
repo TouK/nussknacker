@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
@@ -74,6 +73,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
 
     runScenarioWithoutErrors(fixture, scenario) {
       val input = "test-input"
+
       kafkaClient.sendRawMessage(
         inputTopic,
         key = null,
@@ -81,8 +81,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
         timestamp = inputTimestamp
       )
 
-      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
-
+      val outputTimestamp = kafkaClient.consumeLastRawMessage(outputTopic).timestamp
       outputTimestamp shouldBe inputTimestamp
     }
   }
@@ -109,14 +108,15 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
 
     runScenarioWithoutErrors(fixture, scenario) {
       val input = "test-input"
+
       kafkaClient.sendRawMessage(
         inputTopic,
         key = null,
         content = input.getBytes(),
         timestamp = inputTimestamp
       )
-      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
 
+      val outputTimestamp = kafkaClient.consumeLastRawMessage(outputTopic).timestamp
       outputTimestamp shouldBe inputTimestamp
     }
   }
@@ -130,6 +130,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
 
     runScenarioWithoutErrors(fixture, scenario) {
       val input = "test-input"
+
       kafkaClient.sendRawMessage(
         inputTopic,
         key = null,
@@ -137,8 +138,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
         timestamp = inputTimestamp
       )
 
-      val outputTimestamp = kafkaClient.createConsumer().consume(outputTopic).head.timestamp
-
+      val outputTimestamp = kafkaClient.consumeLastRawMessage(outputTopic).timestamp
       outputTimestamp shouldBe inputTimestamp
     }
   }
@@ -162,11 +162,10 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
       kafkaClient.sendMessage(inputTopic, input).futureValue
       kafkaClient.sendMessage(inputTopic, "").futureValue
 
-      val messages = kafkaClient.createConsumer().consume(outputTopic).take(2).map(rec => new String(rec.message()))
+      val messages = kafkaClient.consumeStrMessages(outputTopic, 2).map(_.message())
       messages shouldBe List("original-add", "other-add")
 
-      val error = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](kafkaClient
-        .createConsumer().consume(errorTopic).head.message())
+      val error = kafkaClient.consumeLastMessage[KafkaExceptionInfo](errorTopic).message()
       error.nodeId shouldBe Some("throw on 0")
       error.processName shouldBe scenario.id
       error.exceptionInput shouldBe Some("1 / #input.length")
@@ -176,15 +175,14 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
   test("correctly committing of offsets") { fixture =>
     val scenario: CanonicalProcess = passThroughScenario(fixture)
 
-    lazy val outputConsumer = kafkaClient.createConsumer().consume(fixture.outputTopic).map(rec => new String(rec.message()))
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendMessage(fixture.inputTopic, "one").futureValue
-      outputConsumer.take(1) shouldEqual List("one")
+      kafkaClient.consumeStrMessages(fixture.outputTopic, 1).map(_.message()) shouldEqual List("one")
     }
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendMessage(fixture.inputTopic, "two").futureValue
-      outputConsumer.take(2) shouldEqual List("one", "two")
+      kafkaClient.consumeStrMessages(fixture.outputTopic, 2, shouldSeekToBeginning = true).map(_.message()) shouldEqual List("one", "two")
     }
   }
 
@@ -243,7 +241,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
       val runResult = interpreter.run()
       //we wait for one message to make sure everything is already running
       kafkaClient.sendMessage(inputTopic, "dummy").futureValue
-      kafkaClient.createConsumer().consume(outputTopic).head
+      kafkaClient.consumeLastRawMessage(outputTopic)
       runResult
     }
     Try(Await.result(runResult, 10 seconds)) match {
@@ -310,8 +308,8 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendRawMessage(fixture.inputTopic, Array.empty, TestComponentProvider.failingInputValue.getBytes).futureValue
-      val error = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](kafkaClient
-        .createConsumer().consume(fixture.errorTopic).head.message())
+      val error = kafkaClient.consumeLastMessage[KafkaExceptionInfo](fixture.errorTopic).message()
+
       error.nodeId shouldBe Some("source")
       error.processName shouldBe scenario.id
       // shouldn't it be just in error.message?
@@ -332,7 +330,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
       val input = "original"
 
       kafkaClient.sendRawMessage(inputTopic, Array(), input.getBytes(), None, timestamp.toEpochMilli).futureValue
-      kafkaClient.createConsumer().consume(outputTopic).head
+      kafkaClient.consumeLastRawMessage(outputTopic)
 
       forSomeMetric[Gauge[Long]]("eventtimedelay.minimalDelay")(_.getValue shouldBe withMinTolerance(10 hours))
       forSomeMetric[Histogram]("eventtimedelay.histogram")(_.getSnapshot.getMin shouldBe withMinTolerance(10 hours))

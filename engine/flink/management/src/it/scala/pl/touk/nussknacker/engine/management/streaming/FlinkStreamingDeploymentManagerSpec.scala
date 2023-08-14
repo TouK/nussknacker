@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
@@ -10,14 +9,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 
 import java.net.URI
-import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits._
 
-class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest {
-
-  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
+class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest  {
 
   override protected def classPath: List[String] = ClassPaths.scalaClasspath
 
@@ -68,13 +63,13 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
     try {
-      kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "1")).get(30, TimeUnit.SECONDS)
-      messagesFromTopic(outTopic, 1).head shouldBe "1"
+      kafkaClient.sendMessage(inTopic, "1").futureValue
+      kafkaClient.consumeLastStrMessage(outTopic).message() shouldBe "1"
 
       deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
-      kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "2")).get(30, TimeUnit.SECONDS)
-      messagesFromTopic(outTopic, 2).last shouldBe "2"
+      kafkaClient.sendMessage(inTopic, "2").futureValue
+      kafkaClient.consumeStrMessages(outTopic, 2, shouldSeekToBeginning = true).last.message() shouldBe "2"
     } finally {
       cancelProcess(kafkaProcess.id)
     }
@@ -90,11 +85,11 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
     try {
       //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
-      messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
+      kafkaClient.consumeLastStrMessage(outTopic).message() shouldBe "List(One element)"
 
       deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
 
-      val messages = messagesFromTopic(outTopic, 2)
+      val messages = kafkaClient.consumeStrMessages(outTopic, 2, shouldSeekToBeginning = true).map(_.message())
       messages shouldBe List("List(One element)", "List(One element, One element)")
     } finally {
       cancelProcess(processId)
@@ -111,7 +106,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
     try {
       //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
-      messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
+      kafkaClient.consumeLastStrMessage(outTopic).message() shouldBe "List(One element)"
 
       val savepointDir = Files.createTempDirectory("customSavepoint")
       val savepointPathFuture = deploymentManager.savepoint(ProcessName(processEmittingOneElementAfterStart.id), savepointDir = Some(savepointDir.toUri.toString))
@@ -122,7 +117,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       cancelProcess(processId)
       deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.toString))
 
-      val messages = messagesFromTopic(outTopic, 2)
+      val messages = kafkaClient.consumeStrMessages(outTopic, 2, shouldSeekToBeginning = true).map(_.message())
       messages shouldBe List("List(One element)", "List(One element, One element)")
     } finally {
       cancelProcess(processId)
@@ -138,7 +133,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
     try {
-      messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
+      kafkaClient.consumeLastStrMessage(outTopic).message() shouldBe "List(One element)"
 
       val savepointPath = deploymentManager.stop(ProcessName(processId), savepointDir = None, user = userToAct).map(_.path)
       eventually {
@@ -148,7 +143,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
       deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
 
-      messagesFromTopic(outTopic, 2) shouldBe List("List(One element)", "List(One element, One element)")
+      kafkaClient.consumeStrMessages(outTopic, 2, shouldSeekToBeginning = true).map(_.message()) shouldBe List("List(One element)", "List(One element, One element)")
     } finally {
       cancelProcess(processId)
     }
@@ -163,7 +158,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     deployProcessAndWaitIfRunning(process, empty(process.id))
     try {
-      messagesFromTopic(outTopic, 1) shouldBe List("")
+      kafkaClient.consumeLastStrMessage(outTopic).message() shouldBe ""
 
       logger.info("Starting to redeploy")
 
@@ -184,7 +179,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     deployProcessAndWaitIfRunning(process, empty(process.id))
     try {
-      messagesFromTopic(outTopic, 1) shouldBe List("test")
+      kafkaClient.consumeLastStrMessage(outTopic).message() shouldBe "test"
 
       logger.info("Starting to redeploy")
 
@@ -202,13 +197,6 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     val modelData = ModelData(processingTypeConfig)
     val definition = modelData.modelDefinition
     definition.services should contain key "accountService"
-  }
-
-  private def messagesFromTopic(outTopic: String, count: Int): List[String] = {
-    kafkaClient.createConsumer()
-      .consume(outTopic)
-      .map(_.message()).map(new String(_, StandardCharsets.UTF_8))
-      .take(count).toList
   }
 
   private def processVersion(processId: ProcessName): List[ProcessVersion] =

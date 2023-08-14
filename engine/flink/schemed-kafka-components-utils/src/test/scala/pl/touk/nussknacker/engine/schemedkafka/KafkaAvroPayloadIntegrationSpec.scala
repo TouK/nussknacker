@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets
 class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
-  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
   import spel.Implicits._
 
   import scala.jdk.CollectionConverters._
@@ -265,8 +264,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     pushMessage(LongFieldV1.record, topicConfig.input)
     kafkaClient.createTopic(topicConfig.output)
     run(process) {
-      val consumer = kafkaClient.createConsumer()
-      val message = consumer.consumeWithConsumerRecord(topicConfig.output).head
+      val message = kafkaClient.consumeLastRawMessage(topicConfig.output)
       message.timestamp() shouldBe timeToSetInProcess
       message.timestampType() shouldBe TimestampType.CREATE_TIME
     }
@@ -358,10 +356,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     kafkaClient.createTopic(topicConfig.output, partitions = 1)
 
     run(process) {
-      val consumer = kafkaClient.createConsumer()
-      val consumed = consumer.consume(topicConfig.output).take(1).head
-      val consumedKey = new String(consumed.key(), StandardCharsets.UTF_8)
-      consumedKey shouldEqual FullNameV1.BaseFirst
+      val result = kafkaClient.consumeLastStrMessage(topicConfig.output)
+      result.key() shouldEqual FullNameV1.BaseFirst
     }
   }
 
@@ -376,9 +372,8 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     kafkaClient.createTopic(topicConfig.output, partitions = 1)
 
     run(process) {
-      val consumer = kafkaClient.createConsumer()
-      val consumed = consumer.consume(topicConfig.output).take(1).head
-      consumed.key() shouldBe null
+      val result = kafkaClient.consumeLastStrMessage(topicConfig.output)
+      result.key() shouldEqual null
     }
   }
 

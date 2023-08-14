@@ -6,7 +6,6 @@ import org.apache.avro.generic.GenericRecord
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -36,9 +35,9 @@ class NuKafkaRuntimeDockerAvroTest extends AnyFunSuite with BaseNuKafkaRuntimeDo
     val valueBytes = ConfluentUtils.serializeContainerToBytesArray(NuKafkaRuntimeTestSamples.avroPingRecord, inputSchemaId)
     kafkaClient.sendRawMessage(fixture.inputTopic, "fooKey".getBytes, valueBytes).futureValue
     try {
-      val messages = kafkaClient.createConsumer().consume(fixture.outputTopic, secondsToWait = 60).take(1)
-        .map(rec => ConfluentUtils.deserializeSchemaIdAndData[GenericRecord](rec.message(), NuKafkaRuntimeTestSamples.avroPingSchema)).toList
-      messages shouldBe List((outputSchemaId, NuKafkaRuntimeTestSamples.avroPingRecord))
+      val record = kafkaClient.consumeLastRawMessage(fixture.outputTopic)
+      val message = ConfluentUtils.deserializeSchemaIdAndData[GenericRecord](record.value(), NuKafkaRuntimeTestSamples.avroPingSchema)
+      message shouldBe (outputSchemaId, NuKafkaRuntimeTestSamples.avroPingRecord)
     } finally {
       consumeFirstError shouldBe empty
     }

@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolderImpl
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.spel
@@ -156,8 +155,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   }
 
   private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
-    val rawOutputEvent = kafkaClient.createConsumer().consume(outTopic).take(1).head.msg
-    val outputEvent = io.circe.parser.decode[OutputEvent](new String(rawOutputEvent)).toOption.get
+    val outputEvent = kafkaClient.consumeLastMessage[OutputEvent](outTopic).message()
     outputEvent.input shouldBe input
     outputEvent.previousInput shouldBe previousInput
   }

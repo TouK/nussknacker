@@ -22,8 +22,6 @@ import java.nio.charset.StandardCharsets
 
 trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with Eventually {
 
-  import KafkaTestUtils._
-
   override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(50, Millis)))
 
   def pushMessage(obj: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null, headers: Headers = KafkaRecordUtils.emptyHeaders): RecordMetadata = {
@@ -54,12 +52,10 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
     result shouldBe expected
   }
 
-  protected def consumeMessages(kafkaDeserializer: serialization.KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
-    val consumer = kafkaClient.createConsumer()
-    consumer.consumeWithConsumerRecord(topic).map { record =>
+  protected def consumeMessages(kafkaDeserializer: serialization.KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] =
+    kafkaClient.consumeRawMessages(topic, count).map{ record =>
       kafkaDeserializer.deserialize(record)
-    }.take(count).toList
-  }
+    }
 
   def consumeAndVerifyMessage(topic: String, expected: Any, useSpecificAvroReader: Boolean = false): Assertion =
     consumeAndVerifyMessages(topic, List(expected), useSpecificAvroReader)
@@ -69,12 +65,10 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
     result shouldBe expected
   }
 
-  private def consumeMessages(topic: String, count: Int, useSpecificAvroReader: Boolean): List[Any] = {
-    val consumer = kafkaClient.createConsumer()
-    consumer.consume(topic).map { record =>
-      deserialize(useSpecificAvroReader)(topic, record.message())
-    }.take(count).toList
-  }
+  private def consumeMessages(topic: String, count: Int, useSpecificAvroReader: Boolean): List[Any] =
+    kafkaClient.consumeRawMessages(topic, count).map { record =>
+      deserialize(useSpecificAvroReader)(topic, record.value())
+    }
 
   protected def deserialize(useSpecificAvroReader: Boolean)
                            (objectTopic: String, obj: Array[Byte]): Any = prepareValueDeserializer(useSpecificAvroReader).deserialize(objectTopic, obj)
