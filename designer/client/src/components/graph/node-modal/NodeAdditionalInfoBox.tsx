@@ -30,14 +30,17 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
     //we don't wat to query BE on each key pressed (we send node parameters to get additional data)
     const [debouncedNode] = useDebounce(node, 1000);
     useEffect(() => {
+        let ignore = false;
         if (processId) {
-            const nodeType = NodeUtils.nodeType(debouncedNode);
-            if (nodeType === "Properties") {
-                HttpService.getPropertiesAdditionalInfo(processId, debouncedNode).then((res) => setAdditionalInfo(res.data));
-            } else {
-                HttpService.getNodeAdditionalInfo(processId, debouncedNode).then((res) => setAdditionalInfo(res.data));
-            }
+            const nodeType = NodeUtils.nodeType(debouncedNode) === "Properties";
+            const promise = nodeType
+                ? HttpService.getPropertiesAdditionalInfo(processId, debouncedNode)
+                : HttpService.getNodeAdditionalInfo(processId, debouncedNode);
+            promise.then(({ data }) => ignore || setAdditionalInfo(data));
         }
+        return () => {
+            ignore = true;
+        };
     }, [processId, debouncedNode]);
 
     if (!additionalInfo?.type) {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import HttpService from "../../../../http/HttpService";
 import { getProcessCounts } from "../../../../reducers/selectors/graph";
-import { Process, FragmentNodeType } from "../../../../types";
+import { FragmentNodeType, Process } from "../../../../types";
 import ErrorBoundary from "../../../common/ErrorBoundary";
 import NodeUtils from "../../NodeUtils";
 import { fragmentGraph as BareGraph } from "../../fragmentGraph";
@@ -29,7 +29,7 @@ export function FragmentContent({ nodeToDisplay }: { nodeToDisplay: FragmentNode
                 <BareGraph
                     processCounts={fragmentCounts}
                     processToDisplay={fragmentContent}
-                    nodeIdPrefixForFragmentTests={`${fragmentContent.id}-`}
+                    nodeIdPrefixForFragmentTests={`${nodeToDisplay.id}-`}
                 />
             )}
         </ErrorBoundary>

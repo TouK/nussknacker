@@ -4,9 +4,8 @@ import { Expression, NodeValidationError, PropertiesType, TypingResult, Variable
 
 import { debounce } from "lodash";
 
-export type NodeValidationUpdated = { type: "GENERIC_ACTION_VALIDATION_UPDATED"; validationData: GenericValidationData };
-export type NodeValidationClear = { type: "NODE_VALIDATION_CLEAR"; nodeId: string };
-export type NodeDetailsActions = NodeValidationUpdated | NodeValidationClear;
+type GenericActionValidationUpdated = { type: "GENERIC_ACTION_VALIDATION_UPDATED"; validationData: GenericValidationData };
+export type GenericActionActions = GenericActionValidationUpdated;
 
 export interface GenericValidationData {
     validationErrors: NodeValidationError[];
@@ -25,7 +24,7 @@ export interface GenericValidationRequest {
     processProperties: PropertiesType;
 }
 
-function nodeGenericValidationDataUpdated(validationData: GenericValidationData): NodeValidationUpdated {
+function nodeGenericValidationDataUpdated(validationData: GenericValidationData): GenericActionValidationUpdated {
     return { type: "GENERIC_ACTION_VALIDATION_UPDATED", validationData };
 }
 
