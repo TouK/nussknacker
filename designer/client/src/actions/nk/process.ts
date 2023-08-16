@@ -1,9 +1,9 @@
 import { ThunkAction } from "../reduxTypes";
-import { clear as clearUndo } from "./../undoRedoActions";
 import { Process, ProcessId } from "../../types";
 import HttpService from "./../../http/HttpService";
 import { ProcessVersionId } from "../../components/Process/types";
 import { displayProcessActivity } from "./displayProcessActivity";
+import { ActionCreators as UndoActionCreators } from "redux-undo";
 
 export function fetchProcessToDisplay(processId: ProcessId, versionId?: ProcessVersionId) {
     return (dispatch) => {
@@ -57,7 +57,7 @@ export function displayCurrentProcessVersion(processId: ProcessId) {
 
 export function clearProcess(): ThunkAction {
     return (dispatch) => {
-        dispatch(clearUndo());
+        dispatch(UndoActionCreators.clearHistory());
         dispatch({ type: "CLEAR_PROCESS" });
     };
 }
