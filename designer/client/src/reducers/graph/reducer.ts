@@ -305,9 +305,7 @@ const reducer = mergeReducers(graphReducer, {
 
 const undoableReducer = undoable(reducer, {
     ignoreInitialState: true,
-    undoType: "UNDO",
-    redoType: "REDO",
-    clearHistoryType: ["CLEAR", "PROCESS_FETCH"],
+    clearHistoryType: [UndoActionTypes.CLEAR_HISTORY, "PROCESS_FETCH"],
     groupBy: batchGroupBy.init(),
     filter: combineFilters(
         excludeAction([

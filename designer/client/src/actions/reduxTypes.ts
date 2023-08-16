@@ -9,7 +9,6 @@ import { UiActions } from "./nk/ui/uiActions";
 import { SettingsActions } from "./settingsActions";
 import { ToolbarActions } from "./nk/toolbars";
 import { RootState } from "../reducers";
-import { UndoRedoActions } from "./undoRedoActions";
 import { NodeDetailsActions } from "./nk/nodeDetails";
 import { NotificationActions } from "./nk/notifications";
 import { DisplayTestResultsDetailsAction } from "./nk/displayTestResults";
@@ -24,7 +23,6 @@ type TypedAction =
     | NodeActions
     | ToolbarActions
     | NodeDetailsActions
-    | UndoRedoActions
     | FeatureFlagsActions
     | UserSettingsActions
     | SelectionActions
