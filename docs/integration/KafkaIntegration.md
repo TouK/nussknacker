@@ -30,7 +30,7 @@ Schema of message can be described in [Avro Schema format](https://avro.apache.o
 
 Schemas are managed by Schema Registry - *Confluent Schema Registry* and *Azure Schema Registry* are supported.
 
-To preview schemas or add a new version, you can use tools available on your cloud platform or tools like [AKHQ](https://akhq.io)
+To preview schemas or add a new version, you can use tools available on your cloud platform or tools like [AKHQ](https://akhq.io). The Nussknacker Quickstart (Streaming Processing Mode) comes with bundled AKHQ, so you can add and modify schemas without the need to install additional tools. The link to AKHQ is available in the Designer in Scenarios tab under Data label. 
 
 #### Association between schema with topic
 
