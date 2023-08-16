@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { redo } from "../../../../actions/undoRedoActions";
 import Icon from "../../../../assets/img/toolbarButtons/redo.svg";
 import { getHistory } from "../../../../reducers/selectors/graph";
 import { useSelectionActions } from "../../../graph/SelectionContextProvider";

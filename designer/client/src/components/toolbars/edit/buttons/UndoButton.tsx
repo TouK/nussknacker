@@ -2,7 +2,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { undo } from "../../../../actions/undoRedoActions";
 import Icon from "../../../../assets/img/toolbarButtons/undo.svg";
 import { getHistory } from "../../../../reducers/selectors/graph";
 import { useSelectionActions } from "../../../graph/SelectionContextProvider";
