@@ -69,6 +69,12 @@ object DelayedKafkaSourceFactory {
     editor = Some(DualParameterEditor(simpleEditor = StringParameterEditor, defaultMode = DualEditorMode.RAW))
   )
 
+  def extractTimestampField(params: Map[String, Any]): String =
+    params(TimestampFieldParamName).asInstanceOf[String]
+
+  def extractDelayInMillis(params: Map[String, Any]): Long =
+    params(DelayParameterName).asInstanceOf[Long]
+
   def validateDelay(value: java.lang.Long)(implicit nodeId: NodeId): List[ProcessCompilationError] = {
     delayValidators.flatMap(_.isValid(DelayParameterName, value.toString, None).swap.toList)
   }

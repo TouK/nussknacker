@@ -14,6 +14,8 @@ case class ParameterWithExtractor[V](parameter: Parameter) {
 
   def extractValue(params: Map[String, Any]): V = params(parameter.name).asInstanceOf[V]
 
+  def extractOptionValue(params: Map[String, Any]): Option[V] = Option(params(parameter.name)).map(_.asInstanceOf[V])
+
 }
 
 object ParameterWithExtractor {

@@ -8,7 +8,6 @@
 * [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad hoc testing. 
 * [#4572](https://github.com/TouK/nussknacker/pull/4572) The package of improvements:
     - make the properties of the `FlinkStreamingPropertiesConfig` public, so that they can be reused
-    - introduce the `ParameterImplicits`, the fast way to extract parameter's value
     - introduce the `CaseClassTypeInfoFactory`, a generic factory for creating `CaseClassTypeInfo`
     - allow passing classLoader at `ResourceLoader.load`
 
