@@ -122,15 +122,16 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
     try {
       val queryMetaData = dbMetaDataProvider.getQueryMetaData(query)
       val queryArgParams = toParameters(queryMetaData.dbParameterMetaData)
-      NextParameters(
-        parameters = queryArgParams,
-        state = Some(TransformationState(
-          query = query,
-          argsCount = queryArgParams.size,
-          tableDef = queryMetaData.tableDefinition,
-          strategy = QueryResultStrategy(strategyName).get)
-        )
-      )
+      val state = TransformationState(
+        query = query,
+        argsCount = queryArgParams.size,
+        tableDef = queryMetaData.tableDefinition,
+        strategy = QueryResultStrategy(strategyName).get)
+      if (queryArgParams.isEmpty) {
+        createFinalResults(context, dependencies, state)
+      } else {
+        NextParameters(parameters = queryArgParams, state = Some(state))
+      }
     } catch {
       case e: SQLException =>
         val error = CustomNodeError(messageFromSQLException(query, e), Some(DatabaseQueryEnricher.QueryParamName))
@@ -160,10 +161,16 @@ class DatabaseQueryEnricher(val dbPoolConfig: DBPoolConfig, val dbMetaDataProvid
   protected def finalStep(context: ValidationContext, dependencies: List[NodeDependencyValue])
                          (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(_, Some(state)) =>
-      FinalResults.forValidation(context, state = Some(state))(_.withVariable(
-        name = OutputVariableNameDependency.extract(dependencies),
-        value = state.outputType,
-        paramName = None))
+      createFinalResults(context, dependencies, state)
+  }
+
+  private def createFinalResults(context: ValidationContext,
+                                 dependencies: List[NodeDependencyValue],
+                                 state: TransformationState)(implicit nodeId: NodeId): FinalResults = {
+    FinalResults.forValidation(context, state = Some(state))(_.withVariable(
+      name =  OutputVariableNameDependency.extract(dependencies),
+      value = state.outputType,
+      paramName = None))
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[TransformationState]): ServiceInvoker = {

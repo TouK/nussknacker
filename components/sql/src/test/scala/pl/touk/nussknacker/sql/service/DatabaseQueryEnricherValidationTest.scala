@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParame
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.sql.db.query.SingleResultStrategy
+import pl.touk.nussknacker.sql.db.query.{ResultSetStrategy, SingleResultStrategy}
 import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
 import pl.touk.nussknacker.sql.utils.BaseHsqlQueryEnricherTest
 
@@ -40,6 +40,25 @@ class DatabaseQueryEnricherValidationTest extends BaseHsqlQueryEnricherTest {
       expectedOutputContext,
       List(CustomNodeError("unexpected token: FROM in statement [select from]", Some(DatabaseQueryEnricher.QueryParamName)))
     )
+  }
+
+  test("should handle non-parametrized queries") {
+    implicit val nodeId: NodeId = NodeId("test")
+    val vCtx = ValidationContext(Map("some" -> Typed[String]))
+    val outVarName = "out"
+
+    val result = service.contextTransformation(vCtx, List(OutputVariableNameValue(outVarName))).apply(
+      service.TransformationStep(List(
+        DatabaseQueryEnricher.ResultStrategyParam.name -> eagerValueParameter(ResultSetStrategy.name),
+        DatabaseQueryEnricher.QueryParamName -> eagerValueParameter("select * from persons"),
+        DatabaseQueryEnricher.CacheTTLParam.name -> eagerValueParameter(Duration.ofMinutes(1)),
+      ), None)
+    )
+
+    result match {
+      case service.FinalResults(expectedOutputContext, _, _) => expectedOutputContext.contains("out") shouldBe true
+      case _ => fail("Enricher does not return final results")
+    }
   }
 
   private def eagerValueParameter(value: Any) = DefinedEagerParameter(value, null)
