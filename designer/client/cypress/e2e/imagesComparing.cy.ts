@@ -1,6 +1,4 @@
 import axios from "axios";
-import * as fs from "fs";
-
 describe("Images Comparing", () => {
     const seed = "imagesComparing";
 
@@ -175,31 +173,4 @@ function postSchemaToRegistry(): void {
         .catch((error) => {
             console.error("Error:", error);
         });
-}
-
-function checkDockerComposeFile(): string | null {
-    const composeFilePath = process.env.COMPOSE_FILE;
-
-    if (!composeFilePath) {
-        console.log("Nie znaleziono zmiennej środowiskowej COMPOSE_FILE.");
-        return null;
-    }
-
-    if (!fs.existsSync(composeFilePath)) {
-        console.log(`Plik ${composeFilePath} nie istnieje.`);
-        return null;
-    }
-
-    if (!composeFilePath.endsWith("docker-compose.yml")) {
-        console.log("Plik nie jest plikiem docker-compose.yml.");
-        return null;
-    }
-
-    return composeFilePath;
-}
-
-const dockerComposeFilePath = checkDockerComposeFile();
-
-if (dockerComposeFilePath) {
-    console.log(`Docker Compose został odpalony z pliku: ${dockerComposeFilePath}`);
 }
