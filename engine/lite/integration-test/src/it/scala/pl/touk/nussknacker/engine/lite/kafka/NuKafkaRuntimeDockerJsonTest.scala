@@ -27,7 +27,7 @@ class NuKafkaRuntimeDockerJsonTest extends AnyFunSuite with BaseNuKafkaRuntimeDo
   test("json ping-pong should work") {
     kafkaClient.sendMessage(fixture.inputTopic, NuKafkaRuntimeTestSamples.jsonPingMessage).futureValue
     try {
-      val message = kafkaClient.consumeLastStrMessage(fixture.outputTopic).message()
+      val message = kafkaClient.consumeMessages[String](fixture.outputTopic, 1).head.message()
       message shouldBe NuKafkaRuntimeTestSamples.jsonPingMessage
     } finally {
       consumeFirstError shouldBe empty

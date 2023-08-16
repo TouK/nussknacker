@@ -35,7 +35,7 @@ class NuKafkaRuntimeDockerAvroTest extends AnyFunSuite with BaseNuKafkaRuntimeDo
     val valueBytes = ConfluentUtils.serializeContainerToBytesArray(NuKafkaRuntimeTestSamples.avroPingRecord, inputSchemaId)
     kafkaClient.sendRawMessage(fixture.inputTopic, "fooKey".getBytes, valueBytes).futureValue
     try {
-      val record = kafkaClient.consumeLastRawMessage(fixture.outputTopic)
+      val record = kafkaClient.consumeRawMessages(fixture.outputTopic, 1).head
       val message = ConfluentUtils.deserializeSchemaIdAndData[GenericRecord](record.value(), NuKafkaRuntimeTestSamples.avroPingSchema)
       message shouldBe (outputSchemaId, NuKafkaRuntimeTestSamples.avroPingRecord)
     } finally {

@@ -14,6 +14,7 @@ import java.time.Duration
 import java.util
 import java.util.{Collections, UUID}
 import scala.concurrent.{Future, Promise}
+import scala.reflect.{classTag, ClassTag}
 import scala.util.{Failure, Success, Try}
 
 object KafkaClient {
@@ -21,11 +22,15 @@ object KafkaClient {
     def keyAsStr: String =
       strOrNull(record.key())
 
-    def valueAsStr: String =
-      strOrNull(record.value())
+    def valueAs[T: Decoder : ClassTag]: T = {
+      val clazz = classTag[T].runtimeClass
 
-    def valueAs[T: Decoder]: T =
-      CirceUtil.decodeJsonUnsafe[T](record.value())
+      if (classOf[String].isAssignableFrom(clazz)) {
+        strOrNull(record.value()).asInstanceOf[T]
+      } else {
+        CirceUtil.decodeJsonUnsafe[T](record.value())
+      }
+    }
 
     private def strOrNull(data: Array[Byte]): String =
       Option(data).map(value => new String(value, StandardCharsets.UTF_8)).orNull
@@ -36,11 +41,9 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 
-  import KafkaClient._
-
   import scala.jdk.CollectionConverters._
 
-  private val LastMessageCount = 1
+  import KafkaClient._
 
   private val rawProducer: KafkaProducer[Array[Byte], Array[Byte]] = KafkaTestUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
 
@@ -84,24 +87,10 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
     promise.future
   }
 
-  def consumeLastMessage[T: Decoder](topic: String): KeyMessage[String, T] =
-    consumeMessages[T](topic, LastMessageCount).head
-
-  def consumeMessages[V: Decoder](topic: String, count: Int, shouldSeekToBeginning: Boolean = false): List[KeyMessage[String, V]] =
+  def consumeMessages[V: Decoder : ClassTag](topic: String, count: Int, shouldSeekToBeginning: Boolean = false): List[KeyMessage[String, V]] =
     consumeRawMessages(topic, count, shouldSeekToBeginning).map { record =>
       KeyMessage(record.keyAsStr, record.valueAs[V], record.timestamp)
     }
-
-  def consumeLastStrMessage(topic: String): KeyMessage[String, String] =
-    consumeStrMessages(topic, LastMessageCount).head
-
-  def consumeStrMessages(topic: String, count: Int, shouldSeekToBeginning: Boolean = false): List[KeyMessage[String, String]] =
-    consumeRawMessages(topic, count, shouldSeekToBeginning).map { record =>
-      KeyMessage(record.keyAsStr, record.valueAsStr, record.timestamp)
-    }
-
-  def consumeLastRawMessage(topic: String, shouldSeekToBeginning: Boolean = false): ConsumerRecord[Array[Byte], Array[Byte]] =
-    consumeRawMessages(topic, LastMessageCount, shouldSeekToBeginning).head
 
   def consumeRawMessages(topic: String, count: Int, shouldSeekToBeginning: Boolean = false): List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
     (consumers.get(topic) match {

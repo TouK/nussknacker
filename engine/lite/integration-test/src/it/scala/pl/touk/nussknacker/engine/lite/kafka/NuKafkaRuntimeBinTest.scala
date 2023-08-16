@@ -28,7 +28,7 @@ class NuKafkaRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin w
         kafkaClient.sendMessage(fixture.inputTopic, NuKafkaRuntimeTestSamples.jsonPingMessage).futureValue
       },
       {
-        val messages = kafkaClient.consumeLastStrMessage(fixture.outputTopic).message()
+        val messages = kafkaClient.consumeMessages[String](fixture.outputTopic, 1).head.message()
         messages shouldBe NuKafkaRuntimeTestSamples.jsonPingMessage
       })
   }

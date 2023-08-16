@@ -155,7 +155,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   }
 
   private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
-    val outputEvent = kafkaClient.consumeLastMessage[OutputEvent](outTopic).message()
+    val outputEvent = kafkaClient.consumeMessages[OutputEvent](outTopic, 1).head.message()
     outputEvent.input shouldBe input
     outputEvent.previousInput shouldBe previousInput
   }

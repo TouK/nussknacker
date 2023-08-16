@@ -81,7 +81,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
         timestamp = inputTimestamp
       )
 
-      val outputTimestamp = kafkaClient.consumeLastRawMessage(outputTopic).timestamp
+      val outputTimestamp = kafkaClient.consumeRawMessages(outputTopic, 1).head.timestamp
       outputTimestamp shouldBe inputTimestamp
     }
   }
@@ -116,7 +116,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
         timestamp = inputTimestamp
       )
 
-      val outputTimestamp = kafkaClient.consumeLastRawMessage(outputTopic).timestamp
+      val outputTimestamp = kafkaClient.consumeRawMessages(outputTopic, 1).head.timestamp
       outputTimestamp shouldBe inputTimestamp
     }
   }
@@ -138,7 +138,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
         timestamp = inputTimestamp
       )
 
-      val outputTimestamp = kafkaClient.consumeLastRawMessage(outputTopic).timestamp
+      val outputTimestamp = kafkaClient.consumeRawMessages(outputTopic, 1).head.timestamp
       outputTimestamp shouldBe inputTimestamp
     }
   }
@@ -162,10 +162,10 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
       kafkaClient.sendMessage(inputTopic, input).futureValue
       kafkaClient.sendMessage(inputTopic, "").futureValue
 
-      val messages = kafkaClient.consumeStrMessages(outputTopic, 2).map(_.message())
+      val messages = kafkaClient.consumeMessages[String](outputTopic, 2).map(_.message())
       messages shouldBe List("original-add", "other-add")
 
-      val error = kafkaClient.consumeLastMessage[KafkaExceptionInfo](errorTopic).message()
+      val error = kafkaClient.consumeMessages[KafkaExceptionInfo](errorTopic, 1).head.message()
       error.nodeId shouldBe Some("throw on 0")
       error.processName shouldBe scenario.id
       error.exceptionInput shouldBe Some("1 / #input.length")
@@ -177,12 +177,12 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendMessage(fixture.inputTopic, "one").futureValue
-      kafkaClient.consumeStrMessages(fixture.outputTopic, 1).map(_.message()) shouldEqual List("one")
+      kafkaClient.consumeMessages[String](fixture.outputTopic, 1).map(_.message()) shouldEqual List("one")
     }
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendMessage(fixture.inputTopic, "two").futureValue
-      kafkaClient.consumeStrMessages(fixture.outputTopic, 2, shouldSeekToBeginning = true).map(_.message()) shouldEqual List("one", "two")
+      kafkaClient.consumeMessages[String](fixture.outputTopic, 2, shouldSeekToBeginning = true).map(_.message()) shouldEqual List("one", "two")
     }
   }
 
@@ -241,7 +241,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
       val runResult = interpreter.run()
       //we wait for one message to make sure everything is already running
       kafkaClient.sendMessage(inputTopic, "dummy").futureValue
-      kafkaClient.consumeLastRawMessage(outputTopic)
+      kafkaClient.consumeRawMessages(outputTopic, 1).head
       runResult
     }
     Try(Await.result(runResult, 10 seconds)) match {
@@ -308,7 +308,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendRawMessage(fixture.inputTopic, Array.empty, TestComponentProvider.failingInputValue.getBytes).futureValue
-      val error = kafkaClient.consumeLastMessage[KafkaExceptionInfo](fixture.errorTopic).message()
+      val error = kafkaClient.consumeMessages[KafkaExceptionInfo](fixture.errorTopic, 1).head.message()
 
       error.nodeId shouldBe Some("source")
       error.processName shouldBe scenario.id
@@ -330,7 +330,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
       val input = "original"
 
       kafkaClient.sendRawMessage(inputTopic, Array(), input.getBytes(), None, timestamp.toEpochMilli).futureValue
-      kafkaClient.consumeLastRawMessage(outputTopic)
+      kafkaClient.consumeRawMessages(outputTopic, 1).head
 
       forSomeMetric[Gauge[Long]]("eventtimedelay.minimalDelay")(_.getValue shouldBe withMinTolerance(10 hours))
       forSomeMetric[Histogram]("eventtimedelay.histogram")(_.getSnapshot.getMin shouldBe withMinTolerance(10 hours))

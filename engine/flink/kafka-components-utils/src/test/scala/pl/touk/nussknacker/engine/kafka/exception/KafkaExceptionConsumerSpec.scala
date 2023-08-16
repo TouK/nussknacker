@@ -47,7 +47,7 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id) {
-      val consumed = kafkaClient.consumeLastMessage[KafkaExceptionInfo](topicName)
+      val consumed = kafkaClient.consumeMessages[KafkaExceptionInfo](topicName, 1)
       consumed.key() shouldBe "testProcess-shouldFail"
 
       consumed.message().nodeId shouldBe Some("shouldFail")

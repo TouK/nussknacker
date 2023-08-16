@@ -45,9 +45,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     }
 
     val input = obj("productId" -> fromInt(10))
-    kafkaClient.sendMessage(inputTopic, input.noSpaces)
-
-    kafkaClient.consumeLastMessage[Json](outputTopic).message() shouldBe input
+    kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
+    kafkaClient.consumeMessages[Json](outputTopic, 1).head.message() shouldBe input
 
     wrapInFailingLoader {
       manager.cancel(name, User("a", "b")).futureValue
@@ -73,9 +72,9 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     }
 
     val input = obj("productId" -> fromInt(10))
-    kafkaClient.sendMessage(inputTopic, input.noSpaces)
+    kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
 
-    kafkaClient.consumeLastMessage[Json](outputTopic).message() shouldBe input
+    kafkaClient.consumeMessages[Json](outputTopic, 1).head.message() shouldBe input
 
     manager.cancel(name, User("a", "b")).futureValue
     manager.getProcessStates(name).futureValue.value shouldBe List.empty
@@ -145,8 +144,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
 
     fixture.deployScenario(scenarioForOutput("start"))
 
-    kafkaClient.sendMessage(inputTopic, message("1"))
-    kafkaClient.consumeLastMessage[Json](outputTopic).message() shouldBe prefixMessage("start", "1")
+    kafkaClient.sendMessage(inputTopic, message("1")).futureValue
+    kafkaClient.consumeMessages[Json](outputTopic, 1).head.message() shouldBe prefixMessage("start", "1")
 
     fixture.deployScenario(scenarioForOutput("next"))
 
@@ -154,12 +153,12 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
       manager.getProcessStates(name).futureValue.value.map(_.status) shouldBe List(SimpleStateStatus.Running)
     }
 
-    kafkaClient.sendMessage(inputTopic, message("2"))
+    kafkaClient.sendMessage(inputTopic, message("2")).futureValue
     kafkaClient.consumeMessages[Json](outputTopic, 2, shouldSeekToBeginning = true).map(_.message()) shouldBe List(
       prefixMessage("start", "1"), prefixMessage("next", "2")
     )
 
-    kafkaClient.sendMessage(inputTopic, message("3"))
+    kafkaClient.sendMessage(inputTopic, message("3")).futureValue
     kafkaClient.consumeMessages[Json](outputTopic, 3, shouldSeekToBeginning = true).map(_.message()) shouldBe List(
       prefixMessage("start", "1"), prefixMessage("next" , "2"),
       prefixMessage("next", "3")
@@ -200,8 +199,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
       .emptySink("sink", "kafka", TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> "'latest'", "Key" -> "null",
         SinkRawEditorParamName -> "true", SinkValidationModeParameterName -> "'strict'", SinkValueParamName -> s"{message: #input.message, other: '1'}")
 
-    kafkaClient.sendMessage(inputTopic, message("1"))
-    kafkaClient.sendMessage(inputTopic, message("2"))
+    kafkaClient.sendMessage(inputTopic, message("1")).futureValue
+    kafkaClient.sendMessage(inputTopic, message("2")).futureValue
 
     val preliminaryTestData = testInfoProvider.generateTestData(scenario, 2).value
 
