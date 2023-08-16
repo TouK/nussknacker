@@ -1,0 +1,67 @@
+{
+    "metaData": {
+        "id": "test",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "kafka",
+            "ref": {
+                "typ": "kafka",
+                "parameters": [
+                    {
+                        "name": "Topic",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "nu"
+                        }
+                    },
+                    {
+                        "name": "Schema version",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "'latest'"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": -1
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "id": "dead-end",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 0,
+                    "y": 180
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": []
+}
