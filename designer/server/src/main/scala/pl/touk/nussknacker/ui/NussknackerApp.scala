@@ -142,8 +142,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
     val processActivityRepository = new DbProcessActivityRepository(dbConfig)
 
-    val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader)
-    val authorizationRules = AuthenticationConfiguration.getRules(resolvedConfig)
+    val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
 
     val counter = new ProcessCounter(fragmentRepository)
 
@@ -243,6 +242,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val route = createAppRoute(
       resolvedConfig = resolvedConfig,
+      authenticationResources = authenticationResources,
       apiResourcesWithAuthentication = apiResourcesWithAuthentication,
       apiResourcesWithoutAuthentication = apiResourcesWithoutAuthentication,
       processCategoryService = processCategoryService,
@@ -254,15 +254,13 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
   }
 
   private def createAppRoute(resolvedConfig: Config,
+                             authenticationResources: AuthenticationResources,
                              apiResourcesWithAuthentication: List[RouteWithUser],
                              apiResourcesWithoutAuthentication: List[Route],
                              processCategoryService: ProcessCategoryService,
                              developmentMode: Boolean) // todo: fixme
                             (implicit executionContext: ExecutionContext,
                              sttpBacked: SttpBackend[Future, Any]): Route = {
-    val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader)
-    val authorizationRules = AuthenticationConfiguration.getRules(resolvedConfig)
-
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(resolvedConfig.getString("http.publicPath"))
     WithDirectives(CorsSupport.cors(developmentMode), SecurityHeadersSupport(), OptionsMethodSupport()) {
@@ -273,13 +271,16 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       } ~ authenticationResources.authenticate() { authenticatedUser =>
         pathPrefix("api") {
           authorize(authenticatedUser.roles.nonEmpty) {
-            val loggedUser = LoggedUser(authenticatedUser, authorizationRules, processCategoryService.getAllCategories)
+            val loggedUser = LoggedUser(
+              authenticatedUser = authenticatedUser,
+              rules = AuthenticationConfiguration.getRules(resolvedConfig),
+              processCategories = processCategoryService.getAllCategories
+            )
             apiResourcesWithAuthentication.map(_.securedRoute(loggedUser)).reduce(_ ~ _)
           }
         }
       }
     }
-
   }
 
   //by default, we use InfluxCountsReporterCreator
