@@ -139,7 +139,7 @@ describe("Images Comparing", () => {
     });
 
     it.only("should display kawka value", () => {
-        cy.visitNewProcess(seed, "test-7");
+        cy.visitNewProcess(seed, "dockKafkaInput#0");
         cy.get('[title="layout"] > .ToolbarButton--icon--w9M5n').click();
 
         cy.get('[model-id="kafka"]').dblclick();
