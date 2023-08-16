@@ -1,6 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, isEqual, pick, sortBy, uniq, xor, zipObject } from "lodash";
-import undoable, { combineFilters, excludeAction } from "redux-undo";
+import { concat, defaultsDeep, flow, isEqual, sortBy, uniq, xor, zipObject } from "lodash";
+import { omit as _omit, pick as _pick } from "lodash/fp";
+import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
 import { Reducer } from "../../actions/reduxTypes";
 import * as GraphUtils from "../../components/graph/GraphUtils";
 import * as LayoutUtils from "../layoutUtils";
@@ -19,6 +20,7 @@ import {
 import { Edge, ValidationResult } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "./batchGroupBy";
+import { NestedKeyOf } from "./nestedKeyOf";
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -297,13 +299,26 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     }
 };
 
-const reducer = mergeReducers(graphReducer, {
+const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
     processToDisplay: {
         nodes,
     },
 });
 
-const undoableReducer = undoable(reducer, {
+const pick = <T>(props: NestedKeyOf<T>[]) => _pick(props);
+const omit = <T>(props: NestedKeyOf<T>[]) => _omit(props);
+
+const getUndoableState = flow(
+    pick<GraphState>(["fetchedProcessDetails", "processToDisplay", "unsavedNewName", "layout", "selectionState"]),
+    omit<GraphState>([
+        "processToDisplay.validationResult",
+        "fetchedProcessDetails.lastDeployedAction",
+        "fetchedProcessDetails.lastAction",
+        "fetchedProcessDetails.history",
+    ]),
+);
+
+const undoableReducer: Reducer<StateWithHistory<GraphState>> = undoable<GraphState>(reducer, {
     ignoreInitialState: true,
     clearHistoryType: [UndoActionTypes.CLEAR_HISTORY, "PROCESS_FETCH"],
     groupBy: batchGroupBy.init(),
@@ -317,20 +332,18 @@ const undoableReducer = undoable(reducer, {
             "UPDATE_BACKEND_NOTIFICATIONS",
         ]),
         (action, nextState, prevState) => {
-            const keys: Array<keyof GraphState> = [
-                "fetchedProcessDetails",
-                "processToDisplay",
-                "unsavedNewName",
-                "layout",
-                "selectionState",
-            ];
-            return !isEqual(pick(nextState, keys), pick(prevState._latestUnfiltered, keys));
+            return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
         },
     ),
 });
 
-//TODO: replace this with use of selectors everywhere
 export function reducerWithUndo(state, action) {
-    const history = undoableReducer(state?.history, action);
-    return { ...history.present, history };
+    const { present, ...history } = undoableReducer(state?.history, action);
+
+    const filteredPresent = Object.values(UndoActionTypes).includes(action.type)
+        ? defaultsDeep(getUndoableState(present), state?.history?.present)
+        : present;
+
+    //TODO: replace this with use of selectors everywhere
+    return { ...filteredPresent, history: { ...history, present: filteredPresent } };
 }
