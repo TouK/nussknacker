@@ -651,6 +651,11 @@ class HttpService {
 
     async #addError(message: string, error?: AxiosError<unknown>, showErrorText = false) {
         console.warn(message, error);
+
+        if (this.#requestCanceled(error)) {
+            return;
+        }
+
         const errorResponseData = error?.response?.data || error.message;
         const errorMessage =
             errorResponseData instanceof Blob
@@ -668,6 +673,10 @@ class HttpService {
             //don't send empty edges
             withoutHackOfEmptyEdges(process);
         return { id, nodes, edges, properties, processingType, category };
+    }
+
+    #requestCanceled(error: AxiosError<unknown>) {
+        return error.message === "canceled";
     }
 }
 

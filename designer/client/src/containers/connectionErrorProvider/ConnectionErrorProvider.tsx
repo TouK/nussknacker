@@ -1,12 +1,13 @@
-import React, { createContext, FC, PropsWithChildren, useContext, useMemo, useState } from "react";
+import React, { createContext, FC, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
 import { Dialog } from "@mui/material";
 import { ConnectionErrorContent } from "./ConnectionErrorContent";
 import { CloudOff, WifiOff } from "@mui/icons-material";
 import i18next from "i18next";
+import { useCancelRequestsIfConnectionProblem } from "./useCancelRequestsIfConnectionProblem";
 
 const ConnectionErrorContext = createContext<{ handleChangeConnectionError: (connectionError: ConnectionError) => void | null }>(null);
 
-type ConnectionError = "NO_NETWORK_ACCESS" | "NO_BACKEND_ACCESS";
+export type ConnectionError = "NO_NETWORK_ACCESS" | "NO_BACKEND_ACCESS";
 
 export const ConnectionErrorProvider: FC<PropsWithChildren<unknown>> = ({ children }) => {
     const [connectionError, setConnectionError] = useState<ConnectionError | null>(null);
@@ -14,6 +15,8 @@ export const ConnectionErrorProvider: FC<PropsWithChildren<unknown>> = ({ childr
     const handleChangeConnectionError = (newConnectionError: ConnectionError) => {
         setConnectionError(newConnectionError);
     };
+
+    useCancelRequestsIfConnectionProblem(connectionError);
 
     const connectionErrorComponent = useMemo(() => {
         switch (connectionError) {
