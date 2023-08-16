@@ -16,7 +16,9 @@ const parseCollection = (collection: ToolbarsConfig): Toolbar[] =>
     );
 
 export function useToolbarConfig(): [Toolbar[], string] {
-    const { id, ...toolbarsCollection } = useSelector(getToolbarsConfig);
-    const toolbars = useMemo(() => parseCollection(toolbarsCollection), [toolbarsCollection]);
-    return [toolbars, id];
+    const config = useSelector(getToolbarsConfig);
+    return useMemo(() => {
+        const { id, ...toolbarsCollection } = config;
+        return [parseCollection(toolbarsCollection), id];
+    }, [config]);
 }
