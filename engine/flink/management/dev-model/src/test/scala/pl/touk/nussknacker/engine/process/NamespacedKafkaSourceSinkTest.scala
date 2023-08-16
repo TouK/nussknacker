@@ -22,6 +22,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
 
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
 
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import spel.Implicits._
   import KafkaFactory._
 
@@ -45,7 +46,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
       .emptySink("output", "kafka-string", TopicParamName -> s"'$outputTopic'", SinkValueParamName -> "#input")
 
     run(process) {
-      val processed = kafkaClient.consumeMessages[String](s"ns_$outputTopic", 1).map(_.message())
+      val processed = kafkaClient.createConsumer().consume[String](s"ns_$outputTopic", 1).map(_.message())
       processed shouldEqual List(message)
     }
   }

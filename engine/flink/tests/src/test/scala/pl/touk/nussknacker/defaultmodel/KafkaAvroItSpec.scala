@@ -14,6 +14,7 @@ import java.time.temporal.ChronoUnit
 
 class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import MockSchemaRegistry._
   import spel.Implicits._
 
@@ -81,7 +82,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
     sendAvro(givenMatchingAvroObj, topicConfig.input, timestamp = timeAgo)
 
     run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
-      val processed = kafkaClient.consumeRawMessages(topicConfig.output, 1).head
+      val processed = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output).take(1).head
       processed.timestamp shouldBe timeAgo
       valueDeserializer.deserialize(topicConfig.output, processed.value()) shouldEqual givenMatchingAvroObjConvertedToV2
     }
@@ -140,6 +141,6 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
   }
 
   private def consumeOneAvroMessage(topic: String) =
-    valueDeserializer.deserialize(topic, kafkaClient.consumeRawMessages(topic, 1).head.value())
+    valueDeserializer.deserialize(topic, kafkaClient.createConsumer().consumeWithConsumerRecord(topic).take(1).head.value())
 
 }

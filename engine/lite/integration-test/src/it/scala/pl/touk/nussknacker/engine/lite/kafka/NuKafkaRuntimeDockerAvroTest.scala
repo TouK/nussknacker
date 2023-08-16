@@ -12,6 +12,8 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 class NuKafkaRuntimeDockerAvroTest extends AnyFunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with PatientScalaFutures with LazyLogging {
 
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+
   private var inputSchemaId: SchemaId = _
 
   private var outputSchemaId: SchemaId = _
@@ -35,7 +37,7 @@ class NuKafkaRuntimeDockerAvroTest extends AnyFunSuite with BaseNuKafkaRuntimeDo
     val valueBytes = ConfluentUtils.serializeContainerToBytesArray(NuKafkaRuntimeTestSamples.avroPingRecord, inputSchemaId)
     kafkaClient.sendRawMessage(fixture.inputTopic, "fooKey".getBytes, valueBytes).futureValue
     try {
-      val record = kafkaClient.consumeRawMessages(fixture.outputTopic, 1).head
+      val record = kafkaClient.createConsumer().consumeWithConsumerRecord(fixture.outputTopic, secondsToWait = 60).take(1).head
       val message = ConfluentUtils.deserializeSchemaIdAndData[GenericRecord](record.value(), NuKafkaRuntimeTestSamples.avroPingSchema)
       message shouldBe (outputSchemaId, NuKafkaRuntimeTestSamples.avroPingRecord)
     } finally {

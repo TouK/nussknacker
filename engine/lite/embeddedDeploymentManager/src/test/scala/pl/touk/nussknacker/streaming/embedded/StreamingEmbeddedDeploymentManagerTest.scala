@@ -24,6 +24,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
 
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import KafkaUniversalComponentTransformer._
 
   test("Deploys scenario and cancels") {
@@ -46,7 +47,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
 
     val input = obj("productId" -> fromInt(10))
     kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
-    kafkaClient.consumeMessages[Json](outputTopic, 1).head.message() shouldBe input
+    kafkaClient.createConsumer().consume[Json](outputTopic).take(1).head.message() shouldBe input
 
     wrapInFailingLoader {
       manager.cancel(name, User("a", "b")).futureValue
@@ -74,7 +75,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val input = obj("productId" -> fromInt(10))
     kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
 
-    kafkaClient.consumeMessages[Json](outputTopic, 1).head.message() shouldBe input
+    kafkaClient.createConsumer().consume[Json](outputTopic).take(1).head.message() shouldBe input
 
     manager.cancel(name, User("a", "b")).futureValue
     manager.getProcessStates(name).futureValue.value shouldBe List.empty
@@ -145,7 +146,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     fixture.deployScenario(scenarioForOutput("start"))
 
     kafkaClient.sendMessage(inputTopic, message("1")).futureValue
-    kafkaClient.consumeMessages[Json](outputTopic, 1).head.message() shouldBe prefixMessage("start", "1")
+    kafkaClient.createConsumer().consume[Json](outputTopic).take(1).head.message() shouldBe prefixMessage("start", "1")
 
     fixture.deployScenario(scenarioForOutput("next"))
 
@@ -154,12 +155,12 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     }
 
     kafkaClient.sendMessage(inputTopic, message("2")).futureValue
-    kafkaClient.consumeMessages[Json](outputTopic, 2, shouldSeekToBeginning = true).map(_.message()) shouldBe List(
+    kafkaClient.createConsumer().consume[Json](outputTopic).take(2).map(_.message()) shouldBe List(
       prefixMessage("start", "1"), prefixMessage("next", "2")
     )
 
     kafkaClient.sendMessage(inputTopic, message("3")).futureValue
-    kafkaClient.consumeMessages[Json](outputTopic, 3, shouldSeekToBeginning = true).map(_.message()) shouldBe List(
+    kafkaClient.createConsumer().consume[Json](outputTopic).take(3).map(_.message()) shouldBe List(
       prefixMessage("start", "1"), prefixMessage("next" , "2"),
       prefixMessage("next", "3")
     )

@@ -10,6 +10,8 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 class NuKafkaRuntimeDockerJsonTest extends AnyFunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with PatientScalaFutures with LazyLogging {
 
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+
   override val container: Container = {
     kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
     schemaRegistryContainer.start() // should be started after kafka
@@ -27,7 +29,7 @@ class NuKafkaRuntimeDockerJsonTest extends AnyFunSuite with BaseNuKafkaRuntimeDo
   test("json ping-pong should work") {
     kafkaClient.sendMessage(fixture.inputTopic, NuKafkaRuntimeTestSamples.jsonPingMessage).futureValue
     try {
-      val message = kafkaClient.consumeMessages[String](fixture.outputTopic, 1).head.message()
+      val message = kafkaClient.createConsumer().consume[String](fixture.outputTopic).head.message()
       message shouldBe NuKafkaRuntimeTestSamples.jsonPingMessage
     } finally {
       consumeFirstError shouldBe empty

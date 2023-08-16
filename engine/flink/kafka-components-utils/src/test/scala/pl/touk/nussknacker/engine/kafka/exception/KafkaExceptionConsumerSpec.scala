@@ -21,6 +21,7 @@ import java.util.Date
 
 class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSpec with Matchers {
 
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   private val topicName = "testingErrors"
 
   protected var registrar: FlinkProcessRegistrar = _
@@ -47,7 +48,7 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id) {
-      val consumed = kafkaClient.consumeMessages[KafkaExceptionInfo](topicName, 1)
+      val consumed = kafkaClient.createConsumer().consume[KafkaExceptionInfo](topicName).take(1).head
       consumed.key() shouldBe "testProcess-shouldFail"
 
       consumed.message().nodeId shouldBe Some("shouldFail")

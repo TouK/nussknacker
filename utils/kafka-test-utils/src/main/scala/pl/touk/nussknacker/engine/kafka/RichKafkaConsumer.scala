@@ -1,19 +1,29 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.Decoder
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, ConsumerRecords}
 import org.apache.kafka.common.TopicPartition
-import org.scalatest.concurrent.Eventually._
+import org.scalatest.concurrent.Eventually.{eventually, _}
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.kafka.RichKafkaConsumer.DefaultSecondsToWait
 
 import java.time.Duration
 import java.util.concurrent.TimeoutException
 import scala.collection.compat.immutable.LazyList
+import scala.reflect.ClassTag
 
 class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 
+  import RichKafkaConsumer._
+
   import scala.jdk.CollectionConverters._
+
+  def consume[V: Decoder : ClassTag](topic: String, secondsToWait: Int = DefaultSecondsToWait)(implicit ek: K =:= Array[Byte], em: M =:= Array[Byte]): LazyList[KeyMessage[String, V]] =
+    consumeWithConsumerRecord(topic, secondsToWait).map { record =>
+      val key = ConsumerRecordHelper.as[String](record.key())
+      val message = ConsumerRecordHelper.as[V](record.value())
+      KeyMessage(key, message, record.timestamp)
+    }
 
   def consumeWithConsumerRecord(topic: String, secondsToWait: Int = DefaultSecondsToWait): LazyList[ConsumerRecord[K, M]] = {
     val partitions = fetchTopicPartitions(topic, secondsToWait)
@@ -32,6 +42,7 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
     }
     partitionsInfo.asScala.map(no => new TopicPartition(topic, no.partition()))
   }
+
 
   //If we do just _ => consumer.poll(...).asScala.toStream, the stream will block indefinitely when no messages are sent
   class Poller(secondsToWait: Int) extends Function1[Unit, LazyList[ConsumerRecord[K, M]]] {
@@ -58,7 +69,7 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 }
 
 object RichKafkaConsumer {
-  val DefaultSecondsToWait = 30
+  private val DefaultSecondsToWait = 30
 }
 
 case class KeyMessage[K, V](k: K, msg: V, timestamp: Long) {

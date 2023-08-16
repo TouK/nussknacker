@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import MockSchemaRegistry._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
@@ -112,7 +113,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
       providerSetup.pushMessage(serializer, givenObj, topicConfig.output)
 
       if(schemaForWrite.isDefined) {
-        kafkaClient.consumeRawMessages(topicConfig.output, 1).head.headers().toArray.map(_.key()) should contain (ValueSchemaIdHeaderName)
+        kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output).take(1).head.headers().toArray.map(_.key()) should contain (ValueSchemaIdHeaderName)
         kafkaClient.closeConsumers() //We have to 'clear offsets', because providerSetup.consumeAndVerifyMessage will not fetch data from the beginning
       }
 

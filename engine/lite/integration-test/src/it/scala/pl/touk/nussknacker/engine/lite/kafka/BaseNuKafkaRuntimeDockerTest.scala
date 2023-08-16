@@ -20,6 +20,8 @@ import scala.util.Try
 trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAfterAll with NuKafkaRuntimeTestMixin with TryValues {
   self: TestSuite with LazyLogging =>
 
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+
   private val schemaRegistryHostname = "schemaregistry"
   private val schemaRegistryPort = 8081
 
@@ -77,7 +79,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
   protected def mappedRuntimeApiPort: Int = runtimeContainer.mappedPort(runtimeApiPort)
 
   protected def consumeFirstError: Option[KeyMessage[String, KafkaExceptionInfo]] = {
-    Try(kafkaClient.consumeMessages[KafkaExceptionInfo](fixture.errorTopic, 1).headOption).recover {
+    Try(kafkaClient.createConsumer().consume[KafkaExceptionInfo](fixture.errorTopic).take(1).headOption).recover {
       case _: TimeoutException => None
     }
   }.success.value

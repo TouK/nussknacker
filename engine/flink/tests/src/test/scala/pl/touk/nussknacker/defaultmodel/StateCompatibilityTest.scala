@@ -45,6 +45,8 @@ object StateCompatibilityTest {
   * @see https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html
   */
 class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with LazyLogging {
+
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import spel.Implicits._
 
   import scala.jdk.CollectionConverters._
@@ -155,7 +157,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   }
 
   private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
-    val outputEvent = kafkaClient.consumeMessages[OutputEvent](outTopic, 1).head.message()
+    val outputEvent = kafkaClient.createConsumer().consume[OutputEvent](outTopic).take(1).head.message()
     outputEvent.input shouldBe input
     outputEvent.previousInput shouldBe previousInput
   }
