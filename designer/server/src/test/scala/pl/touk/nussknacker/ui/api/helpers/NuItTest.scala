@@ -10,6 +10,8 @@ trait NuItTest
     with BeforeAndAfterAll {
   self: Suite =>
 
+  val nuDesignerHttpAddress = "http://localhost:8080"
+
   private val (_, releaseAppResources) = {
     new NussknackerApp(ConfigWithScalaVersion.TestsConfig)
       .init()

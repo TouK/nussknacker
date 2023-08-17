@@ -950,6 +950,7 @@ lazy val testUtils = (project in utils("test-utils")).
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "com.softwaremill.sttp.client3" %% "slf4j-backend" % sttpV,
         "org.typelevel" %% "cats-effect" % "2.5.5",
+        "io.circe" %% "circe-parser" % circeV,
       )
     }
   )
@@ -1549,8 +1550,9 @@ lazy val designer = (project in file("designer/server"))
 
         "org.slf4j" % "log4j-over-slf4j" % slf4jV,
         "com.carrotsearch" % "java-sizeof" % "0.0.5",
+        "org.typelevel" %% "case-insensitive" % "1.4.0",
 
-        //It's needed by flinkDeploymentManager which has disabled includingScala
+        // It's needed by flinkDeploymentManager which has disabled includingScala
         "org.scala-lang" % "scala-compiler" % scalaVersion.value,
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
 
@@ -1561,7 +1563,6 @@ lazy val designer = (project in file("designer/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.8",
-
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
 

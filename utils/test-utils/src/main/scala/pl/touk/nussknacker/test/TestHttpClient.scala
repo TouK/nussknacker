@@ -2,14 +2,15 @@ package pl.touk.nussknacker.test
 
 import cats.effect.{ContextShift, IO, Resource}
 import org.scalatest.{BeforeAndAfterAll, Suite}
-import sttp.client3.{HttpClientSyncBackend, Identity, SttpBackend}
+import sttp.client3.logging.LoggingBackend
 import sttp.client3.logging.slf4j._
+import sttp.client3.{HttpClientSyncBackend, Identity, SttpBackend}
 
 import java.net.http.HttpClient
 import javax.net.ssl.SSLContext
 import scala.concurrent.ExecutionContext
 
-trait WithTestHttpClientCreator {
+trait WithTestHttpClientCreator extends WithSttpTestUtils {
 
   def createHttpClient(sslContext: Option[SSLContext] = None): Resource[IO, SttpBackend[Identity, Any]] = {
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
@@ -20,7 +21,13 @@ trait WithTestHttpClientCreator {
             case Some(ssl) => HttpClient.newBuilder().sslContext(ssl).build()
             case None => HttpClient.newBuilder().build()
           }
-          Slf4jLoggingBackend(HttpClientSyncBackend.usingClient(httpClient))
+          val backend = HttpClientSyncBackend.usingClient(httpClient)
+          LoggingBackend(
+            delegate = backend,
+            logger = new Slf4jLogger("nu-test", backend.responseMonad),
+            logRequestBody = true,
+            logResponseBody = true
+          )
         }
       )(
         release = client => IO(client.close())
@@ -30,7 +37,7 @@ trait WithTestHttpClientCreator {
 }
 object WithTestHttpClientCreator extends WithTestHttpClientCreator
 
-trait WithTestHttpClient extends BeforeAndAfterAll {
+trait WithTestHttpClient extends WithSttpTestUtils with BeforeAndAfterAll {
   this: Suite =>
 
   private val (client, clientResources) = WithTestHttpClientCreator
