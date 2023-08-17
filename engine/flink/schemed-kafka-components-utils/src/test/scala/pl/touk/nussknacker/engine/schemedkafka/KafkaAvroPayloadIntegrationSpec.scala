@@ -357,8 +357,9 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     kafkaClient.createTopic(topicConfig.output, partitions = 1)
 
     run(process) {
-      val result = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output).take(1).head
-      result.key() shouldEqual FullNameV1.BaseFirst
+      val consumer = kafkaClient.createConsumer()
+      val consumed = consumer.consumeWithJson[String](topicConfig.output).take(1).head
+      consumed.key() shouldEqual FullNameV1.BaseFirst
     }
   }
 

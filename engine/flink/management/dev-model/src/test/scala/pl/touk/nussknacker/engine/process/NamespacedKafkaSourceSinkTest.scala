@@ -46,7 +46,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
       .emptySink("output", "kafka-string", TopicParamName -> s"'$outputTopic'", SinkValueParamName -> "#input")
 
     run(process) {
-      val processed = kafkaClient.createConsumer().consumeWithJson[String](s"ns_$outputTopic", 1).map(_.message())
+      val processed = kafkaClient.createConsumer().consumeWithJson[String](s"ns_$outputTopic").take(1).map(_.message()).toList
       processed shouldEqual List(message)
     }
   }

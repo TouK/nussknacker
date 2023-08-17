@@ -71,7 +71,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
       kafkaClient.sendMessage(inTopic, "2").futureValue
-      messagesFromTopic(outTopic, 2).head shouldBe "2"
+      messagesFromTopic(outTopic, 2).last shouldBe "2"
     } finally {
       cancelProcess(kafkaProcess.id)
     }
@@ -182,7 +182,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     deployProcessAndWaitIfRunning(process, empty(process.id))
     try {
-      messagesFromTopic(outTopic, 1) shouldBe List("")
+      messagesFromTopic(outTopic, 1) shouldBe List("test")
 
       logger.info("Starting to redeploy")
 
