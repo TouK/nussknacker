@@ -20,7 +20,8 @@ import scala.util.{Failure, Success}
 
 class NussknackerHttpServer(system: ActorSystem,
                             materializer: Materializer,
-                            executionContext: ExecutionContext)
+                            executionContext: ExecutionContext,
+                            processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
   extends NusskanckerAkkaHttpBasedRouter
     with LazyLogging {
 
@@ -33,7 +34,7 @@ class NussknackerHttpServer(system: ActorSystem,
             dbConfig: DbConfig,
             metricRegistry: MetricRegistry): Resource[IO, Unit] = {
     for {
-      route <- createRoute(config, dbConfig, metricRegistry)
+      route <- createRoute(config, dbConfig, metricRegistry, processingTypeDataProviderFactory)
       _ <- createAkkaHttpBinding(config, route, metricRegistry)
     } yield ()
   }

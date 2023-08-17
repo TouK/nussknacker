@@ -15,31 +15,46 @@ import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
-class NussknackerApp(baseUnresolvedConfig: Config)
+class NussknackerApp(baseUnresolvedConfig: Config,
+                     processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
   extends LazyLogging {
 
   def this() = {
-    this(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
+    this(
+      ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader),
+      ProcessingTypeDataReaderBasedProcessingTypeDataProviderFactory
+    )
   }
 
-  protected val config: ConfigWithUnresolvedVersion = DesignerConfigLoader.load(baseUnresolvedConfig, getClass.getClassLoader)
+  def this(baseUnresolvedConfig: Config) = {
+    this(baseUnresolvedConfig, ProcessingTypeDataReaderBasedProcessingTypeDataProviderFactory)
+  }
+
+  def this(processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory) = {
+    this(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader), processingTypeDataProviderFactory)
+  }
 
   def init(): Resource[IO, Unit] = {
     for {
-      system <- createActorSystem()
+      config <- designerConfigFrom(baseUnresolvedConfig)
+      system <- createActorSystem(config)
       materializer = Materializer(system)
       _ <- Resource.eval(IO(JavaClassVersionChecker.check()))
       _ <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
       metricsRegistry <- createGeneralPurposeMetricsRegistry()
-      db = initDb(config.resolved)
-      server = new NussknackerHttpServer(system, materializer, system.dispatcher)
+      db <- initDb(config)
+      server = new NussknackerHttpServer(system, materializer, system.dispatcher, processingTypeDataProviderFactory)
       _ <- server.start(config, db, metricsRegistry)
       _ <- startJmxReporter(metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
     } yield ()
   }
 
-  private def createActorSystem() = {
+  private def designerConfigFrom(baseUnresolvedConfig: Config) = {
+    Resource.eval(IO(DesignerConfigLoader.load(baseUnresolvedConfig, getClass.getClassLoader)))
+  }
+
+  private def createActorSystem(config: ConfigWithUnresolvedVersion) = {
     Resource
       .make(
         acquire = IO(ActorSystem("nussknacker-designer", config.resolved))
@@ -68,13 +83,17 @@ class NussknackerApp(baseUnresolvedConfig: Config)
       )
   }
 
-  private def initDb(config: Config): DbConfig = {
-    val db = JdbcBackend.Database.forConfig("db", config)
-    val profile = chooseDbProfile(config)
-    val dbConfig = DbConfig(db, profile)
-    DatabaseInitializer.initDatabase("db", config)
-
-    dbConfig
+  private def initDb(config: ConfigWithUnresolvedVersion): Resource[IO, DbConfig] = {
+    val resolvedConfig = config.resolved
+    for {
+      db <- Resource
+        .make(
+          acquire = IO(JdbcBackend.Database.forConfig("db", resolvedConfig))
+        )(
+          release = db => IO(db.close())
+        )
+      _ <- Resource.eval(IO(DatabaseInitializer.initDatabase("db", resolvedConfig)))
+    } yield DbConfig(db, chooseDbProfile(resolvedConfig))
   }
 
   private def chooseDbProfile(config: Config): JdbcProfile = {

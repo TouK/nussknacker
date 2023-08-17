@@ -53,7 +53,8 @@ trait NusskanckerAkkaHttpBasedRouter
 
   def createRoute(config: ConfigWithUnresolvedVersion,
                   dbConfig: DbConfig,
-                  metricsRegistry: MetricRegistry)
+                  metricsRegistry: MetricRegistry,
+                  processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
                  (implicit system: ActorSystem,
                   materializer: Materializer): Resource[IO, Route] = {
     import system.dispatcher
@@ -70,11 +71,15 @@ trait NusskanckerAkkaHttpBasedRouter
         config,
         deploymentServiceSupplier,
         processCategoryService,
+        processingTypeDataProviderFactory,
         sttpBackend
       )
       (typeToConfig, reload) = typeToConfigAndReload
     } yield {
-      val stateDefinitionService = new ProcessStateDefinitionService(typeToConfig.mapCombined(_.statusNameToStateDefinitionsMapping), processCategoryService)
+      val stateDefinitionService = new ProcessStateDefinitionService(
+        typeToConfig.mapCombined(_.statusNameToStateDefinitionsMapping),
+        processCategoryService
+      )
 
       val analyticsConfig = AnalyticsConfig(resolvedConfig)
 
@@ -353,17 +358,14 @@ trait NusskanckerAkkaHttpBasedRouter
   protected def prepareProcessingTypeData(designerConfig: ConfigWithUnresolvedVersion,
                                           deploymentServiceSupplier: Supplier[DeploymentService],
                                           categoriesService: ProcessCategoryService,
+                                          processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory,
                                           sttpBackend: SttpBackend[Future, Any])
                                          (implicit ec: ExecutionContext, actorSystem: ActorSystem): Resource[IO, (ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData], ProcessingTypeDataReload with Initialization)] = {
     implicit val sttpBackendImplicit: SttpBackend[Future, Any] = sttpBackend
     Resource
       .make(
         acquire = IO(BasicProcessingTypeDataReload.wrapWithReloader(
-          () => {
-            implicit val deploymentService: DeploymentService = deploymentServiceSupplier.get()
-            implicit val categoriesServiceImp: ProcessCategoryService = categoriesService
-            ProcessingTypeDataReader.loadProcessingTypeData(designerConfig)
-          }
+          () => processingTypeDataProviderFactory.create(designerConfig, deploymentServiceSupplier, categoriesService)
         ))
       )(
         release = provider => IO {
