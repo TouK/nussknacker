@@ -8,19 +8,21 @@ import io.circe.Json
 import org.apache.commons.lang3.StringUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestJsonRecord}
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.test.{PreliminaryScenarioTestData, PreliminaryScenarioTestRecord, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, ProcessTestData}
+import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
 
+import scala.annotation.nowarn
+
+@nowarn("cat=deprecation")
 class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
-  with NuItTest with PatientScalaFutures with EitherValuesDetailedMessage {
+  with NuResourcesTest with PatientScalaFutures with EitherValuesDetailedMessage {
 
   private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
 

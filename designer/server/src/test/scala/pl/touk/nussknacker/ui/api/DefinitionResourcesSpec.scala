@@ -18,9 +18,12 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
+import scala.annotation.nowarn
+
+@nowarn("cat=deprecation")
 class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with EitherValuesDetailedMessage with BeforeAndAfterEach with BeforeAndAfterAll
-  with NuItTest with OptionValues {
+  with NuResourcesTest with OptionValues {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 

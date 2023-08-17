@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, withAdminPermissions, withPermissions, withoutPermissions}
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuItTest2, StubDeploymentService, TestFactory}
+import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, StubDeploymentService, TestFactory}
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 
 import java.util.Collections
@@ -35,10 +35,10 @@ class AppResourcesSpec
     with OptionValues
     with BeforeAndAfterEach
     with BeforeAndAfterAll
-    with NuItTest2
-    with NuItTest {
+    with NuItTest // fixme: it's not fully used here yet
+    with NuScenarioConfigurationHelper {
 
-  test("it should return healthcheck also if cannot retrieve statuses") {
+  test("it should return health check also if cannot retrieve statuses") {
     createDeployedProcess(ProcessName("id1"))
     createDeployedProcess(ProcessName("id2"))
     createDeployedProcess(ProcessName("id3"))

@@ -26,14 +26,17 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, ProcessTestData, TestCategories}
+import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestCategories}
 import pl.touk.nussknacker.ui.process.fragment.FragmentResolver
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
+import scala.annotation.nowarn
+
+@nowarn("cat=deprecation")
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuItTest {
+  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 

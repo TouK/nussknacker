@@ -41,13 +41,13 @@ import scala.util.{Failure, Success, Try}
 class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScalaFutures with MockitoSugar with WithHsqlDbTesting with EitherValuesDetailedMessage with OptionValues with DBIOActionValues {
 
   private implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
-  override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(db)
+  override protected val dbioRunner: DBIOActionRunner = DBIOActionRunner(dbConfig)
 
   private var currentInstant: Instant = Instant.ofEpochMilli(0)
   private val clock: Clock = clockForInstant(() => currentInstant)
-  private val processRepository = TestFactory.newFetchingProcessRepository(db)
-  private val writeProcessRepository = TestFactory.newWriteProcessRepository(db)
-  private val actionRepository = DbProcessActionRepository.create(db, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+  private val processRepository = TestFactory.newFetchingProcessRepository(dbConfig)
+  private val writeProcessRepository = TestFactory.newWriteProcessRepository(dbConfig)
+  private val actionRepository = DbProcessActionRepository.create(dbConfig, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
   private val expectedRefreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity, DataToRefresh.state)
   private val expectedRefreshAfterFail = List(DataToRefresh.state)

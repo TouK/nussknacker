@@ -38,19 +38,19 @@ class DBFetchingProcessRepositorySpec
 
   import cats.syntax.either._
 
-  private val dbioRunner = DBIOActionRunner(db)
+  private val dbioRunner = DBIOActionRunner(dbConfig)
 
-  private val writingRepo = new DBProcessRepository(db, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
+  private val writingRepo = new DBProcessRepository(dbConfig, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
     override protected def now: Instant = currentTime
   }
 
   private var currentTime: Instant = Instant.now()
 
-  private val actions = DbProcessActionRepository.create(db, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+  private val actions = DbProcessActionRepository.create(dbConfig, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
-  private val fetching = DBFetchingProcessRepository.createFutureRespository(db, actions)
+  private val fetching = DBFetchingProcessRepository.createFutureRespository(dbConfig, actions)
 
-  private val activities = DbProcessActivityRepository(db)
+  private val activities = DbProcessActivityRepository(dbConfig)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
 

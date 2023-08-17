@@ -44,12 +44,12 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   private implicit val ds: ExecutionContextExecutor = system.dispatcher
 
   private var deploymentManager: MockDeploymentManager = _
-  override protected val dbioRunner: DBIOActionRunner = newDBIOActionRunner(db)
-  private val fetchingProcessRepository = newFetchingProcessRepository(db)
-  private val futureFetchingProcessRepository = newFutureFetchingProcessRepository(db)
-  private val writeProcessRepository = newWriteProcessRepository(db)
-  private val actionRepository = newActionProcessRepository(db)
-  private val activityRepository = newProcessActivityRepository(db)
+  override protected val dbioRunner: DBIOActionRunner = newDBIOActionRunner(dbConfig)
+  private val fetchingProcessRepository = newFetchingProcessRepository(dbConfig)
+  private val futureFetchingProcessRepository = newFutureFetchingProcessRepository(dbConfig)
+  private val writeProcessRepository = newWriteProcessRepository(dbConfig)
+  private val actionRepository = newActionProcessRepository(dbConfig)
+  private val activityRepository = newProcessActivityRepository(dbConfig)
 
   private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] = new ProcessingTypeDataProvider[DeploymentManager, Nothing] {
     override def forType(typ: ProcessingType): Option[DeploymentManager] = all.get(typ)

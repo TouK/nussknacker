@@ -17,7 +17,7 @@ trait WithDbConfig {
   val dbProfile: JdbcProfile
   val config: Config
 
-  lazy val db: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", config), dbProfile)
+  lazy val dbConfig: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", config), dbProfile)
 }
 
 trait WithHsqlDbConfig extends WithDbConfig {
@@ -67,7 +67,7 @@ trait DbTesting
     }
   }
 
-  def cleanDB(): Try[Unit] = Using(db.db.createSession()) { session =>
+  def cleanDB(): Try[Unit] = Using(dbConfig.db.createSession()) { session =>
     session.prepareStatement("""delete from "process_attachments"""").execute()
     session.prepareStatement("""delete from "process_comments"""").execute()
     session.prepareStatement("""delete from "process_actions"""").execute()

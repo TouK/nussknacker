@@ -11,12 +11,15 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.restmodel.component.{ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, TestCategories, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.{ComponentIdProvider, DefaultComponentIdProvider, DefaultComponentService}
 import pl.touk.nussknacker.ui.config.ComponentLinksConfigExtractor
 
+import scala.annotation.nowarn
+
+@nowarn("cat=deprecation")
 class ComponentResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with NuItTest {
+  with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 
   //These should be defined as lazy val's because of racing, there are some missing tables in db..
   private val defaultComponentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map.empty)

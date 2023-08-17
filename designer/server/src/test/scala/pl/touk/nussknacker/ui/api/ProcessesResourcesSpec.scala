@@ -35,14 +35,16 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Pro
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
+import scala.annotation.nowarn
 import scala.concurrent.Future
 import scala.language.higherKinds
 
 /**
  * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb.
  */
+@nowarn("cat=deprecation")
 class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
-  with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuItTest {
+  with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 
   import io.circe._, io.circe.parser._
   import TestCategories._

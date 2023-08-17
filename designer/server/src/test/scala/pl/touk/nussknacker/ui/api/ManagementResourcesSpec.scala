@@ -31,9 +31,11 @@ import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 
 import java.time.Instant
+import scala.annotation.nowarn
 
+@nowarn("cat=deprecation")
 class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuItTest {
+  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 
   import TestCategories._
   import KafkaFactory._
