@@ -11,7 +11,7 @@ import org.scalatest.Assertion
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, KafkaClient, KafkaTestUtils, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, KafkaClient, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets
 
 trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with Eventually {
 
-  import KafkaTestUtils._
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
   override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(50, Millis)))
 
@@ -54,12 +54,10 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
     result shouldBe expected
   }
 
-  protected def consumeMessages(kafkaDeserializer: serialization.KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] = {
-    val consumer = kafkaClient.createConsumer()
-    consumer.consumeWithConsumerRecord(topic).map { record =>
+  protected def consumeMessages(kafkaDeserializer: serialization.KafkaDeserializationSchema[_], topic: String, count: Int): List[Any] =
+    kafkaClient.createConsumer().consumeWithConsumerRecord(topic).take(count).map{ record =>
       kafkaDeserializer.deserialize(record)
-    }.take(count).toList
-  }
+    }.toList
 
   def consumeAndVerifyMessage(topic: String, expected: Any, useSpecificAvroReader: Boolean = false): Assertion =
     consumeAndVerifyMessages(topic, List(expected), useSpecificAvroReader)
@@ -69,12 +67,10 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with 
     result shouldBe expected
   }
 
-  private def consumeMessages(topic: String, count: Int, useSpecificAvroReader: Boolean): List[Any] = {
-    val consumer = kafkaClient.createConsumer()
-    consumer.consume(topic).map { record =>
-      deserialize(useSpecificAvroReader)(topic, record.message())
-    }.take(count).toList
-  }
+  private def consumeMessages(topic: String, count: Int, useSpecificAvroReader: Boolean): List[Any] =
+    kafkaClient.createConsumer().consumeWithConsumerRecord(topic).take(count).map{ record =>
+      deserialize(useSpecificAvroReader)(topic, record.value())
+    }.toList
 
   protected def deserialize(useSpecificAvroReader: Boolean)
                            (objectTopic: String, obj: Array[Byte]): Any = prepareValueDeserializer(useSpecificAvroReader).deserialize(objectTopic, obj)

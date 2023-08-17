@@ -2,10 +2,8 @@ package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils
 import pl.touk.nussknacker.engine.schemedkafka._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.spel
@@ -15,13 +13,11 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-class KafkaAvroSchemaJsonPayloadItSpec extends  FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
+class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
-  import KafkaTestUtils._
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import MockSchemaRegistry._
   import spel.Implicits._
-
-  private val secondsToWaitForAvro = 30
 
   private val givenMatchingJsonObj =
     """{
@@ -71,10 +67,10 @@ class KafkaAvroSchemaJsonPayloadItSpec extends  FlinkWithKafkaSuite with Patient
     logger.info(s"Message sent successful: $sendResult")
 
     run(avroSchemedJsonPayloadProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
-      val consumer = kafkaClient.createConsumer()
-      val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
-      processedMessage.timestamp shouldBe timeAgo
-      decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
+      val result = kafkaClient.createConsumer().consumeWithJson[Json](topicConfig.output).take(1).head
+
+      result.timestamp shouldBe timeAgo
+      result.message() shouldEqual parseJson(givenMatchingJsonSchemedObj)
     }
   }
 

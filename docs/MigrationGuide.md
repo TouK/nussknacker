@@ -6,6 +6,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ## In version 1.12.0 (Not released yet)
 
 ### Code API changes
+* [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
+  * `RichKafkaConsumer.consumeWithJson` needs json decoder
+  * removed `RichKafkaConsumer.consumeWithConsumerRecord`, use `RichKafkaConsumer.consumeWithJson` instead of it 
+  * `RichKafkaConsumer.defaultSecondsToWait` renamed to `RichKafkaConsumer.DefaultSecondsToWait`
+  * `KafkaClient.sendMessage` accepts generic content with json encoder
 
 ### REST API changes
 

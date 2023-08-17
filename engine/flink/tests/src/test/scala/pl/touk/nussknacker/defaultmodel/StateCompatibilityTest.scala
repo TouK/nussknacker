@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolderImpl
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.spel
@@ -46,6 +45,8 @@ object StateCompatibilityTest {
   * @see https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Serializable.html
   */
 class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with LazyLogging {
+
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import spel.Implicits._
 
   import scala.jdk.CollectionConverters._
@@ -156,8 +157,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   }
 
   private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
-    val rawOutputEvent = kafkaClient.createConsumer().consume(outTopic).take(1).head.msg
-    val outputEvent = io.circe.parser.decode[OutputEvent](new String(rawOutputEvent)).toOption.get
+    val outputEvent = kafkaClient.createConsumer().consumeWithJson[OutputEvent](outTopic).take(1).head.message()
     outputEvent.input shouldBe input
     outputEvent.previousInput shouldBe previousInput
   }

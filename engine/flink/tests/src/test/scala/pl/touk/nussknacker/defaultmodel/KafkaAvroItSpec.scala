@@ -4,7 +4,6 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils
 import pl.touk.nussknacker.engine.schemedkafka._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.spel
@@ -15,11 +14,9 @@ import java.time.temporal.ChronoUnit
 
 class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
-  import KafkaTestUtils._
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import MockSchemaRegistry._
   import spel.Implicits._
-
-  private val secondsToWaitForAvro = 30
 
   private val givenMatchingAvroObjConvertedToV2 = avroEncoder.encodeRecordOrError(
     Map("first" -> "Jan", "middle" -> null, "last" -> "Kowalski"), RecordSchemaV2
@@ -53,7 +50,6 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
         KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
-
       )
 
   private def avroFromScratchProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption) =
@@ -86,9 +82,9 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
     sendAvro(givenMatchingAvroObj, topicConfig.input, timestamp = timeAgo)
 
     run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
-      val processed = consumeOneRawAvroMessage(topicConfig.output)
+      val processed = kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output).take(1).head
       processed.timestamp shouldBe timeAgo
-      valueDeserializer.deserialize(topicConfig.output, processed.message()) shouldEqual givenMatchingAvroObjConvertedToV2
+      valueDeserializer.deserialize(topicConfig.output, processed.value()) shouldEqual givenMatchingAvroObjConvertedToV2
     }
   }
 
@@ -144,11 +140,7 @@ class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with 
     }
   }
 
-  private def consumeOneRawAvroMessage(topic: String) = {
-    val consumer = kafkaClient.createConsumer()
-    consumer.consume(topic, secondsToWaitForAvro).head
-  }
-
-  private def consumeOneAvroMessage(topic: String) = valueDeserializer.deserialize(topic, consumeOneRawAvroMessage(topic).message())
+  private def consumeOneAvroMessage(topic: String) =
+    valueDeserializer.deserialize(topic, kafkaClient.createConsumer().consumeWithConsumerRecord(topic).take(1).head.value())
 
 }
