@@ -174,7 +174,7 @@ function postSchemaToRegistry(): void {
 
     cy.request({
         method: "POST",
-        url: "http://localhost:8081/subjects/Kafka-value/versions", // Replace with the actual API URL
+        url: "http://localhost:3081/subjects", // Replace with the actual API URL
         body: {
             name: "nu-value",
             schema: JSON.stringify(schema),
