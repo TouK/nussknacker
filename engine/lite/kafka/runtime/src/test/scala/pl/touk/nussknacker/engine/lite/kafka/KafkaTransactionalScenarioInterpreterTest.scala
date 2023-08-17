@@ -163,10 +163,10 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
       kafkaClient.sendMessage(inputTopic, input).futureValue
       kafkaClient.sendMessage(inputTopic, "").futureValue
 
-      val messages = kafkaClient.createConsumer().consume[String](outputTopic).take(2).map(_.message())
+      val messages = kafkaClient.createConsumer().consumeWithJson[String](outputTopic).take(2).map(_.message())
       messages shouldBe List("original-add", "other-add")
 
-      val error = kafkaClient.createConsumer().consume[KafkaExceptionInfo](errorTopic).take(1).head.message()
+      val error = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](errorTopic).take(1).head.message()
       error.nodeId shouldBe Some("throw on 0")
       error.processName shouldBe scenario.id
       error.exceptionInput shouldBe Some("1 / #input.length")
@@ -178,12 +178,12 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendMessage(fixture.inputTopic, "one").futureValue
-      kafkaClient.createConsumer().consume[String](fixture.outputTopic).take(1).map(_.message()) shouldEqual List("one")
+      kafkaClient.createConsumer().consumeWithJson[String](fixture.outputTopic).take(1).map(_.message()) shouldEqual List("one")
     }
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendMessage(fixture.inputTopic, "two").futureValue
-      kafkaClient.createConsumer().consume[String](fixture.outputTopic).take(2).map(_.message()) shouldEqual List("one", "two")
+      kafkaClient.createConsumer().consumeWithJson[String](fixture.outputTopic).take(2).map(_.message()) shouldEqual List("one", "two")
     }
   }
 
@@ -309,7 +309,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
 
     runScenarioWithoutErrors(fixture, scenario) {
       kafkaClient.sendRawMessage(fixture.inputTopic, Array.empty, TestComponentProvider.failingInputValue.getBytes).futureValue
-      val error = kafkaClient.createConsumer().consume[KafkaExceptionInfo](fixture.errorTopic).take(1).head.message()
+      val error = kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](fixture.errorTopic).take(1).head.message()
 
       error.nodeId shouldBe Some("source")
       error.processName shouldBe scenario.id

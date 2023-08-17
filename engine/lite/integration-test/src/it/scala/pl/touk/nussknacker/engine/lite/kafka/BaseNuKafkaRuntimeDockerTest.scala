@@ -79,7 +79,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
   protected def mappedRuntimeApiPort: Int = runtimeContainer.mappedPort(runtimeApiPort)
 
   protected def consumeFirstError: Option[KeyMessage[String, KafkaExceptionInfo]] = {
-    Try(kafkaClient.createConsumer().consume[KafkaExceptionInfo](fixture.errorTopic).take(1).headOption).recover {
+    Try(kafkaClient.createConsumer().consumeWithJson[KafkaExceptionInfo](fixture.errorTopic).take(1).headOption).recover {
       case _: TimeoutException => None
     }
   }.success.value

@@ -10,7 +10,7 @@
     - make the properties of the `FlinkStreamingPropertiesConfig` public, so that they can be reused
     - introduce the `CaseClassTypeInfoFactory`, a generic factory for creating `CaseClassTypeInfo`
     - allow passing classLoader at `ResourceLoader.load`
-* [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: Additional methods at KafkaClient in kafka-test-utils
+* [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
 
 1.11.0 (Not released yet)
 -------------------------

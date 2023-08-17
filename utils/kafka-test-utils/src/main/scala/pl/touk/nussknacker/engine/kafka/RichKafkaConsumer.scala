@@ -18,10 +18,10 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 
   import scala.jdk.CollectionConverters._
 
-  def consume[V: Decoder : ClassTag](topic: String, secondsToWait: Int = DefaultSecondsToWait)(implicit ek: K =:= Array[Byte], em: M =:= Array[Byte]): LazyList[KeyMessage[String, V]] =
+  def consumeWithJson[V: Decoder : ClassTag](topic: String, secondsToWait: Int = DefaultSecondsToWait)(implicit ek: K =:= Array[Byte], em: M =:= Array[Byte]): LazyList[KeyMessage[String, V]] =
     consumeWithConsumerRecord(topic, secondsToWait).map { record =>
-      val key = ConsumerRecordHelper.as[String](record.key())
-      val message = ConsumerRecordHelper.as[V](record.value())
+      val key = ConsumerRecordHelper.asJson[String](record.key())
+      val message = ConsumerRecordHelper.asJson[V](record.value())
       KeyMessage(key, message, record.timestamp)
     }
 

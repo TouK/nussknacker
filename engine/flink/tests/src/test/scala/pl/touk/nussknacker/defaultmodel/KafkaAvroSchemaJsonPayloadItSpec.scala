@@ -67,7 +67,7 @@ class KafkaAvroSchemaJsonPayloadItSpec extends FlinkWithKafkaSuite with PatientS
     logger.info(s"Message sent successful: $sendResult")
 
     run(avroSchemedJsonPayloadProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
-      val result = kafkaClient.createConsumer().consume[Json](topicConfig.output).take(1).head
+      val result = kafkaClient.createConsumer().consumeWithJson[Json](topicConfig.output).take(1).head
 
       result.timestamp shouldBe timeAgo
       result.message() shouldEqual parseJson(givenMatchingJsonSchemedObj)

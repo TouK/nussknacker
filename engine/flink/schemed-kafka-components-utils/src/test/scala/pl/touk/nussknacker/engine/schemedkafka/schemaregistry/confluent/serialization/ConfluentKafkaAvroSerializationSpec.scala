@@ -114,7 +114,6 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
 
       if(schemaForWrite.isDefined) {
         kafkaClient.createConsumer().consumeWithConsumerRecord(topicConfig.output).take(1).head.headers().toArray.map(_.key()) should contain (ValueSchemaIdHeaderName)
-        kafkaClient.closeConsumers() //We have to 'clear offsets', because providerSetup.consumeAndVerifyMessage will not fetch data from the beginning
       }
 
       providerSetup.consumeAndVerifyMessage(topicConfig.output, expectedObj)

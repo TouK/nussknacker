@@ -204,7 +204,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
   private def messagesFromTopic(outTopic: String, count: Int): List[String] =
     kafkaClient.createConsumer()
-      .consume[String](outTopic)
+      .consumeWithJson[String](outTopic)
       .take(count)
       .map(_.message())
       .toList
