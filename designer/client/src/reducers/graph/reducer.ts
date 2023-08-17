@@ -342,7 +342,7 @@ const fixUndoableHistory: Reducer<StateWithHistory<GraphState>> = (state, action
     const nextState = undoableReducer(state, action);
 
     if (Object.values(UndoActionTypes).includes(action.type)) {
-        const present = defaultsDeep(getUndoableState(nextState.present), getNonUndoableState(state.present));
+        const present = defaultsDeep(getUndoableState(nextState.present), getNonUndoableState(state?.present));
         return { ...nextState, present };
     }
 
@@ -351,6 +351,6 @@ const fixUndoableHistory: Reducer<StateWithHistory<GraphState>> = (state, action
 
 //TODO: replace this with use of selectors everywhere
 export const reducerWithUndo: Reducer<GraphState & { history: StateWithHistory<GraphState> }> = (state, action) => {
-    const history = fixUndoableHistory(state.history, action);
+    const history = fixUndoableHistory(state?.history, action);
     return { ...history.present, history };
 };
