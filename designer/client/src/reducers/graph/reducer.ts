@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, defaultsDeep, flow, isEqual, sortBy, uniq, xor, zipObject } from "lodash";
-import { omit as _omit, pick as _pick } from "lodash/fp";
+import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy, uniq, xor, zipObject } from "lodash";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
 import { Reducer } from "../../actions/reduxTypes";
 import * as GraphUtils from "../../components/graph/GraphUtils";
@@ -305,18 +304,21 @@ const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
     },
 });
 
-const pick = <T>(props: NestedKeyOf<T>[]) => _pick(props);
-const omit = <T>(props: NestedKeyOf<T>[]) => _omit(props);
+const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
+const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
 
-const getUndoableState = flow(
-    pick<GraphState>(["fetchedProcessDetails", "processToDisplay", "unsavedNewName", "layout", "selectionState"]),
-    omit<GraphState>([
-        "processToDisplay.validationResult",
-        "fetchedProcessDetails.lastDeployedAction",
-        "fetchedProcessDetails.lastAction",
-        "fetchedProcessDetails.history",
-    ]),
-);
+const pickKeys: NestedKeyOf<GraphState>[] = ["fetchedProcessDetails", "processToDisplay", "unsavedNewName", "layout", "selectionState"];
+const omitKeys: NestedKeyOf<GraphState>[] = [
+    "processToDisplay.validationResult",
+    "fetchedProcessDetails.lastDeployedAction",
+    "fetchedProcessDetails.lastAction",
+    "fetchedProcessDetails.history",
+];
+
+const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys);
+const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));
+const applyOnlyUndoableChanges = (nextState: GraphState, previousState: GraphState) =>
+    defaultsDeep(getUndoableState(nextState), getNonUndoableState(previousState));
 
 const undoableReducer: Reducer<StateWithHistory<GraphState>> = undoable<GraphState>(reducer, {
     ignoreInitialState: true,
@@ -337,13 +339,13 @@ const undoableReducer: Reducer<StateWithHistory<GraphState>> = undoable<GraphSta
     ),
 });
 
-export function reducerWithUndo(state, action) {
+export const reducerWithUndo: Reducer<GraphState & { history: StateWithHistory<GraphState> }> = (state, action) => {
     const { present, ...history } = undoableReducer(state?.history, action);
 
     const filteredPresent = Object.values(UndoActionTypes).includes(action.type)
-        ? defaultsDeep(getUndoableState(present), state?.history?.present)
+        ? applyOnlyUndoableChanges(present, state?.history?.present)
         : present;
 
     //TODO: replace this with use of selectors everywhere
     return { ...filteredPresent, history: { ...history, present: filteredPresent } };
-}
+};
