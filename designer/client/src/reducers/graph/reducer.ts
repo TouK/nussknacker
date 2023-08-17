@@ -317,10 +317,8 @@ const omitKeys: NestedKeyOf<GraphState>[] = [
 
 const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys);
 const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));
-const applyOnlyUndoableChanges = (nextState: GraphState, previousState: GraphState) =>
-    defaultsDeep(getUndoableState(nextState), getNonUndoableState(previousState));
 
-const undoableReducer: Reducer<StateWithHistory<GraphState>> = undoable<GraphState>(reducer, {
+const undoableReducer = undoable<GraphState>(reducer, {
     ignoreInitialState: true,
     clearHistoryType: [UndoActionTypes.CLEAR_HISTORY, "PROCESS_FETCH"],
     groupBy: batchGroupBy.init(),
@@ -339,13 +337,20 @@ const undoableReducer: Reducer<StateWithHistory<GraphState>> = undoable<GraphSta
     ),
 });
 
+// apply only undoable changes for undo actions
+const fixUndoableHistory: Reducer<StateWithHistory<GraphState>> = (state, action) => {
+    const nextState = undoableReducer(state, action);
+
+    if (Object.values(UndoActionTypes).includes(action.type)) {
+        const present = defaultsDeep(getUndoableState(nextState.present), getNonUndoableState(state.present));
+        return { ...nextState, present };
+    }
+
+    return nextState;
+};
+
+//TODO: replace this with use of selectors everywhere
 export const reducerWithUndo: Reducer<GraphState & { history: StateWithHistory<GraphState> }> = (state, action) => {
-    const { present, ...history } = undoableReducer(state?.history, action);
-
-    const filteredPresent = Object.values(UndoActionTypes).includes(action.type)
-        ? applyOnlyUndoableChanges(present, state?.history?.present)
-        : present;
-
-    //TODO: replace this with use of selectors everywhere
-    return { ...filteredPresent, history: { ...history, present: filteredPresent } };
+    const history = fixUndoableHistory(state.history, action);
+    return { ...history.present, history };
 };
