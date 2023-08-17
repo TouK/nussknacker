@@ -1,14 +1,14 @@
-package pl.touk.nussknacker.ui.factory
+package pl.touk.nussknacker.ui.server
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import cats.effect.{ContextShift, IO, Resource}
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.LazyLogging
-import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+import com.typesafe.scalalogging.LazyLogging
+import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -19,18 +19,19 @@ import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, ComponentLinksConfigExtractor, FeatureTogglesConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.factory.ProcessingTypeDataProviderFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
-import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
-import pl.touk.nussknacker.ui.process.processingtypedata._
+import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, Initialization, ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
@@ -47,16 +48,16 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
 
-trait NusskanckerAkkaHttpBasedRouter
-  extends Directives
+class AkkaHttpBasedRouteProvider(dbConfig: DbConfig,
+                                 metricsRegistry: MetricRegistry,
+                                 processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
+                                (implicit system: ActorSystem,
+                                 materializer: Materializer)
+  extends RouteProvider[Route]
+    with Directives
     with LazyLogging {
 
-  def createRoute(config: ConfigWithUnresolvedVersion,
-                  dbConfig: DbConfig,
-                  metricsRegistry: MetricRegistry,
-                  processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
-                 (implicit system: ActorSystem,
-                  materializer: Materializer): Resource[IO, Route] = {
+  override def createRoute(config: ConfigWithUnresolvedVersion): Resource[IO, Route] = {
     import system.dispatcher
     for {
       sttpBackend <- createSttpBackend()
@@ -117,7 +118,6 @@ trait NusskanckerAkkaHttpBasedRouter
 
       val scenarioResolver = new ScenarioResolver(fragmentResolver)
       val dmDispatcher = new DeploymentManagerDispatcher(managers, futureProcessRepository)
-
 
       val deploymentService = new DeploymentServiceImpl(dmDispatcher, processRepository, actionRepository, dbioRunner,
         processValidation, scenarioResolver, processChangeListener, featureTogglesConfig.scenarioStateTimeout)
@@ -355,11 +355,11 @@ trait NusskanckerAkkaHttpBasedRouter
   }
 
   private def prepareProcessingTypeData(designerConfig: ConfigWithUnresolvedVersion,
-                                          deploymentServiceSupplier: Supplier[DeploymentService],
-                                          categoriesService: ProcessCategoryService,
-                                          processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory,
-                                          sttpBackend: SttpBackend[Future, Any])
-                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem): Resource[IO, (ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData], ProcessingTypeDataReload with Initialization)] = {
+                                        deploymentServiceSupplier: Supplier[DeploymentService],
+                                        categoriesService: ProcessCategoryService,
+                                        processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory,
+                                        sttpBackend: SttpBackend[Future, Any])
+                                       (implicit executionContext: ExecutionContext): Resource[IO, (ProcessingTypeDataProvider[ProcessingTypeData, CombinedProcessingTypeData], ProcessingTypeDataReload with Initialization)] = {
     implicit val sttpBackendImplicit: SttpBackend[Future, Any] = sttpBackend
     Resource
       .make(

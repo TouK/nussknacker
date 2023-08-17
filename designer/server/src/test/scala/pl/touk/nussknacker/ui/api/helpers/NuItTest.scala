@@ -1,19 +1,14 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
+import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.ui.factory.NussknackerApp
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 trait NuItTest
   extends WithHsqlDbTesting
     with TestPermissions
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with LazyLogging {
-  self: Suite with Matchers with ScalaFutures =>
+    with BeforeAndAfterAll {
+  self: Suite =>
 
   private val (_, releaseAppResources) = {
     new NussknackerApp(ConfigWithScalaVersion.TestsConfig)
@@ -22,9 +17,9 @@ trait NuItTest
       .unsafeRunSync()
   }
 
-  override def afterAll(): Unit = {
-    super.afterAll()
+  abstract override def afterAll(): Unit = {
     releaseAppResources.unsafeRunSync()
+    super.afterAll()
   }
 
 }

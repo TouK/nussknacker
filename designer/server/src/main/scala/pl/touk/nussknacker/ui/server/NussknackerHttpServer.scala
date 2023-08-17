@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.factory
+package pl.touk.nussknacker.ui.server
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
@@ -11,30 +11,26 @@ import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings
 import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
-import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, SslConfigParser}
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class NussknackerHttpServer(system: ActorSystem,
-                            materializer: Materializer,
-                            executionContext: ExecutionContext)
-  extends NusskanckerAkkaHttpBasedRouter
-    with LazyLogging {
+class NussknackerHttpServer(routeProvider: RouteProvider[Route],
+                            system: ActorSystem,
+                            materializer: Materializer)
+  extends LazyLogging {
 
   private implicit val systemImplicit: ActorSystem = system
   private implicit val materializerImplicit: Materializer = materializer
-  private implicit val executionContextImplicit: ExecutionContext = executionContext
-  private implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
+  private implicit val executionContextImplicit: ExecutionContext = system.dispatcher
+  private implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContextImplicit)
 
   def start(config: ConfigWithUnresolvedVersion,
-            dbConfig: DbConfig,
-            metricRegistry: MetricRegistry,
-            processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory): Resource[IO, Unit] = {
+            metricRegistry: MetricRegistry): Resource[IO, Unit] = {
     for {
-      route <- createRoute(config, dbConfig, metricRegistry, processingTypeDataProviderFactory)
+      route <- routeProvider.createRoute(config)
       _ <- createAkkaHttpBinding(config, route, metricRegistry)
     } yield ()
   }

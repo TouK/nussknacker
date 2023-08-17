@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
+import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
 class NussknackerApp(baseUnresolvedConfig: Config,
@@ -43,8 +44,12 @@ class NussknackerApp(baseUnresolvedConfig: Config,
       _ <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
       metricsRegistry <- createGeneralPurposeMetricsRegistry()
       db <- initDb(config)
-      server = new NussknackerHttpServer(system, materializer, system.dispatcher)
-      _ <- server.start(config, db, metricsRegistry, processingTypeDataProviderFactory)
+      server = new NussknackerHttpServer(
+        new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataProviderFactory)(system, materializer),
+        system,
+        materializer
+      )
+      _ <- server.start(config, metricsRegistry)
       _ <- startJmxReporter(metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
     } yield ()

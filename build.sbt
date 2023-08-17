@@ -948,6 +948,8 @@ lazy val testUtils = (project in utils("test-utils")).
         "ch.qos.logback" % "logback-classic" % logbackV,
         "commons-io" % "commons-io" % flinkCommonsIOV,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
+        "com.softwaremill.sttp.client3" %% "slf4j-backend" % sttpV,
+        "org.typelevel" %% "cats-effect" % "2.5.5",
       )
     }
   )
