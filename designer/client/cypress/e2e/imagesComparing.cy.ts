@@ -1,4 +1,3 @@
-import axios from "axios";
 describe("Images Comparing", () => {
     const seed = "imagesComparing";
 
@@ -143,6 +142,7 @@ describe("Images Comparing", () => {
         cy.get('[title="layout"] > .ToolbarButton--icon--w9M5n').click();
 
         cy.get('[model-id="kafka"]').dblclick();
+        cy.get('[title="Name"]').click();
         imageTake();
     });
 });
@@ -151,26 +151,39 @@ function imageTake(padding = false) {
     const basePath = "/home/fgl/Git/nussknacker/docs/scenarios_authoring/img/imagesComparing/";
     cy.get(padding ? ".joint-layers" : '[data-testid="window-frame"]').matchImage({
         screenshotConfig: { padding: padding ? 16 : 0 },
+        maxDiffThreshold: 0.0001,
         imagesPath: basePath,
     });
 }
 
 function postSchemaToRegistry(): void {
-    const url = "http://localhost:8081/subjects/Kafka-value/versions";
-    const headers = {
-        "Content-Type": "application/vnd.schemaregistry.v1+json",
-    };
-    const data = {
-        "nu-value":
-            '{"type": "object","additionalProperties": false,"$schema": "http://json-schema.org/draft-07/schema","required": ["operation","color"],"properties": {"color": {"type": "string"},"operation": {"type": "string"}}}',
+    const schema = {
+        type: "object",
+        additionalProperties: false,
+        $schema: "http://json-schema.org/draft-07/schema",
+        required: ["message"],
+        properties: {
+            message: {
+                type: "string",
+            },
+            eventDate: {
+                type: "integer",
+            },
+        },
     };
 
-    axios
-        .post(url, data, { headers })
-        .then((response) => {
-            console.log("Response:", response.data);
-        })
-        .catch((error) => {
-            console.error("Error:", error);
-        });
+    cy.request({
+        method: "POST",
+        url: "http://localhost:8081/subjects/Kafka-value/versions", // Replace with the actual API URL
+        body: {
+            name: "nu-value",
+            schema: JSON.stringify(schema),
+        },
+        headers: {
+            "Content-Type": "application/json",
+        },
+    }).then((response) => {
+        expect(response.status).to.equal(200);
+        expect(response.body).to.have.property("id");
+    });
 }
