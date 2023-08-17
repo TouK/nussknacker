@@ -354,8 +354,7 @@ trait NusskanckerAkkaHttpBasedRouter
       )
   }
 
-  //override this method to e.g. run UI with local model
-  protected def prepareProcessingTypeData(designerConfig: ConfigWithUnresolvedVersion,
+  private def prepareProcessingTypeData(designerConfig: ConfigWithUnresolvedVersion,
                                           deploymentServiceSupplier: Supplier[DeploymentService],
                                           categoriesService: ProcessCategoryService,
                                           processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory,

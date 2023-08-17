@@ -17,7 +17,6 @@ object ProcessingTypeDataReader extends ProcessingTypeDataReader
 
 trait ProcessingTypeDataReader extends LazyLogging {
 
-
   def loadProcessingTypeData(config: ConfigWithUnresolvedVersion)(implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                                                   sttpBackend: SttpBackend[Future, Any],
                                                                   deploymentService: DeploymentService,

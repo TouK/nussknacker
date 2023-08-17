@@ -18,8 +18,7 @@ final case class ProcessingTypeData private(deploymentManager: DeploymentManager
                                             metaDataInitializer: MetaDataInitializer,
                                             additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
                                             additionalValidators: List[CustomProcessValidator],
-                                            usageStatistics: ProcessingTypeUsageStatistics)
-  extends AutoCloseable {
+                                            usageStatistics: ProcessingTypeUsageStatistics) {
 
   def close(): Unit = {
     modelData.close()
