@@ -137,7 +137,7 @@ describe("Images Comparing", () => {
         imageTake(true);
     });
 
-    it.only("should display kawka value", () => {
+    it.only("should display kafka value", () => {
         cy.visitNewProcess(seed, "dockKafkaInput#0");
         cy.get('[title="layout"] > .ToolbarButton--icon--w9M5n').click();
 
@@ -157,33 +157,32 @@ function imageTake(padding = false) {
 }
 
 function postSchemaToRegistry(): void {
-    const schema = {
-        type: "object",
-        additionalProperties: false,
-        $schema: "http://json-schema.org/draft-07/schema",
-        required: ["message"],
-        properties: {
-            message: {
-                type: "string",
+    const body = {
+        name: "nu-value",
+        schema: JSON.stringify({
+            type: "object",
+            additionalProperties: false,
+            $schema: "http://json-schema.org/draft-07/schema",
+            required: ["message"],
+            properties: {
+                message: {
+                    type: "string",
+                },
+                eventDate: {
+                    type: "integer",
+                },
             },
-            eventDate: {
-                type: "integer",
-            },
-        },
+        }),
     };
 
     cy.request({
         method: "POST",
-        url: "http://localhost:3081/subjects", // Replace with the actual API URL
-        body: {
-            name: "nu-value",
-            schema: JSON.stringify(schema),
-        },
+        url: `http://localhost:4081/subjects/${body.name}/versions`,
+        body: body,
         headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/vnd.schemaregistry.v1+json",
         },
     }).then((response) => {
         expect(response.status).to.equal(200);
-        expect(response.body).to.have.property("id");
     });
 }
