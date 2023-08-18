@@ -223,7 +223,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
                                                   deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]] = {
     val filteredPeriodicProcessQuery = periodicProcessesQuery.filter(p => p.processingType === processingType && p.processName === processName.value)
     val latestDeploymentsForSchedules = profile match {
-      case postgresProfile: ExPostgresProfile =>
+      case _: ExPostgresProfile =>
         getLatestDeploymentsForEachSchedulePostgres(filteredPeriodicProcessQuery, deploymentsPerScheduleMaxCount)
       case _ =>
         getLatestDeploymentsForEachScheduleJdbcGeneric(filteredPeriodicProcessQuery, deploymentsPerScheduleMaxCount)
@@ -240,7 +240,6 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     }.toMap)
   }
 
-  // TODO: test for postgres implementation
   private def getLatestDeploymentsForEachSchedulePostgres(periodicProcessesQuery: Query[PeriodicProcessesTable, PeriodicProcessEntity, Seq],
                                                           deploymentsPerScheduleMaxCount: Int): Action[Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]] = {
     // To effectively limit deployments to given count for each schedule in one query, we use window functions in slick
@@ -250,8 +249,8 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     val deploymentsForProcesses = periodicProcessesQuery join PeriodicProcessDeployments on (_.id === _.periodicProcessId)
     deploymentsForProcesses.map {
       case (process, deployment) =>
-        (rank() :: Over.partitionBy((deployment.periodicProcessId, deployment.scheduleName)).sortBy(deployment.runAt.desc), process, deployment)
-    }.filter(_._1 <= deploymentsPerScheduleMaxCount.longValue()).map {
+        (rowNumber() :: Over.partitionBy((deployment.periodicProcessId, deployment.scheduleName)).sortBy(deployment.runAt.desc), process, deployment)
+    }.subquery.filter(_._1 <= deploymentsPerScheduleMaxCount.longValue()).map {
       case (_, process, deployment) =>
         (process, deployment)
     }.result

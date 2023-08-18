@@ -28,9 +28,9 @@ object DbInitializer extends LazyLogging {
     Flyway
       .configure()
       .locations(
-        ( profile match {
-          case HsqldbProfile => Array("db/batch_periodic/migration/hsql", "db/batch_periodic/migration/common")
-          case PostgresProfile => Array("db/batch_periodic/migration/postgres", "db/batch_periodic/migration/common")
+        (profile match {
+          case _: HsqldbProfile => Array("db/batch_periodic/migration/hsql", "db/batch_periodic/migration/common")
+          case _: PostgresProfile => Array("db/batch_periodic/migration/postgres", "db/batch_periodic/migration/common")
           case _ => throw new IllegalArgumentException(s"Unsupported database url: $url. Use either PostgreSQL or HSQLDB.")
         }): _*
       )
