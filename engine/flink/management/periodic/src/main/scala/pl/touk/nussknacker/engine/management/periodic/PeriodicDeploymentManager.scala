@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentState
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
@@ -130,11 +130,17 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     }
   }
 
+  override def stop(name: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult] =
+    Future.failed(new UnsupportedOperationException(s"Stopping of deployment is not supported"))
+
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
     service.deactivate(name).flatMap {
       _ => delegate.cancel(name, user)
     }
   }
+
+  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
+    Future.failed(new UnsupportedOperationException(s"Cancelling of deployment it not supported"))
 
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)

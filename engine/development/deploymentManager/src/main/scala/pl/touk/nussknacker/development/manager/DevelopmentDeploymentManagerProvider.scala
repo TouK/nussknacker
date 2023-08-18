@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.{ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, MetaDataInitializer}
 import sttp.client3.SttpBackend
@@ -93,11 +93,22 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
     result.future
   }
 
+
+  override def stop(name: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult] = {
+    // TODO: stopping specific deployment
+    stop(name, savepointDir, user)
+  }
+
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
     logger.debug(s"Starting stopping scenario: $name..")
     asyncChangeState(name, Finished)
     logger.debug(s"Finished stopping scenario: $name.")
     Future.successful(SavepointResult(""))
+  }
+
+  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = {
+    // TODO: cancelling specific deployment
+    cancel(name, user)
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
