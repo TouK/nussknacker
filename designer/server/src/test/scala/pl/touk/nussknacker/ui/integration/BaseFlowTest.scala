@@ -5,7 +5,7 @@ import io.circe.{Decoder, Json}
 import org.apache.commons.io.FileUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, EitherValues, OptionValues}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition._
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.restmodel.definition.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
-import pl.touk.nussknacker.test.{PatientScalaFutures, WithTestHttpClient}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIAdditionalPropertyConfig
@@ -36,10 +36,8 @@ import sttp.model.{Header, MediaType, StatusCode}
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.UUID
-import scala.annotation.nowarn
 import scala.util.Properties
 
-@nowarn // todo:
 class BaseFlowTest
   extends AnyFunSuite
     with NuItTest
@@ -49,7 +47,7 @@ class BaseFlowTest
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with OptionValues
-    with EitherValues {
+    with EitherValuesDetailedMessage {
 
   import BaseFlowTest._
 
@@ -199,19 +197,7 @@ class BaseFlowTest
     response2.body should include("Configured property environment (Environment) is missing")
     response2.body should include("This field value has to be an integer number")
     response2.body should include("Unknown property unknown")
-    response2.body should include("Property numberOfThreads (Number of threads) has invalid value")
-
-    //    Post(s"") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-    //      Post("/api/processValidation", HttpEntity(ContentTypes.`application/json`, scenario.asJson.spaces2)) ~> addCredentials(credentials) ~> mainRoute ~> check {
-    //        status shouldEqual StatusCodes.OK
-    //        val entity = responseAs[String]
-    //
-    //        entity should include("Configured property environment (Environment) is missing")
-    //        entity should include("This field value has to be an integer number")
-    //        entity should include("Unknown property unknown")
-    //        entity should include("Property numberOfThreads (Number of threads) has invalid value")
-    //      }
-    //    }
+    response2.body should include("Property numberOfThreads (Number of threads) has invalid value")//
   }
 
   test("be able to work with fragment with custom class inputs") {
@@ -413,7 +399,7 @@ class BaseFlowTest
         .response(asJson[ValidationResult])
     )
     response.code shouldEqual StatusCode.Ok
-    response.body.value
+    response.body.rightValue
   }
 
   private def testProcess(process: CanonicalProcess, data: String): Json = {

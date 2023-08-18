@@ -3,13 +3,14 @@ package pl.touk.nussknacker.ui.integration
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, EitherValues, OptionValues}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.test.{PatientScalaFutures, WithTestHttpClient}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{MediaType, StatusCode}
 
@@ -24,7 +25,7 @@ class DictsFlowTest
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with OptionValues
-    with EitherValues {
+    with EitherValuesDetailedMessage {
 
   private val DictId = "dict"
   private val VariableNodeId = "variableCheck"
@@ -74,75 +75,107 @@ class DictsFlowTest
     saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel) shouldBe Json.obj()
   }
 
-  //  test("save process with invalid expression using dicts and get it back with validation results") {
-  //    val expressionUsingDictWithInvalidLabel = s"#DICT['invalid']"
-  //    val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithInvalidLabel)
-  //
-  //    val processRootResource = s"/api/processes/${process.id}"
-  //
-  //    createEmptyScenario(processRootResource)
-  //
-  //    Post("/api/processValidation", TestFactory.posting.toEntity(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-  //      status shouldEqual StatusCodes.OK
-  //      val invalidNodes = extractInvalidNodes
-  //      invalidNodes.asObject.value should have size 1
-  //      invalidNodes.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParserCompilationError"
-  //    }
-  //
-  //    val invalidNodesAfterSave = extractValidationResult(processRootResource, process)
-  //    invalidNodesAfterSave.asObject.value should have size 1
-  //    invalidNodesAfterSave.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParserCompilationError"
-  //
-  //    Get(processRootResource) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-  //      status shouldEqual StatusCodes.OK
-  //      val returnedEndResultExpression = extractVariableExpression(responseAs[Json].hcursor.downField("json"))
-  //      returnedEndResultExpression shouldEqual expressionUsingDictWithInvalidLabel
-  //      val invalidNodesAfterGet = extractInvalidNodesFromValidationResult
-  //      invalidNodesAfterGet.asObject.value should have size 1
-  //      invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParserCompilationError"
-  //    }
-  //  }
-  //
-  //  test("save process with expression using dicts and test it") {
-  //    val expressionUsingDictWithLabel = s"#DICT['$Label']"
-  //    val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
-  //    saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
-  //  }
-  //
-  //  test("save process with expression using dict values as property and test it") {
-  //    val expressionUsingDictWithLabel = s"#DICT.$Label"
-  //    val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
-  //    saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
-  //  }
-  //
-  //  test("export process with expression using dict") {
-  //    val expressionUsingDictWithLabel = s"#DICT.$Label"
-  //    val expressionUsingDictWithKey = s"#DICT.$Key"
-  //    val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
-  //
-  //    Post(s"/api/processes/${process.id}/Category1?isFragment=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-  //      status shouldEqual StatusCodes.Created
-  //    }
-  //
-  //    Post(s"/api/processesExport", TestProcessUtil.toJson(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-  //      status shouldEqual StatusCodes.OK
-  //      val returnedEndResultExpression = extractVariableExpression(responseAs[Json].hcursor)
-  //      returnedEndResultExpression shouldEqual expressionUsingDictWithKey
-  //    }
-  //  }
-  //
-  //  private def saveProcessAndTestIt(process: CanonicalProcess, expressionUsingDictWithLabel: String, expectedResult: String) = {
-  //    saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel).asObject.value shouldBe empty
-  //
-  //    val testDataContent = """{"sourceId":"source","record":"field1|field2"}"""
-  //    val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
-  //    Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-  //      status shouldEqual StatusCodes.OK
-  //      val endInvocationResult = extractedVariableResult()
-  //      endInvocationResult shouldEqual expectedResult
-  //    }
-  //  }
-  //
+  test("save process with invalid expression using dicts and get it back with validation results") {
+    val expressionUsingDictWithInvalidLabel = s"#DICT['invalid']"
+    val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithInvalidLabel)
+
+    createEmptyScenario(process.id)
+
+    val response1 = httpClient.send(
+      quickRequest
+        .post(uri"$nuDesignerHttpAddress/api/processValidation")
+        .contentType(MediaType.ApplicationJson)
+        .body(TestFactory.posting.toJson(process).spaces2)
+        .auth.basic("admin", "admin")
+    )
+    response1.code shouldEqual StatusCode.Ok
+    val invalidNodesJson = response1.extractFieldJsonValue("errors", "invalidNodes")
+    invalidNodesJson.asObject.value should have size 1
+    invalidNodesJson.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual {
+      "ExpressionParserCompilationError"
+    }
+
+    val invalidNodesAfterSave = extractValidationResult(process)
+    invalidNodesAfterSave.asObject.value should have size 1
+    invalidNodesAfterSave.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual {
+      "ExpressionParserCompilationError"
+    }
+
+    val response2 = httpClient.send(
+      quickRequest
+        .get(uri"$nuDesignerHttpAddress/api/processes/${process.id}")
+        .auth.basic("admin", "admin")
+    )
+    response2.code shouldEqual StatusCode.Ok
+
+    val returnedEndResultExpression = extractVariableExpressionFromGetProcessResponse(response2.bodyAsJson)
+    returnedEndResultExpression shouldEqual expressionUsingDictWithInvalidLabel
+    val invalidNodesAfterGet = response2.extractFieldJsonValue("json", "validationResult", "errors", "invalidNodes")
+    invalidNodesAfterGet.asObject.value should have size 1
+    invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual {
+      "ExpressionParserCompilationError"
+    }
+  }
+
+  // todo: fixme
+  ignore("save process with expression using dicts and test it") {
+    val expressionUsingDictWithLabel = s"#DICT['$Label']"
+    val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
+    saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
+  }
+
+  // todo: fixme
+  ignore("save process with expression using dict values as property and test it") {
+    val expressionUsingDictWithLabel = s"#DICT.$Label"
+    val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
+    saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
+  }
+
+  test("export process with expression using dict") {
+    val expressionUsingDictWithLabel = s"#DICT.$Label"
+    val expressionUsingDictWithKey = s"#DICT.$Key"
+    val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
+
+    val response1 = httpClient.send(
+      quickRequest
+        .post(uri"$nuDesignerHttpAddress/api/processes/${process.id}/Category1?isFragment=false")
+        .auth.basic("admin", "admin")
+    )
+    response1.code shouldEqual StatusCode.Created
+
+    val response2 = httpClient.send(
+      quickRequest
+        .post(uri"$nuDesignerHttpAddress/api/processesExport")
+        .contentType(MediaType.ApplicationJson)
+        .body(TestProcessUtil.toJson(process).noSpaces)
+        .auth.basic("admin", "admin")
+    )
+    response2.code shouldEqual StatusCode.Ok
+    val returnedEndResultExpression = extractVariableExpressionFromProcessExportResponse(response2.bodyAsJson)
+    returnedEndResultExpression shouldEqual expressionUsingDictWithKey
+  }
+
+  private def saveProcessAndTestIt(process: CanonicalProcess, expressionUsingDictWithLabel: String, expectedResult: String) = {
+    saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel) shouldBe Json.obj()
+
+    val response = httpClient.send(
+      quickRequest
+        .post(uri"$nuDesignerHttpAddress/api/processManagement/test/${process.id}")
+        .contentType(MediaType.MultipartFormData)
+        .multipartBody(
+          sttpPrepareMultiParts(
+            "testData" -> """{"sourceId":"source","record":"field1|field2"}""",
+            "processJson" -> TestProcessUtil.toJson(process).noSpaces
+          )()
+        )
+        .auth.basic("admin", "admin")
+    )
+
+    response.code shouldEqual StatusCode.Ok
+    val endInvocationResult = extractedVariableResultFrom(response.bodyAsJson)
+    endInvocationResult shouldEqual expectedResult
+  }
+
   private def sampleProcessWithExpression(processId: String, variableExpression: String) =
     ScenarioBuilder
       .streaming(processId)
@@ -172,7 +205,7 @@ class DictsFlowTest
         .auth.basic("admin", "admin")
     )
     response2.code shouldEqual StatusCode.Ok
-    val returnedEndResultExpression = extractJsonVariableExpression(response2.bodyAsJson)
+    val returnedEndResultExpression = extractVariableExpressionFromGetProcessResponse(response2.bodyAsJson)
     returnedEndResultExpression shouldEqual endResultExpressionToPost
 
     response2.extractFieldJsonValue("json", "validationResult", "errors", "invalidNodes")
@@ -199,60 +232,41 @@ class DictsFlowTest
     response.extractFieldJsonValue("errors", "invalidNodes")
   }
 
-  private def extractJsonVariableExpression(json: Json) = {
+  private def extractVariableExpressionFromGetProcessResponse(json: Json) = {
     import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
     json.hcursor
       .downField("json")
       .downField("nodes")
-      .downAt(_.hcursor.get[String]("id").value == VariableNodeId)
+      .downAt(_.hcursor.get[String]("id").rightValue == VariableNodeId)
       .downField("value")
       .downField("expression")
       .as[String]
-      .value
+      .rightValue
   }
 
-  //
-  //  private def extractVariableExpression(cursor: ACursor) = {
-  //    cursor.downField("nodes")
-  //      .downAt(_.hcursor.get[String]("id").rightValue == VariableNodeId)
-  //      .downField("value")
-  //      .downField("expression")
-  //      .as[String].rightValue
-  //  }
-  //
-  //  private def extractedVariableResult() = {
-  //    val response = responseAs[Json]
-  //    response.hcursor
-  //      .downField("results")
-  //      .downField("nodeResults")
-  //      .downField(EndNodeId)
-  //      .downArray
-  //      .downField("context")
-  //      .downField("variables")
-  //      .downField(VariableName)
-  //      .downField("pretty")
-  //      .as[String].rightValue
-  //  }
-  //
-  //    private def extractInvalidNodes(response: Response[String]): Json = {
-  //
-  //    }
-  //
-  //  private def extractInvalidNodesFromValidationResult: Json = {
-  //    val response = responseAs[Json]
-  //
-  //    response.hcursor
-  //      .downField("json")
-  //      .downField("validationResult")
-  //      .downField("errors")
-  //      .downField("invalidNodes")
-  //      .as[Json].rightValue
-  //  }
-  //
-  //  def checkWithClue[T](body: => T): RouteTestResult => T = check {
-  //    withClue(responseAs[String]) {
-  //      body
-  //    }
-  //  }
+  private def extractVariableExpressionFromProcessExportResponse(json: Json) = {
+    import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
+    json.hcursor
+      .downField("nodes")
+      .downAt(_.hcursor.get[String]("id").rightValue == VariableNodeId)
+      .downField("value")
+      .downField("expression")
+      .as[String]
+      .rightValue
+  }
+
+  private def extractedVariableResultFrom(json: Json) = {
+    json
+      .hcursor
+      .downField("results")
+      .downField("nodeResults")
+      .downField(EndNodeId)
+      .downArray
+      .downField("context")
+      .downField("variables")
+      .downField(VariableName)
+      .downField("pretty")
+      .as[String].rightValue
+  }
 
 }
