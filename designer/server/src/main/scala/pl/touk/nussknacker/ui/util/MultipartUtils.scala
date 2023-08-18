@@ -6,7 +6,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import sttp.client3._
-import sttp.model.Part
+import sttp.model.{MediaType, Part}
 
 import java.nio.charset.StandardCharsets
 import scala.collection.immutable.Seq
@@ -37,7 +37,11 @@ object MultipartUtils {
 
   def sttpPrepareMultiParts(nameContent: (String, String)*)
                            (fileName: String = "file.json"): Seq[Part[RequestBody[Any]]] = {
-    nameContent.map { case (name, content) => multipart(name, content).fileName(fileName) }
+    nameContent.map { case (name, content) =>
+      multipart(name, content)
+        .fileName(fileName)
+        .contentType(MediaType.TextPlainUtf8)
+    }
   }
 
 }

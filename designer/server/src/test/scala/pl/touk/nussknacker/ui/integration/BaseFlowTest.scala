@@ -43,8 +43,6 @@ class BaseFlowTest
     with NuItTest
     with WithTestHttpClient
     with Matchers
-    with PatientScalaFutures
-    with BeforeAndAfterEach
     with BeforeAndAfterAll
     with OptionValues
     with EitherValuesDetailedMessage {
@@ -89,53 +87,81 @@ class BaseFlowTest
 
     //docs url comes from defaultModelConf.conf in dev-model
     val underTest = Map(
-      "filter" -> SingleComponentConfig(None, None, Some("https://touk.github.io/nussknacker/filter"), None, None),
-      "test1" -> SingleComponentConfig(None, Some("/assets/components/Sink.svg"), None, None, None),
-      "enricher" -> SingleComponentConfig(
-        Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
-        Some("/assets/components/Filter.svg"),
-        Some("https://touk.github.io/nussknacker/enricher"),
+      "filter" -> SingleComponentConfig(
         None,
-        None
+        None,
+        Some("https://touk.github.io/nussknacker/filter"),
+        componentGroup = None,
+        componentId = None
+      ),
+      "test1" -> SingleComponentConfig(
+        params = None,
+        icon = Some("/assets/components/Sink.svg"),
+        docsUrl = None,
+        componentGroup = None,
+        componentId = None
+      ),
+      "enricher" -> SingleComponentConfig(
+        params = Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
+        icon = Some("/assets/components/Filter.svg"),
+        docsUrl = Some("https://touk.github.io/nussknacker/enricher"),
+        componentGroup = None,
+        componentId = None
       ),
       "multipleParamsService" -> SingleComponentConfig(
-        Some(Map(
+        params = Some(Map(
           "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))), None, None),
           "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
           "baz" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))), None, None)
         )),
-        None,
-        None,
-        None,
-        None
+        icon = None,
+        docsUrl = None,
+        componentGroup = None,
+        componentId = None
       ),
-      "accountService" -> SingleComponentConfig(None, None, Some("accountServiceDocs"), None, None),
+      "accountService" -> SingleComponentConfig(
+        params = None,
+        icon = None,
+        docsUrl = Some("accountServiceDocs"),
+        componentGroup = None,
+        componentId = None
+      ),
       "sub1" -> SingleComponentConfig(
-        Some(Map(
+        params = Some(Map(
           "param1" -> ParameterConfig(None, Some(StringParameterEditor), None, None)
         )),
-        None,
-        Some("http://nussknacker.io"),
-        None,
-        None,
+        icon = None,
+        docsUrl = Some("http://nussknacker.io"),
+        componentGroup = None,
+        componentId = None,
       ),
       "optionalTypesService" -> SingleComponentConfig(
-        Some(Map(
+        params = Some(Map(
           "overriddenByFileConfigParam" -> ParameterConfig(None, None, Some(List.empty), None),
           "overriddenByDevConfigParam" -> ParameterConfig(None, None, Some(List(MandatoryParameterValidator)), None)
         )),
-        None,
-        None,
-        Some(ComponentGroupName("types")),
-        None
+        icon = None,
+        docsUrl = None,
+        componentGroup = Some(ComponentGroupName("types")),
+        componentId = None
       ),
-      "providedComponent-component-v1" -> SingleComponentConfig(None, None, Some("https://nussknacker.io/Configuration.html"), None, None),
-      "$properties" -> SingleComponentConfig(None, None,
-        Some("https://nussknacker.io/documentation/docs/installation_configuration_guide/ModelConfiguration#scenarios-additional-properties"), None, None)
+      "providedComponent-component-v1" -> SingleComponentConfig(
+        params = None,
+        icon = None,
+        docsUrl = Some("https://nussknacker.io/Configuration.html"),
+        componentGroup = None,
+        componentId = None
+      ),
+      "$properties" -> SingleComponentConfig(
+        params = None,
+        icon = None,
+        docsUrl = Some("https://nussknacker.io/documentation/docs/installation_configuration_guide/ModelConfiguration#scenarios-additional-properties"),
+        componentGroup = None,
+        componentId = None
+      )
     )
 
     settings.collect { case (k, v) if underTest.keySet contains k => (k, v) } shouldBe underTest
-
   }
 
   test("ensure additional properties config is properly applied") {
@@ -154,22 +180,22 @@ class BaseFlowTest
 
     val underTest = Map(
       "environment" -> UiAdditionalPropertyConfig(
-        Some("test"),
-        StringParameterEditor,
-        List(MandatoryParameterValidator),
-        Some("Environment")
+        defaultValue = Some("test"),
+        editor = StringParameterEditor,
+        validators = List(MandatoryParameterValidator),
+        label = Some("Environment")
       ),
       "maxEvents" -> UiAdditionalPropertyConfig(
-        None,
-        StringParameterEditor,
-        List(LiteralParameterValidator.integerValidator),
-        Some("Max events")
+        defaultValue = None,
+        editor = StringParameterEditor,
+        validators = List(LiteralParameterValidator.integerValidator),
+        label = Some("Max events")
       ),
       "numberOfThreads" -> UiAdditionalPropertyConfig(
-        Some("1"),
-        FixedValuesParameterEditor(fixedPossibleValues),
-        List(FixedValuesValidator(fixedPossibleValues)),
-        Some("Number of threads")
+        defaultValue = Some("1"),
+        editor = FixedValuesParameterEditor(fixedPossibleValues),
+        validators = List(FixedValuesValidator(fixedPossibleValues)),
+        label = Some("Number of threads")
       )
     ) ++ streamingDefaultPropertyConfig
 
@@ -228,13 +254,13 @@ class BaseFlowTest
         .contentType(MediaType.ApplicationJson)
         .body(TestFactory.posting.toJsonAsProcessToSave(process).spaces2)
         .auth.basic("admin", "admin")
+        .response(asJson[ValidationResult])
     )
     response2.code shouldEqual StatusCode.Ok
-    // todo:
-    //    val res = responseAs[ValidationResult]
-    //    //TODO: in the future should be more local error
-    //    res.errors.globalErrors.map(_.description) shouldBe List(
-    //      "Fatal error: Failed to load scenario fragment parameter: i.do.not.exist for input1, please check configuration")
+    //TODO: in the future should be more local error
+    response2.body.rightValue.errors.globalErrors.map(_.description) shouldBe List(
+      "Fatal error: Failed to load scenario fragment parameter: i.do.not.exist for input1, please check configuration"
+    )
 
     val response3 = httpClient.send(
       quickRequest
@@ -244,8 +270,7 @@ class BaseFlowTest
     response3.code shouldEqual StatusCode.Ok
   }
 
-  // todo: fix ignore
-  ignore("should test process with complexReturnObjectService") {
+  test("should test process with complexReturnObjectService") {
     val processId = "complexObjectProcess" + UUID.randomUUID().toString
 
     val process = ScenarioBuilder
@@ -273,8 +298,7 @@ class BaseFlowTest
     response.code shouldEqual StatusCode.Ok
   }
 
-  // todo: fix ignore
-  ignore("should reload ConfigCreator") {
+  test("should reload ConfigCreator") {
     def generationTime: Option[String] = {
       val response = httpClient.send(
         quickRequest

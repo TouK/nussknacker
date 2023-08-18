@@ -25,7 +25,7 @@ class NussknackerHttpServerSpec
     with WithTestHttpClientCreator
     with DefaultUniquePortProvider {
 
-  it should "connect to api via SSL" in {
+  it should "allow client to connect via SSL" in {
     eval {
       val keyStoreConfig = KeyStoreConfig(getClass.getResource("/localhost.p12").toURI, "foobar".toCharArray)
       val port = nextPort()

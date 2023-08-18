@@ -291,7 +291,7 @@ class AkkaHttpBasedRouteProvider(dbConfig: DbConfig,
                              apiResourcesWithAuthentication: List[RouteWithUser],
                              apiResourcesWithoutAuthentication: List[Route],
                              processCategoryService: ProcessCategoryService,
-                             developmentMode: Boolean) // todo: fixme
+                             developmentMode: Boolean)
                             (implicit executionContext: ExecutionContext): Route = {
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(resolvedConfig.getString("http.publicPath"))

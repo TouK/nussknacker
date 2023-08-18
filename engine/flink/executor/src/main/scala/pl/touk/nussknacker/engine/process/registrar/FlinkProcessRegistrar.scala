@@ -181,6 +181,8 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, R
         case part@SinkPart(sink: FlinkSink, _, contextBefore, _) =>
           registerSinkPark(start, part, sink, contextBefore)
         case part: SinkPart =>
+          // todo: fixme "part.obj" is not stringified well
+          //      (eg. Scenario can only use flink sinks, instead given: pl.touk.nussknacker.engine.management.sample.sink.LiteDeadEndSink$@21220fd7)
           throw new IllegalArgumentException(s"Scenario can only use flink sinks, instead given: ${part.obj}")
         case part: CustomNodePart =>
           registerCustomNodePart(start, part)

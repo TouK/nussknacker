@@ -3,11 +3,11 @@ package pl.touk.nussknacker.ui.integration
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures, WithTestHttpClient}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
@@ -21,8 +21,6 @@ class DictsFlowTest
     with NuItTest
     with WithTestHttpClient
     with Matchers
-    with PatientScalaFutures
-    with BeforeAndAfterEach
     with BeforeAndAfterAll
     with OptionValues
     with EitherValuesDetailedMessage {
@@ -117,15 +115,13 @@ class DictsFlowTest
     }
   }
 
-  // todo: fixme
-  ignore("save process with expression using dicts and test it") {
+  test("save process with expression using dicts and test it") {
     val expressionUsingDictWithLabel = s"#DICT['$Label']"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
     saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
   }
 
-  // todo: fixme
-  ignore("save process with expression using dict values as property and test it") {
+  test("save process with expression using dict values as property and test it") {
     val expressionUsingDictWithLabel = s"#DICT.$Label"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
     saveProcessAndTestIt(process, expressionUsingDictWithLabel, Key)
