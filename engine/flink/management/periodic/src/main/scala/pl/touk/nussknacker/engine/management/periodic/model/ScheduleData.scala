@@ -9,7 +9,8 @@ case class ScheduleData(process: PeriodicProcess, latestDeployments: List[Schedu
 // To identify schedule we need scheduleName - None for SingleScheduleProperty and Some(key) for MultipleScheduleProperty keys
 // Also we need PeriodicProcessId to distinguish between active schedules and some inactive from the past for the same PeriodicProcessId
 // Warning: PeriodicProcessId is not the same as ProcessId - we match processes with schedules by process_name
-case class ScheduleId(id: PeriodicProcessId, scheduleName: Option[String])
+// TODO: We could extract periodic_schedule table with syntetic id and use it everwhere
+case class ScheduleId(processId: PeriodicProcessId, scheduleName: Option[String])
 
 case class ScheduleDeploymentData(id: PeriodicProcessDeploymentId,
                                   runAt: LocalDateTime,

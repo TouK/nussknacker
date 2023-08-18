@@ -242,7 +242,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
     intercept[TestFailedException](tryToSchedule(MultipleScheduleProperty(Map("s1" -> cronInPast, "s2" -> cronInPast)))).getCause shouldBe a[PeriodicProcessException]
   }
 
-  test("getLatestDeployment - should return correct deployment for multiple schedules") {
+  test("pickMostImportantDeployment - should return correct deployment for multiple schedules") {
     val schedules@(schedule1 :: schedule2 :: Nil) = List("schedule1", "schedule2")
     val table = Table(
       ("statuses", "expected status", "expected schedule name"),
@@ -265,7 +265,9 @@ class PeriodicProcessServiceTest extends AnyFunSuite
         f.repository.addOnlyDeployment(periodicProcessId, status = status, runAt = now.plusDays(index), scheduleName = Some(schedule))
       }
 
-      val deployment = f.periodicProcessService.getLatestDeploymentForActiveSchedulesOld(processName).futureValue.value
+      val activeSchedules = f.periodicProcessService.getLatestDeploymentForActiveSchedules(processName).futureValue
+      activeSchedules should have size (schedules.size)
+      val deployment = f.periodicProcessService.pickMostImportantDeployment(activeSchedules).value
 
       deployment.state.status shouldBe expectedStatus
       deployment.scheduleName shouldBe Some(expectedScheduleName)

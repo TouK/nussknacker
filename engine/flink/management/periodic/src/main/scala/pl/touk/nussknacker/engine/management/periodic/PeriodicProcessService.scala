@@ -383,6 +383,9 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
   def getLatestDeploymentForActiveSchedules(processName: ProcessName): Future[Map[ScheduleId, ScheduleData]] =
     scheduledProcessesRepository.getLatestDeploymentsForActiveSchedules(processName, deploymentsPerScheduleMaxCount = 1).run
 
+  def getLatestDeploymentForLatestInactiveSchedules(processName: ProcessName, inactiveProcessesMaxCount: Int, deploymentsPerScheduleMaxCount: Int): Future[Map[ScheduleId, ScheduleData]] =
+    scheduledProcessesRepository.getLatestDeploymentsForLatestInactiveSchedules(processName, inactiveProcessesMaxCount, deploymentsPerScheduleMaxCount).run
+
   /**
    * Returns latest deployment. It can be in any status (consult [[PeriodicProcessDeploymentStatus]]).
    * For multiple schedules only single schedule is returned in the following order:

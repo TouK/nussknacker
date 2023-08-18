@@ -256,8 +256,13 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     }.result
   }
 
+  // This variant of method is much less optimal than postgres one. It is highly recommended to use postgres with periodics
+  // If we decided to support more databases, we should consider some optimization like extracting periodic_schedule table
+  // with foreign key to periodic_process and with schedule_name column - it would reduce number of queries
   private def getLatestDeploymentsForEachScheduleJdbcGeneric(periodicProcessesQuery: Query[PeriodicProcessesTable, PeriodicProcessEntity, Seq],
                                                              deploymentsPerScheduleMaxCount: Int): Action[Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]] = {
+    // It is debug instead of warn to not bloast logs when e.g. for some reasons is used hsql under the hood
+    logger.debug("WARN: Using not optimized version of getLatestDeploymentsForEachSchedule not using window functions")
     for {
       processes <- periodicProcessesQuery.result
       schedulesForProcesses <-
