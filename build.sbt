@@ -306,10 +306,14 @@ val jwtCirceV = "9.3.0"
 val jacksonV = "2.14.3"
 val catsV = "2.9.0"
 <<<<<<< HEAD
+<<<<<<< HEAD
 val catsEffectV = "2.5.5"
 =======
 val catsEffectV = "3.4.8"
 >>>>>>> ee8e844071 (Improvements: bump cats effect)
+=======
+val catsEffectV = "3.5.1"
+>>>>>>> 1be91a59b6 (Upgrade cats and remove using IORuntime.global)
 val everitSchemaV = "1.14.2"
 val slf4jV = "1.7.36"
 val scalaLoggingV = "3.9.5"

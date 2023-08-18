@@ -24,7 +24,6 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
   extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {
 
   private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
-  private lazy implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global //TODO: Global is not good idea..
 
   private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
@@ -46,10 +45,15 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
   private def runInterpreter(input: Context): List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]] = {
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
+<<<<<<< HEAD
       interpreter.interpret(compiledNode, metaData, input).unsafeRunTimed(processTimeout) match {
         case Some(result) => result
         case None => throw new TimeoutException(s"Interpreter is running too long (timeout: $processTimeout)")
       }
+=======
+      implicit val runtime: IORuntime = IORuntimeFactory.create(ec)
+      interpreter.interpret(compiledNode, metaData, input).unsafeRunSync()
+>>>>>>> 1be91a59b6 (Upgrade cats and remove using IORuntime.global)
     } else {
       implicit val futureShape: FutureShape = new FutureShape()
       Await.result(interpreter.interpret[Future](compiledNode, metaData, input), processTimeout)

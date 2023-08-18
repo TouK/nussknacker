@@ -140,7 +140,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   so you can simplify your deployment by removing them and updating to new
   ([`flink-scala` JAR](https://repo1.maven.org/maven2/pl/touk/flink-scala-2-13_2.13/1.1.0/flink-scala-2-13_2.13-1.1.0-assembly.jar))
   (this doesn't introduce any functional changes)
-* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvements: bump cats effect.
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvements: bump cats effect 3.5.1.
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
 
 ### REST API changes

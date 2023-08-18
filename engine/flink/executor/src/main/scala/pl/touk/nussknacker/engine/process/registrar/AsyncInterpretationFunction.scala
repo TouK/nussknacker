@@ -62,7 +62,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
     implicit val ec: ExecutionContext = executionContext
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
-      implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global //TODO: Global is not good idea..
+      implicit val runtime: IORuntime = IORuntimeFactory.create(executionContext)
       interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunAsync(callback)
     } else {
       implicit val future: FutureShape = new FutureShape()
