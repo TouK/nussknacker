@@ -118,21 +118,31 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   }
 
   override def cancel(processName: ProcessName, user: User): Future[Unit] = {
-    def doCancel(details: StatusDetails) = {
-      cancel(details.externalDeploymentId.getOrElse(throw new IllegalStateException("Error during cancelling scenario: returned status details has no external deployment id")))
+    getFreshProcessStates(processName).flatMap { statuses =>
+      cancelEachMatchingJob(processName, None, statuses)
     }
+  }
 
-    getFreshProcessStates(processName).map { statuses =>
-      statuses.filterNot(details => SimpleStateStatus.isFinalStatus(details.status)) match {
-        case Nil =>
-          logger.warn(s"Trying to cancel ${processName.value} which is not present in Flink.")
-          Future.successful(())
-        case single :: Nil => doCancel(single)
-        case moreThanOne@(_ :: _ :: _) =>
-          logger.warn(s"Found duplicate jobs of ${processName.value}: $moreThanOne. Cancelling all in non terminal state.")
-          Future.sequence(moreThanOne.map(doCancel)).map(_=> ())
-      }
+  override def cancel(processName: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = {
+    getFreshProcessStates(processName).flatMap { statuses =>
+      cancelEachMatchingJob(processName, Some(deploymentId), statuses.filter(_.deploymentId.contains(deploymentId)))
     }
+  }
+
+  private def cancelEachMatchingJob(processName: ProcessName, deploymentId: Option[DeploymentId], statuses: List[StatusDetails]) = {
+    statuses.filterNot(details => SimpleStateStatus.isFinalStatus(details.status)) match {
+      case Nil =>
+        logger.warn(s"Trying to cancel ${processName.value}${deploymentId.map(" with id: " + _).getOrElse("")} which is not present or finished on Flink.")
+        Future.successful(())
+      case single :: Nil => cancelJob(single)
+      case moreThanOne@(_ :: _ :: _) =>
+        logger.warn(s"Found duplicate jobs of ${processName.value}${deploymentId.map(" with id: " + _).getOrElse("")}: $moreThanOne. Cancelling all in non terminal state.")
+        Future.sequence(moreThanOne.map(cancelJob)).map(_ => ())
+    }
+  }
+
+  private def cancelJob(details: StatusDetails) = {
+    cancel(details.externalDeploymentId.getOrElse(throw new IllegalStateException("Error during cancelling scenario: returned status details has no external deployment id")))
   }
 
   override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {

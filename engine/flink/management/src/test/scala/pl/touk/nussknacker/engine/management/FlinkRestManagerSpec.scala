@@ -27,6 +27,7 @@ import sttp.model.{Method, StatusCode}
 import java.net.NoRouteToHostException
 import java.util.concurrent.TimeoutException
 import java.util.{Collections, UUID}
+import scala.collection.immutable.Map
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -212,6 +213,28 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       .foreach(_.futureValue shouldBe (()))
 
     statuses.map(_.jid).foreach(id => history should contain(HistoryEntry("cancel", Some(id))))
+  }
+
+  test("allow cancel specific deployment") {
+    val processName = ProcessName("process1")
+    val fooDeploymentId = DeploymentId("foo")
+    val barDeploymentId = DeploymentId("bar")
+
+    val deploymentIds = List(fooDeploymentId, barDeploymentId)
+    statuses = deploymentIds.map(deploymentId =>
+      JobOverview(deploymentId.value, processName.value, 10L, 10L, JobStatus.RUNNING.name(), tasksOverview()))
+    configs = deploymentIds.map(deploymentId => deploymentId.value -> ExecutionConfig(1, Map(
+      "processId" -> fromString("123"),
+      "versionId" -> fromString("1"),
+      "deploymentId" -> fromString(deploymentId.value),
+      "user" -> fromString("user1")))).toMap
+
+    val (manager, history) = createManagerWithHistory(statuses)
+
+    manager.cancel(processName, fooDeploymentId, User("user1", "user1")).futureValue shouldBe (())
+
+    history should contain (HistoryEntry("cancel", Some(fooDeploymentId.value)))
+    history should not contain HistoryEntry("cancel", Some(barDeploymentId.value))
   }
 
   test("cancel duplicate processes which are in non terminal state") {

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
@@ -124,14 +124,19 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
     // TODO: savepoint for given deployment id
-    requireSingleRunningJob(processName) {
+    requireSingleRunningJob(processName, _ => true) {
       makeSavepoint(_, savepointDir)
     }
   }
 
   override def stop(processName: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    // TODO: savepoint for given deployment id
-    requireSingleRunningJob(processName) {
+    requireSingleRunningJob(processName, _ => true) {
+      stop(_, savepointDir)
+    }
+  }
+
+  override def stop(processName: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult] = {
+    requireSingleRunningJob(processName, _.deploymentId.contains(deploymentId)) {
       stop(_, savepointDir)
     }
   }
@@ -145,10 +150,10 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
     Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 
-  private def requireSingleRunningJob[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
+  private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value
     getFreshProcessStates(processName).flatMap { statuses =>
-      val runningDeploymentIds = statuses.collect {
+      val runningDeploymentIds = statuses.filter(statusDetailsPredicate).collect {
         case StatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _, _, _) => deploymentId
       }
       runningDeploymentIds match {

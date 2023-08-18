@@ -3,19 +3,22 @@ package pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleProcessStateDefinitionManager
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.User
+import pl.touk.nussknacker.engine.deployment.{DeploymentId, User}
 
 import scala.concurrent.Future
 
 trait BaseDeploymentManager extends DeploymentManager with AlwaysFreshProcessState {
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
-    Future.failed(new UnsupportedOperationException(s"Cannot make savepoint with ${getClass.getSimpleName}"))
+    Future.failed(new UnsupportedOperationException(s"Making of savepoint is not supported"))
   }
 
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    Future.failed(new UnsupportedOperationException(s"Cannot stop scenario with ${getClass.getSimpleName}"))
+    Future.failed(new UnsupportedOperationException(s"Stopping of scenario is not supported"))
   }
+
+  override def stop(name: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult] =
+    Future.failed(new UnsupportedOperationException(s"Stopping of deployment is not supported"))
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager = SimpleProcessStateDefinitionManager
 
