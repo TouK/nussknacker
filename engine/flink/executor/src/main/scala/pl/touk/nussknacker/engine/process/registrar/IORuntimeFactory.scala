@@ -8,14 +8,7 @@ object IORuntimeFactory {
 
   def create(ec: ExecutionContext): IORuntime = {
     val (scheduler, shutdown) = Scheduler.createDefaultScheduler()
-
-    IORuntime
-      .builder()
-      .setCompute(ec, () => ())
-      .setBlocking(ec, () => ())
-      .setScheduler(scheduler, shutdown)
-      .setConfig(IORuntimeConfig())
-      .build()
+    IORuntime(ec, ec, scheduler, shutdown, IORuntimeConfig())
   }
 
 }
