@@ -37,11 +37,13 @@ object MultipartUtils {
 
   def sttpPrepareMultiParts(nameContent: (String, String)*)
                            (fileName: String = "file.json"): Seq[Part[RequestBody[Any]]] = {
-    nameContent.map { case (name, content) =>
-      multipart(name, content)
-        .fileName(fileName)
-        .contentType(MediaType.TextPlainUtf8)
-    }
+    nameContent
+      .toList
+      .map { case (name, content) =>
+        multipart(name, content)
+          .fileName(fileName)
+          .contentType(MediaType.TextPlainUtf8)
+      }
   }
 
 }
