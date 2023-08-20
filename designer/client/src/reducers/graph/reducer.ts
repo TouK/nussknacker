@@ -309,7 +309,6 @@ const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]
 
 const pickKeys: NestedKeyOf<GraphState>[] = ["fetchedProcessDetails", "processToDisplay", "unsavedNewName", "layout", "selectionState"];
 const omitKeys: NestedKeyOf<GraphState>[] = [
-    "processToDisplay.validationResult",
     "fetchedProcessDetails.lastDeployedAction",
     "fetchedProcessDetails.lastAction",
     "fetchedProcessDetails.history",
