@@ -1,13 +1,9 @@
-import React, { PropsWithChildren, useMemo } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { ProcessStateType, ProcessType } from "./types";
-import { Popover } from "react-bootstrap";
-import { OverlayTrigger } from "react-bootstrap/lib";
 import ProcessStateUtils from "./ProcessStateUtils";
-import { css } from "@emotion/css";
 import UrlIcon from "../UrlIcon";
-import { useTheme } from "@emotion/react";
-import { ProcessId } from "../../types";
+import { Box, Divider, Popover, Typography } from "@mui/material";
 
 interface Props {
     processState?: ProcessStateType;
@@ -33,45 +29,38 @@ function Errors({ state }: { state: ProcessStateType }) {
     );
 }
 
-function StateIconPopover({
-    processName,
-    processState,
-    tooltip,
-    children,
-}: PropsWithChildren<{
-    processState: ProcessStateType;
-    processName: ProcessId;
-    tooltip: string;
-}>) {
-    const theme = useTheme();
-    const imagePopover = useMemo(() => {
-        const className = css({
-            marginTop: "5px",
-            "&, h3": { backgroundColor: theme.colors?.primaryBackground },
-        });
-        return (
-            <Popover id="state-icon-popover" className={className} title={processName}>
-                <strong>{tooltip}</strong>
-                <Errors state={processState} />
-            </Popover>
-        );
-    }, [processName, processState, theme.colors?.primaryBackground, tooltip]);
-
-    return (
-        <OverlayTrigger trigger="click" placement="left" overlay={imagePopover}>
-            {children}
-        </OverlayTrigger>
-    );
-}
-
 function ProcessStateIcon({ process, processState }: Props) {
     const icon = ProcessStateUtils.getStatusIcon(process, processState);
     const tooltip = ProcessStateUtils.getStatusTooltip(process, processState);
 
+    const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
+
     return (
-        <StateIconPopover processName={process.name} processState={processState} tooltip={tooltip}>
-            <UrlIcon src={icon} title={tooltip} />
-        </StateIconPopover>
+        <>
+            <UrlIcon src={icon} title={tooltip} onClick={(event) => setAnchorEl(event.currentTarget)} />
+            <Popover
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                    vertical: "center",
+                    horizontal: "left",
+                }}
+                transformOrigin={{
+                    vertical: "center",
+                    horizontal: "right",
+                }}
+                onClose={() => setAnchorEl(null)}
+                open={!!anchorEl}
+            >
+                <Typography p={1} variant="h6">
+                    {process.name}
+                </Typography>
+                <Divider />
+                <Box p={1}>
+                    <Typography variant="body2">{tooltip}</Typography>
+                    <Errors state={processState} />
+                </Box>
+            </Popover>
+        </>
     );
 }
 
