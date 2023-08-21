@@ -9,7 +9,7 @@ import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy.{FetchCanonical, FetchComponentsUsages, FetchDisplayable, NotFetch}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.security.Permission
-import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
@@ -33,7 +33,7 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[Canonical
 
   //It's only for BasicRepository implementation, we don't use it
   private val config: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
-  val dbConfig: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", config), HsqldbProfile)
+  val dbRef: DbRef = DbRef(JdbcBackend.Database.forConfig("db", config), HsqldbProfile)
 
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](q: FetchProcessesDetailsQuery)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]] =
     getUserProcesses[PS].map(_.filter(

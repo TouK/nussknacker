@@ -33,18 +33,18 @@ abstract class InitializationOnDbItSpec
 
   private val migrations = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2))
 
-  private lazy val repository = TestFactory.newFetchingProcessRepository(dbConfig)
+  private lazy val repository = TestFactory.newFetchingProcessRepository(testDbRef)
 
-  private lazy val dbioRunner = TestFactory.newDBIOActionRunner(dbConfig)
+  private lazy val dbioRunner = TestFactory.newDBIOActionRunner(testDbRef)
 
-  private lazy val writeRepository = TestFactory.newWriteProcessRepository(dbConfig)
+  private lazy val writeRepository = TestFactory.newWriteProcessRepository(testDbRef)
 
   private def sampleCanonicalProcess(processId: String) = ProcessTestData.validProcessWithId(processId)
 
   it should "migrate processes" in {
     saveSampleProcess()
 
-    Initialization.init(migrations, dbConfig, repository, "env1")
+    Initialization.init(migrations, testDbRef, repository, "env1")
 
     dbioRunner.runInTransaction(
       repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
@@ -60,7 +60,7 @@ abstract class InitializationOnDbItSpec
       saveSampleProcess(s"id$id")
     }
 
-    Initialization.init(migrations, dbConfig, repository, "env1")
+    Initialization.init(migrations, testDbRef, repository, "env1")
 
     dbioRunner.runInTransaction(
       repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
@@ -71,7 +71,7 @@ abstract class InitializationOnDbItSpec
     saveSampleProcess()
 
     val exception = intercept[RuntimeException](
-      Initialization.init(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)), dbConfig, repository, "env1"))
+      Initialization.init(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)), testDbRef, repository, "env1"))
 
     exception.getMessage shouldBe "made to fail.."
 

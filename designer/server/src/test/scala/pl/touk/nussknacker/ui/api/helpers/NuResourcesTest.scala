@@ -69,19 +69,19 @@ trait NuResourcesTest
 
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
 
-  protected val dbioRunner: DBIOActionRunner = newDBIOActionRunner(dbConfig)
+  protected val dbioRunner: DBIOActionRunner = newDBIOActionRunner(testDbRef)
 
-  protected val fetchingProcessRepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(dbConfig)
+  protected val fetchingProcessRepository: DBFetchingProcessRepository[DB] = newFetchingProcessRepository(testDbRef)
 
   protected val processAuthorizer: AuthorizeProcess = new AuthorizeProcess(futureFetchingProcessRepository)
 
-  protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(dbConfig)
+  protected val writeProcessRepository: DBProcessRepository = newWriteProcessRepository(testDbRef)
 
-  protected val fragmentRepository: DbFragmentRepository = newFragmentRepository(dbConfig)
+  protected val fragmentRepository: DbFragmentRepository = newFragmentRepository(testDbRef)
 
-  protected val actionRepository: DbProcessActionRepository[DB] = newActionProcessRepository(dbConfig)
+  protected val actionRepository: DbProcessActionRepository[DB] = newActionProcessRepository(testDbRef)
 
-  protected val processActivityRepository: DbProcessActivityRepository = newProcessActivityRepository(dbConfig)
+  protected val processActivityRepository: DbProcessActivityRepository = newProcessActivityRepository(testDbRef)
 
   protected val processChangeListener = new TestProcessChangeListener()
 

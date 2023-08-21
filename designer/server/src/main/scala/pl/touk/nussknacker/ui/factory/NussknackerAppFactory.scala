@@ -12,30 +12,19 @@ import pl.touk.nussknacker.engine.ConfigWithUnresolvedVersion
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.ui.config.DesignerConfigLoader
-import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
+import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
-import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
-class NussknackerDesigner(baseUnresolvedConfig: Config,
-                          processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
+class NussknackerAppFactory(processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
   extends LazyLogging {
 
   def this() = {
     this(
-      ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader),
       ProcessingTypeDataReaderBasedProcessingTypeDataProviderFactory
     )
   }
 
-  def this(baseUnresolvedConfig: Config) = {
-    this(baseUnresolvedConfig, ProcessingTypeDataReaderBasedProcessingTypeDataProviderFactory)
-  }
-
-  def this(processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory) = {
-    this(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader), processingTypeDataProviderFactory)
-  }
-
-  def init(): Resource[IO, Unit] = {
+  def createApp(baseUnresolvedConfig: Config = ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader)): Resource[IO, Unit] = {
     for {
       config <- designerConfigFrom(baseUnresolvedConfig)
       system <- createActorSystem(config)
@@ -43,7 +32,7 @@ class NussknackerDesigner(baseUnresolvedConfig: Config,
       _ <- Resource.eval(IO(JavaClassVersionChecker.check()))
       _ <- Resource.eval(IO(SLF4JBridgeHandlerRegistrar.register()))
       metricsRegistry <- createGeneralPurposeMetricsRegistry()
-      db <- initDb(config)
+      db <- DbRef.create(config.resolved)
       server = new NussknackerHttpServer(
         new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataProviderFactory)(system, materializer),
         system,
@@ -88,26 +77,4 @@ class NussknackerDesigner(baseUnresolvedConfig: Config,
       )
   }
 
-  private def initDb(config: ConfigWithUnresolvedVersion): Resource[IO, DbConfig] = {
-    val resolvedConfig = config.resolved
-    for {
-      db <- Resource
-        .make(
-          acquire = IO(JdbcBackend.Database.forConfig("db", resolvedConfig))
-        )(
-          release = db => IO(db.close())
-        )
-      _ <- Resource.eval(IO(DatabaseInitializer.initDatabase("db", resolvedConfig)))
-    } yield DbConfig(db, chooseDbProfile(resolvedConfig))
-  }
-
-  private def chooseDbProfile(config: Config): JdbcProfile = {
-    val jdbcUrlPattern = "jdbc:([0-9a-zA-Z]+):.*".r
-    config.getAs[String]("db.url") match {
-      case Some(jdbcUrlPattern("postgresql")) => PostgresProfile
-      case Some(jdbcUrlPattern("hsqldb")) => HsqldbProfile
-      case None => HsqldbProfile
-      case _ => throw new IllegalStateException("unsupported jdbc url")
-    }
-  }
 }

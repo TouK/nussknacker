@@ -18,7 +18,7 @@ import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, ComponentLinksConfigExtractor, FeatureTogglesConfig, UsageStatisticsReportsConfig}
-import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.factory.ProcessingTypeDataProviderFactory
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -48,7 +48,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class AkkaHttpBasedRouteProvider(dbConfig: DbConfig,
+class AkkaHttpBasedRouteProvider(dbRef: DbRef,
                                  metricsRegistry: MetricRegistry,
                                  processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
                                 (implicit system: ActorSystem,
@@ -88,7 +88,7 @@ class AkkaHttpBasedRouteProvider(dbConfig: DbConfig,
 
       val managers = typeToConfig.mapValues(_.deploymentManager)
 
-      val fragmentRepository = new DbFragmentRepository(dbConfig, system.dispatcher)
+      val fragmentRepository = new DbFragmentRepository(dbRef, system.dispatcher)
       val fragmentResolver = new FragmentResolver(fragmentRepository)
 
       val additionalProperties = typeToConfig.mapValues(_.additionalPropertiesConfig)
@@ -102,12 +102,12 @@ class AkkaHttpBasedRouteProvider(dbConfig: DbConfig,
       val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.uiDictServices.dictRegistry))
       val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
 
-      val dbioRunner = DBIOActionRunner(dbConfig)
-      val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
-      val processRepository = DBFetchingProcessRepository.create(dbConfig, actionRepository)
+      val dbioRunner = DBIOActionRunner(dbRef)
+      val actionRepository = DbProcessActionRepository.create(dbRef, modelData)
+      val processRepository = DBFetchingProcessRepository.create(dbRef, actionRepository)
       // TODO: get rid of Future based repositories - it is easier to use everywhere one implementation - DBIOAction based which allows transactions handling
-      val futureProcessRepository = DBFetchingProcessRepository.createFutureRespository(dbConfig, actionRepository)
-      val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
+      val futureProcessRepository = DBFetchingProcessRepository.createFutureRepository(dbRef, actionRepository)
+      val writeProcessRepository = ProcessRepository.create(dbRef, modelData)
 
       val notificationsConfig = resolvedConfig.as[NotificationConfig]("notifications")
       val processChangeListener = ProcessChangeListenerLoader.loadListeners(
@@ -128,13 +128,13 @@ class AkkaHttpBasedRouteProvider(dbConfig: DbConfig,
       // we need to init processing type data after deployment service creation to make sure that it will be done using
       // correct classloader and that won't cause further delays during handling requests
       reload.init()
-      val processActivityRepository = new DbProcessActivityRepository(dbConfig)
+      val processActivityRepository = new DbProcessActivityRepository(dbRef)
 
       val authenticationResources = AuthenticationResources(resolvedConfig, getClass.getClassLoader, sttpBackend)
 
       val counter = new ProcessCounter(fragmentRepository)
 
-      Initialization.init(modelData.mapValues(_.migrations), dbConfig, processRepository, environment)
+      Initialization.init(modelData.mapValues(_.migrations), dbRef, processRepository, environment)
 
       val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 

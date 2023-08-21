@@ -15,7 +15,6 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
@@ -38,19 +37,19 @@ class DBFetchingProcessRepositorySpec
 
   import cats.syntax.either._
 
-  private val dbioRunner = DBIOActionRunner(dbConfig)
+  private val dbioRunner = DBIOActionRunner(testDbRef)
 
-  private val writingRepo = new DBProcessRepository(dbConfig, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
+  private val writingRepo = new DBProcessRepository(testDbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
     override protected def now: Instant = currentTime
   }
 
   private var currentTime: Instant = Instant.now()
 
-  private val actions = DbProcessActionRepository.create(dbConfig, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+  private val actions = DbProcessActionRepository.create(testDbRef, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
-  private val fetching = DBFetchingProcessRepository.createFutureRespository(dbConfig, actions)
+  private val fetching = DBFetchingProcessRepository.createFutureRepository(testDbRef, actions)
 
-  private val activities = DbProcessActivityRepository(dbConfig)
+  private val activities = DbProcessActivityRepository(testDbRef)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
 

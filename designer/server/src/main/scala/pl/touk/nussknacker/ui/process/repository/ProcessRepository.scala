@@ -14,7 +14,7 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessShapeFetchStrategy
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError._
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessEntityData, ProcessVersionEntityData}
-import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
+import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository._
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, ProcessUpdated, UpdateProcessAction}
@@ -42,23 +42,21 @@ object ProcessRepository {
     }
   }
 
-  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
-    new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
+  def create(dbRef: DbRef, modelData: ProcessingTypeDataProvider[ModelData, _]): DBProcessRepository =
+    new DBProcessRepository(dbRef, modelData.mapValues(_.migrations.version))
 
   case class CreateProcessAction(processName: ProcessName,
                                  category: String,
                                  canonicalProcess: CanonicalProcess,
                                  processingType: ProcessingType,
                                  isFragment: Boolean,
-                                 forwardedUserName: Option[RemoteUserName],
-                                )
+                                 forwardedUserName: Option[RemoteUserName])
 
   case class UpdateProcessAction(id: ProcessId,
                                  canonicalProcess: CanonicalProcess,
                                  comment: Option[Comment],
                                  increaseVersionWhenJsonNotChanged: Boolean,
-                                 forwardedUserName: Option[RemoteUserName],
-                                )
+                                 forwardedUserName: Option[RemoteUserName])
 
   case class ProcessUpdated(processId: ProcessId, oldVersion: Option[VersionId], newVersion: Option[VersionId])
 
@@ -80,7 +78,7 @@ trait ProcessRepository[F[_]] {
   def renameProcess(processId: ProcessIdWithName, newName: ProcessName)(implicit loggedUser: LoggedUser): F[XError[Unit]]
 }
 
-class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTypeDataProvider[Int, _])
+class DBProcessRepository(val dbRef: DbRef, val modelVersion: ProcessingTypeDataProvider[Int, _])
   extends ProcessRepository[DB] with EspTables with LazyLogging with CommentActions with ProcessDBQueryRepository[DB] {
 
   import profile.api._
