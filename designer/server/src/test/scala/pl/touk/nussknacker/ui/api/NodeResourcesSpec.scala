@@ -34,7 +34,6 @@ import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 
 import scala.annotation.nowarn
 
-@nowarn("cat=deprecation")
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 

@@ -20,7 +20,6 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import scala.annotation.nowarn
 
-@nowarn("cat=deprecation")
 class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with EitherValuesDetailedMessage with BeforeAndAfterEach with BeforeAndAfterAll
   with NuResourcesTest with OptionValues {

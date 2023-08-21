@@ -28,7 +28,6 @@ import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
 import scala.annotation.nowarn
 
-@nowarn("cat=deprecation")
 class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 

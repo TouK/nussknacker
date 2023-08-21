@@ -16,7 +16,7 @@ trait DefaultUniquePortProvider extends UniquePortProvider {
   override def nextPort(): Int = DefaultUniquePortProvider.nextPort()
 }
 
-// todo: reuse AvailablePortFinder
+// TODO: reuse AvailablePortFinder
 object DefaultUniquePortProvider extends UniquePortProvider {
   private val startingPort: Int = 20000
 

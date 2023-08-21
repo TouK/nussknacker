@@ -10,10 +10,8 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
-import scala.annotation.nowarn
 import scala.language.higherKinds
 
-@nowarn("cat=deprecation")
 class FragmentRepositorySpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with BeforeAndAfterEach with NuResourcesTest with VeryPatientScalaFutures {
 
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._

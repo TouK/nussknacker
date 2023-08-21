@@ -204,7 +204,7 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
                                 versionOption: SchemaVersionOption,
                                 valueParams: List[(String, expression.Expression)],
                                 key: String,
-                                validationMode: Option[ValidationMode]) //todo: improve it, but now - if defined we use 'raw editor' otherwise 'value editor'
+                                validationMode: Option[ValidationMode]) //TODO: improve it, but now - if defined we use 'raw editor' otherwise 'value editor'
 
   object UniversalSinkParam {
 

@@ -20,7 +20,6 @@ import pl.touk.nussknacker.ui.util.MultipartUtils
 import scala.annotation.nowarn
 import scala.language.higherKinds
 
-@nowarn("cat=deprecation")
 class ProcessActivityResourceSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with NuResourcesTest with FailFastCirceSupport {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)

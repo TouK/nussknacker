@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
 import cats.data.{NonEmptyList, Validated}
-import cats.{Id, Monad, catsInstancesForId}
+import cats.{Id, Monad}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape.transform
 import pl.touk.nussknacker.engine.ModelData
@@ -39,7 +39,7 @@ object SynchronousLiteInterpreter {
 
     override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Id[Either[T, Throwable]] = f => Await.result(transform(f), waitTime)
   }
-  //todo add generate test data support
+  // TODO: add generate test data support
 
   def run(modelData: ModelData,
           scenario: CanonicalProcess,

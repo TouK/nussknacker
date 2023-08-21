@@ -16,7 +16,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.annotation.nowarn
 import scala.language.higherKinds
 
-@nowarn("cat=deprecation")
 class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 

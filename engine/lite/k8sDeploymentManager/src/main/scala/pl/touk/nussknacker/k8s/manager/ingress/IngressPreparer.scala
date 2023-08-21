@@ -35,7 +35,7 @@ class IngressPreparer(config: IngressConfig, nuInstanceName: Option[String]) {
       GenLens[Ingress](_.metadata.annotations).modify(_ ++ rewriteAnnotation) andThen
       (ingressSpecLens composeLens GenLens[Ingress.Spec](_.rules)).modify(_ ++ List(
         Ingress.Rule(config.host, Ingress.HttpRule(paths = List(Ingress.Path(
-          path = s"${config.rootPath}$slug" + "(/|$)(.*)", // todo: fix RequestResponseOpenApiGenerator so it's aware of ingress address
+          path = s"${config.rootPath}$slug" + "(/|$)(.*)", // TODO: fix RequestResponseOpenApiGenerator so it's aware of ingress address
           backend = Ingress.Backend(Some(Ingress.ServiceType(serviceName, Ingress.Port(number = Some(servicePort))))),
           pathType = Ingress.PathType.Prefix))))))
 

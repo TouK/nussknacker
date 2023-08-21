@@ -16,8 +16,8 @@ import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.server.{AkkaHttpBasedRouteProvider, NussknackerHttpServer}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
-class NussknackerApp(baseUnresolvedConfig: Config,
-                     processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
+class NussknackerDesigner(baseUnresolvedConfig: Config,
+                          processingTypeDataProviderFactory: ProcessingTypeDataProviderFactory)
   extends LazyLogging {
 
   def this() = {

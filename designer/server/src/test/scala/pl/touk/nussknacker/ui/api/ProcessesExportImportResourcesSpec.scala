@@ -24,7 +24,6 @@ import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import scala.annotation.nowarn
 import scala.language.higherKinds
 
-@nowarn("cat=deprecation")
 class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 

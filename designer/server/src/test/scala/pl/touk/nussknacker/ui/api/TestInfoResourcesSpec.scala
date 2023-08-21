@@ -20,7 +20,6 @@ import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
 
 import scala.annotation.nowarn
 
-@nowarn("cat=deprecation")
 class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
   with NuResourcesTest with PatientScalaFutures with EitherValuesDetailedMessage {
 

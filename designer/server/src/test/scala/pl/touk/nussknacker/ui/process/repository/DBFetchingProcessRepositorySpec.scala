@@ -113,7 +113,7 @@ class DBFetchingProcessRepositorySpec
     newAfter.toSet shouldBe Set(newName.value)
   }
 
-  // todo: remove this in favour of process-audit-log
+  // TODO: remove this in favour of process-audit-log
   test("should add comment when renamed") {
     val oldName = ProcessName("oldName")
     val newName = ProcessName("newName")

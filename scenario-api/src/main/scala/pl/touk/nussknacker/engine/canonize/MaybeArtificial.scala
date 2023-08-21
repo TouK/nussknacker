@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 
 import java.util.UUID
 
-// todo: this is basically a Writer; we should approach it differently?
+// TODO: this is basically a Writer; we should approach it differently?
 private[engine] class MaybeArtificial[A](private val value: A, private val errors: List[ProcessUncanonizationError]) {
   def map[B](f: A => B): MaybeArtificial[B] = new MaybeArtificial(f(value), errors)
 

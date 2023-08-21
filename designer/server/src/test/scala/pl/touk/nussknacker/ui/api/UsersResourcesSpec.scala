@@ -12,7 +12,6 @@ import pl.touk.nussknacker.ui.api.helpers.NuResourcesTest
 
 import scala.annotation.nowarn
 
-@nowarn("cat=deprecation")
 class UsersResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with NuResourcesTest with PatientScalaFutures {
 

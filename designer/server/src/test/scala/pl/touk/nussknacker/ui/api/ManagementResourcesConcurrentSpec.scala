@@ -15,7 +15,6 @@ import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 @Slow
-@nowarn("cat=deprecation")
 class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 

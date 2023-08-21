@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
 import pl.touk.nussknacker.engine.api._
@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTransformation, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo, TypedExpression, TypedExpressionMap}
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source, TestWithParametersSupport}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
@@ -440,10 +440,10 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       val contextTransformationDefOpt = cNode.cast[AbstractContextTransformation].map(_.definition)
       (contextTransformationDefOpt, validationContexts) match {
         case (Some(transformation: ContextTransformationDef), Left(validationContext)) =>
-          // copying global variables because custom transformation may override them -> todo in ValidationContext
+          // copying global variables because custom transformation may override them -> TODO: in ValidationContext
           transformation.transform(validationContext).map(_.copy(globalVariables = validationContext.globalVariables))
         case (Some(transformation: JoinContextTransformationDef), Right(branchEndContexts)) =>
-          // copying global variables because custom transformation may override them -> todo in ValidationContext
+          // copying global variables because custom transformation may override them -> TODO: in ValidationContext
           transformation.transform(branchEndContexts).map(_.copy(globalVariables = contextWithOnlyGlobalVariables.globalVariables))
         case (Some(transformation), ctx) =>
           Invalid(FatalUnknownError(s"Invalid ContextTransformation class $transformation for contexts: $ctx")).toValidatedNel

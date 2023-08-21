@@ -52,7 +52,7 @@ import slick.dbio.DBIOAction
 import java.net.URI
 import scala.concurrent.{ExecutionContext, Future}
 
-@deprecated("Consider using NuItTest with NuScenarioConfigurationHelper instead. Will be removed in the future.")
+// TODO: Consider using NuItTest with NuScenarioConfigurationHelper instead. This one will be removed in the future.
 trait NuResourcesTest
   extends WithHsqlDbTesting
     with TestPermissions
