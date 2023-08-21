@@ -83,7 +83,7 @@ To automate image updates in your documentation, follow these steps:
     Auto Image Change Docs - basic_components - variable#0.png
     ```
    
-3. **Rename Images**: In the `nussknacker-page` repository, there's a handy script called `rename_images_docs.sh`. This script is responsible for renaming all the images in the docs folder to match the Docusaurus naming schema:
+3. **Rename Images**: In the [nussknacker-page](https://gitlab.touk.pl/nussknacker1/nussknacker-page) repository, there's a handy script called `rename_images_docs.sh`. This script is responsible for renaming all the images in the docs folder to match the Docusaurus naming schema:
     
     ```
     Auto_Image_Change_Docs_-_[name of test][index of image in test].png
@@ -130,7 +130,7 @@ Building:
 - build fronted using [Building frontend instruction](#building-frontend) below
 - run `./buildServer.sh` in `designer`
 
-Run `./runServer.sh` in `designer`
+Run `./runServer.sh` in `designer`Documentation
 
 #### Running using integration environment
 
