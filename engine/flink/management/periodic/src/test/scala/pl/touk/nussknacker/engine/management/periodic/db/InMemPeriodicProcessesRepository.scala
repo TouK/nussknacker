@@ -98,6 +98,14 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
         processEntities.update(index, process.copy(active = false))
       }
 
+  override def markInactive(processId: PeriodicProcessId): Unit =
+    processEntities
+      .find(_.id == processId)
+      .zipWithIndex
+      .foreach { case (process, index) =>
+        processEntities.update(index, process.copy(active = false))
+      }
+
   override def create(deploymentWithJarData: DeploymentWithJarData, scheduleProperty: ScheduleProperty): PeriodicProcess = {
     val id = PeriodicProcessId(Random.nextLong())
     val periodicProcess = PeriodicProcessEntity(
@@ -116,23 +124,31 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
     PeriodicProcessesRepository.createPeriodicProcess(periodicProcess)
   }
 
-  override def getLatestDeploymentsForActiveSchedules(processName: ProcessName, deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]] =
+  override def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus]): Action[SchedulesState] = {
+    val filteredProcesses = processEntities.filter { pe =>
+      pe.processingType == processingType &&
+        deploymentEntities.exists(d => d.periodicProcessId == pe.id && expectedDeploymentStatuses.contains(d.status))
+    }.toSeq
+    getLatestDeploymentsForPeriodicProcesses(filteredProcesses, deploymentsPerScheduleMaxCount = 1)
+  }
+
+  override def getLatestDeploymentsForActiveSchedules(processName: ProcessName, deploymentsPerScheduleMaxCount: Int): Action[SchedulesState] =
     getLatestDeploymentsForPeriodicProcesses(processEntities(processName).filter(_.active), deploymentsPerScheduleMaxCount)
 
-  override def getLatestDeploymentsForLatestInactiveSchedules(processName: ProcessName, inactiveProcessesMaxCount: Int, deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]] = {
+  override def getLatestDeploymentsForLatestInactiveSchedules(processName: ProcessName, inactiveProcessesMaxCount: Int, deploymentsPerScheduleMaxCount: Int): Action[SchedulesState] = {
     val filteredProcesses = processEntities(processName).filterNot(_.active).sortBy(_.createdAt).takeRight(inactiveProcessesMaxCount)
     getLatestDeploymentsForPeriodicProcesses(filteredProcesses, deploymentsPerScheduleMaxCount)
   }
 
-  private def getLatestDeploymentsForPeriodicProcesses(processes: Seq[PeriodicProcessEntity], deploymentsPerScheduleMaxCount: Int): Map[ScheduleId, ScheduleData] =
-    (for {
+  private def getLatestDeploymentsForPeriodicProcesses(processes: Seq[PeriodicProcessEntity], deploymentsPerScheduleMaxCount: Int): SchedulesState =
+    SchedulesState((for {
       process <- processes
       deploymentGroupedByScheduleName <- deploymentEntities
         .filter(_.periodicProcessId == process.id)
         .groupBy(_.scheduleName)
         .map {
           case (scheduleName, deployments) =>
-            val scheduleId = ScheduleId(process.id, scheduleName)
+            val scheduleId = ScheduleId(process.id, ScheduleName(scheduleName))
             val ds = deployments
               .sortBy(d => -d.runAt.atZone(ZoneId.systemDefault()).toInstant.toEpochMilli)
               .take(deploymentsPerScheduleMaxCount)
@@ -140,7 +156,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
               .toList
             scheduleId -> ScheduleData(PeriodicProcessesRepository.createPeriodicProcess(process), ds)
         }
-    } yield deploymentGroupedByScheduleName).toMap
+    } yield deploymentGroupedByScheduleName).toMap)
 
   override def findToBeDeployed: Seq[PeriodicProcessDeployment] = {
     val scheduled = findActive(PeriodicProcessDeploymentStatus.Scheduled)
@@ -151,12 +167,6 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
     val toBeRetried = findActive(PeriodicProcessDeploymentStatus.FailedOnDeploy).filter(_.retriesLeft > 0)
     readyToRun(toBeRetried)
   }
-
-  override def findDeployedOrFailedOnDeploy: Seq[PeriodicProcessDeployment] =
-    findActive(Seq(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy))
-
-  override def findScheduled(id: PeriodicProcessId): Seq[PeriodicProcessDeployment] =
-    findActive(PeriodicProcessDeploymentStatus.Scheduled)
 
   override def findProcessData(id: PeriodicProcessDeploymentId): PeriodicProcessDeployment =
     (for {
@@ -196,13 +206,13 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
     ))
   }
 
-  override def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime, deployMaxRetries: Int): PeriodicProcessDeployment = {
+  override def schedule(id: PeriodicProcessId, scheduleName: ScheduleName, runAt: LocalDateTime, deployMaxRetries: Int): PeriodicProcessDeployment = {
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(Random.nextLong()),
       periodicProcessId = id,
       createdAt = LocalDateTime.now(),
       runAt = runAt,
-      scheduleName = scheduleName,
+      scheduleName = scheduleName.value,
       deployedAt = None,
       completedAt = None,
       retriesLeft = deployMaxRetries,

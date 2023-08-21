@@ -96,7 +96,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
       logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
       // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
       // but NK API does, so we need to handle this situation.
-      service.schedule(scheduleProperty, processVersion, canonicalProcess, cancelIfJobPresent(processVersion, deploymentData.user))
+      service.schedule(scheduleProperty, processVersion, canonicalProcess, cancel(processVersion.processName, deploymentData.user))
         .map(_ => None)
     }
   }
@@ -110,24 +110,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     }
   }
 
-  private def cancelIfJobPresent(processVersion: ProcessVersion, user: User): Future[Unit] = {
-
-    delegate.getProcessStates(processVersion.processName)(DataFreshnessPolicy.Fresh)
-      .map(_.value)
-      .flatMap(service.mergeStatusWithDeployments(processVersion.processName, _))
-      .map(sd => !Set(SimpleStateStatus.Canceled, SimpleStateStatus.Finished, SimpleStateStatus.NotDeployed).contains(sd.status)) // FIXME: base on sth else
-      .flatMap(shouldStop => {
-        if (shouldStop) {
-          logger.info(s"Scenario ${processVersion.processName} is running or scheduled. Cancelling before reschedule")
-          cancel(processVersion.processName, user).map(_ => ())
-        }
-        else Future.successful(())
-      })
-  }
-
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    service.deactivate(name).flatMap {
-      _ => delegate.stop(name, savepointDir, user)
+    service.deactivate(name).flatMap { deploymentIdsToStop =>
+      // TODO: should return List of SavepointResult
+      Future.sequence(deploymentIdsToStop.map(delegate.stop(name, _, savepointDir, user))).map(_.head)
     }
   }
 
@@ -135,8 +121,8 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     Future.failed(new UnsupportedOperationException(s"Stopping of deployment is not supported"))
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
-    service.deactivate(name).flatMap {
-      _ => delegate.cancel(name, user)
+    service.deactivate(name).flatMap { deploymentIdsToCancel =>
+      Future.sequence(deploymentIdsToCancel.map(delegate.cancel(name, _, user))).map(_ => ())
     }
   }
 

@@ -10,19 +10,19 @@ import java.time.{Clock, LocalDateTime}
 case class PeriodicProcessDeployment(id: PeriodicProcessDeploymentId,
                                      periodicProcess: PeriodicProcess,
                                      runAt: LocalDateTime,
-                                     scheduleName: Option[String],
+                                     scheduleName: ScheduleName,
                                      retriesLeft: Int,
                                      nextRetryAt: Option[LocalDateTime],
                                      state: PeriodicProcessDeploymentState) {
 
-  def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]] = (periodicProcess.scheduleProperty, scheduleName) match {
+  def nextRunAt(clock: Clock): Either[String, Option[LocalDateTime]] = (periodicProcess.scheduleProperty, scheduleName.value) match {
     case (MultipleScheduleProperty(schedules), Some(name)) =>
       schedules.get(name).toRight(s"Failed to find schedule: $scheduleName").flatMap(_.nextRunAt(clock))
     case (e:SingleScheduleProperty, None) => e.nextRunAt(clock)
     case (schedule, name) => Left(s"Schedule name: $name mismatch with schedule: $schedule")
   }
 
-  def display: String = s"${periodicProcess.processVersion} with ${scheduleName.map(sn => s"schedule=$sn and ").getOrElse("")}deploymentId=${periodicProcess.id}"
+  def display: String = s"${periodicProcess.processVersion} with scheduleName=${scheduleName.display} and deploymentId=${periodicProcess.id}"
 
 }
 
@@ -38,4 +38,9 @@ object PeriodicProcessDeploymentStatus extends Enumeration {
   type PeriodicProcessDeploymentStatus = Value
 
   val Scheduled, Deployed, Finished, Failed, RetryingDeploy, FailedOnDeploy = Value
+}
+
+
+case class ScheduleName(value: Option[String]) extends MappedTo[Option[String]] {
+  def display: String = value.getOrElse("[empty]")
 }

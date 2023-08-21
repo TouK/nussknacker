@@ -8,8 +8,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.management.periodic._
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus.PeriodicProcessDeploymentStatus
-import pl.touk.nussknacker.engine.management.periodic.model._
-import slick.{dbio, lifted}
+import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentStatus, _}
 import slick.dbio.{DBIOAction, Effect, NoStream}
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.{JdbcBackend, JdbcProfile}
@@ -28,7 +27,7 @@ object PeriodicProcessesRepository {
       processDeploymentEntity.id,
       process,
       processDeploymentEntity.runAt,
-      processDeploymentEntity.scheduleName,
+      ScheduleName(processDeploymentEntity.scheduleName),
       processDeploymentEntity.retriesLeft,
       processDeploymentEntity.nextRetryAt,
       createPeriodicDeploymentState(processDeploymentEntity)
@@ -73,20 +72,20 @@ trait PeriodicProcessesRepository {
 
   def markInactive(processName: ProcessName): Action[Unit]
 
+  def markInactive(processId: PeriodicProcessId): Action[Unit]
+
   def create(deploymentWithJarData: DeploymentWithJarData,
              scheduleProperty: ScheduleProperty): Action[PeriodicProcess]
 
-  def getLatestDeploymentsForActiveSchedules(processName: ProcessName, deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]]
+  def getLatestDeploymentsForActiveSchedules(processName: ProcessName, deploymentsPerScheduleMaxCount: Int): Action[SchedulesState]
 
-  def getLatestDeploymentsForLatestInactiveSchedules(processName: ProcessName, inactiveProcessesMaxCount: Int, deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]]
+  def getLatestDeploymentsForLatestInactiveSchedules(processName: ProcessName, inactiveProcessesMaxCount: Int, deploymentsPerScheduleMaxCount: Int): Action[SchedulesState]
 
   def findToBeDeployed: Action[Seq[PeriodicProcessDeployment]]
 
   def findToBeRetried: Action[Seq[PeriodicProcessDeployment]]
 
-  def findDeployedOrFailedOnDeploy: Action[Seq[PeriodicProcessDeployment]]
-
-  def findScheduled(id: PeriodicProcessId): Action[Seq[PeriodicProcessDeployment]]
+  def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus]): Action[SchedulesState]
 
   def findProcessData(id: PeriodicProcessDeploymentId): Action[PeriodicProcessDeployment]
 
@@ -100,7 +99,7 @@ trait PeriodicProcessesRepository {
 
   def markFailed(id: PeriodicProcessDeploymentId): Action[Unit]
 
-  def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime, deployMaxRetries: Int): Action[PeriodicProcessDeployment]
+  def schedule(id: PeriodicProcessId, scheduleName: ScheduleName, runAt: LocalDateTime, deployMaxRetries: Int): Action[PeriodicProcessDeployment]
 
 }
 
@@ -205,39 +204,35 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     update.map(_ => ())
   }
 
-  override def getLatestDeploymentsForActiveSchedules(processName: ProcessName, deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]] = {
-    val activeProcessesQuery = PeriodicProcesses.filter(_.active === true)
-    getLatestDeploymentsForEachSchedule(activeProcessesQuery, processName, deploymentsPerScheduleMaxCount)
+  override def findActiveSchedulesForProcessesHavingDeploymentWithMatchingStatus(expectedDeploymentStatuses: Set[PeriodicProcessDeploymentStatus]): Action[SchedulesState] = {
+    val processesHavingDeploymentsWithMatchingStatus = PeriodicProcesses.filter(p => p.active  &&
+      PeriodicProcessDeployments.filter(d => d.periodicProcessId === p.id && d.status.inSet(expectedDeploymentStatuses)).exists)
+    getLatestDeploymentsForEachSchedule(processesHavingDeploymentsWithMatchingStatus, deploymentsPerScheduleMaxCount = 1)
   }
 
-  override def getLatestDeploymentsForLatestInactiveSchedules(processName: ProcessName, inactiveProcessesMaxCount: Int, deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]] = {
+  override def getLatestDeploymentsForActiveSchedules(processName: ProcessName, deploymentsPerScheduleMaxCount: Int): Action[SchedulesState] = {
+    val activeProcessesQuery = PeriodicProcesses.filter(p => p.processName === processName.value && p.active)
+    getLatestDeploymentsForEachSchedule(activeProcessesQuery, deploymentsPerScheduleMaxCount)
+  }
+
+  override def getLatestDeploymentsForLatestInactiveSchedules(processName: ProcessName, inactiveProcessesMaxCount: Int, deploymentsPerScheduleMaxCount: Int): Action[SchedulesState] = {
     val filteredProcessesQuery = PeriodicProcesses
-      .filter(_.active === false)
+      .filter(p => p.processName === processName.value && !p.active)
       .sortBy(_.createdAt.desc)
       .take(inactiveProcessesMaxCount)
-    getLatestDeploymentsForEachSchedule(filteredProcessesQuery, processName, deploymentsPerScheduleMaxCount)
+    getLatestDeploymentsForEachSchedule(filteredProcessesQuery, deploymentsPerScheduleMaxCount)
   }
 
   private def getLatestDeploymentsForEachSchedule(periodicProcessesQuery: Query[PeriodicProcessesTable, PeriodicProcessEntity, Seq],
-                                                  processName: ProcessName,
-                                                  deploymentsPerScheduleMaxCount: Int): Action[Map[ScheduleId, ScheduleData]] = {
-    val filteredPeriodicProcessQuery = periodicProcessesQuery.filter(p => p.processingType === processingType && p.processName === processName.value)
+                                                  deploymentsPerScheduleMaxCount: Int): Action[SchedulesState] = {
+    val filteredPeriodicProcessQuery = periodicProcessesQuery.filter(p => p.processingType === processingType)
     val latestDeploymentsForSchedules = profile match {
       case _: ExPostgresProfile =>
         getLatestDeploymentsForEachSchedulePostgres(filteredPeriodicProcessQuery, deploymentsPerScheduleMaxCount)
       case _ =>
         getLatestDeploymentsForEachScheduleJdbcGeneric(filteredPeriodicProcessQuery, deploymentsPerScheduleMaxCount)
     }
-    latestDeploymentsForSchedules.map(_.map {
-      case (process, deployment) =>
-        val scheduleId = ScheduleId(process.id, deployment.scheduleName)
-        val scheduleDataWithoutDeployment = (scheduleId, PeriodicProcessesRepository.createPeriodicProcess(process))
-        val scheduleDeployment = ScheduleDeploymentData(deployment)
-        (scheduleDataWithoutDeployment, scheduleDeployment)
-    }.toList.toGroupedMap.toList.map {
-      case ((scheduleId, process), deployments) =>
-        scheduleId -> ScheduleData(process, deployments)
-    }.toMap)
+    latestDeploymentsForSchedules.map(toSchedulesState)
   }
 
   private def getLatestDeploymentsForEachSchedulePostgres(periodicProcessesQuery: Query[PeriodicProcessesTable, PeriodicProcessEntity, Seq],
@@ -280,13 +275,13 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     } yield deploymentsForSchedules
   }
 
-  override def schedule(id: PeriodicProcessId, scheduleName: Option[String], runAt: LocalDateTime, deployMaxRetries: Int): Action[PeriodicProcessDeployment] = {
+  override def schedule(id: PeriodicProcessId, scheduleName: ScheduleName, runAt: LocalDateTime, deployMaxRetries: Int): Action[PeriodicProcessDeployment] = {
     val deploymentEntity = PeriodicProcessDeploymentEntity(
       id = PeriodicProcessDeploymentId(-1),
       periodicProcessId = id,
       createdAt = now(),
       runAt = runAt,
-      scheduleName = scheduleName,
+      scheduleName = scheduleName.value,
       deployedAt = None,
       completedAt = None,
       retriesLeft = deployMaxRetries,
@@ -304,24 +299,30 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
     update.map(_ => ())
   }
 
-  override def findDeployedOrFailedOnDeploy: Action[Seq[PeriodicProcessDeployment]] = {
-    val processWithDeployment = activePeriodicProcessWithDeploymentQuery
-      .filter { case (_, d) => d.status inSet Seq(PeriodicProcessDeploymentStatus.Deployed, PeriodicProcessDeploymentStatus.FailedOnDeploy) }
-    processWithDeployment
-      .result
-      .map(createPeriodicProcessDeployment)
-  }
-
-  override def findScheduled(id: PeriodicProcessId): Action[Seq[PeriodicProcessDeployment]] = {
-    activePeriodicProcessWithDeploymentQuery
-      .filter { case (p, d) => p.id === id && d.status === (PeriodicProcessDeploymentStatus.Scheduled: PeriodicProcessDeploymentStatus) }
-      .result
-      .map(createPeriodicProcessDeployment)
+  override def markInactive(processId: PeriodicProcessId): Action[Unit] = {
+    val q = for {
+      p <- PeriodicProcesses if p.id === processId
+    } yield p.active
+    val update = q.update(false)
+    update.map(_ => ())
   }
 
   private def activePeriodicProcessWithDeploymentQuery = {
     (PeriodicProcesses.filter(p => p.active === true && p.processingType === processingType)
         join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
+  }
+
+  private def toSchedulesState(list: Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]): SchedulesState = {
+    SchedulesState(list.map {
+      case (process, deployment) =>
+        val scheduleId = ScheduleId(process.id, ScheduleName(deployment.scheduleName))
+        val scheduleDataWithoutDeployment = (scheduleId, PeriodicProcessesRepository.createPeriodicProcess(process))
+        val scheduleDeployment = ScheduleDeploymentData(deployment)
+        (scheduleDataWithoutDeployment, scheduleDeployment)
+    }.toList.toGroupedMap.toList.map {
+      case ((scheduleId, process), deployments) =>
+        scheduleId -> ScheduleData(process, deployments)
+    }.toMap)
   }
 
   private def createPeriodicProcessDeployment(all: Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]): Seq[PeriodicProcessDeployment] =
@@ -336,7 +337,7 @@ object DBIOActionInstances {
 
   implicit def dbMonad(implicit ec: ExecutionContext): Monad[DB] = new Monad[DB] {
 
-    override def pure[A](x: A) = dbio.DBIO.successful(x)
+    override def pure[A](x: A) = DBIO.successful(x)
 
     override def flatMap[A, B](fa: DB[A])(f: (A) => DB[B]) = fa.flatMap(f)
 

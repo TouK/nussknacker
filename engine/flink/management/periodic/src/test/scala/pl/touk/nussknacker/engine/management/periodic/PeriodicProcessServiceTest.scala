@@ -270,7 +270,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
       val deployment = f.periodicProcessService.pickMostImportantDeployment(activeSchedules).value
 
       deployment.state.status shouldBe expectedStatus
-      deployment.scheduleName shouldBe Some(expectedScheduleName)
+      deployment.scheduleName.value shouldBe Some(expectedScheduleName)
     }
   }
 }

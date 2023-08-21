@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
-import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus, ScheduleData, ScheduleDeploymentData, ScheduleId}
+import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus, ScheduleData, ScheduleDeploymentData, ScheduleId, SchedulesState}
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.test.PatientScalaFutures
 import slick.jdbc
@@ -137,7 +137,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
 
     val stateAfterSchedule = service.getLatestDeploymentForActiveSchedules(processName).futureValue
     stateAfterSchedule should have size 1
-    val afterSchedule = stateAfterSchedule.values.head
+    val afterSchedule = stateAfterSchedule.firstScheduleData
 
     afterSchedule.process.processVersion.processName shouldBe processName
     afterSchedule.latestDeployments.head.state shouldBe PeriodicProcessDeploymentState(None, None, PeriodicProcessDeploymentStatus.Scheduled)
@@ -154,7 +154,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
 
     val stateAfterDeploy = service.getLatestDeploymentForActiveSchedules(processName).futureValue
     stateAfterDeploy should have size 1
-    val afterDeploy = stateAfterDeploy.values.head
+    val afterDeploy = stateAfterDeploy.firstScheduleData
     val afterDeployDeployment = afterDeploy.latestDeployments.head
 
     afterDeployDeployment.id shouldBe afterSchedule.latestDeployments.head.id
@@ -170,7 +170,9 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     service.getLatestDeploymentForActiveSchedules(processName).futureValue shouldBe empty
     val inactiveStates = service.getLatestDeploymentForLatestInactiveSchedules(processName, inactiveProcessesMaxCount = 1, deploymentsPerScheduleMaxCount = 1).futureValue
     inactiveStates should have size 1
-    inactiveStates.values.head.latestDeployments.head.state.status shouldBe PeriodicProcessDeploymentStatus.Finished
+    // TODO: we currently don't have Canceled status - to get full information about status someone have to check both state of PeriodicProcess (active/inactive)
+    //       and state of deployment
+    inactiveStates.firstScheduleData.latestDeployments.head.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
   }
 
   it should "redeploy scenarios that failed on deploy" in withFixture(deploymentRetryConfig = DeploymentRetryConfig(deployMaxRetries = 1)) { f =>
@@ -228,9 +230,9 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     val toDeploy = allToDeploy.filter(_.periodicProcess.processVersion.processName == processName)
     toDeploy should have length 2
     toDeploy.head.runAt shouldBe localTime(expectedScheduleTime.plus(5, ChronoUnit.MINUTES))
-    toDeploy.head.scheduleName shouldBe Some(scheduleMinute5)
+    toDeploy.head.scheduleName.value shouldBe Some(scheduleMinute5)
     toDeploy.last.runAt shouldBe localTime(expectedScheduleTime.plus(10, ChronoUnit.MINUTES))
-    toDeploy.last.scheduleName shouldBe Some(scheduleMinute10)
+    toDeploy.last.scheduleName.value shouldBe Some(scheduleMinute10)
 
     service.deactivate(processName).futureValue
     service.getLatestDeploymentForActiveSchedules(processName).futureValue shouldBe empty
@@ -255,7 +257,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     val toDeploy = service.findToBeDeployed.futureValue
     toDeploy should have length 2
 
-    val deployment = toDeploy.find(_.scheduleName.contains(firstSchedule)).value
+    val deployment = toDeploy.find(_.scheduleName.value.contains(firstSchedule)).value
     service.deploy(deployment)
     f.delegateDeploymentManagerStub.setStateStatus(SimpleStateStatus.Running, Some(deployment.id))
 
@@ -267,7 +269,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
 
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
     toDeployAfterFinish should have length 1
-    toDeployAfterFinish.head.scheduleName.value shouldBe secondSchedule
+    toDeployAfterFinish.head.scheduleName.value.value shouldBe secondSchedule
   }
 
   it should "handle multiple one time schedules" in withFixture() { f =>
@@ -287,18 +289,18 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     stateAfterSchedule should have size 2
 
     val latestDeploymentSchedule1 = service.pickMostImportantDeployment(stateAfterSchedule).value
-    latestDeploymentSchedule1.scheduleName.value shouldBe schedule1
+    latestDeploymentSchedule1.scheduleName.value.value shouldBe schedule1
     latestDeploymentSchedule1.runAt shouldBe localTime(timeToTriggerSchedule1)
 
     currentTime = timeToTriggerSchedule1
     val toDeployOnSchedule1 = service.findToBeDeployed.futureValue.loneElement
-    toDeployOnSchedule1.scheduleName.value shouldBe schedule1
+    toDeployOnSchedule1.scheduleName.value.value shouldBe schedule1
     service.deploy(toDeployOnSchedule1).futureValue
 
     val stateAfterSchedule1Deploy = service.getLatestDeploymentForActiveSchedules(processName).futureValue
     stateAfterSchedule1Deploy.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
     stateAfterSchedule1Deploy.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
-    service.pickMostImportantDeployment(stateAfterSchedule1Deploy).value.scheduleName.value shouldBe schedule1
+    service.pickMostImportantDeployment(stateAfterSchedule1Deploy).value.scheduleName.value.value shouldBe schedule1
 
     service.handleFinished.futureValue
     val toDeployAfterFinishSchedule1 = service.findToBeDeployed.futureValue
@@ -308,18 +310,18 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     stateAfterSchedule1Finished.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
     stateAfterSchedule1Finished.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
     val latestDeploymentSchedule2 = service.pickMostImportantDeployment(stateAfterSchedule1Finished).value
-    latestDeploymentSchedule2.scheduleName.value shouldBe schedule2
+    latestDeploymentSchedule2.scheduleName.value.value shouldBe schedule2
     latestDeploymentSchedule2.runAt shouldBe localTime(timeToTriggerSchedule2)
 
     currentTime = timeToTriggerSchedule2
     val toDeployOnSchedule2 = service.findToBeDeployed.futureValue.loneElement
-    toDeployOnSchedule2.scheduleName.value shouldBe schedule2
+    toDeployOnSchedule2.scheduleName.value.value shouldBe schedule2
     service.deploy(toDeployOnSchedule2).futureValue
 
     val stateAfterSchedule2Deploy = service.getLatestDeploymentForActiveSchedules(processName).futureValue
     stateAfterSchedule2Deploy.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
     stateAfterSchedule2Deploy.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
-    service.pickMostImportantDeployment(stateAfterSchedule2Deploy).value.scheduleName.value shouldBe schedule2
+    service.pickMostImportantDeployment(stateAfterSchedule2Deploy).value.scheduleName.value.value shouldBe schedule2
 
     service.handleFinished.futureValue
     service.getLatestDeploymentForActiveSchedules(processName).futureValue shouldBe empty
@@ -394,12 +396,15 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
       .asString()
   }
 
-  private implicit class SchedulesStateExt(schedulesState: Map[ScheduleId, ScheduleData]) {
+  private implicit class SchedulesStateExt(schedulesState: SchedulesState) {
+
+    def firstScheduleData: ScheduleData = schedulesState.schedules.values.head
+
     def latestDeploymentForSingleSchedule: ScheduleDeploymentData = {
-      schedulesState.find(_._1.scheduleName.isEmpty).value._2.latestDeployments.head
+      schedulesState.schedules.find(_._1.scheduleName.value.isEmpty).value._2.latestDeployments.head
     }
     def latestDeploymentForSchedule(name: String): ScheduleDeploymentData = {
-      schedulesState.find(_._1.scheduleName.contains(name)).value._2.latestDeployments.head
+      schedulesState.schedules.find(_._1.scheduleName.value.contains(name)).value._2.latestDeployments.head
     }
   }
 
