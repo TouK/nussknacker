@@ -20,6 +20,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 * [#4640](https://github.com/TouK/nussknacker/pull/4640) Expand timestamp support to handle more types/formats
 * [#4685](https://github.com/TouK/nussknacker/pull/4685) App API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 * [#4707](https://github.com/TouK/nussknacker/pull/4707) Support for `overrideFrontendAuthenticationStrategy` configuration parameter in OIDC security model - works the same as in OAuth2 case.
@@ -32,6 +33,9 @@
 =======
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.4.8
 >>>>>>> aad908e079 (Downgrade to 3.4.8)
+=======
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.1
+>>>>>>> 72c623f640 (Revert "Downgrade to 3.4.8")
 
 1.11.3 (11 Sep 2023)
 -------------------------

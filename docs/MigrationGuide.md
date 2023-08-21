@@ -37,7 +37,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
 =======
   You would like to remove `hidden: { fragment: true }` flag for `type: "test-with-form"`, `type: "test-counts"` and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
-* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.4.8.
+* [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.1.
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
 >>>>>>> d62419ec4a (Changes in docs)
 
