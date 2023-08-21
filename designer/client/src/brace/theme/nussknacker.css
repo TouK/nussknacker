@@ -10,6 +10,15 @@
     width: 1px;
     background: #555651
 }
+
+.ace-nussknacker .ace_search {
+    background: #818181;
+}
+
+.ace-nussknacker .ace_search_field {
+    color: #a8ce91;
+}
+
 .ace-nussknacker {
     background-color: #333;
     color: #F8F8F2
