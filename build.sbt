@@ -307,6 +307,7 @@ val jacksonV = "2.14.3"
 val catsV = "2.9.0"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 val catsEffectV = "2.5.5"
 =======
 val catsEffectV = "3.4.8"
@@ -314,6 +315,9 @@ val catsEffectV = "3.4.8"
 =======
 val catsEffectV = "3.5.1"
 >>>>>>> 1be91a59b6 (Upgrade cats and remove using IORuntime.global)
+=======
+val catsEffectV = "3.4.8"
+>>>>>>> aad908e079 (Downgrade to 3.4.8)
 val everitSchemaV = "1.14.2"
 val slf4jV = "1.7.36"
 val scalaLoggingV = "3.9.5"
