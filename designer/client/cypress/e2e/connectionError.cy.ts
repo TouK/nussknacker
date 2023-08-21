@@ -92,7 +92,7 @@ describe("Connection error", () => {
 
             cy.contains("svg", /filter/i).dblclick();
 
-            cy.tick(12000);
+            cy.tick(16000);
 
             visibleStatusToastMessageBeforeConnectionError();
 
@@ -100,7 +100,7 @@ describe("Connection error", () => {
 
             cy.intercept("/api/notifications", { statusCode: 502 });
 
-            cy.tick(12000);
+            cy.tick(16000);
 
             notVisibleStatusToastMessageWhenConnectionError();
 
