@@ -65,8 +65,47 @@ When writing documentation please follow these instructions:
     [Components](/about/GLOSSARY.md#component)
     [Components](../about/GLOSSARY#component)
     ```
+### Automatic Image Updates in Documentation
 
-## Working with code
+To automate image updates in your documentation, follow these steps:
+
+1. **Create a Cypress Test**: Begin by adding a new Cypress test in the `designer/client/cypress/e2e/autoImageChangeDocs.cy.ts` file. In this test, utilize one of the image capture functions available in your code.
+
+2. **Image Storage**: All captured images are stored in the `docs/autoImageChangeDocs` folder. These images are named according to a specific convention:
+
+    ```
+    Auto Image Change Docs - [name of test]#[index of image in test].png    
+    ```
+
+    For example:
+    
+    ```
+    Auto Image Change Docs - basic_components - variable#0.png
+    ```
+   
+3. **Rename Images**: In the `nussknacker-page` repository, there's a handy script called `rename_images_docs.sh`. This script is responsible for renaming all the images in the docs folder to match the Docusaurus naming schema:
+    
+    ```
+    Auto_Image_Change_Docs_-_[name of test][index of image in test].png
+    ```
+    
+    For instance:
+    
+    ```
+    Auto_Image_Change_Docs_-basic_components-_variable0.png
+    ```
+    
+    Note that this script depends on the `sync_with_github_docs.sh` script.
+
+4. **Use Docusaurus Naming Schema**: In your documentation, make sure to reference the images using the Docusaurus naming schema. For example:
+
+    ```
+    ![image](../autoImageChangeDocs/Auto_Image_Change_Docs_-basic_components-_variable0.png  "Scenario with variable declaration")
+    ```
+    
+    By following these steps, you can easily update and reference images in your documentation using an automated process.
+ 
+# Working with code
 
 ### Setup
 

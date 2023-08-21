@@ -129,7 +129,7 @@ describe("Auto Image Change Docs - ", () => {
 
 const snapshotOptions = {
     maxDiffThreshold: 0.00001,
-    imagesPath: "../../docs/scenarios_authoring/img/autoImageChangeDocs",
+    imagesPath: "../../docs/autoImageChangeDocs",
 };
 
 function takeGraphImage() {
