@@ -50,7 +50,7 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
         val newAccParams = (param.name -> valueWithModifiedContext.value) :: accParams
         (valueWithModifiedContext.context, newAccParams)
     }
-    //hopefully peformance will be a bit improved with https://github.com/scala/scala/pull/7118
+    //hopefully performance will be a bit improved with https://github.com/scala/scala/pull/7118
     (newCtx, evaluatedParams.toMap)
   }
 

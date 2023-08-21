@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, Scenario
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.testmode._
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -45,7 +45,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
     //FIXME: validation??
     val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](process, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), componentUseCase
-    )(SynchronousExecutionContext.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
+    )(SynchronousExecutionContextAndIORuntime.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
     }

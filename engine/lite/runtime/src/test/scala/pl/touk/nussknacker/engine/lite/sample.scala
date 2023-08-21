@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime.ctx
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariable
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -27,20 +27,20 @@ import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnod
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.definition.{ProcessDefinitionExtractor, FragmentComponentDefinitionExtractor}
-import pl.touk.nussknacker.engine.dict.{SimpleDictRegistry, SimpleDictServicesFactory}
+import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, ProcessDefinitionExtractor}
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.fragment.FragmentRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
+import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParametersAndReturnType, EnricherContextTransformation}
-import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
 import java.util.{Collections, Optional}
 import javax.annotation.Nullable
@@ -84,7 +84,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
                                services: Map[String, Service] = servicesDef,
                                transformers: Map[String, CustomStreamTransformer] = Map()): Any = {
     import Interpreter._
-    import SynchronousExecutionContext.ctx
+    import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime.ctx
 
     AccountService.clear()
     NameDictService.clear()
@@ -112,7 +112,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           case sink: SinkPart if sink.id == nextPartId => sink
           case endingCustomPart: CustomNodePart if endingCustomPart.id == nextPartId => endingCustomPart
         }.get
-        interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.finalContext).unsafeRunSync().head.swap.toOption.get.finalContext.get(resultVariable).orNull
+        interpreter.interpret[IO](compileNode(sink), metaData, resultBeforeSink.finalContext).unsafeRunSync().head.swap.toOption.get.finalContext.get(resultVariable).orNull
       //we handle it on other level
       case _: EndReference =>
         null

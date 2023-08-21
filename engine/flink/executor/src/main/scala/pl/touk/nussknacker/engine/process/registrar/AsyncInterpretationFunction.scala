@@ -1,41 +1,37 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import cats.effect.IO
-import cats.effect.unsafe.IORuntime
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
+<<<<<<< HEAD
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
+=======
+>>>>>>> c49ec58b1a (potential fix)
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
-                                                     val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
-                                                     asyncExecutionContextPreparer: AsyncExecutionContextPreparer, useIOMonad: Boolean)
+                                                     val node: SplittedNode[_<:NodeData],
+                                                     validationContext: ValidationContext,
+                                                     useIOMonad: Boolean)
   extends RichAsyncFunction[Context, InterpretationResult] with LazyLogging with ProcessPartFunction {
 
   private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
+  import SynchronousExecutionContextAndIORuntime._
   import compiledProcessWithDeps._
-
-  private var executionContext: ExecutionContext = _
-
-  override def open(parameters: Configuration): Unit = {
-    super.open(parameters)
-    executionContext = asyncExecutionContextPreparer.prepareExecutionContext(compiledProcessWithDeps.metaData.id,
-      getRuntimeContext.getExecutionConfig.getParallelism)
-  }
 
   override def asyncInvoke(input: Context, collector: ResultFuture[InterpretationResult]): Unit = {
     try {
@@ -53,26 +49,25 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
         logger.warn("Unexpected error", ex)
         handleResults(collector, Nil, List(NuExceptionInfo(None, ex, input)))
     }
-
-
   }
 
   private def invokeInterpreter(input: Context)
                                (callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
-    implicit val ec: ExecutionContext = executionContext
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
-      implicit val runtime: IORuntime = IORuntimeFactory.create(executionContext)
-      interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunAsync(callback)
+      interpreter
+        .interpret[IO](compiledNode, metaData, input)
+        .unsafeRunAsync(callback)
     } else {
       implicit val future: FutureShape = new FutureShape()
+<<<<<<< HEAD
       interpreter.interpret[Future](compiledNode, metaData, input).onComplete(result => callback(result.toEither))
+=======
+      interpreter
+        .interpret[Future](compiledNode, metaData, input)
+        .onComplete { result => callback(result.toEither) }
+>>>>>>> c49ec58b1a (potential fix)
     }
-  }
-
-  override def close(): Unit = {
-    super.close()
-    asyncExecutionContextPreparer.close()
   }
 
   //This function has to be invoked exactly *ONCE* for one asyncInvoke (complete/completeExceptionally) can be invoked only once)

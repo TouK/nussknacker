@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, Scenario
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -29,7 +29,7 @@ object SynchronousLiteInterpreter {
 
   type SynchronousResult = Validated[NonEmptyList[ProcessCompilationError], (List[ErrorType], List[EndResult[AnyRef]])]
 
-  implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
+  implicit val ec: ExecutionContext = SynchronousExecutionContextAndIORuntime.ctx
   implicit val capabilityTransformer: CapabilityTransformer[Id] = new FixedCapabilityTransformer[Id]
   implicit val syncIdShape: InterpreterShape[Id] = new InterpreterShape[Id] {
 

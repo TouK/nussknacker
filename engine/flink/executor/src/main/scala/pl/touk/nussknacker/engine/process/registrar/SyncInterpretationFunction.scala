@@ -1,21 +1,24 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import cats.effect.unsafe.IORuntime
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
+<<<<<<< HEAD
 import java.util.concurrent.TimeoutException
 import scala.concurrent.{Await, ExecutionContext, Future}
+=======
+import scala.concurrent.{Await, Future, TimeoutException}
+>>>>>>> c49ec58b1a (potential fix)
 import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
@@ -23,7 +26,7 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
                                                     validationContext: ValidationContext, useIOMonad: Boolean)
   extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {
 
-  private lazy implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
+  import SynchronousExecutionContextAndIORuntime._
 
   private lazy val compiledNode = compiledProcessWithDeps.compileSubPart(node, validationContext)
 
@@ -46,6 +49,7 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
 <<<<<<< HEAD
+<<<<<<< HEAD
       interpreter.interpret(compiledNode, metaData, input).unsafeRunTimed(processTimeout) match {
         case Some(result) => result
         case None => throw new TimeoutException(s"Interpreter is running too long (timeout: $processTimeout)")
@@ -54,6 +58,15 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
       implicit val runtime: IORuntime = IORuntimeFactory.create(ec)
       interpreter.interpret(compiledNode, metaData, input).unsafeRunSync()
 >>>>>>> 1be91a59b6 (Upgrade cats and remove using IORuntime.global)
+=======
+      val resultOpt = interpreter
+        .interpret(compiledNode, metaData, input)
+        .unsafeRunTimed(processTimeout)
+      resultOpt match {
+        case Some(result) => result
+        case None => throw new TimeoutException(s"Interpreter is running too long (timeout: $processTimeout)")
+      }
+>>>>>>> c49ec58b1a (potential fix)
     } else {
       implicit val futureShape: FutureShape = new FutureShape()
       Await.result(interpreter.interpret[Future](compiledNode, metaData, input), processTimeout)

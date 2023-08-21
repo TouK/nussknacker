@@ -937,6 +937,7 @@ lazy val commonUtils = (project in utils("utils")).
         "commons-io" % "commons-io" % flinkCommonsIOV,
         "org.slf4j" % "jul-to-slf4j" % slf4jV,
         "com.iheart" %% "ficus" % ficusV,
+        "org.typelevel" %% "cats-effect" % catsEffectV,
       )
     }
   ).dependsOn(commonApi, componentsApi, testUtils % "test")

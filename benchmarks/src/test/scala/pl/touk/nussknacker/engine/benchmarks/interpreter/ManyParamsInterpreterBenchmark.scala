@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
@@ -32,8 +32,13 @@ class ManyParamsInterpreterBenchmark {
     (ctx: Context) => setup(ctx, executionContext)
   }
 
+<<<<<<< HEAD
   private val interpreterSyncIO = prepareIoInterpreter(SynchronousExecutionContext.ctx)
   private val interpreterAsyncIO = prepareIoInterpreter(ExecutionContext.Implicits.global)
+=======
+  private val interpreterSync = prepareInterpreter(SynchronousExecutionContextAndIORuntime.create())
+  private val interpreterAsync = prepareInterpreter(ExecutionContext.Implicits.global)
+>>>>>>> c49ec58b1a (potential fix)
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))

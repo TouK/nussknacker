@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
@@ -36,7 +36,7 @@ class OneParamInterpreterBenchmark {
   private val service = new OneParamService(instantlyCompletedFuture)
 
   private val interpreterFuture = new InterpreterSetup[String]
-    .sourceInterpretation[Future](process, Map("service" -> service), Nil)(new FutureShape()(SynchronousExecutionContext.ctx))
+    .sourceInterpretation[Future](process, Map("service" -> service), Nil)(new FutureShape()(SynchronousExecutionContextAndIORuntime.ctx))
 
   private val interpreterIO = new InterpreterSetup[String]
     .sourceInterpretation[IO](process, Map("service" -> service), Nil)
@@ -49,7 +49,7 @@ class OneParamInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkFutureSync(): AnyRef = {
-    Await.result(interpreterFuture(Context(""), SynchronousExecutionContext.ctx), 1 second)
+    Await.result(interpreterFuture(Context(""), SynchronousExecutionContextAndIORuntime.ctx), 1 second)
   }
 
 
@@ -64,7 +64,7 @@ class OneParamInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkSyncIO(): AnyRef = {
-    interpreterIO(Context(""), SynchronousExecutionContext.ctx).unsafeRunSync()
+    interpreterIO(Context(""), SynchronousExecutionContextAndIORuntime.ctx).unsafeRunSync()
   }
 
 

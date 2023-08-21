@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.StringUtils
 import org.springframework.expression._
-import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression, TemplateParserContext}
+import org.springframework.expression.common.{CompositeStringExpression, LiteralExpression}
 import org.springframework.expression.spel.ast.SpelNodeImpl
 import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationException, SpelParserConfiguration, standard}
 import pl.touk.nussknacker.engine.api.Context

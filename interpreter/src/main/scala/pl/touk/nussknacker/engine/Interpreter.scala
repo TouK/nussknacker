@@ -14,7 +14,10 @@ import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+<<<<<<< HEAD
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+=======
+>>>>>>> c49ec58b1a (potential fix)
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -25,7 +28,12 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
                                         expressionEvaluator: ExpressionEvaluator,
                                         interpreterShape: InterpreterShape[F],
                                         componentUseCase: ComponentUseCase
+<<<<<<< HEAD
                                        )(implicit metaData: MetaData, executor: ExecutionContext) {
+=======
+                                       )(implicit metaData: MetaData,
+                                         executionContext: ExecutionContext) {
+>>>>>>> c49ec58b1a (potential fix)
 
   type Result[T] = Either[T, NuExceptionInfo[_ <: Throwable]]
 
@@ -83,7 +91,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         }
         interpretNext(next, newParentContext)
       case Processor(_, ref, next, false) =>
-        invoke(ref, ctx).flatMap {
+        invokeWrappedInInterpreterShape(ref, ctx).flatMap {
           //for Processor the result is null/BoxedUnit/Void etc. so we ignore it
           case Left(ValueWithContext(_, newCtx)) => interpretNext(next, newCtx)
           case Right(exInfo) => monad.pure(List(Right(exInfo)))
@@ -91,7 +99,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case Processor(_, _, next, true) => interpretNext(next, ctx)
       case EndingProcessor(id, ref, false) =>
         listeners.foreach(_.endEncountered(id, ref.id, ctx, metaData))
-        invoke(ref, ctx).map {
+        invokeWrappedInInterpreterShape(ref, ctx).map {
           //for Processor the result is null/BoxedUnit/Void etc. so we ignore it
           case Left(ValueWithContext(_, newCtx)) =>
             List(Left(InterpretationResult(EndReference(id), newCtx)))
@@ -117,7 +125,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
             }
           )
       case Enricher(_, ref, outName, next) =>
-        invoke(ref, ctx).flatMap {
+        invokeWrappedInInterpreterShape(ref, ctx).flatMap {
           case Left(ValueWithContext(out, newCtx)) => interpretNext(next, newCtx.withVariable(outName, out))
           case Right(exInfo) => monad.pure(List(Right(exInfo)))
         }
@@ -201,6 +209,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     }
   }
 
+<<<<<<< HEAD
   private def invoke(ref: ServiceRef, ctx: Context)(implicit node: Node): F[Result[ValueWithContext[Any]]] = {
     implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
     val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator)
@@ -213,8 +222,30 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       .map {
         case Right(ex) => Right(handleError(node, ctx)(ex))
         case Left(value) => Left(ValueWithContext(value, ctx))
+=======
+  private def invokeWrappedInInterpreterShape(ref: ServiceRef, ctx: Context)
+                                             (implicit node: Node): F[Result[ValueWithContext[Any]]] = {
+    interpreterShape
+      .fromFuture(executionContext)
+      .apply(invoke(ref, ctx))
+      .map {
+        case Right(ex) => Right(handleError(node, ctx)(ex))
+        case Left(value) => Left(value)
+>>>>>>> c49ec58b1a (potential fix)
       }
   }
+
+  private def invoke(ref: ServiceRef, ctx: Context)
+                    (implicit node: Node, executionContext: ExecutionContext) =
+    Future {
+      implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
+      val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator)
+      resultFuture.onComplete { result =>
+        //TODO: what about implicit??
+        listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
+      }
+      resultFuture.map(ValueWithContext(_, ctx))
+    }.flatten
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
                                    (implicit metaData: MetaData, node: Node): ValueWithContext[R] = {
@@ -230,8 +261,8 @@ class Interpreter(listeners: Seq[ProcessListener],
                       metaData: MetaData,
                       ctx: Context)
                      (implicit shape: InterpreterShape[F],
-                      ec: ExecutionContext): F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
-    new InterpreterInternal[F](listeners, expressionEvaluator, shape, componentUseCase)(metaData, ec).interpret(node, ctx)
+                      executionContext: ExecutionContext): F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
+    new InterpreterInternal[F](listeners, expressionEvaluator, shape, componentUseCase)(metaData, executionContext).interpret(node, ctx)
   }
 
 }
@@ -264,8 +295,6 @@ object Interpreter {
 
   implicit object IOShape extends InterpreterShape[IO] {
 
-    import IO._
-
     override def monad: Monad[IO] = Monad[IO]
 
 <<<<<<< HEAD
@@ -275,17 +304,26 @@ object Interpreter {
     }
 =======
     override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => IO[Either[T, Throwable]] =
+<<<<<<< HEAD
       f => IO.fromFuture(IO.pure(transform(f)))
 >>>>>>> ee8e844071 (Improvements: bump cats effect)
+=======
+      f => IO.fromFuture(IO(transform(f)))
+>>>>>>> c49ec58b1a (potential fix)
   }
 
   class FutureShape(implicit ec: ExecutionContext) extends InterpreterShape[Future] {
 
     override def monad: Monad[Future] = cats.instances.future.catsStdInstancesForFuture(ec)
 
+<<<<<<< HEAD
     override def fromFuture[T]: Future[T] => Future[Either[T, Throwable]] = {
       transform(_)(SynchronousExecutionContext.ctx)
     }
+=======
+    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Future[Either[T, Throwable]] =
+      transform(_)
+>>>>>>> c49ec58b1a (potential fix)
   }
 
 }

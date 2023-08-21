@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseResultType
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime.ctx
 
 import scala.concurrent.Future
 

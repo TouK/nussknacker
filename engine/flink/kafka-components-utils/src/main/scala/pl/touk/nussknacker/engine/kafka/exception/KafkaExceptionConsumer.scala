@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.flink.api.exception.{FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.sharedproducer.WithSharedKafkaProducer
 import pl.touk.nussknacker.engine.kafka.{DefaultProducerCreator, KafkaConfig, KafkaProducerCreator, KafkaUtils}
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 
 class KafkaExceptionConsumerProvider extends FlinkEspExceptionConsumerProvider {
@@ -65,7 +65,7 @@ case class SharedProducerKafkaExceptionConsumer(metaData: MetaData,
   }
 
   override def consume(exceptionInfo: NuExceptionInfo[NonTransientException]): Unit = {
-    sendToKafka(serializationSchema.serialize(exceptionInfo, System.currentTimeMillis()))(SynchronousExecutionContext.ctx)
+    sendToKafka(serializationSchema.serialize(exceptionInfo, System.currentTimeMillis()))(SynchronousExecutionContextAndIORuntime.ctx)
   }
   
 }
