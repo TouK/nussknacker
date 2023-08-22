@@ -236,8 +236,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
   }
 
   private def invoke(ref: ServiceRef, ctx: Context)
-                    (implicit node: Node, executionContext: ExecutionContext) =
-    Future {
+                    (implicit node: Node, executionContext: ExecutionContext) = {
       implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
       val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator)
       resultFuture.onComplete { result =>
@@ -245,7 +244,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
       }
       resultFuture.map(ValueWithContext(_, ctx))
-    }.flatten
+    }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
                                    (implicit metaData: MetaData, node: Node): ValueWithContext[R] = {
