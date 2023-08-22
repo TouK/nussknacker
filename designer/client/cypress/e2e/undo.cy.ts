@@ -75,7 +75,7 @@ describe("Undo/Redo", () => {
         cy.get("@redo").click().should("be.disabled");
     });
 
-    it.only("should work for copy/paste", () => {
+    it("should work for copy/paste", () => {
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("body").type("{ctrl}a");
         cy.get("@copy").click();
