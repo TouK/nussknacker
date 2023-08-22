@@ -15,9 +15,9 @@ import scala.util.{Try, Using}
 trait WithTestDb extends BeforeAndAfterAll {
   this: Suite =>
 
-  val config: Config
+  def testDbConfig: Config
 
-  private val (dbRef, releaseDbRefResources) = DbRef.create(config).allocated.unsafeRunSync()
+  private lazy val (dbRef, releaseDbRefResources) = DbRef.create(testDbConfig).allocated.unsafeRunSync()
 
   def testDbRef: DbRef = dbRef
 
@@ -30,7 +30,7 @@ trait WithTestDb extends BeforeAndAfterAll {
 trait WithTestHsqlDb extends WithTestDb {
   self: Suite =>
 
-  override lazy val config: Config = ConfigFactory.parseMap(Map(
+  override val testDbConfig: Config = ConfigFactory.parseMap(Map(
     "db" -> Map(
       "user" -> "SA",
       "password" -> "",
@@ -42,7 +42,10 @@ trait WithTestHsqlDb extends WithTestDb {
 trait WithTestPostgresDb extends WithTestDb {
   self: Suite with ForAllTestContainer =>
 
-  override lazy val config: Config = ConfigFactory.parseMap(Map(
+  override val container: PostgreSQLContainer =
+    PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
+
+  override def testDbConfig: Config = ConfigFactory.parseMap(Map(
     "db" -> Map(
       "user" -> container.username,
       "password" -> container.password,
@@ -50,9 +53,6 @@ trait WithTestPostgresDb extends WithTestDb {
       "driver" -> "org.postgresql.Driver",
       "schema" -> "testschema"
     ).asJava).asJava)
-
-  override val container: PostgreSQLContainer = PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
-
 }
 
 trait DbTesting
@@ -63,7 +63,7 @@ trait DbTesting
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    DatabaseInitializer.initDatabase("db", config)
+    DatabaseInitializer.initDatabase("db", testDbConfig)
   }
 
   override protected def afterEach(): Unit = {

@@ -313,7 +313,8 @@ val configV = "1.4.2"
 // rc16+ depend on slf4j 2.x
 val dropWizardV = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.10.0"
-val testcontainersScalaV = "0.40.16"
+val testContainersScalaV = "0.40.17"
+val testContainersJavaV = "1.18.3"
 val nettyV = "4.1.93.Final"
 val nettyReactiveStreamsV = "2.0.8"
 
@@ -572,8 +573,8 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % flinkScope,
         "com.softwaremill.retry" %% "retry" % "0.3.6",
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-kafka" % testContainersScalaV % "it,test",
         "com.github.tomakehurst" % "wiremock-jre8" % wireMockV % Test
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
@@ -763,8 +764,8 @@ lazy val kafkaComponentsUtils = (project in utils("kafka-components-utils")).
     libraryDependencies ++= {
       Seq(
         "javax.validation" % "validation-api" % javaxValidationApiV,
-        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
-        "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it"
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it",
+        "com.dimafeng" %% "testcontainers-scala-kafka" % testContainersScalaV % "it"
       )
     }
   ).dependsOn(kafkaUtils, componentsUtils % Provided, componentsApi % Provided, testUtils % "it, test")
@@ -952,6 +953,7 @@ lazy val testUtils = (project in utils("test-utils")).
         "com.softwaremill.sttp.client3" %% "slf4j-backend" % sttpV,
         "org.typelevel" %% "cats-effect" % catsEffectV,
         "io.circe" %% "circe-parser" % circeV,
+        "org.testcontainers" % "testcontainers" % testContainersJavaV
       )
     }
   )
@@ -1120,8 +1122,8 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration
       liteEngineRuntimeApp / Docker / publishLocal
     ).value,
     libraryDependencies ++= Seq(
-      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
-      "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it",
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it",
+      "com.dimafeng" %% "testcontainers-scala-kafka" % testContainersScalaV % "it",
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it"
     )
   ).dependsOn(interpreter % "it", schemedKafkaComponentsUtils % "it", testUtils % "it", kafkaTestUtils % "it", httpUtils % "it")
@@ -1333,7 +1335,7 @@ lazy val security = (project in file("security")).
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
       "com.auth0" % "jwks-rsa" % "0.22.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
-      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
       "com.github.dasniko" % "testcontainers-keycloak" % "2.5.0" % "it,test" excludeAll(
         // we're using testcontainers-scala which requires a proper junit4 dependency
         ExclusionRule("io.quarkus", "quarkus-junit4-mock")
@@ -1375,8 +1377,8 @@ lazy val processReports = (project in file("designer/processReports")).
     libraryDependencies ++= {
       Seq(
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-influxdb" % testcontainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-influxdb" % testContainersScalaV % "it,test",
         "org.influxdb" % "influxdb-java" % "2.23" % "it,test"
       )
     }
@@ -1567,8 +1569,8 @@ lazy val designer = (project in file("designer/server"))
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
 
-        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "test",
-        "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaV % "test",
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "test",
+        "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersScalaV % "test",
         "org.scalatestplus" %% "mockito-4-6" % scalaTestPlusV % "test",
 
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
