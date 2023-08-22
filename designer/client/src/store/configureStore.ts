@@ -7,6 +7,7 @@ import { reducer } from "../reducers";
 import { ThunkDispatch } from "../actions/reduxTypes";
 import { useDispatch } from "react-redux";
 import { createStateSyncMiddleware, initMessageListener } from "redux-state-sync";
+import { nodeValidationMiddleware } from "./nodeValidationMiddleware";
 
 export default function configureStore() {
     const store = createStore(
@@ -28,6 +29,7 @@ export default function configureStore() {
                         "TOGGLE_COMPONENT_GROUP_TOOLBOX",
                     ],
                 }),
+                nodeValidationMiddleware(["DELETE_NODES", "NODES_CONNECTED", "NODES_DISCONNECTED", "NODES_WITH_EDGES_ADDED"]),
             ),
         ),
     );

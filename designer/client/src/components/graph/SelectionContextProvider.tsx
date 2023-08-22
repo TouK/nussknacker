@@ -7,7 +7,6 @@ import {
     cutSelection,
     deleteNodes,
     deleteSelection,
-    nodesValidation,
     nodesWithEdgesAdded,
     pasteSelection,
     selectAll,
@@ -211,7 +210,6 @@ export default function SelectionContextProvider(
             try {
                 const clipboardText = await ClipboardUtils.readText(event);
                 parseInsertNodes(clipboardText);
-                dispatch(nodesValidation());
             } catch {
                 dispatch(error(t("userActions.paste.notAvailable", "Paste button is not available. Try Ctrl+V")));
             }
