@@ -14,11 +14,13 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.utility.DockerImageName
+import pl.touk.nussknacker.engine.api.deployment.DataFreshnessPolicy
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus, ScheduleData, ScheduleDeploymentData, ScheduleId, SchedulesState}
 import pl.touk.nussknacker.engine.management.periodic.service._
@@ -45,6 +47,8 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
   override val container: PostgreSQLContainer = PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
   private val processingType = "testProcessingType"
 
@@ -135,14 +139,14 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     service.schedule(cronEvery4Hours, ProcessVersion.empty.copy(processName = every4HoursProcessName), sampleProcess).futureValue
     otherProcessingTypeService.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = otherProcessName), sampleProcess).futureValue
 
-    val stateAfterSchedule = service.getLatestDeploymentForActiveSchedules(processName).futureValue
+    val stateAfterSchedule = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterSchedule should have size 1
     val afterSchedule = stateAfterSchedule.firstScheduleData
 
     afterSchedule.process.processVersion.processName shouldBe processName
     afterSchedule.latestDeployments.head.state shouldBe PeriodicProcessDeploymentState(None, None, PeriodicProcessDeploymentStatus.Scheduled)
     afterSchedule.latestDeployments.head.runAt shouldBe localTime(expectedScheduleTime)
-    service.getLatestDeploymentForActiveSchedules(otherProcessName).futureValue shouldBe empty
+    service.getLatestDeploymentsForActiveSchedules(otherProcessName).futureValue shouldBe empty
 
     currentTime = timeToTriggerCheck
     
@@ -152,7 +156,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     service.deploy(toDeploy).futureValue
     otherProcessingTypeService.deploy(otherProcessingTypeService.findToBeDeployed.futureValue.loneElement).futureValue
 
-    val stateAfterDeploy = service.getLatestDeploymentForActiveSchedules(processName).futureValue
+    val stateAfterDeploy = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterDeploy should have size 1
     val afterDeploy = stateAfterDeploy.firstScheduleData
     val afterDeployDeployment = afterDeploy.latestDeployments.head
@@ -167,8 +171,8 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     val toDeployAfterFinish = service.findToBeDeployed.futureValue
     toDeployAfterFinish.map(_.periodicProcess.processVersion.processName) should contain only every30MinutesProcessName
     service.deactivate(processName).futureValue
-    service.getLatestDeploymentForActiveSchedules(processName).futureValue shouldBe empty
-    val inactiveStates = service.getLatestDeploymentForLatestInactiveSchedules(processName, inactiveProcessesMaxCount = 1, deploymentsPerScheduleMaxCount = 1).futureValue
+    service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
+    val inactiveStates = service.getLatestDeploymentsForLatestInactiveSchedules(processName, inactiveProcessesMaxCount = 1, deploymentsPerScheduleMaxCount = 1).futureValue
     inactiveStates should have size 1
     // TODO: we currently don't have Canceled status - to get full information about status someone have to check both state of PeriodicProcess (active/inactive)
     //       and state of deployment
@@ -218,7 +222,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
       scheduleMinute10 -> CronScheduleProperty("0 1 * * * ?"))),
       ProcessVersion.empty.copy(processName = ProcessName("other")), sampleProcess).futureValue
 
-    val stateAfterSchedule = service.getLatestDeploymentForActiveSchedules(processName).futureValue
+    val stateAfterSchedule = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterSchedule should have size 2
     stateAfterSchedule.latestDeploymentForSchedule(scheduleMinute5).runAt shouldBe localTime(expectedScheduleTime.plus(5, ChronoUnit.MINUTES))
     stateAfterSchedule.latestDeploymentForSchedule(scheduleMinute10).runAt shouldBe localTime(expectedScheduleTime.plus(10, ChronoUnit.MINUTES))
@@ -235,7 +239,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     toDeploy.last.scheduleName.value shouldBe Some(scheduleMinute10)
 
     service.deactivate(processName).futureValue
-    service.getLatestDeploymentForActiveSchedules(processName).futureValue shouldBe empty
+    service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
   }
 
   it should "wait until other schedule finishes, before deploying next schedule" in withFixture() { f =>
@@ -278,6 +282,8 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     val timeToTriggerSchedule1 = startTime.plus(1, ChronoUnit.HOURS)
     val timeToTriggerSchedule2 = startTime.plus(2, ChronoUnit.HOURS)
 
+    def mostImportantActiveDeployment = service.getStatusDetails(processName).futureValue.value.status.asInstanceOf[PeriodicProcessStatus].pickMostImportantActiveDeployment.value
+
     val schedule1 = "schedule1"
     val schedule2 = "schedule2"
     service.schedule(MultipleScheduleProperty(Map(
@@ -285,10 +291,10 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
       schedule2 -> CronScheduleProperty(convertDateToCron(localTime(timeToTriggerSchedule2))))),
       ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
 
-    val stateAfterSchedule = service.getLatestDeploymentForActiveSchedules(processName).futureValue
+    val stateAfterSchedule = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterSchedule should have size 2
 
-    val latestDeploymentSchedule1 = service.pickMostImportantDeployment(stateAfterSchedule).value
+    val latestDeploymentSchedule1 = mostImportantActiveDeployment
     latestDeploymentSchedule1.scheduleName.value.value shouldBe schedule1
     latestDeploymentSchedule1.runAt shouldBe localTime(timeToTriggerSchedule1)
 
@@ -297,19 +303,19 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     toDeployOnSchedule1.scheduleName.value.value shouldBe schedule1
     service.deploy(toDeployOnSchedule1).futureValue
 
-    val stateAfterSchedule1Deploy = service.getLatestDeploymentForActiveSchedules(processName).futureValue
+    val stateAfterSchedule1Deploy = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterSchedule1Deploy.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
     stateAfterSchedule1Deploy.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
-    service.pickMostImportantDeployment(stateAfterSchedule1Deploy).value.scheduleName.value.value shouldBe schedule1
+    mostImportantActiveDeployment.scheduleName.value.value shouldBe schedule1
 
     service.handleFinished.futureValue
     val toDeployAfterFinishSchedule1 = service.findToBeDeployed.futureValue
     toDeployAfterFinishSchedule1 should have length 0
 
-    val stateAfterSchedule1Finished = service.getLatestDeploymentForActiveSchedules(processName).futureValue
+    val stateAfterSchedule1Finished = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterSchedule1Finished.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
     stateAfterSchedule1Finished.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
-    val latestDeploymentSchedule2 = service.pickMostImportantDeployment(stateAfterSchedule1Finished).value
+    val latestDeploymentSchedule2 = mostImportantActiveDeployment
     latestDeploymentSchedule2.scheduleName.value.value shouldBe schedule2
     latestDeploymentSchedule2.runAt shouldBe localTime(timeToTriggerSchedule2)
 
@@ -318,14 +324,14 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     toDeployOnSchedule2.scheduleName.value.value shouldBe schedule2
     service.deploy(toDeployOnSchedule2).futureValue
 
-    val stateAfterSchedule2Deploy = service.getLatestDeploymentForActiveSchedules(processName).futureValue
+    val stateAfterSchedule2Deploy = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterSchedule2Deploy.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
     stateAfterSchedule2Deploy.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Deployed
-    service.pickMostImportantDeployment(stateAfterSchedule2Deploy).value.scheduleName.value.value shouldBe schedule2
+    mostImportantActiveDeployment.scheduleName.value.value shouldBe schedule2
 
     service.handleFinished.futureValue
-    service.getLatestDeploymentForActiveSchedules(processName).futureValue shouldBe empty
-    val inactiveStates = service.getLatestDeploymentForLatestInactiveSchedules(processName, inactiveProcessesMaxCount = 1, deploymentsPerScheduleMaxCount = 1).futureValue
+    service.getLatestDeploymentsForActiveSchedules(processName).futureValue shouldBe empty
+    val inactiveStates = service.getLatestDeploymentsForLatestInactiveSchedules(processName, inactiveProcessesMaxCount = 1, deploymentsPerScheduleMaxCount = 1).futureValue
     inactiveStates.latestDeploymentForSchedule(schedule1).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
     inactiveStates.latestDeploymentForSchedule(schedule2).state.status shouldBe PeriodicProcessDeploymentStatus.Finished
   }
@@ -379,7 +385,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFlatSpec
     //this one is cyclically called by RescheduleActor
     service.handleFinished.futureValue
 
-    val stateAfterHandleFinished = service.getLatestDeploymentForActiveSchedules(processName).futureValue
+    val stateAfterHandleFinished = service.getLatestDeploymentsForActiveSchedules(processName).futureValue
     stateAfterHandleFinished.latestDeploymentForSingleSchedule.state.status shouldBe PeriodicProcessDeploymentStatus.Scheduled
   }
 

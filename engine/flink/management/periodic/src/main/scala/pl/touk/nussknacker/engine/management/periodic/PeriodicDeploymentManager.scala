@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkConfig
+import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.PeriodicProcessStatus
 import pl.touk.nussknacker.engine.management.periodic.Utils.runSafely
 import pl.touk.nussknacker.engine.management.periodic.db.{DbInitializer, SlickPeriodicProcessesRepository}
 import pl.touk.nussknacker.engine.management.periodic.flink.FlinkJarManager
@@ -137,18 +138,13 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   }
 
   override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
-    getFlattenStatusDetails(idWithName.name).map { statusesWithFreshness =>
-      statusesWithFreshness.copy(value = processStateDefinitionManager.processState(statusesWithFreshness.value))
+    service.getStatusDetails(idWithName.name).map { statusesWithFreshness =>
+      statusesWithFreshness.map { cd =>
+        // TODO: add "real" presentation of deployments in GUI
+        val mergedStatus = processStateDefinitionManager.processState(cd.copy(status = cd.status.asInstanceOf[PeriodicProcessStatus].mergedStatusDetails.status))
+        mergedStatus.copy(tooltip = processStateDefinitionManager.statusTooltip(cd.status))
+      }
     }
-  }
-
-  def getFlattenStatusDetails(name: ProcessName)
-                             (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[StatusDetails]] = {
-    for {
-      statusesWithFreshness <- delegate.getProcessStates(name)
-      _ = logger.debug(s"Statuses for $name: $statusesWithFreshness")
-      mergedStatus <- service.mergeStatusWithDeployments(name, statusesWithFreshness.value)
-    } yield statusesWithFreshness.copy(value = mergedStatus)
   }
 
   override def processStateDefinitionManager: ProcessStateDefinitionManager =

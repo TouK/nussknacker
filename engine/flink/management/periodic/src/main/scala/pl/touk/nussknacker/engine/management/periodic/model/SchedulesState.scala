@@ -31,8 +31,6 @@ case class SchedulesState(schedules: Map[ScheduleId, ScheduleData]) {
         PeriodicProcessScheduleData(periodicProcess, deploymentsForSchedules)
     }
 
-  def addAll(other: SchedulesState): SchedulesState = SchedulesState(schedules ++ other.schedules)
-
 }
 
 // This structure contains list of latest deployments of given schedule identified by processId and scheduleName

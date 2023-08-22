@@ -56,7 +56,9 @@ function ProcessStateIcon({ process, processState }: Props) {
                 </Typography>
                 <Divider />
                 <Box p={1}>
-                    <Typography variant="body2">{tooltip}</Typography>
+                    <Typography variant="body2" style={{ whiteSpace: "pre-wrap" }}>
+                        {tooltip}
+                    </Typography>
                     <Errors state={processState} />
                 </Box>
             </Popover>

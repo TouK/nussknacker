@@ -604,8 +604,8 @@ lazy val flinkPeriodicDeploymentManager = (project in flink("management/periodic
         "com.cronutils" % "cron-utils" % cronParserV,
         "com.typesafe.akka" %% "akka-actor" % akkaV,
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
-        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "test",
-        "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaV % "test",
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "test",
+        "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersScalaV % "test",
       )
     }
   ).dependsOn(flinkDeploymentManager,

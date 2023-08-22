@@ -41,6 +41,6 @@ object PeriodicProcessDeploymentStatus extends Enumeration {
 }
 
 
-case class ScheduleName(value: Option[String]) extends MappedTo[Option[String]] {
-  def display: String = value.getOrElse("[empty]")
+case class ScheduleName(value: Option[String]) {
+  def display: String = value.getOrElse("[default]")
 }
