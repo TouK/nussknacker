@@ -61,7 +61,7 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
     }
 
     function stringifyMockedValue(mockedValue) {
-        const content = mockedValue.value.pretty;
+        const content = mockedValue.value?.pretty;
         return isObject(content) ? JSON.stringify(content) : content;
     }
 }
