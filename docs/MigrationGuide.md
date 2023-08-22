@@ -3,7 +3,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.11.0 (Not released yet)
+## In version 1.11.0
 
 ### Code API changes
 * [#4295](https://github.com/TouK/nussknacker/pull/4295) `DeploymentManager.getProcessState(ProcessName)`
