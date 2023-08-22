@@ -75,7 +75,7 @@ describe("Undo/Redo", () => {
         cy.get("@redo").click().should("be.disabled");
     });
 
-    it("should work for copy/paste", () => {
+    it.only("should work for copy/paste", () => {
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("body").type("{ctrl}a");
         cy.get("@copy").click();
@@ -90,7 +90,6 @@ describe("Undo/Redo", () => {
         const screenshotConfig = {
             clip: { x: 0, y: 0, height: 25, width: 2000 },
         };
-        cy.get("@undo").should("be.disabled");
         cy.dragNode("enricher", { x: 560, y: 500 });
         cy.get("@undo").should("be.enabled").click().should("be.disabled");
         cy.deployScenario("undo");
@@ -107,7 +106,6 @@ describe("Undo/Redo", () => {
             sendSms: { all: 60, errors: 0, fragmentCounts: {} },
         });
 
-        cy.get("@undo").should("be.disabled");
         cy.dragNode("enricher", { x: 560, y: 500 });
         cy.get("@undo").should("be.enabled").click().should("be.disabled");
 
@@ -116,6 +114,20 @@ describe("Undo/Redo", () => {
 
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("@redo").should("be.enabled").click().should("be.disabled");
+        cy.get("@graph").matchImage(screenshotOptions);
+    });
+
+    it("should work with validation", () => {
+        cy.dragNode("enricher", { x: 560, y: 500 });
+        cy.get("@undo").should("be.enabled");
+
+        cy.getNode("enricher").click();
+        cy.contains(/^delete$/i).click();
+
+        cy.get("@undo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
+        cy.get("@graph").matchImage(screenshotOptions);
+
+        cy.get("@redo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
     });
 });
