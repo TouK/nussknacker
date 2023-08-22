@@ -119,7 +119,8 @@ object RequestResponseInterpreter {
     }
   }
 
-  def testRunner[Effect[_]:InterpreterShape:CapabilityTransformer:EffectUnwrapper]: TestRunner = new InterpreterTestRunner[Effect, Context, AnyRef]
+  def testRunner[Effect[_]: Monad : InterpreterShape:CapabilityTransformer : EffectUnwrapper]: TestRunner =
+    new InterpreterTestRunner[Effect, Context, AnyRef]
 
 }
 

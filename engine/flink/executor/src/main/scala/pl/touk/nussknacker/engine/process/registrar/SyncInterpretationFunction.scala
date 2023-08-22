@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
+import cats.effect.IO
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.InterpretationResult
@@ -23,7 +24,8 @@ import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                     val node: SplittedNode[_<:NodeData],
-                                                    validationContext: ValidationContext, useIOMonad: Boolean)
+                                                    validationContext: ValidationContext,
+                                                    useIOMonad: Boolean)
   extends RichFlatMapFunction[Context, InterpretationResult] with ProcessPartFunction {
 
   import SynchronousExecutionContextAndIORuntime._
@@ -60,7 +62,7 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
 >>>>>>> 1be91a59b6 (Upgrade cats and remove using IORuntime.global)
 =======
       val resultOpt = interpreter
-        .interpret(compiledNode, metaData, input)
+        .interpret[IO](compiledNode, metaData, input)
         .unsafeRunTimed(processTimeout)
       resultOpt match {
         case Some(result) => result
@@ -68,8 +70,10 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
       }
 >>>>>>> c49ec58b1a (potential fix)
     } else {
-      implicit val futureShape: FutureShape = new FutureShape()
-      Await.result(interpreter.interpret[Future](compiledNode, metaData, input), processTimeout)
+      Await.result(
+        awaitable = interpreter.interpret[Future](compiledNode, metaData, input),
+        atMost = processTimeout
+      )
     }
   }
 }

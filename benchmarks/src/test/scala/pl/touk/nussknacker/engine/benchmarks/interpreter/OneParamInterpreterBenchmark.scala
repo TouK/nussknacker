@@ -35,21 +35,24 @@ class OneParamInterpreterBenchmark {
 
   private val service = new OneParamService(instantlyCompletedFuture)
 
-  private val interpreterFuture = new InterpreterSetup[String]
-    .sourceInterpretation[Future](process, Map("service" -> service), Nil)(new FutureShape()(SynchronousExecutionContextAndIORuntime.ctx))
+  private val interpreterFutureSync = {
+    implicit val ec: ExecutionContext = SynchronousExecutionContextAndIORuntime.ctx
+    new InterpreterSetup[String].sourceInterpretation[Future](process, Map("service" -> service), Nil)
+  }
 
-  private val interpreterIO = new InterpreterSetup[String]
-    .sourceInterpretation[IO](process, Map("service" -> service), Nil)
+  private val interpreterFutureAsync = {
+    implicit val ec: ExecutionContext = ExecutionContext.global
+    new InterpreterSetup[String].sourceInterpretation[Future](process, Map("service" -> service), Nil)
+  }
 
-  private val interpreterFutureAsync = new InterpreterSetup[String]
-    .sourceInterpretation[Future](process, Map("service" -> service), Nil)(new FutureShape()(ExecutionContext.global))
-
+  private val interpreterIO =
+    new InterpreterSetup[String].sourceInterpretation[IO](process, Map("service" -> service), Nil)
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkFutureSync(): AnyRef = {
-    Await.result(interpreterFuture(Context(""), SynchronousExecutionContextAndIORuntime.ctx), 1 second)
+    Await.result(interpreterFutureSync(Context(""), SynchronousExecutionContextAndIORuntime.ctx), 1 second)
   }
 
 

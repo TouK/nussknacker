@@ -11,6 +11,7 @@ import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.support.DefaultConversionService
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.Interpreter.IOShape
+import cats.effect.IO
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -90,7 +91,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
 
     val inputContext = Context("foo").withVariable(VariableConstants.InputVariableName, inputValue)
     implicit val runtime: IORuntime = cats.effect.unsafe.implicits.global
-    Validated.fromEither(compilerData.interpreter.interpret(compiledNode, parts.metaData, inputContext).unsafeRunSync().head.swap).toValidatedNel
+    Validated.fromEither(compilerData.interpreter.interpret[IO](compiledNode, parts.metaData, inputContext).unsafeRunSync().head.swap).toValidatedNel
   }
 
   object ConversionUtils extends HideToString {

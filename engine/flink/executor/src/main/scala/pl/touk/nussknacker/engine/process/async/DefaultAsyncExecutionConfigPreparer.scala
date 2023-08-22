@@ -50,10 +50,11 @@ object DefaultAsyncExecutionConfigPreparer extends LazyLogging {
 
 case class DefaultAsyncExecutionConfigPreparer(bufferSize: Int,
                                                workers: Int,
-                                               defaultUseAsyncInterpretation: Option[Boolean]) extends AsyncExecutionContextPreparer with LazyLogging {
+                                               defaultUseAsyncInterpretation: Option[Boolean])
+  extends AsyncExecutionContextPreparer with LazyLogging {
 
-  def prepareExecutionContext(processId: String, parallelism: Int) : ExecutionContext = {
-    logger.info(s"Creating asyncExecutor for $processId, parallelism: $parallelism, workers: $workers")
+  def prepareExecutionContext(processId: String) : ExecutionContext = {
+    logger.info(s"Creating asyncExecutor for $processId, workers: $workers")
     DefaultAsyncExecutionConfigPreparer.getExecutionContext(workers, processId)
   }
 

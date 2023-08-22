@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.{Id, ~>}
+import cats.{Id, Monad, ~>}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source}
@@ -29,7 +29,8 @@ trait TestRunner {
 }
 
 //TODO: integrate with Engine somehow?
-class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Input, Res <: AnyRef] extends TestRunner {
+class InterpreterTestRunner[F[_] : Monad : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Input, Res <: AnyRef]
+  extends TestRunner {
 
   def runTest[T](modelData: ModelData,
                  scenarioTestData: ScenarioTestData,
@@ -45,7 +46,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
     //FIXME: validation??
     val scenarioInterpreter = ScenarioInterpreterFactory.createInterpreter[F, Input, Res](process, modelData,
       additionalListeners = List(collectingListener), new TestServiceInvocationCollector(collectingListener.runId), componentUseCase
-    )(SynchronousExecutionContextAndIORuntime.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
+    )(implicitly[Monad[F]], SynchronousExecutionContextAndIORuntime.ctx, implicitly[InterpreterShape[F]], implicitly[CapabilityTransformer[F]]) match {
       case Valid(interpreter) => interpreter
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
     }

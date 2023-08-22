@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import akka.http.scaladsl.server.Route
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
+import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -58,8 +58,6 @@ object KafkaTransactionalScenarioInterpreter {
 
   private[kafka] implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
-  private[kafka] implicit def shape(implicit ec: ExecutionContext): InterpreterShape[Future] = new FutureShape()
-
   def testRunner(implicit ec: ExecutionContext): TestRunner = new InterpreterTestRunner[Future, Input, AnyRef]
 
   def apply(scenario: CanonicalProcess,
@@ -78,7 +76,10 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
                                                            jobData: JobData,
                                                            liteKafkaJobData: LiteKafkaJobData,
                                                            modelData: ModelData,
-                                                           engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends RunnableScenarioInterpreter {
+                                                           engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)
+                                                          (implicit ec: ExecutionContext)
+  extends RunnableScenarioInterpreter {
+
   override def status(): TaskStatus = taskRunner.status()
 
   import KafkaTransactionalScenarioInterpreter._

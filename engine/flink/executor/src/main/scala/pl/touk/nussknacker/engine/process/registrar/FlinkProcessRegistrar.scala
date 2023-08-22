@@ -256,7 +256,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, R
       val shouldUseAsyncInterpretation = AsyncInterpretationDeterminer(configParameters, asyncExecutionContextPreparer).determine(node, streamMetaData)
 
       val resultStream: SingleOutputStreamOperator[InterpretationResult] = if (shouldUseAsyncInterpretation) {
-        val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps(Some(part)), node, validationContext, useIOMonad)
+        val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps(Some(part)), node, validationContext, asyncExecutionContextPreparer, useIOMonad)
         ExplicitUidInOperatorsSupport.setUidIfNeedJava[InterpretationResult](
           ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
           AsyncDataStream.orderedWait(stream, asyncFunction, processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize))

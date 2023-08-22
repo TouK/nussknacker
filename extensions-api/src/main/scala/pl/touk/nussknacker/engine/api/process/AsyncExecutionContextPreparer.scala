@@ -8,7 +8,7 @@ trait AsyncExecutionContextPreparer {
 
   def defaultUseAsyncInterpretation: Option[Boolean]
 
-  def prepareExecutionContext(processId: String, parallelism: Int): ExecutionContext
+  def prepareExecutionContext(processId: String): ExecutionContext
 
   def close(): Unit
 

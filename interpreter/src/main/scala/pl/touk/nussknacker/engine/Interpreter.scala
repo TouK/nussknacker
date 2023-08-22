@@ -24,7 +24,7 @@ import scala.language.higherKinds
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
+private class InterpreterInternal[F[_] : Monad](listeners: Seq[ProcessListener],
                                         expressionEvaluator: ExpressionEvaluator,
                                         interpreterShape: InterpreterShape[F],
                                         componentUseCase: ComponentUseCase
@@ -37,7 +37,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
 
   type Result[T] = Either[T, NuExceptionInfo[_ <: Throwable]]
 
-  private implicit val monad: Monad[F] = interpreterShape.monad
+//  private implicit val monad: Monad[F] = interpreterShape.monad
 
   private val expressionName = "expression"
 
@@ -46,7 +46,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       interpretNode(node, ctx)
     } catch {
       case NonFatal(ex) =>
-        monad.pure(List(Right(handleError(node, ctx)(ex))))
+        Monad[F].pure(List(Right(handleError(node, ctx)(ex))))
     }
   }
 
@@ -94,7 +94,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         invokeWrappedInInterpreterShape(ref, ctx).flatMap {
           //for Processor the result is null/BoxedUnit/Void etc. so we ignore it
           case Left(ValueWithContext(_, newCtx)) => interpretNext(next, newCtx)
-          case Right(exInfo) => monad.pure(List(Right(exInfo)))
+          case Right(exInfo) => Monad[F].pure(List(Right(exInfo)))
         }
       case Processor(_, _, next, true) => interpretNext(next, ctx)
       case EndingProcessor(id, ref, false) =>
@@ -106,10 +106,11 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
           case Right(exInfo) => List(Right(exInfo))
         }
       case EndingProcessor(id, _, true) =>
-        monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
+        Monad[F].pure(List(Left(InterpretationResult(EndReference(id), ctx))))
       case FragmentOutput(id, _, true) =>
-        monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, Map.empty), ctx))))
+        Monad[F].pure(List(Left(InterpretationResult(FragmentEndReference(id, Map.empty), ctx))))
       case FragmentOutput(id, fieldsWithExpression, false) =>
+<<<<<<< HEAD
         fieldsWithExpression.toList
           .traverse(a => Either.catchNonFatal(a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value).toValidatedNel)
           .map(_.toMap)
@@ -124,10 +125,16 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
               monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, fields), newCtx))))
             }
           )
+=======
+        val fields = fieldsWithExpression.map(a => a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value)
+        val newCtx = ctx.withVariables(fields)
+        listeners.foreach(_.nodeEntered(node.id, newCtx, metaData))
+        Monad[F].pure(List(Left(InterpretationResult(FragmentEndReference(id, fields), newCtx))))
+>>>>>>> 2ccc1862ef (different solution)
       case Enricher(_, ref, outName, next) =>
         invokeWrappedInInterpreterShape(ref, ctx).flatMap {
           case Left(ValueWithContext(out, newCtx)) => interpretNext(next, newCtx.withVariable(outName, out))
-          case Right(exInfo) => monad.pure(List(Right(exInfo)))
+          case Right(exInfo) => Monad[F].pure(List(Right(exInfo)))
         }
       case Filter(_, expression, nextTrue, nextFalse, disabled) =>
         val valueWithModifiedContext = if (disabled) ValueWithContext(true, ctx) else evaluateExpression[Boolean](expression, ctx, expressionName)
@@ -159,17 +166,17 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
             interpretOptionalNext(node, defaultNext, accCtx)
         }
       case Sink(id, _, true) =>
-        monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
+        Monad[F].pure(List(Left(InterpretationResult(EndReference(id), ctx))))
       case Sink(id, ref, false) =>
         listeners.foreach(_.endEncountered(id, ref, ctx, metaData))
-        monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
+        Monad[F].pure(List(Left(InterpretationResult(EndReference(id), ctx))))
       case BranchEnd(e) =>
-        monad.pure(List(Left(InterpretationResult(e.joinReference, ctx))))
+        Monad[F].pure(List(Left(InterpretationResult(e.joinReference, ctx))))
       case CustomNode(_, _, next) =>
         interpretNext(next, ctx)
       case EndingCustomNode(id, ref) =>
         listeners.foreach(_.endEncountered(id, ref, ctx, metaData))
-        monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
+        Monad[F].pure(List(Left(InterpretationResult(EndReference(id), ctx))))
       case SplitNode(_, nexts) =>
         import cats.implicits._
         nexts.map(interpretNext(_, ctx)).sequence.map(_.flatten)
@@ -182,7 +189,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         interpretNext(next, ctx)
       case None =>
         listeners.foreach(_.deadEndEncountered(node.id, ctx, metaData))
-        monad.pure(List(Left(InterpretationResult(DeadEndReference(node.id), ctx))))
+        Monad[F].pure(List(Left(InterpretationResult(DeadEndReference(node.id), ctx))))
     }
   }
 
@@ -190,7 +197,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     case NextNode(node) => interpret(node, ctx)
     case pr@PartRef(ref) => {
       listeners.foreach(_.nodeEntered(pr.id, ctx, metaData))
-      monad.pure(List(Left(InterpretationResult(NextPartReference(ref), ctx))))
+      Monad[F].pure(List(Left(InterpretationResult(NextPartReference(ref), ctx))))
     }
   }
 
@@ -259,9 +266,12 @@ class Interpreter(listeners: Seq[ProcessListener],
   def interpret[F[_]](node: Node,
                       metaData: MetaData,
                       ctx: Context)
-                     (implicit shape: InterpreterShape[F],
+                     (implicit monad: Monad[F],
+                      shape: InterpreterShape[F],
                       executionContext: ExecutionContext): F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
-    new InterpreterInternal[F](listeners, expressionEvaluator, shape, componentUseCase)(metaData, executionContext).interpret(node, ctx)
+    implicit val metaDataImplicit: MetaData = metaData
+    new InterpreterInternal[F](listeners, expressionEvaluator, shape, componentUseCase)
+      .interpret(node, ctx)
   }
 
 }
@@ -284,16 +294,21 @@ object Interpreter {
   //Interpreter can be invoked with various effects, we require MonadError capabilities and ability to convert service invocation results
   trait InterpreterShape[F[_]] {
 
+<<<<<<< HEAD
     def monad: Monad[F]
 
     def fromFuture[T]: Future[T] => F[Either[T, Throwable]]
 
+=======
+    def fromFuture[T](implicit ec: ExecutionContext): Future[T] => F[Either[T, Throwable]]
+>>>>>>> 2ccc1862ef (different solution)
   }
 
   import InterpreterShape._
 
   implicit object IOShape extends InterpreterShape[IO] {
 
+<<<<<<< HEAD
     override def monad: Monad[IO] = Monad[IO]
 
 <<<<<<< HEAD
@@ -302,6 +317,8 @@ object Interpreter {
       f => IO.fromFuture(IO(transform(f)))(IO.contextShift(ctx))
     }
 =======
+=======
+>>>>>>> 2ccc1862ef (different solution)
     override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => IO[Either[T, Throwable]] =
 <<<<<<< HEAD
       f => IO.fromFuture(IO.pure(transform(f)))
@@ -311,9 +328,7 @@ object Interpreter {
 >>>>>>> c49ec58b1a (potential fix)
   }
 
-  class FutureShape(implicit ec: ExecutionContext) extends InterpreterShape[Future] {
-
-    override def monad: Monad[Future] = cats.instances.future.catsStdInstancesForFuture(ec)
+  implicit object FutureShape extends InterpreterShape[Future] {
 
 <<<<<<< HEAD
     override def fromFuture[T]: Future[T] => Future[Either[T, Throwable]] = {
