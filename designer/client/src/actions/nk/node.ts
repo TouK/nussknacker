@@ -5,9 +5,6 @@ import { EditNodeAction, RenameProcessAction } from "./editNode";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 
-//TODO: identify
-type Edges = $TodoType[];
-
 export type NodesWithPositions = { node: NodeType; position: Position }[];
 
 type DeleteNodesAction = {
@@ -32,7 +29,7 @@ type NodesDisonnectedAction = {
 type NodesWithEdgesAddedAction = {
     type: "NODES_WITH_EDGES_ADDED";
     nodesWithPositions: NodesWithPositions;
-    edges: Edges;
+    edges: Edge[];
     processDefinitionData: ProcessDefinitionData;
 };
 
@@ -49,20 +46,18 @@ type NodeAddedAction = {
 
 export function deleteNodes(ids: NodeId[]): ThunkAction {
     return (dispatch) => {
-        batchGroupBy.startOrContinue();
         dispatch({
             type: "DELETE_NODES",
-            ids: ids,
+            ids,
         });
     };
 }
 
 export function nodesConnected(fromNode: NodeType, toNode: NodeType, edgeType?: EdgeType): ThunkAction {
     return (dispatch, getState) => {
-        batchGroupBy.startOrContinue();
         dispatch({
             type: "NODES_CONNECTED",
-            processDefinitionData: getState().settings.processDefinitionData,
+            processDefinitionData: getProcessDefinitionData(getState()),
             fromNode,
             toNode,
             edgeType,
@@ -72,7 +67,6 @@ export function nodesConnected(fromNode: NodeType, toNode: NodeType, edgeType?: 
 
 export function nodesDisconnected(from: NodeId, to: NodeId): ThunkAction {
     return (dispatch) => {
-        batchGroupBy.startOrContinue();
         dispatch({
             type: "NODES_DISCONNECTED",
             from,
@@ -103,6 +97,8 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, { edg
             toNode: to,
             processDefinitionData,
         });
+        dispatch(layoutChanged());
+        batchGroupBy.end();
     };
 }
 
@@ -115,7 +111,7 @@ export function nodeAdded(node: NodeType, position: Position): ThunkAction {
     };
 }
 
-export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edges): ThunkAction {
+export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edge[]): ThunkAction {
     return (dispatch, getState) => {
         const processDefinitionData = getProcessDefinitionData(getState());
         batchGroupBy.startOrContinue();

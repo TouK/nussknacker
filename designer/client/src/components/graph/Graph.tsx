@@ -26,6 +26,7 @@ import { GraphProps } from "./GraphWrapped";
 import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import ProcessUtils from "../../common/ProcessUtils";
+import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 
 interface Props extends GraphProps {
     processCategory: string;
@@ -91,8 +92,10 @@ export class Graph extends React.Component<Props> {
                 .on(Events.CELL_MOVED, (cell: dia.CellView) => {
                     if (isModelElement(cell.model)) {
                         const linkBelowCell = this.getLinkBelowCell();
-                        this.changeLayoutIfNeeded(!!linkBelowCell);
+                        const group = batchGroupBy.startOrContinue();
+                        this.changeLayoutIfNeeded();
                         this.handleInjectBetweenNodes(cell.model, linkBelowCell);
+                        batchGroupBy.end(group);
                     }
                 })
                 .on(Events.LINK_CONNECT, ({ sourceView, targetView, model }) => {
@@ -436,7 +439,7 @@ export class Graph extends React.Component<Props> {
         }
     };
 
-    changeLayoutIfNeeded = (batched?: boolean): void => {
+    changeLayoutIfNeeded = (): void => {
         const { layout, layoutChanged, isFragment } = this.props;
 
         if (isFragment) {
@@ -454,7 +457,7 @@ export class Graph extends React.Component<Props> {
         const oldLayout = sortBy(layout, iteratee);
 
         if (!isEqual(oldLayout, newLayout)) {
-            layoutChanged(newLayout, !batched);
+            layoutChanged(newLayout);
         }
     };
 
