@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.TestProcess.{ExpressionInvocationResult, ExternalInvocationResult, NodeResult, ResultContext}
 import pl.touk.nussknacker.engine.lite.sample.SampleInputWithListAndMap
+
 import scala.jdk.CollectionConverters._
 
 class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
@@ -118,6 +119,22 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     results.nodeResults("fragmentEnd") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> "some-text-id", "out" -> "some-text-id"))))
     results.invocationResults("fragmentEnd") shouldBe List(ExpressionInvocationResult("fragment1", "out", "some-text-id"))
     results.exceptions shouldBe empty
+  }
+
+  test("should handle errors in fragment output") {
+    val fragment = ScenarioBuilder
+      .fragment("fragment1", "in" -> classOf[Int])
+      .fragmentOutput("fragmentEnd", "output", "out" -> "4 / #in")
+
+    val parameterExpressions: Map[String, Expression] = Map(
+      "in" -> Expression("spel", "0")
+    )
+    val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
+    val results = sample.test(fragment, scenarioTestData)
+
+    results.nodeResults("fragment1") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> 0))))
+    results.nodeResults("fragmentEnd") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> 0))))
+    results.exceptions.map(e => (e.context, e.nodeId, e.throwable.getMessage)) shouldBe List((ResultContext("fragment1",Map("in" -> 0)),Some("fragmentEnd"), "Expression [4 / #in] evaluation failed, message: / by zero"))
   }
 
 }
