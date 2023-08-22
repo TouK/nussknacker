@@ -27,8 +27,8 @@ import scala.reflect.ClassTag
 class InterpreterSetup[T: ClassTag] {
 
   def sourceInterpretation[F[_] : Monad : InterpreterShape](process: CanonicalProcess,
-                                                          services: Map[String, Service],
-                                                          listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
+                                                            services: Map[String, Service],
+                                                            listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
     val compiledProcess = compile(services, process, listeners)
     val interpreter = compiledProcess.interpreter
     val parts = failOnErrors(compiledProcess.compile())

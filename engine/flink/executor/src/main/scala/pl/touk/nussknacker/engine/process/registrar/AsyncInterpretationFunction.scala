@@ -67,7 +67,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
   private def invokeInterpreter(input: Context)
                                (callback: Either[Throwable, List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] => Unit): Unit = {
     implicit val executionContextImplicit: ExecutionContext = executionContext
-    implicit val ioRuntime: IORuntime = SynchronousExecutionContextAndIORuntime.ioRuntime
+    implicit val ioRuntime: IORuntime = SynchronousExecutionContextAndIORuntime.ioRuntimeFrom(executionContext)
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
       interpreter
