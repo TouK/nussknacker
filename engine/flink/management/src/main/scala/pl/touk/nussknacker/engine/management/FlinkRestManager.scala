@@ -162,9 +162,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     client.runProgram(jarFile, mainClass, args, savepointPath)
   }
 
-  override protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
+  override protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobsIds: List[ExternalDeploymentId]): Future[Unit] = {
     if (config.shouldCheckAvailableSlots) {
-      slotsChecker.checkRequiredSlotsExceedAvailableSlots(canonicalProcess, currentlyDeployedJobId)
+      slotsChecker.checkRequiredSlotsExceedAvailableSlots(canonicalProcess, currentlyDeployedJobsIds)
     } else
       Future.successful(())
   }
