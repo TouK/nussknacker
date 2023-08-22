@@ -18,8 +18,6 @@ import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
 
-import scala.annotation.nowarn
-
 class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
   with NuResourcesTest with PatientScalaFutures with EitherValuesDetailedMessage {
 

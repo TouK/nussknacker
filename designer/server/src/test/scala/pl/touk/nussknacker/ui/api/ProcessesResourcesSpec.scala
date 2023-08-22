@@ -35,7 +35,6 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Pro
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
-import scala.annotation.nowarn
 import scala.concurrent.Future
 import scala.language.higherKinds
 

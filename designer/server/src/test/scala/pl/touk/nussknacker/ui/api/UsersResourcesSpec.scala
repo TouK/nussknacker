@@ -10,8 +10,6 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.NuResourcesTest
 
-import scala.annotation.nowarn
-
 class UsersResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with NuResourcesTest with PatientScalaFutures {
 

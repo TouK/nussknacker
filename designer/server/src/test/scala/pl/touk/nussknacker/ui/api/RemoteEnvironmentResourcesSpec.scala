@@ -30,8 +30,6 @@ import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresent
 import scala.concurrent.{ExecutionContext, Future}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-import scala.annotation.nowarn
-
 class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with PatientScalaFutures with Matchers with FailFastCirceSupport
   with BeforeAndAfterEach with Inside with NuResourcesTest {
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)

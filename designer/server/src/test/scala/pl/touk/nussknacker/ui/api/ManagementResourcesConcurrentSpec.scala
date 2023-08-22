@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, SampleProcess}
 
-import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 @Slow

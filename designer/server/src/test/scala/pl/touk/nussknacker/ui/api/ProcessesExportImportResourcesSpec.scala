@@ -21,7 +21,6 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 
-import scala.annotation.nowarn
 import scala.language.higherKinds
 
 class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport

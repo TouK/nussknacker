@@ -26,8 +26,6 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
-import scala.annotation.nowarn
-
 class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 

@@ -301,6 +301,7 @@ val circeGenericExtrasV = "0.14.3"
 val jwtCirceV = "9.3.0"
 val jacksonV = "2.14.3"
 val catsV = "2.9.0"
+val catsEffectV = "2.5.5"
 val everitSchemaV = "1.14.2"
 val slf4jV = "1.7.36"
 val scalaLoggingV = "3.9.5"
@@ -709,7 +710,7 @@ lazy val interpreter = (project in file("interpreter")).
     name := "nussknacker-interpreter",
     libraryDependencies ++= {
       Seq(
-        "org.typelevel" %% "cats-effect" % "2.5.5",
+        "org.typelevel" %% "cats-effect" % catsEffectV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.avro" % "avro" % avroV % "test",
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
@@ -949,7 +950,7 @@ lazy val testUtils = (project in utils("test-utils")).
         "commons-io" % "commons-io" % flinkCommonsIOV,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "com.softwaremill.sttp.client3" %% "slf4j-backend" % sttpV,
-        "org.typelevel" %% "cats-effect" % "2.5.5",
+        "org.typelevel" %% "cats-effect" % catsEffectV,
         "io.circe" %% "circe-parser" % circeV,
       )
     }
