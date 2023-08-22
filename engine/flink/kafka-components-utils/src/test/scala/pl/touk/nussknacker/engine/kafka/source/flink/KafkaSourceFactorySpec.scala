@@ -154,13 +154,11 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
   test("should generate and parse data for kafka-json") {
     val topic = createTopic("kafka-json-test-data", 1)
 
-
-    kafkaClient.sendMessage(topic, Json.obj("key" -> Json.fromString("value1")).noSpaces)
-    kafkaClient.sendMessage(topic, Json.obj("key" -> Json.fromString("value2")).noSpaces)
+    kafkaClient.sendMessage[Json](topic, Json.obj("key" -> Json.fromString("value1")))
+    kafkaClient.sendMessage[Json](topic, Json.obj("key" -> Json.fromString("value2")))
 
     def generatedForSource[K, V](sourceFactory: KafkaSourceFactory[K, V]): List[V] = {
       val source = createSource(sourceFactory, topic)
-
       val testData = source.generateTestData(2)
 
       testData.testRecords.map(source.testRecordParser.parse).map(_.value())

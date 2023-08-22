@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
@@ -10,14 +9,12 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 
 import java.net.URI
-import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits._
 
-class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest {
+class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest  {
 
-  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
   override protected def classPath: List[String] = ClassPaths.scalaClasspath
 
@@ -68,12 +65,12 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
     try {
-      kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "1")).get(30, TimeUnit.SECONDS)
+      kafkaClient.sendMessage(inTopic, "1").futureValue
       messagesFromTopic(outTopic, 1).head shouldBe "1"
 
       deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
 
-      kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "2")).get(30, TimeUnit.SECONDS)
+      kafkaClient.sendMessage(inTopic, "2").futureValue
       messagesFromTopic(outTopic, 2).last shouldBe "2"
     } finally {
       cancelProcess(kafkaProcess.id)
@@ -148,7 +145,8 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
       deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
 
-      messagesFromTopic(outTopic, 2) shouldBe List("List(One element)", "List(One element, One element)")
+      val messages = messagesFromTopic(outTopic, 2)
+      messages shouldBe List("List(One element)", "List(One element, One element)")
     } finally {
       cancelProcess(processId)
     }
@@ -204,12 +202,12 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     definition.services should contain key "accountService"
   }
 
-  private def messagesFromTopic(outTopic: String, count: Int): List[String] = {
+  private def messagesFromTopic(outTopic: String, count: Int): List[String] =
     kafkaClient.createConsumer()
-      .consume(outTopic)
-      .map(_.message()).map(new String(_, StandardCharsets.UTF_8))
-      .take(count).toList
-  }
+      .consumeWithJson[String](outTopic)
+      .take(count)
+      .map(_.message())
+      .toList
 
   private def processVersion(processId: ProcessName): List[ProcessVersion] =
     deploymentManager.getProcessStates(processId).futureValue.value.flatMap(_.version)

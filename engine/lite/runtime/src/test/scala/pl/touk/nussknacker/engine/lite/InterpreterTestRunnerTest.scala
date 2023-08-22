@@ -102,4 +102,22 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
     results.externalInvocationResults("end") shouldBe List(ExternalInvocationResult("some-ctx-id", "end", 120))
   }
 
+  test("should handle fragment test parameters in test") {
+    val fragment = ScenarioBuilder
+      .fragment("fragment1", "in" -> classOf[String])
+      .filter("filter", "#in != 'stop'")
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
+
+    val parameterExpressions: Map[String, Expression] = Map(
+      "in" -> Expression("spel", "'some-text-id'")
+    )
+    val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
+    val results = sample.test(fragment, scenarioTestData)
+
+    results.nodeResults("fragment1") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> "some-text-id"))))
+    results.nodeResults("fragmentEnd") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> "some-text-id", "out" -> "some-text-id"))))
+    results.invocationResults("fragmentEnd") shouldBe List(ExpressionInvocationResult("fragment1", "out", "some-text-id"))
+    results.exceptions shouldBe empty
+  }
+
 }

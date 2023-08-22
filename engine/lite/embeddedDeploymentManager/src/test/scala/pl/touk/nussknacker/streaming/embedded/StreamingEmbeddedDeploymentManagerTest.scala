@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.streaming.embedded
 
+import io.circe.Json
 import io.circe.Json.{fromInt, fromString, obj}
 import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -11,7 +12,6 @@ import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.test.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
@@ -24,6 +24,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
 
   protected implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
 
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import KafkaUniversalComponentTransformer._
 
   test("Deploys scenario and cancels") {
@@ -46,7 +47,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
 
     val input = obj("productId" -> fromInt(10))
     kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
-    kafkaClient.createConsumer().consumeWithJson(outputTopic).head shouldBe input
+    kafkaClient.createConsumer().consumeWithJson[Json](outputTopic).take(1).head.message() shouldBe input
 
     wrapInFailingLoader {
       manager.cancel(name, User("a", "b")).futureValue
@@ -73,10 +74,10 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
 
     val input = obj("productId" -> fromInt(10))
     kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
-    kafkaClient.createConsumer().consumeWithJson(outputTopic).head shouldBe input
+
+    kafkaClient.createConsumer().consumeWithJson[Json](outputTopic).take(1).head.message() shouldBe input
 
     manager.cancel(name, User("a", "b")).futureValue
-
     manager.getProcessStates(name).futureValue.value shouldBe List.empty
   }
 
@@ -142,13 +143,11 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
     def prefixMessage(prefix: String, message: String) = obj("message" -> fromString(message), "prefix" -> fromString(prefix))
 
-
     fixture.deployScenario(scenarioForOutput("start"))
-
 
     kafkaClient.sendMessage(inputTopic, message("1")).futureValue
 
-    val consumer = kafkaClient.createConsumer().consumeWithJson(outputTopic)
+    val consumer = kafkaClient.createConsumer().consumeWithJson[Json](outputTopic).map(_.message())
     consumer.head shouldBe prefixMessage("start", "1")
 
     fixture.deployScenario(scenarioForOutput("next"))

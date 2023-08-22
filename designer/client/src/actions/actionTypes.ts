@@ -23,7 +23,6 @@ export type ActionTypes =
     | "DELETE_SELECTION"
     | "EXPAND_SELECTION"
     | "RESET_SELECTION"
-    | "CLOSE_MODALS"
     | "EDIT_NODE"
     | "PROCESS_RENAME"
     | "SHOW_METRICS"

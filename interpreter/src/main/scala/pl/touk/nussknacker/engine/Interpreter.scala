@@ -9,17 +9,20 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.compile.ExpressionCompiler
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.compiledgraph.node._
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
                                         expressionEvaluator: ExpressionEvaluator,
@@ -55,7 +58,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     node match {
       // We do not invoke listener 'nodeEntered' here for nodes which are wrapped in PartRef by ProcessSplitter.
       // These are handled in interpretNext method
-      case CustomNode(_, _, _) | EndingCustomNode(_, _) | Sink(_, _, _) =>
+      case CustomNode(_, _, _) | EndingCustomNode(_, _) | Sink(_, _, _) | FragmentOutput(_, _, _) =>
       case _ => listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
     }
     node match {
@@ -100,6 +103,13 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         }
       case EndingProcessor(id, _, true) =>
         monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
+      case FragmentOutput(id, _, true) =>
+        monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, Map.empty), ctx))))
+      case FragmentOutput(id, fieldsWithExpression, false) =>
+        val fields = fieldsWithExpression.map(a => a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value)
+        val newCtx = ctx.withVariables(fields)
+        listeners.foreach(_.nodeEntered(node.id, newCtx, metaData))
+        monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, fields), newCtx))))
       case Enricher(_, ref, outName, next) =>
         invoke(ref, ctx).flatMap {
           case Left(ValueWithContext(out, newCtx)) => interpretNext(next, newCtx.withVariable(outName, out))
@@ -243,6 +253,7 @@ object Interpreter {
     def fromFuture[T](implicit ec: ExecutionContext): Future[T] => F[Either[T, Throwable]]
 
   }
+
   import InterpreterShape._
 
   implicit object IOShape extends InterpreterShape[IO] {

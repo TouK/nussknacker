@@ -46,40 +46,41 @@ object FlinkStreamingDeploymentManagerProvider {
 
 }
 
+//Properties from this class should be public because implementing projects should be able to reuse them
 object FlinkStreamingPropertiesConfig {
 
-  private val parallelismConfig: (String, AdditionalPropertyConfig) = StreamMetaData.parallelismName ->
+  val parallelismConfig: (String, AdditionalPropertyConfig) = StreamMetaData.parallelismName ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),
       validators = Some(List(LiteralIntegerValidator, MinimalNumberValidator(1))),
       label = Some("Parallelism"))
 
-  private val spillStatePossibleValues = List(
+  val spillStatePossibleValues = List(
     FixedExpressionValue("", "Server default"),
     FixedExpressionValue("false", "False"),
     FixedExpressionValue("true", "True"))
 
-  private val asyncPossibleValues = List(
+  val asyncPossibleValues = List(
     FixedExpressionValue("", "Server default"),
     FixedExpressionValue("false", "Synchronous"),
     FixedExpressionValue("true", "Asynchronous"))
 
-  private val spillStateConfig: (String, AdditionalPropertyConfig) = StreamMetaData.spillStateToDiskName ->
+  val spillStateConfig: (String, AdditionalPropertyConfig) = StreamMetaData.spillStateToDiskName ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(FixedValuesParameterEditor(spillStatePossibleValues)),
       validators = Some(List(FixedValuesValidator(spillStatePossibleValues))),
       label = Some("Spill state to disk"))
 
-  private val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = StreamMetaData.useAsyncInterpretationName ->
+  val asyncInterpretationConfig: (String, AdditionalPropertyConfig) = StreamMetaData.useAsyncInterpretationName ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(FixedValuesParameterEditor(asyncPossibleValues)),
       validators = Some(List(FixedValuesValidator(asyncPossibleValues))),
       label = Some("IO mode"))
 
-  private val checkpointIntervalConfig: (String, AdditionalPropertyConfig) = StreamMetaData.checkpointIntervalName ->
+  val checkpointIntervalConfig: (String, AdditionalPropertyConfig) = StreamMetaData.checkpointIntervalName ->
     AdditionalPropertyConfig(
       defaultValue = None,
       editor = Some(StringParameterEditor),

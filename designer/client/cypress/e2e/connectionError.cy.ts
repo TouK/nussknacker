@@ -71,8 +71,49 @@ describe("Connection error", () => {
             cy.contains(/Backend connection issue/).should("not.exist");
         };
 
+        const verifyNoBackendAccessAndRequestCanceling = () => {
+            const visibleStatusToastMessageBeforeConnectionError = () => {
+                cy.intercept("/api/processes/*/status", { statusCode: 502 });
+
+                // Check if the status toast message is not visible after the backend connection issue. We need to speed up interval to not wait 12s for a request
+                cy.contains(/Cannot fetch status/).should("be.visible");
+
+                cy.intercept("/api/processes/*/status", (req) => {
+                    req.continue();
+                });
+            };
+            const notVisibleStatusToastMessageWhenConnectionError = () => {
+                cy.contains(/Cannot fetch status/).should("not.exist");
+            };
+
+            cy.clock();
+            cy.log("verify no backend access when scenario edit modal opens");
+            cy.visitNewProcess(NAME, "filter");
+
+            cy.contains("svg", /filter/i).dblclick();
+
+            cy.tick(16000);
+
+            visibleStatusToastMessageBeforeConnectionError();
+
+            cy.tick(1000);
+
+            cy.intercept("/api/notifications", { statusCode: 502 });
+
+            cy.tick(16000);
+
+            notVisibleStatusToastMessageWhenConnectionError();
+
+            cy.intercept("/api/notifications", (req) => {
+                req.continue();
+            });
+
+            cy.clock().invoke("restore");
+        };
+
         verifyNoNetworkAccess();
         verifyNoBackendAccess();
         verifyNoBackendAccessWhenScenarioEditNodeModalOpens();
+        verifyNoBackendAccessAndRequestCanceling();
     });
 });

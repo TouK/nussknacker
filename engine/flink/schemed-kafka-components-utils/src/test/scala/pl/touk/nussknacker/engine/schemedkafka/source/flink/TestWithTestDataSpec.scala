@@ -79,14 +79,32 @@ class TestWithTestDataSpec extends AnyFunSuite with Matchers with LazyLogging {
       .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#input.city + '-' + #input.street")
 
     val parameterExpressions: Map[String, Expression] = Map(
-      "city" -> Expression("spel", "'Lublin'"),
-      "street" -> Expression("spel", "'Lipowa'"),
+      "city" -> Expression.spel("'Lublin'"),
+      "street" -> Expression.spel("'Lipowa'"),
     )
     val scenarioTestData = ScenarioTestData("start", parameterExpressions)
 
     val results = run(process, scenarioTestData)
     results.invocationResults("end").head.value shouldBe "Lublin-Lipowa"
 
+  }
+
+  test("should handle fragment test parameters in test") {
+    val fragment = ScenarioBuilder
+      .fragment("fragment1", "in" -> classOf[String])
+      .filter("filter", "#in != 'stop'")
+      .fragmentOutput("fragmentEnd", "output", "out" -> "#in")
+
+    val parameterExpressions: Map[String, Expression] = Map(
+      "in" -> Expression.spel("'some-text-id'")
+    )
+    val scenarioTestData = ScenarioTestData("fragment1", parameterExpressions)
+    val results = run(fragment, scenarioTestData)
+
+    results.nodeResults("fragment1") shouldBe List(NodeResult(ResultContext("fragment1-fragment1-0-0", Map("in" -> "some-text-id"))))
+    results.nodeResults("fragmentEnd") shouldBe List(NodeResult(ResultContext("fragment1-fragment1-0-0", Map("in" -> "some-text-id", "out" -> "some-text-id"))))
+    results.invocationResults("fragmentEnd") shouldBe List(ExpressionInvocationResult("fragment1-fragment1-0-0", "out", "some-text-id"))
+    results.exceptions shouldBe empty
   }
 
   private def registerSchema(topic: String) = {

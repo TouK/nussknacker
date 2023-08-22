@@ -18,12 +18,11 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{process, spel}
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
-import java.nio.charset.StandardCharsets
-
 class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with KafkaSpec with Matchers {
+
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
 
-  import KafkaTestUtils._
+  import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
   import spel.Implicits._
   import KafkaFactory._
 
@@ -47,12 +46,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
       .emptySink("output", "kafka-string", TopicParamName -> s"'$outputTopic'", SinkValueParamName -> "#input")
 
     run(process) {
-      val consumer = kafkaClient.createConsumer()
-      val processed = consumer
-        .consume(s"ns_${outputTopic}")
-        .take(1)
-        .map(msg => new String(msg.message(), StandardCharsets.UTF_8))
-        .toList
+      val processed = kafkaClient.createConsumer().consumeWithJson[String](s"ns_$outputTopic").take(1).map(_.message()).toList
       processed shouldEqual List(message)
     }
   }

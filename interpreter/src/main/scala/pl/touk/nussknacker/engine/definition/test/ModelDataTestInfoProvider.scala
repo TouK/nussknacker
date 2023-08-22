@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.node.{Source, asSource}
+import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, Source, SourceNodeData, asFragmentInputDefinition, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.ListUtil
@@ -22,7 +22,9 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     case spel: SpelExpressionParser => spel.typingDictLabels
   }
 
-  private lazy val nodeCompiler = new NodeCompiler(modelData.modelDefinition, FragmentComponentDefinitionExtractor(modelData), expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, ComponentUseCase.TestDataGeneration)
+  private lazy val fragmentComponentDefinitionExtractor = FragmentComponentDefinitionExtractor(modelData)
+
+  private lazy val nodeCompiler = new NodeCompiler(modelData.modelDefinition, fragmentComponentDefinitionExtractor, expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, ComponentUseCase.TestDataGeneration)
 
   override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = {
     collectAllSources(scenario).map(getTestingCapabilities(_, scenario.metaData)) match {
@@ -35,9 +37,9 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     }
   }
 
-  private def getTestingCapabilities(source: Source, metaData: MetaData): TestingCapabilities = modelData.withThisAsContextClassLoader {
+  private def getTestingCapabilities(source: SourceNodeData, metaData: MetaData): TestingCapabilities = modelData.withThisAsContextClassLoader {
     val testingCapabilities = for {
-      sourceObj <- prepareSourceObj(source)(metaData)
+      sourceObj <- prepareSourceObj(source)(metaData, NodeId(source.id))
       canTest = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
       canTestWithForm = sourceObj.isInstanceOf[TestWithParametersSupport[_]]
@@ -50,8 +52,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       .map(source => source.id -> getTestParameters(source, scenario.metaData)).toMap
   }
 
-  private def getTestParameters(source: Source, metaData: MetaData): List[Parameter] = modelData.withThisAsContextClassLoader {
-    prepareSourceObj(source)(metaData) match {
+  private def getTestParameters(source: SourceNodeData, metaData: MetaData): List[Parameter] = modelData.withThisAsContextClassLoader {
+    prepareSourceObj(source)(metaData, NodeId(source.id)) match {
       case Some(s: TestWithParametersSupport[_]) => s.testParametersDefinition
       case _ => throw new UnsupportedOperationException(s"Requested test parameters from source (${source.id}) that does not implement TestWithParametersSupport.")
     }
@@ -73,13 +75,12 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   private def prepareTestDataGenerators(scenario: CanonicalProcess): List[(NodeId, TestDataGenerator)] = {
     for {
       source <- collectAllSources(scenario)
-      sourceObj <- prepareSourceObj(source)(scenario.metaData)
+      sourceObj <- prepareSourceObj(source)(scenario.metaData, NodeId(source.id))
       testDataGenerator <- sourceObj.cast[TestDataGenerator]
     } yield (NodeId(source.id), testDataGenerator)
   }
 
-  private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source] = {
-    implicit val nodeId: NodeId = NodeId(source.id)
+  private def prepareSourceObj(source: SourceNodeData)(implicit metaData: MetaData, nodeId: NodeId): Option[process.Source] = {
     nodeCompiler.compileSource(source).compiledObject.toOption
   }
 
@@ -100,8 +101,8 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     }.sequence.map(scenarioTestRecords => ScenarioTestData(scenarioTestRecords))
   }
 
-  private def collectAllSources(scenario: CanonicalProcess): List[Source] = {
-    scenario.collectAllNodes.flatMap(asSource)
+  private def collectAllSources(scenario: CanonicalProcess): List[SourceNodeData] = {
+    scenario.collectAllNodes.flatMap(asSource) ++ scenario.collectAllNodes.flatMap(asFragmentInputDefinition)
   }
 
   private def formatError(error: String, recordIdx: Int): String = {

@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import io.circe.{Decoder, Encoder}
+import io.circe.Decoder.Result
+import io.circe.{Decoder, Encoder, HCursor}
 import io.circe.generic.JsonCodec
+import io.circe.generic.semiauto.deriveEncoder
 import pl.touk.nussknacker.engine.api.deployment
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionState.ProcessActionState
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
@@ -9,8 +11,9 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 
 import java.time.Instant
 import java.util.UUID
+import scala.util.Random
 
-@JsonCodec case class ProcessAction(id: ProcessActionId,
+case class ProcessAction(id: ProcessActionId,
                                     processId: ProcessId,
                                     // We use process action only for finished/execution finished actions so processVersionId is always defined
                                     processVersionId: VersionId,
@@ -24,6 +27,52 @@ import java.util.UUID
                                     commentId: Option[Long],
                                     comment: Option[String],
                                     buildInfo: Map[String, String])
+
+//TODO  remove it in NU 1.12 and restore @JsonCodec
+object ProcessAction {
+  //custom decoder for compatibility reasons
+  implicit val decodeProcessAction: Decoder[ProcessAction] = new Decoder[ProcessAction] {
+    override def apply(c: HCursor): Result[ProcessAction] =
+      for {
+        id               <- c.downField("id").as[ProcessActionId] match {
+                              //dummy UUID for backward compatibility
+                              case Left(_) => Right(ProcessActionId(new UUID(0, 0)))
+                              case Right(id) => Right(id)
+                            }
+        processId        <- c.downField("processId").as[ProcessId] match {
+                              //dummy value for backeard compatibility
+                              case Left(_) => Right(ProcessId(0L))
+                              case Right(processId) => Right(processId)
+                            }
+        processVersionId <- c.downField("processVersionId").as[VersionId]
+        user             <- c.downField("user").as[String]
+        createdAt        <- c.downField("createdAt").as[Instant] match {
+                              //dummy value for backward compatibility
+                              case Left(_) => Right(Instant.now())
+                              case Right(createdAt) => Right(createdAt)
+                            }
+        performedAt      <- c.downField("performedAt").as[Instant]
+        actionType       <- c.downField("actionType").as[ProcessActionType] match {
+                              case Left(_) => c.downField("action").as[ProcessActionType]
+                              case Right(actionType) => Right(actionType)
+                            }
+        state            <- c.downField("state").as[ProcessActionState] match {
+                              //dummy value for backward compatibility
+                              case Left(_) => Right(ProcessActionState.InProgress)
+                              case Right(state) => Right(state)
+                            }
+        failureMessage   <- c.downField("failureMessage").as[Option[String]] match {
+                              case Left(_) => Right(None)
+                              case Right(failureMessage) => Right(failureMessage)
+                            }
+        commentId        <- c.downField("commentId").as[Option[Long]]
+        comment          <- c.downField("comment").as[Option[String]]
+        buildInfo        <- c.downField("buildInfo").as[Map[String, String]]
+      } yield ProcessAction(id, processId, processVersionId, user, createdAt, performedAt, actionType, state, failureMessage, commentId, comment, buildInfo)
+  }
+
+  implicit val encodeProcessAction: Encoder[ProcessAction] = deriveEncoder[ProcessAction]
+}
 
 final case class ProcessActionId(value: UUID) {
   override def toString: String = value.toString

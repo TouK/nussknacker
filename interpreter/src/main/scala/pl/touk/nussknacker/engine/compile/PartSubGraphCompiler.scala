@@ -115,20 +115,17 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
       //probably this shouldn't occur - otherwise we'd have empty fragment?
       case FragmentInput(id, _, _, _, _) => toCompilationResult(Invalid(NonEmptyList.of(UnresolvedFragment(id))), Map.empty, None)
 
-      case FragmentOutputDefinition(id, outputName, List(), _) =>
+      case FragmentOutputDefinition(id, _, List(), _) =>
         //TODO: should we validate it's process?
         //TODO: does it make sense to validate FragmentOutput?
-        toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, isDisabled = false)), Map.empty, None)
-      case FragmentOutputDefinition(id, outputName, fields, _) =>
-        val NodeCompilationResult(typingInfo, parameters, ctxV, compiledFields, _) =
-          nodeCompiler.compileFields(fields, ctx, outputVar = None)
-        CompilationResult.map2(
-          fa = CompilationResult(ctxV),
-          fb = toCompilationResult(compiledFields, typingInfo, parameters)
-        ) { (_, _) =>
-          compiledgraph.node.Sink(id, outputName, isDisabled = false)
-        }
-
+        toCompilationResult(Valid(compiledgraph.node.FragmentOutput(id, Map.empty, isDisabled = false)), Map.empty, None)
+      case FragmentOutputDefinition(id, _, fields, _) =>
+        val fieldTypedExpressions = nodeCompiler.fieldToTypedExpression(fields, ctx)
+        toCompilationResult(
+          fieldTypedExpressions.map(typedExpressions => compiledgraph.node.FragmentOutput(id, typedExpressions, isDisabled = false)),
+          expressionsTypingInfo = Map.empty,
+          parameters = None
+        )
       //TODO JOIN: a lot of additional validations needed here - e.g. that join with that name exists, that it
       //accepts this join, maybe we should also validate the graph is connected?
       case BranchEndData(definition) => toCompilationResult(Valid(compiledgraph.node.BranchEnd(definition)), Map.empty, None)

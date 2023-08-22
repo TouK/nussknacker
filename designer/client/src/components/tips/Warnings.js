@@ -15,16 +15,16 @@ export default class Warnings extends React.Component {
 
     render() {
         const { warnings, showDetails, currentProcess } = this.props;
-        const groupedByMessage = groupBy(warnings, (warning) => warning.error.message);
+        const groupedByType = groupBy(warnings, (warning) => warning.error.typ);
         const separator = ", ";
 
         return (
             <div key={uuid4()}>
                 {warnings.length > 0 && <TipsWarning className={"icon"} />}
                 <div>
-                    {Object.entries(groupedByMessage).map(([message, warnings]) => (
+                    {Object.entries(groupedByType).map(([warningType, warnings]) => (
                         <div key={uuid4()} className={"warning-tips"} title={warnings.description}>
-                            <span>{headerMessageByWarningMessage.get(message)}</span>
+                            <span>{headerMessageByWarningType.get(warningType)}</span>
                             <div className={"warning-links"}>
                                 {warnings.map((warning, index) => (
                                     <Link
@@ -46,4 +46,4 @@ export default class Warnings extends React.Component {
     }
 }
 
-const headerMessageByWarningMessage = new Map([["Node is disabled", "Node disabled: "]]);
+const headerMessageByWarningType = new Map([["DisabledNode", "Nodes disabled: "]]);

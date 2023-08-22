@@ -14,7 +14,7 @@ import { IdField } from "./IdField";
 
 const DEFAULT_EXPRESSION_ID = "$expression";
 
-function getTypingResult(expressionType: TypedObjectTypingResult, nodeTypingInfo: TypingInfo): TypedObjectTypingResult | TypingResult {
+function getTypingResult(expressionType: TypingResult, nodeTypingInfo: TypingInfo): TypedObjectTypingResult | TypingResult {
     return expressionType || nodeTypingInfo?.[DEFAULT_EXPRESSION_ID];
 }
 

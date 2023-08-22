@@ -13,7 +13,9 @@ trait AuthenticationConfiguration {
 
   val userConfig: Config = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader)
 
-  lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig)
+  lazy val users: List[ConfigUser] = AuthenticationConfiguration.getUsers(userConfig).getOrElse(
+    throw new IllegalArgumentException(s"Missing field ${AuthenticationConfiguration.usersConfigurationPath} at ${userConfig.getConfig(AuthenticationConfiguration.usersConfigPath)} users config file.")
+  )
 }
 
 object AuthenticationConfiguration {
@@ -27,8 +29,7 @@ object AuthenticationConfiguration {
   val usersConfigurationPath = "users"
   val rulesConfigurationPath = "rules"
 
-  def getUsers(config: Config): List[ConfigUser] = config.as[List[ConfigUser]](usersConfigurationPath)
-
+  def getUsers(config: Config): Option[List[ConfigUser]] = config.as[Option[List[ConfigUser]]](usersConfigurationPath)
   def getRules(usersFile: URI): List[ConfigRule] = ConfigFactoryExt.parseUri(usersFile, getClass.getClassLoader).as[List[ConfigRule]](rulesConfigurationPath)
   def getRules(config: Config): List[ConfigRule] = getRules(config.as[URI](usersConfigPath))
 

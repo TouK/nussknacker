@@ -17,10 +17,11 @@ object CirceUtil {
     .withDiscriminator("type")
 
 
-  def decodeJson[T: Decoder](json: String): Either[circe.Error, T]
-  = io.circe.parser.parse(json).flatMap(Decoder[T].decodeJson)
+  def decodeJson[T: Decoder](json: String): Either[circe.Error, T] =
+    io.circe.parser.parse(json).flatMap(Decoder[T].decodeJson)
 
-  def decodeJson[T: Decoder](json: Array[Byte]): Either[circe.Error, T] = decodeJson(new String(json, StandardCharsets.UTF_8))
+  def decodeJson[T: Decoder](json: Array[Byte]): Either[circe.Error, T] =
+    decodeJson(new String(json, StandardCharsets.UTF_8))
 
   def decodeJsonUnsafe[T: Decoder](json: String): T = unsafe(decodeJson(json))
 
