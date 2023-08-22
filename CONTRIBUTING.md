@@ -130,7 +130,7 @@ Building:
 - build fronted using [Building frontend instruction](#building-frontend) below
 - run `./buildServer.sh` in `designer`
 
-Run `./runServer.sh` in `designer`Documentation
+Run `./runServer.sh` in `designer`
 
 #### Running using integration environment
 
