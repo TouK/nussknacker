@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
@@ -17,9 +18,11 @@ trait NuItTest
 
   val nuDesignerHttpAddress = s"http://localhost:$port"
 
+  def nuTestConfig: Config = TestsConfig
+
   private val (_, releaseAppResources) = {
     new NussknackerAppFactory()
-      .createApp(TestsConfig.withValue("http.port", fromAnyRef(port)))
+      .createApp(nuTestConfig.withValue("http.port", fromAnyRef(port)))
       .allocated
       .unsafeRunSync()
   }

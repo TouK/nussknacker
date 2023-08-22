@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.integration
 
+import com.typesafe.config.Config
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -10,6 +11,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
 import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{MediaType, StatusCode}
@@ -31,6 +33,8 @@ class DictsFlowTest
   private val EndNodeId = "end"
   private val Key = "foo"
   private val Label = "Foo"
+
+  override def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
 
   // TODO: fixme
   override def afterAll(): Unit = {
