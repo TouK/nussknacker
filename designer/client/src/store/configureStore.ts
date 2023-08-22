@@ -12,7 +12,7 @@ import { nodeValidationMiddleware } from "./nodeValidationMiddleware";
 export default function configureStore() {
     const store = createStore(
         reducer,
-        composeWithDevTools(
+        composeWithDevTools({ actionsBlacklist: ["UPDATE_BACKEND_NOTIFICATIONS", "RNS_SHOW_NOTIFICATION", "RNS_HIDE_NOTIFICATION"] })(
             applyMiddleware(
                 thunk,
                 createStateSyncMiddleware({

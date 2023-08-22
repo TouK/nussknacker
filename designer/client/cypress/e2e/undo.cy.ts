@@ -12,7 +12,7 @@ describe("Undo/Redo", () => {
     });
 
     after(() => {
-        cy.deleteAllTestProcesses({ filter: seed, force: true });
+        // cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
     beforeEach(() => {
@@ -52,13 +52,15 @@ describe("Undo/Redo", () => {
 
     it("should work for drop on edge", () => {
         cy.get("@graph").matchImage(screenshotOptions);
+        cy.getNode("boundedSource-enricher-").find("[event=remove]").eq(0).click();
+        cy.getNode("enricher-dynamicService-").find("[event=remove]").eq(0).click();
         cy.get("[data-testid='component:customFilter']")
             .should("be.visible")
             .drag("#nk-graph-main", { x: 580, y: 450, position: "right", force: true });
         cy.get("@graph").matchImage(screenshotOptions);
-        cy.get("@undo").should("be.enabled").click().should("be.disabled");
+        cy.get("@undo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
-        cy.get("@redo").should("be.enabled").click().should("be.disabled");
+        cy.get("@redo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
     });
 
