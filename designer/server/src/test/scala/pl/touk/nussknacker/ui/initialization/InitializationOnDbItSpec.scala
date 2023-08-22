@@ -22,11 +22,10 @@ abstract class InitializationOnDbItSpec
     with Matchers
     with PatientScalaFutures
     with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with DbTesting {
+    with BeforeAndAfterAll {
+  this: DbTesting with WithTestDb =>
 
   import Initialization.nussknackerUser
-
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val processId = "proc1"

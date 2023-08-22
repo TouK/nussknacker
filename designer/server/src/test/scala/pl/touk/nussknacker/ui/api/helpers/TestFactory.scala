@@ -2,14 +2,14 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
@@ -20,24 +20,32 @@ import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
+import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
+import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: merge with ProcessTestData?
 object TestFactory extends TestPermissions {
 
-  private val dummyDbConfig: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
+  val (dummyDbRef: DbRef, _) = {
+    val dbConfig = ConfigFactory.parseMap(Map(
+      "db" -> Map(
+        "user" -> "SA",
+        "password" -> "",
+        "url" -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
+        "driver" -> "org.hsqldb.jdbc.JDBCDriver"
+      ).asJava).asJava)
+    DbRef.create(dbConfig).allocated.unsafeRunSync()
+  }
 
-  private val dummyDbRef: DbRef = DbRef.create(dummyDbConfig)
-
-  //FIIXME: remove testCategory dummy implementation
+  //FIXME: remove testCategory dummy implementation
   val testCategory: CategorizedPermission = Map(
     TestCategories.TestCat -> Permission.ALL_PERMISSIONS,
     TestCategories.TestCat2 -> Permission.ALL_PERMISSIONS

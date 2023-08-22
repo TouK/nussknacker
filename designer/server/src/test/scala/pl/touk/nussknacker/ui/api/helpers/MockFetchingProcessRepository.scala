@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import cats.instances.future._
-import com.typesafe.config.{Config, ConfigFactory}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionType}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.processdetails
@@ -15,7 +14,6 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.{BasicRepository, FetchingProcessRepository, ScenarioComponentsUsagesHelper}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import slick.jdbc.{HsqldbProfile, JdbcBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
@@ -24,16 +22,19 @@ object MockFetchingProcessRepository {
 
   def withProcessesDetails(processes: List[ProcessDetails])(implicit ec: ExecutionContext): MockFetchingProcessRepository = {
     val canonicals = processes.map { p => p.mapProcess(ProcessConverter.fromDisplayable) }
-    new MockFetchingProcessRepository(canonicals)
-  }
 
+    new MockFetchingProcessRepository(
+      TestFactory.dummyDbRef, // It's only for BasicRepository implementation, we don't use it
+      canonicals
+    )
+  }
 }
 
-class MockFetchingProcessRepository(processes: List[BaseProcessDetails[CanonicalProcess]])(implicit ec: ExecutionContext) extends FetchingProcessRepository[Future] with BasicRepository {
-
-  //It's only for BasicRepository implementation, we don't use it
-  private val config: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
-  val dbRef: DbRef = DbRef(JdbcBackend.Database.forConfig("db", config), HsqldbProfile)
+class MockFetchingProcessRepository private(override val dbRef: DbRef,
+                                            processes: List[BaseProcessDetails[CanonicalProcess]])
+                                           (implicit ec: ExecutionContext)
+  extends FetchingProcessRepository[Future]
+    with BasicRepository {
 
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](q: FetchProcessesDetailsQuery)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]] =
     getUserProcesses[PS].map(_.filter(
