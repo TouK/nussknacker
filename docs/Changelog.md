@@ -4,7 +4,7 @@
 -------------------------
 * [#4540](https://github.com/TouK/nussknacker/pull/4540) Improvement: Allow selecting a claim from OIDC JWT to represent the username
 * [#4555](https://github.com/TouK/nussknacker/pull/4555) Remove: Back compatibility for encoding/decoding UIParameter
-* [#4561](https://github.com/TouK/nussknacker/pull/4561) Improvement: Users are not requrired at OAuth2 config file
+* [#4561](https://github.com/TouK/nussknacker/pull/4561) Improvement: Users are not required at OAuth2 config file
 * [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad hoc testing. 
 * [#4572](https://github.com/TouK/nussknacker/pull/4572) The package of improvements:
     - make the properties of the `FlinkStreamingPropertiesConfig` public, so that they can be reused
@@ -12,7 +12,7 @@
     - allow passing classLoader at `ResourceLoader.load`
 * [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
 
-1.11.0 (Not released yet)
+1.11.0 (22 Aug 2023)
 -------------------------
 * [#4454](https://github.com/TouK/nussknacker/pull/4454) Rename 'subprocess' to 'fragment' along with all endpoints (with backward compatibility)
 * [#4440](https://github.com/TouK/nussknacker/pull/4440) Improvement: Better exception info handling at KafkaExceptionInfo.inputEvent,
