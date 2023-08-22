@@ -12,7 +12,7 @@ describe("Undo/Redo", () => {
     });
 
     after(() => {
-        // cy.deleteAllTestProcesses({ filter: seed, force: true });
+        cy.deleteAllTestProcesses({ filter: seed, force: true });
     });
 
     beforeEach(() => {
