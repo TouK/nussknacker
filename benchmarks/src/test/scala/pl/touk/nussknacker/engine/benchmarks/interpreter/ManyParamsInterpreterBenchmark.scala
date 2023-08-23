@@ -33,7 +33,11 @@ class ManyParamsInterpreterBenchmark {
   }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   private val interpreterSyncIO = prepareIoInterpreter(SynchronousExecutionContext.ctx)
+=======
+  private val interpreterSyncIO = prepareIoInterpreter(SynchronousExecutionContextAndIORuntime.ctx)
+>>>>>>> 56a1137645 (fix)
   private val interpreterAsyncIO = prepareIoInterpreter(ExecutionContext.Implicits.global)
 =======
   private val interpreterSync = prepareInterpreter(SynchronousExecutionContextAndIORuntime.create())
