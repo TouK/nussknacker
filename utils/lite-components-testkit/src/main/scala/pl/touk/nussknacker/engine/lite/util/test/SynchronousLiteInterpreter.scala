@@ -37,7 +37,7 @@ object SynchronousLiteInterpreter {
 
     override def monad: Monad[Id] = Monad[Id]
 
-    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Id[Either[T, Throwable]] = f => Await.result(transform(f), waitTime)
+    override def fromFuture[T]: Future[T] => Id[Either[T, Throwable]] = f => Await.result(transform(f), waitTime)
   }
   // TODO: add generate test data support
 
