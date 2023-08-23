@@ -19,7 +19,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   By default, NU enables that feature but if you have some custom `processToolbarConfig` settings then
   You would like to remove `hidden: { fragment: true }` flag for `type: "test-with-form"`, `type: "test-counts"` and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
 
-## In version 1.11.0 (Not released yet)
+## In version 1.11.0
 
 ### Code API changes
 * [#4295](https://github.com/TouK/nussknacker/pull/4295) `DeploymentManager.getProcessState(ProcessName)`
