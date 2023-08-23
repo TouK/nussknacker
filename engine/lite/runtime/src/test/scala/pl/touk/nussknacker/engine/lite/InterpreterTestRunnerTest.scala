@@ -124,7 +124,7 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
   test("should handle errors in fragment output") {
     val fragment = ScenarioBuilder
       .fragment("fragment1", "in" -> classOf[Int])
-      .fragmentOutput("fragmentEnd", "output", "out" -> "4 / #in")
+      .fragmentOutput("fragmentEnd", "output", "out" -> "4 / #in", "out_2" -> "8 / #in")
 
     val parameterExpressions: Map[String, Expression] = Map(
       "in" -> Expression("spel", "0")
@@ -134,7 +134,10 @@ class InterpreterTestRunnerTest extends AnyFunSuite with Matchers {
 
     results.nodeResults("fragment1") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> 0))))
     results.nodeResults("fragmentEnd") shouldBe List(NodeResult(ResultContext("fragment1", Map("in" -> 0))))
-    results.exceptions.map(e => (e.context, e.nodeId, e.throwable.getMessage)) shouldBe List((ResultContext("fragment1",Map("in" -> 0)),Some("fragmentEnd"), "Expression [4 / #in] evaluation failed, message: / by zero"))
+    results.exceptions.map(e => (e.context, e.nodeId, e.throwable.getMessage)) shouldBe List(
+      (ResultContext("fragment1",Map("in" -> 0)),Some("fragmentEnd"), "Expression [4 / #in] evaluation failed, message: / by zero"),
+      (ResultContext("fragment1",Map("in" -> 0)),Some("fragmentEnd"), "Expression [8 / #in] evaluation failed, message: / by zero")
+    )
   }
 
 }

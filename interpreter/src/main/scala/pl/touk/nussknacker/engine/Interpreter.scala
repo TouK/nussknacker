@@ -103,14 +103,20 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case FragmentOutput(id, _, true) =>
         monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, Map.empty), ctx))))
       case FragmentOutput(id, fieldsWithExpression, false) =>
-        val fields = try {
-          fieldsWithExpression.map(a => a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value)
-        } catch {
-          case NonFatal(ex) => listeners.foreach(_.nodeEntered(node.id, ctx, metaData)); throw ex
-        }
-        val newCtx = ctx.withVariables(fields)
-        listeners.foreach(_.nodeEntered(node.id, newCtx, metaData))
-        monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, fields), newCtx))))
+        fieldsWithExpression.toList
+          .traverse(a => Either.catchNonFatal(a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value).toValidatedNel)
+          .map(_.toMap)
+          .fold(
+            exceptions => {
+              listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
+              monad.pure(exceptions.toList.map(exc => Right(handleError(node, ctx)(exc))))
+            },
+            fields => {
+              val newCtx = ctx.withVariables(fields)
+              listeners.foreach(_.nodeEntered(node.id, newCtx, metaData))
+              monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, fields), newCtx))))
+            }
+          )
       case Enricher(_, ref, outName, next) =>
         invoke(ref, ctx).flatMap {
           case Left(ValueWithContext(out, newCtx)) => interpretNext(next, newCtx.withVariable(outName, out))
