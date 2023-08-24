@@ -81,7 +81,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       object AddProcess {
         def unapply(arg: (String, HttpMethod)): Option[Boolean] = {
           if (is(s"/processes/${expectedProcessDetails.id}/$expectedProcessCategory", POST)) {
-            uri.query().get("isFragment").map(_.toBoolean).orElse(uri.query().get("isSubprocess").map(_.toBoolean)).orElse(Some(false))
+            uri.query().get("isFragment").map(_.toBoolean).orElse(Some(false))
           } else {
             None
           }
