@@ -13,6 +13,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `KafkaClient.sendMessage` accepts generic content with json encoder
 
 ### REST API changes
+* [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
+  * Removed isSubprocess endpoint param, use isFragment from now on.
+  * Removed backward compatibility for subprocess fields.
 
 ### Other changes
 * [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow to test fragments using ad hoc testing.
