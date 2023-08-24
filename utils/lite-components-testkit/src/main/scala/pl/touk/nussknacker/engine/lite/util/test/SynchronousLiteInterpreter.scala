@@ -39,7 +39,7 @@ object SynchronousLiteInterpreter {
 
     override def fromFuture[T]: Future[T] => Id[Either[T, Throwable]] = f => Await.result(transform(f), waitTime)
   }
-  //todo add generate test data support
+  // TODO: add generate test data support
 
   def run(modelData: ModelData,
           scenario: CanonicalProcess,

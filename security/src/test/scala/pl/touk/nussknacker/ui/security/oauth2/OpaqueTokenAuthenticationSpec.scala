@@ -42,7 +42,7 @@ class OpaqueTokenAuthenticationSpec extends AnyFunSpec with Matchers with Scalat
 
   private val classLoader = getClass.getClassLoader
 
-  private val authenticationResources = AuthenticationResources(config, classLoader)
+  private val authenticationResources = AuthenticationResources(config, classLoader, testingBackend)
   assert(authenticationResources.isInstanceOf[OAuth2AuthenticationResources])
 
   private val testRoute = Route.seal(

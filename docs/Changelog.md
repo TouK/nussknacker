@@ -2,6 +2,7 @@
 
 1.12.0 (Not released yet)
 -------------------------
+* [#4582](https://github.com/TouK/nussknacker/pull/4582) Fixed: Releasing app resources on the designer close 
 * [#4540](https://github.com/TouK/nussknacker/pull/4540) Improvement: Allow selecting a claim from OIDC JWT to represent the username
 * [#4555](https://github.com/TouK/nussknacker/pull/4555) Remove: Back compatibility for encoding/decoding UIParameter
 * [#4561](https://github.com/TouK/nussknacker/pull/4561) Improvement: Users are not required at OAuth2 config file

@@ -9,7 +9,7 @@ private[engine] trait MaybeArtificialExtractor[A] {
 private[engine] object MaybeArtificialExtractor {
   implicit val espProcess: MaybeArtificialExtractor[EspProcess] = new MaybeArtificialExtractor[EspProcess] {
     override def get(errors: List[ProcessUncanonizationError], rawValue: EspProcess): EspProcess = {
-      // todo: we should probably remove artificial nodes by dummy id if there is an error
+      // TODO: we should probably remove artificial nodes by dummy id if there is an error
       rawValue
     }
   }

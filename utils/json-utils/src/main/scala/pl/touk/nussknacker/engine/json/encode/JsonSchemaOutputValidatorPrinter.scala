@@ -37,7 +37,7 @@ class JsonSchemaOutputValidatorPrinter(parentSchema: Schema) {
   private def baseDisplayType(schema: Schema) = SwaggerBasedJsonSchemaTypeDefinitionExtractor
     .swaggerType(schema, parentSchema = Some(parentSchema)).typingResult.display
 
-  //todo: remove duplication - JsonSchemaTypeDefinitionExtractor
+  // TODO: remove duplication - JsonSchemaTypeDefinitionExtractor
   private def printLogicalType(schema: Schema): Option[String] = Option(schema match {
     case s: StringSchema => s.getFormatValidator.formatName() match {
       case "date-time" => classOf[LocalDateTime].getSimpleName

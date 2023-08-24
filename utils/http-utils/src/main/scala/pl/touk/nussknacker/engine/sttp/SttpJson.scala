@@ -11,7 +11,6 @@ import scala.language.higherKinds
 
 object SttpJson {
 
-
   def failureToError[F[_], T](response: Response[Either[ResponseException[String, Error], T]])(implicit monadError: MonadError[F]): F[T] = response.body match {
     case Right(qr) => monadError.unit(qr)
     case Left(error) => monadError.error(error)

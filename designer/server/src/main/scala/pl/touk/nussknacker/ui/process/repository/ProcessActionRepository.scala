@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, CommentEntityData, ProcessActionEntityData}
-import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
+import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
 import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -34,11 +34,11 @@ trait ProcessActionRepository[F[_]] {
 }
 
 object DbProcessActionRepository {
-  def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData, _])(implicit ec: ExecutionContext): DbProcessActionRepository[DB] =
-    new DbProcessActionRepository[DB](dbConfig, modelData.mapValues(_.configCreator.buildInfo())) with DbioRepository
+  def create(dbRef: DbRef, modelData: ProcessingTypeDataProvider[ModelData, _])(implicit ec: ExecutionContext): DbProcessActionRepository[DB] =
+    new DbProcessActionRepository[DB](dbRef, modelData.mapValues(_.configCreator.buildInfo())) with DbioRepository
 }
 
-abstract class DbProcessActionRepository[F[_]](val dbConfig: DbConfig, buildInfos: ProcessingTypeDataProvider[Map[String, String], _]) (implicit ec: ExecutionContext)
+abstract class DbProcessActionRepository[F[_]](val dbRef: DbRef, buildInfos: ProcessingTypeDataProvider[Map[String, String], _])(implicit ec: ExecutionContext)
 extends Repository[F] with EspTables with CommentActions with ProcessActionRepository[F] with LazyLogging {
 
   import profile.api._

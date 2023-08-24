@@ -78,7 +78,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition],
                   testComponentHolder: TestComponentsHolder): RunnerResult[Unit] = {
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
 
-    //todo get flink mini cluster through composition
+    // TODO: get flink mini cluster through composition
     val env = flinkMiniCluster.createExecutionEnvironment()
 
     //It's copied from registrar.register only for handling compilation errors..

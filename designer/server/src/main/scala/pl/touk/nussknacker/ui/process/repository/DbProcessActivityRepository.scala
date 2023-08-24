@@ -6,7 +6,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, VersionId}
 import pl.touk.nussknacker.ui.api.ProcessAttachmentService.AttachmentToAdd
 import pl.touk.nussknacker.ui.db.entity.{AttachmentEntityData, CommentActions, CommentEntityData}
-import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
+import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Attachment, Comment, ProcessActivity}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
@@ -22,7 +22,7 @@ trait ProcessActivityRepository {
   def findAttachment(attachmentId: Long)(implicit ec: ExecutionContext): Future[Option[AttachmentEntityData]]
 }
 
-case class DbProcessActivityRepository(dbConfig: DbConfig)
+case class DbProcessActivityRepository(dbRef: DbRef)
   extends ProcessActivityRepository with LazyLogging with BasicRepository with EspTables with CommentActions {
 
   import profile.api._
