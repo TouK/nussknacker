@@ -15,7 +15,6 @@ describe("Connection error", () => {
     });
 
     it("should display connection errors", () => {
-        const statusIntervalTickTime = 11000;
         const verifyNoNetworkAccess = () => {
             cy.log("verify no network access");
             cy.intercept("/api/notifications").as("notifications");
@@ -77,31 +76,39 @@ describe("Connection error", () => {
                 cy.intercept("/api/processes/*/status", { statusCode: 502 });
 
                 // Check if the status toast message is not visible after the backend connection issue. We need to speed up interval to not wait 12s for a request
-                cy.contains(/Cannot fetch status/, { timeout: statusIntervalTickTime }).should("be.visible");
+                cy.contains(/Cannot fetch status/).should("be.visible");
 
                 cy.intercept("/api/processes/*/status", (req) => {
                     req.continue();
                 });
             };
             const notVisibleStatusToastMessageWhenConnectionError = () => {
-                cy.wait(statusIntervalTickTime);
                 cy.contains(/Cannot fetch status/).should("not.exist");
             };
 
+            cy.clock();
             cy.log("verify no backend access when scenario edit modal opens");
             cy.visitNewProcess(NAME, "filter");
 
             cy.contains("svg", /filter/i).dblclick();
 
+            cy.tick(16000);
+
             visibleStatusToastMessageBeforeConnectionError();
 
+            cy.tick(1000);
+
             cy.intercept("/api/notifications", { statusCode: 502 });
+
+            cy.tick(16000);
 
             notVisibleStatusToastMessageWhenConnectionError();
 
             cy.intercept("/api/notifications", (req) => {
                 req.continue();
             });
+
+            cy.clock().invoke("restore");
         };
 
         verifyNoNetworkAccess();
