@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.server
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
-import cats.effect.{ContextShift, IO, Resource}
+import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
@@ -282,7 +282,6 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
   }
 
   private def createSttpBackend()(implicit executionContext: ExecutionContext) = {
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
     Resource
       .make(
         acquire = IO(AsyncHttpClientFutureBackend.usingConfigBuilder(identity))

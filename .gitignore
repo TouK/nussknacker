@@ -35,8 +35,4 @@ target.tgz
 .k3d/k3s_manifests/local-storage.yaml
 .k3d/k3s_manifests/rolebindings.yaml
 .eslintcache
-<<<<<<< HEAD
 .java-version
-=======
-.java-version
->>>>>>> 74db56d8ca (cleanup)

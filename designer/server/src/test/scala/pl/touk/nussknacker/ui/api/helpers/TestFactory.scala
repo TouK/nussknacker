@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.server.Route
+import cats.effect.unsafe.IORuntime
 import cats.instances.future._
 import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
@@ -42,7 +43,7 @@ object TestFactory extends TestPermissions {
         "url" -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
         "driver" -> "org.hsqldb.jdbc.JDBCDriver"
       ).asJava).asJava)
-    DbRef.create(dbConfig).allocated.unsafeRunSync()
+    DbRef.create(dbConfig).allocated.unsafeRunSync()(IORuntime.global)
   }
 
   //FIXME: remove testCategory dummy implementation

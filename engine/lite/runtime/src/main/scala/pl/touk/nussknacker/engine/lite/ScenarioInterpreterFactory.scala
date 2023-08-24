@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, FragmentComponentDefinitionExtractor, LazyInterpreterDependencies}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
-import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{LiteSource, _}
+import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
@@ -262,14 +262,8 @@ object ScenarioInterpreterFactory {
     private def interpretationInvoke(partInvokers: Map[String, PartInterpreterType])
                                     (pr: PartReference, irs: List[InterpretationResult]): InterpreterOutputType = {
       val results: InterpreterOutputType = pr match {
-<<<<<<< HEAD
-=======
-        case er: EndReference =>
-          //FIXME: do we need it at all
-          Monad[F].pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, null.asInstanceOf[Res]))))
         case fer: FragmentEndReference =>
           Monad[F].pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(fer.nodeId, ir.finalContext, fer.outputFields.asInstanceOf[Res]))))
->>>>>>> 2ccc1862ef (different solution)
         case _: DeadEndReference =>
           Monad[F].pure[ResultType[PartResult]](Writer.value(Nil))
         case r: JoinReference =>
@@ -277,7 +271,7 @@ object ScenarioInterpreterFactory {
         case NextPartReference(id) =>
           partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(DataBatch(irs.map(_.finalContext)))
         case er: EndingReference => //FIXME: do we need it at all
-          monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, null.asInstanceOf[Res]))))
+          Monad[F].pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, null.asInstanceOf[Res]))))
       }
       results
     }

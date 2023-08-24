@@ -1,19 +1,17 @@
 package pl.touk.nussknacker.test
 
-import cats.effect.{ContextShift, IO, Resource}
+import cats.effect.{IO, Resource}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import sttp.client3.logging.LoggingBackend
 import sttp.client3.logging.slf4j._
 import sttp.client3.{HttpClientSyncBackend, Identity, SttpBackend}
-
+import cats.effect.unsafe.implicits.global
 import java.net.http.HttpClient
 import javax.net.ssl.SSLContext
-import scala.concurrent.ExecutionContext
 
 trait WithTestHttpClientCreator extends WithSttpTestUtils {
 
   def createHttpClient(sslContext: Option[SSLContext] = None): Resource[IO, SttpBackend[Identity, Any]] = {
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     Resource
       .make(
         acquire = IO {

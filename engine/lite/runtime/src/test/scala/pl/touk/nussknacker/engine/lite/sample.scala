@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime.ctx
 
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 
@@ -48,15 +48,8 @@ object sample {
 
     import InterpreterShape._
 
-<<<<<<< HEAD
-    override def monad: Monad[StateType] = implicitly[Monad[StateType]]
-
-    override def fromFuture[T]: Future[T] => StateType[Either[T, Throwable]] =
-      f => StateT.pure(Await.result(transform(f), 1 second))
-=======
     override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => StateType[Either[T, Throwable]] =
       f => StateT.pure(Await.result(transform(f)(ec), 1 second))
->>>>>>> 2ccc1862ef (different solution)
 
   }
 

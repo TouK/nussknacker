@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.util
 
 import cats.effect.{IO, Resource}
+import cats.effect.unsafe.implicits.global
 
 object CatsTestExtensions {
 

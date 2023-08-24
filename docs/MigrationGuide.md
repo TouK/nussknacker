@@ -32,14 +32,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Other changes
 * [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad-hoc testing method.
   By default, NU enables that feature but if you have some custom `processToolbarConfig` settings then
-<<<<<<< HEAD
   You would like to remove `hidden: { fragment: true }` flag for `type: "test-with-form"`, `type: "test-counts"` 
   and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
-=======
-  You would like to remove `hidden: { fragment: true }` flag for `type: "test-with-form"`, `type: "test-counts"` and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
 * [#4287](https://github.com/TouK/nussknacker/pull/4287) Improvement: bump cats effect to 3.5.1.
   Be careful with IO monad mode, we provide an experimental way to create IORuntime for the cat's engine.
->>>>>>> d62419ec4a (Changes in docs)
 
 ## In version 1.11.0
 

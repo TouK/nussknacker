@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.factory
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import cats.effect.{ContextShift, IO, Resource}
+import cats.effect.unsafe.IORuntime
+import cats.effect.{IO, Resource}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
@@ -37,7 +38,7 @@ class NussknackerAppFactory(processingTypeDataProviderFactory: ProcessingTypeDat
         new AkkaHttpBasedRouteProvider(db, metricsRegistry, processingTypeDataProviderFactory)(system, materializer),
         system,
         materializer
-      )
+      )(IORuntime.global)
       _ <- server.start(config, metricsRegistry)
       _ <- startJmxReporter(metricsRegistry)
       _ <- createStartAndStopLoggingEntries()
@@ -54,7 +55,6 @@ class NussknackerAppFactory(processingTypeDataProviderFactory: ProcessingTypeDat
         acquire = IO(ActorSystem("nussknacker-designer", config.resolved))
       )(
         release = system => {
-          implicit val contextShift: ContextShift[IO] = IO.contextShift(system.dispatcher)
           IO.fromFuture(IO(system.terminate())).map(_ => ())
         }
       )

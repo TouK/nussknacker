@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 /*
@@ -27,22 +26,8 @@ class ManyParamsInterpreterBenchmark {
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
     .emptySink("sink", "sink")
 
-  private def prepareIoInterpreter(executionContext: ExecutionContext) = {
-    val setup = new InterpreterSetup[String].sourceInterpretation[IO](process, Map("service" -> new ManyParamsService(executionContext)), Nil)
-    (ctx: Context) => setup(ctx, executionContext)
-  }
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-  private val interpreterSyncIO = prepareIoInterpreter(SynchronousExecutionContext.ctx)
-=======
   private val interpreterSyncIO = prepareIoInterpreter(SynchronousExecutionContextAndIORuntime.ctx)
->>>>>>> 56a1137645 (fix)
   private val interpreterAsyncIO = prepareIoInterpreter(ExecutionContext.Implicits.global)
-=======
-  private val interpreterSync = prepareInterpreter(SynchronousExecutionContextAndIORuntime.create())
-  private val interpreterAsync = prepareInterpreter(ExecutionContext.Implicits.global)
->>>>>>> c49ec58b1a (potential fix)
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
@@ -51,7 +36,6 @@ class ManyParamsInterpreterBenchmark {
     interpreterSyncIO(Context("")).unsafeRunSync()
   }
 
-
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
@@ -59,6 +43,10 @@ class ManyParamsInterpreterBenchmark {
     interpreterAsyncIO(Context("")).unsafeRunSync()
   }
 
+  private def prepareIoInterpreter(executionContext: ExecutionContext) = {
+    val setup = new InterpreterSetup[String].sourceInterpretation[IO](process, Map("service" -> new ManyParamsService(executionContext)), Nil)
+    (ctx: Context) => setup(ctx, executionContext)
+  }
 }
 
 class ManyParamsService(expectedEc: ExecutionContext) extends Service {

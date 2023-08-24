@@ -10,14 +10,7 @@ import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-<<<<<<< HEAD
-<<<<<<< HEAD
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
-=======
->>>>>>> c49ec58b1a (potential fix)
-=======
-import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
->>>>>>> 2ccc1862ef (different solution)
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -74,17 +67,9 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
         .interpret[IO](compiledNode, metaData, input)
         .unsafeRunAsync(callback)
     } else {
-<<<<<<< HEAD
-      implicit val future: FutureShape = new FutureShape()
-<<<<<<< HEAD
-      interpreter.interpret[Future](compiledNode, metaData, input).onComplete(result => callback(result.toEither))
-=======
-=======
->>>>>>> 2ccc1862ef (different solution)
       interpreter
         .interpret[Future](compiledNode, metaData, input)
         .onComplete { result => callback(result.toEither) }
->>>>>>> c49ec58b1a (potential fix)
     }
   }
 

@@ -13,13 +13,9 @@ import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContextAndIORuntime
-
-<<<<<<< HEAD
 import java.util.concurrent.TimeoutException
 import scala.concurrent.{Await, ExecutionContext, Future}
-=======
 import scala.concurrent.{Await, Future, TimeoutException}
->>>>>>> c49ec58b1a (potential fix)
 import scala.util.control.NonFatal
 
 private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
@@ -50,17 +46,6 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
   private def runInterpreter(input: Context): List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]] = {
     //we leave switch to be able to return to Future if IO has some flaws...
     if (useIOMonad) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-      interpreter.interpret(compiledNode, metaData, input).unsafeRunTimed(processTimeout) match {
-        case Some(result) => result
-        case None => throw new TimeoutException(s"Interpreter is running too long (timeout: $processTimeout)")
-      }
-=======
-      implicit val runtime: IORuntime = IORuntimeFactory.create(ec)
-      interpreter.interpret(compiledNode, metaData, input).unsafeRunSync()
->>>>>>> 1be91a59b6 (Upgrade cats and remove using IORuntime.global)
-=======
       val resultOpt = interpreter
         .interpret[IO](compiledNode, metaData, input)
         .unsafeRunTimed(processTimeout)
@@ -68,7 +53,6 @@ private[registrar] class SyncInterpretationFunction(val compiledProcessWithDepsP
         case Some(result) => result
         case None => throw new TimeoutException(s"Interpreter is running too long (timeout: $processTimeout)")
       }
->>>>>>> c49ec58b1a (potential fix)
     } else {
       Await.result(
         awaitable = interpreter.interpret[Future](compiledNode, metaData, input),
