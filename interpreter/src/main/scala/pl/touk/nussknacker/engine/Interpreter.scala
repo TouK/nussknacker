@@ -9,27 +9,23 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.Expression
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.compiledgraph.node._
 import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
                                         expressionEvaluator: ExpressionEvaluator,
                                         interpreterShape: InterpreterShape[F],
                                         componentUseCase: ComponentUseCase
                                        )(implicit metaData: MetaData, executor: ExecutionContext) {
-
 
   type Result[T] = Either[T, NuExceptionInfo[_ <: Throwable]]
 
@@ -106,10 +102,20 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case FragmentOutput(id, _, true) =>
         monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, Map.empty), ctx))))
       case FragmentOutput(id, fieldsWithExpression, false) =>
-        val fields = fieldsWithExpression.map(a => a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value)
-        val newCtx = ctx.withVariables(fields)
-        listeners.foreach(_.nodeEntered(node.id, newCtx, metaData))
-        monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, fields), newCtx))))
+        fieldsWithExpression.toList
+          .traverse(a => Either.catchNonFatal(a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value).toValidatedNel)
+          .map(_.toMap)
+          .fold(
+            exceptions => {
+              listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
+              monad.pure(exceptions.toList.map(exc => Right(handleError(node, ctx)(exc))))
+            },
+            fields => {
+              val newCtx = ctx.withVariables(fields)
+              listeners.foreach(_.nodeEntered(node.id, newCtx, metaData))
+              monad.pure(List(Left(InterpretationResult(FragmentEndReference(id, fields), newCtx))))
+            }
+          )
       case Enricher(_, ref, outName, next) =>
         invoke(ref, ctx).flatMap {
           case Left(ValueWithContext(out, newCtx)) => interpretNext(next, newCtx.withVariable(outName, out))
@@ -202,11 +208,12 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       //TODO: what about implicit??
       listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
     }
-    val syncEc = SynchronousExecutionContext.ctx
-    interpreterShape.fromFuture(syncEc)(resultFuture.map(ValueWithContext(_, ctx))(syncEc)).map {
-      case Right(ex) => Right(handleError(node, ctx)(ex))
-      case Left(value) => Left(value)
-    }
+    interpreterShape
+      .fromFuture(resultFuture)
+      .map {
+        case Right(ex) => Right(handleError(node, ctx)(ex))
+        case Left(value) => Left(ValueWithContext(value, ctx))
+      }
   }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
@@ -214,7 +221,6 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     expressionEvaluator.evaluate(expr, name, node.id, ctx)
   }
 }
-
 
 class Interpreter(listeners: Seq[ProcessListener],
                   expressionEvaluator: ExpressionEvaluator,
@@ -250,7 +256,7 @@ object Interpreter {
 
     def monad: Monad[F]
 
-    def fromFuture[T](implicit ec: ExecutionContext): Future[T] => F[Either[T, Throwable]]
+    def fromFuture[T]: Future[T] => F[Either[T, Throwable]]
 
   }
 
@@ -262,15 +268,19 @@ object Interpreter {
 
     override def monad: Monad[IO] = Monad[IO]
 
-    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => IO[Either[T, Throwable]] =
-      f => IO.fromFuture(IO.pure(transform(f)))(IO.contextShift(ec))
+    override def fromFuture[T]: Future[T] => IO[Either[T, Throwable]] = {
+      implicit val ctx = SynchronousExecutionContext.ctx
+      f => IO.fromFuture(IO(transform(f)))(IO.contextShift(ctx))
+    }
   }
 
   class FutureShape(implicit ec: ExecutionContext) extends InterpreterShape[Future] {
 
     override def monad: Monad[Future] = cats.instances.future.catsStdInstancesForFuture(ec)
 
-    override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Future[Either[T, Throwable]] = transform(_)
+    override def fromFuture[T]: Future[T] => Future[Either[T, Throwable]] = {
+      transform(_)(SynchronousExecutionContext.ctx)
+    }
   }
 
 }

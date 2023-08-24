@@ -236,7 +236,7 @@ class ProcessUtils {
                 return node.nodeType;
             }
             case "VariableBuilder": {
-                //todo remove when VariableBuilder will be removed
+                //TODO: remove when VariableBuilder will be removed
                 return "mapVariable";
             }
             default: {

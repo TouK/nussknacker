@@ -12,13 +12,13 @@ import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ProcessingTypeData(deploymentManager: DeploymentManager,
-                              modelData: ModelData,
-                              staticObjectsDefinition: ProcessDefinition[ObjectDefinition],
-                              metaDataInitializer: MetaDataInitializer,
-                              additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
-                              additionalValidators: List[CustomProcessValidator],
-                              usageStatistics: ProcessingTypeUsageStatistics) extends AutoCloseable {
+final case class ProcessingTypeData private(deploymentManager: DeploymentManager,
+                                            modelData: ModelData,
+                                            staticObjectsDefinition: ProcessDefinition[ObjectDefinition],
+                                            metaDataInitializer: MetaDataInitializer,
+                                            additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
+                                            additionalValidators: List[CustomProcessValidator],
+                                            usageStatistics: ProcessingTypeUsageStatistics) {
 
   def close(): Unit = {
     modelData.close()
@@ -48,7 +48,7 @@ object ProcessingTypeData {
   def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider,
                                manager: DeploymentManager,
                                modelData: ModelData,
-                               managerConfig: Config) = {
+                               managerConfig: Config): ProcessingTypeData = {
     import net.ceedubs.ficus.Ficus._
     import pl.touk.nussknacker.engine.util.config.FicusReaders._
     val additionalProperties =

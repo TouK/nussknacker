@@ -22,29 +22,28 @@ abstract class InitializationOnDbItSpec
     with Matchers
     with PatientScalaFutures
     with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with DbTesting {
+    with BeforeAndAfterAll {
+  this: DbTesting with WithTestDb =>
 
   import Initialization.nussknackerUser
-
   import scala.concurrent.ExecutionContext.Implicits.global
 
   private val processId = "proc1"
 
   private val migrations = mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2))
 
-  private lazy val repository = TestFactory.newFetchingProcessRepository(db)
+  private lazy val repository = TestFactory.newFetchingProcessRepository(testDbRef)
 
-  private lazy val dbioRunner = TestFactory.newDBIOActionRunner(db)
+  private lazy val dbioRunner = TestFactory.newDBIOActionRunner(testDbRef)
 
-  private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
+  private lazy val writeRepository = TestFactory.newWriteProcessRepository(testDbRef)
 
   private def sampleCanonicalProcess(processId: String) = ProcessTestData.validProcessWithId(processId)
 
   it should "migrate processes" in {
     saveSampleProcess()
 
-    Initialization.init(migrations, db, repository, "env1")
+    Initialization.init(migrations, testDbRef, repository, "env1")
 
     dbioRunner.runInTransaction(
       repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
@@ -60,7 +59,7 @@ abstract class InitializationOnDbItSpec
       saveSampleProcess(s"id$id")
     }
 
-    Initialization.init(migrations, db, repository, "env1")
+    Initialization.init(migrations, testDbRef, repository, "env1")
 
     dbioRunner.runInTransaction(
       repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses)
@@ -71,7 +70,7 @@ abstract class InitializationOnDbItSpec
     saveSampleProcess()
 
     val exception = intercept[RuntimeException](
-      Initialization.init(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)), db, repository, "env1"))
+      Initialization.init(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(1, 2, 5)), testDbRef, repository, "env1"))
 
     exception.getMessage shouldBe "made to fail.."
 
