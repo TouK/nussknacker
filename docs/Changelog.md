@@ -2,6 +2,7 @@
 
 1.12.0 (Not released yet)
 -------------------------
+* [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
 * [#4582](https://github.com/TouK/nussknacker/pull/4582) Fixed: Releasing app resources on the designer close 
 * [#4540](https://github.com/TouK/nussknacker/pull/4540) Improvement: Allow selecting a claim from OIDC JWT to represent the username
 * [#4555](https://github.com/TouK/nussknacker/pull/4555) Remove: Back compatibility for encoding/decoding UIParameter
