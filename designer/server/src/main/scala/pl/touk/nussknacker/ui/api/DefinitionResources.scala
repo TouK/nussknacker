@@ -49,21 +49,6 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
                   processingTypeData.additionalPropertiesConfig,
                   processingType)
               )
-              //TODO remove isSubprocess param path after NU 1.10 release
-            } ~ parameter(Symbol("isSubprocess").as[Boolean]) { isSubprocess =>
-              val fragments = fragmentRepository.loadFragments(Map.empty)
-              complete(
-                UIProcessObjectsFactory.prepareUIProcessObjects(
-                  processingTypeData.modelData,
-                  processingTypeData.staticObjectsDefinition,
-                  processingTypeData.deploymentManager,
-                  user,
-                  fragments,
-                  isFragment = isSubprocess,
-                  processCategoryService,
-                  processingTypeData.additionalPropertiesConfig,
-                  processingType)
-              )
             }
           }
         } ~ dictResources.route(processingTypeData.modelData)
