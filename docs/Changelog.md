@@ -7,7 +7,7 @@
 * [#4561](https://github.com/TouK/nussknacker/pull/4561) Improvement: Users are not required at OAuth2 config file
 * [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad hoc testing. 
 
-1.11.1 (Not released yet)
+1.11.1 (25 Aug 2023)
 -------------------------
 * [#4603](https://github.com/TouK/nussknacker/pull/4603) Fix subprocess -> fragment migration
 
