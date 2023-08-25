@@ -14,7 +14,7 @@
     - allow passing classLoader at `ResourceLoader.load`
 * [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
 
-1.11.1 (Not released yet)
+1.11.1 (25 Aug 2023)
 -------------------------
 * [#4603](https://github.com/TouK/nussknacker/pull/4603) Fix subprocess -> fragment migration
 
