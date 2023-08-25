@@ -59,7 +59,6 @@ function ToolbarButton({ onDrop, title, className, disabled, name, icon, hasErro
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "start",
-        position: "relative",
         border: "3px solid",
         userSelect: "none",
         opacity: disabled ? 0.3 : 1,
