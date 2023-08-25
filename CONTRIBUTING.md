@@ -73,7 +73,7 @@ When writing documentation please follow these instructions:
 
 1. **Create a Cypress Test**: Begin by adding a new Cypress test in the `designer/client/cypress/e2e/autoScreenshotChangeDocs.cy.ts` file. In this test you have to choose a scenario form the `designer/client/cypress/fixtures/` folder (or create a new one). Then utilize one of the screenshot capture functions like `takeGraphScreenshot()`, `takeWindowScreenshot()` (or add a new one like those).
 
-2. **Screenshot Storage**: All captured screenshots are stored in the `docs/autoScreenshotChangeDocs` folder. These screenshots are named according to a following convention:
+2. **Screenshot Storage** [nothing to do]: All captured screenshots are stored in the `docs/autoScreenshotChangeDocs` folder. These screenshots are named according to a specific convention:
 
     ``` 
     Auto Screenshot Change Docs - [name of test]#[index of image in test].png    
@@ -81,7 +81,7 @@ When writing documentation please follow these instructions:
 
     For example:`Auto Screenshot Change Docs - basic_components - variable#0.png`
 
-    Filenames assigned by Cypress are not accepted by Docusaurus - we need to modify them to meet Docusaurus naming requirements. The renaming takes place during upload of the documentation (`\docs` folder) to the repo from which documentation is served. For example, the screenshot file from the example above will be renamed to:
+    Filenames assigned by Cypress are not accepted by Docusaurus - we modify them to meet Docusaurus naming requirements. The renaming takes place during upload of the documentation (`\docs` folder) to the repo from which documentation is served. For example, the screenshot file from the example above will be renamed to:
 
     ```
     Auto_Screenshot_Change_Docs_-_[name of test][index of image in test].png
@@ -96,6 +96,8 @@ When writing documentation please follow these instructions:
     ```
     
     By following these steps, you can easily update and reference screenshots in your documentation using an automated process.
+
+> **Note**: Screenshots will not appear in you IDE `*.md` rendered preview. You can't do anything about it.
  
 # Working with code
 
