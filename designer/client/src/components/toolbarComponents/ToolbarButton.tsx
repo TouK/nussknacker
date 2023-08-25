@@ -37,6 +37,7 @@ const Icon = styled("div")({
     flex: 1,
     lineHeight: 0,
     display: "flex",
+    flexDirection: "column",
     width: parseFloat(buttonSize) / 2,
 });
 
