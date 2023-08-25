@@ -1,0 +1,108 @@
+{
+    "metaData": {
+        "id": "First-Split",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "source",
+            "ref": {
+                "typ": "periodic",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": ""
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "{}"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 180,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "nexts": [
+                [
+                    {
+                        "id": "sink 1",
+                        "ref": {
+                            "typ": "dead-end",
+                            "parameters": []
+                        },
+                        "endResult": null,
+                        "isDisabled": null,
+                        "additionalFields": {
+                            "description": null,
+                            "layoutData": {
+                                "x": 0,
+                                "y": 360
+                            }
+                        },
+                        "type": "Sink"
+                    }
+                ],
+                [
+                    {
+                        "id": "sink 2",
+                        "ref": {
+                            "typ": "dead-end",
+                            "parameters": []
+                        },
+                        "endResult": null,
+                        "isDisabled": null,
+                        "additionalFields": {
+                            "description": null,
+                            "layoutData": {
+                                "x": 360,
+                                "y": 360
+                            }
+                        },
+                        "type": "Sink"
+                    }
+                ]
+            ],
+            "id": "split",
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 180,
+                    "y": 180
+                }
+            },
+            "type": "Split"
+        }
+    ],
+    "additionalBranches": []
+}
