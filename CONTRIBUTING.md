@@ -73,7 +73,7 @@ When writing documentation please follow these instructions:
 
 1. **Create a Cypress Test**: Begin by adding a new Cypress test in the `designer/client/cypress/e2e/autoScreenshotChangeDocs.cy.ts` file. In this test you have to choose a scenario form the `designer/client/cypress/fixtures/` folder (or create a new one). Then utilize one of the screenshot capture functions like `takeGraphScreenshot()`, `takeWindowScreenshot()` (or add a new one like those).
 
-2. **Screenshot Storage**: All captured screenshots are stored in the `docs/autoScreenshotChangeDocs` folder. These screenshots are named according to a specific convention:
+2. **Screenshot Storage**: All captured screenshots are stored in the `docs/autoScreenshotChangeDocs` folder. These screenshots are named according to a following convention:
 
     ``` 
     Auto Screenshot Change Docs - [name of test]#[index of image in test].png    
