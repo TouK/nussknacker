@@ -34,6 +34,8 @@ const AsyncSvg = loadable.lib(
 
 const Flex = styled.div({
     display: "flex",
+    width: "100%",
+    height: "100%",
     svg: {
         width: "auto",
         height: "auto",
