@@ -11,7 +11,6 @@ import { CssFade } from "../../CssFade";
 import ProcessStateIcon from "../../Process/ProcessStateIcon";
 import { ToolbarWrapper } from "../../toolbarComponents/ToolbarWrapper";
 import { DefaultToolbarPanel, ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
-import { DragHandle } from "../../toolbarComponents/DragHandle";
 import { ToolbarButtons } from "../../toolbarComponents/ToolbarButtons";
 import { ActionButton } from "../../toolbarSettings/buttons";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
@@ -30,36 +29,34 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
         // TODO: better styling of process info toolbar in case of many custom actions
         return (
             <ToolbarWrapper title={i18next.t("panels.status.title", "Status")} id={this.props.id}>
-                <DragHandle>
-                    <SwitchTransition>
-                        <CssFade key={transitionKey}>
-                            <div className={"panel-process-info"}>
-                                <div className={"process-info-icon"}>
-                                    <ProcessStateIcon process={process} processState={processState} />
-                                </div>
-                                <div className={"process-info-text"}>
-                                    {isRenamePending ? (
-                                        <div className="process-name process-name-rename" title={process.name}>
-                                            {unsavedNewName}*
-                                        </div>
-                                    ) : (
-                                        <div className="process-name">{process.name}</div>
-                                    )}
-                                    <div className={"process-info-description"}>{description}</div>
-                                </div>
+                <SwitchTransition>
+                    <CssFade key={transitionKey}>
+                        <div className={"panel-process-info"}>
+                            <div className={"process-info-icon"}>
+                                <ProcessStateIcon process={process} processState={processState} />
                             </div>
-                        </CssFade>
-                    </SwitchTransition>
-                    <ToolbarButtons variant={this.props.buttonsVariant}>
-                        {this.props.children}
-                        {
-                            //TODO: to be replaced by toolbar config
-                            customActions.map((action) => (
-                                <ActionButton name={action.name} key={action.name} />
-                            ))
-                        }
-                    </ToolbarButtons>
-                </DragHandle>
+                            <div className={"process-info-text"}>
+                                {isRenamePending ? (
+                                    <div className="process-name process-name-rename" title={process.name}>
+                                        {unsavedNewName}*
+                                    </div>
+                                ) : (
+                                    <div className="process-name">{process.name}</div>
+                                )}
+                                <div className={"process-info-description"}>{description}</div>
+                            </div>
+                        </div>
+                    </CssFade>
+                </SwitchTransition>
+                <ToolbarButtons variant={this.props.buttonsVariant}>
+                    {this.props.children}
+                    {
+                        //TODO: to be replaced by toolbar config
+                        customActions.map((action) => (
+                            <ActionButton name={action.name} key={action.name} />
+                        ))
+                    }
+                </ToolbarButtons>
             </ToolbarWrapper>
         );
     }
