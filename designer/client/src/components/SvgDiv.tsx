@@ -36,10 +36,6 @@ const Flex = styled.div({
     display: "flex",
     width: "100%",
     height: "100%",
-    svg: {
-        width: "auto",
-        height: "auto",
-    },
 });
 
 export interface InlineSvgProps extends DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
