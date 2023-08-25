@@ -26,19 +26,19 @@ class ManyParamsInterpreterBenchmark {
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)
     .emptySink("sink", "sink")
 
-  private def prepareInterpreter(executionContext: ExecutionContext) = {
+  private def prepareIoInterpreter(executionContext: ExecutionContext) = {
     val setup = new InterpreterSetup[String].sourceInterpretation[IO](process, Map("service" -> new ManyParamsService(executionContext)), Nil)
     (ctx: Context) => setup(ctx, executionContext)
   }
 
-  private val interpreterSync = prepareInterpreter(SynchronousExecutionContext.create())
-  private val interpreterAsync = prepareInterpreter(ExecutionContext.Implicits.global)
+  private val interpreterSyncIO = prepareIoInterpreter(SynchronousExecutionContext.ctx)
+  private val interpreterAsyncIO = prepareIoInterpreter(ExecutionContext.Implicits.global)
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkSync(): AnyRef = {
-    interpreterSync(Context("")).unsafeRunSync()
+    interpreterSyncIO(Context("")).unsafeRunSync()
   }
 
 
@@ -46,7 +46,7 @@ class ManyParamsInterpreterBenchmark {
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkAsync(): AnyRef = {
-    interpreterAsync(Context("")).unsafeRunSync()
+    interpreterAsyncIO(Context("")).unsafeRunSync()
   }
 
 }

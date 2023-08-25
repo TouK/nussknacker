@@ -198,12 +198,11 @@ class ProcessesResources(
         authorize(user.can(category, Permission.Write)) {
           optionalHeaderValue(RemoteUserName.extractFromHeader) { remoteUserName =>
             canOverrideUsername(category, remoteUserName)(user) {
-              //TODO change it to `parameters(Symbol("isFragment") ? false)` after NU 1.10 release
-              parameters(Symbol("isFragment").as[Boolean].optional, Symbol("isSubprocess").withDefault(false)) { (isFragment, isSubprocess) =>
+              parameters(Symbol("isFragment") ? false) { isFragment =>
                 post {
                   complete {
                     processService
-                      .createProcess(CreateProcessCommand(ProcessName(processName), category, isFragment.getOrElse(isSubprocess), remoteUserName))
+                      .createProcess(CreateProcessCommand(ProcessName(processName), category, isFragment, remoteUserName))
                       .withSideEffect(response => sideEffectAction(response) { process =>
                         OnSaved(process.id, process.versionId)
                       })
@@ -326,7 +325,6 @@ class ProcessesResources(
   private def processesQuery: Directive1[ProcessesQuery] = {
     parameters(
       Symbol("isFragment").as[Boolean].?,
-      Symbol("isSubprocess").as[Boolean].?, //TODO remove `isSubprocess` after NU 1.10 release
       Symbol("isArchived").as[Boolean].?,
       Symbol("isDeployed").as[Boolean].?,
       Symbol("categories").as(CsvSeq[String]).?,
@@ -344,7 +342,6 @@ object ProcessesResources {
   case class UnmarshallError(message: String) extends Exception(message) with FatalError
 
   case class ProcessesQuery(isFragment: Option[Boolean],
-                            isSubprocess: Option[Boolean],
                             isArchived: Option[Boolean],
                             isDeployed: Option[Boolean],
                             categories: Option[Seq[String]],
@@ -352,7 +349,7 @@ object ProcessesResources {
                             names: Option[Seq[String]],
                            ) {
     def toRepositoryQuery: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(
-      isFragment = isFragment.orElse(isSubprocess),
+      isFragment = isFragment,
       isArchived = isArchived,
       isDeployed = isDeployed,
       categories = categories,
@@ -362,6 +359,6 @@ object ProcessesResources {
   }
 
   object ProcessesQuery {
-    def empty: ProcessesQuery = ProcessesQuery(None, None, None, None, None, None, None)
+    def empty: ProcessesQuery = ProcessesQuery(None, None, None, None, None, None)
   }
 }

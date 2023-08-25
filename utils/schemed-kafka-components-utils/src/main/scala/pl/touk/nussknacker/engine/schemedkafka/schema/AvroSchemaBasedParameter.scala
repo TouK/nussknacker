@@ -76,7 +76,7 @@ object AvroSinkSingleValueParameter {
       isLazyParameter = true,
       defaultValue = defaultValue
     )
-    //todo: for now we don't use SchemaOutputValidator for avro in editor mode,
+    // TODO: for now we don't use SchemaOutputValidator for avro in editor mode,
     // but we can add it in the future in combination with accepting unknown/any in enums fields to allow passing enums in editor mode
     SingleSchemaBasedParameter(parameter, TypingResultValidator.emptyValidator)
   }

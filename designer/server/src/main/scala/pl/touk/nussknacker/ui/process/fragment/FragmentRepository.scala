@@ -4,7 +4,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
-import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
+import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.repository.DBIOActionRunner
 import slick.jdbc.JdbcProfile
@@ -32,7 +32,7 @@ trait FragmentRepository {
 
 case class FragmentDetails(canonical: CanonicalProcess, category: String)
 
-class DbFragmentRepository(db: DbConfig, ec: ExecutionContext) extends FragmentRepository {
+class DbFragmentRepository(db: DbRef, ec: ExecutionContext) extends FragmentRepository {
 
   private val dbioRunner = DBIOActionRunner(db)
 

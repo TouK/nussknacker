@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
@@ -80,7 +80,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     for {
-      oldJob <- oldJobToStop(processVersion)
+      oldJob <- oldJobsToStop(processVersion)
       _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.externalDeploymentId))
     } yield ()
   }
@@ -89,23 +89,28 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     val processName = processVersion.processName
 
     val stoppingResult = for {
-      oldJob <- OptionT(oldJobToStop(processVersion))
-      deploymentId <- OptionT.fromOption[Future](oldJob.externalDeploymentId)
-      maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, deploymentId, canonicalProcess))
+      oldJobs <- oldJobsToStop(processVersion)
+      deploymentIds = oldJobs.sortBy(_.startTime)(Ordering[Option[Long]].reverse).flatMap(_.externalDeploymentId)
+      savepoints <- Future.sequence(deploymentIds.map(stopSavingSavepoint(processVersion, _, canonicalProcess)))
     } yield {
-      logger.info(s"Deploying $processName. Saving savepoint finished")
-      maybeSavePoint
+      logger.info(s"Deploying $processName. ${
+        Option(savepoints).filter(_.nonEmpty)
+          .map(_.mkString("Saving savepoints finished: ", ", ", "."))
+          .getOrElse("There was no job to stop.")
+      }")
+      savepoints
     }
 
     for {
-      maybeSavepoint <- stoppingResult.value
+      savepointList <- stoppingResult
       // In case of redeploy we double check required slots which is not bad because can be some run between jobs and it is better to check it again
-      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, None)
+      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, List.empty)
       runResult <- runProgram(
         processName,
         mainClassName,
         prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, canonicalProcess),
-        savepointPath.orElse(maybeSavepoint)
+        // TODO: We should define which job should be replaced by the new one instead of stopping all and picking the newest one to start from
+        savepointPath.orElse(savepointList.headOption)
       )
       _ <- runResult.map(waitForDuringDeployFinished(processName, _)).getOrElse(Future.successful(()))
     } yield runResult
@@ -113,25 +118,28 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   protected def waitForDuringDeployFinished(processName: ProcessName, deploymentId: ExternalDeploymentId): Future[Unit]
 
-  private def oldJobToStop(processVersion: ProcessVersion): Future[Option[StatusDetails]] = {
+  private def oldJobsToStop(processVersion: ProcessVersion): Future[List[StatusDetails]] = {
     getFreshProcessStates(processVersion.processName)
-      // TODO: handle stopping of more than one jobs before deploy
-      .map(InconsistentStateDetector.extractAtMostOneStatus)
       .map(_.filter(details => SimpleStateStatus.DefaultFollowingDeployStatuses.contains(details.status)))
   }
 
-  protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit]
+  protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobsIds: List[ExternalDeploymentId]): Future[Unit]
 
   override def savepoint(processName: ProcessName, savepointDir: Option[String]): Future[SavepointResult] = {
     // TODO: savepoint for given deployment id
-    requireSingleRunningJob(processName) {
+    requireSingleRunningJob(processName, _ => true) {
       makeSavepoint(_, savepointDir)
     }
   }
 
   override def stop(processName: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
-    // TODO: savepoint for given deployment id
-    requireSingleRunningJob(processName) {
+    requireSingleRunningJob(processName, _ => true) {
+      stop(_, savepointDir)
+    }
+  }
+
+  override def stop(processName: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult] = {
+    requireSingleRunningJob(processName, _.deploymentId.contains(deploymentId)) {
       stop(_, savepointDir)
     }
   }
@@ -145,10 +153,10 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
     Future.successful(Left(CustomActionNotImplemented(actionRequest)))
 
-  private def requireSingleRunningJob[T](processName: ProcessName)(action: ExternalDeploymentId => Future[T]): Future[T] = {
+  private def requireSingleRunningJob[T](processName: ProcessName, statusDetailsPredicate: StatusDetails => Boolean)(action: ExternalDeploymentId => Future[T]): Future[T] = {
     val name = processName.value
     getFreshProcessStates(processName).flatMap { statuses =>
-      val runningDeploymentIds = statuses.collect {
+      val runningDeploymentIds = statuses.filter(statusDetailsPredicate).collect {
         case StatusDetails(SimpleStateStatus.Running, _, Some(deploymentId), _, _, _, _) => deploymentId
       }
       runningDeploymentIds match {

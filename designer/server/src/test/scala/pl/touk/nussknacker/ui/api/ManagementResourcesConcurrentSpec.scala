@@ -9,13 +9,13 @@ import org.scalatest.tags.Slow
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess}
+import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, SampleProcess}
 
 import scala.jdk.CollectionConverters._
 
 @Slow
 class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 
   test("not allow concurrent deployment of same process") {
     val processName = s"sameConcurrentDeployments"

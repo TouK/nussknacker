@@ -16,9 +16,9 @@ import scala.util.control.NonFatal
 
 class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) extends LazyLogging {
 
-  def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
+  def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobsIds: List[ExternalDeploymentId]): Future[Unit] = {
     val collectedSlotsCheckInputs = for {
-      slotsBalance <- determineSlotsBalance(canonicalProcess, currentlyDeployedJobId)
+      slotsBalance <- determineSlotsBalance(canonicalProcess, currentlyDeployedJobsIds)
       clusterOverview <- OptionT(client.getClusterOverview.map(Option(_)))
     } yield (slotsBalance, clusterOverview)
 
@@ -38,11 +38,11 @@ class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) 
     checkResult.value.map(_ => ())
   }
 
-  private def determineSlotsBalance(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): OptionT[Future, SlotsBalance] = {
+  private def determineSlotsBalance(canonicalProcess: CanonicalProcess, currentlyDeployedJobsIds: List[ExternalDeploymentId]): OptionT[Future, SlotsBalance] = {
     canonicalProcess.metaData.typeSpecificData match {
       case stream: StreamMetaData =>
         val requiredSlotsFuture = for {
-          releasedSlots <- slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobId)
+          releasedSlots <- slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobsIds)
           allocatedSlots <- slotsAllocatedByProcessThatWilBeDeployed(stream, canonicalProcess.metaData.id)
         } yield Option(SlotsBalance(releasedSlots, allocatedSlots))
         OptionT(requiredSlotsFuture)
@@ -50,10 +50,9 @@ class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) 
     }
   }
 
-  private def slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Int] = {
-    currentlyDeployedJobId
-      .map(deploymentId => client.getJobConfig(deploymentId.value).map(_.`job-parallelism`))
-      .getOrElse(Future.successful(0))
+  private def slotsThatWillBeReleasedAfterJobCancel(currentlyDeployedJobsIds: List[ExternalDeploymentId]): Future[Int] = {
+    Future.sequence(currentlyDeployedJobsIds
+      .map(deploymentId => client.getJobConfig(deploymentId.value).map(_.`job-parallelism`))).map(_.sum)
   }
 
   private def slotsAllocatedByProcessThatWilBeDeployed(stream: StreamMetaData, processId: String): Future[Int] = {

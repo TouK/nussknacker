@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.{EngineRuntime, TestRuntime}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 
 import scala.reflect.ClassTag
 
@@ -57,7 +57,7 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 }
 
 trait ClassBasedTestScenarioRunner extends TestScenarioRunner {
-  //todo add generate test data support
+  // TODO: add generate test data support
   def runWithData[T:ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerListResult[R]
 }
 

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.util.SynchronousExecutionContext.ctx
 
 import scala.concurrent.Future
 
-//todo this is basically requestResponse runtime test
+//TODO: this is basically requestResponse runtime test
 trait LiteRuntimeTest extends Matchers with ScalaFutures {
 
   val componentUseCase: ComponentUseCase = ComponentUseCase.TestRuntime

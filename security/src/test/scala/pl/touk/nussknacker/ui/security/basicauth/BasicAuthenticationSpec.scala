@@ -27,7 +27,7 @@ class BasicAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRou
         }
       """.stripMargin)
 
-  private val authenticationResources = AuthenticationResources(config, classLoader)
+  private val authenticationResources = AuthenticationResources(config, classLoader, testingBackend)
   assert(authenticationResources.isInstanceOf[BasicAuthenticationResources])
 
   private val testRoute = Route.seal(

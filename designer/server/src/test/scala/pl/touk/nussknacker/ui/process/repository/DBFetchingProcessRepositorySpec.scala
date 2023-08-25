@@ -15,7 +15,6 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.component.ComponentsUsageHelper
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
@@ -38,19 +37,19 @@ class DBFetchingProcessRepositorySpec
 
   import cats.syntax.either._
 
-  private val dbioRunner = DBIOActionRunner(db)
+  private val dbioRunner = DBIOActionRunner(testDbRef)
 
-  private val writingRepo = new DBProcessRepository(db, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
+  private val writingRepo = new DBProcessRepository(testDbRef, mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> 0)) {
     override protected def now: Instant = currentTime
   }
 
   private var currentTime: Instant = Instant.now()
 
-  private val actions = DbProcessActionRepository.create(db, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
+  private val actions = DbProcessActionRepository.create(testDbRef, MapBasedProcessingTypeDataProvider.withEmptyCombinedData(Map.empty))
 
-  private val fetching = DBFetchingProcessRepository.createFutureRespository(db, actions)
+  private val fetching = DBFetchingProcessRepository.createFutureRepository(testDbRef, actions)
 
-  private val activities = DbProcessActivityRepository(db)
+  private val activities = DbProcessActivityRepository(testDbRef)
 
   private implicit val user: LoggedUser = TestFactory.adminUser()
 
@@ -113,7 +112,7 @@ class DBFetchingProcessRepositorySpec
     newAfter.toSet shouldBe Set(newName.value)
   }
 
-  // todo: remove this in favour of process-audit-log
+  // TODO: remove this in favour of process-audit-log
   test("should add comment when renamed") {
     val oldName = ProcessName("oldName")
     val newName = ProcessName("newName")

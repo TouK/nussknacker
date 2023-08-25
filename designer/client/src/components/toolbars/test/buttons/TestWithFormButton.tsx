@@ -52,7 +52,9 @@ function TestWithFormButton(props: Props) {
                     parametersValues: (testFormParam.parameters || []).reduce(
                         (paramObj, param) => ({
                             ...paramObj,
-                            [param.name]: param.defaultValue,
+                            [param.name]: sourceParameters
+                                ? sourceParameters[testFormParam.sourceId]?.parametersValues[param.name] || param.defaultValue
+                                : param.defaultValue,
                         }),
                         {},
                     ),

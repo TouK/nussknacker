@@ -7,12 +7,12 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import scala.language.higherKinds
 
-class FragmentRepositorySpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with BeforeAndAfterEach with EspItTest with VeryPatientScalaFutures {
+class FragmentRepositorySpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with BeforeAndAfterEach with NuResourcesTest with VeryPatientScalaFutures {
 
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._
 

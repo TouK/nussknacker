@@ -6,10 +6,10 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.async.{ResultFuture, RichAsyncFunction}
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
+import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.AsyncExecutionContextPreparer
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.process.ProcessPartFunction
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
 
 private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDepsProvider: ClassLoader => FlinkProcessCompilerData,
                                                      val node: SplittedNode[_<:NodeData], validationContext: ValidationContext,
@@ -65,7 +64,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
       interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunAsync(callback)
     } else {
       implicit val future: FutureShape = new FutureShape()
-      interpreter.interpret[Future](compiledNode, metaData, input).onComplete(_.toEither)
+      interpreter.interpret[Future](compiledNode, metaData, input).onComplete(result => callback(result.toEither))
     }
   }
 

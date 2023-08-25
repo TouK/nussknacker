@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.security.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.server.directives.AuthenticationDirective
-import akka.http.scaladsl.server.{AuthorizationFailedRejection, Directive1, Directives, RejectionHandler, Route}
+import akka.http.scaladsl.server._
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import sttp.client3.SttpBackend
@@ -16,11 +16,18 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
   def authenticate(): Directive1[AuthenticatedUser]
 
   final lazy val routeWithPathPrefix: Route =
-    pathPrefix("authentication" / name.toLowerCase() ) {
+    pathPrefix("authentication" / name.toLowerCase()) {
       additionalRoute ~ frontendSettingsRoute
     }
 
-  protected lazy val frontendSettingsRoute: Route = path("settings") { get { complete { ToResponseMarshallable(frontendStrategySettings) } } }
+  protected lazy val frontendSettingsRoute: Route =
+    path("settings") {
+      get {
+        complete {
+          ToResponseMarshallable(frontendStrategySettings)
+        }
+      }
+    }
   protected lazy val additionalRoute: Route = Directives.reject
 }
 
@@ -35,6 +42,7 @@ trait AnonymousAccess extends Directives {
       // we issue the Unauthorized status code with a challenge instead of the Forbidden
       .handle { case AuthorizationFailedRejection => authenticateReally() { _ => reject } }
       .result())
+
     authenticateReally().optional.flatMap(_.map(provide).getOrElse(
       handleAuthorizationFailedRejection.tmap(_ => anonymousUser)
     ))
@@ -49,7 +57,12 @@ trait AnonymousAccess extends Directives {
 }
 
 object AuthenticationResources {
-  def apply(config: Config, classLoader: ClassLoader)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): AuthenticationResources = {
-    AuthenticationProvider(config, classLoader).createAuthenticationResources(config, classLoader)
+  def apply(config: Config,
+            classLoader: ClassLoader,
+            sttpBackend: SttpBackend[Future, Any])
+           (implicit ec: ExecutionContext): AuthenticationResources = {
+    implicit val sttpBackendImplicit: SttpBackend[Future, Any] = sttpBackend
+    AuthenticationProvider(config, classLoader)
+      .createAuthenticationResources(config, classLoader)
   }
 }

@@ -66,7 +66,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   def validate(typingResult: TypingResult, outputSchema: Schema, rootSchema: Option[Schema] = None): ValidatedNel[OutputValidatorError, Unit] =
     validateTypingResult(typingResult, outputSchema, rootSchema.getOrElse(outputSchema), None)
 
-  //todo: add support for: enums, logical types
+  // TODO: add support for: enums, logical types
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, rootSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema) match {
       case (_, referenceSchema: ReferenceSchema) => validateTypingResult(typingResult, referenceSchema.getReferredSchema, rootSchema, path)
