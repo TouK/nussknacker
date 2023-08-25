@@ -65,45 +65,37 @@ When writing documentation please follow these instructions:
     [Components](/about/GLOSSARY.md#component)
     [Components](../about/GLOSSARY#component)
     ```
-### Automatic Image Updates in Documentation
+### Automatic Screenshots Updates in Documentation
 
-To automate image updates in your documentation, follow these steps:
+> The screenshots from Nu GUI are taken automatically by Cypress test automation tool based on the test definition you need to create. Once recorded, during the "documentation test run" the test screenshot is compared against the stored screenshot. If they are different, a PR is created automatically.
 
-1. **Create a Cypress Test**: Begin by adding a new Cypress test in the `designer/client/cypress/e2e/autoImageChangeDocs.cy.ts` file. In this test, utilize one of the image capture functions available in your code.
+#### To automate new screenshot in your documentation, follow these steps:
 
-2. **Image Storage**: All captured images are stored in the `docs/autoImageChangeDocs` folder. These images are named according to a specific convention:
+1. **Create a Cypress Test**: Begin by adding a new Cypress test in the `designer/client/cypress/e2e/autoScreenshotChangeDocs.cy.ts` file. In this test you have to choose a scenario form the `designer/client/cypress/fixtures/` folder (or create a new one). Then utilize one of the screenshot capture functions like `takeGraphScreenshot()`, `takeWindowScreenshot()` (or add a new one like those).
+
+2. **Screenshot Storage**: All captured screenshots are stored in the `docs/autoScreenshotChangeDocs` folder. These screenshots are named according to a specific convention:
+
+    ``` 
+    Auto Screenshot Change Docs - [name of test]#[index of image in test].png    
+    ```
+
+    For example:`Auto Screenshot Change Docs - basic_components - variable#0.png`
+
+    Filenames assigned by Cypress are not accepted by Docusaurus - we need to modify them to meet Docusaurus naming requirements. The renaming takes place during upload of the documentation (`\docs` folder) to the repo from which documentation is served. For example, the screenshot file from the example above will be renamed to:
 
     ```
-    Auto Image Change Docs - [name of test]#[index of image in test].png    
-    ```
-
-    For example:
-    
-    ```
-    Auto Image Change Docs - basic_components - variable#0.png
-    ```
-   
-3. **Rename Images**: In the [nussknacker-page](https://gitlab.touk.pl/nussknacker1/nussknacker-page) repository, there's a handy script called `rename_images_docs.sh`. This script is responsible for renaming all the images in the docs folder to match the Docusaurus naming schema:
-    
-    ```
-    Auto_Image_Change_Docs_-_[name of test][index of image in test].png
+    Auto_Screenshot_Change_Docs_-_[name of test][index of image in test].png
     ```
     
-    For instance:
-    
-    ```
-    Auto_Image_Change_Docs_-basic_components-_variable0.png
-    ```
-    
-    Note that this script depends on the `sync_with_github_docs.sh` script.
+    For example:`Auto_Screenshot_Change_Docs_-_basic_components_-_variable0.png`
 
-4. **Use Docusaurus Naming Schema**: In your documentation, make sure to reference the images using the Docusaurus naming schema. For example:
+3. **Use final screenshot name**: In the docs, make sure to reference the screenshots using the Docusaurus naming schema. For example:
 
     ```
-    ![image](../autoImageChangeDocs/Auto_Image_Change_Docs_-basic_components-_variable0.png  "Scenario with variable declaration")
+    ![image](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_variable0.png  "Scenario with variable declaration")
     ```
     
-    By following these steps, you can easily update and reference images in your documentation using an automated process.
+    By following these steps, you can easily update and reference screenshots in your documentation using an automated process.
  
 # Working with code
 

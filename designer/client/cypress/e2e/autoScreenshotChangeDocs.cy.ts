@@ -1,5 +1,5 @@
-describe("Auto Image Change Docs - ", () => {
-    const seed = "autoImageChangeDocs";
+describe("Auto Screenshot Change Docs - ", () => {
+    const seed = "autoScreenshotChangeDocs";
 
     before(() => {
         cy.deleteAllTestProcesses({ filter: seed, force: true });
@@ -14,17 +14,18 @@ describe("Auto Image Change Docs - ", () => {
     });
 
     it("basic components - variable", () => {
-        cy.visitNewProcess(seed, "docsBasicComponentsVariable#0");
-        cy.layoutScenario();
-        takeGraphImage();
+        cy.visitNewProcess(seed, "docsBasicComponentsVariable#0"); // load scenario
+        cy.layoutScenario(); // layout alignment
+        takeGraphScreenshot(); // take screenshot of whole graph
 
-        cy.get('[model-id="My first variable declaration"]').dblclick();
-        cy.get('[title="Name"]').click();
-        takeWindowImage();
-        cy.visitNewProcess(seed, "docsBasicComponentsVariable#1");
-        cy.get('[model-id="only financial ops"]').dblclick();
-        cy.get('[title="Name"]').click();
-        takeWindowImage();
+        cy.get('[model-id="My first variable declaration"]').dblclick(); // click on node
+        cy.get('[title="Name"]').click(); // click of remove cursor flickering effect
+        takeWindowScreenshot(); // take screenshot of node window
+
+        cy.visitNewProcess(seed, "docsBasicComponentsVariable#1"); // load new scenario
+        cy.get('[model-id="only financial ops"]').dblclick(); // click on node
+        cy.get('[title="Name"]').click(); // click of remove cursor flickering effect
+        takeWindowScreenshot(); // take screenshot of node window
     });
 
     it("basic components - mapmariable", () => {
@@ -32,45 +33,45 @@ describe("Auto Image Change Docs - ", () => {
         cy.layoutScenario();
         cy.get('[model-id="node label goes here"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeWindowImage();
+        takeWindowScreenshot();
         cy.get("[data-testid=window]")
             .contains(/^cancel$/i)
             .click();
 
         cy.get('[model-id="variable"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeWindowImage();
+        takeWindowScreenshot();
     });
 
     it("basic components - filter", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsFilter#0");
         cy.layoutScenario();
-        takeGraphImage();
+        takeGraphScreenshot();
 
         cy.visitNewProcess(seed, "docsBasicComponentsFilter#1");
         cy.layoutScenario();
-        takeGraphImage();
+        takeGraphScreenshot();
 
         cy.get('[model-id="conditional filter"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeWindowImage();
+        takeWindowScreenshot();
     });
 
-    it.skip("basic components - choice", () => {
+    it("basic components - choice", () => {
         //skip
         cy.visitNewProcess(seed, "docsBasicComponentsChoice#0");
         cy.layoutScenario();
-        takeGraphImage();
+        takeGraphScreenshot();
 
         cy.get('[model-id="choice"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeWindowImage();
+        takeWindowScreenshot();
     });
 
     it("basic components - split", () => {
         cy.visitNewProcess(seed, "docsBasicComponentsSplit#0");
         cy.layoutScenario();
-        takeGraphImage();
+        takeGraphScreenshot();
     });
 
     it("basic components - foreach", () => {
@@ -78,38 +79,38 @@ describe("Auto Image Change Docs - ", () => {
         cy.layoutScenario();
         cy.get('[model-id="for-each"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeWindowImage();
+        takeWindowScreenshot();
     });
 
-    it.skip("basic components - union", () => {
+    it("basic components - union", () => {
         //skip
         cy.visitNewProcess(seed, "docsBasicComponentsUnion#0");
         cy.layoutScenario();
-        takeGraphImage();
+        takeGraphScreenshot();
 
         cy.get('[model-id="union"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeWindowImage();
+        takeWindowScreenshot();
     });
 
-    it.skip("aggregates - Single Side Join", () => {
+    it("aggregates - Single Side Join", () => {
         //skip
         cy.visitNewProcess(seed, "docsAggregatesSingleSideJoin#0");
         cy.layoutScenario();
-        takeGraphImage();
+        takeGraphScreenshot();
 
         cy.get('[model-id="single-side-join"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeWindowImage();
+        takeWindowScreenshot();
     });
 
-    it.skip("aggregates - Full Outer Join", () => {
+    it("aggregates - Full Outer Join", () => {
         //skip
         cy.visitNewProcess(seed, "docsAggregatesFullOuterJoin#0");
         cy.layoutScenario();
         cy.get('[model-id="full-outer-join"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeWindowImage();
+        takeWindowScreenshot();
     });
 
     it("fragments - Inputs", () => {
@@ -117,28 +118,34 @@ describe("Auto Image Change Docs - ", () => {
         cy.layoutScenario();
         cy.get('[model-id="input"]').dblclick();
         cy.get('[title="Name"]').click();
-        takeWindowImage();
+        takeWindowScreenshot();
     });
 
     it("fragments - Outputs", () => {
         cy.visitNewProcess(seed, "docsFragmentsOutputs#0");
         cy.layoutScenario();
-        takeGraphImage();
+        cy.get('[model-id="output"]').dblclick();
+        cy.get('[title="Name"]').click();
+        takeGraphScreenshot();
     });
 });
 
+// screenshots CONSTANT options DO NOT CHANGE
+
 const snapshotOptions = {
     maxDiffThreshold: 0.00001,
-    imagesPath: "../../docs/autoImageChangeDocs",
+    imagesPath: "../../docs/autoScreenshotChangeDocs",
 };
 
-function takeGraphImage() {
+// screenshots taking functions
+
+function takeGraphScreenshot() {
     cy.get('[joint-selector="layers"]').matchImage({
         ...snapshotOptions,
         screenshotConfig: { padding: 16 },
     });
 }
 
-function takeWindowImage() {
+function takeWindowScreenshot() {
     cy.get('[data-testid="window-frame"]').matchImage(snapshotOptions);
 }
