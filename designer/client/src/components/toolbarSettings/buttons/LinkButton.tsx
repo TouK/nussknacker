@@ -15,7 +15,7 @@ export interface LinkButtonProps {
 
 export function LinkButton({ url, icon, name, title, disabled }: LinkButtonProps): JSX.Element {
     return (
-        <PlainStyleLink disabled={disabled} to={url}>
+        <PlainStyleLink disabled={disabled} to={url} tabIndex={-1}>
             <ToolbarButton
                 name={name}
                 title={title || name}

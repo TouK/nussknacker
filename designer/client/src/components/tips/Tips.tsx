@@ -8,7 +8,6 @@ import { getProcessToDisplay, getTestResults } from "../../reducers/selectors/gr
 import { getUi } from "../../reducers/selectors/ui";
 import { useWindows } from "../../windowManager";
 import { ToolbarWrapper } from "../toolbarComponents/ToolbarWrapper";
-import { DragHandle } from "../toolbarComponents/DragHandle";
 import Errors from "./Errors";
 import ValidTips from "./ValidTips";
 import Warnings from "./Warnings";
@@ -32,31 +31,29 @@ export default function Tips(): JSX.Element {
 
     return (
         <ToolbarWrapper title={i18next.t("panels.tips.title", "Tips")} id="TIPS-PANEL">
-            <DragHandle>
-                <div id="tipsPanel" className={isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"}>
-                    <Scrollbars
-                        renderThumbVertical={(props) => <div key={uuid4()} {...props} className="thumbVertical" />}
-                        hideTracksWhenNotNeeded={true}
-                    >
-                        {
-                            <ValidTips
-                                testing={!!testResults}
-                                hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(currentProcess)}
-                            />
-                        }
-                        {!ProcessUtils.hasNoErrors(currentProcess) && (
-                            <Errors errors={errors} showDetails={showDetails} currentProcess={currentProcess} />
-                        )}
-                        {!ProcessUtils.hasNoWarnings(currentProcess) && (
-                            <Warnings
-                                warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
-                                showDetails={showDetails}
-                                currentProcess={currentProcess}
-                            />
-                        )}
-                    </Scrollbars>
-                </div>
-            </DragHandle>
+            <div id="tipsPanel" className={isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"}>
+                <Scrollbars
+                    renderThumbVertical={(props) => <div key={uuid4()} {...props} className="thumbVertical" />}
+                    hideTracksWhenNotNeeded={true}
+                >
+                    {
+                        <ValidTips
+                            testing={!!testResults}
+                            hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(currentProcess)}
+                        />
+                    }
+                    {!ProcessUtils.hasNoErrors(currentProcess) && (
+                        <Errors errors={errors} showDetails={showDetails} currentProcess={currentProcess} />
+                    )}
+                    {!ProcessUtils.hasNoWarnings(currentProcess) && (
+                        <Warnings
+                            warnings={ProcessUtils.extractInvalidNodes(warnings.invalidNodes)}
+                            showDetails={showDetails}
+                            currentProcess={currentProcess}
+                        />
+                    )}
+                </Scrollbars>
+            </div>
         </ToolbarWrapper>
     );
 }
