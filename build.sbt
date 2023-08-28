@@ -526,6 +526,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
   settings(itSettings()).
   settings(commonSettings).
   settings(assemblyNoScala("nussknacker-request-response-manager.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-request-response-runtime",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
@@ -1042,6 +1043,7 @@ lazy val liteComponentsApi = (project in lite("components-api")).
 lazy val liteBaseComponents = (project in lite("components/base")).
   settings(commonSettings).
   settings(assemblyNoScala("liteBase.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-lite-base-components",
   ).dependsOn(liteComponentsApi % "provided", componentsUtils % Provided, testUtils % "test", liteEngineRuntime % "test")
@@ -1049,6 +1051,7 @@ lazy val liteBaseComponents = (project in lite("components/base")).
 lazy val liteKafkaComponents: Project = (project in lite("components/kafka")).
   settings(commonSettings).
   settings(assemblyNoScala("liteKafka.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-lite-kafka-components"
     //TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...
@@ -1075,6 +1078,7 @@ lazy val liteKafkaComponentsTests: Project =  (project in lite("components/kafka
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).
   settings(assemblyNoScala("liteRequestResponse.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-lite-request-response-components",
   ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", componentsUtils % Provided, jsonUtils, requestResponseComponentsUtils)
@@ -1190,6 +1194,7 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   enablePlugins().
   settings(commonSettings).
   settings(assemblyNoScala("lite-embedded-manager.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-lite-embedded-deploymentManager",
   ).dependsOn(
@@ -1222,6 +1227,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
   enablePlugins().
   settings(commonSettings).
   settings(assemblyNoScala("lite-k8s-manager.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
