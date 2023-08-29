@@ -92,8 +92,8 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
 
   override def markInactive(processId: PeriodicProcessId): Unit =
     processEntities
-      .find(_.id == processId)
       .zipWithIndex
+      .find { case (process, _) => process.id == processId }
       .foreach { case (process, index) =>
         processEntities.update(index, process.copy(active = false))
       }

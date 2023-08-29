@@ -356,4 +356,28 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
     f.repository.deploymentEntities.loneElement.status shouldBe PeriodicProcessDeploymentStatus.Failed
     f.getMergedStatusDetails.status shouldBe SimpleStateStatus.Canceled
   }
+
+  test("should take into account only latest deployments of active schedules during merged status computation") {
+    val f = new Fixture
+    val processId = f.repository.addOnlyProcess(processName)
+    val firstDeploymentRunAt = LocalDateTime.of(2023, 1, 1, 10, 0)
+    f.repository.addOnlyDeployment(processId, PeriodicProcessDeploymentStatus.Failed, firstDeploymentRunAt)
+    f.repository.addOnlyDeployment(processId, PeriodicProcessDeploymentStatus.Finished, firstDeploymentRunAt.plusHours(1))
+
+    f.getMergedStatusDetails.status shouldBe WaitingForScheduleStatus
+  }
+
+  test("should take into account only latest inactive schedule request (periodic process) during merged status computation") {
+    val f = new Fixture
+    val firstProcessId = f.repository.addOnlyProcess(processName)
+    f.repository.addOnlyDeployment(firstProcessId, PeriodicProcessDeploymentStatus.Failed)
+    f.repository.markInactive(firstProcessId)
+
+    val secProcessId = f.repository.addOnlyProcess(processName)
+    f.repository.addOnlyDeployment(secProcessId, PeriodicProcessDeploymentStatus.Finished)
+    f.repository.markInactive(secProcessId)
+
+    f.getMergedStatusDetails.status shouldBe SimpleStateStatus.Finished
+  }
+
 }
