@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus}
+import pl.touk.nussknacker.engine.management.periodic.model.{PeriodicProcessDeployment, PeriodicProcessDeploymentId, PeriodicProcessDeploymentState, PeriodicProcessDeploymentStatus, ScheduleName}
 
 import java.time.LocalDateTime
 
@@ -10,7 +10,7 @@ object PeriodicProcessDeploymentGen {
       id = PeriodicProcessDeploymentId(42),
       periodicProcess = PeriodicProcessGen(),
       runAt = LocalDateTime.now(),
-      scheduleName = None,
+      scheduleName = ScheduleName(None),
       retriesLeft = 0,
       nextRetryAt = None,
       state = PeriodicProcessDeploymentState(

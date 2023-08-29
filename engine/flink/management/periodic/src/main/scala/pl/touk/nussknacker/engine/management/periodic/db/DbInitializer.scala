@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic.db
 
+import com.github.tminglei.slickpg.ExPostgresProfile
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ValueReader
@@ -27,9 +28,9 @@ object DbInitializer extends LazyLogging {
     Flyway
       .configure()
       .locations(
-        ( profile match {
-          case HsqldbProfile => Array("db/batch_periodic/migration/hsql", "db/batch_periodic/migration/common")
-          case PostgresProfile => Array("db/batch_periodic/migration/postgres", "db/batch_periodic/migration/common")
+        (profile match {
+          case _: HsqldbProfile => Array("db/batch_periodic/migration/hsql", "db/batch_periodic/migration/common")
+          case _: PostgresProfile => Array("db/batch_periodic/migration/postgres", "db/batch_periodic/migration/common")
           case _ => throw new IllegalArgumentException(s"Unsupported database url: $url. Use either PostgreSQL or HSQLDB.")
         }): _*
       )
@@ -44,7 +45,7 @@ object DbInitializer extends LazyLogging {
 
   private def chooseDbProfile(dbUrl: String): JdbcProfile = {
     dbUrl match {
-      case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => PostgresProfile
+      case url if (new PostgreSQLDatabaseType).handlesJDBCUrl(url) => ExPostgresProfile
       case _ => HsqldbProfile
     }
   }

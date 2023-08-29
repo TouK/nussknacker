@@ -16,7 +16,7 @@ object DefaultAdditionalDeploymentDataProvider extends AdditionalDeploymentDataP
     Map(
       "deploymentId" -> runDetails.id.value.toString,
       "runAt" -> runDetails.runAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-      "scheduleName" -> runDetails.scheduleName.getOrElse("")
+      "scheduleName" -> runDetails.scheduleName.value.getOrElse("")
     )
   }
 

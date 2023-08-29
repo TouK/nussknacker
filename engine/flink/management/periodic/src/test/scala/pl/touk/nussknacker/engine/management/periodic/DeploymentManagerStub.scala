@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, Pro
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentId
 import pl.touk.nussknacker.engine.testmode.TestProcess
 
 import java.time.Instant
@@ -17,9 +18,9 @@ class DeploymentManagerStub extends BaseDeploymentManager with PostprocessingPro
 
   var jobStatus: Option[StatusDetails] = None
 
-  def setStateStatus(status: StateStatus): Unit = {
+  def setStateStatus(status: StateStatus, deploymentIdOpt: Option[PeriodicProcessDeploymentId]): Unit = {
     jobStatus = Some(StatusDetails(
-      deploymentId = None,
+      deploymentId = deploymentIdOpt.map(pdid => DeploymentId(pdid.toString)),
       externalDeploymentId = Some(ExternalDeploymentId("1")),
       status = status,
       version = None,
