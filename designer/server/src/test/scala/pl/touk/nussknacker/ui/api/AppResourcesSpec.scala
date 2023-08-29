@@ -22,8 +22,7 @@ class AppResourcesSpec
     with NuScenarioConfigurationHelper
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
-    with PatientScalaFutures
-    with BeforeAndAfterEach {
+    with PatientScalaFutures {
 
   override def nuTestConfig: Config = TestsConfig
     .withValue("enableConfigEndpoint", fromAnyRef(true))
