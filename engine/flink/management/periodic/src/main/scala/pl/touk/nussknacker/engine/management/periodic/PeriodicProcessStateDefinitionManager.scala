@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import pl.touk.nussknacker.engine.api.deployment.{OverridingProcessStateDefinitionManager, ProcessStateDefinitionManager, StateStatus}
 import pl.touk.nussknacker.engine.management.periodic.PeriodicProcessService.{DeploymentStatus, PeriodicProcessStatus}
-import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
 
 class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionManager) extends OverridingProcessStateDefinitionManager(
   statusActionsPF = PeriodicStateStatus.statusActionsPF,
@@ -13,21 +12,34 @@ class PeriodicProcessStateDefinitionManager(delegate: ProcessStateDefinitionMana
 ) {
   override def statusTooltip(stateStatus: StateStatus): String = {
     stateStatus match {
-      case periodic: PeriodicProcessStatus => periodic.limitedAndSortedDeployments.map {
-        case d@DeploymentStatus(_, scheduleId, runAt, status, processActive, _) =>
-          val refinedStatus = {
-            if (!processActive && status != PeriodicProcessDeploymentStatus.Finished) {
-              "Canceled" // We don't have Canceled status - we only mark periodic_process inactive
-            } else if (d.isWaitingForReschedule) {
-              "WaitingForReschedule"
-            } else {
-              status.toString
-            }
-          }
-          s"Schedule ${scheduleId.scheduleName.display} scheduled at: ${runAt.format(PeriodicStateStatus.Format)} status: $refinedStatus"
-      }.mkString(",\n")
+      case periodic: PeriodicProcessStatus => PeriodicProcessStateDefinitionManager.statusTooltip(periodic)
       case _ => super.statusTooltip(stateStatus)
     }
+  }
+
+}
+
+object PeriodicProcessStateDefinitionManager {
+
+  def statusTooltip(processStatus: PeriodicProcessStatus): String = {
+    processStatus.limitedAndSortedDeployments.map {
+      case d@DeploymentStatus(_, scheduleId, runAt, status, _, _) =>
+        val refinedStatus = {
+          if (d.isCanceled) {
+            "Canceled"
+          } else if (d.isWaitingForReschedule) {
+            "WaitingForReschedule"
+          } else {
+            status.toString
+          }
+        }
+        val prefix = scheduleId.scheduleName.value.map { definedScheduleName =>
+          s"Schedule $definedScheduleName scheduled at:"
+        }.getOrElse {
+          s"Scheduled at:"
+        }
+        s"$prefix ${runAt.format(PeriodicStateStatus.Format)} status: $refinedStatus"
+    }.mkString(",\n")
   }
 
 }

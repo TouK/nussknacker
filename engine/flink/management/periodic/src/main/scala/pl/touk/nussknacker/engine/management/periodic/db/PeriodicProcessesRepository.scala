@@ -70,8 +70,6 @@ trait PeriodicProcessesRepository {
 
   def run[T](action: Action[T]): Future[T]
 
-  def markInactive(processName: ProcessName): Action[Unit]
-
   def markInactive(processId: PeriodicProcessId): Action[Unit]
 
   def create(deploymentWithJarData: DeploymentWithJarData,
@@ -289,14 +287,6 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       status = PeriodicProcessDeploymentStatus.Scheduled
     )
     ((PeriodicProcessDeployments returning PeriodicProcessDeployments.map(_.id) into ((_, id) => id)) += deploymentEntity).flatMap(findProcessData)
-  }
-
-  override def markInactive(processName: ProcessName): Action[Unit] = {
-    val q = for {
-      p <- PeriodicProcesses if p.processName === processName.value && p.active === true
-    } yield p.active
-    val update = q.update(false)
-    update.map(_ => ())
   }
 
   override def markInactive(processId: PeriodicProcessId): Action[Unit] = {

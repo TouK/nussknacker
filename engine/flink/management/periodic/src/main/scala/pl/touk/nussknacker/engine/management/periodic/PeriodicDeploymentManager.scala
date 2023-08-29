@@ -114,7 +114,9 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
     service.deactivate(name).flatMap { deploymentIdsToStop =>
       // TODO: should return List of SavepointResult
-      Future.sequence(deploymentIdsToStop.map(delegate.stop(name, _, savepointDir, user))).map(_.head)
+      Future.sequence(deploymentIdsToStop.map(delegate.stop(name, _, savepointDir, user))).map(_.headOption.getOrElse {
+        throw new IllegalStateException(s"No running deployment for scenario: $name found")
+      })
     }
   }
 

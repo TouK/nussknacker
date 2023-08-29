@@ -373,6 +373,10 @@ object PeriodicProcessService {
   // Should we reschedule canceled status? It can be useful in case when job hang, we cancel it and want to be rescheduled
   private val EngineStatusesToReschedule = Set(SimpleStateStatus.Finished, SimpleStateStatus.Canceled)
 
+  // This class represents status of all schedules for given scenario. It is designed to contain simple representation of statuses
+  // for each historical and active deployments. mergedStatusDetails and methods below are for purpose of presentation
+  // of single, merged status similar to this available for streaming job. This merged status should be a straightforward derivative
+  // of these deployments statuses so it will be easy to figure out it by user.
   case class PeriodicProcessStatus(activeDeploymentsStatuses: List[DeploymentStatus], inactiveDeploymentsStatuses: List[DeploymentStatus]) extends StateStatus with LazyLogging {
 
     def limitedAndSortedDeployments: List[DeploymentStatus] =
@@ -455,14 +459,14 @@ object PeriodicProcessService {
         .orElse(last(PeriodicProcessDeploymentStatus.Finished))
     }
 
-  }
+    private def latestDeploymentForEachSchedule(deploymentsStatuses: List[DeploymentStatus]) = {
+      deploymentsStatuses
+        .groupBy(_.scheduleId)
+        .values
+        .toList
+        .map(_.sortBy(_.runAt)(Ordering[LocalDateTime].reverse).head)
+    }
 
-  private def latestDeploymentForEachSchedule(deploymentsStatuses: List[DeploymentStatus]) = {
-    deploymentsStatuses
-      .groupBy(_.scheduleId)
-      .values
-      .toList
-      .map(_.sortBy(_.runAt)(Ordering[LocalDateTime].reverse).head)
   }
 
   case class DeploymentStatus( // Probably it is too much technical to present to users, but the only other alternative
@@ -471,7 +475,7 @@ object PeriodicProcessService {
                                scheduleId: ScheduleId,
                                runAt: LocalDateTime,
                                // This status is almost fine but:
-                               // - we don't have cancel status - we have to check processActive as well
+                               // - we don't have cancel status - we have to check processActive as well (isCanceled)
                                // - sometimes we have to check runtimeStatusOpt (isWaitingForReschedule)
                                status: PeriodicProcessDeploymentStatus,
                                processActive: Boolean,
@@ -484,6 +488,12 @@ object PeriodicProcessService {
       processActive &&
         DeploymentStatusesToReschedule.contains(status) &&
         runtimeStatusOpt.exists(st => EngineStatusesToReschedule.contains(st.status))
+    }
+
+    def isCanceled: Boolean = {
+      // We don't have Canceled status, because of that we base on tricky assumption. It can be wrong when we cancel
+      // scenario just after it was marked as finished and is not rescheduled yet
+      !processActive && status != PeriodicProcessDeploymentStatus.Finished
     }
 
   }
