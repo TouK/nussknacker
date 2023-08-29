@@ -3,11 +3,13 @@ package pl.touk.nussknacker.engine.management.periodic
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.management.periodic.cron.CronParameterValidator
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ValidatedValuesDetailedMessage}
 
 class CronSchedulePropertyExtractorTest extends AnyFunSuite
-  with Matchers
-  with Inside {
+  with Matchers with EitherValuesDetailedMessage with ValidatedValuesDetailedMessage with Inside {
 
   private val extractor = CronSchedulePropertyExtractor()
 
@@ -33,4 +35,20 @@ class CronSchedulePropertyExtractorTest extends AnyFunSuite
     
     inside(result) { case Right(CronScheduleProperty(_)) => }
   }
+
+  test("should extract MultipleScheduleProperty") {
+    val multipleSchedulesExpression = "{foo: '0 0 * * * ?', bar: '1 0 * * * ?'}"
+    val result = extractor(PeriodicProcessGen.buildCanonicalProcess(multipleSchedulesExpression))
+    result.rightValue shouldEqual MultipleScheduleProperty(Map(
+      "foo" -> CronScheduleProperty("0 0 * * * ?"),
+      "bar" -> CronScheduleProperty("1 0 * * * ?")
+    ))
+
+    validate(multipleSchedulesExpression).validValue
+  }
+
+  private def validate(expression: String) = {
+    CronParameterValidator.isValid("cron", expression, None)(NodeId("fooNodeId"))
+  }
+
 }
