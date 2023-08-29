@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, ProcessTestData}
+import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.MultipartUtils
@@ -24,7 +24,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import scala.language.higherKinds
 
 class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
-  with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuItTest {
+  with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 
   import akka.http.scaladsl.server.RouteConcatenation._
 

@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, ProcessTestData}
+import pl.touk.nussknacker.ui.api.helpers.{NuResourcesTest, ProcessTestData}
 import pl.touk.nussknacker.ui.process.migrate.{RemoteEnvironment, RemoteEnvironmentCommunicationError, TestMigrationResult}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ProcessComparator
@@ -31,7 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with PatientScalaFutures with Matchers with FailFastCirceSupport
-  with BeforeAndAfterEach with Inside with NuItTest {
+  with BeforeAndAfterEach with Inside with NuResourcesTest {
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val processId: String = ProcessTestData.validProcess.id

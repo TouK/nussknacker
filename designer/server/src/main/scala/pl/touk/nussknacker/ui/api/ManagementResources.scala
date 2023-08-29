@@ -23,8 +23,8 @@ import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponseTryPF
 import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
-import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerService, DeploymentManagerDispatcher, DeploymentService}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
+import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerService, DeploymentManagerDispatcher, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
@@ -71,7 +71,6 @@ object ManagementResources {
     case a => Json.obj("pretty" -> BestEffortJsonEncoder(failOnUnknown = false, a.getClass.getClassLoader).circeEncoder.apply(a))
   }
 
-
 }
 
 class ManagementResources(val processAuthorizer: AuthorizeProcess,
@@ -100,7 +99,7 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
   case class ValidationError(message: String) extends Exception(message) with BadRequestError
 
   private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
-    entity(as[Option[String]]).flatMap{ comment =>
+    entity(as[Option[String]]).flatMap { comment =>
       DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
         case Valid(deploymentComment) => provide(deploymentComment)
         case Invalid(exc) => complete(EspErrorToHttp.espErrorToHttp(ValidationError(exc.getMessage)))
@@ -184,9 +183,12 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                     measureTime("test", metricRegistry) {
                       parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
                         case Right(displayableProcess) =>
-                          scenarioTestService.performTest(idWithName, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
-                            Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-                          }.recover(EspErrorToHttp.errorToHttp)
+                          scenarioTestService
+                            .performTest(idWithName, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder)
+                            .flatMap { results =>
+                              Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                            }
+                            .recover(EspErrorToHttp.errorToHttp)
                         case Left(error) =>
                           Future.failed(UnmarshallError(error.toString))
                       }
@@ -221,20 +223,21 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
           path("testWithParameters" / Segment) {
             processName => {
               (post & processDetailsForName[Unit](processName)) { process =>
-              val modelData = typeToConfig.forTypeUnsafe(process.processingType)
-              implicit val requestDecoder: Decoder[TestFromParametersRequest] = prepareTestFromParametersDecoder(modelData)
-              (post & entity(as[TestFromParametersRequest])) { testParametersRequest => {
-                processId(testParametersRequest.displayableProcess.id) { idWithName =>
-                  canDeploy(idWithName) {
-                    complete {
-                      scenarioTestService.performTest(idWithName, testParametersRequest.displayableProcess,
-                        testParametersRequest.sourceParameters, testResultsVariableEncoder)
-                        .flatMap { results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)) }
-                        .recover(EspErrorToHttp.errorToHttp)
+                val modelData = typeToConfig.forTypeUnsafe(process.processingType)
+                implicit val requestDecoder: Decoder[TestFromParametersRequest] = prepareTestFromParametersDecoder(modelData)
+                (post & entity(as[TestFromParametersRequest])) { testParametersRequest => {
+                  processId(testParametersRequest.displayableProcess.id) { idWithName =>
+                    canDeploy(idWithName) {
+                      complete {
+                        scenarioTestService.performTest(idWithName, testParametersRequest.displayableProcess,
+                          testParametersRequest.sourceParameters, testResultsVariableEncoder)
+                          .flatMap { results => Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en)) }
+                          .recover(EspErrorToHttp.errorToHttp)
+                      }
                     }
                   }
                 }
-              }}
+                }
               }
             }
           } ~

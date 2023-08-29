@@ -7,23 +7,30 @@ import org.scalatest.time.{Second, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
-import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
+import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbRef}
 
-import scala.util.{Try, Using}
 import scala.jdk.CollectionConverters._
+import scala.util.{Try, Using}
 
-trait WithDbConfig {
-  val dbProfile: JdbcProfile
-  val config: Config
+trait WithTestDb extends BeforeAndAfterAll {
+  this: Suite =>
 
-  lazy val db: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", config), dbProfile)
+  def testDbConfig: Config
+
+  private lazy val (dbRef, releaseDbRefResources) = DbRef.create(testDbConfig).allocated.unsafeRunSync()
+
+  def testDbRef: DbRef = dbRef
+
+  abstract override def afterAll(): Unit = {
+    releaseDbRefResources.unsafeRunSync()
+    super.afterAll()
+  }
 }
 
-trait WithHsqlDbConfig extends WithDbConfig {
+trait WithTestHsqlDb extends WithTestDb {
+  self: Suite =>
 
-  override val dbProfile = HsqldbProfile
-  override lazy val config: Config = ConfigFactory.parseMap(Map(
+  override val testDbConfig: Config = ConfigFactory.parseMap(Map(
     "db" -> Map(
       "user" -> "SA",
       "password" -> "",
@@ -32,9 +39,13 @@ trait WithHsqlDbConfig extends WithDbConfig {
     ).asJava).asJava)
 }
 
-trait WithPostgresDbConfig extends WithDbConfig { self: ForAllTestContainer =>
+trait WithTestPostgresDb extends WithTestDb {
+  self: Suite with ForAllTestContainer =>
 
-  override lazy val config: Config = ConfigFactory.parseMap(Map(
+  override val container: PostgreSQLContainer =
+    PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
+
+  override def testDbConfig: Config = ConfigFactory.parseMap(Map(
     "db" -> Map(
       "user" -> container.username,
       "password" -> container.password,
@@ -42,23 +53,17 @@ trait WithPostgresDbConfig extends WithDbConfig { self: ForAllTestContainer =>
       "driver" -> "org.postgresql.Driver",
       "schema" -> "testschema"
     ).asJava).asJava)
-
-  override val dbProfile = PostgresProfile
-
-  override val container: PostgreSQLContainer = PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
-
 }
 
 trait DbTesting
-  extends WithDbConfig
-    with BeforeAndAfterEach
+  extends BeforeAndAfterEach
     with BeforeAndAfterAll
     with LazyLogging {
-  self: Suite =>
+  self: Suite with WithTestDb =>
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    DatabaseInitializer.initDatabase("db", config)
+    DatabaseInitializer.initDatabase("db", testDbConfig)
   }
 
   override protected def afterEach(): Unit = {
@@ -67,7 +72,7 @@ trait DbTesting
     }
   }
 
-  def cleanDB(): Try[Unit] = Using(db.db.createSession()) { session =>
+  def cleanDB(): Try[Unit] = Using(testDbRef.db.createSession()) { session =>
     session.prepareStatement("""delete from "process_attachments"""").execute()
     session.prepareStatement("""delete from "process_comments"""").execute()
     session.prepareStatement("""delete from "process_actions"""").execute()
@@ -80,7 +85,7 @@ trait DbTesting
 
 trait WithHsqlDbTesting
   extends DbTesting
-    with WithHsqlDbConfig {
+    with WithTestHsqlDb {
   self: Suite =>
 }
 
@@ -88,7 +93,7 @@ trait WithPostgresDbTesting
   extends DbTesting
     with PatientScalaFutures
     with ForAllTestContainer
-    with WithPostgresDbConfig {
+    with WithTestPostgresDb {
   self: Suite =>
 
   implicit val pc: PatienceConfig = PatienceConfig(Span(20, Seconds), Span(1, Second))

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
 
 import scala.compat.java8.FutureConverters._
@@ -52,6 +52,9 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
   override def cancel(name: ProcessName, user: User): Future[Unit] =
     delegate.cancel(name, user)
 
+  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
+    delegate.cancel(name, deploymentId, user)
+
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
     delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
@@ -67,6 +70,9 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
 
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] =
     delegate.stop(name, savepointDir, user)
+
+  override def stop(name: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult] =
+    delegate.stop(name, deploymentId, savepointDir, user)
 
   override def close(): Unit = delegate.close()
 

@@ -2,14 +2,14 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import akka.http.scaladsl.server.Route
 import cats.instances.future._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ModelDefinitionWithTypes, ProcessDefinition}
 import pl.touk.nussknacker.engine.dict.{ProcessDictSubstitutor, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.management.FlinkStreamingPropertiesConfig
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
@@ -17,28 +17,35 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
-import pl.touk.nussknacker.ui.db.DbConfig
+import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
+import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.process.processingtypedata.{MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider}
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentDetails, FragmentResolver}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import slick.jdbc.{HsqldbProfile, JdbcBackend}
 
+import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: merge with ProcessTestData?
 object TestFactory extends TestPermissions {
 
-  private val dummyDbConfig: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
+  val (dummyDbRef: DbRef, _) = {
+    val dbConfig = ConfigFactory.parseMap(Map(
+      "db" -> Map(
+        "user" -> "SA",
+        "password" -> "",
+        "url" -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
+        "driver" -> "org.hsqldb.jdbc.JDBCDriver"
+      ).asJava).asJava)
+    DbRef.create(dbConfig).allocated.unsafeRunSync()
+  }
 
-  private val dummyDb: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", dummyDbConfig), HsqldbProfile)
-
-  //FIIXME: remove testCategory dummy implementation
+  //FIXME: remove testCategory dummy implementation
   val testCategory: CategorizedPermission = Map(
     TestCategories.TestCat -> Permission.ALL_PERMISSIONS,
     TestCategories.TestCat2 -> Permission.ALL_PERMISSIONS
@@ -70,34 +77,34 @@ object TestFactory extends TestPermissions {
 
   def deploymentService() = new StubDeploymentService(Map.empty)
 
-  def newDBIOActionRunner(dbs: DbConfig): DBIOActionRunner =
-    DBIOActionRunner(dbs)
+  def newDBIOActionRunner(dbRef: DbRef): DBIOActionRunner =
+    DBIOActionRunner(dbRef)
 
   def newDummyDBIOActionRunner(): DBIOActionRunner =
-    newDBIOActionRunner(dummyDb)
+    newDBIOActionRunner(dummyDbRef)
 
-  def newFutureFetchingProcessRepository(dbs: DbConfig) =
-    new DBFetchingProcessRepository[Future](dbs, newActionProcessRepository(dbs)) with BasicRepository
+  def newFutureFetchingProcessRepository(dbRef: DbRef) =
+    new DBFetchingProcessRepository[Future](dbRef, newActionProcessRepository(dbRef)) with BasicRepository
 
-  def newFetchingProcessRepository(dbs: DbConfig) =
-    new DBFetchingProcessRepository[DB](dbs, newActionProcessRepository(dbs)) with DbioRepository
+  def newFetchingProcessRepository(dbRef: DbRef) =
+    new DBFetchingProcessRepository[DB](dbRef, newActionProcessRepository(dbRef)) with DbioRepository
 
-  def newWriteProcessRepository(dbs: DbConfig, modelVersions: Option[Int] = Some(1)) =
-    new DBProcessRepository(dbs, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
+  def newWriteProcessRepository(dbRef: DbRef, modelVersions: Option[Int] = Some(1)) =
+    new DBProcessRepository(dbRef, mapProcessingTypeDataProvider(modelVersions.map(TestProcessingTypes.Streaming -> _).toList: _*))
 
   def newDummyWriteProcessRepository(): DBProcessRepository =
-    newWriteProcessRepository(dummyDb)
+    newWriteProcessRepository(dummyDbRef)
 
-  def newFragmentRepository(db: DbConfig): DbFragmentRepository =
-    new DbFragmentRepository(db, implicitly[ExecutionContext])
+  def newFragmentRepository(dbRef: DbRef): DbFragmentRepository =
+    new DbFragmentRepository(dbRef, implicitly[ExecutionContext])
 
-  def newActionProcessRepository(db: DbConfig) = new DbProcessActionRepository[DB](db,
+  def newActionProcessRepository(dbRef: DbRef) = new DbProcessActionRepository[DB](dbRef,
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> buildInfo)) with DbioRepository
 
   def newDummyActionRepository(): DbProcessActionRepository[DB] =
-    newActionProcessRepository(dummyDb)
+    newActionProcessRepository(dummyDbRef)
 
-  def newProcessActivityRepository(db: DbConfig) = new DbProcessActivityRepository(db)
+  def newProcessActivityRepository(dbRef: DbRef) = new DbProcessActivityRepository(dbRef)
 
   def asAdmin(route: RouteWithUser): Route =
     route.securedRoute(adminUser())

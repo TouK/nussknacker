@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.language.higherKinds
 
 class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
-  with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with NuItTest {
+  with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
 
   import TestCategories._
 

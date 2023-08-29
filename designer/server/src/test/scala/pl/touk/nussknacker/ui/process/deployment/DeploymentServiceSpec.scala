@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, Pro
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NussknackerAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
@@ -29,7 +29,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 
-class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with DBIOActionValues with NussknackerAssertions
+class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaFutures with DBIOActionValues with NuScalaTestAssertions
   with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting with EitherValuesDetailedMessage {
 
   import TestCategories._
@@ -44,12 +44,12 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   private implicit val ds: ExecutionContextExecutor = system.dispatcher
 
   private var deploymentManager: MockDeploymentManager = _
-  override protected val dbioRunner: DBIOActionRunner = newDBIOActionRunner(db)
-  private val fetchingProcessRepository = newFetchingProcessRepository(db)
-  private val futureFetchingProcessRepository = newFutureFetchingProcessRepository(db)
-  private val writeProcessRepository = newWriteProcessRepository(db)
-  private val actionRepository = newActionProcessRepository(db)
-  private val activityRepository = newProcessActivityRepository(db)
+  override protected val dbioRunner: DBIOActionRunner = newDBIOActionRunner(testDbRef)
+  private val fetchingProcessRepository = newFetchingProcessRepository(testDbRef)
+  private val futureFetchingProcessRepository = newFutureFetchingProcessRepository(testDbRef)
+  private val writeProcessRepository = newWriteProcessRepository(testDbRef)
+  private val actionRepository = newActionProcessRepository(testDbRef)
+  private val activityRepository = newProcessActivityRepository(testDbRef)
 
   private val processingTypeDataProvider: ProcessingTypeDataProvider[DeploymentManager, Nothing] = new ProcessingTypeDataProvider[DeploymentManager, Nothing] {
     override def forType(typ: ProcessingType): Option[DeploymentManager] = all.get(typ)

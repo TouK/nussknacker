@@ -17,7 +17,7 @@ object HttpsConnectionContextFactory {
     ConnectionContext.httpsClient(sslContext)
   }
 
-  private def prepareSSLContext(keyStoreConfig: KeyStoreConfig) = {
+  def prepareSSLContext(keyStoreConfig: KeyStoreConfig): SSLContext = {
     val ks = KeyStore.getInstance("PKCS12")
 
     ks.load(keyStoreConfig.uri.toURL.openStream(), keyStoreConfig.password)

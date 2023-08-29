@@ -1,0 +1,196 @@
+{
+    "metaData": {
+        "id": "First-Union",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "source",
+            "ref": {
+                "typ": "periodic",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": ""
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "{color: 'green'}"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 180,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "nexts": [
+                [
+                    {
+                        "id": "branch2",
+                        "varName": "branch2Content",
+                        "value": {
+                            "language": "spel",
+                            "expression": "'value'"
+                        },
+                        "additionalFields": {
+                            "description": null,
+                            "layoutData": {
+                                "x": 360,
+                                "y": 360
+                            }
+                        },
+                        "type": "Variable"
+                    },
+                    {
+                        "definition": {
+                            "id": "branch2",
+                            "joinId": "union"
+                        },
+                        "type": "BranchEndData"
+                    }
+                ],
+                [
+                    {
+                        "id": "branch1",
+                        "varName": "branch1Content",
+                        "value": {
+                            "language": "spel",
+                            "expression": "'value'"
+                        },
+                        "additionalFields": {
+                            "description": null,
+                            "layoutData": {
+                                "x": 0,
+                                "y": 360
+                            }
+                        },
+                        "type": "Variable"
+                    },
+                    {
+                        "definition": {
+                            "id": "branch1",
+                            "joinId": "union"
+                        },
+                        "type": "BranchEndData"
+                    }
+                ]
+            ],
+            "id": "split",
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 180,
+                    "y": 180
+                }
+            },
+            "type": "Split"
+        }
+    ],
+    "additionalBranches": [
+        [
+            {
+                "id": "union",
+                "outputVar": "outputVar",
+                "nodeType": "union",
+                "parameters": [],
+                "branchParameters": [
+                    {
+                        "branchId": "branch1",
+                        "parameters": [
+                            {
+                                "name": "Output expression",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "{branchName: \"branch1\", value: #branch1Content}"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "branchId": "branch2",
+                        "parameters": [
+                            {
+                                "name": "Output expression",
+                                "expression": {
+                                    "language": "spel",
+                                    "expression": "{branchName: \"branch2\", value: #branch2Content}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "additionalFields": {
+                    "description": null,
+                    "layoutData": {
+                        "x": 180,
+                        "y": 540
+                    }
+                },
+                "type": "Join"
+            },
+            {
+                "id": "variable",
+                "varName": "varName",
+                "value": {
+                    "language": "spel",
+                    "expression": "'value'"
+                },
+                "additionalFields": {
+                    "description": null,
+                    "layoutData": {
+                        "x": 180,
+                        "y": 720
+                    }
+                },
+                "type": "Variable"
+            },
+            {
+                "id": "dead-end",
+                "ref": {
+                    "typ": "dead-end",
+                    "parameters": []
+                },
+                "endResult": null,
+                "isDisabled": null,
+                "additionalFields": {
+                    "description": null,
+                    "layoutData": {
+                        "x": 180,
+                        "y": 900
+                    }
+                },
+                "type": "Sink"
+            }
+        ]
+    ]
+}

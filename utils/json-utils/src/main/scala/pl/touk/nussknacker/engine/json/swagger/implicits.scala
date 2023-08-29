@@ -38,7 +38,7 @@ object implicits {
             defaultMode = DualEditorMode.SIMPLE
           )
         )
-        //todo: FixedValuesParameterEditor for other types e.g. numbers
+        // TODO: FixedValuesParameterEditor for other types e.g. numbers
         case SwaggerEnum(values) if values.forall(v => v.isInstanceOf[String]) => Some(
           FixedValuesParameterEditor(values.map(value => FixedExpressionValue(s"'$value'", value.asInstanceOf[String])))
         )

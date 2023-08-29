@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionSt
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -20,15 +20,15 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
 object DBFetchingProcessRepository {
-  def create(dbConfig: DbConfig, actionRepository: ProcessActionRepository[DB])(implicit ec: ExecutionContext) =
-    new DBFetchingProcessRepository[DB](dbConfig, actionRepository) with DbioRepository
 
-  def createFutureRespository(dbConfig: DbConfig, actionRepository: ProcessActionRepository[DB])(implicit ec: ExecutionContext) =
-    new DBFetchingProcessRepository[Future](dbConfig, actionRepository) with BasicRepository
+  def create(dbRef: DbRef, actionRepository: ProcessActionRepository[DB])(implicit ec: ExecutionContext) =
+    new DBFetchingProcessRepository[DB](dbRef, actionRepository) with DbioRepository
 
+  def createFutureRepository(dbRef: DbRef, actionRepository: ProcessActionRepository[DB])(implicit ec: ExecutionContext) =
+    new DBFetchingProcessRepository[Future](dbRef, actionRepository) with BasicRepository
 }
 
-abstract class DBFetchingProcessRepository[F[_] : Monad](val dbConfig: DbConfig, actionRepository: ProcessActionRepository[DB])
+abstract class DBFetchingProcessRepository[F[_] : Monad](val dbRef: DbRef, actionRepository: ProcessActionRepository[DB])
   extends FetchingProcessRepository[F] with LazyLogging {
 
   import api._
@@ -57,15 +57,18 @@ abstract class DBFetchingProcessRepository[F[_] : Monad](val dbConfig: DbConfig,
       lastDeployedActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastActionPerProcess(Set(ProcessActionState.Finished), Some(Set(ProcessActionType.Deploy))))
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
     } yield
-      latestProcesses.map { case ((_, processVersion), process) => createFullDetails(
-        process,
-        processVersion,
-        lastActionPerProcess.get(process.id),
-        lastStateActionPerProcess.get(process.id),
-        lastDeployedActionPerProcess.get(process.id),
-        isLatestVersion = true
-      )
-      }).map(_.toList)
+      latestProcesses
+        .map { case ((_, processVersion), process) =>
+          createFullDetails(
+            process,
+            processVersion,
+            lastActionPerProcess.get(process.id),
+            lastStateActionPerProcess.get(process.id),
+            lastDeployedActionPerProcess.get(process.id),
+            isLatestVersion = true
+          )
+        }
+      ).map(_.toList)
   }
 
   private def fetchActionsOrEmpty[PS: ProcessShapeFetchStrategy](doFetch: => DBIO[Map[ProcessId, ProcessAction]]): DBIO[Map[ProcessId, ProcessAction]] = {

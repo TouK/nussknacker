@@ -7,7 +7,7 @@ import db.util.DBIOActionInstances._
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.migration.ProcessMigrations
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
+import pl.touk.nussknacker.ui.db.{DbRef, EspTables}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
@@ -25,7 +25,7 @@ object Initialization {
 
   implicit val nussknackerUser: LoggedUser = NussknackerInternalUser
   def init(migrations: ProcessingTypeDataProvider[ProcessMigrations, _],
-           db: DbConfig,
+           db: DbRef,
            fetchingRepository: DBFetchingProcessRepository[DB],
            environment: String)(implicit ec: ExecutionContext) : Unit = {
     val processRepository = new DBProcessRepository(db, migrations.mapValues(_.version))
@@ -38,7 +38,7 @@ object Initialization {
     runOperationsTransactionally(db, operations)
   }
 
-  private def runOperationsTransactionally(db: DbConfig, operations: List[InitialOperation])(implicit ec: ExecutionContext): List[Unit] = {
+  private def runOperationsTransactionally(db: DbRef, operations: List[InitialOperation])(implicit ec: ExecutionContext): List[Unit] = {
 
     import db.profile.api._
 
@@ -57,12 +57,12 @@ trait InitialOperation extends LazyLogging {
 
 }
 
-class EnvironmentInsert(environmentName: String, dbConfig: DbConfig) extends InitialOperation {
+class EnvironmentInsert(environmentName: String, dbRef: DbRef) extends InitialOperation {
   override def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     //`insertOrUpdate` in Slick v.3.2.0-M1 seems not to work
-    import dbConfig.profile.api._
+    import dbRef.profile.api._
     val espTables = new EspTables {
-      override implicit val profile: JdbcProfile = dbConfig.profile
+      override implicit val profile: JdbcProfile = dbRef.profile
     }
     val uppsertEnvironmentAction = for {
       alreadyExists <- espTables.environmentsTable.filter(_.name === environmentName).exists.result
@@ -91,7 +91,7 @@ class AutomaticMigration(migrations: ProcessingTypeDataProvider[ProcessMigration
   }
 
   private def migrateOne(processDetails: ProcessDetails)(implicit ec: ExecutionContext, lu: LoggedUser) : DB[Unit] = {
-    // todo: unsafe processId?
+    // TODO: unsafe processId?
     migrator.migrateProcess(processDetails, skipEmptyMigrations = true).map(_.toUpdateAction(ProcessId(processDetails.processId.value))) match {
       case Some(action) => processRepository.updateProcess(action).flatMap {
         case Left(error) => DBIOAction.failed(new RuntimeException(s"Failed to migrate ${processDetails.name}: $error"))

@@ -31,7 +31,7 @@ class UniversalKafkaDeserializer[T](schemaRegistryClient: SchemaRegistryClient,
 
     readerSchemaDataOpt.map(_.schema.schemaType()).foreach(readerSchemaType => {
       if (readerSchemaType != writerSchema.schemaType())
-        throw new MismatchReaderWriterSchemaException(readerSchemaType, writerSchema.schemaType()) //todo: test this case when supporting json schema
+        throw new MismatchReaderWriterSchemaException(readerSchemaType, writerSchema.schemaType()) //TODO: test this case when supporting json schema
     })
 
     val writerSchemaData = new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))

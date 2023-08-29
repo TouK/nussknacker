@@ -58,7 +58,9 @@ class AppResources(config: Config,
     }
   }
 
-  private def createHealthCheckHttpResponse(status: HealthCheckProcessResponseStatus, message: Option[String] = None, processes: Option[Set[String]] = None): Future[HttpResponse] =
+  private def createHealthCheckHttpResponse(status: HealthCheckProcessResponseStatus,
+                                            message: Option[String] = None,
+                                            processes: Option[Set[String]] = None): Future[HttpResponse] =
     Marshal(HealthCheckProcessResponse(status, message, processes))
       .to[ResponseEntity]
       .map(res => HttpResponse(

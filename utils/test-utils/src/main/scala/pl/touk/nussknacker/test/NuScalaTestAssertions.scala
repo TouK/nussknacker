@@ -5,7 +5,7 @@ import org.scalatest.{Assertion, Assertions}
 
 import scala.reflect.ClassTag
 
-trait NussknackerAssertions extends Assertions {
+trait NuScalaTestAssertions extends Assertions {
   def assertThrowsWithParent[T <: AnyRef](f: => Any)(implicit classTag: ClassTag[T], pos: source.Position): Assertion = {
     assertThrows[T] {
       try {

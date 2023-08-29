@@ -11,8 +11,14 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * removed `RichKafkaConsumer.consumeWithConsumerRecord`, use `RichKafkaConsumer.consumeWithJson` instead of it 
   * `RichKafkaConsumer.defaultSecondsToWait` renamed to `RichKafkaConsumer.DefaultSecondsToWait`
   * `KafkaClient.sendMessage` accepts generic content with json encoder
+* [#4583](https://github.com/TouK/nussknacker/pull/4583) `DeploymentManager` has new variants of method `cancel` and `stop`
+  taking `DeployomentId` next to `ProcessName`. They will be used with batch processing mechanism (periodic DM) so it is necessary
+  to implement it only if your DM will be wrapped by `PeriodicDeploymentManager`
 
 ### REST API changes
+* [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
+  * Removed isSubprocess endpoint param, use isFragment from now on.
+  * Removed backward compatibility for subprocess fields.
 
 ### Other changes
 * [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow to test fragments using ad hoc testing.

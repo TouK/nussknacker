@@ -134,8 +134,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     EitherT {
       invokeForSuccess(
         HttpMethods.POST, List("processes", localProcess.id, category),
-        //TODO replace `isSubprocess` with `isFragment` after 1.10 release
-        Query(("isSubprocess", localProcess.metaData.isFragment.toString)), HttpEntity.Empty, remoteUserNameHeader
+        Query(("isFragment", localProcess.metaData.isFragment.toString)), HttpEntity.Empty, remoteUserNameHeader
       )
     }
   }

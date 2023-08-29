@@ -2,6 +2,7 @@ import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
 import pl.project13.scala.sbt.JmhPlugin._
+
 import scala.sys.process._
 import sbt.Keys._
 import sbt.{Def, _}
@@ -301,6 +302,7 @@ val circeGenericExtrasV = "0.14.3"
 val jwtCirceV = "9.3.0"
 val jacksonV = "2.14.3"
 val catsV = "2.9.0"
+val catsEffectV = "2.5.5"
 val everitSchemaV = "1.14.2"
 val slf4jV = "1.7.36"
 val scalaLoggingV = "3.9.5"
@@ -312,7 +314,8 @@ val configV = "1.4.2"
 // rc16+ depend on slf4j 2.x
 val dropWizardV = "5.0.0-rc15"
 val scalaCollectionsCompatV = "2.10.0"
-val testcontainersScalaV = "0.40.16"
+val testContainersScalaV = "0.40.17"
+val testContainersJavaV = "1.18.3"
 val nettyV = "4.1.93.Final"
 val nettyReactiveStreamsV = "2.0.8"
 
@@ -524,6 +527,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
   settings(itSettings()).
   settings(commonSettings).
   settings(assemblyNoScala("nussknacker-request-response-manager.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-request-response-runtime",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
@@ -571,8 +575,8 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % flinkScope,
         "com.softwaremill.retry" %% "retry" % "0.3.6",
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-kafka" % testContainersScalaV % "it,test",
         "com.github.tomakehurst" % "wiremock-jre8" % wireMockV % Test
       ) ++ flinkLibScalaDeps(scalaVersion.value, Some(flinkScope))
     },
@@ -709,7 +713,7 @@ lazy val interpreter = (project in file("interpreter")).
     name := "nussknacker-interpreter",
     libraryDependencies ++= {
       Seq(
-        "org.typelevel" %% "cats-effect" % "2.5.5",
+        "org.typelevel" %% "cats-effect" % catsEffectV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.avro" % "avro" % avroV % "test",
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
@@ -762,8 +766,8 @@ lazy val kafkaComponentsUtils = (project in utils("kafka-components-utils")).
     libraryDependencies ++= {
       Seq(
         "javax.validation" % "validation-api" % javaxValidationApiV,
-        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
-        "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it"
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it",
+        "com.dimafeng" %% "testcontainers-scala-kafka" % testContainersScalaV % "it"
       )
     }
   ).dependsOn(kafkaUtils, componentsUtils % Provided, componentsApi % Provided, testUtils % "it, test")
@@ -948,6 +952,12 @@ lazy val testUtils = (project in utils("test-utils")).
         "ch.qos.logback" % "logback-classic" % logbackV,
         "commons-io" % "commons-io" % flinkCommonsIOV,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
+        "com.softwaremill.sttp.client3" %% "slf4j-backend" % sttpV,
+        "org.typelevel" %% "cats-effect" % catsEffectV,
+        "io.circe" %% "circe-parser" % circeV,
+        "org.testcontainers" % "testcontainers" % testContainersJavaV,
+        "com.lihaoyi" %% "ujson" % "3.1.2",
+        "io.rest-assured" % "scala-support" % "5.3.1",
       )
     }
   )
@@ -1036,6 +1046,7 @@ lazy val liteComponentsApi = (project in lite("components-api")).
 lazy val liteBaseComponents = (project in lite("components/base")).
   settings(commonSettings).
   settings(assemblyNoScala("liteBase.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-lite-base-components",
   ).dependsOn(liteComponentsApi % "provided", componentsUtils % Provided, testUtils % "test", liteEngineRuntime % "test")
@@ -1043,6 +1054,7 @@ lazy val liteBaseComponents = (project in lite("components/base")).
 lazy val liteKafkaComponents: Project = (project in lite("components/kafka")).
   settings(commonSettings).
   settings(assemblyNoScala("liteKafka.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-lite-kafka-components"
     //TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...
@@ -1069,6 +1081,7 @@ lazy val liteKafkaComponentsTests: Project =  (project in lite("components/kafka
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).
   settings(assemblyNoScala("liteRequestResponse.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-lite-request-response-components",
   ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", componentsUtils % Provided, jsonUtils, requestResponseComponentsUtils)
@@ -1116,8 +1129,8 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration
       liteEngineRuntimeApp / Docker / publishLocal
     ).value,
     libraryDependencies ++= Seq(
-      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
-      "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it",
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it",
+      "com.dimafeng" %% "testcontainers-scala-kafka" % testContainersScalaV % "it",
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it"
     )
   ).dependsOn(interpreter % "it", schemedKafkaComponentsUtils % "it", testUtils % "it", kafkaTestUtils % "it", httpUtils % "it")
@@ -1184,6 +1197,7 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   enablePlugins().
   settings(commonSettings).
   settings(assemblyNoScala("lite-embedded-manager.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-lite-embedded-deploymentManager",
   ).dependsOn(
@@ -1216,6 +1230,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
   enablePlugins().
   settings(commonSettings).
   settings(assemblyNoScala("lite-k8s-manager.jar"): _*).
+  settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
@@ -1329,7 +1344,7 @@ lazy val security = (project in file("security")).
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
       "com.auth0" % "jwks-rsa" % "0.22.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
-      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
       "com.github.dasniko" % "testcontainers-keycloak" % "2.5.0" % "it,test" excludeAll(
         // we're using testcontainers-scala which requires a proper junit4 dependency
         ExclusionRule("io.quarkus", "quarkus-junit4-mock")
@@ -1371,8 +1386,8 @@ lazy val processReports = (project in file("designer/processReports")).
     libraryDependencies ++= {
       Seq(
         "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-influxdb" % testcontainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
+        "com.dimafeng" %% "testcontainers-scala-influxdb" % testContainersScalaV % "it,test",
         "org.influxdb" % "influxdb-java" % "2.23" % "it,test"
       )
     }
@@ -1547,8 +1562,9 @@ lazy val designer = (project in file("designer/server"))
 
         "org.slf4j" % "log4j-over-slf4j" % slf4jV,
         "com.carrotsearch" % "java-sizeof" % "0.0.5",
+        "org.typelevel" %% "case-insensitive" % "1.4.0",
 
-        //It's needed by flinkDeploymentManager which has disabled includingScala
+        // It's needed by flinkDeploymentManager which has disabled includingScala
         "org.scala-lang" % "scala-compiler" % scalaVersion.value,
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
 
@@ -1560,16 +1576,15 @@ lazy val designer = (project in file("designer/server"))
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.8",
 
-
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
 
-        "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "test",
-        "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaV % "test",
+        "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "test",
+        "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersScalaV % "test",
         "org.scalatestplus" %% "mockito-4-6" % scalaTestPlusV % "test",
 
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-jmx" % dropWizardV,
-        "fr.davit" %% "akka-http-metrics-dropwizard-v5" % "1.7.1"
+        "fr.davit" %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
       ) ++ forScalaVersion(scalaVersion.value, Seq(),
         (2, 13) -> Seq( "org.scala-lang.modules" %% "scala-xml" % "2.1.0")
       )

@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.deployment.inconsistency.InconsistentState
 import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
 import scala.concurrent.ExecutionContext.Implicits._
@@ -40,8 +40,9 @@ trait DeploymentManager extends AutoCloseable {
     */
   def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
 
-  // TODO: add cancel for given deployment id
   def cancel(name: ProcessName, user: User): Future[Unit]
+  
+  def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit]
 
   def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]]
 
@@ -63,6 +64,8 @@ trait DeploymentManager extends AutoCloseable {
 
   //TODO: savepointPath is very flink specific, we should handle it via custom action
   def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult]
+
+  def stop(name: ProcessName, deploymentId: DeploymentId, savepointDir: Option[String], user: User): Future[SavepointResult]
 
 }
 

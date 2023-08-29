@@ -2,6 +2,8 @@
 
 1.12.0 (Not released yet)
 -------------------------
+* [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
+* [#4582](https://github.com/TouK/nussknacker/pull/4582) Fixed: Releasing app resources on the designer close 
 * [#4540](https://github.com/TouK/nussknacker/pull/4540) Improvement: Allow selecting a claim from OIDC JWT to represent the username
 * [#4555](https://github.com/TouK/nussknacker/pull/4555) Remove: Back compatibility for encoding/decoding UIParameter
 * [#4561](https://github.com/TouK/nussknacker/pull/4561) Improvement: Users are not required at OAuth2 config file
@@ -11,6 +13,10 @@
     - introduce the `CaseClassTypeInfoFactory`, a generic factory for creating `CaseClassTypeInfo`
     - allow passing classLoader at `ResourceLoader.load`
 * [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
+
+1.11.1 (25 Aug 2023)
+-------------------------
+* [#4603](https://github.com/TouK/nussknacker/pull/4603) Fix subprocess -> fragment migration
 
 1.11.0 (22 Aug 2023)
 -------------------------

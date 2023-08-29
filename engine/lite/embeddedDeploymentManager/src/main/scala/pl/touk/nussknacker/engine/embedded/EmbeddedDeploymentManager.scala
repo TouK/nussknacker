@@ -114,12 +114,28 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
     deployments.get(name) match {
       case None => Future.failed(new IllegalArgumentException(s"Cannot find scenario $name"))
-      case Some(ScenarioDeploymentData(_, _, interpreterTry)) => Future.successful {
-        deployments -= name
-        interpreterTry.foreach { interpreter =>
-          interpreter.close()
-          logger.debug(s"Scenario $name stopped")
-        }
+      case Some(deploymentData) => stopDeployment(name, deploymentData)
+    }
+  }
+
+  override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] = {
+    for {
+      deploymentData <- deployments.get(name)
+        .map(Future.successful)
+        .getOrElse(Future.failed(new IllegalArgumentException(s"Cannot find scenario $name")))
+      deploymentDataForDeploymentId <- Option(deploymentData).filter(_.deploymentId == deploymentId)
+        .map(Future.successful)
+        .getOrElse(Future.failed(new IllegalArgumentException(s"Cannot find deployment $deploymentId for scenario $name")))
+      stoppingResult <- stopDeployment(name, deploymentDataForDeploymentId)
+    } yield stoppingResult
+  }
+
+  private def stopDeployment(name: ProcessName, deploymentData: ScenarioDeploymentData) = {
+    Future.successful {
+      deployments -= name
+      deploymentData.scenarioDeployment.foreach { interpreter =>
+        interpreter.close()
+        logger.debug(s"Scenario $name stopped")
       }
     }
   }

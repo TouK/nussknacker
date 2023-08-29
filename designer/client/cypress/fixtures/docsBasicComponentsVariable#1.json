@@ -1,0 +1,91 @@
+{
+    "metaData": {
+        "id": "First-variable",
+        "additionalFields": {
+            "description": null,
+            "properties": {
+                "parallelism": "1",
+                "checkpointIntervalInSeconds": "",
+                "numberOfThreads": "1",
+                "spillStateToDisk": "true",
+                "environment": "test",
+                "useAsyncInterpretation": ""
+            },
+            "metaDataType": "StreamMetaData"
+        }
+    },
+    "nodes": [
+        {
+            "id": "periodic",
+            "ref": {
+                "typ": "periodic",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "T(java.time.Duration).parse('PT1M')"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "expression": {
+                            "language": "spel",
+                            "expression": ""
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "expression": {
+                            "language": "spel",
+                            "expression": "{operation: \"RECHARGE\"}"
+                        }
+                    }
+                ]
+            },
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 360,
+                    "y": 0
+                }
+            },
+            "type": "Source"
+        },
+        {
+            "nextFalse": [],
+            "id": "only financial ops",
+            "expression": {
+                "language": "spel",
+                "expression": "(#input.operation == \"RECHARGE\") || (#input.operation == \"BILL_PAYMENT\")"
+            },
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 360,
+                    "y": 180
+                }
+            },
+            "type": "Filter"
+        },
+        {
+            "id": "output Kafka topic with json content",
+            "ref": {
+                "typ": "dead-end",
+                "parameters": []
+            },
+            "endResult": null,
+            "isDisabled": null,
+            "additionalFields": {
+                "description": null,
+                "layoutData": {
+                    "x": 360,
+                    "y": 360
+                }
+            },
+            "type": "Sink"
+        }
+    ],
+    "additionalBranches": []
+}
