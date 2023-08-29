@@ -6,9 +6,7 @@ import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomParameterValidationError
 import pl.touk.nussknacker.engine.api.definition.{CustomParameterValidator, CustomParameterValidatorDelegate, ParameterValidator}
-import pl.touk.nussknacker.engine.management.periodic.CronScheduleProperty
-
-import java.time.Clock
+import pl.touk.nussknacker.engine.management.periodic.SchedulePropertyExtractor
 object CronParameterValidator extends CronParameterValidator {
 
   def delegate: ParameterValidator = CustomParameterValidatorDelegate(name)
@@ -28,10 +26,7 @@ class CronParameterValidator extends CustomParameterValidator {
       )
     }
 
-    CronScheduleProperty(value).nextRunAt(Clock.systemDefaultZone()) match {
-      case Left(_) => invalid(createValidationError)
-      case Right(_) => valid(())
-    }
+    SchedulePropertyExtractor.parseAndValidateProperty(value).fold(_ => invalid(createValidationError), _ => valid(()))
   }
 
   override def name: String = "cron_validator"

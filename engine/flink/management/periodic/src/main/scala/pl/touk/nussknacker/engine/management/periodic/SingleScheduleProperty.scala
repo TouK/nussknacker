@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import java.time.{Clock, Instant, LocalDateTime, ZoneId, ZonedDateTime}
-import cats.Alternative.ops.toAllAlternativeOps
-import com.cronutils.model.{Cron, CronType}
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
+import com.cronutils.model.{Cron, CronType}
 import com.cronutils.parser.CronParser
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec}
 
+import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
 import scala.util.Try
 
 object ScheduleProperty {
@@ -35,8 +34,8 @@ object SingleScheduleProperty {
 
 
 @JsonCodec case class CronScheduleProperty(labelOrCronExpr: String) extends SingleScheduleProperty {
-  import pl.touk.nussknacker.engine.management.periodic.CronScheduleProperty._
   import cats.implicits._
+  import pl.touk.nussknacker.engine.management.periodic.CronScheduleProperty._
 
   private lazy val cronsOrError: Either[String, List[Cron]] = {
     val (errors, crons) = labelOrCronExpr

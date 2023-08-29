@@ -15,12 +15,12 @@ class InconsistentStateDetector extends LazyLogging {
       case (Left(state), _) => state
       case (Right(Some(state)), _) if shouldAlwaysReturnStatus(state) => state
       case (Right(Some(state)), _) if state.status == SimpleStateStatus.Restarting => handleRestartingState(state, lastStateAction)
-      case (Right(statusDetailsOpt), Some(action)) if action.actionType.equals(ProcessActionType.Deploy) && action.state == ProcessActionState.ExecutionFinished =>
+      case (Right(statusDetailsOpt), Some(action)) if action.actionType == ProcessActionType.Deploy && action.state == ProcessActionState.ExecutionFinished =>
         handleLastActionFinishedDeploy(statusDetailsOpt, action)
-      case (Right(statusDetailsOpt), Some(action)) if action.actionType.equals(ProcessActionType.Deploy) =>
+      case (Right(statusDetailsOpt), Some(action)) if action.actionType == ProcessActionType.Deploy =>
         handleLastActionDeploy(statusDetailsOpt, action)
       case (Right(Some(state)), _) if isFollowingDeployStatus(state) => handleFollowingDeployState(state, lastStateAction)
-      case (Right(statusDetailsOpt), Some(action)) if action.actionType.equals(ProcessActionType.Cancel) => handleCanceledState(statusDetailsOpt)
+      case (Right(statusDetailsOpt), Some(action)) if action.actionType == ProcessActionType.Cancel => handleCanceledState(statusDetailsOpt)
       case (Right(Some(state)), _) => handleState(state, lastStateAction)
       case (Right(None), Some(a)) => StatusDetails(SimpleStateStatus.NotDeployed, Some(DeploymentId.fromActionId(a.id)))
       case (Right(None), None) => StatusDetails(SimpleStateStatus.NotDeployed, None)
@@ -49,8 +49,6 @@ class InconsistentStateDetector extends LazyLogging {
 
   private def handleState(statusDetails: StatusDetails, lastStateAction: Option[ProcessAction]): StatusDetails =
     statusDetails.status match {
-      case SimpleStateStatus.NotDeployed if lastStateAction.isEmpty =>
-        statusDetails.copy(status = SimpleStateStatus.NotDeployed)
       case SimpleStateStatus.Restarting | SimpleStateStatus.DuringCancel | SimpleStateStatus.Finished if lastStateAction.isEmpty =>
         statusDetails.copy(status = ProblemStateStatus.ProcessWithoutAction)
       case _ => statusDetails
