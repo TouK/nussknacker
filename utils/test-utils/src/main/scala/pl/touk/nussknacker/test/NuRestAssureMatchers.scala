@@ -130,8 +130,10 @@ object NuRestAssureMatchers {
                                                                source: JsonValueParent): Validated[String, Unit] = {
       stringToRegex(expected) match {
         case Some(regex) =>
-          if (regex.matches(current)) Validated.Valid(())
-          else Validated.Invalid(errorString(current, expected, source, withRegex = true))
+          current match {
+            case regex() => Validated.Valid(())
+            case _ => Validated.Invalid(errorString(current, expected, source, withRegex = true))
+          }
         case None =>
           if (current == expected) Validated.Valid(())
           else Validated.Invalid(errorString(current, expected, source, withRegex = false))

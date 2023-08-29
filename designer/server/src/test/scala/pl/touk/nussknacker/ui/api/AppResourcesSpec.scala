@@ -5,7 +5,8 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.funsuite.AnyFunSuiteLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
@@ -16,20 +17,16 @@ import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelp
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion.TestsConfig
 
 class AppResourcesSpec
-  extends AnyFunSuite
-    with NuItTest
+  extends NuItTest
+    with AnyFunSuiteLike
     with NuScenarioConfigurationHelper
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
-    with PatientScalaFutures {
+    with PatientScalaFutures
+    with BeforeAndAfterEach {
 
   override def nuTestConfig: Config = TestsConfig
     .withValue("enableConfigEndpoint", fromAnyRef(true))
-
-  // todo: fixme
-  override def afterAll(): Unit = {
-    super.afterAll()
-  }
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.integration
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Json}
 import org.apache.commons.io.FileUtils
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.typelevel.ci._
@@ -39,8 +39,8 @@ import java.util.UUID
 import scala.util.Properties
 
 class BaseFlowTest
-  extends AnyFunSuite
-    with NuItTest
+  extends NuItTest
+    with AnyFunSuiteLike
     with WithTestHttpClient
     with Matchers
     with BeforeAndAfterAll

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion.TestsConfig
 
-trait NuItTest
+abstract class NuItTest
   extends WithHsqlDbTesting
     with DefaultUniquePortProvider
     with TestPermissions
@@ -27,7 +27,7 @@ trait NuItTest
       .unsafeRunSync()
   }
 
-  abstract override def afterAll(): Unit = {
+  override def afterAll(): Unit = {
     releaseAppResources.unsafeRunSync()
     super.afterAll()
   }
