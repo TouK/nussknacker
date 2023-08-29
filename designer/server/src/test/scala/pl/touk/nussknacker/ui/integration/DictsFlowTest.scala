@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.integration
 
 import com.typesafe.config.Config
 import io.circe.Json
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -23,7 +23,6 @@ class DictsFlowTest
     with AnyFunSuiteLike
     with WithTestHttpClient
     with Matchers
-    with BeforeAndAfterAll
     with OptionValues
     with EitherValuesDetailedMessage {
 

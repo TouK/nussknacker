@@ -8,11 +8,11 @@ import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion.TestsConfig
 
 abstract class NuItTest
-  extends WithHsqlDbTesting
+  extends Suite
+    with WithHsqlDbTesting
     with DefaultUniquePortProvider
     with TestPermissions
     with BeforeAndAfterAll {
-  self: Suite =>
 
   private val port = nextPort()
 

@@ -5,7 +5,6 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers._
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuiteLike
 import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -165,8 +164,8 @@ class AppResourcesSpec
       .body(matchJsonWithRegexValues(
         s"""{
            |  "name": "nussknacker-common-api",
-           |  "gitCommit": "67bf4fb220b727c73a9cb5769cd8c40c40f83d9d",
-           |  "buildTime": "2023-08-24T14:44:21.151682",
+           |  "gitCommit": "^\\\\w{40}$$",
+           |  "buildTime": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{6}$$",
            |  "version": "1.12.0-SNAPSHOT",
            |  "processingType": {
            |    "streaming": {
