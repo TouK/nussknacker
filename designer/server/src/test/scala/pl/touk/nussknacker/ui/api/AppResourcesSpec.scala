@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper}
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion.TestsConfig
 
 class AppResourcesSpec
   extends NuItTest
@@ -23,7 +22,7 @@ class AppResourcesSpec
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
 
-  override def nuTestConfig: Config = TestsConfig
+  override def nuTestConfig: Config = super.nuTestConfig
     .withValue("enableConfigEndpoint", fromAnyRef(true))
 
   override protected def beforeEach(): Unit = {

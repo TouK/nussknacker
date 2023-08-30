@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{BeforeAndAfterAll, Suite}
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion.TestsConfig
 
 abstract class NuItTest
   extends Suite
@@ -18,7 +18,8 @@ abstract class NuItTest
 
   val nuDesignerHttpAddress = s"http://localhost:$port"
 
-  def nuTestConfig: Config = TestsConfig
+  def nuTestConfig: Config = ScalaMajorVersionConfig
+    .configWithScalaMajorVersion(ConfigFactory.parseResources("designer-api-test.conf"))
 
   private val (_, releaseAppResources) = {
     new NussknackerAppFactory()

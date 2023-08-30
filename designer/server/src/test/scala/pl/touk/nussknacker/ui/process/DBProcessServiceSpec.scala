@@ -29,7 +29,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._
   import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 
-  //These users were created based on categoriesConfig at designer.conf
+  //These users were created based on categoriesConfig at designer.conf and designer-api-test.conf
   private val adminUser = TestFactory.adminUser()
   private val categoriesUser = TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = CategoryCategories)
   private val testUser = TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = TestCategories)
