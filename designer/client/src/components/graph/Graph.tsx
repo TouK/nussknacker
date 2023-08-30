@@ -7,7 +7,7 @@ import "../../stylesheets/graph.styl";
 import { filterDragHovered, getLinkNodes, setLinksHovered } from "./dragHelpers";
 import { updateNodeCounts } from "./EspNode/element";
 import { GraphPaperContainer } from "./focusable";
-import { applyCellChanges, calcLayout, createPaper, isBackgroundObject, isModelElement } from "./GraphPartialsInTS";
+import { applyCellChanges, calcLayout, createPaper, isModelElement } from "./GraphPartialsInTS";
 import styles from "./graphTheme.styl";
 import { Events } from "./joint-events";
 import NodeUtils from "./NodeUtils";
@@ -25,7 +25,10 @@ import { UserSettings } from "../../reducers/userSettings";
 import { GraphProps } from "./GraphWrapped";
 import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
+import { getDefaultLinkCreator } from "./EspNode/link";
 import ProcessUtils from "../../common/ProcessUtils";
+
+import { createUniqueArrowMarker } from "./arrowMarker";
 
 interface Props extends GraphProps {
     processCategory: string;
@@ -52,7 +55,8 @@ export class Graph extends React.Component<Props> {
         const paper = createPaper({
             model: this.graph,
             el: this.getEspGraphRef(),
-            validateConnection: this.validateConnection,
+            validateConnection: this.twoWayValidateConnection,
+            validateMagnet: this.validateMagnet,
             interactive: (cellView: dia.CellView) => {
                 const { model } = cellView;
                 if (!canEditFrontend) {
@@ -62,13 +66,17 @@ export class Graph extends React.Component<Props> {
                     // Disable the default vertex add and label move functionality on pointerdown.
                     return { vertexAdd: false, labelMove: false };
                 }
-                if (isBackgroundObject(model)) {
-                    //Disable moving group rect
-                    return false;
-                }
                 return true;
             },
         });
+
+        const uniqueArrowMarker = createUniqueArrowMarker(paper);
+        // arrow id from paper is needed, so we have to mutate this
+        paper.options.defaultLink = (cellView, magnet) => {
+            // actual props are needed when link is created
+            const linkCreator = getDefaultLinkCreator(uniqueArrowMarker, this.props.processToDisplay, this.props.processDefinitionData);
+            return linkCreator(cellView, magnet);
+        };
 
         return (
             paper
@@ -95,12 +103,14 @@ export class Graph extends React.Component<Props> {
                         this.handleInjectBetweenNodes(cell.model, linkBelowCell);
                     }
                 })
-                .on(Events.LINK_CONNECT, ({ sourceView, targetView, model }) => {
+                .on(Events.LINK_CONNECT, ({ sourceView, targetView, targetMagnet, model }) => {
+                    const isReversed = targetMagnet?.getAttribute("port") === "Out";
+                    const type = model.attributes.edgeData?.edgeType;
                     const from = sourceView?.model.attributes.nodeData;
                     const to = targetView?.model.attributes.nodeData;
+
                     if (from && to) {
-                        const type = model.attributes.edgeData?.edgeType;
-                        this.props.nodesConnected(from, to, type);
+                        isReversed ? this.props.nodesConnected(to, from, type) : this.props.nodesConnected(from, to, type);
                     }
                 })
                 .on(Events.LINK_DISCONNECT, ({ model }) => {
@@ -330,21 +340,49 @@ export class Graph extends React.Component<Props> {
         return await prepareSvg(this._exportGraphOptions);
     }
 
-    validateConnection = (
-        cellViewS: dia.CellView,
+    twoWayValidateConnection = (
+        { model: source }: dia.CellView,
         magnetS: SVGElement,
-        cellViewT: dia.CellView,
+        { model: target }: dia.CellView,
         magnetT: SVGElement,
         end: dia.LinkEnd,
         linkView: dia.LinkView,
     ): boolean => {
-        const from = cellViewS.model.id.toString();
-        const to = cellViewT.model.id.toString();
+        if (source === target) {
+            return false;
+        }
+        if (magnetS.getAttribute("port") === magnetT.getAttribute("port")) {
+            return false;
+        }
+        return this.validateConnection(source, target, magnetT, linkView) || this.validateConnection(target, source, magnetS, linkView);
+    };
+
+    validateConnection = (source: dia.Cell, target: dia.Cell, magnetT: SVGElement, linkView: dia.LinkView): boolean => {
+        if (magnetT.getAttribute("port") !== "In") {
+            return false;
+        }
+        if (this.graph.getPredecessors(source as dia.Element).includes(target as dia.Element)) {
+            return false;
+        }
+        const from = source.id.toString();
+        const to = target.id.toString();
         const previousEdge = linkView.model.attributes.edgeData || {};
         const { processToDisplay, processDefinitionData } = this.props;
-        return (
-            magnetT.getAttribute("port") === "In" && NodeUtils.canMakeLink(from, to, processToDisplay, processDefinitionData, previousEdge)
-        );
+        return NodeUtils.canMakeLink(from, to, processToDisplay, processDefinitionData, previousEdge);
+    };
+
+    validateMagnet = ({ model }: dia.CellView, magnet: SVGElement) => {
+        const { processToDisplay, processDefinitionData } = this.props;
+        const from = NodeUtils.getNodeById(model.id.toString(), processToDisplay);
+        const port = magnet.getAttribute("port");
+        if (port === "Out") {
+            const nodeOutputs = NodeUtils.nodeOutputs(from.id, processToDisplay);
+            return NodeUtils.canHaveMoreOutputs(from, nodeOutputs, processDefinitionData);
+        }
+        if (port === "In") {
+            const nodeInputs = NodeUtils.nodeInputs(from.id, processToDisplay);
+            return NodeUtils.canHaveMoreInputs(from, nodeInputs, processDefinitionData);
+        }
     };
 
     disconnectPreviousEdge = (from: NodeId, to: NodeId): void => {
@@ -414,7 +452,7 @@ export class Graph extends React.Component<Props> {
         this.processGraphPaper.findViewByModel(cell).highlight(null, {
             highlighter: {
                 name: "addClass",
-                options: { className: className },
+                options: { className },
             },
         });
     }
@@ -423,7 +461,7 @@ export class Graph extends React.Component<Props> {
         this.processGraphPaper.findViewByModel(cell).unhighlight(null, {
             highlighter: {
                 name: "addClass",
-                options: { className: className },
+                options: { className },
             },
         });
     }
@@ -462,37 +500,13 @@ export class Graph extends React.Component<Props> {
         this.processGraphPaper.on(Events.CELL_MOUSEOVER, (cellView: dia.CellView) => {
             const model = cellView.model;
             this.showLabelOnHover(model);
-            this.showBackgroundIcon(model);
-        });
-        this.processGraphPaper.on(Events.BLANK_MOUSEOVER, () => {
-            this.hideBackgroundsIcons();
         });
     }
 
     //needed for proper switch/filter label handling
     showLabelOnHover(model: dia.Cell): dia.Cell {
-        if (!isBackgroundObject(model)) {
-            model.toFront();
-        }
+        model.toFront();
         return model;
-    }
-
-    //background is below normal node, we cannot use normal hover/mouseover/mouseout...
-    showBackgroundIcon(model: dia.Cell): void {
-        if (isBackgroundObject(model)) {
-            const el = model.findView(this.processGraphPaper).vel;
-            el.toggleClass("forced-hover", true);
-        }
-    }
-
-    hideBackgroundsIcons(): void {
-        this.graph
-            .getElements()
-            .filter(isBackgroundObject)
-            .forEach((model) => {
-                const el = model.findView(this.processGraphPaper).vel;
-                el.toggleClass("forced-hover", false);
-            });
     }
 
     moveSelectedNodesRelatively(movedNodeId: string, position: Position): dia.Cell[] {

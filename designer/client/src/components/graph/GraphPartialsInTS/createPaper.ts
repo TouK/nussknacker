@@ -1,19 +1,16 @@
-import { dia, V } from "jointjs";
+import { dia } from "jointjs";
 import { defaults } from "lodash";
-import { defaultLink } from "../EspNode/link";
-import { arrowMarker } from "../arrowMarker";
+import { defaultRouter } from "../EspNode/link";
 
 export function createPaper(options: dia.Paper.Options): dia.Paper {
-    const uniqueArrowMarker = arrowMarker.clone();
-    const paper = new dia.Paper({
+    return new dia.Paper({
         height: "100%",
         width: "100%",
         gridSize: 1,
         clickThreshold: 2,
         async: false,
-        snapLinks: { radius: 75 },
+        snapLinks: { radius: 30 },
         linkPinning: false,
-        defaultLink: defaultLink(uniqueArrowMarker.attr("id")),
         linkView: dia.LinkView.extend({
             options: defaults<dia.LinkView.Options, dia.LinkView.Options>(
                 {
@@ -26,16 +23,7 @@ export function createPaper(options: dia.Paper.Options): dia.Paper {
                 dia.LinkView.prototype.options,
             ),
         }),
-        defaultRouter: {
-            name: `manhattan`,
-            args: {
-                startDirections: [`bottom`],
-                endDirections: [`top`],
-                excludeTypes: [`basic.Rect`],
-                step: 30,
-                padding: 20,
-            },
-        },
+        defaultRouter,
         defaultConnector: {
             name: `rounded`,
             args: {
@@ -44,6 +32,4 @@ export function createPaper(options: dia.Paper.Options): dia.Paper {
         },
         ...options,
     });
-    V(paper.defs).append(uniqueArrowMarker);
-    return paper;
 }
