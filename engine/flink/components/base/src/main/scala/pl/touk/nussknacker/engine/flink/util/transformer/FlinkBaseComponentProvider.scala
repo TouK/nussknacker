@@ -35,7 +35,7 @@ class FlinkBaseComponentProvider extends ComponentProvider {
       ComponentDefinition("aggregate-tumbling", new TumblingAggregateTransformer(aggregateWindowsConfig)).withRelativeDocs("AggregatesInTimeWindows#tumbling-window"),
       ComponentDefinition("aggregate-session", SessionWindowAggregateTransformer).withRelativeDocs("AggregatesInTimeWindows#session-window"),
       ComponentDefinition("single-side-join", SingleSideJoinTransformer).withRelativeDocs("AggregatesInTimeWindows#single-side-join"),
-      ComponentDefinition("full-outer-join", FullOuterJoinTransformer).withRelativeDocs("AggregatesInTimeWindows#single-side-join"),
+      ComponentDefinition("full-outer-join", FullOuterJoinTransformer).withRelativeDocs("AggregatesInTimeWindows#full-outer-join"),
       ComponentDefinition("delay", DelayTransformer).withRelativeDocs("DataSourcesAndSinks#delay"),
     )
 
