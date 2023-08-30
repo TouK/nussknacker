@@ -40,7 +40,7 @@ describe("Fragment", () => {
             .drag("#nk-graph-main", { x: 800, y: 600, position: "right", force: true });
         cy.layoutScenario();
 
-        cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick");
+        cy.get("[model-id^=e2e][model-id$=fragment-test-process]").should("be.visible").trigger("dblclick");
         cy.get("#nk-graph-fragment [model-id='input']").should("be.visible");
         cy.wait(750);
         cy.get("[data-testid=window]").matchImage();
@@ -57,7 +57,7 @@ describe("Fragment", () => {
             },
         });
 
-        cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick");
+        cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick");
         cy.intercept("POST", "/api/nodes/*/validation", (request) => {
             if (request.body.nodeData.ref?.parameters[0]?.expression.expression == "#fragmentResult.") {
                 request.alias = "validation";
@@ -120,7 +120,7 @@ describe("Fragment", () => {
         cy.contains(`${seed2}-test`).last().should("be.visible").drag("#nk-graph-main", { x: 800, y: 600, position: "right", force: true });
         cy.layoutScenario();
 
-        cy.get(`[model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
+        cy.get(`[model-id^=e2e][model-id$=-${seed2}-test-process]`).should("be.visible").trigger("dblclick");
 
         cy.get("[title='Documentation']").should("have.attr", "href", docsUrl);
         cy.get("[data-testid=window]").as("window");
