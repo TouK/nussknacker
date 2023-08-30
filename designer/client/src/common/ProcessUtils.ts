@@ -56,10 +56,11 @@ class ProcessUtils {
         );
     };
 
-    getValidationResult = (process: Process): ValidationResult => process?.validationResult;
+    getValidationResult = (process: Process): ValidationResult =>
+        process?.validationResult || { validationErrors: [], validationWarnings: [], nodeResults: {} };
 
     hasNoWarnings = (process) => {
-        const warnings = this.getValidationResult(process)?.warnings;
+        const warnings = this.getValidationResult(process).warnings;
         return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0;
     };
 
@@ -68,7 +69,7 @@ class ProcessUtils {
     };
 
     getValidationErrors(process) {
-        return this.getValidationResult(process)?.errors;
+        return this.getValidationResult(process).errors;
     }
 
     //see BranchEndDefinition.artificialNodeId
@@ -92,7 +93,7 @@ class ProcessUtils {
         );
     };
 
-    getNodeResults = (process: Process): NodeResults => this.getValidationResult(process)?.nodeResults;
+    getNodeResults = (process: Process): NodeResults => this.getValidationResult(process).nodeResults;
 
     //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
     escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");

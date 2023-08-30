@@ -13,7 +13,7 @@ const debouncedValidate = debounce(
         HttpService.validateProcess(getProcessToDisplay(getState())).then(({ data }) =>
             dispatch({ type: "VALIDATION_RESULT", validationResult: data }),
         ),
-    250,
+    500,
 );
 
 export function nodeValidationMiddleware(

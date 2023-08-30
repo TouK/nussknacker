@@ -391,13 +391,22 @@ export class Graph extends React.Component<Props> {
 
     highlightNodes = (selectedNodeIds: string[] = [], process = this.props.processToDisplay): void => {
         this.processGraphPaper.freeze();
-        this.graph.getCells().forEach((cell) => {
+        const elements = this.graph.getElements();
+        elements.forEach((cell) => {
             this.unhighlightCell(cell, "node-validation-error");
             this.unhighlightCell(cell, "node-focused");
             this.unhighlightCell(cell, "node-focused-with-validation-error");
         });
 
         const invalidNodeIds = keys(ProcessUtils.getValidationErrors(process)?.invalidNodes);
+
+        // fast indicator for loose nodes, faster than async validation
+        elements.forEach((el) => {
+            const nodeId = el.id.toString();
+            if (!invalidNodeIds.includes(nodeId) && el.getPort("In") && !this.graph.getNeighbors(el, { inbound: true }).length) {
+                invalidNodeIds.push(nodeId);
+            }
+        });
 
         invalidNodeIds.forEach((id) =>
             selectedNodeIds.includes(id)

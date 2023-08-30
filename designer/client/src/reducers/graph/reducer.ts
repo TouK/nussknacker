@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy, uniq, xor, zipObject } from "lodash";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
-import { Reducer } from "../../actions/reduxTypes";
+import { Action, Reducer } from "../../actions/reduxTypes";
 import * as GraphUtils from "../../components/graph/GraphUtils";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
@@ -20,6 +20,7 @@ import { Edge, ValidationResult } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "./batchGroupBy";
 import { NestedKeyOf } from "./nestedKeyOf";
+import ProcessUtils from "../../common/ProcessUtils";
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -41,7 +42,7 @@ export function updateValidationResult(state: GraphState, action: { validationRe
         ...action.validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
         nodeResults: {
-            ...state.processToDisplay.validationResult.nodeResults,
+            ...ProcessUtils.getValidationResult(state.processToDisplay).nodeResults,
             ...action.validationResult.nodeResults,
         },
     };
@@ -309,14 +310,13 @@ const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]
 
 const pickKeys: NestedKeyOf<GraphState>[] = ["fetchedProcessDetails", "processToDisplay", "unsavedNewName", "layout", "selectionState"];
 const omitKeys: NestedKeyOf<GraphState>[] = [
-    "processToDisplay.validationResult",
     "fetchedProcessDetails.json.validationResult",
     "fetchedProcessDetails.lastDeployedAction",
     "fetchedProcessDetails.lastAction",
     "fetchedProcessDetails.history",
 ];
 
-const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys);
+const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["processToDisplay.validationResult"]));
 const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));
 
 const undoableReducer = undoable<GraphState>(reducer, {
@@ -339,7 +339,7 @@ const undoableReducer = undoable<GraphState>(reducer, {
 });
 
 // apply only undoable changes for undo actions
-const fixUndoableHistory: Reducer<StateWithHistory<GraphState>> = (state, action) => {
+function fixUndoableHistory(state: StateWithHistory<GraphState>, action: Action): StateWithHistory<GraphState> {
     const nextState = undoableReducer(state, action);
 
     if (Object.values(UndoActionTypes).includes(action.type)) {
@@ -348,7 +348,7 @@ const fixUndoableHistory: Reducer<StateWithHistory<GraphState>> = (state, action
     }
 
     return nextState;
-};
+}
 
 //TODO: replace this with use of selectors everywhere
 export const reducerWithUndo: Reducer<GraphState & { history: StateWithHistory<GraphState> }> = (state, action) => {
