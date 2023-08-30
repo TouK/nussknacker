@@ -18,7 +18,7 @@ type DeleteNodesAction = {
     ids: NodeId[];
 };
 
-type NodesConnectedAction = {
+export type NodesConnectedAction = {
     type: "NODES_CONNECTED";
     fromNode: NodeType;
     toNode: NodeType;

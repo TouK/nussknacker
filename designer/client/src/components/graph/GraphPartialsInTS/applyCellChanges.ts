@@ -9,15 +9,14 @@ import { updateChangedCells } from "./updateChangedCells";
 
 export function applyCellChanges(paper: dia.Paper, process: Process, processDefinitionData: ProcessDefinitionData): void {
     const graph = paper.model;
-    const nodesWithGroups = NodeUtils.nodesFromProcess(process);
-    const edgesWithGroups = NodeUtils.edgesFromProcess(process);
 
-    const nodes = nodesWithGroups.map(makeElement(processDefinitionData));
-    const indexed = flatMap(groupBy(edgesWithGroups, "from"), (edges) => edges.map((edge, i) => ({ ...edge, index: ++i })));
-    const defs = Array.from(paper?.defs?.children);
-    const edges = indexed.filter(isEdgeConnected).map((value) => makeLink(value, defs.find((def) => def.nodeName === "marker")?.id));
+    const nodeElements = NodeUtils.nodesFromProcess(process).map(makeElement(processDefinitionData));
 
-    const cells = [...nodes, ...edges];
+    const edges = NodeUtils.edgesFromProcess(process);
+    const indexed = flatMap(groupBy(edges, "from"), (edges) => edges.map((edge, i) => ({ ...edge, index: ++i })));
+    const edgeElements = indexed.filter(isEdgeConnected).map((value) => makeLink(value, paper));
+
+    const cells = [...nodeElements, ...edgeElements];
 
     const currentCells = graph.getCells();
     const currentIds = currentCells.map((c) => c.id);
