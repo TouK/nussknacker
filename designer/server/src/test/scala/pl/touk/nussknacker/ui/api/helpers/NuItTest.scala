@@ -3,9 +3,9 @@ package pl.touk.nussknacker.ui.api.helpers
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{BeforeAndAfterAll, Suite}
-import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 abstract class NuItTest
   extends Suite
@@ -18,8 +18,7 @@ abstract class NuItTest
 
   val nuDesignerHttpAddress = s"http://localhost:$port"
 
-  def nuTestConfig: Config = ScalaMajorVersionConfig
-    .configWithScalaMajorVersion(ConfigFactory.parseResources("designer-api-test.conf"))
+  def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   private val (_, releaseAppResources) = {
     new NussknackerAppFactory()
@@ -38,5 +37,16 @@ abstract class NuItTest
       .withValue("db", testDbConfig.getConfig("db").root())
       .withValue("http.port", fromAnyRef(port))
   }
+}
 
+trait WithMockableDeploymentManager extends NuItTest {
+
+  abstract override def nuTestConfig: Config = super
+    .nuTestConfig
+    .withValue(
+      "scenarioTypes.streaming.deploymentConfig",
+      ConfigFactory
+        .parseString("""{ type: "mockable" }""")
+        .root()
+    )
 }

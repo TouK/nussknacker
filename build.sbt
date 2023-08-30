@@ -156,9 +156,12 @@ val externalDepsTestsSettings =
 val ignoreExternalDepsTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Network")
 
 def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*): T = {
-  CrossVersion.partialVersion(version).flatMap { case (k, v) =>
-    specific.toMap.get((k.toInt, v.toInt))
-  }.getOrElse(default)
+  CrossVersion
+    .partialVersion(version)
+    .flatMap { case (k, v) =>
+      specific.toMap.get((k.toInt, v.toInt))
+    }
+    .getOrElse(default)
 }
 
 lazy val commonSettings =
@@ -961,7 +964,10 @@ lazy val testUtils = (project in utils("test-utils")).
         "io.circe" %% "circe-parser" % circeV,
         "org.testcontainers" % "testcontainers" % testContainersJavaV,
         "com.lihaoyi" %% "ujson" % "3.1.2",
-        "io.rest-assured" % "scala-support" % "5.3.1",
+      ) ++ forScalaVersion(scalaVersion.value, Seq(),
+        // rest-assured is not cross compiled, so we have to use different versions
+        (2, 12) -> Seq("io.rest-assured" % "scala-support" % "4.0.0"),
+        (2, 13) -> Seq("io.rest-assured" % "scala-support" % "5.3.1")
       )
     }
   )

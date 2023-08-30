@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.test
 
-import cats.implicits._
 import cats.Show
 import cats.data.Validated
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import io.restassured.response.ValidatableResponse
 import org.hamcrest.{BaseMatcher, Description, Matcher}
@@ -18,7 +18,7 @@ trait NuRestAssureMatchers {
   def matchJsonWithRegexValues(expectedJsonWithRegexValuesString: String): Matcher[ValidatableResponse] =
     new MatchJsonWithRegexValues(expectedJsonWithRegexValuesString)
 }
-object NuRestAssureMatchers {
+object NuRestAssureMatchers extends NuRestAssureMatchers {
 
   private type JSON = ujson.Value.Value
 
@@ -69,7 +69,8 @@ object NuRestAssureMatchers {
                              parent: JsonValueParent): Validated[String, Unit] = {
       (currentJsonCursor, expectedJsonCursor) match {
         case (Str(s1), Str(s2)) =>
-          compareAssumingThatExpectedStringCouldBeARegex(s1, s2, parent)
+          if(s1 == s2) Validated.Valid(())
+          else compareAssumingThatExpectedStringCouldBeARegex(s1, s2, parent)
         case (Num(n1), Num(n2)) =>
           if (n1 == n2) Validated.Valid(())
           else Validated.Invalid(errorString(s"$n1", s"$n2", parent))
@@ -101,7 +102,7 @@ object NuRestAssureMatchers {
               compareJsons(elemA1, elemA2, JsonValueParent.Array(parent, idx)) :: validationResults
           }
           .reverse
-          .traverse(identity)
+          .sequence
           .map(_ => ())
       } else {
         Validated.Invalid(errorString(s"$a1", s"$a2", parent))
@@ -118,26 +119,24 @@ object NuRestAssureMatchers {
               compareJsons(o1.value.apply(key), o2.value.apply(key), JsonValueParent.Field(parent, key)) :: validationResults
           }
           .reverse
-          .traverse(identity)
+          .sequence
           .map(_ => ())
       } else {
         Validated.Invalid(errorString(s"$o1", s"$o2", parent))
       }
     }
 
-    private def compareAssumingThatExpectedStringCouldBeARegex(current: String,
-                                                               expected: String,
+    private def compareAssumingThatExpectedStringCouldBeARegex(currentValueString: String,
+                                                               expectedValueRegex: String,
                                                                source: JsonValueParent): Validated[String, Unit] = {
-      stringToRegex(expected) match {
-        case Some(regex) =>
-          current match {
+      stringToRegex(expectedValueRegex)
+        .map { regex =>
+          currentValueString match {
             case regex() => Validated.Valid(())
-            case _ => Validated.Invalid(errorString(current, expected, source, withRegex = true))
+            case _ => Validated.Invalid(errorString(currentValueString, expectedValueRegex, source, withRegex = true))
           }
-        case None =>
-          if (current == expected) Validated.Valid(())
-          else Validated.Invalid(errorString(current, expected, source, withRegex = false))
-      }
+        }
+        .get
     }
 
     private def errorString(current: String, expected: String, source: JsonValueParent, withRegex: Boolean = false) = {
@@ -150,7 +149,7 @@ object NuRestAssureMatchers {
          |""".stripMargin
     }
 
-    private def stringToRegex(str: String) = Try(str.r).toOption
+    private def stringToRegex(str: String) = Try(str.r)
 
     private sealed trait JsonValueParent
     private object JsonValueParent {
