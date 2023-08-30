@@ -188,7 +188,7 @@ describe("Components list", () => {
             position: "right",
             force: true,
         });
-        cy.contains(/^save$/i).click();
+        cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
         cy.viewport(1400, 500);
