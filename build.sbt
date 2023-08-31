@@ -1588,6 +1588,9 @@ lazy val designer = (project in file("designer/server"))
         "org.apache.xmlgraphics" % "fop" % "2.8",
 
         "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirV,
+        "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirV,
+        "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % tapirV,
+        "io.circe" %% "circe-generic-extras" % circeGenericExtrasV,
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
 

@@ -5,9 +5,14 @@ import sttp.tapir._
 
 trait BaseEndpointDefinitions {
 
-  type PublicEndpoint[I, E, O, -R] = Endpoint[Unit, I, E, O, R]
-  type SecuredEndpoint[I, E, O, -R] = Endpoint[LoggedUser, I, E, O, R]
+  private def baseNuApiEndpoint = endpoint//.in("api") // todo: explanation
 
-  protected def baseNuApiEndpoint =
-    endpoint.in("api")
+  protected def baseNuApiPublicEndpoint: PublicEndpoint[Unit, Unit, Unit, Unit] =
+    baseNuApiEndpoint
+
+  type SecuredEndpoint[INPUT, ERROR_OUTPUT, OUTPUT, -R] = Endpoint[LoggedUser, INPUT, ERROR_OUTPUT, OUTPUT, R]
+
+  protected def baseNuApiSecuredEndpoint(loggedUser: LoggedUser): SecuredEndpoint[Unit, Unit, Unit, Any] =
+    baseNuApiEndpoint
+      .securityIn(auth.apiKey(extractFromRequest(_ => loggedUser)))
 }

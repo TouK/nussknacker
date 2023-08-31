@@ -5,10 +5,10 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import cats.effect.{ContextShift, IO, Resource}
 import com.typesafe.config.Config
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.MetricRegistry
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -25,13 +25,13 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.notifications.{NotificationConfig, NotificationServiceImpl}
+import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment._
 import pl.touk.nussknacker.ui.process.fragment.{DbFragmentRepository, FragmentResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
 import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, Initialization, ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
-import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
@@ -56,6 +56,11 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
   extends RouteProvider[Route]
     with Directives
     with LazyLogging {
+
+  private val akkaHttpServerInterpreter = {
+    import system.dispatcher
+    new NuAkkaHttpServerInterpreterForTapirPurposes()
+  }
 
   override def createRoute(config: ConfigWithUnresolvedVersion): Resource[IO, Route] = {
     import system.dispatcher
@@ -214,6 +219,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
           new DefinitionResources(modelData, typeToConfig, fragmentRepository, processCategoryService),
           new UserResources(processCategoryService),
           new NotificationResources(notificationService),
+          appResourcesRoute,
           appResources,
           new TestInfoResources(processAuthorizer, futureProcessRepository, scenarioTestService),
           new ComponentResource(componentService),
@@ -312,6 +318,12 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
           }
         }
       }
+    }
+  }
+
+  private val appResourcesRoute: RouteWithUser = new RouteWithUser {
+    override def securedRoute(implicit user: LoggedUser): Route = {
+      akkaHttpServerInterpreter.toRoute(AppHttpService.serverEndpoint)
     }
   }
 

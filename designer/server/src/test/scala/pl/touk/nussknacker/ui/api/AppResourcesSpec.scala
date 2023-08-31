@@ -200,4 +200,16 @@ class AppResourcesSpec
            |}""".stripMargin
       ))
   }
+
+  // todo: to remove
+  test("it is the temp test") {
+    given()
+      .auth().basic("reader", "reader")
+      .when()
+      .get(s"$nuDesignerHttpAddress/api/app/healthCheck")
+      .Then()
+      .statusCode(200)
+      .body(equalTo("test"))
+  }
+
 }

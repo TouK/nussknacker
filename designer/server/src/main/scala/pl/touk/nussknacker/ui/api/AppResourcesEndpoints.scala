@@ -1,20 +1,24 @@
 package pl.touk.nussknacker.ui.api
 
+import io.circe.generic.semiauto
+import io.circe.generic.extras.{semiauto => extrassemiauto}
 import pl.touk.nussknacker.ui.api.AppResourcesEndpoints.Dtos.HealthCheckProcessResponseDto
+import pl.touk.nussknacker.ui.security.api.LoggedUser
+import sttp.model.StatusCode.Ok
 import sttp.tapir._
+import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-class AppResourcesEndpoints extends BaseEndpointDefinitions {
+object AppResourcesEndpoints extends BaseEndpointDefinitions {
 
-  val healthCheckEndpoint =
-    baseNuApiEndpoint
+  import AppResourcesEndpoints.Dtos.Codecs._
+
+  def healthCheckEndpoint(implicit user: LoggedUser): Endpoint[LoggedUser, Unit, Unit, HealthCheckProcessResponseDto, Any] =
+    baseNuApiSecuredEndpoint(user)
       .get
-      .in("app" / "healthCheck")
+      .in("app" / "healthCheck") // todo: remove
+      .out(statusCode(Ok))
       .out(jsonBody[HealthCheckProcessResponseDto])
-
-}
-
-object AppResourcesEndpoints {
 
   object Dtos {
 
@@ -30,6 +34,11 @@ object AppResourcesEndpoints {
       }
     }
 
-
+    private [AppResourcesEndpoints] object Codecs {
+      implicit val healthCheckProcessResponseDtoCodec: io.circe.Codec[HealthCheckProcessResponseDto] = {
+        implicit val statusCodec: io.circe.Codec[HealthCheckProcessResponseDto.Status] = extrassemiauto.deriveEnumerationCodec
+        semiauto.deriveCodec
+      }
+    }
   }
 }
