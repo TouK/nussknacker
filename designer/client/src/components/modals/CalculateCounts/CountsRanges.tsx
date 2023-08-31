@@ -3,11 +3,11 @@ import moment, { Moment } from "moment";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { useFeatureFlags } from "../../../common/featureFlags";
 import HttpService from "../../../http/HttpService";
 import { getProcessId } from "../../../reducers/selectors/graph";
 import { CountsRangesButtons, Range } from "./CountsRangesButtons";
 import { TFunction } from "i18next";
+import { DATE_FORMAT } from "../../../config";
 
 function predefinedRanges(t: TFunction<string>): Range[] {
     const forDay = (name: string, moment: () => Moment): Range => ({
@@ -37,31 +37,26 @@ interface RangesProps {
 function useDeployHistory(processId: string): Range[] {
     const { t } = useTranslation();
     const [deploys, setDeploys] = useState<Range[]>([]);
-    const { showDeploymentsInCounts } = useFeatureFlags();
     useEffect(() => {
-        if (!showDeploymentsInCounts) {
-            setDeploys([]);
-        } else {
-            HttpService.fetchProcessesDeployments(processId)
-                .then((dates) =>
-                    dates.map((current, i, all) => {
-                        const from = current;
-                        const to = all[i - 1];
-                        return {
-                            from: () => moment(from),
-                            to: () => (to ? moment(to) : moment().add(1, "day").startOf("day")),
-                            name: i
-                                ? t("calculateCounts.range.prevDeploy", "Previous deploy #{{i}} ({{date}})", {
-                                      i: all.length - i,
-                                      date: from,
-                                  })
-                                : t("calculateCounts.range.lastDeploy", "Latest deploy"),
-                        };
-                    }),
-                )
-                .then(setDeploys);
-        }
-    }, [showDeploymentsInCounts, t, processId]);
+        HttpService.fetchProcessesDeployments(processId)
+            .then((dates) =>
+                dates.map((current, i, all) => {
+                    const from = moment(current);
+                    const to = all[i - 1];
+                    return {
+                        from: () => from,
+                        to: () => (to ? moment(to) : moment().add(1, "day").startOf("day")),
+                        name: i
+                            ? t("calculateCounts.range.prevDeploy", "Previous deploy #{{i}} ({{date}})", {
+                                  i: all.length - i,
+                                  date: from.format(DATE_FORMAT),
+                              })
+                            : t("calculateCounts.range.lastDeploy", "Latest deploy"),
+                    };
+                }),
+            )
+            .then(setDeploys);
+    }, [t, processId]);
 
     return deploys;
 }
@@ -81,13 +76,14 @@ export function CountsRanges({ label, onChange }: RangesProps): JSX.Element {
     const { t } = useTranslation<string>();
     const processId = useSelector(getProcessId);
     const deploys = useDeployHistory(processId);
-    const ranges = useMemo(() => [...predefinedRanges(t), ...deploys], [t, deploys]);
+    const dates = useMemo(() => predefinedRanges(t), [t]);
+    const ranges = useMemo(() => [...dates, ...deploys], [dates, deploys]);
 
     return (
         <>
             <p>{label}</p>
             <div className={rangesStyle}>
-                <CountsRangesButtons ranges={ranges} onChange={onChange} limit={6} />
+                <CountsRangesButtons ranges={ranges} onChange={onChange} limit={dates.length + 1} />
             </div>
         </>
     );

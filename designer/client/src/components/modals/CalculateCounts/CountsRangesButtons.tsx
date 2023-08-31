@@ -53,7 +53,7 @@ export function CountsRangesButtons({ ranges, onChange, limit = 2 }: RangesButto
                         flex: 2,
                     }}
                 >
-                    {t("calculateCounts.more", "Select more...")}
+                    {t("calculateCounts.more", "Previous deployments...")}
                 </DropdownButton>
             ) : null}
         </>
