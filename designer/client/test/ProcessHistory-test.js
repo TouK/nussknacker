@@ -23,8 +23,12 @@ describe("ProcessHistory suite", () => {
         //given
         const store = mockStore({
             graphReducer: {
-                fetchedProcessDetails: {
-                    history: [processEntry(3), processEntry(2), processEntry(1)],
+                history: {
+                    present: {
+                        fetchedProcessDetails: {
+                            history: [processEntry(3), processEntry(2), processEntry(1)],
+                        },
+                    },
                 },
             },
         });

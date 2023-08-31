@@ -8,7 +8,7 @@ import { ProcessCounts } from "../graph";
 import { RootState } from "../index";
 import { getProcessState } from "./scenarioState";
 
-export const getGraph = (state: RootState): RootState["graphReducer"] => state.graphReducer;
+export const getGraph = (state: RootState) => state.graphReducer.history.present;
 
 export const getFetchedProcessDetails = createSelector(getGraph, (g) => g.fetchedProcessDetails);
 export const getProcessToDisplay = createSelector(getGraph, (g) => g.processToDisplay || ({} as Process));
@@ -29,7 +29,8 @@ export const hasPropertiesErrors = createSelector(getProcessToDisplay, (p) => !P
 export const getSelectionState = createSelector(getGraph, (g) => g.selectionState);
 export const getSelection = createSelector(getSelectionState, getProcessToDisplay, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p));
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s));
-export const getHistory = createSelector(getGraph, (g) => g.history);
+export const getHistoryPast = (state: RootState) => state.graphReducer.history.past;
+export const getHistoryFuture = (state: RootState) => state.graphReducer.history.future;
 
 export const isProcessRenamed = createSelector(
     getProcessName,

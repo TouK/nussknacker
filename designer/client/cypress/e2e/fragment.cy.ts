@@ -24,7 +24,7 @@ describe("Fragment", () => {
         cy.get("@window")
             .contains(/^apply$/i)
             .click();
-        cy.contains(/^save$/i).click();
+        cy.contains(/^save\*$/i).click();
         cy.contains(/^ok$/i).click();
 
         cy.visitNewProcess(seed, "testProcess");
