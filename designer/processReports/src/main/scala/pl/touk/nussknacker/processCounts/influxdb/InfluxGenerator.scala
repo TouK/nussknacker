@@ -62,8 +62,6 @@ private[influxdb] class InfluxGenerator[F[_]](config: InfluxConfig, env: String)
   private def parseInfluxDate(date:String) : Instant =
     ZonedDateTime.parse(date, DateTimeFormatter.ISO_ZONED_DATE_TIME).toInstant
 
-  def close(): F[Unit] = influxClient.close()
-
 }
 
 object InfluxGenerator extends LazyLogging {

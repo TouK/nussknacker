@@ -3,7 +3,7 @@ package pl.touk.nussknacker.processCounts.influxdb
 import com.dimafeng.testcontainers.{ForAllTestContainer, InfluxDBContainer}
 import org.influxdb.InfluxDBFactory
 import org.influxdb.dto.Point
-import org.scalatest.Assertion
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -16,7 +16,7 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 import scala.language.implicitConversions
 
-class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with TableDrivenPropertyChecks with VeryPatientScalaFutures with Matchers {
+class InfluxCountsReporterSpec extends AnyFunSuite with BeforeAndAfterAll with ForAllTestContainer with TableDrivenPropertyChecks with VeryPatientScalaFutures with Matchers {
 
   implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
@@ -32,6 +32,11 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
   }
 
   private val env = "testEnv"
+
+  override protected def afterAll(): Unit = {
+    backend.close()
+    super.afterAll()
+  }
 
   test("invokes counts for point in time data") {
 
@@ -112,7 +117,7 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
     private val influxDB = InfluxDBFactory.connect(container.url, container.username, container.password)
 
     def reporter(queryMode: QueryMode.Value) = new InfluxCountsReporter[Identity](env,
-      InfluxConfig(container.url + "/query", Option(container.username), Option(container.password), container.database, queryMode, Some(config)), identity
+      InfluxConfig(container.url + "/query", Option(container.username), Option(container.password), container.database, queryMode, Some(config))
     )
 
     influxDB.setDatabase(container.database)

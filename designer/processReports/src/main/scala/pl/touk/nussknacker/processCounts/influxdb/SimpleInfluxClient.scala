@@ -40,8 +40,6 @@ class SimpleInfluxClient[F[_]](config: InfluxConfig)(implicit backend: SttpBacke
       .map(_.results.head.series)
   }
 
-  def close(): F[Unit] = backend.close()
-
 }
 
 case class InfluxResponse(results: List[InfluxResult] = Nil)
