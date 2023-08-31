@@ -1,5 +1,5 @@
 import { Moment } from "moment";
-import React, { useCallback, useMemo } from "react";
+import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { DropdownButton } from "../../common/DropdownButton";
 import { ButtonWithFocus } from "../../withFocus";
@@ -16,12 +16,12 @@ interface RangesButtonsProps {
     limit?: number;
 }
 
-export function CountsRangesButtons({ ranges, onChange, limit = 2 }: RangesButtonsProps): JSX.Element {
+export function CountsRangesButtons({ children, ranges, onChange, limit = -1 }: PropsWithChildren<RangesButtonsProps>): JSX.Element {
     const { t } = useTranslation();
     const changeHandler = useCallback(({ from, to }: Range) => onChange([from(), to()]), [onChange]);
 
-    const visible = useMemo(() => ranges.slice(0, limit), [ranges, limit]);
-    const collapsed = useMemo(() => ranges.slice(limit), [ranges, limit]);
+    const visible = useMemo(() => (limit >= 0 ? ranges.slice(0, limit) : ranges), [ranges, limit]);
+    const collapsed = useMemo(() => (limit >= 0 ? ranges.slice(limit) : []), [ranges, limit]);
 
     return (
         <>
@@ -53,7 +53,7 @@ export function CountsRangesButtons({ ranges, onChange, limit = 2 }: RangesButto
                         flex: 2,
                     }}
                 >
-                    {t("calculateCounts.more", "Previous deployments...")}
+                    {children || t("calculateCounts.more", "Select more...")}
                 </DropdownButton>
             ) : null}
         </>

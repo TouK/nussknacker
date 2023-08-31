@@ -77,13 +77,15 @@ export function CountsRanges({ label, onChange }: RangesProps): JSX.Element {
     const processId = useSelector(getProcessId);
     const deploys = useDeployHistory(processId);
     const dates = useMemo(() => predefinedRanges(t), [t]);
-    const ranges = useMemo(() => [...dates, ...deploys], [dates, deploys]);
 
     return (
         <>
             <p>{label}</p>
             <div className={rangesStyle}>
-                <CountsRangesButtons ranges={ranges} onChange={onChange} limit={dates.length + 1} />
+                <CountsRangesButtons ranges={dates} onChange={onChange} />
+                <CountsRangesButtons ranges={deploys} onChange={onChange} limit={1}>
+                    {t("calculateCounts.deployments", "Previous deployments...")}
+                </CountsRangesButtons>
             </div>
         </>
     );
