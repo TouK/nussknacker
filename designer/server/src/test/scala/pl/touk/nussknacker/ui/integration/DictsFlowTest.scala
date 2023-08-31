@@ -2,9 +2,9 @@ package pl.touk.nussknacker.ui.integration
 
 import com.typesafe.config.Config
 import io.circe.Json
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -19,11 +19,10 @@ import sttp.model.{MediaType, StatusCode}
 import java.util.UUID
 
 class DictsFlowTest
-  extends AnyFunSuite
-    with NuItTest
+  extends NuItTest
+    with AnyFunSuiteLike
     with WithTestHttpClient
     with Matchers
-    with BeforeAndAfterAll
     with OptionValues
     with EitherValuesDetailedMessage {
 
@@ -35,11 +34,6 @@ class DictsFlowTest
   private val Label = "Foo"
 
   override def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfigWithEmbeddedEngine
-
-  // TODO: fixme
-  override def afterAll(): Unit = {
-    super.afterAll()
-  }
 
   test("query dict entries by label pattern") {
     val response1 = httpClient.send(

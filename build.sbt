@@ -2,6 +2,7 @@ import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
 import pl.project13.scala.sbt.JmhPlugin._
+
 import scala.sys.process._
 import sbt.Keys._
 import sbt.{Def, _}
@@ -155,9 +156,12 @@ val externalDepsTestsSettings =
 val ignoreExternalDepsTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Network")
 
 def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*): T = {
-  CrossVersion.partialVersion(version).flatMap { case (k, v) =>
-    specific.toMap.get((k.toInt, v.toInt))
-  }.getOrElse(default)
+  CrossVersion
+    .partialVersion(version)
+    .flatMap { case (k, v) =>
+      specific.toMap.get((k.toInt, v.toInt))
+    }
+    .getOrElse(default)
 }
 
 lazy val commonSettings =
@@ -958,7 +962,12 @@ lazy val testUtils = (project in utils("test-utils")).
         "com.softwaremill.sttp.client3" %% "slf4j-backend" % sttpV,
         "org.typelevel" %% "cats-effect" % catsEffectV,
         "io.circe" %% "circe-parser" % circeV,
-        "org.testcontainers" % "testcontainers" % testContainersJavaV
+        "org.testcontainers" % "testcontainers" % testContainersJavaV,
+        "com.lihaoyi" %% "ujson" % "3.1.2",
+      ) ++ forScalaVersion(scalaVersion.value, Seq(),
+        // rest-assured is not cross compiled, so we have to use different versions
+        (2, 12) -> Seq("io.rest-assured" % "scala-support" % "4.0.0"),
+        (2, 13) -> Seq("io.rest-assured" % "scala-support" % "5.3.1")
       )
     }
   )
@@ -1585,7 +1594,7 @@ lazy val designer = (project in file("designer/server"))
 
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-jmx" % dropWizardV,
-        "fr.davit" %% "akka-http-metrics-dropwizard-v5" % "1.7.1"
+        "fr.davit" %% "akka-http-metrics-dropwizard-v5" % "1.7.1",
       ) ++ forScalaVersion(scalaVersion.value, Seq(),
         (2, 13) -> Seq( "org.scala-lang.modules" %% "scala-xml" % "2.1.0")
       )
