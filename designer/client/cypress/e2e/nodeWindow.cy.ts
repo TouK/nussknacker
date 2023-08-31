@@ -24,6 +24,10 @@ describe("Node window", () => {
 
         cy.getNode("periodic").dblclick();
 
+        // TODO: fix validation display in node windows
+        cy.intercept("POST", "/api/nodes/*/validation").as("validation");
+        cy.wait("@validation");
+
         cy.get("[data-testid=window]").should("be.visible");
         cy.contains(/^hours$/).should("be.visible");
         cy.get("[data-testid=window]").matchImage();
