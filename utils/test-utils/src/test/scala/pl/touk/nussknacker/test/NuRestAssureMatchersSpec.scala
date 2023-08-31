@@ -50,15 +50,15 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
       .matchJsonWithRegexValues(
         s"""{
            |  "a": "^\\\\w\\\\w$$",
-           |  "b": "^true|false$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
            |    "f": {}
@@ -72,16 +72,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true|false$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
            |    "a": "^\\\\w\\\\w$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
            |    "f": {}
@@ -95,16 +95,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
+           |  "a": "Astring",
            |  "b": "^false$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
            |    "f": {}
@@ -118,16 +118,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true|false$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
+           |    "a": "Bstring",
            |    "b": "^true$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
            |    "f": {}
@@ -141,16 +141,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true$$",
+           |  "a": "Astring",
+           |  "b": true,
            |  "c": "^\\\\d{2}\\\\.0$$",
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
            |    "f": {}
@@ -164,15 +164,15 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
+           |    "a": "Bstring",
+           |    "b": false,
            |    "c": "^\\\\d{2}\\\\.0$$",
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
@@ -187,16 +187,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ 1, "a", true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
            |    "f": {}
@@ -210,16 +210,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
            |    "f": {}
@@ -233,16 +233,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, { "a": true } ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
            |    "f": {}
@@ -256,16 +256,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", true, 1, [], null, {} ],
            |    "f": {}
@@ -279,16 +279,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], {} ],
            |    "f": {}
@@ -302,16 +302,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, { "a": true } ],
            |    "f": {}
@@ -325,16 +325,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true|false$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
            |    "f": {}
@@ -349,16 +349,16 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
-           |  "a": "^\\\\wstring$$",
-           |  "b": "^true|false$$",
-           |  "c": "^\\\\d{1}\\\\.0$$",
+           |  "a": "Astring",
+           |  "b": true,
+           |  "c": 1,
            |  "d": null,
            |  "e": [ "a", 1, true, [], null, {} ],
            |  "f": {},
            |  "g": {
-           |    "a": "^\\\\wstring$$",
-           |    "b": "^true|false$$",
-           |    "c": "^\\\\d{1}\\\\.0$$",
+           |    "a": "Bstring",
+           |    "b": false,
+           |    "c": 2,
            |    "d": null,
            |    "e": [ "a", 1, true, [], null, {} ],
            |    "f": {},

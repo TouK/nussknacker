@@ -10,7 +10,7 @@ import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
-import pl.touk.nussknacker.test.{NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
 
@@ -19,6 +19,7 @@ class AppResourcesSpec
     with WithMockableDeploymentManager
     with AnyFunSuiteLike
     with NuScenarioConfigurationHelper
+    with NuRestAssureExtensions
     with NuRestAssureMatchers
     with RestAssuredVerboseLogging
     with PatientScalaFutures {
@@ -32,19 +33,20 @@ class AppResourcesSpec
   }
 
   test("it should return health check also if cannot retrieve statuses") {
-    createDeployedProcess(ProcessName("id1"), category = Category1)
-    createDeployedProcess(ProcessName("id2"), category = Category1)
-    createDeployedProcess(ProcessName("id3"), category = Category1)
-
-    MockableDeploymentManager.configure(
-      Map(
-        ProcessName("id1") -> ProblemStateStatus.FailedToGet,
-        ProcessName("id2") -> SimpleStateStatus.Running,
-        ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
-      )
-    )
-
     given()
+      .applicationConfiguration {
+        createDeployedProcess(ProcessName("id1"), category = Category1)
+        createDeployedProcess(ProcessName("id2"), category = Category1)
+        createDeployedProcess(ProcessName("id3"), category = Category1)
+
+        MockableDeploymentManager.configure(
+          Map(
+            ProcessName("id1") -> ProblemStateStatus.FailedToGet,
+            ProcessName("id2") -> SimpleStateStatus.Running,
+            ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+          )
+        )
+      }
       .auth().basic("reader", "reader")
       .when()
       .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
@@ -60,16 +62,17 @@ class AppResourcesSpec
   }
 
   test("it shouldn't return healthcheck when scenario canceled") {
-    createDeployedCanceledProcess(ProcessName("id1"), category = Category1)
-    createDeployedProcess(ProcessName("id2"), category = Category1)
-
-    MockableDeploymentManager.configure(
-      Map(
-        ProcessName("id2") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
-      )
-    )
-
     given()
+      .applicationConfiguration {
+        createDeployedCanceledProcess(ProcessName("id1"), category = Category1)
+        createDeployedProcess(ProcessName("id2"), category = Category1)
+
+        MockableDeploymentManager.configure(
+          Map(
+            ProcessName("id2") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+          )
+        )
+      }
       .auth().basic("reader", "reader")
       .when()
       .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
@@ -85,17 +88,18 @@ class AppResourcesSpec
   }
 
   test("it should return healthcheck ok if statuses are ok") {
-    createDeployedProcess(ProcessName("id1"), category = Category1)
-    createDeployedProcess(ProcessName("id2"), category = Category1)
-
-    MockableDeploymentManager.configure(
-      Map(
-        ProcessName("id1") -> SimpleStateStatus.Running,
-        ProcessName("id2") -> SimpleStateStatus.Running,
-      )
-    )
-
     given()
+      .applicationConfiguration {
+        createDeployedProcess(ProcessName("id1"), category = Category1)
+        createDeployedProcess(ProcessName("id2"), category = Category1)
+
+        MockableDeploymentManager.configure(
+          Map(
+            ProcessName("id1") -> SimpleStateStatus.Running,
+            ProcessName("id2") -> SimpleStateStatus.Running,
+          )
+        )
+      }
       .auth().basic("reader", "reader")
       .when()
       .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
@@ -111,16 +115,17 @@ class AppResourcesSpec
   }
 
   test("it should not report deployment in progress as fail") {
-    createDeployedProcess(ProcessName("id1"))
-    createDeployedCanceledProcess(ProcessName("id1"))
-
-    MockableDeploymentManager.configure(
-      Map(
-        ProcessName("id1") -> SimpleStateStatus.Running
-      )
-    )
-
     given()
+      .applicationConfiguration {
+        createDeployedProcess(ProcessName("id1"))
+        createDeployedCanceledProcess(ProcessName("id1"))
+
+        MockableDeploymentManager.configure(
+          Map(
+            ProcessName("id1") -> SimpleStateStatus.Running
+          )
+        )
+      }
       .when()
       .auth().basic("reader", "reader")
       .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
@@ -179,9 +184,10 @@ class AppResourcesSpec
   }
 
   test("it should should return simple designer health check (not checking scenario statuses) without authentication") {
-    createDeployedProcess(ProcessName("id1"))
-
     given()
+      .applicationConfiguration {
+        createDeployedProcess(ProcessName("id1"))
+      }
       .when()
       .get(s"$nuDesignerHttpAddress/api/app/healthCheck")
       .Then()
