@@ -3,27 +3,35 @@ import NodeUtils from "../src/components/graph/NodeUtils";
 describe("edgeType retrieved", () => {
     it("should choose unused edge type", () => {
         expect(
-            NodeUtils.edgeType([{ from: "node1", edgeType: { type: "edge1" } }], { id: "node1", type: "Filter" }, processDefinitionData),
+            NodeUtils.getNextEdgeType(
+                [{ from: "node1", edgeType: { type: "edge1" } }],
+                { id: "node1", type: "Filter" },
+                processDefinitionData,
+            ),
         ).toEqual({ type: "edge2" });
     });
 
     it("should get edge types for node", () => {
-        expect(NodeUtils.edgesForNode({ id: "node1", type: "FragmentInput", ref: { id: "sub1" } }, processDefinitionData)).toEqual({
+        expect(
+            NodeUtils.getEdgesAvailableForNode({ id: "node1", type: "FragmentInput", ref: { id: "sub1" } }, processDefinitionData),
+        ).toEqual({
             nodeId: { type: "FragmentInput", id: "sub1" },
             edges: [{ type: "edge3" }],
         });
-        expect(NodeUtils.edgesForNode({ id: "node1", type: "Filter" }, processDefinitionData)).toEqual({
+        expect(NodeUtils.getEdgesAvailableForNode({ id: "node1", type: "Filter" }, processDefinitionData)).toEqual({
             nodeId: { type: "Filter" },
             edges: [{ type: "edge1" }, { type: "edge2" }],
         });
     });
 
     it("should get empty types for defaultNode", () => {
-        expect(NodeUtils.edgesForNode({ id: "node1", type: "Variable" }, processDefinitionData)).toEqual({
+        expect(NodeUtils.getEdgesAvailableForNode({ id: "node1", type: "Variable" }, processDefinitionData)).toEqual({
             edges: [null],
             canChooseNodes: false,
         });
-        expect(NodeUtils.edgesForNode({ id: "node1", type: "Processor", service: { id: "sub1" } }, processDefinitionData)).toEqual({
+        expect(
+            NodeUtils.getEdgesAvailableForNode({ id: "node1", type: "Processor", service: { id: "sub1" } }, processDefinitionData),
+        ).toEqual({
             edges: [null],
             canChooseNodes: false,
         });

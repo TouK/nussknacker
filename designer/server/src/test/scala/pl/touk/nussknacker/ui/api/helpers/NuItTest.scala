@@ -1,35 +1,52 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 import pl.touk.nussknacker.test.DefaultUniquePortProvider
 import pl.touk.nussknacker.ui.factory.NussknackerAppFactory
-import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion.TestsConfig
+import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
-trait NuItTest
-  extends WithHsqlDbTesting
+abstract class NuItTest
+  extends Suite
+    with WithHsqlDbTesting
     with DefaultUniquePortProvider
     with TestPermissions
     with BeforeAndAfterAll {
-  self: Suite =>
 
   private val port = nextPort()
 
   val nuDesignerHttpAddress = s"http://localhost:$port"
 
-  def nuTestConfig: Config = TestsConfig
+  def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   private val (_, releaseAppResources) = {
     new NussknackerAppFactory()
-      .createApp(nuTestConfig.withValue("http.port", fromAnyRef(port)))
+      .createApp(adjustNuTestConfig())
       .allocated
       .unsafeRunSync()
   }
 
-  abstract override def afterAll(): Unit = {
+  override def afterAll(): Unit = {
     releaseAppResources.unsafeRunSync()
     super.afterAll()
   }
 
+  private def adjustNuTestConfig() = {
+    nuTestConfig
+      .withValue("db", testDbConfig.getConfig("db").root())
+      .withValue("http.port", fromAnyRef(port))
+  }
+}
+
+trait WithMockableDeploymentManager extends NuItTest {
+
+  abstract override def nuTestConfig: Config = super
+    .nuTestConfig
+    .withValue(
+      "scenarioTypes.streaming.deploymentConfig",
+      ConfigFactory
+        .parseString("""{ type: "mockable" }""")
+        .root()
+    )
 }

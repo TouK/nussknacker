@@ -1,198 +1,203 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.typesafe.config.{Config, ConfigFactory}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.Json
-import io.circe.syntax.EncoderOps
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
-import pl.touk.nussknacker.engine.ModelData
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import io.restassured.RestAssured._
+import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
+import org.hamcrest.Matchers._
+import org.scalatest.funsuite.AnyFunSuiteLike
+import pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider.MockableDeploymentManager
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
-import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus, StatusDetails}
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, withAdminPermissions, withPermissions, withoutPermissions}
-import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, StubDeploymentService, TestFactory}
-import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
-
-import java.util.Collections
-import scala.jdk.CollectionConverters._
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
+import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
 
 class AppResourcesSpec
-  extends AnyFunSuite
-    with ScalatestRouteTest
-    with Matchers
-    with PatientScalaFutures
-    with FailFastCirceSupport
-    with OptionValues
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with NuItTest // fixme: it's not fully used here yet
-    with NuScenarioConfigurationHelper {
+  extends NuItTest
+    with WithMockableDeploymentManager
+    with AnyFunSuiteLike
+    with NuScenarioConfigurationHelper
+    with NuRestAssureExtensions
+    with NuRestAssureMatchers
+    with RestAssuredVerboseLogging
+    with PatientScalaFutures {
+
+  override def nuTestConfig: Config = super.nuTestConfig
+    .withValue("enableConfigEndpoint", fromAnyRef(true))
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    MockableDeploymentManager.clean()
+  }
 
   test("it should return health check also if cannot retrieve statuses") {
-    createDeployedProcess(ProcessName("id1"))
-    createDeployedProcess(ProcessName("id2"))
-    createDeployedProcess(ProcessName("id3"))
-    val resources = prepareBasicAppResources(
-      statuses = Map(
-        ProcessName("id1") -> ProblemStateStatus.FailedToGet,
-        ProcessName("id2") -> SimpleStateStatus.Running,
-        ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
-      )
-    )
+    given()
+      .applicationConfiguration {
+        createDeployedProcess(ProcessName("id1"), category = Category1)
+        createDeployedProcess(ProcessName("id2"), category = Category1)
+        createDeployedProcess(ProcessName("id3"), category = Category1)
 
-    val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
-
-    result ~> check {
-      status shouldBe StatusCodes.InternalServerError
-      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Scenarios with status PROBLEM"), Some(Set("id1", "id3")))
-      entityAs[HealthCheckProcessResponse] shouldBe expectedResponse
-    }
+        MockableDeploymentManager.configure(
+          Map(
+            ProcessName("id1") -> ProblemStateStatus.FailedToGet,
+            ProcessName("id2") -> SimpleStateStatus.Running,
+            ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+          )
+        )
+      }
+      .auth().basic("reader", "reader")
+      .when()
+      .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
+      .Then()
+      .statusCode(500)
+      .body(equalsJson(
+        s"""{
+           |  "status": "ERROR",
+           |  "message": "Scenarios with status PROBLEM",
+           |  "processes": [ "id1", "id3" ]
+           |}""".stripMargin
+      ))
   }
 
   test("it shouldn't return healthcheck when scenario canceled") {
-    createDeployedCanceledProcess(ProcessName("id1"))
-    createDeployedProcess(ProcessName("id2"))
-    val resources = prepareBasicAppResources(
-      statuses = Map(
-        ProcessName("id2") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
-      )
-    )
+    given()
+      .applicationConfiguration {
+        createDeployedCanceledProcess(ProcessName("id1"), category = Category1)
+        createDeployedProcess(ProcessName("id2"), category = Category1)
 
-    val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
-
-    result ~> check {
-      status shouldBe StatusCodes.InternalServerError
-      val expectedResponse = HealthCheckProcessResponse(ERROR, Some("Scenarios with status PROBLEM"), Some(Set("id2")))
-      entityAs[HealthCheckProcessResponse] shouldBe expectedResponse
-    }
+        MockableDeploymentManager.configure(
+          Map(
+            ProcessName("id2") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+          )
+        )
+      }
+      .auth().basic("reader", "reader")
+      .when()
+      .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
+      .Then()
+      .statusCode(500)
+      .body(equalsJson(
+        s"""{
+           |  "status": "ERROR",
+           |  "message": "Scenarios with status PROBLEM",
+           |  "processes": [ "id2" ]
+           |}""".stripMargin
+      ))
   }
 
   test("it should return healthcheck ok if statuses are ok") {
-    createDeployedProcess(ProcessName("id1"))
-    createDeployedProcess(ProcessName("id2"))
-    val resources = prepareBasicAppResources(
-      statuses = Map(
-        ProcessName("id1") -> SimpleStateStatus.Running,
-        ProcessName("id2") -> SimpleStateStatus.Running,
-      )
-    )
+    given()
+      .applicationConfiguration {
+        createDeployedProcess(ProcessName("id1"), category = Category1)
+        createDeployedProcess(ProcessName("id2"), category = Category1)
 
-    val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
-
-    result ~> check {
-      status shouldBe StatusCodes.OK
-    }
+        MockableDeploymentManager.configure(
+          Map(
+            ProcessName("id1") -> SimpleStateStatus.Running,
+            ProcessName("id2") -> SimpleStateStatus.Running,
+          )
+        )
+      }
+      .auth().basic("reader", "reader")
+      .when()
+      .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
+      .Then()
+      .statusCode(200)
+      .body(equalsJson(
+        s"""{
+           |  "status": "OK",
+           |  "message": null,
+           |  "processes": null
+           |}""".stripMargin
+      ))
   }
 
   test("it should not report deployment in progress as fail") {
-    createDeployedProcess(ProcessName("id1"))
-    val resources = prepareBasicAppResources(
-      statuses = Map(
-        ProcessName("id1") -> SimpleStateStatus.Running,
-      )
-    )
+    given()
+      .applicationConfiguration {
+        createDeployedProcess(ProcessName("id1"))
+        createDeployedCanceledProcess(ProcessName("id1"))
 
-    val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
-
-    result ~> check {
-      status shouldBe StatusCodes.OK
-    }
+        MockableDeploymentManager.configure(
+          Map(
+            ProcessName("id1") -> SimpleStateStatus.Running
+          )
+        )
+      }
+      .when()
+      .auth().basic("reader", "reader")
+      .get(s"$nuDesignerHttpAddress/api/app/healthCheck/process/deployment")
+      .Then()
+      .statusCode(200)
+      .body(equalsJson(
+        s"""{
+           |  "status":"OK",
+           |  "processes":null,
+           |  "message":null
+           |}""".stripMargin
+      ))
   }
 
   test("it should return config") {
-    val resources = prepareBasicAppResources(statuses = Map.empty)
-
-    val result = Get("/app/config") ~> withAdminPermissions(resources)
-
-    result ~> check {
-      status shouldBe StatusCodes.OK
-    }
+    given()
+      .auth().basic("admin", "admin")
+      .when()
+      .get(s"$nuDesignerHttpAddress/api/app/config")
+      .Then()
+      .statusCode(200)
+      .body(is(not(emptyString())))
   }
 
-  test("it shouldn't return config when disabled") {
-    val resources = prepareBasicAppResources(
-      statuses = Map.empty,
-      withConfigExposed = false
-    )
-
-    val result = Get("/app/config") ~> withAdminPermissions(resources)
-
-    result ~> check {
-      rejections
-    }
+  test("it shouldn't return config when the user is not admin") {
+    given()
+      .auth().basic("reader", "reader")
+      .when()
+      .get(s"$nuDesignerHttpAddress/api/app/config")
+      .Then()
+      .statusCode(403)
+      .body(equalTo("The supplied authentication is not authorized to access this resource"))
   }
 
   test("it should return build info without authentication") {
-    val creatorWithBuildInfo = new EmptyProcessConfigCreator {
-      override def buildInfo(): Map[String, String] = Map("fromModel" -> "value1")
-    }
-    val modelData = LocalModelData(
-      inputConfig = ConfigFactory.empty(),
-      configCreator = creatorWithBuildInfo
-    )
-    val globalConfig = Map("testConfig" -> "testValue", "otherConfig" -> "otherValue")
-    val resources = prepareBasicAppResources(
-      config = ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)),
-      statuses = Map.empty,
-      modelData = mapProcessingTypeDataProvider("test1" -> modelData),
-      withConfigExposed = false
-    )
-
-    val expectedEntity = (BuildInfo.toMap.mapValuesNow(_.toString) ++ globalConfig).mapValuesNow(_.asJson) +
-      ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)
-
-    Get("/app/buildInfo") ~> withoutPermissions(resources) ~> check {
-      status shouldBe StatusCodes.OK
-      entityAs[Map[String, Json]] shouldBe (expectedEntity)
-    }
+    given()
+      .when()
+      .get(s"$nuDesignerHttpAddress/api/app/buildInfo")
+      .Then()
+      .statusCode(200)
+      .body(matchJsonWithRegexValues(
+        s"""{
+           |  "name": "nussknacker-common-api",
+           |  "gitCommit": "^\\\\w{40}$$",
+           |  "buildTime": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{6}$$",
+           |  "version": "1.12.0-SNAPSHOT",
+           |  "processingType": {
+           |    "streaming": {
+           |      "process-version": "0.1",
+           |      "engine-version": "0.1",
+           |      "generation-time": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{6}$$"
+           |    }
+           |  }
+           |}""".stripMargin
+      ))
   }
 
   test("it should should return simple designer health check (not checking scenario statuses) without authentication") {
-    val resources = prepareBasicAppResources(statuses = Map.empty)
-
-    val result = Get("/app/healthCheck") ~> withoutPermissions(resources)
-
-    result ~> check {
-      status shouldBe StatusCodes.OK
-    }
+    given()
+      .applicationConfiguration {
+        createDeployedProcess(ProcessName("id1"))
+      }
+      .when()
+      .get(s"$nuDesignerHttpAddress/api/app/healthCheck")
+      .Then()
+      .statusCode(200)
+      .body(equalsJson(
+        s"""{
+           |  "status":"OK",
+           |  "processes":null,
+           |  "message":null
+           |}""".stripMargin
+      ))
   }
-
-  private val emptyReload = new ProcessingTypeDataReload {
-    override def reloadAll(): Unit = throw new TestFailedException(
-      message = Some("Should not be called in this test case"),
-      cause = None,
-      failedCodeStackDepth = 0
-    )
-  }
-
-  private def processStatus(status: StateStatus): ProcessState =
-    SimpleProcessStateDefinitionManager.processState(StatusDetails(status, None))
-
-  private def prepareBasicAppResources(config: Config = ConfigFactory.empty(),
-                                       statuses: Map[ProcessName, StateStatus],
-                                       modelData: ProcessingTypeDataProvider[ModelData, _] = emptyProcessingTypeDataProvider,
-                                       withConfigExposed: Boolean = true) = {
-    val deploymentService = new StubDeploymentService(statuses.mapValuesNow(processStatus))
-    new AppResources(
-      config = config,
-      processingTypeDataReload = emptyReload,
-      modelData = modelData,
-      processRepository = futureFetchingProcessRepository,
-      processValidation = TestFactory.processValidation,
-      deploymentService = deploymentService,
-      exposeConfig = withConfigExposed,
-      processCategoryService = processCategoryService
-    )
-  }
-
 }

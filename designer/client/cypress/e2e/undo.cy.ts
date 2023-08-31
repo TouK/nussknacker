@@ -52,13 +52,15 @@ describe("Undo/Redo", () => {
 
     it("should work for drop on edge", () => {
         cy.get("@graph").matchImage(screenshotOptions);
+        cy.getNode("boundedSource-enricher").find("[event=remove]").eq(0).click();
+        cy.getNode("enricher-dynamicService").find("[event=remove]").eq(0).click();
         cy.get("[data-testid='component:customFilter']")
             .should("be.visible")
             .drag("#nk-graph-main", { x: 580, y: 450, position: "right", force: true });
         cy.get("@graph").matchImage(screenshotOptions);
-        cy.get("@undo").should("be.enabled").click().should("be.disabled");
+        cy.get("@undo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
-        cy.get("@redo").should("be.enabled").click().should("be.disabled");
+        cy.get("@redo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
     });
 
@@ -84,5 +86,50 @@ describe("Undo/Redo", () => {
         cy.get("@undo").should("be.enabled").click().should("be.disabled");
         cy.get("@graph").matchImage(screenshotOptions);
         cy.get("@redo").should("be.enabled").click().should("be.disabled");
+    });
+
+    it("should work with 'last deployed' tag", () => {
+        const screenshotConfig = {
+            clip: { x: 0, y: 0, height: 25, width: 2000 },
+        };
+        cy.dragNode("enricher", { x: 560, y: 500 });
+        cy.get("@undo").should("be.enabled").click().should("be.disabled");
+        cy.deployScenario("undo");
+        cy.contains("v2 | admin").scrollIntoView().parent().matchImage({ screenshotConfig });
+        cy.get("@redo").should("be.enabled").click().should("be.disabled");
+        cy.contains("v2 | admin").scrollIntoView().parent().matchImage({ screenshotConfig });
+    });
+
+    it("should work with counts", () => {
+        cy.intercept("GET", "/api/processCounts/*", {
+            boundedSource: { all: 10, errors: 0, fragmentCounts: {} },
+            enricher: { all: 120, errors: 10, fragmentCounts: {} },
+            dynamicService: { all: 40, errors: 0, fragmentCounts: {} },
+            sendSms: { all: 60, errors: 0, fragmentCounts: {} },
+        });
+
+        cy.dragNode("enricher", { x: 560, y: 500 });
+        cy.get("@undo").should("be.enabled").click().should("be.disabled");
+
+        cy.contains(/^counts$/i).click();
+        cy.get("[data-testid=window]").contains(/^ok$/i).click();
+
+        cy.get("@graph").matchImage(screenshotOptions);
+        cy.get("@redo").should("be.enabled").click().should("be.disabled");
+        cy.get("@graph").matchImage(screenshotOptions);
+    });
+
+    it("should work with validation", () => {
+        cy.dragNode("enricher", { x: 560, y: 500 });
+        cy.get("@undo").should("be.enabled");
+
+        cy.getNode("enricher").click();
+        cy.contains(/^delete$/i).click();
+
+        cy.get("@undo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
+        cy.get("@graph").matchImage(screenshotOptions);
+
+        cy.get("@redo").should("be.enabled").click().should("be.enabled").click().should("be.enabled").click().should("be.disabled");
+        cy.get("@graph").matchImage(screenshotOptions);
     });
 });

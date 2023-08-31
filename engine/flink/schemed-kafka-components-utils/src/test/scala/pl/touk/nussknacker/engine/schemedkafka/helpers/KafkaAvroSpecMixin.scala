@@ -38,11 +38,11 @@ import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, S
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.test.{NuScalaTestAssertions, PatientScalaFutures}
 
 import scala.reflect.ClassTag
 
-trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperations with FlinkSpec with SchemaRegistryMixin with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures with Serializable {
+trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperations with FlinkSpec with SchemaRegistryMixin with Matchers with LazyLogging with NuScalaTestAssertions with PatientScalaFutures with Serializable {
 
   type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source]
 

@@ -1,1 +1,2 @@
  pl.touk.nussknacker.development.manager.DevelopmentDeploymentManagerProvider
+ pl.touk.nussknacker.development.manager.MockableDeploymentManagerProvider

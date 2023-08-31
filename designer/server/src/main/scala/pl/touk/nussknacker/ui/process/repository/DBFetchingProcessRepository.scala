@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.deployment.{ProcessAction, ProcessActionSt
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.db.DbRef
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -57,15 +58,18 @@ abstract class DBFetchingProcessRepository[F[_] : Monad](val dbRef: DbRef, actio
       lastDeployedActionPerProcess <- fetchActionsOrEmpty(actionRepository.getLastActionPerProcess(Set(ProcessActionState.Finished), Some(Set(ProcessActionType.Deploy))))
       latestProcesses <- fetchLatestProcessesQuery(query, lastDeployedActionPerProcess.keySet, isDeployed).result
     } yield
-      latestProcesses.map { case ((_, processVersion), process) => createFullDetails(
-        process,
-        processVersion,
-        lastActionPerProcess.get(process.id),
-        lastStateActionPerProcess.get(process.id),
-        lastDeployedActionPerProcess.get(process.id),
-        isLatestVersion = true
-      )
-      }).map(_.toList)
+      latestProcesses
+        .map { case ((_, processVersion), process) =>
+          createFullDetails(
+            process,
+            processVersion,
+            lastActionPerProcess.get(process.id),
+            lastStateActionPerProcess.get(process.id),
+            lastDeployedActionPerProcess.get(process.id),
+            isLatestVersion = true
+          )
+        }
+      ).map(_.toList)
   }
 
   private def fetchActionsOrEmpty[PS: ProcessShapeFetchStrategy](doFetch: => DBIO[Map[ProcessId, ProcessAction]]): DBIO[Map[ProcessId, ProcessAction]] = {

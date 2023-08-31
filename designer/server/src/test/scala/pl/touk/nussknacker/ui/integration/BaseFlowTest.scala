@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.ui.integration
 
+import com.typesafe.config.Config
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Json}
 import org.apache.commons.io.FileUtils
-import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.typelevel.ci._
@@ -28,7 +29,7 @@ import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIAdditionalPropertyConfig
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.MultipartUtils.sttpPrepareMultiParts
-import pl.touk.nussknacker.ui.util.{CorsSupport, SecurityHeadersSupport}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, SecurityHeadersSupport}
 import sttp.client3.circe.asJson
 import sttp.client3.{UriContext, quickRequest}
 import sttp.model.{Header, MediaType, StatusCode}
@@ -39,8 +40,8 @@ import java.util.UUID
 import scala.util.Properties
 
 class BaseFlowTest
-  extends AnyFunSuite
-    with NuItTest
+  extends NuItTest
+    with AnyFunSuiteLike
     with WithTestHttpClient
     with Matchers
     with BeforeAndAfterAll
@@ -52,6 +53,8 @@ class BaseFlowTest
   //@see DevProcessConfigCreator.DynamicService, TODO: figure out how to make reload test more robust...
   //currently we delete file in beforeAll, because it's used *also* in initialization...
   val dynamicServiceFile = new File(Properties.tmpDir, "nk-dynamic-params.lst")
+
+  override def nuTestConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   override def beforeAll(): Unit = {
     super.beforeAll()

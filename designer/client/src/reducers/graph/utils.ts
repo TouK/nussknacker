@@ -85,11 +85,11 @@ export function createEdge(
     fromNode: NodeType,
     toNode: NodeType,
     edgeType: EdgeType,
-    allEdges: Edge[],
+    nodeOutputEdges: Edge[],
     processDefinitionData: ProcessDefinitionData,
 ) {
-    const baseEdge = { from: fromNode.id, to: toNode.id };
-    const adjustedEdgeType = edgeType || NodeUtils.edgeType(allEdges, fromNode, processDefinitionData);
+    const baseEdge = { from: fromNode?.id, to: toNode?.id };
+    const adjustedEdgeType = edgeType || NodeUtils.getNextEdgeType(nodeOutputEdges, fromNode, processDefinitionData);
     return adjustedEdgeType ? { ...baseEdge, edgeType: adjustedEdgeType } : baseEdge;
 }
 

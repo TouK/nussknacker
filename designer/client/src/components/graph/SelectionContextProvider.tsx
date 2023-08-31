@@ -7,13 +7,12 @@ import {
     cutSelection,
     deleteNodes,
     deleteSelection,
-    nodesValidation,
     nodesWithEdgesAdded,
     pasteSelection,
     selectAll,
 } from "../../actions/nk";
 import { error, success } from "../../actions/notificationActions";
-import { redo, undo } from "../../actions/undoRedoActions";
+import { ActionCreators as UndoActionCreators } from "redux-undo";
 import * as ClipboardUtils from "../../common/ClipboardUtils";
 import { tryParseOrNull } from "../../common/JsonUtils";
 import { isInputEvent } from "../../containers/BindKeyboardShortcuts";
@@ -211,7 +210,6 @@ export default function SelectionContextProvider(
             try {
                 const clipboardText = await ClipboardUtils.readText(event);
                 parseInsertNodes(clipboardText);
-                dispatch(nodesValidation());
             } catch {
                 dispatch(error(t("userActions.paste.notAvailable", "Paste button is not available. Try Ctrl+V")));
             }
@@ -227,8 +225,8 @@ export default function SelectionContextProvider(
             paste: capabilities.editFrontend && ((e) => dispatch(pasteSelection(() => paste(e)))),
             cut: canModifySelected && capabilities.editFrontend && (() => dispatch(cutSelection(cut))),
             delete: canModifySelected && capabilities.editFrontend && (() => dispatch(deleteSelection(selectionState))),
-            undo: () => dispatch(undo()),
-            redo: () => dispatch(redo()),
+            undo: () => dispatch(UndoActionCreators.undo()),
+            redo: () => dispatch(UndoActionCreators.redo()),
             selectAll: () => {
                 dispatch(selectAll());
             },
