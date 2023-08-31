@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
-import { concat, isEqual, pick, sortBy, uniq, xor, zipObject } from "lodash";
-import undoable, { combineFilters, excludeAction } from "redux-undo";
-import { Reducer } from "../../actions/reduxTypes";
+import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy, uniq, xor, zipObject } from "lodash";
+import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
+import { Action, Reducer } from "../../actions/reduxTypes";
 import * as GraphUtils from "../../components/graph/GraphUtils";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
@@ -19,6 +19,8 @@ import {
 import { ValidationResult } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "./batchGroupBy";
+import { NestedKeyOf } from "./nestedKeyOf";
+import ProcessUtils from "../../common/ProcessUtils";
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -40,7 +42,7 @@ export function updateValidationResult(state: GraphState, action: { validationRe
         ...action.validationResult,
         // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
         nodeResults: {
-            ...state.processToDisplay.validationResult.nodeResults,
+            ...ProcessUtils.getValidationResult(state.processToDisplay).nodeResults,
             ...action.validationResult.nodeResults,
         },
     };
@@ -286,17 +288,29 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     }
 };
 
-const reducer = mergeReducers(graphReducer, {
+const reducer: Reducer<GraphState> = mergeReducers(graphReducer, {
     processToDisplay: {
         nodes,
     },
 });
 
-const undoableReducer = undoable(reducer, {
+const pick = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _pick(object, props);
+const omit = <T extends NonNullable<unknown>>(object: T, props: NestedKeyOf<T>[]) => _omit(object, props);
+
+const pickKeys: NestedKeyOf<GraphState>[] = ["fetchedProcessDetails", "processToDisplay", "unsavedNewName", "layout", "selectionState"];
+const omitKeys: NestedKeyOf<GraphState>[] = [
+    "fetchedProcessDetails.json.validationResult",
+    "fetchedProcessDetails.lastDeployedAction",
+    "fetchedProcessDetails.lastAction",
+    "fetchedProcessDetails.history",
+];
+
+const getUndoableState = (state: GraphState) => omit(pick(state, pickKeys), omitKeys.concat(["processToDisplay.validationResult"]));
+const getNonUndoableState = (state: GraphState) => defaultsDeep(omit(state, pickKeys), pick(state, omitKeys));
+
+const undoableReducer = undoable<GraphState>(reducer, {
     ignoreInitialState: true,
-    undoType: "UNDO",
-    redoType: "REDO",
-    clearHistoryType: ["CLEAR", "PROCESS_FETCH"],
+    clearHistoryType: [UndoActionTypes.CLEAR_HISTORY, "PROCESS_FETCH"],
     groupBy: batchGroupBy.init(),
     filter: combineFilters(
         excludeAction([
@@ -308,20 +322,25 @@ const undoableReducer = undoable(reducer, {
             "UPDATE_BACKEND_NOTIFICATIONS",
         ]),
         (action, nextState, prevState) => {
-            const keys: Array<keyof GraphState> = [
-                "fetchedProcessDetails",
-                "processToDisplay",
-                "unsavedNewName",
-                "layout",
-                "selectionState",
-            ];
-            return !isEqual(pick(nextState, keys), pick(prevState._latestUnfiltered, keys));
+            return !isEqual(getUndoableState(nextState), getUndoableState(prevState._latestUnfiltered));
         },
     ),
 });
 
-//TODO: replace this with use of selectors everywhere
-export function reducerWithUndo(state, action) {
-    const history = undoableReducer(state?.history, action);
-    return { ...history.present, history };
+// apply only undoable changes for undo actions
+function fixUndoableHistory(state: StateWithHistory<GraphState>, action: Action): StateWithHistory<GraphState> {
+    const nextState = undoableReducer(state, action);
+
+    if (Object.values(UndoActionTypes).includes(action.type)) {
+        const present = defaultsDeep(getUndoableState(nextState.present), getNonUndoableState(state?.present));
+        return { ...nextState, present };
+    }
+
+    return nextState;
 }
+
+//TODO: replace this with use of selectors everywhere
+export const reducerWithUndo: Reducer<GraphState & { history: StateWithHistory<GraphState> }> = (state, action) => {
+    const history = fixUndoableHistory(state?.history, action);
+    return { ...history.present, history };
+};

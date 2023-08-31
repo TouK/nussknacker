@@ -7,11 +7,12 @@ import { reducer } from "../reducers";
 import { ThunkDispatch } from "../actions/reduxTypes";
 import { useDispatch } from "react-redux";
 import { createStateSyncMiddleware, initMessageListener } from "redux-state-sync";
+import { nodeValidationMiddleware } from "./nodeValidationMiddleware";
 
 export default function configureStore() {
     const store = createStore(
         reducer,
-        composeWithDevTools(
+        composeWithDevTools({ actionsBlacklist: ["UPDATE_BACKEND_NOTIFICATIONS", "RNS_SHOW_NOTIFICATION", "RNS_HIDE_NOTIFICATION"] })(
             applyMiddleware(
                 thunk,
                 createStateSyncMiddleware({
@@ -28,6 +29,7 @@ export default function configureStore() {
                         "TOGGLE_COMPONENT_GROUP_TOOLBOX",
                     ],
                 }),
+                nodeValidationMiddleware(["NODE_ADDED", "DELETE_NODES", "NODES_CONNECTED", "NODES_DISCONNECTED", "NODES_WITH_EDGES_ADDED"]),
             ),
         ),
     );

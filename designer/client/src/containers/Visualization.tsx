@@ -95,7 +95,9 @@ function useModalDetailsIfNeeded(getGraphInstance: () => Graph) {
             const nodeIds = nodes.map((node) => node.id);
             nodes.forEach((node) => openNodeWindow(node, process));
 
-            getGraphInstance()?.highlightNodes(nodeIds);
+            if (nodeIds.length) {
+                getGraphInstance()?.highlightNodes(nodeIds);
+            }
 
             navigate(
                 {

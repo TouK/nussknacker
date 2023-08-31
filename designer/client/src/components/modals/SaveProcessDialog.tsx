@@ -9,7 +9,7 @@ import { CommentInput } from "../CommentInput";
 import { ThunkAction } from "../../actions/reduxTypes";
 import { getProcessToDisplay, getProcessUnsavedNewName, isProcessRenamed } from "../../reducers/selectors/graph";
 import HttpService from "../../http/HttpService";
-import { clear } from "../../actions/undoRedoActions";
+import { ActionCreators as UndoActionCreators } from "redux-undo";
 import { visualizationUrl } from "../../common/VisualizationUrl";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -30,7 +30,7 @@ export function SaveProcessDialog(props: WindowContentProps): JSX.Element {
                 const isRenamed = isProcessRenamed(state) && (await HttpService.changeProcessName(currentProcessName, unsavedNewName));
                 const processId = isRenamed ? unsavedNewName : currentProcessName;
 
-                await dispatch(clear());
+                await dispatch(UndoActionCreators.clearHistory());
                 await dispatch(displayCurrentProcessVersion(processId));
                 await dispatch(displayProcessActivity(processId));
 

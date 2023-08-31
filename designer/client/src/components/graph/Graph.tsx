@@ -27,6 +27,7 @@ import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import ProcessUtils from "../../common/ProcessUtils";
+import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 
 import { createUniqueArrowMarker } from "./arrowMarker";
 
@@ -99,8 +100,10 @@ export class Graph extends React.Component<Props> {
                 .on(Events.CELL_MOVED, (cell: dia.CellView) => {
                     if (isModelElement(cell.model)) {
                         const linkBelowCell = this.getLinkBelowCell();
-                        this.changeLayoutIfNeeded(!!linkBelowCell);
+                        const group = batchGroupBy.startOrContinue();
+                        this.changeLayoutIfNeeded();
                         this.handleInjectBetweenNodes(cell.model, linkBelowCell);
+                        batchGroupBy.end(group);
                     }
                 })
                 .on(Events.LINK_CONNECT, ({ sourceView, targetView, targetMagnet, model }) => {
@@ -426,13 +429,22 @@ export class Graph extends React.Component<Props> {
 
     highlightNodes = (selectedNodeIds: string[] = [], process = this.props.processToDisplay): void => {
         this.processGraphPaper.freeze();
-        this.graph.getCells().forEach((cell) => {
+        const elements = this.graph.getElements();
+        elements.forEach((cell) => {
             this.unhighlightCell(cell, "node-validation-error");
             this.unhighlightCell(cell, "node-focused");
             this.unhighlightCell(cell, "node-focused-with-validation-error");
         });
 
         const invalidNodeIds = keys(ProcessUtils.getValidationErrors(process)?.invalidNodes);
+
+        // fast indicator for loose nodes, faster than async validation
+        elements.forEach((el) => {
+            const nodeId = el.id.toString();
+            if (!invalidNodeIds.includes(nodeId) && el.getPort("In") && !this.graph.getNeighbors(el, { inbound: true }).length) {
+                invalidNodeIds.push(nodeId);
+            }
+        });
 
         invalidNodeIds.forEach((id) =>
             selectedNodeIds.includes(id)
@@ -474,7 +486,7 @@ export class Graph extends React.Component<Props> {
         }
     };
 
-    changeLayoutIfNeeded = (batched?: boolean): void => {
+    changeLayoutIfNeeded = (): void => {
         const { layout, layoutChanged, isFragment } = this.props;
 
         if (isFragment) {
@@ -492,7 +504,7 @@ export class Graph extends React.Component<Props> {
         const oldLayout = sortBy(layout, iteratee);
 
         if (!isEqual(oldLayout, newLayout)) {
-            layoutChanged(newLayout, !batched);
+            layoutChanged(newLayout);
         }
     };
 

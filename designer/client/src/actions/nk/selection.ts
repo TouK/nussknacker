@@ -44,11 +44,12 @@ export function deleteSelection(selectionState: string[]): ThunkAction {
         const process = getProcessToDisplay(getState());
         const selectedNodes = NodeUtils.getAllNodesById(selectionState, process).map((n) => n.id);
 
+        batchGroupBy.startOrContinue();
         dispatch(deleteNodes(selectedNodes));
-
-        return dispatch({
+        dispatch({
             type: "DELETE_SELECTION",
         });
+        batchGroupBy.end();
     };
 }
 
