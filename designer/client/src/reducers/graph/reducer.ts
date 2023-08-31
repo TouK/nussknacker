@@ -16,7 +16,7 @@ import {
     updateAfterNodeDelete,
     updateAfterNodeIdChange,
 } from "./utils";
-import { Edge, ValidationResult } from "../../types";
+import { ValidationResult } from "../../types";
 import NodeUtils from "../../components/graph/NodeUtils";
 import { batchGroupBy } from "./batchGroupBy";
 
@@ -141,37 +141,25 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             }, state);
         }
         case "NODES_CONNECTED": {
-            let newEdges: Edge[];
+            const currentEdges = NodeUtils.edgesFromProcess(state.processToDisplay);
+            const newEdge = NodeUtils.getEdgeForConnection({
+                fromNode: action.fromNode,
+                toNode: action.toNode,
+                edgeType: action.edgeType,
+                processDefinition: action.processDefinitionData,
+                process: state.processToDisplay,
+            });
 
-            const availableEdges = NodeUtils.edgesForNode(action.fromNode, action.processDefinitionData).edges;
-            const freeOutputEdges = state.processToDisplay.edges
-                .filter((e) => e.from === action.fromNode.id && !e.to)
-                //we do this to skip e.g. edges that became incorrect/unavailable
-                .filter((e) =>
-                    availableEdges.find((available) => available?.name == e?.edgeType?.name && available?.type == e?.edgeType?.type),
-                );
-
-            const freeOutputEdge =
-                freeOutputEdges.find((e) => e.edgeType === action.edgeType) || (freeOutputEdges.length == 0 ? null : freeOutputEdges[0]);
-            if (freeOutputEdge) {
-                newEdges = state.processToDisplay.edges.map((e) =>
-                    e === freeOutputEdge
-                        ? {
-                              ...freeOutputEdge,
-                              to: action.toNode.id,
-                          }
-                        : e,
-                );
-            } else {
-                const edge = createEdge(
-                    action.fromNode,
-                    action.toNode,
-                    action.edgeType,
-                    state.processToDisplay.edges,
-                    action.processDefinitionData,
-                );
-                newEdges = concat(state.processToDisplay.edges, edge);
-            }
+            const newEdges = currentEdges.includes(newEdge)
+                ? currentEdges.map((edge) =>
+                      edge === newEdge
+                          ? {
+                                ...newEdge,
+                                to: action.toNode.id,
+                            }
+                          : edge,
+                  )
+                : concat(currentEdges, newEdge);
 
             return {
                 ...state,
@@ -224,7 +212,8 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
             const updatedEdges = edgesWithValidIds.reduce((edges, edge) => {
                 const fromNode = nodes.find((n) => n.id === edge.from);
                 const toNode = nodes.find((n) => n.id === edge.to);
-                const newEdge = createEdge(fromNode, toNode, edge.edgeType, edges, action.processDefinitionData);
+                const currentNodeEdges = NodeUtils.getOutputEdges(fromNode.id, edges);
+                const newEdge = createEdge(fromNode, toNode, edge.edgeType, currentNodeEdges, action.processDefinitionData);
                 return edges.concat(newEdge);
             }, state.processToDisplay.edges);
 

@@ -6,15 +6,16 @@ import {
     Edge,
     EdgeKind,
     EdgeType,
+    FragmentNodeType,
     NodeId,
     NodeType,
     Process,
     ProcessDefinitionData,
     PropertiesType,
-    FragmentNodeType,
     UINodeType,
 } from "../../types";
 import { UnknownRecord } from "../../types/common";
+import { createEdge } from "../../reducers/graph/utils";
 
 class NodeUtils {
     isNode = (obj: UnknownRecord): obj is NodeType => {
@@ -77,30 +78,31 @@ class NodeUtils {
         return availableIdsInCategory.includes(nodeDefinitionId);
     };
 
-    getIncomingEdges = (nodeId: NodeId, process: Process): Edge[] => this.edgesFromProcess(process).filter((e) => e.to === nodeId);
+    getOutputEdges = (nodeId: NodeId, edges: Edge[]): Edge[] => edges.filter((e) => e.from === nodeId);
 
     getEdgesForConnectedNodes = (nodeIds: NodeId[], process: Process): Edge[] =>
         process.edges?.filter((edge) => nodeIds.includes(edge.from) && nodeIds.includes(edge.to));
 
-    edgeType = (allEdges: Edge[], node: NodeType, processDefinitionData: ProcessDefinitionData): EdgeType => {
-        const edgesForNode = this.edgesForNode(node, processDefinitionData);
+    getNextEdgeType = (allEdges: Edge[], node: NodeType, processDefinitionData: ProcessDefinitionData): EdgeType => {
+        const edgesForNode = this.getEdgesAvailableForNode(node, processDefinitionData);
 
         if (edgesForNode.canChooseNodes) {
             return edgesForNode.edges[0];
         } else {
-            const currentConnectionsTypes = allEdges.filter((edge) => edge.from === node.id).map((e) => e.edgeType);
-            return edgesForNode.edges.find((et) => !currentConnectionsTypes.find((currentType) => isEqual(currentType, et)));
+            const currentNodeEdges = allEdges.filter((edge) => edge.from === node.id);
+            const currentEdgeTypes = currentNodeEdges.map((e) => e.edgeType);
+            return edgesForNode.edges.find((et) => !currentEdgeTypes.find((currentType) => isEqual(currentType, et)));
         }
     };
 
-    edgesForNode = (node: NodeType, processDefinitionData: ProcessDefinitionData, forInput?: boolean) => {
+    getEdgesAvailableForNode = (node: NodeType, processDefinitionData: ProcessDefinitionData, forInput?: boolean) => {
         const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionId(node);
         //TODO: when we add more configuration for joins, probably more complex logic will be needed
-        const data = processDefinitionData.edgesForNodes
+        const edgesForNode = processDefinitionData.edgesForNodes
             .filter((e) => !forInput || e.isForInputDefinition === forInput)
             //here we use == in second comparison, as we sometimes compare null to undefined :|
             .find((e) => e.nodeId.type === get(node, "type") && e.nodeId.id == nodeObjectTypeDefinition);
-        return data || { edges: [null], canChooseNodes: false };
+        return edgesForNode || { edges: [null], canChooseNodes: false };
     };
 
     edgeLabel = (edge: Edge) => {
@@ -140,15 +142,15 @@ class NodeUtils {
         processDefinitionData: ProcessDefinitionData,
         previousEdge?: Edge,
     ): boolean => {
-        const nodeInputs = this._nodeInputs(toId, process);
+        const nodeInputs = this.nodeInputs(toId, process);
         //we do not want to include currently edited edge
-        const nodeOutputs = this._nodeOutputs(fromId, process).filter((e) => e.from !== previousEdge?.from && e.to !== previousEdge?.to);
+        const nodeOutputs = this.nodeOutputs(fromId, process).filter((e) => e.from !== previousEdge?.from && e.to !== previousEdge?.to);
 
         const to = this.getNodeById(toId, process);
         const from = this.getNodeById(fromId, process);
         if (fromId !== toId) {
             const canHaveMoreInputs = this.canHaveMoreInputs(to, nodeInputs, processDefinitionData);
-            const canHaveMoreOutputs = this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData);
+            const canHaveMoreOutputs = this.canHaveMoreOutputs(from, nodeOutputs, processDefinitionData);
             const isUniqe = !nodeInputs.find((e) => e.from === fromId);
             return canHaveMoreInputs && canHaveMoreOutputs && isUniqe;
         }
@@ -157,22 +159,52 @@ class NodeUtils {
     };
 
     canHaveMoreInputs = (node: NodeType, nodeInputs: Edge[], processDefinitionData: ProcessDefinitionData): boolean => {
-        const edgesForNode = this.edgesForNode(node, processDefinitionData, true);
+        const edgesForNode = this.getEdgesAvailableForNode(node, processDefinitionData, true);
         const maxEdgesForNode = edgesForNode.edges.length;
         return this.hasInputs(node) && (edgesForNode.canChooseNodes || nodeInputs.length < maxEdgesForNode);
     };
 
-    _canHaveMoreOutputs = (node, nodeOutputs, processDefinitionData): boolean => {
-        const edgesForNode = this.edgesForNode(node, processDefinitionData, false);
+    canHaveMoreOutputs = (node: NodeType, nodeOutputs: Edge[], processDefinitionData: ProcessDefinitionData): boolean => {
+        const edgesForNode = this.getEdgesAvailableForNode(node, processDefinitionData, false);
         const maxEdgesForNode = edgesForNode.edges.length;
         return this.hasOutputs(node) && (edgesForNode.canChooseNodes || nodeOutputs.filter((e) => e.to).length < maxEdgesForNode);
     };
 
-    _nodeInputs = (nodeId: NodeId, process: Process) => {
+    getFirstUnconnectedOutputEdge = (currentEdges: Edge[], availableEdges: EdgeType[], edgeType: EdgeType) => {
+        const freeOutputEdges = currentEdges
+            .filter((e) => !e.to)
+            //we do this to skip e.g. edges that became incorrect/unavailable
+            .filter((e) =>
+                availableEdges.find((available) => available?.name == e?.edgeType?.name && available?.type == e?.edgeType?.type),
+            );
+
+        return freeOutputEdges.find((e) => e.edgeType === edgeType) || freeOutputEdges[0];
+    };
+
+    getEdgeForConnection = ({
+        fromNode,
+        toNode,
+        edgeType,
+        process,
+        processDefinition,
+    }: {
+        fromNode: NodeType;
+        toNode: NodeType;
+        edgeType?: EdgeType;
+        process: Process;
+        processDefinition: ProcessDefinitionData;
+    }): Edge => {
+        const { edges: availableNodeEdges } = this.getEdgesAvailableForNode(fromNode, processDefinition);
+        const currentNodeEdges = this.getOutputEdges(fromNode?.id, this.edgesFromProcess(process));
+        const freeOutputEdge = this.getFirstUnconnectedOutputEdge(currentNodeEdges, availableNodeEdges, edgeType);
+        return freeOutputEdge || createEdge(fromNode, toNode, edgeType, currentNodeEdges, processDefinition);
+    };
+
+    nodeInputs = (nodeId: NodeId, process: Process) => {
         return this.edgesFromProcess(process).filter((e) => e.to == nodeId);
     };
 
-    _nodeOutputs = (nodeId: NodeId, process: Process) => {
+    nodeOutputs = (nodeId: NodeId, process: Process) => {
         return this.edgesFromProcess(process).filter((e) => e.from == nodeId);
     };
 
