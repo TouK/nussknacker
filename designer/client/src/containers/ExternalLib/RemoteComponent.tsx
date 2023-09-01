@@ -6,6 +6,7 @@ import ReactDOM from "react-dom";
 import { NkThemeProvider } from "../theme";
 import { MuiThemeProvider } from "../muiThemeProvider";
 import { ExternalModule } from "./ExternalModule";
+import SystemUtils from "../../common/SystemUtils";
 
 function Component<P>({ scope, ...props }: { scope: ModuleString } & P) {
     const {
@@ -36,4 +37,10 @@ export const loadExternalReactModule = (url, props) => {
     );
 };
 
+export const loadExternalReactModuleWithAuth = (url, props) => {
+    const getAuthToken = () => Promise.resolve(SystemUtils.authorizationToken());
+    loadExternalReactModule(url, { getAuthToken, ...props });
+};
+
 window["loadExternalReactModule"] = loadExternalReactModule;
+window["loadExternalReactModuleWithAuth"] = loadExternalReactModuleWithAuth;
