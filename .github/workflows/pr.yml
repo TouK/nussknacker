@@ -548,10 +548,13 @@ jobs:
         uses: peter-evans/create-pull-request@v4
       - name: Comment PR
         if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
-        uses: thollander/actions-comment-pull-request@v1
+        uses: thollander/actions-comment-pull-request@v2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          message: '${{ steps.update_snapshots.outputs.pull-request-operation }}: #${{ steps.update_snapshots.outputs.pull-request-number }}'
+          message: |
+            ${{ steps.update_snapshots.outputs.pull-request-operation }}: #${{ steps.update_snapshots.outputs.pull-request-number }}
+            :warning: Be careful! Snapshot changes are not necessarily the cause of the error. Check the logs.
+          comment_tag: snapshots_pr
       - name: Force fail if update PR created
         if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
         uses: actions/github-script@v6.3.3
