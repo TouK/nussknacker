@@ -12,7 +12,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
-import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
@@ -219,7 +219,6 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
           new DefinitionResources(modelData, typeToConfig, fragmentRepository, processCategoryService),
           new UserResources(processCategoryService),
           new NotificationResources(notificationService),
-          appResourcesRoute,
           appResources,
           new TestInfoResources(processAuthorizer, futureProcessRepository, scenarioTestService),
           new ComponentResource(componentService),
@@ -261,6 +260,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
+        publicAppResourcesRoute(config.resolved, modelData),
         appResources.publicRoute(),
         authenticationResources.routeWithPathPrefix,
       )
@@ -321,11 +321,18 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
     }
   }
 
-  private val appResourcesRoute: RouteWithUser = new RouteWithUser {
-    override def securedRoute(implicit user: LoggedUser): Route = {
-      akkaHttpServerInterpreter.toRoute(AppHttpService.serverEndpoint)
-    }
+  private def publicAppResourcesRoute(config: Config,
+                                      modelData: ProcessingTypeDataProvider[ModelData, _])
+                                     (implicit executionContext: ExecutionContext) = {
+    val appHttpService = new AppHttpService(config, modelData)
+    akkaHttpServerInterpreter.toRoute(appHttpService.serverEndpoints)
   }
+
+//  private val appResourcesRoute: RouteWithUser = new RouteWithUser {
+//    override def securedRoute(implicit user: LoggedUser): Route = {
+////      akkaHttpServerInterpreter.toRoute(AppHttpService.serverEndpoint2)
+//    }
+//  }
 
   private def createCountsReporter(featureTogglesConfig: FeatureTogglesConfig,
                                    environment: String,

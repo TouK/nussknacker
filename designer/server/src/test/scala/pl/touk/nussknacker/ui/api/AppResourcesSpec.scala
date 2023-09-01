@@ -187,6 +187,12 @@ class AppResourcesSpec
     given()
       .applicationConfiguration {
         createDeployedProcess(ProcessName("id1"))
+
+        MockableDeploymentManager.configure(
+          Map(
+            ProcessName("id1") -> SimpleStateStatus.Running,
+          )
+        )
       }
       .when()
       .get(s"$nuDesignerHttpAddress/api/app/healthCheck")
@@ -204,7 +210,7 @@ class AppResourcesSpec
   // todo: to remove
   test("it is the temp test") {
     given()
-      .auth().basic("reader", "reader")
+//      .auth().basic("reader", "reader")
       .when()
       .get(s"$nuDesignerHttpAddress/api/app/healthCheck")
       .Then()

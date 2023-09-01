@@ -7,7 +7,7 @@ trait BaseEndpointDefinitions {
 
   private def baseNuApiEndpoint = endpoint//.in("api") // todo: explanation
 
-  protected def baseNuApiPublicEndpoint: PublicEndpoint[Unit, Unit, Unit, Unit] =
+  protected def baseNuApiPublicEndpoint: PublicEndpoint[Unit, Unit, Unit, Any] =
     baseNuApiEndpoint
 
   type SecuredEndpoint[INPUT, ERROR_OUTPUT, OUTPUT, -R] = Endpoint[LoggedUser, INPUT, ERROR_OUTPUT, OUTPUT, R]
