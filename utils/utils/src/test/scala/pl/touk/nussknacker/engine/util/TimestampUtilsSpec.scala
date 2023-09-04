@@ -4,7 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.TimestampUtils.normalizeTimestampToMillis
 
-class TimeUtilsTest extends AnyFunSuite with Matchers {
+class TimestampUtilsSpec extends AnyFunSuite with Matchers {
 
   test("normalize timestamps properly") {
     normalizeTimestampToMillis(31535999999L) shouldBe 31535999999000L //  1 ms before 1971 should be treated as seconds and multiplied by 1000
