@@ -97,8 +97,8 @@ class DelayedGenericTypedJsonIntegrationSpec extends AnyFunSuite with FlinkSpec 
   }
 
   test("null timestamp should raise exception") {
-    val recordOk = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> 456L)))
-    TypedJsonTimestampFieldAssigner("ts").extractTimestamp(recordOk, 123L) shouldEqual 456L
+    val recordOk = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> 1625751296000L)))
+    TypedJsonTimestampFieldAssigner("ts").extractTimestamp(recordOk, 123L) shouldEqual 1625751296000L
 
     val recordWithNull = new ConsumerRecord[String, TypedMap]("dummy", 1, 1L, "", TypedMap(Map("msisdn" -> "abc", "ts" -> null)))
     TypedJsonTimestampFieldAssigner("ts").extractTimestamp(recordWithNull, 123L) shouldEqual 0L

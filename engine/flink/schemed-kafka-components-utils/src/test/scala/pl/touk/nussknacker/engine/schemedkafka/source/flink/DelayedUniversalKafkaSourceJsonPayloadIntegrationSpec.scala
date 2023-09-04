@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SimpleKafkaJsonSerializer
-import pl.touk.nussknacker.engine.schemedkafka.schema.{LongFieldV1, NullableLongFieldV1}
+import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 
 class DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec extends DelayedUniversalKafkaSourceIntegrationMixinSpec  {
@@ -16,6 +16,34 @@ class DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec extends DelayedUnive
     registerJsonSchema(inputTopic, LongFieldV1.jsonSchema, isKey = false)
     val process = createProcessWithDelayedSource(inputTopic, ExistingSchemaVersion(1), "'field'", "1L")
     runAndVerify(inputTopic, process, LongFieldV1.exampleData)
+  }
+
+  test("handle timestamp field in Int format") {
+    val inputTopic = "simple-topic-with-int-field-input"
+    registerJsonSchema(inputTopic, IntFieldV1.jsonSchema, isKey = false)
+    val process = createProcessWithDelayedSource(inputTopic, ExistingSchemaVersion(1), "'field'", "1L")
+    runAndVerify(inputTopic, process, IntFieldV1.exampleData)
+  }
+
+  test("handle timestamp field in LocalDate format") {
+    val inputTopic = "simple-topic-with-local-date-field-input"
+    registerJsonSchema(inputTopic, LocalDateFieldJsonV1.jsonSchema, isKey = false)
+    val process = createProcessWithDelayedSource(inputTopic, ExistingSchemaVersion(1), "'field'", "1L")
+    runAndVerify(inputTopic, process, LocalDateFieldJsonV1.exampleData)
+  }
+
+  test("handle timestamp field in ZonedDateTime format") {
+    val inputTopic = "simple-topic-with-zoned-date-time-field-input"
+    registerJsonSchema(inputTopic, ZoneDateTimeFieldJsonV1.jsonSchema, isKey = false)
+    val process = createProcessWithDelayedSource(inputTopic, ExistingSchemaVersion(1), "'field'", "1L")
+    runAndVerify(inputTopic, process, ZoneDateTimeFieldJsonV1.exampleData)
+  }
+
+  test("handle timestamp field in OffsetDateTime format") {
+    val inputTopic = "simple-topic-with-offset-date-time-field-input"
+    registerJsonSchema(inputTopic, OffsetDateTimeFieldJsonV1.jsonSchema, isKey = false)
+    val process = createProcessWithDelayedSource(inputTopic, ExistingSchemaVersion(1), "'field'", "1L")
+    runAndVerify(inputTopic, process, OffsetDateTimeFieldJsonV1.exampleData)
   }
 
 }
