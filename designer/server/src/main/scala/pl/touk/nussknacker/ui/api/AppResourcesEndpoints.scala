@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.api
 
-import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.extras.{semiauto => extrassemiauto}
 import io.circe.generic.semiauto
-import pl.touk.nussknacker.ui.api.AppResourcesEndpoints.Dtos.{BuildInfoDto, HealthCheckProcessResponseDto, ServerConfigInfoDto, ServerConfigInfoErrorDto, UserCategoriesWithProcessingTypesDto}
+import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import sttp.model.StatusCode.{Forbidden, Ok}
+import sttp.model.StatusCode.{Forbidden, NoContent, Ok}
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
@@ -13,6 +12,7 @@ import sttp.tapir.json.circe._
 object AppResourcesEndpoints extends BaseEndpointDefinitions {
 
   import AppResourcesEndpoints.Dtos.Codecs._
+  import AppResourcesEndpoints.Dtos._
 
   def healthCheckEndpoint: Endpoint[Unit, Unit, Unit, HealthCheckProcessResponseDto, Any] =
     baseNuApiPublicEndpoint
@@ -45,6 +45,15 @@ object AppResourcesEndpoints extends BaseEndpointDefinitions {
       .out(jsonBody[UserCategoriesWithProcessingTypesDto])
   }
 
+  def processingTypeDataReloadEndpoint(implicit user: LoggedUser): Endpoint[LoggedUser, Unit, ProcessingTypeDataReloadErrorDto, Unit, Any] = {
+    baseNuApiUserSecuredEndpoint(user)
+      .post
+      .in("app" / "processingtype" / "reload")
+      .out(statusCode(NoContent))
+      .errorOut(statusCode(Forbidden))
+      .errorOut(plainBody[ProcessingTypeDataReloadErrorDto])
+  }
+
   object Dtos {
 
     final case class HealthCheckProcessResponseDto(status: HealthCheckProcessResponseDto.Status,
@@ -73,6 +82,12 @@ object AppResourcesEndpoints extends BaseEndpointDefinitions {
 
     final case class UserCategoriesWithProcessingTypesDto(map: Map[String, String])
 
+
+    sealed trait ProcessingTypeDataReloadErrorDto
+    object ProcessingTypeDataReloadErrorDto {
+      case object AuthorizationProcessingTypeDataReloadErrorDto extends ProcessingTypeDataReloadErrorDto
+    }
+
     private [AppResourcesEndpoints] object Codecs {
       implicit val healthCheckProcessResponseDtoCodec: io.circe.Codec[HealthCheckProcessResponseDto] = {
         implicit val statusCodec: io.circe.Codec[HealthCheckProcessResponseDto.Status] = extrassemiauto.deriveEnumerationCodec
@@ -95,8 +110,10 @@ object AppResourcesEndpoints extends BaseEndpointDefinitions {
       }
 
       implicit val serverConfigInfoDtoCodec: io.circe.Codec[ServerConfigInfoDto] = {
-        // todo: check me
-        semiauto.deriveCodec
+        io.circe.Codec.from(
+          Decoder.decodeJson.map(ServerConfigInfoDto.apply),
+          Encoder.encodeJson.contramap[ServerConfigInfoDto](_.configJson)
+        )
       }
 
       implicit val serverConfigInfoErrorDtoCodec: Codec[String, ServerConfigInfoErrorDto, CodecFormat.TextPlain] = {
@@ -118,6 +135,20 @@ object AppResourcesEndpoints extends BaseEndpointDefinitions {
           Decoder.decodeMap[String, String].map(UserCategoriesWithProcessingTypesDto.apply),
           Encoder.encodeMap[String, String].contramap(_.map)
         )
+      }
+
+      implicit val processingTypeDataReloadErrorDtoCodec: Codec[String, ProcessingTypeDataReloadErrorDto, CodecFormat.TextPlain] = {
+        Codec
+          .id(CodecFormat.TextPlain(), Schema.string[String])
+          .map(
+            Mapping
+              .from[String, ProcessingTypeDataReloadErrorDto](
+                _ => ProcessingTypeDataReloadErrorDto.AuthorizationProcessingTypeDataReloadErrorDto
+              ) {
+                case ProcessingTypeDataReloadErrorDto.AuthorizationProcessingTypeDataReloadErrorDto =>
+                  "The supplied authentication is not authorized to access this resource"
+              }
+          )
       }
     }
   }

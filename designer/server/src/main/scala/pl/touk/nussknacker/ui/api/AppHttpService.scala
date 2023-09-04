@@ -8,15 +8,16 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.api.AppResourcesEndpoints.Dtos.HealthCheckProcessResponseDto.Status
-import pl.touk.nussknacker.ui.api.AppResourcesEndpoints.Dtos.{BuildInfoDto, HealthCheckProcessResponseDto, ServerConfigInfoDto, ServerConfigInfoErrorDto, UserCategoriesWithProcessingTypesDto}
+import pl.touk.nussknacker.ui.api.AppResourcesEndpoints.Dtos.{BuildInfoDto, HealthCheckProcessResponseDto, ProcessingTypeDataReloadErrorDto, ServerConfigInfoDto, ServerConfigInfoErrorDto, UserCategoriesWithProcessingTypesDto}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 import sttp.tapir.server.ServerEndpoint
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class AppHttpService(config: Config,
+                     processingTypeDataReloader: ProcessingTypeDataReload,
                      modelData: ProcessingTypeDataProvider[ModelData, _],
                      processCategoryService: ProcessCategoryService,
                      exposeConfig: Boolean)
@@ -29,7 +30,7 @@ class AppHttpService(config: Config,
 
   def securedServerEndpoints(implicit user: LoggedUser): List[ServerEndpoint[Any, Future]] =
     List(
-      userCategoriesWithProcessingTypesEndpoint
+      userCategoriesWithProcessingTypes, processingTypeDataReload(user)
     ) ::: (
       if (exposeConfig) Some(serverConfigInfo) else None
       ).toList
@@ -80,7 +81,7 @@ class AppHttpService(config: Config,
       }
   }
 
-  private def userCategoriesWithProcessingTypesEndpoint(implicit user: LoggedUser) = {
+  private def userCategoriesWithProcessingTypes(implicit user: LoggedUser) = {
     AppResourcesEndpoints.userCategoriesWithProcessingTypesEndpoint
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogicSuccess { _ => _ =>
@@ -89,5 +90,17 @@ class AppHttpService(config: Config,
         }
       }
   }
+
+  private def processingTypeDataReload(implicit user: LoggedUser) =
+    AppResourcesEndpoints.processingTypeDataReloadEndpoint
+      .serverSecurityLogicSuccess(Future.successful)
+      .serverLogic {
+        case _: AdminUser => _ =>
+          Future(Right {
+            processingTypeDataReloader.reloadAll()
+          })
+        case _: CommonUser => _ =>
+          Future.successful(Left(ProcessingTypeDataReloadErrorDto.AuthorizationProcessingTypeDataReloadErrorDto))
+      }
 
 }

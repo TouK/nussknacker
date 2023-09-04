@@ -171,6 +171,82 @@ class AppResourcesSpec
     }
   }
 
+  "The processing type data reload endpoint" when {
+    "authenticated" should {
+      "allow to reload" in {
+        given()
+          .applicationConfiguration {
+            createDeployedProcess(ProcessName("id1"), category = Category1)
+            createDeployedProcess(ProcessName("id2"), category = Category1)
+            createDeployedProcess(ProcessName("id3"), category = Category1)
+
+            MockableDeploymentManager.configure(
+              Map(
+                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
+                ProcessName("id2") -> SimpleStateStatus.Running,
+                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+              )
+            )
+          }
+          .auth().basic("admin", "admin")
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .Then()
+          .statusCode(204)
+      }
+    }
+    "not authenticated" should {
+      "forbid access" in {
+        given()
+          .applicationConfiguration {
+            createDeployedProcess(ProcessName("id1"), category = Category1)
+            createDeployedProcess(ProcessName("id2"), category = Category1)
+            createDeployedProcess(ProcessName("id3"), category = Category1)
+
+            MockableDeploymentManager.configure(
+              Map(
+                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
+                ProcessName("id2") -> SimpleStateStatus.Running,
+                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+              )
+            )
+          }
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .Then()
+          .statusCode(401)
+          .body(equalTo("The resource requires authentication, which was not supplied with the request"))
+      }
+    }
+    "not authorized as admin" should {
+      "forbid access" in {
+        given()
+          .applicationConfiguration {
+            createDeployedProcess(ProcessName("id1"), category = Category1)
+            createDeployedProcess(ProcessName("id2"), category = Category1)
+            createDeployedProcess(ProcessName("id3"), category = Category1)
+
+            MockableDeploymentManager.configure(
+              Map(
+                ProcessName("id1") -> ProblemStateStatus.FailedToGet,
+                ProcessName("id2") -> SimpleStateStatus.Running,
+                ProcessName("id3") -> ProblemStateStatus.shouldBeRunning(VersionId(1L), "user"),
+              )
+            )
+          }
+          .auth().basic("reader", "reader")
+          .when()
+          .post(s"$nuDesignerHttpAddress/api/app/processingtype/reload")
+          .Then()
+          .statusCode(403)
+          .body(equalTo("The supplied authentication is not authorized to access this resource"))
+      }
+    }
+  }
+
+
+  // ---
+
   "it should return health check also if cannot retrieve statuses" in {
     given()
       .applicationConfiguration {

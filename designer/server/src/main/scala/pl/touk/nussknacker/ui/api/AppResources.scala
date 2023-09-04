@@ -114,17 +114,17 @@ class AppResources(config: Config,
 //            }
 //          }
 //        }
-      } ~ pathPrefix("processingtype" / "reload") {
-        authorize(user.isAdmin) {
-          post {
-            pathEnd {
-              complete {
-                processingTypeDataReload.reloadAll()
-                HttpResponse(StatusCodes.NoContent)
-              }
-            }
-          }
-        }
+//      } ~ pathPrefix("processingtype" / "reload") {
+//        authorize(user.isAdmin) {
+//          post {
+//            pathEnd {
+//              complete {
+//                processingTypeDataReload.reloadAll()
+//                HttpResponse(StatusCodes.NoContent)
+//              }
+//            }
+//          }
+//        }
       }
     }
 
