@@ -7,13 +7,12 @@ import { reducer as settings, SettingsState } from "./settings";
 import { toolbars, ToolbarsStates } from "./toolbars";
 import { NodeDetailsState, reducer as nodeDetails } from "./nodeDetailsState";
 import { reducer as ui, UiState } from "./ui";
-import { FeatureFlags, featureFlags } from "./featureFlags";
 import { UserSettings, userSettings } from "./userSettings";
 import { StateWithHistory } from "redux-undo";
 import { backendNotifications, BackendNotificationState } from "./notifications";
 import { reducer as scenarioState } from "./scenarioState";
 import { ProcessStateType } from "../components/Process/types";
-import { reducer as genericAction, GenericActionState } from "./genericActionState";
+import { GenericActionState, reducer as genericAction } from "./genericActionState";
 
 export const reducer = combineReducers<RootState>({
     httpErrorHandler,
@@ -24,7 +23,6 @@ export const reducer = combineReducers<RootState>({
     backendNotifications,
     notifications,
     toolbars,
-    featureFlags,
     userSettings,
     nodeDetails,
     genericAction,
@@ -40,7 +38,6 @@ export type RootState = {
     backendNotifications: BackendNotificationState;
     notifications: NotificationsState;
     toolbars: ToolbarsStates;
-    featureFlags: FeatureFlags;
     userSettings: UserSettings;
     nodeDetails: NodeDetailsState;
     genericAction: GenericActionState;
