@@ -67,7 +67,6 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
     )
   }
 
-
 }
 
 @JsonCodec case class TestMigrationResult(converted: ValidatedDisplayableProcess, newErrors: ValidationResult, shouldFailOnNewErrors: Boolean) {
