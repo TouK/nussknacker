@@ -10,9 +10,10 @@ trait BaseEndpointDefinitions {
   protected def baseNuApiPublicEndpoint: PublicEndpoint[Unit, Unit, Unit, Any] =
     baseNuApiEndpoint
 
-  type SecuredEndpoint[INPUT, ERROR_OUTPUT, OUTPUT, -R] = Endpoint[LoggedUser, INPUT, ERROR_OUTPUT, OUTPUT, R]
+  type SecuredCommonUserEndpoint[INPUT, ERROR_OUTPUT, OUTPUT, -R] = Endpoint[LoggedUser, INPUT, ERROR_OUTPUT, OUTPUT, R]
 
-  protected def baseNuApiSecuredEndpoint(loggedUser: LoggedUser): SecuredEndpoint[Unit, Unit, Unit, Any] =
+  protected def baseNuApiUserSecuredEndpoint(loggedUser: LoggedUser): SecuredCommonUserEndpoint[Unit, Unit, Unit, Any] =
     baseNuApiEndpoint
       .securityIn(auth.apiKey(extractFromRequest(_ => loggedUser)))
+
 }

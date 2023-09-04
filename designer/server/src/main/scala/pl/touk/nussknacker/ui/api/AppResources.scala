@@ -4,23 +4,19 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpResponse, ResponseEntity, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.SecurityDirectives
-import com.typesafe.config.{Config, ConfigRenderOptions}
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.syntax._
-import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus.ProblemStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, ProcessState}
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
@@ -36,27 +32,27 @@ class AppResources(config: Config,
                    exposeConfig: Boolean,
                    processCategoryService: ProcessCategoryService
                   )(implicit ec: ExecutionContext)
-  extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with RouteWithoutUser with SecurityDirectives {
+  extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with SecurityDirectives {
 
   //We use duplicated pathPrefix("app") code - look at comment in NussknackerApp where routes are created
-  def publicRoute(): Route = pathPrefix("app") {
-    path("healthCheck") {
-      get {
-        complete {
-          createHealthCheckHttpResponse(OK)
-        }
-      }
-    } ~ path("buildInfo") {
-      get {
-        complete {
-          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
-          val globalBuildInfo = (BuildInfo.toMap.mapValuesNow(_.toString) ++ configuredBuildInfo).mapValuesNow(_.asJson)
-          val modelDataInfo = modelData.all.mapValuesNow(_.configCreator.buildInfo()).asJson
-          (globalBuildInfo + ("processingType" -> modelDataInfo)).asJson
-        }
-      }
-    }
-  }
+//  def publicRoute(): Route = pathPrefix("app") {
+//    path("healthCheck") {
+//      get {
+//        complete {
+//          createHealthCheckHttpResponse(OK)
+//        }
+//      }
+//    } ~ path("buildInfo") {
+//      get {
+//        complete {
+//          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
+//          val globalBuildInfo = (BuildInfo.toMap.mapValuesNow(_.toString) ++ configuredBuildInfo).mapValuesNow(_.asJson)
+//          val modelDataInfo = modelData.all.mapValuesNow(_.configCreator.buildInfo()).asJson
+//          (globalBuildInfo + ("processingType" -> modelDataInfo)).asJson
+//        }
+//      }
+//    }
+//  }
 
   private def createHealthCheckHttpResponse(status: HealthCheckProcessResponseStatus,
                                             message: Option[String] = None,
@@ -102,22 +98,22 @@ class AppResources(config: Config,
             }
           }
         }
-      } ~ path("config" / "categoriesWithProcessingType") {
-        get {
-          complete {
-            processCategoryService.getUserCategoriesWithType(user)
-          }
-        }
-      } ~ path("config") {
-        if(!exposeConfig) reject
-        //config can contain sensitive information, so only Admin can see it
-        else authorize(user.isAdmin) {
-          get {
-            complete {
-              io.circe.parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
-            }
-          }
-        }
+//      } ~ path("config" / "categoriesWithProcessingType") {
+//        get {
+//          complete {
+//            processCategoryService.getUserCategoriesWithType(user)
+//          }
+//        }
+//      } ~ path("config") {
+//        if(!exposeConfig) reject
+//        //config can contain sensitive information, so only Admin can see it
+//        else authorize(user.isAdmin) {
+//          get {
+//            complete {
+//              io.circe.parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
+//            }
+//          }
+//        }
       } ~ pathPrefix("processingtype" / "reload") {
         authorize(user.isAdmin) {
           post {
