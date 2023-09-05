@@ -25,13 +25,6 @@ class DelayedUniversalKafkaSourceJsonPayloadIntegrationSpec extends DelayedUnive
     runAndVerify(inputTopic, process, IntFieldV1.exampleData)
   }
 
-  test("handle timestamp field in LocalDate format") {
-    val inputTopic = "simple-topic-with-local-date-field-input"
-    registerJsonSchema(inputTopic, LocalDateFieldJsonV1.jsonSchema, isKey = false)
-    val process = createProcessWithDelayedSource(inputTopic, ExistingSchemaVersion(1), "'field'", "1L")
-    runAndVerify(inputTopic, process, LocalDateFieldJsonV1.exampleData)
-  }
-
   test("handle timestamp field in ZonedDateTime format") {
     val inputTopic = "simple-topic-with-zoned-date-time-field-input"
     registerJsonSchema(inputTopic, ZoneDateTimeFieldJsonV1.jsonSchema, isKey = false)

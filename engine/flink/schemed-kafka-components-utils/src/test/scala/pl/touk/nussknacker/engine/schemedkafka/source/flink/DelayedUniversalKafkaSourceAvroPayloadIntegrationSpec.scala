@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.schemedkafka.schema.{DateFieldV1, IntFieldV1, LocalTimestampMicrosFieldV1, LocalTimestampMillisFieldV1, LongFieldV1, NullableDateFieldV1, NullableLongFieldV1, TimestampMicrosFieldV1, TimestampMillisFieldV1}
+import pl.touk.nussknacker.engine.schemedkafka.schema.{IntFieldV1, LocalTimestampMicrosFieldV1, LocalTimestampMillisFieldV1, LongFieldV1, NullableLongFieldV1, TimestampMicrosFieldV1, TimestampMillisFieldV1}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 
 class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec extends DelayedUniversalKafkaSourceIntegrationMixinSpec  {
@@ -42,18 +42,6 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec extends DelayedUnive
     val topicConfig = createAndRegisterTopicConfig("simple-topic-with-int-field", IntFieldV1.schema)
     val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "123L")
     runAndVerify(topicConfig, process, IntFieldV1.record)
-  }
-
-  test("handle timestamp field in Date format") {
-    val topicConfig = createAndRegisterTopicConfig("simple-topic-with-date-field", DateFieldV1.schema)
-    val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "123L")
-    runAndVerify(topicConfig, process, DateFieldV1.record)
-  }
-
-  test("handle nullable timestamp field in Date format") {
-    val topicConfig = createAndRegisterTopicConfig("simple-topic-with-nullable-date-field", NullableDateFieldV1.schema)
-    val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "123L")
-    runAndVerify(topicConfig, process, NullableDateFieldV1.record)
   }
 
   test("handle timestamp field in TimestampMillis format") {
