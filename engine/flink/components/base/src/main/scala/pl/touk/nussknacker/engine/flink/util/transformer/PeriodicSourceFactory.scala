@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkContextInitializingFunction, FlinkCustomNodeContext, FlinkSource}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
+import pl.touk.nussknacker.engine.util.TimestampUtils.supportedTypeToMillis
 
 import java.time.Duration
 import java.{util => jul}
@@ -86,7 +87,12 @@ class MapAscendingTimestampExtractor(timestampField: String) extends Serializabl
     element match {
       case m: jul.Map[String@unchecked, AnyRef@unchecked] =>
         m.asScala
-          .get(timestampField).map(_.asInstanceOf[Long])
+          .get(timestampField).map { value =>
+            supportedTypeToMillis(
+              value,
+              s"Field $timestampField is of an invalid type for a timestamp field"
+            )
+          }
           .getOrElse(System.currentTimeMillis())
       case _ =>
         System.currentTimeMillis()
