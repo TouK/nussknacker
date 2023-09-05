@@ -12,7 +12,7 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
-import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ProcessingTypeData}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
@@ -162,9 +162,9 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
       )
 
       val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
-      val appResources = new AppResources(
+      val appHttpService = new AppHttpService(
         config = resolvedConfig,
-        processingTypeDataReload = reload,
+        processingTypeDataReloader = reload,
         modelData = modelData,
         processRepository = futureProcessRepository,
         processValidation = processValidation,
@@ -219,17 +219,10 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
           new DefinitionResources(modelData, typeToConfig, fragmentRepository, processCategoryService),
           new UserResources(processCategoryService),
           new NotificationResources(notificationService),
-          securedAppResourcesRoute(
-            config = resolvedConfig,
-            processingTypeDataReloader = reload,
-            modelData = modelData,
-            processRepository = futureProcessRepository,
-            processValidation = processValidation,
-            deploymentService = deploymentService,
-            exposeConfig = featureTogglesConfig.enableConfigEndpoint,
-            processCategoryService = processCategoryService
-          ),
-          appResources,
+          new RouteWithUser {
+            override def securedRoute(implicit user: LoggedUser): Route =
+              akkaHttpServerInterpreter.toRoute(appHttpService.securedServerEndpoints)
+          },
           new TestInfoResources(processAuthorizer, futureProcessRepository, scenarioTestService),
           new ComponentResource(componentService),
           new AttachmentResources(
@@ -270,16 +263,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
-        publicAppResourcesRoute(
-          config = resolvedConfig,
-          processingTypeDataReloader = reload,
-          modelData = modelData,
-          processRepository = futureProcessRepository,
-          processValidation = processValidation,
-          deploymentService = deploymentService,
-          exposeConfig = featureTogglesConfig.enableConfigEndpoint,
-          processCategoryService = processCategoryService
-        ),
+        akkaHttpServerInterpreter.toRoute(appHttpService.publicServerEndpoints),
         authenticationResources.routeWithPathPrefix,
       )
 
@@ -336,34 +320,6 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
           }
         }
       }
-    }
-  }
-
-  private def publicAppResourcesRoute(config: Config,
-                                      processingTypeDataReloader: ProcessingTypeDataReload,
-                                      modelData: ProcessingTypeDataProvider[ModelData, _],
-                                      processRepository: FetchingProcessRepository[Future],
-                                      processValidation: ProcessValidation,
-                                      deploymentService: DeploymentService,
-                                      processCategoryService: ProcessCategoryService,
-                                      exposeConfig: Boolean)
-                                     (implicit executionContext: ExecutionContext) = {
-    val appHttpService = new AppHttpService(config, processingTypeDataReloader, modelData, processRepository, processValidation, deploymentService, processCategoryService, exposeConfig)
-    akkaHttpServerInterpreter.toRoute(appHttpService.publicServerEndpoints)
-  }
-
-  private def securedAppResourcesRoute(config: Config,
-                                       processingTypeDataReloader: ProcessingTypeDataReload,
-                                       modelData: ProcessingTypeDataProvider[ModelData, _],
-                                       processRepository: FetchingProcessRepository[Future],
-                                       processValidation: ProcessValidation,
-                                       deploymentService: DeploymentService,
-                                       processCategoryService: ProcessCategoryService,
-                                       exposeConfig: Boolean)
-                                      (implicit executionContext: ExecutionContext): RouteWithUser = new RouteWithUser {
-    override def securedRoute(implicit user: LoggedUser): Route = {
-      val appHttpService = new AppHttpService(config, processingTypeDataReloader, modelData, processRepository, processValidation, deploymentService, processCategoryService, exposeConfig)
-      akkaHttpServerInterpreter.toRoute(appHttpService.securedServerEndpoints(user))
     }
   }
 
