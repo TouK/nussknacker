@@ -21,7 +21,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 class AppResources(config: Config,
                    processingTypeDataReload: ProcessingTypeDataReload,
@@ -66,38 +65,38 @@ class AppResources(config: Config,
         },
         entity = res))
 
-  def securedRoute(implicit user: LoggedUser): Route =
-    pathPrefix("app") {
-      path("healthCheck" / "process" / "deployment") {
-        get {
-          complete {
-            processesWithProblemStateStatus.map[Future[HttpResponse]] { set =>
-              if (set.isEmpty) {
-                createHealthCheckHttpResponse(OK)
-              } else {
-                logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
-                logger.debug(s"Scenarios with status PROBLEM: $set")
-                createHealthCheckHttpResponse(ERROR, Some("Scenarios with status PROBLEM"), Some(set.keys.toSet))
-              }
-            }.recover[Future[HttpResponse]] {
-              case NonFatal(e) =>
-                logger.error("Failed to get statuses", e)
-                createHealthCheckHttpResponse(ERROR, Some("Failed to retrieve job statuses"))
-            }
-          }
-        }
-      } ~ path("healthCheck" / "process" / "validation")  {
-        get {
-          complete {
-            processesWithValidationErrors.map[Future[HttpResponse]] { processes =>
-              if (processes.isEmpty) {
-                createHealthCheckHttpResponse(OK)
-              } else {
-                createHealthCheckHttpResponse(ERROR, Some("Scenarios with validation errors"), Some(processes.toSet))
-              }
-            }
-          }
-        }
+  def securedRoute(implicit user: LoggedUser): Route = reject
+//    pathPrefix("app") {
+//      path("healthCheck" / "process" / "deployment") {
+//        get {
+//          complete {
+//            processesWithProblemStateStatus.map[Future[HttpResponse]] { set =>
+//              if (set.isEmpty) {
+//                createHealthCheckHttpResponse(OK)
+//              } else {
+//                logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
+//                logger.debug(s"Scenarios with status PROBLEM: $set")
+//                createHealthCheckHttpResponse(ERROR, Some("Scenarios with status PROBLEM"), Some(set.keys.toSet))
+//              }
+//            }.recover[Future[HttpResponse]] {
+//              case NonFatal(e) =>
+//                logger.error("Failed to get statuses", e)
+//                createHealthCheckHttpResponse(ERROR, Some("Failed to retrieve job statuses"))
+//            }
+//          }
+//        }
+//      } ~ path("healthCheck" / "process" / "validation")  {
+//        get {
+//          complete {
+//            processesWithValidationErrors.map[Future[HttpResponse]] { processes =>
+//              if (processes.isEmpty) {
+//                createHealthCheckHttpResponse(OK)
+//              } else {
+//                createHealthCheckHttpResponse(ERROR, Some("Scenarios with validation errors"), Some(processes.toSet))
+//              }
+//            }
+//          }
+//        }
 //      } ~ path("config" / "categoriesWithProcessingType") {
 //        get {
 //          complete {
@@ -125,8 +124,8 @@ class AppResources(config: Config,
 //            }
 //          }
 //        }
-      }
-    }
+//      }
+//    }
 
   private def processesWithProblemStateStatus(implicit ec: ExecutionContext, user: LoggedUser): Future[Map[String, ProcessState]] = {
     for {

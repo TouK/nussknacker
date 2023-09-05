@@ -6,7 +6,7 @@ import io.circe.{Decoder, Json}
 import org.apache.commons.io.FileUtils
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, OptionValues}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition._
@@ -40,8 +40,9 @@ import java.util.UUID
 import scala.util.Properties
 
 class BaseFlowTest
-  extends NuItTest
-    with AnyFunSuiteLike
+  extends AnyFunSuiteLike
+    with NuItTest
+    with BeforeAndAfterEach
     with WithTestHttpClient
     with Matchers
     with BeforeAndAfterAll
@@ -60,6 +61,15 @@ class BaseFlowTest
     super.beforeAll()
     dynamicServiceFile.delete()
   }
+
+  override def afterEach(): Unit = {
+    super.afterEach()
+  }
+
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+  }
+
 
   override def afterAll(): Unit = {
     dynamicServiceFile.delete()

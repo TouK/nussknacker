@@ -220,11 +220,14 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
           new UserResources(processCategoryService),
           new NotificationResources(notificationService),
           securedAppResourcesRoute(
-            config.resolved,
-            reload,
-            modelData,
-            processCategoryService,
-            featureTogglesConfig.enableConfigEndpoint,
+            config = resolvedConfig,
+            processingTypeDataReloader = reload,
+            modelData = modelData,
+            processRepository = futureProcessRepository,
+            processValidation = processValidation,
+            deploymentService = deploymentService,
+            exposeConfig = featureTogglesConfig.enableConfigEndpoint,
+            processCategoryService = processCategoryService
           ),
           appResources,
           new TestInfoResources(processAuthorizer, futureProcessRepository, scenarioTestService),
@@ -268,11 +271,14 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
         publicAppResourcesRoute(
-          config.resolved,
-          reload,
-          modelData,
-          processCategoryService,
-          featureTogglesConfig.enableConfigEndpoint
+          config = resolvedConfig,
+          processingTypeDataReloader = reload,
+          modelData = modelData,
+          processRepository = futureProcessRepository,
+          processValidation = processValidation,
+          deploymentService = deploymentService,
+          exposeConfig = featureTogglesConfig.enableConfigEndpoint,
+          processCategoryService = processCategoryService
         ),
         authenticationResources.routeWithPathPrefix,
       )
@@ -334,23 +340,29 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
   }
 
   private def publicAppResourcesRoute(config: Config,
-                                      processingTypeDataReload: ProcessingTypeDataReload,
+                                      processingTypeDataReloader: ProcessingTypeDataReload,
                                       modelData: ProcessingTypeDataProvider[ModelData, _],
+                                      processRepository: FetchingProcessRepository[Future],
+                                      processValidation: ProcessValidation,
+                                      deploymentService: DeploymentService,
                                       processCategoryService: ProcessCategoryService,
                                       exposeConfig: Boolean)
                                      (implicit executionContext: ExecutionContext) = {
-    val appHttpService = new AppHttpService(config, processingTypeDataReload, modelData, processCategoryService, exposeConfig)
+    val appHttpService = new AppHttpService(config, processingTypeDataReloader, modelData, processRepository, processValidation, deploymentService, processCategoryService, exposeConfig)
     akkaHttpServerInterpreter.toRoute(appHttpService.publicServerEndpoints)
   }
 
   private def securedAppResourcesRoute(config: Config,
-                                       processingTypeDataReload: ProcessingTypeDataReload,
+                                       processingTypeDataReloader: ProcessingTypeDataReload,
                                        modelData: ProcessingTypeDataProvider[ModelData, _],
+                                       processRepository: FetchingProcessRepository[Future],
+                                       processValidation: ProcessValidation,
+                                       deploymentService: DeploymentService,
                                        processCategoryService: ProcessCategoryService,
                                        exposeConfig: Boolean)
                                       (implicit executionContext: ExecutionContext): RouteWithUser = new RouteWithUser {
     override def securedRoute(implicit user: LoggedUser): Route = {
-      val appHttpService = new AppHttpService(config, processingTypeDataReload, modelData, processCategoryService, exposeConfig)
+      val appHttpService = new AppHttpService(config, processingTypeDataReloader, modelData, processRepository, processValidation, deploymentService, processCategoryService, exposeConfig)
       akkaHttpServerInterpreter.toRoute(appHttpService.securedServerEndpoints(user))
     }
   }
