@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 object TimestampUtils {
 
-  val supportedTimestampTypes: List[TypingResult] = List(Typed[java.lang.Long], Typed[Long], Typed[Int], Typed[Instant], Typed[ZonedDateTime])
+  val supportedTimestampTypes: List[TypingResult] = List(Typed[java.lang.Long], Typed[Long], Typed[Int], Typed[Instant], Typed[OffsetDateTime], Typed[ZonedDateTime])
 
   def supportedTypeToMillis(value: Any, errorMsg: String): Long = value match {
     case v: Long => v
