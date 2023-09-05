@@ -17,6 +17,7 @@ export enum PanelSide {
     Right = "RIGHT",
     Left = "LEFT",
 }
+
 type Props = {
     isCollapsed?: boolean;
     className?: string;
@@ -34,7 +35,9 @@ type SidePanelProps = {
     className?: string;
 };
 
-export function useSidePanelToggle(side: "LEFT" | "RIGHT") {
+export type Side = "LEFT" | "RIGHT";
+
+export function useSidePanelToggle(side: Side) {
     const dispatch = useDispatch();
     const isOpened = useSelector(side === "RIGHT" ? isRightPanelOpened : isLeftPanelOpened);
     const onToggle = () => dispatch(togglePanel(side));
@@ -85,7 +88,7 @@ const ScrollTogglePanel = forwardRef<HTMLDivElement, PropsWithChildren<Props>>(f
     const { children, innerClassName, side, isCollapsed, onScrollToggle } = props;
     return (
         <ScrollToggle ref={ref} side={side} isOpened={isCollapsed}>
-            <ScrollbarsExtended onScrollToggle={onScrollToggle}>
+            <ScrollbarsExtended onScrollToggle={onScrollToggle} side={side}>
                 <ErrorBoundary>
                     <ScrollToggleChild side={side} className={innerClassName}>
                         {children}

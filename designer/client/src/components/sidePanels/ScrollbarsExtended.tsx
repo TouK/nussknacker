@@ -1,13 +1,49 @@
 /* eslint-disable i18next/no-literal-string */
 import React, { PropsWithChildren, useState, useEffect } from "react";
 import Scrollbars from "react-scrollbars-custom";
-import cn from "classnames";
-import styles from "./ScrollbarsExtended.styl";
+import styled from "@emotion/styled";
+import { Side } from "./SidePanel";
 
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
 const CLEAN_STYLE = null;
+const scrollThumbSize = 8;
+const toolbarsGap = 3;
 
-export function ScrollbarsExtended({ children, onScrollToggle }: PropsWithChildren<{ onScrollToggle?: (isEnabled: boolean) => void }>) {
+const trackStyleProps = (side: Side) => ({
+    background: CLEAN_STYLE,
+    borderRadius: scrollThumbSize,
+    backgroundColor: "transparent",
+
+    width: scrollThumbSize - 1,
+    top: (toolbarsGap - scrollThumbSize) / 3,
+    bottom: (toolbarsGap - scrollThumbSize) / 3,
+    height: CLEAN_STYLE,
+    right: side === "LEFT" ? 0 : null,
+    left: side === "RIGHT" ? 0 : null,
+});
+
+const thumbYStyleProps = {
+    borderRadius: scrollThumbSize,
+    cursor: "all-scroll",
+    backgroundColor: "rgba(0,0,0, 0.45)",
+};
+
+const scrollerStyleProps = { padding: CLEAN_STYLE, display: "flex" };
+
+const ScrollbarsWrapper = styled.div((props: { isScrollPossible: boolean }) => ({
+    minHeight: "100%",
+    display: "flex",
+    transition: "all .25s",
+    overflow: "hidden",
+    background: props.isScrollPossible && "#646464",
+    pointerEvents: props.isScrollPossible ? "auto" : "inherit",
+}));
+
+export function ScrollbarsExtended({
+    children,
+    onScrollToggle,
+    side,
+}: PropsWithChildren<{ onScrollToggle?: (isEnabled: boolean) => void; side: Side }>) {
     const [isScrollPossible, setScrollPossible] = useState<boolean>();
 
     useEffect(() => {
@@ -17,43 +53,18 @@ export function ScrollbarsExtended({ children, onScrollToggle }: PropsWithChildr
     return (
         <Scrollbars
             noScrollX
+            style={{
+                pointerEvents: isScrollPossible ? "auto" : "inherit",
+            }}
             disableTracksWidthCompensation
-            trackYProps={{
-                className: cn(styles.track, styles.vertical),
-                style: {
-                    background: CLEAN_STYLE,
-                    borderRadius: CLEAN_STYLE,
-                    left: CLEAN_STYLE,
-                    right: CLEAN_STYLE,
-                    width: CLEAN_STYLE,
-                    top: CLEAN_STYLE,
-                    height: CLEAN_STYLE,
-                },
-            }}
-            thumbYProps={{
-                className: cn(styles.thumb, styles.vertical),
-                style: {
-                    background: CLEAN_STYLE,
-                    borderRadius: CLEAN_STYLE,
-                    cursor: CLEAN_STYLE,
-                },
-            }}
-            contentProps={{
-                className: cn(styles.content),
-                style: {
-                    padding: CLEAN_STYLE,
-                },
-            }}
+            trackYProps={{ style: trackStyleProps(side) }}
+            thumbYProps={{ style: thumbYStyleProps }}
+            contentProps={{ style: scrollerStyleProps }}
             scrollbarWidth={SCROLLBAR_WIDTH}
-            scrollerProps={{
-                style: {
-                    marginRight: -SCROLLBAR_WIDTH,
-                },
-            }}
+            scrollerProps={{ style: { marginRight: -SCROLLBAR_WIDTH } }}
             onUpdate={({ scrollYPossible }) => setScrollPossible(scrollYPossible)}
-            className={cn(isScrollPossible ? styles.enabled : styles.disabled)}
         >
-            <div className={cn(styles.wrapper, isScrollPossible ? styles.enabled : styles.disabled)}>{children}</div>
+            <ScrollbarsWrapper isScrollPossible={isScrollPossible}>{children}</ScrollbarsWrapper>
         </Scrollbars>
     );
 }
