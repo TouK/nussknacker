@@ -10,16 +10,12 @@ object UniversalTimestampFieldAssigner {
   def apply[K, V](fieldName: String): SerializableTimestampAssigner[ConsumerRecord[K, V]] = new SerializableTimestampAssigner[ConsumerRecord[K, V]] {
     override def extractTimestamp(element: ConsumerRecord[K, V], recordTimestamp: Long): Long = {
       val timestampOpt: Option[Long] = Option(element.value() match {
-        case genericRecord: GenericRecord => supportedTypeToMillis(
-          genericRecord.get(fieldName),
-          s"Field $fieldName is of an invalid type for a timestamp field"
-        )
-
-        case typedMap: java.util.Map[String, Any]@unchecked => supportedTypeToMillis(
-          typedMap.get(fieldName),
-          s"Field $fieldName is of an invalid type for a timestamp field"
-        )
-      })
+        case genericRecord: GenericRecord => genericRecord.get(fieldName)
+        case typedMap: java.util.Map[String, Any]@unchecked => typedMap.get(fieldName)
+      }).map(v => supportedTypeToMillis(
+        v,
+        s"Field $fieldName is of an invalid type for a timestamp field"
+      ))
 
       timestampOpt.getOrElse(0L) // explicit null to 0L conversion (instead of implicit unboxing)
     }

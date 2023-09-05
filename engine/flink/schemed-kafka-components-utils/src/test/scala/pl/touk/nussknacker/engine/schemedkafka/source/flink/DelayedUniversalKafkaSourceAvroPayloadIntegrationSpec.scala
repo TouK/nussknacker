@@ -12,10 +12,16 @@ class DelayedUniversalKafkaSourceAvroPayloadIntegrationSpec extends DelayedUnive
     runAndVerify(topicConfig, process, LongFieldV1.record)
   }
 
-  test("properly process data delaying by nullable field") {
-    val topicConfig = createAndRegisterTopicConfig("simple-topic-with-nullable-long-field", NullableLongFieldV1.schema)
+  test("properly process data delaying by null nullable field") {
+    val topicConfig = createAndRegisterTopicConfig("simple-topic-with-null-nullable-long-field", NullableLongFieldV1.schema)
     val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "1L")
     runAndVerify(topicConfig, process, NullableLongFieldV1.encodeData(timestamp = None))
+  }
+
+  test("properly process data delaying by non-null nullable field") {
+    val topicConfig = createAndRegisterTopicConfig("simple-topic-with-non-null-nullable-long-field", NullableLongFieldV1.schema)
+    val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "1L")
+    runAndVerify(topicConfig, process, NullableLongFieldV1.encodeData(timestamp = Some(10000)))
   }
 
   test("timestampField and delay param are null") {

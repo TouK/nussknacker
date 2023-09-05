@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.util
 
-import java.sql.Timestamp
-import java.time.{Instant, LocalDate, OffsetDateTime, ZonedDateTime}
+import java.time.{Instant, LocalDate, OffsetDateTime, ZoneId, ZonedDateTime}
 import scala.util.Try
 
 object TimestampUtils {
@@ -17,13 +16,9 @@ object TimestampUtils {
     case v: Long => normalizeTimestampToMillis(v)
     case v: Int => normalizeTimestampToMillis(v)
     case v: Instant => v.toEpochMilli
-    case v: LocalDate => Timestamp.valueOf(v.atStartOfDay()).getTime
-    case v: ZonedDateTime => Timestamp.valueOf(v.toLocalDateTime).getTime
-    case v: OffsetDateTime => Timestamp.valueOf(v.toLocalDateTime).getTime
-    case v => normalizeTimestampToMillis(Try(v.asInstanceOf[Long]).getOrElse {
-      Try(v.asInstanceOf[Int].toLong).getOrElse {
-        throw new IllegalArgumentException(errorMsg)
-      }
-    })
+    case v: LocalDate => v.atStartOfDay(ZoneId.systemDefault()).toInstant.toEpochMilli
+    case v: ZonedDateTime => v.toInstant.toEpochMilli
+    case v: OffsetDateTime => v.toInstant.toEpochMilli
+    case _ => throw new IllegalArgumentException(errorMsg)
   }
 }
