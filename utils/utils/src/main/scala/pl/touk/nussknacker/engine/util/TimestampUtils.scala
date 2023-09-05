@@ -9,7 +9,7 @@ object TimestampUtils {
 
   def supportedTypeToMillis(value: Any, errorMsg: String): Long = value match {
     case v: Long => v
-    case v: Int => v
+    case v: Int => v * 1000
     case v: Instant => v.toEpochMilli
     case v: ZonedDateTime => v.toInstant.toEpochMilli
     case v: OffsetDateTime => v.toInstant.toEpochMilli
