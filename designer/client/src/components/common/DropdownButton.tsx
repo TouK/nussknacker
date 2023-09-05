@@ -76,6 +76,7 @@ export function DropdownButton<T = any>(props: PropsWithChildren<ButtonProps & P
                         margin: 0,
                         padding: 0,
                     }),
+                    menuPortal: ({ width, ...base }) => ({ ...base, minWidth: width }),
                     menu: ({ position, ...base }) => ({ ...base }),
                 }}
                 tabSelectsValue={false}
