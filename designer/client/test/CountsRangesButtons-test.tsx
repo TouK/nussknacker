@@ -26,7 +26,7 @@ describe("CountsRangesButtons tests", () => {
     });
 
     it("should render buttons", () => {
-        const { container } = render(<CountsRangesButtons ranges={ranges} onChange={changeFn} />);
+        const { container } = render(<CountsRangesButtons ranges={ranges} onChange={changeFn} limit={2} />);
         expect(container).toMatchSnapshot();
     });
 

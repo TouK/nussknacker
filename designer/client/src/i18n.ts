@@ -15,7 +15,7 @@ i18n.init({
     defaultNS: "main",
     fallbackLng: "en",
     backend: {
-        loadPath: urlJoin(BACKEND_STATIC_URL, "assets/locales/{{lng}}/{{ns}}.json"),
+        loadPath: urlJoin(__DEV__ ? "/" : BACKEND_STATIC_URL, "assets/locales/{{lng}}/{{ns}}.json"),
     },
     supportedLngs: ["en", "pl"],
     interpolation: {

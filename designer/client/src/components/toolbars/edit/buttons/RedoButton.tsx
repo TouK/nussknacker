@@ -2,17 +2,17 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import Icon from "../../../../assets/img/toolbarButtons/redo.svg";
-import { getHistory } from "../../../../reducers/selectors/graph";
+import { getHistoryFuture } from "../../../../reducers/selectors/graph";
 import { useSelectionActions } from "../../../graph/SelectionContextProvider";
 import { CapabilitiesToolbarButton } from "../../../toolbarComponents/CapabilitiesToolbarButton";
 import { ToolbarButtonProps } from "../../types";
 
 function RedoButton(props: ToolbarButtonProps): JSX.Element {
     const { redo } = useSelectionActions();
-    const history = useSelector(getHistory);
+    const future = useSelector(getHistoryFuture);
     const { t } = useTranslation();
     const { disabled } = props;
-    const available = !disabled && history.future.length > 0 && redo;
+    const available = !disabled && future.length > 0 && redo;
 
     return (
         <CapabilitiesToolbarButton

@@ -5,6 +5,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.util.config.DocsConfig
 import pl.touk.nussknacker.sql.db.schema.MetaDataProviderFactory
 import pl.touk.nussknacker.sql.service.{DatabaseLookupEnricher, DatabaseQueryEnricher}
 
@@ -15,12 +16,15 @@ class DatabaseEnricherComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
+    val docsConfig: DocsConfig = new DocsConfig(config)
+    import docsConfig._
+
     val factory = new MetaDataProviderFactory()
     val componentConfig = config.getConfig("config")
     val dbQueryEnricher = readEnricherConfigIfPresent(componentConfig, "databaseQueryEnricher")
-      .map(queryConfig => ComponentDefinition(name = queryConfig.name, component = new DatabaseQueryEnricher(queryConfig.dbPool, factory.create(queryConfig.dbPool))))
+      .map(queryConfig => ComponentDefinition(name = queryConfig.name, component = new DatabaseQueryEnricher(queryConfig.dbPool, factory.create(queryConfig.dbPool))).withRelativeDocs("Enrichers#databasequeryenricher"))
     val dbLookupEnricher = readEnricherConfigIfPresent(componentConfig, "databaseLookupEnricher")
-      .map(lookupConfig => ComponentDefinition(name = lookupConfig.name, component = new DatabaseLookupEnricher(lookupConfig.dbPool, factory.create(lookupConfig.dbPool))))
+      .map(lookupConfig => ComponentDefinition(name = lookupConfig.name, component = new DatabaseLookupEnricher(lookupConfig.dbPool, factory.create(lookupConfig.dbPool))).withRelativeDocs("Enrichers#databaselookupenricher"))
 
     List(dbQueryEnricher, dbLookupEnricher).filter(_.isDefined).map(_.get)
   }

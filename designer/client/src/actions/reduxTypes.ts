@@ -3,7 +3,6 @@ import { ThunkAction as TA, ThunkDispatch as TD } from "redux-thunk";
 
 import { ActionTypes } from "./actionTypes";
 import { DisplayProcessActivityAction, DisplayProcessCountsAction, HandleHTTPErrorAction, NodeActions, SelectionActions } from "./nk";
-import { FeatureFlagsActions } from "./nk/featureFlags";
 import { UserSettingsActions } from "./nk/userSettings";
 import { UiActions } from "./nk/ui/uiActions";
 import { SettingsActions } from "./settingsActions";
@@ -23,7 +22,6 @@ type TypedAction =
     | NodeActions
     | ToolbarActions
     | NodeDetailsActions
-    | FeatureFlagsActions
     | UserSettingsActions
     | SelectionActions
     | NotificationActions

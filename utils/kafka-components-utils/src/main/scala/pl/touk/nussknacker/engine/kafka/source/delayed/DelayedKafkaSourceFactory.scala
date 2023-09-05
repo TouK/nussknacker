@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory._
+import pl.touk.nussknacker.engine.util.TimestampUtils
 
 import scala.reflect.ClassTag
 
@@ -82,7 +83,7 @@ object DelayedKafkaSourceFactory {
   def validateTimestampField(field: String, typingResult: TypingResult)(implicit nodeId: NodeId): List[ProcessCompilationError] = {
     typingResult match {
       case TypedObjectTypingResult(fields, _, _) => fields.get(field) match {
-        case Some(fieldTypingResult) if List(Typed[java.lang.Long], Typed[Long]).contains(fieldTypingResult) => List.empty
+        case Some(fieldTypingResult) if TimestampUtils.supportedTimestampTypes.contains(fieldTypingResult) => List.empty
         case Some(fieldTypingResult) => List(new CustomNodeError(nodeId.id, s"Field: '$field' has invalid type: ${fieldTypingResult.display}.", Some(TimestampFieldParamName)))
         case None => List(new CustomNodeError(nodeId.id, s"Field: '$field' doesn't exist in definition: ${fields.keys.mkString(", ")}.", Some(TimestampFieldParamName)))
       }

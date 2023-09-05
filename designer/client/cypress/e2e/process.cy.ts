@@ -139,20 +139,11 @@ describe("Process", () => {
                 .drag("#nk-graph-main", { x: 580, y: 450, position: "right", force: true });
             cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
             //why save and test snapshot? mistake?
-            cy.contains(/^save$/i).click();
+            cy.contains(/^save\*$/i).click();
             cy.get("[data-testid=window]").contains(/^ok$/i).click();
             cy.get("[data-testid=window]").should("not.exist");
             cy.get("#nk-graph-main").should("be.visible");
             cy.get("[data-testid=graphPage]").matchImage(screenshotOptions);
-        });
-
-        it("should have counts button and modal", () => {
-            cy.viewport("macbook-15");
-            cy.contains(/^counts$/i).as("button");
-            cy.get("@button").should("be.visible").matchImage();
-            cy.get("@button").click();
-            cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
-            cy.get("[data-testid=window]").matchImage();
         });
 
         it("should return 400 status code and show info about required comment", () => {
@@ -164,14 +155,12 @@ describe("Process", () => {
             cy.contains(/^Comment is required.$/i).should("exist");
         });
 
-        it('should have quick ranges (with optional "latest deploy"', () => {
-            //FIXME: temporary fix for notifications race (?)
-            cy.reload();
+        it("should have counts button and modal", () => {
             cy.viewport("macbook-15");
+            cy.contains(/^counts$/i).as("button");
+            cy.get("@button").should("be.visible").matchImage();
+            cy.get("@button").click();
 
-            cy.deployScenario();
-
-            cy.contains(/^counts$/i).click();
             cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
             cy.contains(/^latest deploy$/i).should("not.exist");
             cy.get("[data-testid=window]").matchImage();
@@ -179,13 +168,8 @@ describe("Process", () => {
                 .contains(/^cancel$/i)
                 .click();
 
-            // switch ff
-            cy.window().then((window) => {
-                // first available after "Quick ranges" displayed
-                const setFF = window["__FF"];
-                setFF({ showDeploymentsInCounts: true });
-            });
-            cy.contains(/^counts$/i).click();
+            cy.deployScenario();
+            cy.get("@button").click();
             cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
             cy.contains(/^latest deploy$/i).should("be.visible");
             cy.get("[data-testid=window]").matchImage();
@@ -200,9 +184,9 @@ describe("Process", () => {
             cy.deployScenario();
             cy.cancelScenario();
 
-            cy.contains(/^counts$/i).click();
+            cy.get("@button").click();
             cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
-            cy.contains(/^select more...$/i)
+            cy.contains(/^previous deployments...$/i)
                 .should("be.visible")
                 .click();
             cy.get("[data-testid=window]").matchImage();

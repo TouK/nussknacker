@@ -47,7 +47,8 @@ object TypingUtils {
 
   //TODO: how to handle classloaders??
   def loadClassFromName(name: String): TypingResult = {
-    val langAppended = if (!name.contains(".")) "java.lang." + name else name
+    val nameIntFixed = if (name == "Int") "Integer" else name // scala.Int to java.lang.Integer
+    val langAppended = if (!nameIntFixed.contains(".")) "java.lang." + nameIntFixed else nameIntFixed
     Typed(ThreadUtils.loadUsingContextLoader(langAppended))
   }
 

@@ -17,9 +17,9 @@ class RequestResponseComponentProvider extends ComponentProvider {
     val docsConfig: DocsConfig = new DocsConfig(config)
     import docsConfig._
     List(
-      ComponentDefinition("request", new JsonSchemaRequestResponseSourceFactory).withRelativeDocs("RRDataSourcesAndSinks#request-response-source"),
-      ComponentDefinition("response", new JsonRequestResponseSinkFactory(DefaultResponseRequestSinkImplFactory)).withRelativeDocs("RRDataSourcesAndSinks#request-response-sink"),
-      ComponentDefinition("collect", CollectTransformer).withRelativeDocs("BasicNodes#collect")
+      ComponentDefinition("request", new JsonSchemaRequestResponseSourceFactory).withRelativeDocs("RRDataSourcesAndSinks#source"),
+      ComponentDefinition("response", new JsonRequestResponseSinkFactory(DefaultResponseRequestSinkImplFactory)).withRelativeDocs("RRDataSourcesAndSinks#sink"),
+      ComponentDefinition("collect", CollectTransformer).withRelativeDocs("RRDataSourcesAndSinks#collect")
     )
   }
 

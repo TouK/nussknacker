@@ -61,7 +61,6 @@ export function ToolbarsContainer(props: Props): JSX.Element {
                 <DragHandlerContext.Provider value={p.dragHandleProps}>
                     <div className={styles.background}>
                         <div className={styles.content}>{ordered[r.source.index].component}</div>
-                        <div className={styles.handler} {...p.dragHandleProps} />
                     </div>
                 </DragHandlerContext.Provider>
             </div>
