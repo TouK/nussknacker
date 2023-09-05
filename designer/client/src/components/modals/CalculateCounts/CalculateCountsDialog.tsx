@@ -2,7 +2,7 @@
 import { css, cx } from "@emotion/css";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
 import moment from "moment";
-import React, { PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
+import React, { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAndDisplayProcessCounts } from "../../../actions/nk";
@@ -25,36 +25,14 @@ const initState = (): State => {
     };
 };
 
-export function CalculateCountsForm(props: ChangeableValue<State>): JSX.Element {
+export function CalculateCountsForm({ value, onChange }: ChangeableValue<State>): JSX.Element {
     const { t } = useTranslation();
-    const [state, setState] = useState(props.value);
-    const { from, to } = state;
+    const { from, to } = value;
 
-    const setFrom = useCallback(
-        (from: PickerInput) => {
-            setState((current) => ({ ...current, from }));
-        },
-        [setState],
-    );
+    const setFrom = useCallback((from: PickerInput) => onChange({ ...value, from }), [onChange, value]);
+    const setTo = useCallback((to: PickerInput) => onChange({ ...value, to }), [onChange, value]);
+    const setRange = useCallback(([from, to]: [PickerInput, PickerInput]) => onChange({ ...value, from, to }), [onChange, value]);
 
-    const setTo = useCallback(
-        (to: PickerInput) => {
-            setState((current) => ({ ...current, to }));
-        },
-        [setState],
-    );
-
-    const setRange = useCallback(
-        (value: [PickerInput, PickerInput]) => {
-            const [from, to] = value;
-            setState((current) => ({ ...current, from, to }));
-        },
-        [setState],
-    );
-
-    useEffect(() => props.onChange(state), [props, state]);
-
-    const isValid = (input: PickerInput) => moment(input).isValid();
     return (
         <>
             <Picker label={t("calculateCounts.processCountsFrom", "Scenario counts from")} onChange={setFrom} value={from} />
@@ -72,8 +50,9 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
 
     const confirm = useCallback(async () => {
         await dispatch(fetchAndDisplayProcessCounts(processId, moment(state.from), moment(state.to)));
-    }, [dispatch, processId, state]);
+    }, [dispatch, processId, state.from, state.to]);
 
+    const isStateValid = moment(state.from).isValid() && moment(state.to).isValid();
     const buttons: WindowButtonProps[] = useMemo(
         () => [
             {
@@ -84,13 +63,14 @@ export function CountsDialog({ children, ...props }: PropsWithChildren<WindowCon
             },
             {
                 title: t("dialog.button.ok", "Ok"),
+                disabled: !isStateValid,
                 action: async () => {
                     await confirm();
                     props.close();
                 },
             },
         ],
-        [confirm, props, t],
+        [confirm, isStateValid, props, t],
     );
 
     return (
