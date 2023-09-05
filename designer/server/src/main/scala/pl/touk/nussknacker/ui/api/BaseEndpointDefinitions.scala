@@ -5,14 +5,16 @@ import sttp.tapir._
 
 trait BaseEndpointDefinitions {
 
-  private def baseNuApiEndpoint = endpoint//.in("api") // todo: explanation
+  private val baseNuApiEndpoint =
+    // TODO: when all services are moved to Tapir (including authn & authz), we can uncomment this path here
+    endpoint//.in("api")
 
-  protected def baseNuApiPublicEndpoint: PublicEndpoint[Unit, Unit, Unit, Any] =
+  protected val baseNuApiPublicEndpoint: PublicEndpoint[Unit, Unit, Unit, Any] =
     baseNuApiEndpoint
 
-  type SecuredCommonUserEndpoint[INPUT, ERROR_OUTPUT, OUTPUT, -R] = Endpoint[LoggedUser, INPUT, ERROR_OUTPUT, OUTPUT, R]
+  type SecuredEndpoint[INPUT, ERROR_OUTPUT, OUTPUT, -R] = Endpoint[LoggedUser, INPUT, ERROR_OUTPUT, OUTPUT, R]
 
-  protected def baseNuApiUserSecuredEndpoint(loggedUser: LoggedUser): SecuredCommonUserEndpoint[Unit, Unit, Unit, Any] =
+  protected def baseNuApiUserSecuredEndpoint(loggedUser: LoggedUser): SecuredEndpoint[Unit, Unit, Unit, Any] =
     baseNuApiEndpoint
       .securityIn(auth.apiKey(extractFromRequest(_ => loggedUser)))
 

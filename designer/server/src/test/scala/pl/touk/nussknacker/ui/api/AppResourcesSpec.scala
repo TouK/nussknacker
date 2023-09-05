@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.restassured.RestAssured._
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
@@ -269,7 +269,9 @@ class AppResourcesSpec
              |      "engine-version": "0.1",
              |      "generation-time": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{6}$$"
              |    }
-             |  }
+             |  },
+             |  "build-config-1": "1",
+             |  "build-config-2": "2"
              |}""".stripMargin
         ))
     }
@@ -438,5 +440,13 @@ class AppResourcesSpec
 
   override def nuTestConfig: Config = super.nuTestConfig
     .withValue("enableConfigEndpoint", fromAnyRef(true))
+    .withValue(
+      "globalBuildInfo",
+      ConfigFactory
+        .empty()
+        .withValue("build-config-1", fromAnyRef("1"))
+        .withValue("build-config-2", fromAnyRef("2"))
+        .root()
+    )
 
 }

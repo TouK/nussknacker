@@ -1,17 +1,17 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.api.app
 
-import io.circe.generic.semiauto
 import io.circe.{Decoder, Encoder, Json}
+import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import sttp.model.StatusCode.{Forbidden, InternalServerError, NoContent, Ok}
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-object AppResourcesEndpoints extends BaseEndpointDefinitions {
+object AppApiEndpoints extends BaseEndpointDefinitions {
 
-  import AppResourcesEndpoints.Dtos.Codecs._
-  import AppResourcesEndpoints.Dtos._
+  import AppApiEndpoints.Dtos.Codecs._
+  import AppApiEndpoints.Dtos._
 
   def appHealthCheckEndpoint: Endpoint[Unit, Unit, Unit, HealthCheckProcessSuccessResponseDto.type, Any] =
     baseNuApiPublicEndpoint
@@ -80,7 +80,8 @@ object AppResourcesEndpoints extends BaseEndpointDefinitions {
                                   gitCommit: String,
                                   buildTime: String,
                                   version: String,
-                                  processingType: Map[String, Map[String, String]])
+                                  processingType: Map[String, Map[String, String]],
+                                  otherProperties: Map[String, String])
 
     final case class ServerConfigInfoDto(configJson: Json)
     sealed trait ServerConfigInfoErrorDto
@@ -95,7 +96,7 @@ object AppResourcesEndpoints extends BaseEndpointDefinitions {
       case object AuthorizationProcessingTypeDataReloadErrorDto extends ProcessingTypeDataReloadErrorDto
     }
 
-    private[AppResourcesEndpoints] object Codecs {
+    private[AppApiEndpoints] object Codecs {
 
       implicit val healthCheckProcessSuccessResponseDtoCodec: io.circe.Codec[HealthCheckProcessSuccessResponseDto.type] = {
         io.circe.Codec.from(
@@ -105,7 +106,7 @@ object AppResourcesEndpoints extends BaseEndpointDefinitions {
             case ("OK", None, None) =>
               HealthCheckProcessSuccessResponseDto
             case invalid =>
-              throw new IllegalArgumentException(s"Cannot deserialize [$invalid] to ${classOf[HealthCheckProcessSuccessResponseDto.type].getSimpleName}")
+              throw new IllegalArgumentException(s"Cannot deserialize [$invalid]")
           },
           Encoder.forProduct3[HealthCheckProcessSuccessResponseDto.type, String, Option[String], Option[Set[String]]](
             "status", "message", "processes"
@@ -123,7 +124,7 @@ object AppResourcesEndpoints extends BaseEndpointDefinitions {
             case ("ERROR", message, processes) =>
               HealthCheckProcessErrorResponseDto(message, processes)
             case invalid =>
-              throw new IllegalArgumentException(s"Cannot deserialize [$invalid] to ${classOf[HealthCheckProcessSuccessResponseDto.type].getSimpleName}")
+              throw new IllegalArgumentException(s"Cannot deserialize [$invalid]")
           },
           Encoder.forProduct3[HealthCheckProcessErrorResponseDto, String, Option[String], Option[Set[String]]](
             "status", "message", "processes"
@@ -134,18 +135,30 @@ object AppResourcesEndpoints extends BaseEndpointDefinitions {
       }
 
       implicit val buildInfoDtoCodec: io.circe.Codec[BuildInfoDto] = {
-        semiauto.deriveCodec
-        // todo:
-        //        semiauto.deriveCodec
-        //        io.circe.Codec.from(
-        //          Decoder.decodeMap[String, String].map(m =>
-        //            BuildInfoDto(
-        //              m.view.filterKeys(_ == "processingType").toMap,
-        //              m.view.filterKeys(_ != "processingType")
-        //            )
-        //          ),
-        //          Encoder.encodeMap[String, String].contramap(_.info)
-        //        )
+        io.circe.Codec.from(
+          Decoder.decodeJson.map { json =>
+            BuildInfoDto(???, ???, ???, ???, ???, ???)
+          },
+          Encoder.encodeJson.contramap { buildInfo =>
+            mapToJson(buildInfo.otherProperties)(Json.fromString)
+              .deepMerge {
+                Json
+                  .obj(
+                    "name" -> Json.fromString(buildInfo.name),
+                    "gitCommit" -> Json.fromString(buildInfo.gitCommit),
+                    "buildTime" -> Json.fromString(buildInfo.buildTime),
+                    "version" -> Json.fromString(buildInfo.version),
+                    "processingType" -> mapToJson(buildInfo.processingType)(t => mapToJson(t)(Json.fromString))
+                  )
+              }
+          }
+        )
+      }
+
+      private def mapToJson[T](map: Map[String, T])(tToJson: T => Json): Json = {
+        Json.obj(
+          map.map { case (k, v) => (k, tToJson(v) )}.toList: _*
+        )
       }
 
       implicit val serverConfigInfoDtoCodec: io.circe.Codec[ServerConfigInfoDto] = {

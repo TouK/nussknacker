@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.api.app
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.api.AppResourcesEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.app.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
@@ -48,14 +48,14 @@ class AppHttpService(config: Config,
     ) ::: (if (exposeConfig) serverConfigInfo :: Nil else Nil)
 
   private val healthCheck = {
-    AppResourcesEndpoints.appHealthCheckEndpoint
+    AppApiEndpoints.appHealthCheckEndpoint
       .serverLogicSuccess { _ =>
         Future.successful(HealthCheckProcessSuccessResponseDto)
       }
   }
 
   private def processDeploymentHealthCheck(implicit user: LoggedUser) = {
-    AppResourcesEndpoints.processDeploymentHealthCheckEndpoint
+    AppApiEndpoints.processDeploymentHealthCheckEndpoint
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { _ =>
         _ =>
@@ -84,7 +84,7 @@ class AppHttpService(config: Config,
   }
 
   private def processValidationHealthCheck(implicit user: LoggedUser) = {
-    AppResourcesEndpoints.processValidationHealthCheckEndpoint
+    AppApiEndpoints.processValidationHealthCheckEndpoint
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { _ =>
         _ =>
@@ -102,20 +102,19 @@ class AppHttpService(config: Config,
   }
 
   private val buildInfo = {
-    AppResourcesEndpoints.buildInfoEndpoint
+    AppApiEndpoints.buildInfoEndpoint
       .serverLogicSuccess { _ =>
         Future {
-          // todo: refactor
-          //          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
-          //          val globalBuildInfo = (BuildInfo.toMap.mapValuesNow(_.toString) ++ configuredBuildInfo)
+          import net.ceedubs.ficus.Ficus._
+          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
           val modelDataInfo: Map[ProcessingType, Map[String, String]] = modelData.all.mapValuesNow(_.configCreator.buildInfo())
-          BuildInfoDto(BuildInfo.name, BuildInfo.gitCommit, BuildInfo.buildTime, BuildInfo.version, modelDataInfo)
+          BuildInfoDto(BuildInfo.name, BuildInfo.gitCommit, BuildInfo.buildTime, BuildInfo.version, modelDataInfo, configuredBuildInfo)
         }
       }
   }
 
   private def serverConfigInfo(implicit user: LoggedUser) = {
-    AppResourcesEndpoints.serverConfigEndpoint
+    AppApiEndpoints.serverConfigEndpoint
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic {
         case _: AdminUser => _ =>
@@ -135,7 +134,7 @@ class AppHttpService(config: Config,
   }
 
   private def userCategoriesWithProcessingTypes(implicit user: LoggedUser) = {
-    AppResourcesEndpoints.userCategoriesWithProcessingTypesEndpoint
+    AppApiEndpoints.userCategoriesWithProcessingTypesEndpoint
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogicSuccess { _ =>
         _ =>
@@ -146,7 +145,7 @@ class AppHttpService(config: Config,
   }
 
   private def processingTypeDataReload(implicit user: LoggedUser) =
-    AppResourcesEndpoints.processingTypeDataReloadEndpoint
+    AppApiEndpoints.processingTypeDataReloadEndpoint
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic {
         case _: AdminUser => _ =>

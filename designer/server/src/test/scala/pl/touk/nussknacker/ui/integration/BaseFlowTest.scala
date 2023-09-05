@@ -62,15 +62,6 @@ class BaseFlowTest
     dynamicServiceFile.delete()
   }
 
-  override def afterEach(): Unit = {
-    super.afterEach()
-  }
-
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-  }
-
-
   override def afterAll(): Unit = {
     dynamicServiceFile.delete()
     super.afterAll()
