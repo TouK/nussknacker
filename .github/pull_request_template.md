@@ -1,7 +1,7 @@
 ## Describe your changes
 
 ## Checklist before merge
-- [ ] Added related issue id at the beginning of title in \[brackets\] (could be GH issue or NU jira issue)
+- [ ] Added related issue id at the beginning of the title in \[brackets\] (could be GH issue or NU jira issue)
 - [ ] Code is cleaned from temporal changes and commented lines 
 - [ ] Code formatting checked
 - [ ] Parts of the code that are not easy to understand are documented in the code
