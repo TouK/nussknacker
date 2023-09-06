@@ -7,23 +7,22 @@ import { Side, PanelSide } from "./SidePanel";
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
 const CLEAN_STYLE = null;
 const SCROLL_THUMB_SIZE = 8;
-const TOOLBARS_GAP = 3;
 
 const trackStyleProps = (side: Side) => ({
     background: CLEAN_STYLE,
     borderRadius: SCROLL_THUMB_SIZE,
     backgroundColor: "transparent",
     width: SCROLL_THUMB_SIZE - 1,
-    top: (TOOLBARS_GAP - SCROLL_THUMB_SIZE) / 3,
-    bottom: (TOOLBARS_GAP - SCROLL_THUMB_SIZE) / 3,
+    top: CLEAN_STYLE,
+    bottom: CLEAN_STYLE,
     height: CLEAN_STYLE,
     right: side === PanelSide.Left ? 0 : null,
     left: side === PanelSide.Right ? 0 : null,
 });
 
 const thumbYStyleProps = {
-    borderRadius: SCROLL_THUMB_SIZE,
-    cursor: "all-scroll",
+    borderRadius: CLEAN_STYLE,
+    cursor: CLEAN_STYLE,
     backgroundColor: "rgba(0,0,0, 0.45)",
 };
 
