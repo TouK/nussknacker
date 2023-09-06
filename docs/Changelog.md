@@ -13,6 +13,7 @@
     - introduce the `CaseClassTypeInfoFactory`, a generic factory for creating `CaseClassTypeInfo`
     - allow passing classLoader at `ResourceLoader.load`
 * [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
+* [#4640](https://github.com/TouK/nussknacker/pull/4640) Expand timestamp support to handle more types/formats
 
 1.11.1 (25 Aug 2023)
 -------------------------
