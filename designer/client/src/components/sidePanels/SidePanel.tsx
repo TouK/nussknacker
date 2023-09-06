@@ -9,9 +9,9 @@ import { useGraph } from "../graph/GraphContext";
 import { Graph } from "../graph/Graph";
 import styled from "@emotion/styled";
 
-const scrollThumbSize = 8;
-const sidebarWidth = 290;
-const panelWidth = sidebarWidth + scrollThumbSize;
+const SCROLL_THUMB_SIZE = 8;
+const SIDEBAR_WIDTH = 290;
+const PANEL_WIDTH = SIDEBAR_WIDTH + SCROLL_THUMB_SIZE;
 
 export enum PanelSide {
     Right = "RIGHT",
@@ -45,23 +45,19 @@ export function useSidePanelToggle(side: Side) {
 }
 
 function checkLeftSide(props: ScrollToggle) {
-    if (props.side === PanelSide.Left && !props.isOpened) {
-        return -panelWidth;
-    } else if (props.side === PanelSide.Left && props.isOpened) {
-        return 0;
+    if (props.side === PanelSide.Left) {
+        return props.isOpened ? 0 : -PANEL_WIDTH;
     }
 }
 
 function checkRightSide(props: ScrollToggle) {
-    if (props.side === PanelSide.Right && !props.isOpened) {
-        return -panelWidth;
-    } else if (props.side === PanelSide.Right && props.isOpened) {
-        return 0;
+    if (props.side === PanelSide.Right) {
+        return props.isOpened ? 0 : -PANEL_WIDTH;
     }
 }
 
 const ScrollToggleChild = styled.div((props: ScrollToggle) => ({
-    width: panelWidth,
+    width: PANEL_WIDTH,
     boxSizing: "border-box",
     minHeight: "100%",
     display: "flex",
@@ -73,7 +69,7 @@ const ScrollToggleChild = styled.div((props: ScrollToggle) => ({
 const ScrollToggle = styled.div((props: ScrollToggle) => ({
     pointerEvents: "none",
     userSelect: "none",
-    width: panelWidth,
+    width: PANEL_WIDTH,
     transition: "left 0.5s ease, right 0.5s ease",
     position: "absolute",
     zIndex: 1,
