@@ -1,12 +1,8 @@
 package pl.touk.nussknacker.ui.server
 
 import com.typesafe.scalalogging.LazyLogging
-import sttp.monad.MonadError
 import sttp.tapir.server.akkahttp.{AkkaHttpServerInterpreter, AkkaHttpServerOptions}
-import sttp.tapir.server.interceptor.RequestResult
 import sttp.tapir.server.interceptor.log.{DefaultServerLog, ServerLog}
-import sttp.tapir.server.interceptor.reject.RejectHandler
-import sttp.tapir.server.model.ValuedEndpointOutput
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,7 +13,7 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext:
   override val akkaHttpServerOptions: AkkaHttpServerOptions =
     AkkaHttpServerOptions
       .customiseInterceptors
-      .exceptionHandler(None) // todo: ???
+      .exceptionHandler(None)
       .serverLog(noExceptionLoggingServerLog)
       .options
 

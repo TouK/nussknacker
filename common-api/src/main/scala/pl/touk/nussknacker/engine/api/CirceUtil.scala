@@ -16,7 +16,6 @@ object CirceUtil {
     .withDefaults
     .withDiscriminator("type")
 
-
   def decodeJson[T: Decoder](json: String): Either[circe.Error, T] =
     io.circe.parser.parse(json).flatMap(Decoder[T].decodeJson)
 
@@ -53,7 +52,7 @@ object CirceUtil {
     implicit val urlDecoder: Decoder[URL] = Decoder.decodeString.map(new URL(_))
   }
 
-  implicit class RichACursor(cursor: ACursor) {
+  implicit class RichACursor(val cursor: ACursor) extends AnyVal {
 
     def downAt(p: Json => Boolean): ACursor = {
       @tailrec
@@ -65,6 +64,29 @@ object CirceUtil {
       go(cursor.downArray)
     }
 
+  }
+
+  implicit class HCursorExt(val cursor: HCursor) extends AnyVal {
+
+    def toMapExcluding(keys: String*): Decoder.Result[Map[String, String]] = {
+      val keysSet = keys.toSet
+      cursor.keys match {
+        case Some(keys) =>
+          keys.filter(keysSet.contains)
+            .foldLeft(Right(Vector.empty): Either[DecodingFailure, Vector[(String, String)]]) {
+              case (Right(vector), key) =>
+                cursor.downField(key).as[String].map(value => (key, value)) match {
+                  case Left(df) => Left(df)
+                  case Right(tuple) => Right(vector :+ tuple )
+                }
+              case (left@Left(_), _) =>
+                left
+            }
+            .map(_.toMap)
+        case None =>
+          Right(Map.empty)
+      }
+    }
   }
 
   // Be default circe print all empty values as a nulls which can be good for programs because it is more explicit

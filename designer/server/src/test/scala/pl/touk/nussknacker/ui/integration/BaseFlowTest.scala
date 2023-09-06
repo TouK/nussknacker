@@ -4,9 +4,9 @@ import com.typesafe.config.Config
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Json}
 import org.apache.commons.io.FileUtils
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.typelevel.ci._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition._
@@ -42,10 +42,8 @@ import scala.util.Properties
 class BaseFlowTest
   extends AnyFunSuiteLike
     with NuItTest
-    with BeforeAndAfterEach
     with WithTestHttpClient
     with Matchers
-    with BeforeAndAfterAll
     with OptionValues
     with EitherValuesDetailedMessage {
 

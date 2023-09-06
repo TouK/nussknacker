@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.api.app
 
+import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import sttp.model.StatusCode.{Forbidden, InternalServerError, NoContent, Ok}
@@ -8,7 +10,7 @@ import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-object AppApiEndpoints extends BaseEndpointDefinitions {
+private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
 
   import AppApiEndpoints.Dtos.Codecs._
   import AppApiEndpoints.Dtos._
@@ -136,28 +138,30 @@ object AppApiEndpoints extends BaseEndpointDefinitions {
 
       implicit val buildInfoDtoCodec: io.circe.Codec[BuildInfoDto] = {
         io.circe.Codec.from(
-          Decoder.decodeJson.map { json =>
-            BuildInfoDto(???, ???, ???, ???, ???, ???)
+          Decoder.instance { c =>
+            for {
+              name <- c.downField("name").as[String]
+              version <- c.downField("version").as[String]
+              buildTime <- c.downField("buildTime").as[String]
+              gitCommit <- c.downField("gitCommit").as[String]
+              processingType <- c.downField("processingType").as[Map[String, Map[String, String]]]
+              otherProperties <- c.toMapExcluding("name", "version", "buildTime", "gitCommit", "processingType")
+            } yield BuildInfoDto(name, gitCommit, buildTime, version, processingType, otherProperties)
           },
           Encoder.encodeJson.contramap { buildInfo =>
-            mapToJson(buildInfo.otherProperties)(Json.fromString)
+            buildInfo
+              .otherProperties.asJson
               .deepMerge {
                 Json
                   .obj(
                     "name" -> Json.fromString(buildInfo.name),
-                    "gitCommit" -> Json.fromString(buildInfo.gitCommit),
-                    "buildTime" -> Json.fromString(buildInfo.buildTime),
                     "version" -> Json.fromString(buildInfo.version),
-                    "processingType" -> mapToJson(buildInfo.processingType)(t => mapToJson(t)(Json.fromString))
+                    "buildTime" -> Json.fromString(buildInfo.buildTime),
+                    "gitCommit" -> Json.fromString(buildInfo.gitCommit),
+                    "processingType" -> buildInfo.processingType.asJson
                   )
               }
           }
-        )
-      }
-
-      private def mapToJson[T](map: Map[String, T])(tToJson: T => Json): Json = {
-        Json.obj(
-          map.map { case (k, v) => (k, tToJson(v) )}.toList: _*
         )
       }
 
