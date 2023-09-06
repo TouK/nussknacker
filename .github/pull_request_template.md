@@ -6,8 +6,8 @@
 - [ ] Code formatting checked
 - [ ] Parts of the code that are not easy to understand are documented in the code
 - [ ] Automatic tests added
-- [ ] Showcase in dev-application.conf added if necessary 
+- [ ] Showcase in dev-application.conf added to demonstrate feature
 - [ ] Documentation added or updated
-- [ ] Changelog.md entry describing change from public distribution user added if necessary
-- [ ] MigrationGuide.md entry added in the corresponding subcategory if necessary
+- [ ] Changelog.md entry describing change from public distribution user added
+- [ ] MigrationGuide.md entry added in the corresponding subcategory if breaking change
 - [ ] Verify that PR will be squashed during merge
