@@ -18,7 +18,7 @@ interface Props {
 }
 
 function validRightProps(props: IconWrapper) {
-    if (props.type === "RIGHT" && !props.isOpened) {
+    if (props.type === "RIGHT") {
         return props.isOpened ? PANEL_WIDTH : 0;
     }
 }
