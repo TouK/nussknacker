@@ -24,15 +24,15 @@ import sttp.tapir.server.ServerEndpoint
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class AppHttpService(config: Config,
-                     processingTypeDataReloader: ProcessingTypeDataReload,
-                     modelData: ProcessingTypeDataProvider[ModelData, _],
-                     processRepository: FetchingProcessRepository[Future],
-                     processValidation: ProcessValidation,
-                     deploymentService: DeploymentService,
-                     processCategoryService: ProcessCategoryService,
-                     exposeConfig: Boolean)
-                    (implicit executionContext: ExecutionContext)
+class AppApiHttpService(config: Config,
+                        processingTypeDataReloader: ProcessingTypeDataReload,
+                        modelData: ProcessingTypeDataProvider[ModelData, _],
+                        processRepository: FetchingProcessRepository[Future],
+                        processValidation: ProcessValidation,
+                        deploymentService: DeploymentService,
+                        processCategoryService: ProcessCategoryService,
+                        exposeConfig: Boolean)
+                       (implicit executionContext: ExecutionContext)
   extends LazyLogging {
 
   def publicServerEndpoints: List[ServerEndpoint[Any, Future]] = List(

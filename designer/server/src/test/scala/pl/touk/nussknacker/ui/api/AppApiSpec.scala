@@ -14,7 +14,7 @@ import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, P
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.Category1
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
 
-class AppResourcesSpec
+class AppApiSpec
   extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager

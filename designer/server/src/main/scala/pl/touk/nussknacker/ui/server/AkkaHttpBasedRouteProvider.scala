@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresol
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.api.app.AppHttpService
+import pl.touk.nussknacker.ui.api.app.AppApiHttpService
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, ComponentLinksConfigExtractor, FeatureTogglesConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.db.DbRef
@@ -163,7 +163,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
       )
 
       val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
-      val appHttpService = new AppHttpService(
+      val appHttpService = new AppApiHttpService(
         config = resolvedConfig,
         processingTypeDataReloader = reload,
         modelData = modelData,
