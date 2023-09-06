@@ -6,44 +6,45 @@ import { Side } from "./SidePanel";
 
 const SCROLLBAR_WIDTH = 40; //some value bigger than real scrollbar width
 const CLEAN_STYLE = null;
-const scrollThumbSize = 8;
-const toolbarsGap = 3;
+const SCROLL_THUMB_SIZE = 8;
+const TOOLBARS_GAP = 3;
 
 const trackStyleProps = (side: Side) => ({
     background: CLEAN_STYLE,
-    borderRadius: scrollThumbSize,
+    borderRadius: SCROLL_THUMB_SIZE,
     backgroundColor: "transparent",
 
-    width: scrollThumbSize - 1,
-    top: (toolbarsGap - scrollThumbSize) / 3,
-    bottom: (toolbarsGap - scrollThumbSize) / 3,
+    width: SCROLL_THUMB_SIZE - 1,
+    top: (TOOLBARS_GAP - SCROLL_THUMB_SIZE) / 3,
+    bottom: (TOOLBARS_GAP - SCROLL_THUMB_SIZE) / 3,
     height: CLEAN_STYLE,
     right: side === "LEFT" ? 0 : null,
     left: side === "RIGHT" ? 0 : null,
 });
 
 const thumbYStyleProps = {
-    borderRadius: scrollThumbSize,
+    borderRadius: SCROLL_THUMB_SIZE,
     cursor: "all-scroll",
     backgroundColor: "rgba(0,0,0, 0.45)",
 };
 
 const scrollerStyleProps = { padding: CLEAN_STYLE, display: "flex" };
 
-const ScrollbarsWrapper = styled.div((props: { isScrollPossible: boolean }) => ({
+const ScrollbarsWrapper = styled.div(({ isScrollPossible }: { isScrollPossible: boolean }) => ({
     minHeight: "100%",
     display: "flex",
     transition: "all .25s",
     overflow: "hidden",
-    background: props.isScrollPossible && "#646464",
-    pointerEvents: props.isScrollPossible ? "auto" : "inherit",
+    background: isScrollPossible && "#646464",
+    pointerEvents: isScrollPossible ? "auto" : "inherit",
 }));
 
-export function ScrollbarsExtended({
-    children,
-    onScrollToggle,
-    side,
-}: PropsWithChildren<{ onScrollToggle?: (isEnabled: boolean) => void; side: Side }>) {
+interface ScrollbarsExtended {
+    onScrollToggle?: (isEnabled: boolean) => void;
+    side: Side;
+}
+
+export function ScrollbarsExtended({ children, onScrollToggle, side }: PropsWithChildren<ScrollbarsExtended>) {
     const [isScrollPossible, setScrollPossible] = useState<boolean>();
 
     useEffect(() => {
