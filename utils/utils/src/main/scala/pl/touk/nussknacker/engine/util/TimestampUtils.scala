@@ -5,14 +5,23 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 object TimestampUtils {
 
-  val supportedTimestampTypes: List[TypingResult] = List(Typed[java.lang.Long], Typed[Long], Typed[Int], Typed[Instant], Typed[OffsetDateTime], Typed[ZonedDateTime])
+  val supportedTimestampTypes: Set[TypingResult] = Set(
+    Typed[java.lang.Long],
+    Typed[Long],
+    Typed[Int],
+    Typed[Instant],
+    Typed[ZonedDateTime],
+    Typed[OffsetDateTime],
+  )
 
-  def supportedTypeToMillis(value: Any, errorMsg: String): Long = value match {
+  def supportedTypeToMillis(value: Any, fieldName: String): Long = value match {
     case v: Long => v
     case v: Int => v
     case v: Instant => v.toEpochMilli
     case v: ZonedDateTime => v.toInstant.toEpochMilli
     case v: OffsetDateTime => v.toInstant.toEpochMilli
-    case _ => throw new IllegalArgumentException(errorMsg)
+    case other => throw new IllegalArgumentException(
+      s"Field $fieldName is of an invalid type for a timestamp field: ${if (other == null) "null" else other.getClass}"
+    )
   }
 }
