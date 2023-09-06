@@ -87,12 +87,7 @@ class MapAscendingTimestampExtractor(timestampField: String) extends Serializabl
     element match {
       case m: jul.Map[String@unchecked, AnyRef@unchecked] =>
         m.asScala
-          .get(timestampField).map { value =>
-            supportedTypeToMillis(
-              value,
-              s"Field $timestampField is of an invalid type for a timestamp field"
-            )
-          }
+          .get(timestampField).map(value => supportedTypeToMillis(value, timestampField))
           .getOrElse(System.currentTimeMillis())
       case _ =>
         System.currentTimeMillis()
