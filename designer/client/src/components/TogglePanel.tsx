@@ -4,7 +4,7 @@ import LeftIcon from "../assets/img/arrows/arrow-left.svg";
 import RightIcon from "../assets/img/arrows/arrow-right.svg";
 import styled from "@emotion/styled";
 
-const panelWidth = 298;
+const PANEL_WIDTH = 298;
 type TogglePanelType = "RIGHT" | "LEFT";
 
 interface IconWrapper {
@@ -17,19 +17,15 @@ interface Props {
     type: TogglePanelType;
 }
 
-function validRightProps(props: IconWrapper, panelWidth: number) {
+function validRightProps(props: IconWrapper) {
     if (props.type === "RIGHT" && !props.isOpened) {
-        return 0;
-    } else if (props.type === "RIGHT" && props.isOpened) {
-        return panelWidth;
+        return props.isOpened ? PANEL_WIDTH : 0;
     }
 }
 
-function validLeftProps(props: IconWrapper, panelWidth: number) {
-    if (props.type === "LEFT" && !props.isOpened) {
-        return 0;
-    } else if (props.type === "LEFT" && props.isOpened) {
-        return panelWidth;
+function validLeftProps(props: IconWrapper) {
+    if (props.type === "LEFT") {
+        return props.isOpened ? PANEL_WIDTH : 0;
     }
 }
 
@@ -44,8 +40,8 @@ const IconWrapper = styled.div((props: IconWrapper) => ({
     zIndex: 100,
     cursor: "pointer",
     color: "black",
-    right: validRightProps(props, panelWidth),
-    left: validLeftProps(props, panelWidth),
+    right: validRightProps(props),
+    left: validLeftProps(props),
 }));
 
 export default function TogglePanel(props: Props): JSX.Element {
