@@ -23,11 +23,12 @@ import { Graph } from "../components/graph/Graph";
 import { ErrorHandler } from "./ErrorHandler";
 import { Process } from "../types";
 import { fetchVisualizationData } from "../actions/nk/fetchVisualizationData";
-import { clearProcess, loadProcessState } from "../actions/nk/process";
-import { fetchAndDisplayProcessCounts } from "../actions/nk/displayProcessCounts";
+import { fetchAndDisplayProcessCounts, clearProcess, loadProcessState } from "../actions/nk";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { DndProvider } from "react-dnd";
 import { useDecodedParams } from "../common/routerUtils";
+import { TouchBackend } from "react-dnd-touch-backend";
+import { isTouchDevice } from "../helpers/detectDevice";
 
 function useUnmountCleanup() {
     const { close } = useWindows();
@@ -166,7 +167,7 @@ function Visualization() {
 
     return (
         <ErrorHandler>
-            <DndProvider backend={HTML5Backend}>
+            <DndProvider backend={isTouchDevice() ? TouchBackend : HTML5Backend}>
                 <GraphPage data-testid="graphPage">
                     <GraphProvider graph={getGraphInstance}>
                         <SelectionContextProvider pastePosition={getPastePosition}>
