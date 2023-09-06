@@ -39,7 +39,7 @@ export type Side = "LEFT" | "RIGHT";
 
 export function useSidePanelToggle(side: Side) {
     const dispatch = useDispatch();
-    const isOpened = useSelector(side === "RIGHT" ? isRightPanelOpened : isLeftPanelOpened);
+    const isOpened = useSelector(side === PanelSide.Right ? isRightPanelOpened : isLeftPanelOpened);
     const onToggle = () => dispatch(togglePanel(side));
     return { isOpened, onToggle };
 }
