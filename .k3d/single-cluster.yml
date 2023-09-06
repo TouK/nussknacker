@@ -14,6 +14,9 @@ options:
       - arg: --no-deploy=traefik,metrics-server #--no-deploy=traefik, but we deploy ingress-nginx-controller by custom manifests in k3s
         nodeFilters:
           - server:*
+      - arg: --kubelet-arg=minimum-image-ttl-duration=1h
+        nodeFilters:
+          - all:*
   kubeconfig:
     updateDefaultKubeconfig: true
     switchCurrentContext: true
