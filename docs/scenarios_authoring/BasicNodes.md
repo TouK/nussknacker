@@ -84,7 +84,7 @@ Order is also visible on graph in edges description as a number. Be aware that l
 Split node logically splits processing into two or more parallel branches. Each branch receives all data records and processes them independently and in parallel.
 
 In the Request - Response processing mode you can use this feature to paralellize and hence speed up the processing. You must use a sequence of [Union](./BasicNodes.md#union) and [Collect](./RRDataSourcesAndSinks.md#collect) nodes to merge parallelly executed branches and collect the results from these branches. 
-In the Streaming processing mode - as we deal with data streams - the Split node allows you to have multiple [sinks](./DataSourcesAndSinks.md#sources-and-sinks---kafka) terminating your scenario. 
+In the Streaming processing mode the most typical reason for using a Split node is to define dedicated logic and dedicated sink for each of the branches. 
 
 ![split graph](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_split0.png)
 
