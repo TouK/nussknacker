@@ -143,13 +143,14 @@ properties.
 | [enum](https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values) | String                                                |                                                                                                                                                                                          |
 | [array](https://json-schema.org/understanding-json-schema/reference/array.html)                    | [list](/docs/scenarios_authoring/Spel.md#arrayslists) |                                                                                                                                                                                          |
 
-#### [String Format](https://json-schema.org/understanding-json-schema/reference/string.html#format)
+#### String Format
+We support the following JSON [string format](https://json-schema.org/understanding-json-schema/reference/string.html#format) keywords.
 
-| JSON Schema | Java type     | Sample                    | Comment                |
-|-------------|---------------|---------------------------|------------------------|
-| date-time   | ZonedDateTime | 2021-05-17T07:34:00+01:00 |                        |
-| date        | LocalDate     | 2021-05-17                | Timezone is not stored |
-| time        | LocalTime     | 07:34:00.12345            | Timezone is not stored |
+| JSON Schema | Java type     | Sample                    | Comment                     |
+|-------------|---------------|---------------------------|-----------------------------|
+| date-time   | ZonedDateTime | 2021-05-17T07:34:00+01:00 | Must carry zone information |
+| date        | LocalDate     | 2021-05-17                | Timezone is not stored      |
+| time        | LocalTime     | 07:34:00.12345+01:00      | Must carry zone information |
 
 #### [Objects](https://json-schema.org/understanding-json-schema/reference/object.html)
 

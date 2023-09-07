@@ -81,11 +81,16 @@ Order is also visible on graph in edges description as a number. Be aware that l
 &nbsp;
 ## Split
 
-Split node logically splits processing into two or more parallel branches. Each branch receives all records and processes them independently.
+Split node logically splits processing into two or more parallel branches. Each branch receives all data records and processes them independently and in parallel.
+
+In the Request - Response processing mode you can use this feature to paralellize and hence speed up the processing. You must use a sequence of [Union](./BasicNodes.md#union) and [Collect](./RRDataSourcesAndSinks.md#collect) nodes to merge parallelly executed branches and collect the results from these branches. 
+In the Streaming processing mode - as we deal with data streams - the Split node allows you to have multiple [sinks](./DataSourcesAndSinks.md#sources-and-sinks---kafka) terminating your scenario. 
 
 ![split graph](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_split0.png)
 
-Every record from the `source` goes to `sink 1` and `sink 2`. Split node doesn't have additional parameters.
+Example: (Streaming processing mode) - every record from the `source` goes to `sink 1` and `sink 2`. 
+
+Split node doesn't have additional parameters.
 
 &nbsp;
 ## ForEach
@@ -108,7 +113,10 @@ then nodes that follow `for-each` will be executed twice and the value of curren
 
 ![union_window](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_union0.png)
 
-Union merges multiple branches into one branch. Events from the incoming branches are passed to the output branch without an attempt to combine or match them.
+Union merges multiple branches into one branch. 
+
+In the Streaming processing mode events from the incoming branches are passed to the output branch without an attempt to combine or match them.
+In the Request - Response mode the Union node merges parallel branches of processing back to one branch. You will need to take an extra step using the [Collect](./RRDataSourcesAndSinks.md#collect) node if you need to collect results of processing in each of the merged branches. 
 The #input variable will be no longer available downstream the union node; a new variable will be available instead, which is defined in the union node.
 
 
