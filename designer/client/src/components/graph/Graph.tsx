@@ -116,9 +116,10 @@ export class Graph extends React.Component<Props> {
                         batchGroupBy.end(group);
                     }
                 })
-                .on(Events.LINK_CONNECT, ({ sourceView, targetView, targetMagnet, model }) => {
+                .on(Events.LINK_CONNECT, (linkView: dia.LinkView, evt: dia.Event, targetView: dia.CellView, targetMagnet: SVGElement) => {
                     const isReversed = targetMagnet?.getAttribute("port") === "Out";
-                    const type = model.attributes.edgeData?.edgeType;
+                    const sourceView = linkView.getEndView("source");
+                    const type = linkView.model.attributes.edgeData?.edgeType;
                     const from = sourceView?.model.attributes.nodeData;
                     const to = targetView?.model.attributes.nodeData;
 
@@ -224,8 +225,8 @@ export class Graph extends React.Component<Props> {
         };
         const handleActionOnLongPress =
             (
-                longPressAction: (cellView: dia.CellView, event: Event) => void,
-                shortPressAction: (cellView: dia.CellView, event: Event) => void,
+                longPressAction: (cellView: dia.CellView, event: dia.Event) => void,
+                shortPressAction: (cellView: dia.CellView, event: dia.Event) => void,
             ) =>
             (cellView: dia.CellView, evt) => {
                 // let's clear all pointer click events on start
