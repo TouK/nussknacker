@@ -28,7 +28,6 @@ import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import ProcessUtils from "../../common/ProcessUtils";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
-
 import { createUniqueArrowMarker } from "./arrowMarker";
 
 function isTouchDevice() {
@@ -64,6 +63,7 @@ export class Graph extends React.Component<Props> {
     createPaper = (): dia.Paper => {
         const canEditFrontend = this.props.loggedUser.canEditFrontend(this.props.processCategory) && !this.props.readonly;
         const paper = createPaper({
+            frozen: true,
             model: this.graph,
             el: this.getEspGraphRef(),
             validateConnection: this.twoWayValidateConnection,
@@ -286,7 +286,6 @@ export class Graph extends React.Component<Props> {
 
     componentDidMount(): void {
         this.processGraphPaper = this.createPaper();
-        this.processGraphPaper.freeze();
         this.drawGraph(this.props.processToDisplay, this.props.layout, this.props.processDefinitionData);
         this.processGraphPaper.unfreeze();
         this._prepareContentForExport();
