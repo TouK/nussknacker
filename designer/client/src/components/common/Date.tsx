@@ -1,11 +1,11 @@
 import React from "react";
 import { formatAbsolutely, formatRelatively } from "../../common/DateUtils";
-import styles from "./Date.styl";
+import styled from "@emotion/styled";
+
+const StyledDate = styled.span(() => ({
+    whiteSpace: "normal",
+}));
 
 export default function Date({ date }: { date: string }): JSX.Element {
-    return (
-        <span title={formatAbsolutely(date)} className={styles.date}>
-            {formatRelatively(date)}
-        </span>
-    );
+    return <StyledDate title={formatAbsolutely(date)}>{formatRelatively(date)}</StyledDate>;
 }
