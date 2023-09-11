@@ -15,7 +15,7 @@ export default function Notification({ icon, message, details, type }: Props): J
             sx={{ minWidth: 290 }}
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             open={true}
-            autoHideDuration={5000}
+            autoHideDuration={10000}
             key={"bottom" + "right"}
         >
             <Alert
