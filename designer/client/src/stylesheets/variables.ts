@@ -4,4 +4,5 @@ export const variables = {
     buttonBorderColor: "#666666",
     menuButtonBorderColor: "#666666",
     menuButtonActiveBKColor: "#5d5d5d",
+    buttonTextColor: "#f6f6f6",
 };
