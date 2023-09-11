@@ -29,7 +29,7 @@ const prepareNotification =
                 {
                     autoDismiss: type == "error" ? 0 : 10,
                     uid: id,
-                    children: <Notification icon={type == "error" ? <TipsError /> : <TipsSuccess />} message={message} />,
+                    children: <Notification type={type} icon={type == "error" ? <TipsError /> : <TipsSuccess />} message={message} />,
                     onRemove: () => dispatch(markBackendNotificationRead(id)),
                 },
                 type,

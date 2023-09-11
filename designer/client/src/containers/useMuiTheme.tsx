@@ -3,6 +3,7 @@ import { defaultsDeep } from "lodash";
 import { useMemo } from "react";
 import { useNkTheme } from "./theme";
 import { Theme } from "@emotion/react";
+import { variables } from "../stylesheets/variables";
 
 declare module "@mui/material/styles" {
     interface Theme {
@@ -58,6 +59,25 @@ export function useMuiTheme(): MuiTheme & Theme {
                                 styleOverrides: {
                                     input: {
                                         margin: 0,
+                                    },
+                                },
+                            },
+                            MuiAlert: {
+                                styleOverrides: {
+                                    standardSuccess: {
+                                        backgroundColor: variables.alert.sucsess,
+                                        color: "#333333",
+                                    },
+                                    standardError: {
+                                        backgroundColor: variables.alert.error,
+                                        color: "#333333",
+                                    },
+                                    standardWarning: {
+                                        backgroundColor: variables.alert.warning,
+                                    },
+                                    standardInfo: {
+                                        backgroundColor: variables.alert.info,
+                                        color: "#333333",
                                     },
                                 },
                             },
