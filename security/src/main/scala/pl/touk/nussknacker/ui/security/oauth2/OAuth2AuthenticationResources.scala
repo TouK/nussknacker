@@ -2,8 +2,8 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model.StatusCodes.NotFound
-import akka.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.{HttpCookie, `Set-Cookie`}
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDirectives}
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
@@ -11,15 +11,27 @@ import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
-import pl.touk.nussknacker.ui.security.api.{AnonymousAccess, AuthenticatedUser, AuthenticationResources, FrontendStrategySettings}
+import pl.touk.nussknacker.ui.security.api._
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2AuthenticationResources(override val name: String, realm: String, service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
-  extends AuthenticationResources with Directives with LazyLogging with AnonymousAccess {
+class OAuth2AuthenticationResources(override val name: String,
+                                    realm: String,
+                                    service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData],
+                                    configuration: OAuth2Configuration)
+                                   (implicit ec: ExecutionContext,
+                                    sttpBackend: SttpBackend[Future, Any])
+  extends AuthenticationResources
+    with Directives
+    with LazyLogging
+    with AnonymousAccess {
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable
+
+  override def authenticationMethod(): sttp.tapir.EndpointInput.Auth[AuthCredentials, _] = ???
+
+  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = ???
 
   override val frontendStrategySettings: FrontendStrategySettings = configuration.overrideFrontendAuthenticationStrategy.getOrElse(
     FrontendStrategySettings.OAuth2(

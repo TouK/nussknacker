@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.security.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.server.directives.AuthenticationDirective
 import akka.http.scaladsl.server._
+import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import sttp.client3.SttpBackend
@@ -14,6 +14,10 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
   val frontendStrategySettings: FrontendStrategySettings
 
   def authenticate(): Directive1[AuthenticatedUser]
+
+  def authenticationMethod(): sttp.tapir.EndpointInput.Auth[AuthCredentials, _]
+
+  def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]
 
   final lazy val routeWithPathPrefix: Route =
     pathPrefix("authentication" / name.toLowerCase()) {

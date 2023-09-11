@@ -1354,6 +1354,10 @@ lazy val security = (project in file("security")).
       "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
       "com.auth0" % "jwks-rsa" % "0.22.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
+
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirV,
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirV,
+
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
       "com.github.dasniko" % "testcontainers-keycloak" % "2.5.0" % "it,test" excludeAll(
@@ -1587,9 +1591,10 @@ lazy val designer = (project in file("designer/server"))
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.8",
 
+        "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % tapirV,
         "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirV,
         "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirV,
-        "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % tapirV,
+        "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirV,
         "io.circe" %% "circe-generic-extras" % circeGenericExtrasV,
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",

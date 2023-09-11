@@ -11,13 +11,15 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.api.BaseHttpService
+import pl.touk.nussknacker.ui.api.SecuredEndpointError.OtherError
 import pl.touk.nussknacker.ui.api.app.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 import sttp.tapir.server.ServerEndpoint
 
@@ -25,6 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 class AppApiHttpService(config: Config,
+                        authenticator: AuthenticationResources,
                         processingTypeDataReloader: ProcessingTypeDataReload,
                         modelData: ProcessingTypeDataProvider[ModelData, _],
                         processRepository: FetchingProcessRepository[Future],
@@ -33,31 +36,34 @@ class AppApiHttpService(config: Config,
                         processCategoryService: ProcessCategoryService,
                         exposeConfig: Boolean)
                        (implicit executionContext: ExecutionContext)
-  extends LazyLogging {
+  extends BaseHttpService(config, processCategoryService, authenticator)
+    with LazyLogging {
+
+  private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
 
   def publicServerEndpoints: List[ServerEndpoint[Any, Future]] = List(
     healthCheck, buildInfo
   )
 
-  def securedServerEndpoints(implicit user: LoggedUser): List[ServerEndpoint[Any, Future]] =
+  def securedServerEndpoints: List[ServerEndpoint[Any, Future]] =
     List(
       processDeploymentHealthCheck,
       processValidationHealthCheck,
       userCategoriesWithProcessingTypes,
-      processingTypeDataReload(user)
+      processingTypeDataReload
     ) ::: (if (exposeConfig) serverConfigInfo :: Nil else Nil)
 
   private val healthCheck = {
-    AppApiEndpoints.appHealthCheckEndpoint
+    appApiEndpoints.appHealthCheckEndpoint
       .serverLogicSuccess { _ =>
         Future.successful(HealthCheckProcessSuccessResponseDto)
       }
   }
 
-  private def processDeploymentHealthCheck(implicit user: LoggedUser) = {
-    AppApiEndpoints.processDeploymentHealthCheckEndpoint
-      .serverSecurityLogicSuccess(Future.successful)
-      .serverLogic { _ =>
+  private def processDeploymentHealthCheck = {
+    appApiEndpoints.processDeploymentHealthCheckEndpoint
+      .serverSecurityLogic(authorize)
+      .serverLogic { implicit loggedUser =>
         _ =>
           processesWithProblemStateStatus
             .map { set =>
@@ -66,43 +72,43 @@ class AppApiHttpService(config: Config,
               } else {
                 logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
                 logger.debug(s"Scenarios with status PROBLEM: $set")
-                Left(HealthCheckProcessErrorResponseDto(
+                Left(OtherError(HealthCheckProcessErrorResponseDto(
                   message = Some("Scenarios with status PROBLEM"),
                   processes = Some(set.keys.toSet)
-                ))
+                )))
               }
             }
             .recover {
               case NonFatal(e) =>
                 logger.error("Failed to get statuses", e)
-                Left(HealthCheckProcessErrorResponseDto(
+                Left(OtherError(HealthCheckProcessErrorResponseDto(
                   message = Some("Failed to retrieve job statuses"),
                   processes = None
-                ))
+                )))
             }
       }
   }
 
-  private def processValidationHealthCheck(implicit user: LoggedUser) = {
-    AppApiEndpoints.processValidationHealthCheckEndpoint
-      .serverSecurityLogicSuccess(Future.successful)
-      .serverLogic { _ =>
+  private def processValidationHealthCheck = {
+    appApiEndpoints.processValidationHealthCheckEndpoint
+      .serverSecurityLogic(authorize)
+      .serverLogic { implicit loggedUser =>
         _ =>
           processesWithValidationErrors.map { processes =>
             if (processes.isEmpty) {
               Right(HealthCheckProcessSuccessResponseDto)
             } else {
-              Left(HealthCheckProcessErrorResponseDto(
+              Left(OtherError(HealthCheckProcessErrorResponseDto(
                 message = Some("Scenarios with validation errors"),
                 processes = Some(processes.toSet)
-              ))
+              )))
             }
           }
       }
   }
 
   private val buildInfo = {
-    AppApiEndpoints.buildInfoEndpoint
+    appApiEndpoints.buildInfoEndpoint
       .serverLogicSuccess { _ =>
         Future {
           import net.ceedubs.ficus.Ficus._
@@ -113,47 +119,41 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  private def serverConfigInfo(implicit user: LoggedUser) = {
-    AppApiEndpoints.serverConfigEndpoint
-      .serverSecurityLogicSuccess(Future.successful)
-      .serverLogic {
-        case _: AdminUser => _ =>
-          Future {
-            val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
-            configJson match {
-              case Right(json) =>
-                Right(ServerConfigInfoDto(json))
-              case Left(errorMessage) =>
-                logger.error(s"Cannot create JSON from the Nussknacker configuration. Error: $errorMessage")
-                throw new Exception("Cannot prepare configuration")
-            }
+  private def serverConfigInfo = {
+    appApiEndpoints.serverConfigEndpoint
+      .serverSecurityLogic(authorizeAdmin)
+      .serverLogic { _ => _ =>
+        Future {
+          val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
+          configJson match {
+            case Right(json) =>
+              Right(ServerConfigInfoDto(json))
+            case Left(errorMessage) =>
+              logger.error(s"Cannot create JSON from the Nussknacker configuration. Error: $errorMessage")
+              throw new Exception("Cannot prepare configuration")
           }
-        case _: CommonUser => _ =>
-          Future.successful(Left(ServerConfigInfoErrorDto.AuthorizationServerConfigInfoErrorDto))
+        }
       }
   }
 
-  private def userCategoriesWithProcessingTypes(implicit user: LoggedUser) = {
-    AppApiEndpoints.userCategoriesWithProcessingTypesEndpoint
-      .serverSecurityLogicSuccess(Future.successful)
-      .serverLogicSuccess { _ =>
+  private def userCategoriesWithProcessingTypes = {
+    appApiEndpoints.userCategoriesWithProcessingTypesEndpoint
+      .serverSecurityLogic(authorize)
+      .serverLogicSuccess { loggedUser =>
         _ =>
           Future {
-            UserCategoriesWithProcessingTypesDto(processCategoryService.getUserCategoriesWithType(user))
+            UserCategoriesWithProcessingTypesDto(processCategoryService.getUserCategoriesWithType(loggedUser))
           }
       }
   }
 
-  private def processingTypeDataReload(implicit user: LoggedUser) =
-    AppApiEndpoints.processingTypeDataReloadEndpoint
-      .serverSecurityLogicSuccess(Future.successful)
-      .serverLogic {
-        case _: AdminUser => _ =>
-          Future(Right {
-            processingTypeDataReloader.reloadAll()
-          })
-        case _: CommonUser => _ =>
-          Future.successful(Left(ProcessingTypeDataReloadErrorDto.AuthorizationProcessingTypeDataReloadErrorDto))
+  private def processingTypeDataReload =
+    appApiEndpoints.processingTypeDataReloadEndpoint
+      .serverSecurityLogic(authorizeAdmin)
+      .serverLogic { _ => _ =>
+        Future(Right {
+          processingTypeDataReloader.reloadAll()
+        })
       }
 
   private def processesWithProblemStateStatus(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {

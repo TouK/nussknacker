@@ -17,6 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Service[AuthenticatedUser, _])
                          (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
   extends SecurityDirectives.AsyncAuthenticator[AuthenticatedUser] with LazyLogging {
+
   def apply(credentials: Credentials): Future[Option[AuthenticatedUser]] =
     authenticate(credentials)
 

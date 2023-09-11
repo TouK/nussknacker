@@ -165,6 +165,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
       val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
       val appHttpService = new AppApiHttpService(
         config = resolvedConfig,
+        authenticator = authenticationResources,
         processingTypeDataReloader = reload,
         modelData = modelData,
         processRepository = futureProcessRepository,
@@ -263,6 +264,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
         usageStatisticsReportsSettingsDeterminer.determineSettings()
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
+        akkaHttpServerInterpreter.toRoute(NuApiSwagger.publicServerEndpoints),
         settingsResources.publicRoute(),
         akkaHttpServerInterpreter.toRoute(appHttpService.publicServerEndpoints),
         authenticationResources.routeWithPathPrefix,

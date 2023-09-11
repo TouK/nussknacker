@@ -3,17 +3,25 @@ package pl.touk.nussknacker.ui.api.app
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions
-import pl.touk.nussknacker.ui.security.api.LoggedUser
-import sttp.model.StatusCode.{Forbidden, InternalServerError, NoContent, Ok}
+import pl.touk.nussknacker.ui.api.SecuredEndpointError.{AuthenticationError, AuthorizationError, OtherError}
+import pl.touk.nussknacker.ui.api.{BaseEndpointDefinitions, SecuredEndpointError}
+import pl.touk.nussknacker.ui.security.api.AuthCredentials
+import sttp.model.StatusCode._
+import sttp.tapir.EndpointInput.Auth
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
+private[api] class AppApiEndpoints(auth: Auth[AuthCredentials, _])
+  extends BaseEndpointDefinitions(auth) {
 
   import AppApiEndpoints.Dtos.Codecs._
   import AppApiEndpoints.Dtos._
+
+  override val allEndpoints: List[AnyEndpoint] = List(
+    appHealthCheckEndpoint,
+    buildInfoEndpoint
+  )
 
   def appHealthCheckEndpoint: Endpoint[Unit, Unit, Unit, HealthCheckProcessSuccessResponseDto.type, Any] =
     baseNuApiPublicEndpoint
@@ -22,23 +30,37 @@ private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
       .out(statusCode(Ok))
       .out(jsonBody[HealthCheckProcessSuccessResponseDto.type])
 
-  def processDeploymentHealthCheckEndpoint(implicit user: LoggedUser): Endpoint[LoggedUser, Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
-    baseNuApiUserSecuredEndpoint(user)
+  def processDeploymentHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
+    baseNuApiUserSecuredEndpoint
       .get
       .in("app" / "healthCheck" / "process" / "deployment")
       .out(statusCode(Ok))
       .out(jsonBody[HealthCheckProcessSuccessResponseDto.type])
-      .errorOut(statusCode(InternalServerError))
-      .errorOut(jsonBody[HealthCheckProcessErrorResponseDto])
+      .errorOut(
+        oneOf[SecuredEndpointError[HealthCheckProcessErrorResponseDto]](
+          oneOfVariant[AuthenticationError.type](statusCode(Unauthorized)),
+          oneOfVariant[AuthorizationError.type](statusCode(Forbidden)),
+          oneOfVariant[OtherError[HealthCheckProcessErrorResponseDto]](
+            statusCode(InternalServerError), jsonBody[OtherError[HealthCheckProcessErrorResponseDto]]
+          ),
+        )
+      )
 
-  def processValidationHealthCheckEndpoint(implicit user: LoggedUser): Endpoint[LoggedUser, Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
-    baseNuApiUserSecuredEndpoint(user)
+  def processValidationHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
+    baseNuApiUserSecuredEndpoint
       .get
       .in("app" / "healthCheck" / "process" / "validation")
       .out(statusCode(Ok))
       .out(jsonBody[HealthCheckProcessSuccessResponseDto.type])
-      .errorOut(statusCode(InternalServerError))
-      .errorOut(jsonBody[HealthCheckProcessErrorResponseDto])
+      .errorOut(
+        oneOf[SecuredEndpointError[HealthCheckProcessErrorResponseDto]](
+          oneOfVariant[AuthenticationError.type](statusCode(Unauthorized)),
+          oneOfVariant[AuthorizationError.type](statusCode(Forbidden)),
+          oneOfVariant[OtherError[HealthCheckProcessErrorResponseDto]](
+            statusCode(InternalServerError), jsonBody[OtherError[HealthCheckProcessErrorResponseDto]]
+          ),
+        )
+      )
 
   def buildInfoEndpoint: Endpoint[Unit, Unit, Unit, BuildInfoDto, Any] =
     baseNuApiPublicEndpoint
@@ -47,30 +69,45 @@ private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
       .out(statusCode(Ok))
       .out(jsonBody[BuildInfoDto])
 
-  def serverConfigEndpoint(implicit user: LoggedUser): Endpoint[LoggedUser, Unit, ServerConfigInfoErrorDto, ServerConfigInfoDto, Any] =
-    baseNuApiUserSecuredEndpoint(user)
+  def serverConfigEndpoint: SecuredEndpoint[Unit, Nothing, ServerConfigInfoDto, Any] =
+    baseNuApiUserSecuredEndpoint
       .get
       .in("app" / "config")
       .out(statusCode(Ok))
       .out(jsonBody[ServerConfigInfoDto])
-      .errorOut(statusCode(Forbidden))
-      .errorOut(plainBody[ServerConfigInfoErrorDto])
+      .errorOut(
+        oneOf[SecuredEndpointError[Nothing]](
+          oneOfVariant[AuthenticationError.type](statusCode(Unauthorized)),
+          oneOfVariant[AuthorizationError.type](statusCode(Forbidden))
+        )
+      )
 
-  def userCategoriesWithProcessingTypesEndpoint(implicit user: LoggedUser): Endpoint[LoggedUser, Unit, Unit, UserCategoriesWithProcessingTypesDto, Any] =
-    baseNuApiUserSecuredEndpoint(user)
+  def userCategoriesWithProcessingTypesEndpoint: SecuredEndpoint[Unit, Nothing, UserCategoriesWithProcessingTypesDto, Any] =
+    baseNuApiUserSecuredEndpoint
       .get
       .in("app" / "config" / "categoriesWithProcessingType")
       .out(statusCode(Ok))
       .out(jsonBody[UserCategoriesWithProcessingTypesDto])
+      .errorOut(
+        oneOf[SecuredEndpointError[Nothing]](
+          oneOfVariant[AuthenticationError.type](statusCode(Unauthorized)),
+          oneOfVariant[AuthorizationError.type](statusCode(Forbidden))
+        )
+      )
 
-  def processingTypeDataReloadEndpoint(implicit user: LoggedUser): Endpoint[LoggedUser, Unit, ProcessingTypeDataReloadErrorDto, Unit, Any] =
-    baseNuApiUserSecuredEndpoint(user)
+  def processingTypeDataReloadEndpoint: SecuredEndpoint[Unit, Nothing, Unit, Any] =
+    baseNuApiUserSecuredEndpoint
       .post
       .in("app" / "processingtype" / "reload")
       .out(statusCode(NoContent))
-      .errorOut(statusCode(Forbidden))
-      .errorOut(plainBody[ProcessingTypeDataReloadErrorDto])
-
+      .errorOut(
+        oneOf[SecuredEndpointError[Nothing]](
+          oneOfVariant[AuthenticationError.type](statusCode(Unauthorized)),
+          oneOfVariant[AuthorizationError.type](statusCode(Forbidden))
+        )
+      )
+}
+object AppApiEndpoints {
   object Dtos {
 
     object HealthCheckProcessSuccessResponseDto
@@ -86,17 +123,10 @@ private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
                                   otherProperties: Map[String, String])
 
     final case class ServerConfigInfoDto(configJson: Json)
-    sealed trait ServerConfigInfoErrorDto
-    object ServerConfigInfoErrorDto {
-      case object AuthorizationServerConfigInfoErrorDto extends ServerConfigInfoErrorDto
-    }
 
     final case class UserCategoriesWithProcessingTypesDto(map: Map[String, String])
 
     sealed trait ProcessingTypeDataReloadErrorDto
-    object ProcessingTypeDataReloadErrorDto {
-      case object AuthorizationProcessingTypeDataReloadErrorDto extends ProcessingTypeDataReloadErrorDto
-    }
 
     private[AppApiEndpoints] object Codecs {
 
@@ -118,21 +148,25 @@ private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
         )
       }
 
-      implicit val healthCheckProcessErrorResponseDtoCodec: io.circe.Codec[HealthCheckProcessErrorResponseDto] = {
+      implicit val healthCheckProcessErrorResponseDtoCodec: io.circe.Codec[OtherError[HealthCheckProcessErrorResponseDto]] = {
         io.circe.Codec.from(
-          Decoder.forProduct3[HealthCheckProcessErrorResponseDto, String, Option[String], Option[Set[String]]](
-            "status", "message", "processes"
-          ) {
-            case ("ERROR", message, processes) =>
-              HealthCheckProcessErrorResponseDto(message, processes)
-            case invalid =>
-              throw new IllegalArgumentException(s"Cannot deserialize [$invalid]")
-          },
-          Encoder.forProduct3[HealthCheckProcessErrorResponseDto, String, Option[String], Option[Set[String]]](
-            "status", "message", "processes"
-          )(
-            dto => ("ERROR", dto.message, dto.processes)
-          )
+          Decoder
+            .forProduct3[HealthCheckProcessErrorResponseDto, String, Option[String], Option[Set[String]]](
+              "status", "message", "processes"
+            ) {
+              case ("ERROR", message, processes) =>
+                HealthCheckProcessErrorResponseDto(message, processes)
+              case invalid =>
+                throw new IllegalArgumentException(s"Cannot deserialize [$invalid]")
+            }
+            .map(OtherError.apply),
+          Encoder
+            .forProduct3[HealthCheckProcessErrorResponseDto, String, Option[String], Option[Set[String]]](
+              "status", "message", "processes"
+            )(
+              dto => ("ERROR", dto.message, dto.processes)
+            )
+            .contramap(_.error)
         )
       }
 
@@ -172,39 +206,11 @@ private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
         )
       }
 
-      implicit val serverConfigInfoErrorDtoCodec: Codec[String, ServerConfigInfoErrorDto, CodecFormat.TextPlain] = {
-        Codec
-          .id(CodecFormat.TextPlain(), Schema.string[String])
-          .map(
-            Mapping
-              .from[String, ServerConfigInfoErrorDto](
-                _ => ServerConfigInfoErrorDto.AuthorizationServerConfigInfoErrorDto
-              ) {
-                case ServerConfigInfoErrorDto.AuthorizationServerConfigInfoErrorDto =>
-                  "The supplied authentication is not authorized to access this resource"
-              }
-          )
-      }
-
       implicit val userCategoriesWithProcessingTypesDtoCodec: io.circe.Codec[UserCategoriesWithProcessingTypesDto] = {
         io.circe.Codec.from(
           Decoder.decodeMap[String, String].map(UserCategoriesWithProcessingTypesDto.apply),
           Encoder.encodeMap[String, String].contramap(_.map)
         )
-      }
-
-      implicit val processingTypeDataReloadErrorDtoCodec: Codec[String, ProcessingTypeDataReloadErrorDto, CodecFormat.TextPlain] = {
-        Codec
-          .id(CodecFormat.TextPlain(), Schema.string[String])
-          .map(
-            Mapping
-              .from[String, ProcessingTypeDataReloadErrorDto](
-                _ => ProcessingTypeDataReloadErrorDto.AuthorizationProcessingTypeDataReloadErrorDto
-              ) {
-                case ProcessingTypeDataReloadErrorDto.AuthorizationProcessingTypeDataReloadErrorDto =>
-                  "The supplied authentication is not authorized to access this resource"
-              }
-          )
       }
     }
   }
