@@ -30,6 +30,12 @@ jobs:
           echo Docker update latest is ${{ env.NU_DOCKER_UPDATE_LATEST }}
           echo SBT release next version is ${{ env.SBT_RELEASE_NEXT_VERSION }}
 
+      - name: "Validate release branch name"
+        if: ${{ startsWith(github.ref_name, 'release/') }}
+        run: |
+          echo Specified branch is not a release branch. Specified branch name: ${{ github.ref_name }}. Expected branch name should start with 'release/'.
+          exit 1
+
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.11.0
         with:
