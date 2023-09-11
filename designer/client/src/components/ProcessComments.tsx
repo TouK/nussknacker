@@ -12,7 +12,6 @@ import Date from "./common/Date";
 import { ListSeparator } from "./common/ListSeparator";
 import { NkButton } from "./NkButton";
 import { getCapabilities } from "../reducers/selectors/other";
-import { error } from "../actions/notificationActions";
 
 const getComments = (state) => state.processActivity?.comments || [];
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
@@ -60,14 +59,6 @@ function ProcessComments(): JSX.Element {
 
     return (
         <div className="process-comments">
-            <button
-                onClick={() => {
-                    const action = error("Current message", "current error", true);
-                    dispatch(action);
-                }}
-            >
-                Hello
-            </button>
             <ul className="process-comments-list">
                 {comments.map((comment, index) => (
                     <div key={comment.id}>

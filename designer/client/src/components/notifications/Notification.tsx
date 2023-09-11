@@ -15,11 +15,15 @@ export default function Notification({ icon, message, details, type }: Props): J
             sx={{ minWidth: 290 }}
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             open={true}
-            autoHideDuration={10000}
-            onClose={() => ({})}
+            autoHideDuration={5000}
             key={"bottom" + "right"}
         >
-            <Alert icon={icon} sx={{ width: "100%" }} onClose={() => ({})} severity={type} action={<CloseIcon fontSize="small" />}>
+            <Alert
+                icon={icon}
+                sx={{ width: "100%", cursor: "pointer", ".MuiAlert-icon": { color: "#333333", alignSelf: "center" } }}
+                severity={type}
+                action={<CloseIcon fontSize="small" />}
+            >
                 {message}
                 <br />
                 {details}

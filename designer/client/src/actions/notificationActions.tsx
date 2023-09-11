@@ -9,13 +9,7 @@ import { Action } from "./reduxTypes";
 export function success(message: string): Action {
     return Notifications.success({
         autoDismiss: 10,
-        children: (
-            <Notification
-                type={"success"}
-                icon={<CheckCircleIcon sx={{ color: "#333333", alignSelf: "center" }} fontSize="inherit" />}
-                message={message}
-            />
-        ),
+        children: <Notification type={"success"} icon={<CheckCircleIcon />} message={message} />,
     });
 }
 
@@ -23,26 +17,13 @@ export function error(message: string, error?: string, showErrorText?: boolean):
     const details = showErrorText && error ? error : null;
     return Notifications.error({
         autoDismiss: 10,
-        children: (
-            <Notification
-                type={"error"}
-                icon={<ErrorIcon sx={{ color: "#333333", alignSelf: "center" }} fontSize="inherit" />}
-                message={message}
-                details={details}
-            />
-        ),
+        children: <Notification type={"error"} icon={<ErrorIcon />} message={message} details={details} />,
     });
 }
 
 export function info(message: string): Action {
     return Notifications.info({
-        autoDismiss: 100,
-        children: (
-            <Notification
-                type={"info"}
-                icon={<InfoIcon sx={{ color: "#333333", alignSelf: "center" }} fontSize="inherit" />}
-                message={message}
-            />
-        ),
+        autoDismiss: 10,
+        children: <Notification type={"info"} icon={<InfoIcon />} message={message} />,
     });
 }
