@@ -10,6 +10,14 @@ import { SidePanel, PanelSide } from "../sidePanels/SidePanel";
 import { Toolbar } from "./toolbar";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { useSurvey } from "../toolbars/useSurvey";
+import styled from "@emotion/styled";
+
+interface CustomSidePanel {
+    side: PanelSide;
+    isDragging: boolean;
+}
+
+const CustomSidePanel = styled(SidePanel)(({ side, isDragging }: CustomSidePanel) => ({}));
 
 export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR";
 
@@ -58,13 +66,13 @@ function ToolbarsLayer(props: { toolbars: Toolbar[]; configId: string }): JSX.El
     return (
         <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
             <SidePanel side={PanelSide.Left} className={cn(styles.left, isDragging && styles.isDraggingStarted)}>
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} className={cn(styles.top)} />
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} className={cn(styles.bottom)} />
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} />
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} />
             </SidePanel>
 
             <SidePanel side={PanelSide.Right} className={cn(styles.right, isDragging && styles.isDraggingStarted)}>
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} className={cn(styles.top)} />
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} className={cn(styles.bottom)} />
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} />
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} />
             </SidePanel>
         </DragDropContext>
     );

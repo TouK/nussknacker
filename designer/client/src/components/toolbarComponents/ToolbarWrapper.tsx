@@ -5,12 +5,12 @@ import CollapseIcon from "../../assets/img/arrows/panel-hide-arrow.svg";
 import CloseIcon from "../../assets/img/close.svg";
 import { getIsCollapsed, getToolbarsConfigId } from "../../reducers/selectors/toolbars";
 import ErrorBoundary from "../common/ErrorBoundary";
-import styleVariables from "../../stylesheets/_variables.styl";
+import { variables } from "../../stylesheets/variables";
 import { styled } from "@mui/material";
 import { useDragHandler } from "./DragHandle";
 import { CollapsiblePanelContent, Panel, PanelHeader } from "./Panel";
 
-const { panelBackground, sidebarWidth } = styleVariables;
+const { panelBackground, sidebarWidth } = variables;
 
 export type ToolbarWrapperProps = PropsWithChildren<{
     id?: string;

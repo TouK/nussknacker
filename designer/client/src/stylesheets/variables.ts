@@ -1,4 +1,15 @@
 export const variables = {
     panelTitleTextColor: "#808080",
     panelHeaderBackground: "#3e3e3e",
+    buttonSize: "72",
+    rightPanelButtonFontSize: "11px",
+    buttonTextColor: "#cccccc",
+    buttonBkgColor: "#4d4d4d",
+    buttonBkgHover: "#444444",
+    focusColor: "#0058a9",
+    errorColor: "#f25c6e",
+    okColor: "#8fad60",
+    buttonSmallSize: "48",
+    panelBackground: "#4D4D4D",
+    sidebarWidth: "290px",
 };

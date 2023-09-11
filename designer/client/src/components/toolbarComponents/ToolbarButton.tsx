@@ -1,12 +1,11 @@
 import React, { ReactEventHandler, useContext } from "react";
 import Dropzone, { DropEvent } from "react-dropzone";
 import { InputWithFocus } from "../withFocus";
-import styles from "../../stylesheets/_variables.styl";
 import { ButtonsVariant, ToolbarButtonsContext } from "./ToolbarButtons";
 import { css, cx } from "@emotion/css";
 import { styled } from "@mui/material";
+import { variables } from "../../stylesheets/variables";
 
-// TODO: get rid of stylus
 const {
     buttonSize,
     rightPanelButtonFontSize,
@@ -17,7 +16,7 @@ const {
     errorColor,
     okColor,
     buttonSmallSize,
-} = styles;
+} = variables;
 
 export interface ToolbarButtonProps {
     name: string;

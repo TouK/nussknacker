@@ -1,6 +1,5 @@
 import React, { PropsWithChildren, createContext } from "react";
-import styles from "./ToolbarButtons.styl";
-import cn from "classnames";
+import styled from "@emotion/styled";
 
 export enum ButtonsVariant {
     small = "small",
@@ -11,6 +10,12 @@ type Props = {
     variant?: ButtonsVariant;
 };
 
+const ToolbarButtonWrapper = styled.div(() => ({
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+}));
+
 export const ToolbarButtonsContext = createContext<{ variant: ButtonsVariant }>({ variant: ButtonsVariant.label });
 
 export function ToolbarButtons(props: PropsWithChildren<Props>): JSX.Element {
@@ -18,7 +23,7 @@ export function ToolbarButtons(props: PropsWithChildren<Props>): JSX.Element {
 
     return (
         <ToolbarButtonsContext.Provider value={{ variant }}>
-            <div className={cn(styles.list)}>{props.children}</div>
+            <ToolbarButtonWrapper>{props.children}</ToolbarButtonWrapper>
         </ToolbarButtonsContext.Provider>
     );
 }
