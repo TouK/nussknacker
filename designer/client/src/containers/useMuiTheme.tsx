@@ -62,6 +62,13 @@ export function useMuiTheme(): MuiTheme & Theme {
                                     },
                                 },
                             },
+                            MuiSnackbar: {
+                                styleOverrides: {
+                                    root: {
+                                        zIndex: 20000,
+                                    },
+                                },
+                            },
                             MuiAlert: {
                                 styleOverrides: {
                                     standardSuccess: {
