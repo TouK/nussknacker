@@ -4,6 +4,7 @@ import { debounce, throttle } from "lodash";
 import svgPanZoom from "svg-pan-zoom";
 import { CursorMask } from "./CursorMask";
 import { Events } from "./joint-events";
+import { isTouchDevice } from "../../helpers/detectDevice";
 
 type EventData = { panStart?: { x: number; y: number; touched?: boolean } };
 type Event = JQuery.MouseEventBase<any, EventData>;
@@ -35,6 +36,10 @@ export class PanZoomPlugin {
 
         //appear animation starting point, fitSmallAndLargeGraphs will set animation end point in componentDidMount
         this.instance.zoom(0.001);
+
+        if (isTouchDevice()) {
+            this.initPinchZooming(this.paper);
+        }
 
         this.animationClassHolder = paper.el;
         this.animationClassHolder.addEventListener(
@@ -145,4 +150,63 @@ export class PanZoomPlugin {
             this.panToCells(cells, viewport);
         });
     };
+
+    /**
+     * Pinch event implementation based on https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events/Pinch_zoom_gestures
+     */
+    private initPinchZooming(paper: dia.Paper) {
+        const evCache = [];
+        let prevDiff = -1;
+
+        const removeEvent = (ev) => {
+            // Remove this event from the target's cache
+            const index = evCache.findIndex((cachedEv) => cachedEv.pointerId === ev.pointerId);
+            evCache.splice(index, 1);
+        };
+
+        const pointerdownHandler = (ev) => {
+            evCache.push(ev);
+        };
+
+        const pointermoveHandler = (ev) => {
+            // Find this event in the cache and update its record with this event
+            const index = evCache.findIndex((cachedEv) => cachedEv.pointerId === ev.pointerId);
+            evCache[index] = ev;
+
+            // If two pointers are down, check for pinch gestures
+            if (evCache.length === 2) {
+                // Calculate the distance between the two pointers
+                const curDiff = Math.abs(evCache[0].clientX - evCache[1].clientX);
+
+                if (prevDiff > 0) {
+                    if (curDiff > prevDiff) {
+                        this.zoomIn();
+                    }
+                    if (curDiff < prevDiff) {
+                        this.zoomOut();
+                    }
+                }
+
+                // Cache the distance for the next move event
+                prevDiff = curDiff;
+            }
+        };
+
+        function pointerupHandler(ev) {
+            removeEvent(ev);
+            if (evCache.length < 2) {
+                prevDiff = -1;
+            }
+        }
+
+        paper.el.onpointerdown = pointerdownHandler;
+        paper.el.onpointermove = pointermoveHandler;
+
+        // Use same handler for pointer{up,cancel,out,leave} events since
+        // the semantics for these events - in this app - are the same.
+        paper.el.onpointerup = pointerupHandler;
+        paper.el.onpointercancel = pointerupHandler;
+        paper.el.onpointerout = pointerupHandler;
+        paper.el.onpointerleave = pointerupHandler;
+    }
 }

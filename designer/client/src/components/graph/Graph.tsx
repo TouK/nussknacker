@@ -30,16 +30,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 
 import { createUniqueArrowMarker } from "./arrowMarker";
-
-function isTouchDevice() {
-    return (
-        "ontouchstart" in window ||
-        navigator.maxTouchPoints > 0 ||
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        navigator.msMaxTouchPoints > 0
-    );
-}
+import { isTouchDevice } from "../../helpers/detectDevice";
 
 interface Props extends GraphProps {
     processCategory: string;
