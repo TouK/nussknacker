@@ -16,6 +16,9 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sources.JsonSchemaRequestResponseSource
 
+import java.time.LocalDateTime
+import java.time.temporal.Temporal
+
 class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
   private val metaData: MetaData = MetaData("test1", RequestResponseMetaData(None))

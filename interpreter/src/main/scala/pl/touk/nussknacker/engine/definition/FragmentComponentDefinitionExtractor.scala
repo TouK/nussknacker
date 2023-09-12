@@ -23,6 +23,8 @@ import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtra
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
 
+import java.time.temporal.Temporal
+
 // We have two implementations of FragmentDefinitionExtractor. The only difference is that FragmentGraphDefinitionExtractor
 // extract parts of definition that is used for graph resolution wheres FragmentComponentDefinitionExtractor is used
 // for component definition extraction (parameters, validators, etc.) for purpose of further parameters validation
@@ -90,9 +92,18 @@ class FragmentComponentDefinitionExtractor(componentConfig: String => Option[Sin
     val parameterData = ParameterData(typ, Nil)
     val extractedEditor = EditorExtractor.extract(parameterData, config)
 
-    val customExpressionValidator = fragmentParameter.validationExpression.map(expr =>
-      CustomExpressionParameterValidator(expr.expression, typ.display) // TODO proper handling of `typ`/field type + validate the validator (see TODO in it's code)
-    )
+    val customExpressionValidator = fragmentParameter.validationExpression.map(expr => {
+      val expectedValueType = if (typ.canBeSubclassOf(Typed(classOf[Number]))) { // TODO this is just a draft
+        "Number"
+      } else if (typ.canBeSubclassOf(Typed(classOf[Temporal]))) {
+        "Time"
+      } else {
+        "String"
+      }
+
+      assert(CustomExpressionParameterValidator.isValidationExpressionValid(expr.expression, fragmentParameter.name, expectedValueType))
+      CustomExpressionParameterValidator(expr.expression, expectedValueType)
+    })
 
     val isOptional = !fragmentParameter.required
     Parameter.optional(fragmentParameter.name, typ).copy(
