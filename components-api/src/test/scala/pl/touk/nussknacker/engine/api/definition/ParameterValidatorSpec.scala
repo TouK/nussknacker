@@ -24,15 +24,15 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
     }
   }
 
-  test("isValidationExpressionValid") {
+  test("CustomExpressionParameterValidator.isValidatorValid") {
     forAll(Table(
       ("validationExpression", "paramName", "expectedValueType", "isValid"),
-      ("#param > 10", "param", "Int", true),
-      ("#param < 10", "param", "Int", true),
-      ("#param + 10", "param", "Int", false),
+      ("#param > 10", "param", "Number", true),
+      ("#param < 10", "param", "Number", true),
+      ("#param + 10", "param", "Number", false),
       // TODO more tests
     )) { (validationExpression, paramName, expectedValueType, expected) =>
-      CustomExpressionParameterValidator.isValidationExpressionValid(validationExpression, paramName, expectedValueType) shouldBe expected
+      CustomExpressionParameterValidator(validationExpression, expectedValueType).isValidatorValid(paramName) shouldBe expected
     }
   }
 

@@ -101,8 +101,9 @@ class FragmentComponentDefinitionExtractor(componentConfig: String => Option[Sin
         "String"
       }
 
-      assert(CustomExpressionParameterValidator.isValidationExpressionValid(expr.expression, fragmentParameter.name, expectedValueType))
-      CustomExpressionParameterValidator(expr.expression, expectedValueType)
+      val validator = CustomExpressionParameterValidator(expr.expression, expectedValueType)
+      assert(validator.isValidatorValid(fragmentParameter.name)) // TODO we probably want other handling than just an assert
+      validator
     })
 
     val isOptional = !fragmentParameter.required

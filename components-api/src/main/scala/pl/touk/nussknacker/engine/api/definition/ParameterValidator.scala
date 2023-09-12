@@ -46,11 +46,33 @@ case class CustomExpressionParameterValidator(validationExpression: String,
   private val parser: ExpressionParser = new SpelExpressionParser()
   private val parsedValidationExpression = parser.parseExpression(validationExpression)
 
+  private def defaultForType(valueType: String): Any = {
+    // TODO, maybe implement some abstract method in `TypeResult` or something
+    valueType match {
+      case "Number" => 123
+      case _ => ""
+    }
+  }
+
+  def isValidatorValid(paramName: String): Boolean = {
+    val context = new StandardEvaluationContext() // TODO should be context with access to function that the user can input, for example #DATE.now
+
+    context.setVariable(paramName, defaultForType(expectedValueType))
+    try {
+      parsedValidationExpression.getValue(context, classOf[Boolean])
+      true
+    } catch {
+      case e: Throwable =>
+        println(s"Invalid validation expression: ${e.getMessage}")
+        false
+    }
+  }
+
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (evaluateToBoolean(paramName, value)) valid(()) else invalid(error(paramName, nodeId.id))
 
   private def evaluateToBoolean(paramName: String, value: String): Boolean = { // paramName has to be the same as in validationExpression (and same as the field name)
-    val context: StandardEvaluationContext = new StandardEvaluationContext()
+    val context: StandardEvaluationContext = new StandardEvaluationContext()  // TODO should be context with access to function that the user can input, for example #DATE.now
 
     expectedValueType match { // TODO expand/fix, this is just an example
       case "Number" => context.setVariable(paramName, value.toDouble)
@@ -72,32 +94,6 @@ case class CustomExpressionParameterValidator(validationExpression: String,
     paramName,
     nodeId
   )
-}
-
-object CustomExpressionParameterValidator {
-  def defaultForType(valueType: String): Any = {
-    // TODO, maybe implement some abstract method in `TypeResult` or something
-    valueType match {
-      case "Number" => 123
-      case _ => ""
-    }
-  }
-
-  private val parser = new SpelExpressionParser()
-  def isValidationExpressionValid(validationExpression: String, paramName: String, expectedValueType: String): Boolean = {
-    val parsedExpression = parser.parseExpression(validationExpression)
-    val context = new StandardEvaluationContext() // TODO should be context with access to function that the user can input, for example #DATE.now
-
-    context.setVariable(paramName, defaultForType(expectedValueType))
-    try {
-      parsedExpression.getValue(context, classOf[Boolean])
-      true
-    } catch {
-      case e: Throwable =>
-        println(s"Invalid validation expression: ${e.getMessage}")
-        false
-    }
-  }
 }
 
 case object MandatoryParameterValidator extends ParameterValidator {
