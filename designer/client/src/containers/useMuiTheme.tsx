@@ -65,7 +65,7 @@ export function useMuiTheme(): MuiTheme & Theme {
                             MuiAlert: {
                                 styleOverrides: {
                                     root: {
-                                        minWidth: 300,
+                                        width: 300,
                                         zIndex: 20000,
                                         marginTop: 10,
                                         cursor: "pointer",
