@@ -27,7 +27,7 @@ import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import ProcessUtils from "../../common/ProcessUtils";
-import { isTouchDevice } from "../../helpers/detectDevice";
+import { isTouchDevice, isTouchEvent } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
 
@@ -252,7 +252,7 @@ export class Graph extends React.Component<Props> {
                     return;
                 }
 
-                if (evt.shiftKey || evt.ctrlKey || evt.metaKey) {
+                if (evt.shiftKey || evt.ctrlKey || evt.metaKey || isTouchEvent(evt)) {
                     this.props.toggleSelection(nodeDataId);
                 } else {
                     this.props.resetSelection(nodeDataId);
