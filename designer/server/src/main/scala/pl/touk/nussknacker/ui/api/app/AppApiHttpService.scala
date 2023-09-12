@@ -59,7 +59,7 @@ class AppApiHttpService(config: Config,
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { _ =>
         _ =>
-          processesWithProblemStateStatus
+          problemStateByProcessName
             .map { set =>
               if (set.isEmpty) {
                 Right(HealthCheckProcessSuccessResponseDto)
@@ -156,7 +156,7 @@ class AppApiHttpService(config: Config,
           Future.successful(Left(ProcessingTypeDataReloadErrorDto.AuthorizationProcessingTypeDataReloadErrorDto))
       }
 
-  private def processesWithProblemStateStatus(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
+  private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
     for {
       processes <- processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.deployed)
       statusMap <- Future.sequence(mapNameToProcessState(processes)).map(_.toMap)

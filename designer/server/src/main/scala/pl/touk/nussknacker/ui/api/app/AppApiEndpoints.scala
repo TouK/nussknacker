@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.app
 
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder, Json, Codec => CirceCodec}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -100,8 +100,8 @@ private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
 
     private[AppApiEndpoints] object Codecs {
 
-      implicit val healthCheckProcessSuccessResponseDtoCodec: io.circe.Codec[HealthCheckProcessSuccessResponseDto.type] = {
-        io.circe.Codec.from(
+      implicit val healthCheckProcessSuccessResponseDtoCodec: CirceCodec[HealthCheckProcessSuccessResponseDto.type] = {
+        CirceCodec.from(
           Decoder.forProduct3[HealthCheckProcessSuccessResponseDto.type, String, Option[String], Option[Set[String]]](
             "status", "message", "processes"
           ) {
@@ -118,8 +118,8 @@ private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
         )
       }
 
-      implicit val healthCheckProcessErrorResponseDtoCodec: io.circe.Codec[HealthCheckProcessErrorResponseDto] = {
-        io.circe.Codec.from(
+      implicit val healthCheckProcessErrorResponseDtoCodec: CirceCodec[HealthCheckProcessErrorResponseDto] = {
+        CirceCodec.from(
           Decoder.forProduct3[HealthCheckProcessErrorResponseDto, String, Option[String], Option[Set[String]]](
             "status", "message", "processes"
           ) {
@@ -136,8 +136,8 @@ private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
         )
       }
 
-      implicit val buildInfoDtoCodec: io.circe.Codec[BuildInfoDto] = {
-        io.circe.Codec.from(
+      implicit val buildInfoDtoCodec: CirceCodec[BuildInfoDto] = {
+        CirceCodec.from(
           Decoder.instance { c =>
             for {
               name <- c.downField("name").as[String]
@@ -165,8 +165,8 @@ private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
         )
       }
 
-      implicit val serverConfigInfoDtoCodec: io.circe.Codec[ServerConfigInfoDto] = {
-        io.circe.Codec.from(
+      implicit val serverConfigInfoDtoCodec: CirceCodec[ServerConfigInfoDto] = {
+        CirceCodec.from(
           Decoder.decodeJson.map(ServerConfigInfoDto.apply),
           Encoder.encodeJson.contramap[ServerConfigInfoDto](_.configJson)
         )
@@ -186,8 +186,8 @@ private [app] object AppApiEndpoints extends BaseEndpointDefinitions {
           )
       }
 
-      implicit val userCategoriesWithProcessingTypesDtoCodec: io.circe.Codec[UserCategoriesWithProcessingTypesDto] = {
-        io.circe.Codec.from(
+      implicit val userCategoriesWithProcessingTypesDtoCodec: CirceCodec[UserCategoriesWithProcessingTypesDto] = {
+        CirceCodec.from(
           Decoder.decodeMap[String, String].map(UserCategoriesWithProcessingTypesDto.apply),
           Encoder.encodeMap[String, String].contramap(_.map)
         )

@@ -70,22 +70,13 @@ object CirceUtil {
 
     def toMapExcluding(keys: String*): Decoder.Result[Map[String, String]] = {
       val keysSet = keys.toSet
-      cursor.keys match {
-        case Some(keys) =>
-          keys.filter(keysSet.contains)
-            .foldLeft(Right(Vector.empty): Either[DecodingFailure, Vector[(String, String)]]) {
-              case (Right(vector), key) =>
-                cursor.downField(key).as[String].map(value => (key, value)) match {
-                  case Left(df) => Left(df)
-                  case Right(tuple) => Right(vector :+ tuple )
-                }
-              case (left@Left(_), _) =>
-                left
-            }
-            .map(_.toMap)
-        case None =>
-          Right(Map.empty)
-      }
+      cursor
+        .as[Map[String, String]]
+        .map {
+          _.view
+            .filterKeys(k => !keysSet.contains(k))
+            .toMap
+        }
     }
   }
 

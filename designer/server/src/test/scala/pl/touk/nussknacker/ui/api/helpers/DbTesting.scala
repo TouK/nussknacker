@@ -20,7 +20,7 @@ trait WithTestDb extends BeforeAndAfterAll {
 
   def testDbRef: DbRef = dbRef
 
-  abstract override def afterAll(): Unit = {
+  override def afterAll(): Unit = {
     releaseDbRefResources.unsafeRunSync()
     super.afterAll()
   }
@@ -59,7 +59,7 @@ trait DbTesting
     with BeforeAndAfterAll {
   self: Suite with WithTestDb =>
 
-  abstract override def beforeAll(): Unit = {
+  override def beforeAll(): Unit = {
     super.beforeAll()
     DatabaseInitializer.initDatabase("db", testDbConfig)
   }
