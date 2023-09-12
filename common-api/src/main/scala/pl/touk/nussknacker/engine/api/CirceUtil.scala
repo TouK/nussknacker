@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
+import com.github.ghik.silencer.silent
 import io.circe
 import io.circe.generic.extras.Configuration
 import io.circe._
@@ -68,13 +69,13 @@ object CirceUtil {
 
   implicit class HCursorExt(val cursor: HCursor) extends AnyVal {
 
+    @silent("deprecated")
     def toMapExcluding(keys: String*): Decoder.Result[Map[String, String]] = {
       val keysSet = keys.toSet
       cursor
         .as[Map[String, String]]
         .map {
-          _.view
-            .filterKeys(k => !keysSet.contains(k))
+          _.filterKeys(k => !keysSet.contains(k))
             .toMap
         }
     }
