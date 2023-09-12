@@ -31,9 +31,9 @@ jobs:
           echo SBT release next version is ${{ env.SBT_RELEASE_NEXT_VERSION }}
 
       - name: "Validate release branch name"
-        if: ${{ startsWith(github.ref_name, 'release/') }}
+        if: ${{ !startsWith(github.ref_name, 'release/') }}
         run: |
-          echo Specified branch is not a release branch. Specified branch name: ${{ github.ref_name }}. Expected branch name should start with 'release/'.
+          echo Specified branch is not a release branch. Specified branch name: ${GITHUB_REF_NAME}. Expected branch name should start with 'release/'.
           exit 1
 
       - name: Cancel previous runs
