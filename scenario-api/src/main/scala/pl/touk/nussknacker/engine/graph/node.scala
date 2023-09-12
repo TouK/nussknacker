@@ -218,7 +218,14 @@ object node {
   //shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
 
-    @JsonCodec case class FragmentParameter(name: String, typ: FragmentClazzRef)
+    @JsonCodec case class FragmentParameter(name: String,
+                                            typ: FragmentClazzRef,
+                                            required: Boolean = false,
+                                            validationExpression: Option[Expression] = None,
+                                            validationErrorMessage: Option[String]   = None,
+                                            defaultValue: Option[Expression]         = None,
+                                            hintText: Option[String]                 = None,
+                                           )
 
     object FragmentClazzRef {
 

@@ -4,12 +4,13 @@ import com.typesafe.config.ConfigFactory
 import org.everit.json.schema.EmptySchema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, ParameterEditor, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.compile.StubbedFragmentInputTestSource
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
@@ -86,6 +87,28 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       SimplifiedParam("age", Typed.apply[Long], None),
     )
     parameters.map(p => SimplifiedParam(p.name, p.typ, p.editor)) should contain theSameElementsAs expectedParameters
+  }
+
+  test("should generate complex test parameters for fragment input definition") {
+    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
+    val fragmentInputDefinition = FragmentInputDefinition("", List(
+      FragmentParameter("name", FragmentClazzRef[String],
+        required = true,
+        validationExpression = Some(Expression.spel("#name.length() < 100")),
+        validationErrorMessage = Some("some validation error"),
+        defaultValue = Some(Expression.spel("Tomasz")),
+        hintText = Some("some hint text")
+        )
+    ))
+    val stubbedSource = new StubbedFragmentInputTestSource(fragmentInputDefinition, fragmentDefinitionExtractor)
+    val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
+
+    parameter.name shouldBe "name"
+    parameter.typ shouldBe Typed(classOf[String])
+    parameter.editor shouldBe Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW))
+    parameter.validators should contain theSameElementsAs List(MandatoryParameterValidator, CustomExpressionParameterValidator("#name.length() < 100", "String"))
+    parameter.defaultValue shouldBe Some(Expression.spel("Tomasz"))
+    parameter.isOptional shouldBe false
   }
 
 }

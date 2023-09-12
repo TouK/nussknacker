@@ -1278,6 +1278,7 @@ lazy val componentsApi = (project in file("components-api")).
     name := "nussknacker-components-api",
     libraryDependencies ++= {
       Seq(
+        "org.springframework" % "spring-expression" % springV,
         "org.apache.commons" % "commons-text" % flinkCommonsTextV,
         "org.typelevel" %% "cats-core" % catsV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
