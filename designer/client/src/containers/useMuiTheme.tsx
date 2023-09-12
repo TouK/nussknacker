@@ -62,19 +62,14 @@ export function useMuiTheme(): MuiTheme & Theme {
                                     },
                                 },
                             },
-                            MuiSnackbar: {
-                                styleOverrides: {
-                                    root: {
-                                        minWidth: 290,
-                                        zIndex: 20000,
-                                    },
-                                },
-                            },
                             MuiAlert: {
                                 styleOverrides: {
                                     root: {
-                                        width: "100%",
+                                        minWidth: 300,
+                                        zIndex: 20000,
+                                        marginTop: 10,
                                         cursor: "pointer",
+                                        maxHeight: 400,
                                         ".MuiAlert-icon": { color: "#333333", alignSelf: "center" },
                                     },
                                     standardSuccess: {
