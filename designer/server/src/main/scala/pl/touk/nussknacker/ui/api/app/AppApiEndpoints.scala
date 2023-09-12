@@ -38,9 +38,9 @@ private[api] class AppApiEndpoints(auth: Auth[AuthCredentials, _])
       .out(jsonBody[HealthCheckProcessSuccessResponseDto.type])
       .errorOut(
         oneOf[SecuredEndpointError[HealthCheckProcessErrorResponseDto]](
-          oneOfVariant[AuthenticationError.type](statusCode(Unauthorized)),
-          oneOfVariant[AuthorizationError.type](statusCode(Forbidden)),
-          oneOfVariant[OtherError[HealthCheckProcessErrorResponseDto]](
+          oneOfVariant(statusCode(Unauthorized), plainBody[SecuredEndpointError.AuthenticationError.type]),
+          oneOfVariant(statusCode(Forbidden)),
+          oneOfVariant(
             statusCode(InternalServerError), jsonBody[OtherError[HealthCheckProcessErrorResponseDto]]
           ),
         )
