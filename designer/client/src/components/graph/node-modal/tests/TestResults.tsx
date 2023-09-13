@@ -1,11 +1,12 @@
 import { isEmpty, isObject, join } from "lodash";
 import React from "react";
-import TipsInfo from "../../../../assets/img/icons/tipsInfo.svg";
+import InfoIcon from "@mui/icons-material/Info";
 import NodeTip from "../NodeTip";
 import TestValue from "./TestValue";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeId } from "../../../../types";
 import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
+import { variables } from "../../../../stylesheets/variables";
 
 export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {
     const results = useTestResults();
@@ -18,7 +19,10 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
         <NodeTableBody className="node-test-results">
             <div className="node-row">
                 <div className="node-label">
-                    <NodeTip title={"Variables in test case"} icon={<TipsInfo />} />
+                    <NodeTip
+                        title={"Variables in test case"}
+                        icon={<InfoIcon sx={{ color: variables.alert.infoColor, alignSelf: "center" }} />}
+                    />
                 </div>
             </div>
             {Object.keys(results.testResultsToShow.context.variables).map((key, ikey) => (

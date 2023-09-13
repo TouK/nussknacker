@@ -1,10 +1,11 @@
 import React, { SyntheticEvent } from "react";
 import { v4 as uuid4 } from "uuid";
-import TipsError from "../../assets/img/icons/tipsError.svg";
+import DangerousIcon from "@mui/icons-material/Dangerous";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import i18next from "i18next";
 import { concat, difference, isEmpty } from "lodash";
 import { NodeType, Process, ValidationErrors } from "../../types";
+import { variables } from "../../stylesheets/variables";
 
 interface Props {
     errors: ValidationErrors;
@@ -31,7 +32,7 @@ export default class Errors extends React.Component<Props> {
 
     headerIcon = (errors) =>
         isEmpty(errors.globalErrors) && isEmpty(errors.invalidNodes) && isEmpty(errors.processPropertiesErrors) ? null : (
-            <TipsError className={"icon"} />
+            <DangerousIcon className={"icon"} sx={{ color: variables.alert.error, alignSelf: "center" }} />
         );
 
     errorTips = (errors) => {

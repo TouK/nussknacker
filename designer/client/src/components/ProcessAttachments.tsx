@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import Dropzone from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import ButtonDownload from "../assets/img/icons/buttonDownload.svg";
+import DownloadIcon from "@mui/icons-material/Download";
 import ButtonUpload from "../assets/img/icons/buttonUpload.svg";
 import { NkButton } from "./NkButton";
 import HttpService from "../http/HttpService";
@@ -22,7 +22,7 @@ function AttachmentEl({ data }: { data: Attachment }) {
                     className="download-button"
                     onClick={() => HttpService.downloadAttachment(data.processId, data.processVersionId, data.id, data.fileName)}
                 >
-                    <ButtonDownload />
+                    <DownloadIcon sx={{ width: 13, height: 13 }} />
                 </NkButton>
             </div>
             <div className={"attachment-details"}>
