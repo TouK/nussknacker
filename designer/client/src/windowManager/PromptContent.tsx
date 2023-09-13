@@ -3,6 +3,7 @@ import { DefaultContent, DefaultContentProps } from "@touk/window-manager";
 import React, { PropsWithChildren, useMemo } from "react";
 import { useNkTheme } from "../containers/theme";
 import { LaddaButton } from "./LaddaButton";
+import { isTouchDevice } from "../helpers/detectDevice";
 
 const HeaderPlaceholder = () => <header>{/*grid placeholder*/}</header>;
 
@@ -27,5 +28,5 @@ export function PromptContent(props: PropsWithChildren<DefaultContentProps>): JS
         [props.components],
     );
 
-    return <DefaultContent backgroundDrag {...props} classnames={classnames} components={components} />;
+    return <DefaultContent backgroundDrag={!isTouchDevice()} {...props} classnames={classnames} components={components} />;
 }

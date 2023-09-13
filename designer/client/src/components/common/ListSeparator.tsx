@@ -1,7 +1,9 @@
-import { cx } from "@emotion/css";
 import React from "react";
-import styles from "./ListSeparator.styl";
+import { Divider } from "@mui/material";
+import { variables } from "../../stylesheets/variables";
 
 export function ListSeparator(props: { dark?: boolean }): JSX.Element {
-    return <hr className={cx(styles.listSeparator, props.dark && styles.dark)} />;
+    return (
+        <Divider sx={{ background: props.dark ? variables.panelHeaderBackground : variables.panelTitleTextColor, margin: "10px 0px" }} />
+    );
 }

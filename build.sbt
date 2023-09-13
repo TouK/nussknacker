@@ -923,7 +923,7 @@ lazy val commonUtils = (project in utils("utils")).
         "com.iheart" %% "ficus" % ficusV,
       )
     }
-  ).dependsOn(commonApi, liteComponentsApi, testUtils % "test")
+  ).dependsOn(commonApi, componentsApi, testUtils % "test")
 
 
 lazy val utilsInternal = (project in utils("utils-internal")).

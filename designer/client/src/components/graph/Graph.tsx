@@ -31,6 +31,16 @@ import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 
 import { createUniqueArrowMarker } from "./arrowMarker";
 
+function isTouchDevice() {
+    return (
+        "ontouchstart" in window ||
+        navigator.maxTouchPoints > 0 ||
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        navigator.msMaxTouchPoints > 0
+    );
+}
+
 interface Props extends GraphProps {
     processCategory: string;
     processDefinitionData: ProcessDefinitionData;
@@ -195,6 +205,8 @@ export class Graph extends React.Component<Props> {
     }
 
     bindEventHandlers(): void {
+        let pressTimer;
+
         const showNodeDetails = (cellView: dia.CellView) => {
             const { processToDisplay, readonly, nodeIdPrefixForFragmentTests = "" } = this.props;
             const { nodeData, edgeData } = cellView.model.attributes;
@@ -209,6 +221,32 @@ export class Graph extends React.Component<Props> {
                     readonly,
                 );
             }
+        };
+        const handleActionOnLongPress =
+            (
+                longPressAction: (cellView: dia.CellView, event: Event) => void,
+                shortPressAction: (cellView: dia.CellView, event: Event) => void,
+            ) =>
+            (cellView: dia.CellView, evt) => {
+                // let's clear all pointer click events on start
+                this.processGraphPaper.off(Events.CELL_POINTERCLICK, shortPressAction);
+                this.processGraphPaper.on(Events.CELL_POINTERCLICK, shortPressAction);
+
+                const LONG_PRESS_TIME = 500;
+                const model = cellView.model;
+
+                // Discard specific events on long press action
+                model.once(Events.CHANGE_POSITION, releasePress);
+                model.once(Events.CELL_POINTERUP, releasePress);
+
+                pressTimer = window.setTimeout(() => {
+                    // Stop single click event when longPress fired
+                    this.processGraphPaper.off(Events.CELL_POINTERCLICK, shortPressAction);
+                    longPressAction(cellView, evt);
+                }, LONG_PRESS_TIME);
+            };
+        const releasePress = () => {
+            clearTimeout(pressTimer);
         };
         const selectNode = (cellView, evt) => {
             if (this.props.nodeSelectionEnabled) {
@@ -233,8 +271,14 @@ export class Graph extends React.Component<Props> {
             }
         };
 
-        this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, showNodeDetails);
-        this.processGraphPaper.on(Events.CELL_POINTERCLICK, selectNode);
+        if (isTouchDevice()) {
+            this.processGraphPaper.on(Events.CELL_POINTERUP, releasePress);
+            this.processGraphPaper.on(Events.CELL_POINTERDOWN, handleActionOnLongPress(selectNode, showNodeDetails));
+        } else {
+            this.processGraphPaper.on(Events.CELL_POINTERCLICK, selectNode);
+            this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, showNodeDetails);
+        }
+
         this.processGraphPaper.on(Events.BLANK_POINTERUP, deselectNodes);
         this.hooverHandling();
     }

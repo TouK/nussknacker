@@ -12,10 +12,7 @@ object UniversalTimestampFieldAssigner {
       val timestampOpt: Option[Long] = Option(element.value() match {
         case genericRecord: GenericRecord => genericRecord.get(fieldName)
         case typedMap: java.util.Map[String, Any]@unchecked => typedMap.get(fieldName)
-      }).map(v => supportedTypeToMillis(
-        v,
-        s"Field $fieldName is of an invalid type for a timestamp field"
-      ))
+      }).map(v => supportedTypeToMillis(v, fieldName))
 
       timestampOpt.getOrElse(0L) // explicit null to 0L conversion (instead of implicit unboxing)
     }
