@@ -1,7 +1,7 @@
 import React from "react";
 import Notifications from "react-notification-system-redux";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ErrorIcon from "@mui/icons-material/Error";
+import DangerousIcon from "@mui/icons-material/Dangerous";
 import InfoIcon from "@mui/icons-material/Info";
 import Notification from "../components/notifications/Notification";
 import { Action } from "./reduxTypes";
@@ -17,7 +17,7 @@ export function error(message: string, error?: string, showErrorText?: boolean):
     const details = showErrorText && error ? error : null;
     return Notifications.error({
         autoDismiss: 10,
-        children: <Notification type={"error"} icon={<ErrorIcon />} message={message} details={details} />,
+        children: <Notification type={"error"} icon={<DangerousIcon />} message={message} details={details} />,
     });
 }
 

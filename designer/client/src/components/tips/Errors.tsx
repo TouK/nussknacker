@@ -1,6 +1,6 @@
 import React, { SyntheticEvent } from "react";
 import { v4 as uuid4 } from "uuid";
-import ErrorIcon from "@mui/icons-material/Error";
+import DangerousIcon from "@mui/icons-material/Dangerous";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import i18next from "i18next";
 import { concat, difference, isEmpty } from "lodash";
@@ -32,7 +32,7 @@ export default class Errors extends React.Component<Props> {
 
     headerIcon = (errors) =>
         isEmpty(errors.globalErrors) && isEmpty(errors.invalidNodes) && isEmpty(errors.processPropertiesErrors) ? null : (
-            <ErrorIcon className={"icon"} sx={{ color: variables.alert.text, alignSelf: "center" }} />
+            <DangerousIcon className={"icon"} sx={{ color: variables.alert.error, alignSelf: "center" }} />
         );
 
     errorTips = (errors) => {

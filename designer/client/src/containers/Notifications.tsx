@@ -8,7 +8,7 @@ import { getBackendNotifications, getNotifications } from "../reducers/selectors
 import { useInterval } from "./Interval";
 import Notification from "../components/notifications/Notification";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ErrorIcon from "@mui/icons-material/Error";
+import DangerousIcon from "@mui/icons-material/Dangerous";
 import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
 import { displayProcessActivity, loadProcessState } from "../actions/nk";
 import { getProcessId } from "../reducers/selectors/graph";
@@ -35,9 +35,9 @@ const prepareNotification =
                             type={type}
                             icon={
                                 type == "error" ? (
-                                    <ErrorIcon sx={{ color: variables.alert.text, alignSelf: "center" }} />
+                                    <DangerousIcon sx={{ color: variables.alert.error, alignSelf: "center" }} />
                                 ) : (
-                                    <CheckCircleIcon sx={{ color: variables.alert.text, alignSelf: "center" }} />
+                                    <CheckCircleIcon sx={{ color: variables.alert.sucsess, alignSelf: "center" }} />
                                 )
                             }
                             message={message}
