@@ -7,14 +7,15 @@ import { bindActionCreators } from "redux";
 import { getBackendNotifications, getNotifications } from "../reducers/selectors/other";
 import { useInterval } from "./Interval";
 import Notification from "../components/notifications/Notification";
-import TipsSuccess from "../assets/img/icons/tipsSuccess.svg";
-import TipsError from "../assets/img/icons/tipsError.svg";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DangerousIcon from "@mui/icons-material/Dangerous";
 import { markBackendNotificationRead, updateBackendNotifications } from "../actions/nk/notifications";
 import { displayProcessActivity, loadProcessState } from "../actions/nk";
 import { getProcessId } from "../reducers/selectors/graph";
 import { loadProcessVersions } from "../actions/nk/loadProcessVersions";
 import { useChangeConnectionError } from "./connectionErrorProvider";
 import i18next from "i18next";
+import { variables } from "../stylesheets/variables";
 import { ThunkAction } from "../actions/reduxTypes";
 
 const prepareNotification =
@@ -29,7 +30,19 @@ const prepareNotification =
                 {
                     autoDismiss: type == "error" ? 0 : 10,
                     uid: id,
-                    children: <Notification icon={type == "error" ? <TipsError /> : <TipsSuccess />} message={message} />,
+                    children: (
+                        <Notification
+                            type={type}
+                            icon={
+                                type == "error" ? (
+                                    <DangerousIcon sx={{ color: variables.alert.error, alignSelf: "center" }} />
+                                ) : (
+                                    <CheckCircleIcon sx={{ color: variables.alert.sucsess, alignSelf: "center" }} />
+                                )
+                            }
+                            message={message}
+                        />
+                    ),
                     onRemove: () => dispatch(markBackendNotificationRead(id)),
                 },
                 type,
