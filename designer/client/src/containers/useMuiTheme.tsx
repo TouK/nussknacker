@@ -3,6 +3,7 @@ import { defaultsDeep } from "lodash";
 import { useMemo } from "react";
 import { useNkTheme } from "./theme";
 import { Theme } from "@emotion/react";
+import { variables } from "../stylesheets/variables";
 
 declare module "@mui/material/styles" {
     interface Theme {
@@ -58,6 +59,33 @@ export function useMuiTheme(): MuiTheme & Theme {
                                 styleOverrides: {
                                     input: {
                                         margin: 0,
+                                    },
+                                },
+                            },
+                            MuiAlert: {
+                                styleOverrides: {
+                                    root: {
+                                        width: 300,
+                                        zIndex: 20000,
+                                        marginTop: 10,
+                                        cursor: "pointer",
+                                        maxHeight: 400,
+                                        ".MuiAlert-icon": { color: variables.alert.text, alignSelf: "center" },
+                                    },
+                                    standardSuccess: {
+                                        backgroundColor: variables.alert.sucsess,
+                                        color: variables.alert.text,
+                                    },
+                                    standardError: {
+                                        backgroundColor: variables.alert.error,
+                                        color: variables.alert.text,
+                                    },
+                                    standardWarning: {
+                                        backgroundColor: variables.alert.warning,
+                                    },
+                                    standardInfo: {
+                                        backgroundColor: variables.alert.info,
+                                        color: variables.alert.text,
                                     },
                                 },
                             },
