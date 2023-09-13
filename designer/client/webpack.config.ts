@@ -156,6 +156,9 @@ const config: Configuration = {
             base: isProd ? "__publicPath__/static/" : "/",
             filename: "main.html",
             favicon: "src/assets/img/favicon.svg",
+            meta: {
+                viewport: "user-scalable = no",
+            },
         }),
         new HtmlWebpackHarddiskPlugin(),
         new CopyPlugin({
