@@ -2,12 +2,21 @@
 
 1.12.0 (Not released yet)
 -------------------------
+* [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
+* [#4582](https://github.com/TouK/nussknacker/pull/4582) Fixed: Releasing app resources on the designer close
 * [#4540](https://github.com/TouK/nussknacker/pull/4540) Improvement: Allow selecting a claim from OIDC JWT to represent the username
 * [#4555](https://github.com/TouK/nussknacker/pull/4555) Remove: Back compatibility for encoding/decoding UIParameter
 * [#4561](https://github.com/TouK/nussknacker/pull/4561) Improvement: Users are not required at OAuth2 config file
-* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad hoc testing. 
+* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad hoc testing.
+* [#4572](https://github.com/TouK/nussknacker/pull/4572) The package of improvements:
+  - make the properties of the `FlinkStreamingPropertiesConfig` public, so that they can be reused
+  - introduce the `CaseClassTypeInfoFactory`, a generic factory for creating `CaseClassTypeInfo`
+  - allow passing classLoader at `ResourceLoader.load`
+* [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
+* [#4640](https://github.com/TouK/nussknacker/pull/4640) Expand timestamp support to handle more types/formats
 
-1.11.2 (Not released yet)
+1.11.3 (11 Sep 2023)
+-------------------------
 * [#4629](https://github.com/TouK/nussknacker/pull/4629) Fix closing of shared SttpBackend when reloading model
 
 1.11.1 (25 Aug 2023)
