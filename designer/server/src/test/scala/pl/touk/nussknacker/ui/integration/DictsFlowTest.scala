@@ -19,8 +19,8 @@ import sttp.model.{MediaType, StatusCode}
 import java.util.UUID
 
 class DictsFlowTest
-  extends NuItTest
-    with AnyFunSuiteLike
+  extends AnyFunSuiteLike
+    with NuItTest
     with WithTestHttpClient
     with Matchers
     with OptionValues

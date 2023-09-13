@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.typesafe.config.{Config, ConfigFactory}
-import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.time.{Second, Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 import org.testcontainers.utility.DockerImageName
@@ -21,7 +20,7 @@ trait WithTestDb extends BeforeAndAfterAll {
 
   def testDbRef: DbRef = dbRef
 
-  abstract override def afterAll(): Unit = {
+  override def afterAll(): Unit = {
     releaseDbRefResources.unsafeRunSync()
     super.afterAll()
   }
@@ -57,8 +56,7 @@ trait WithTestPostgresDb extends WithTestDb {
 
 trait DbTesting
   extends BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with LazyLogging {
+    with BeforeAndAfterAll {
   self: Suite with WithTestDb =>
 
   override def beforeAll(): Unit = {
@@ -67,6 +65,7 @@ trait DbTesting
   }
 
   override protected def afterEach(): Unit = {
+    super.afterEach()
     cleanDB().failed.foreach { e =>
       throw new InternalError("Error during cleaning test resources", e) //InternalError as scalatest swallows other exceptions in afterEach
     }

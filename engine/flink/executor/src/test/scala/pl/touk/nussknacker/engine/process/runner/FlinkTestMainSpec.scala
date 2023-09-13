@@ -29,7 +29,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
 
   import scala.jdk.CollectionConverters._
 
-  override protected def beforeEach(): Unit = {
+  override def beforeEach(): Unit = {
     super.beforeEach()
     MonitorEmptySink.clear()
     LogService.clear()

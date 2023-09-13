@@ -173,7 +173,7 @@ trait NuResourcesTest
 
   protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)(new ProcessingTypeDeploymentServiceStub(Nil))
 
-  override protected def beforeEach(): Unit = {
+  override def beforeEach(): Unit = {
     super.beforeEach()
     processChangeListener.clear()
   }
