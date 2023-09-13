@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.EndpointError
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api.{AdminUser, AuthCredentials, AuthenticationConfiguration, AuthenticationResources, CommonUser, LoggedUser}
 
@@ -11,16 +12,16 @@ abstract class BaseHttpService(config: Config,
                                authenticator: AuthenticationResources)
                               (implicit executionContext: ExecutionContext) {
 
-  protected def authorizeAdmin[ERROR](credentials: AuthCredentials): Future[Either[SecuredEndpointError[ERROR], LoggedUser]] = {
-    authorize(credentials)
+  protected def authorizeAdmin[ERROR](credentials: AuthCredentials): Future[Either[EndpointError[ERROR], LoggedUser]] = {
+    authorize[ERROR](credentials)
       .map {
         case right@Right(AdminUser(_, _)) => right
-        case Right(_: CommonUser) => Left(SecuredEndpointError.AuthorizationError)
+        case Right(_: CommonUser) => Left(Left(SecurityError.AuthorizationError))
         case error@Left(_) => error
       }
   }
 
-  protected def authorize[ERROR](credentials: AuthCredentials): Future[Either[SecuredEndpointError[ERROR], LoggedUser]] = {
+  protected def authorize[ERROR](credentials: AuthCredentials): Future[Either[EndpointError[ERROR], LoggedUser]] = {
     authenticator
       .authenticate(credentials)
       .map {
@@ -31,9 +32,9 @@ abstract class BaseHttpService(config: Config,
             processCategories = processCategoryService.getAllCategories
           ))
         case Some(_) =>
-          Left(SecuredEndpointError.AuthorizationError)
+          Left(Left(SecurityError.AuthorizationError))
         case None =>
-          Left(SecuredEndpointError.AuthenticationError)
+          Left(Left(SecurityError.AuthenticationError))
       }
   }
 }

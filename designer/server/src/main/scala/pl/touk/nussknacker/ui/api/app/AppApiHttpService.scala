@@ -12,7 +12,6 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Validat
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.api.BaseHttpService
-import pl.touk.nussknacker.ui.api.SecuredEndpointError.OtherError
 import pl.touk.nussknacker.ui.api.app.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
@@ -62,7 +61,7 @@ class AppApiHttpService(config: Config,
 
   private def processDeploymentHealthCheck = {
     appApiEndpoints.processDeploymentHealthCheckEndpoint
-      .serverSecurityLogic(authorize)
+      .serverSecurityLogic(authorize[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
         _ =>
           processesWithProblemStateStatus
@@ -72,7 +71,7 @@ class AppApiHttpService(config: Config,
               } else {
                 logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
                 logger.debug(s"Scenarios with status PROBLEM: $set")
-                Left(OtherError(HealthCheckProcessErrorResponseDto(
+                Left(Right(HealthCheckProcessErrorResponseDto(
                   message = Some("Scenarios with status PROBLEM"),
                   processes = Some(set.keys.toSet)
                 )))
@@ -81,7 +80,7 @@ class AppApiHttpService(config: Config,
             .recover {
               case NonFatal(e) =>
                 logger.error("Failed to get statuses", e)
-                Left(OtherError(HealthCheckProcessErrorResponseDto(
+                Left(Right(HealthCheckProcessErrorResponseDto(
                   message = Some("Failed to retrieve job statuses"),
                   processes = None
                 )))
@@ -91,14 +90,14 @@ class AppApiHttpService(config: Config,
 
   private def processValidationHealthCheck = {
     appApiEndpoints.processValidationHealthCheckEndpoint
-      .serverSecurityLogic(authorize)
+      .serverSecurityLogic(authorize[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
         _ =>
           processesWithValidationErrors.map { processes =>
             if (processes.isEmpty) {
               Right(HealthCheckProcessSuccessResponseDto)
             } else {
-              Left(OtherError(HealthCheckProcessErrorResponseDto(
+              Left(Right(HealthCheckProcessErrorResponseDto(
                 message = Some("Scenarios with validation errors"),
                 processes = Some(processes.toSet)
               )))
