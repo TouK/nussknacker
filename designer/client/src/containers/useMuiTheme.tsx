@@ -70,22 +70,22 @@ export function useMuiTheme(): MuiTheme & Theme {
                                         marginTop: 10,
                                         cursor: "pointer",
                                         maxHeight: 400,
-                                        ".MuiAlert-icon": { color: "#333333", alignSelf: "center" },
+                                        ".MuiAlert-icon": { color: variables.alert.text, alignSelf: "center" },
                                     },
                                     standardSuccess: {
                                         backgroundColor: variables.alert.sucsess,
-                                        color: "#333333",
+                                        color: variables.alert.text,
                                     },
                                     standardError: {
                                         backgroundColor: variables.alert.error,
-                                        color: "#333333",
+                                        color: variables.alert.text,
                                     },
                                     standardWarning: {
                                         backgroundColor: variables.alert.warning,
                                     },
                                     standardInfo: {
                                         backgroundColor: variables.alert.info,
-                                        color: "#333333",
+                                        color: variables.alert.text,
                                     },
                                 },
                             },

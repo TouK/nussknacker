@@ -1,8 +1,9 @@
 import React from "react";
-import TipsError from "../../../assets/img/icons/tipsError.svg";
+import ErrorIcon from "@mui/icons-material/Error";
 import NodeTip from "./NodeTip";
 import { css } from "@emotion/css";
 import { NodeValidationError } from "../../../types";
+import { variables } from "../../../stylesheets/variables";
 
 //TODO: remove style overrides, cleanup
 export default function NodeErrors(props: { errors: NodeValidationError[]; message: string }): JSX.Element {
@@ -26,7 +27,7 @@ export default function NodeErrors(props: { errors: NodeValidationError[]; messa
 
     return (
         <div className={className}>
-            <NodeTip title={errorMessage} icon={<TipsError />} />
+            <NodeTip title={errorMessage} icon={<ErrorIcon sx={{ color: variables.alert.warningIcon, alignSelf: "center" }} />} />
             <div>
                 {errors.map(({ description, fieldName, message }, index) => (
                     <div className="node-error" key={index} title={description}>

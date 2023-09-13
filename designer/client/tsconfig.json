@@ -15,7 +15,6 @@
         "skipLibCheck": true,
         "downlevelIteration": true,
         "isolatedModules": true,
-        "baseUrl": "/",
         "plugins": [
             {
                 "name": "typescript-plugin-css-modules",
