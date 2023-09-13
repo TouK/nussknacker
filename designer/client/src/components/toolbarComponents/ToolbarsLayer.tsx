@@ -10,14 +10,6 @@ import { SidePanel, PanelSide } from "../sidePanels/SidePanel";
 import { Toolbar } from "./toolbar";
 import { getCapabilities } from "../../reducers/selectors/other";
 import { useSurvey } from "../toolbars/useSurvey";
-import styled from "@emotion/styled";
-
-interface CustomSidePanel {
-    side: PanelSide;
-    isDragging: boolean;
-}
-
-const CustomSidePanel = styled(SidePanel)(({ side, isDragging }: CustomSidePanel) => ({}));
 
 export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR";
 

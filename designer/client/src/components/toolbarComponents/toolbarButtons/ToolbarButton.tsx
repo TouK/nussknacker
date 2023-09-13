@@ -1,10 +1,10 @@
-import React, { ReactEventHandler, useContext } from "react";
-import Dropzone, { DropEvent } from "react-dropzone";
-import { InputWithFocus } from "../withFocus";
-import { ButtonsVariant, ToolbarButtonsContext } from "./ToolbarButtons";
+import React, { useContext } from "react";
+import Dropzone from "react-dropzone";
+import { InputWithFocus } from "../../withFocus";
+import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { css, cx } from "@emotion/css";
-import { styled } from "@mui/material";
-import { variables } from "../../stylesheets/variables";
+import { variables } from "../../../stylesheets/variables";
+import { Icon, Label } from "./ToolbarButtonStyled";
 
 const {
     buttonSize,
@@ -18,35 +18,7 @@ const {
     buttonSmallSize,
 } = variables;
 
-export interface ToolbarButtonProps {
-    name: string;
-    icon: React.JSX.Element | string;
-    className?: string;
-    disabled?: boolean;
-    title?: string;
-    onDrop?: <T extends File>(acceptedFiles: T[], rejectedFiles: T[], event: DropEvent) => void;
-    onMouseOver?: ReactEventHandler;
-    onMouseOut?: ReactEventHandler;
-    onClick?: ReactEventHandler;
-    hasError?: boolean;
-    isActive?: boolean;
-}
-
-const Icon = styled("div")({
-    flex: 1,
-    lineHeight: 0,
-    display: "flex",
-    flexDirection: "column",
-    width: parseFloat(buttonSize) / 2,
-});
-
-const Label = styled("div")<{
-    variant: ButtonsVariant;
-}>(({ variant }) => ({
-    display: variant === ButtonsVariant.small ? "none" : "unset",
-}));
-
-function ToolbarButton({ onDrop, title, className, disabled, name, icon, hasError, isActive, ...props }: ToolbarButtonProps) {
+export function ToolbarButton({ onDrop, title, className, disabled, name, icon, hasError, isActive, ...props }: ToolbarButtonProps) {
     const { variant } = useContext(ToolbarButtonsContext);
 
     const margin = 2;
@@ -108,5 +80,3 @@ function ToolbarButton({ onDrop, title, className, disabled, name, icon, hasErro
 
     return <button type="button" {...buttonProps} disabled={disabled} />;
 }
-
-export default ToolbarButton;

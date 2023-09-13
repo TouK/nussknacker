@@ -9,9 +9,9 @@ import { getCustomActions } from "../../../reducers/selectors/settings";
 import { UnknownRecord } from "../../../types/common";
 import { CssFade } from "../../CssFade";
 import ProcessStateIcon from "../../Process/ProcessStateIcon";
-import { ToolbarWrapper } from "../../toolbarComponents/ToolbarWrapper";
+import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { DefaultToolbarPanel, ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
-import { ToolbarButtons } from "../../toolbarComponents/ToolbarButtons";
+import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons/index";
 import { ActionButton } from "../../toolbarSettings/buttons";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
 

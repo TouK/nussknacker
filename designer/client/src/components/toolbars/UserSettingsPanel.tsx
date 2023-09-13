@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import Creatable from "react-select/creatable";
 import { useUserSettings } from "../../common/userSettings";
 import { useNkTheme } from "../../containers/theme";
-import { ToolbarWrapper } from "../toolbarComponents/ToolbarWrapper";
+import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 
 export function UserSettingsPanel(): JSX.Element {
     const { t } = useTranslation();

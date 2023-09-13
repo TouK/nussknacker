@@ -6,7 +6,7 @@ import { isFragment } from "../../../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../../../reducers/selectors/settings";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager/WindowKind";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/index";
 import { ToolbarButtonProps } from "../../types";
 
 // TODO: counts and metrics should not be visible in archived process

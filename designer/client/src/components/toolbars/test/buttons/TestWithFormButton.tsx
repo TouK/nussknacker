@@ -11,7 +11,7 @@ import {
 } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButtonProps } from "../../types";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/index";
 import { TestFormParameters } from "../../../../common/TestResultUtils";
 import { testProcessWithParameters } from "../../../../actions/nk/displayTestResults";
 import { GenericActionParameters } from "../../../modals/GenericActionDialog";

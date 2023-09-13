@@ -18,7 +18,6 @@ import cn from "classnames";
 import { DragHandlerContext } from "./DragHandle";
 import { getOrderForPosition } from "../../reducers/selectors/toolbars";
 import { Toolbar } from "./toolbar";
-import styled from "@emotion/styled";
 
 interface Rubric extends DraggableRubric {
     source: DraggableLocation;
@@ -36,15 +35,6 @@ type Props = {
     availableToolbars: Toolbar[];
     className?: string;
 };
-
-interface DraggableWrapper {
-    isDragging: boolean;
-    draggingOver?: string;
-    isDropAnimating: boolean;
-    sourceIndex: number;
-}
-
-const DraggableWrapper = styled.div(({ props }: DraggableWrapper) => ({}));
 
 export function ToolbarsContainer(props: Props): JSX.Element {
     const { side, availableToolbars, className } = props;

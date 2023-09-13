@@ -7,7 +7,7 @@ import ProcessUtils from "../../common/ProcessUtils";
 import { getProcessToDisplay, getTestResults } from "../../reducers/selectors/graph";
 import { getUi } from "../../reducers/selectors/ui";
 import { useWindows } from "../../windowManager";
-import { ToolbarWrapper } from "../toolbarComponents/ToolbarWrapper";
+import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import Errors from "./Errors";
 import ValidTips from "./ValidTips";
 import Warnings from "./Warnings";

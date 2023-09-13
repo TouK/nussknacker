@@ -2,7 +2,7 @@ import React from "react";
 import { RootState } from "../../../../reducers/index";
 import ProcessUtils from "../../../../common/ProcessUtils";
 import { connect } from "react-redux";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/index";
 import { getProcessToDisplay, getProcessVersionId } from "../../../../reducers/selectors/graph";
 import { useTranslation } from "react-i18next";
 import Icon from "../../../../assets/img/toolbarButtons/JSON.svg";

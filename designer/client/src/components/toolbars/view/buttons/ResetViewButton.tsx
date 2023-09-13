@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { resetToolbars } from "../../../../actions/nk/toolbars";
 import Icon from "../../../../assets/img/toolbarButtons/resetgui.svg";
 import { getToolbarsConfigId } from "../../../../reducers/selectors/toolbars";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/index";
 import { ToolbarButtonProps } from "../../types";
 
 export function ResetViewButton(props: ToolbarButtonProps) {

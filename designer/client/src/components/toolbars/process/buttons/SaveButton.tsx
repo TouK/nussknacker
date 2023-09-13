@@ -6,7 +6,7 @@ import { getProcessName, getProcessUnsavedNewName, isProcessRenamed, isSaveDisab
 import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager/WindowKind";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/index";
 import { ToolbarButtonProps } from "../../types";
 
 function SaveButton(props: ToolbarButtonProps): JSX.Element {
