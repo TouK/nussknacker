@@ -75,14 +75,10 @@ describe("Process", () => {
             cy.contains(/^properties/i)
                 .should("be.enabled")
                 .click();
-            cy.get("[data-testid=window]")
-                .should("be.visible")
-                .find("input")
-                .within((inputs) => {
-                    cy.wrap(inputs).first().click().type("-renamed");
-                    //this is idx of "Max events", which should be int
-                    cy.wrap(inputs).eq(3).click().type("wrong data");
-                });
+            cy.get("[data-testid=window]").should("be.visible").find("input").as("inputs");
+            cy.get("@inputs").first().click().type("-renamed");
+            //this is idx of "Max events", which should be int
+            cy.get("@inputs").eq(3).click().type("wrong data");
             cy.contains(/^apply/i)
                 .should("be.enabled")
                 .click();
