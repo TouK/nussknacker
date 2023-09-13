@@ -153,7 +153,7 @@ describe("Components list", () => {
         // we are clicking filter component because it has many usages and we are able to test usages list expansion
         cy.get("@links")
             .filter((i, e) => /^\d+$/.test(e.innerText))
-            .its(2)
+            .eq(2)
             .click();
 
         // we are clicking "X more" on list of places of usages to test usages list expansion
