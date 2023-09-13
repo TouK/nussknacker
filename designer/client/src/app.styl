@@ -5,7 +5,7 @@ html,
 body
   margin: 0
   padding: 0
-  height: 100vh
+  height: 100dvh
   background: graphBkgColor
   color: defaultTextColor
   // Material-UI uses rem units for the font size.
@@ -13,9 +13,18 @@ body
   font-size: 16px
   overflow: hidden
 
-#root
-  height: 100vh
-  display: flex
+.notification-dismiss 
+  display: none !important
+
+.notifications-wrapper
+  position absolute
+  bottom 25px
+  right 25px
+  z-index 10000
+
+.notification
+  font-family "Open Sans"
+  font-size: 16px
 
 .container-fluid
   padding-left: containerPadding

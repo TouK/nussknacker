@@ -64,7 +64,7 @@ class AppApiHttpService(config: Config,
       .serverSecurityLogic(authorize[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
         _ =>
-          processesWithProblemStateStatus
+          problemStateByProcessName
             .map { set =>
               if (set.isEmpty) {
                 Right(HealthCheckProcessSuccessResponseDto)
@@ -155,7 +155,7 @@ class AppApiHttpService(config: Config,
         })
       }
 
-  private def processesWithProblemStateStatus(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
+  private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
     for {
       processes <- processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.deployed)
       statusMap <- Future.sequence(mapNameToProcessState(processes)).map(_.toMap)

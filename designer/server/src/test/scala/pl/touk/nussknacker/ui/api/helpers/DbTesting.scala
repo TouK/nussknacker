@@ -20,7 +20,7 @@ trait WithTestDb extends BeforeAndAfterAll {
 
   def testDbRef: DbRef = dbRef
 
-  abstract override def afterAll(): Unit = {
+  override def afterAll(): Unit = {
     releaseDbRefResources.unsafeRunSync()
     super.afterAll()
   }

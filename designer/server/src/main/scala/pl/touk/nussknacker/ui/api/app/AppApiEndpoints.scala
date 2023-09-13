@@ -215,6 +215,7 @@ object AppApiEndpoints {
         )
       }
 
+      // todo: io.circe.Codec to CirceCodec
       implicit val userCategoriesWithProcessingTypesDtoCodec: io.circe.Codec[UserCategoriesWithProcessingTypesDto] = {
         io.circe.Codec.from(
           Decoder.decodeMap[String, String].map(UserCategoriesWithProcessingTypesDto.apply),
