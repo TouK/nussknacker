@@ -56,7 +56,7 @@ export class PanZoomPlugin {
             }
         });
 
-        paper.on(Events.BLANK_POINTERMOVE, (event: JQuery.MouseEventBase) => {
+        paper.on(Events.BLANK_POINTERMOVE, (event: dia.Event) => {
             const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
             const panStart = this.panStart;
             if (!isModified && panStart) {
