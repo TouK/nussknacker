@@ -524,7 +524,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
     }
   }
 
-  override protected def beforeEach(): Unit = {
+  override def beforeEach(): Unit = {
     super.beforeEach()
     listener.clear()
     deploymentManager.deploys.clear()

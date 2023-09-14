@@ -175,7 +175,9 @@ function dragNode(
         y: number;
     },
 ) {
-    cy.getNode(name).should("be.visible").trigger("mousedown", "center").trigger("mousemove", {
+    cy.getNode(name).should("be.visible").trigger("mousedown", "center").trigger("mousemove", x, y, {
+        moveThreshold: 5,
+        force: true,
         clientX: x,
         clientY: y,
     });

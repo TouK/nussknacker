@@ -1,7 +1,7 @@
 import { variables } from "../../stylesheets/variables";
 import { styled } from "@mui/material";
 import { VersionType } from "./HistoryItem";
-import Badge from "../../assets/img/deployed.svg";
+import Badge from "../deployed.svg";
 
 export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
     cursor: pointer;

@@ -1,28 +1,20 @@
-import { isEmpty } from "lodash";
 import React, { ReactElement } from "react";
-import Dotdotdot from "react-dotdotdot";
-import TipsClose from "../../assets/img/icons/tipsClose.svg";
-import classnames from "./notifications.styl";
+import { Alert, AlertColor } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 
 interface Props {
     icon: ReactElement;
     message?: string;
     details?: string;
+    type: AlertColor;
 }
 
-export default function Notification({ icon, message, details }: Props): JSX.Element {
+export default function Notification({ icon, message, details, type }: Props): JSX.Element {
     return (
-        <div className={classnames.notification}>
-            <div className="icon">{icon}</div>
-            <div className={classnames.notificationDetails}>
-                {!isEmpty(message) && <span className={classnames.notificationText}>{message}</span>}
-                {!isEmpty(details) && (
-                    <Dotdotdot clamp={`380px`}>
-                        <span className={classnames.notificationText}>{details}</span>
-                    </Dotdotdot>
-                )}
-            </div>
-            <TipsClose className={classnames.dismissIcon} />
-        </div>
+        <Alert icon={icon} severity={type} action={<CloseIcon sx={{ fontSize: 12 }} />}>
+            {message}
+            <br />
+            {details}
+        </Alert>
     );
 }

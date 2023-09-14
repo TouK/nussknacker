@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api
 
+import com.github.ghik.silencer.silent
 import io.circe
 import io.circe.generic.extras.Configuration
 import io.circe._
@@ -15,7 +16,6 @@ object CirceUtil {
     .default
     .withDefaults
     .withDiscriminator("type")
-
 
   def decodeJson[T: Decoder](json: String): Either[circe.Error, T] =
     io.circe.parser.parse(json).flatMap(Decoder[T].decodeJson)
@@ -53,7 +53,7 @@ object CirceUtil {
     implicit val urlDecoder: Decoder[URL] = Decoder.decodeString.map(new URL(_))
   }
 
-  implicit class RichACursor(cursor: ACursor) {
+  implicit class RichACursor(val cursor: ACursor) extends AnyVal {
 
     def downAt(p: Json => Boolean): ACursor = {
       @tailrec
@@ -65,6 +65,20 @@ object CirceUtil {
       go(cursor.downArray)
     }
 
+  }
+
+  implicit class HCursorExt(val cursor: HCursor) extends AnyVal {
+
+    @silent("deprecated")
+    def toMapExcluding(keys: String*): Decoder.Result[Map[String, String]] = {
+      val keysSet = keys.toSet
+      cursor
+        .as[Map[String, String]]
+        .map {
+          _.filterKeys(k => !keysSet.contains(k))
+            .toMap
+        }
+    }
   }
 
   // Be default circe print all empty values as a nulls which can be good for programs because it is more explicit

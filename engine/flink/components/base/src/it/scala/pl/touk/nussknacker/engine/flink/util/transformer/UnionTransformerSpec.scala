@@ -28,7 +28,8 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
 
   private val data = List("10", "20", "30", "40")
 
-  override protected def afterEach(): Unit = {
+  override def afterEach(): Unit = {
+    super.afterEach()
     MockService.clear()
   }
 

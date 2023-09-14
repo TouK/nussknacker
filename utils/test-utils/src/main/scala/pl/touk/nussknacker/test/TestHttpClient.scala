@@ -47,7 +47,7 @@ trait WithTestHttpClient extends WithSttpTestUtils with BeforeAndAfterAll {
 
   def httpClient: SttpBackend[Identity, Any] = client
 
-  abstract override def afterAll(): Unit = {
+  override def afterAll(): Unit = {
     clientResources.unsafeRunSync()
     super.afterAll()
   }

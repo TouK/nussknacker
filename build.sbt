@@ -341,6 +341,7 @@ val cronParserV = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "3.1.6"
 val sttpV = "3.8.15"
+val tapirV = "1.7.3"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.18.0"
@@ -1585,6 +1586,11 @@ lazy val designer = (project in file("designer/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.8",
+
+        "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirV,
+        "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirV,
+        "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % tapirV,
+        "io.circe" %% "circe-generic-extras" % circeGenericExtrasV,
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
 
