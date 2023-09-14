@@ -1,8 +1,9 @@
 import React from "react";
-import TipsWarning from "../../../../assets/img/icons/tipsWarning.svg";
+import WarningIcon from "@mui/icons-material/Warning";
 import NodeTip from "../NodeTip";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
+import { variables } from "../../../../stylesheets/variables";
 
 export default function TestErrors(): JSX.Element {
     const results = useTestResults();
@@ -15,7 +16,7 @@ export default function TestErrors(): JSX.Element {
         <NodeTableBody>
             <div className="node-row">
                 <div className="node-label">
-                    <NodeTip title={"Test case error"} icon={<TipsWarning />} />
+                    <NodeTip title={"Test case error"} icon={<WarningIcon sx={{ color: variables.alert.warningIcon }} />} />
                 </div>
                 <div className="node-value">
                     <div className="node-error">
