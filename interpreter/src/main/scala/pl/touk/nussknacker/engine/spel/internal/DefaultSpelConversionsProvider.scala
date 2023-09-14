@@ -5,7 +5,7 @@ import org.springframework.core.convert.converter.{ConditionalConverter, Convert
 import org.springframework.core.convert.support.GenericConversionService
 import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
-import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.stringConversionsMap
+import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.{StringConversion, stringConversions}
 
 import java.nio.charset.Charset
 import java.time._
@@ -26,8 +26,8 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
     val service = new GenericConversionService
     service.addConverterFactory(new NumberToNumberConverterFactory())
 
-    stringConversionsMap.foreach { case (klass, conversion) =>
-      service.addConverter(classOf[String], klass.asInstanceOf[Class[Any]], (source: String) => conversion(source))
+    stringConversions.foreach { case StringConversion(klass, conversion) =>
+      service.addConverter(classOf[String], klass, (source: String) => conversion(source))
     }
 
     // This is used only to prevent errors when calling function with

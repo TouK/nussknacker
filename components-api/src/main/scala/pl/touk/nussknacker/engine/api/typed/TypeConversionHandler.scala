@@ -25,31 +25,31 @@ object TypeConversionHandler {
   // TODO: Add feature flag: strictBigDecimalChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
   private val ConversionFromClassesForDecimals = NumberTypesPromotionStrategy.DecimalNumbers.toSet + classOf[java.math.BigDecimal]
 
-  val stringConversionsMap: Map[Class[_], String => Object] = Map(
-    classOf[ZoneId] -> ((source: String) => ZoneId.of(source)),
-    classOf[ZoneOffset] -> ((source: String) => ZoneOffset.of(source)),
-    classOf[Locale] -> ((source: String) => StringUtils.parseLocale(source)),
-    classOf[Charset] -> ((source: String) => Charset.forName(source)),
-    classOf[Currency] -> ((source: String) => Currency.getInstance(source)),
-    classOf[UUID] -> ((source: String) => if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null),
-    classOf[LocalTime] -> ((source: String) => LocalTime.parse(source)),
-    classOf[LocalDate] -> ((source: String) => LocalDate.parse(source)),
-    classOf[LocalDateTime] -> ((source: String) => LocalDateTime.parse(source)),
-    classOf[ChronoLocalDate] -> ((source: String) => LocalDate.parse(source)),
-    classOf[ChronoLocalDateTime[_]] -> ((source: String) => LocalDateTime.parse(source)),
-    classOf[ChronoLocalDateTime[_]] -> ((source: String) => LocalDateTime.parse(source)),
+  case class StringConversion[T](klass: Class[T], conversion: String => T)
+
+  val stringConversions: Seq[StringConversion[_]] = List(
+    StringConversion(classOf[ZoneId], (source: String) => ZoneId.of(source)),
+    StringConversion(classOf[ZoneOffset], (source: String) => ZoneOffset.of(source)),
+    StringConversion(classOf[Locale], (source: String) => StringUtils.parseLocale(source)),
+    StringConversion(classOf[Charset], (source: String) => Charset.forName(source)),
+    StringConversion(classOf[Currency], (source: String) => Currency.getInstance(source)),
+    StringConversion(classOf[UUID], (source: String) => if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null),
+    StringConversion(classOf[LocalTime], (source: String) => LocalTime.parse(source)),
+    StringConversion(classOf[LocalDate], (source: String) => LocalDate.parse(source)),
+    StringConversion(classOf[LocalDateTime], (source: String) => LocalDateTime.parse(source)),
+    StringConversion(classOf[ChronoLocalDate], (source: String) => LocalDate.parse(source)),
+    StringConversion(classOf[ChronoLocalDateTime[_]], (source: String) => LocalDateTime.parse(source))
   )
 
-  private def valueClassesThatBeConvertedFromString(typed: TypedObjectWithValue): List[Class[_]] = {
-    stringConversionsMap.filter { case (_, conversion) =>
+  private def valueClassCanBeConvertedFromString(typed: TypedObjectWithValue, superclassCandidate: TypedClass): Boolean =
+    stringConversions.exists { case StringConversion(klass, conversion) =>
       try {
         conversion(typed.value.asInstanceOf[String])
-        true
+        ClassUtils.isAssignable(superclassCandidate.klass, klass, true)
       } catch {
         case _: Throwable => false
       }
-    }.keys.toList
-  }
+    }
 
   def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean = {
     handleNumberConversions(givenType.objType, superclassCandidate) ||
@@ -71,9 +71,10 @@ object TypeConversionHandler {
     }
   }
 
-  private def handleStringToValueClassConversions(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean = {
-    givenType.isInstanceOf[TypedObjectWithValue] &&
-      valueClassesThatBeConvertedFromString(givenType.asInstanceOf[TypedObjectWithValue]).exists(ClassUtils.isAssignable(superclassCandidate.klass, _, true))
-  }
+  private def handleStringToValueClassConversions(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean =
+    givenType match {
+      case objectWithValue: TypedObjectWithValue => valueClassCanBeConvertedFromString(objectWithValue, superclassCandidate)
+      case _ => false
+    }
 
 }
