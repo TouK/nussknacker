@@ -1,17 +1,17 @@
-import styled from "styled-components";
+import { styled } from "@mui/material";
 
-export const PanelProcessInfo = styled.div`
+export const PanelProcessInfo = styled("div")`
     display: flex;
     padding: 15px 10px;
 `;
 
-export const PanelProcessInfoIcon = styled.div`
+export const PanelProcessInfoIcon = styled("div")`
     display: inline-block;
     width: 32px;
     height: 32px;
 `;
 
-export const ProcessInfoText = styled.div`
+export const ProcessInfoText = styled("div")`
     display: inline-block;
     margin-left: 7px;
     font-size: 14px;
@@ -20,7 +20,7 @@ export const ProcessInfoText = styled.div`
     vertical-align: middle;
 `;
 
-export const ProcessName = styled.div`
+export const ProcessName = styled("div")`
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 215px;
@@ -31,7 +31,7 @@ export const ProcessRename = styled(ProcessName)`
     color: orange;
 `;
 
-export const ProcessInfoDescription = styled.div`
+export const ProcessInfoDescription = styled("div")`
     font-size: 12px;
     font-weight: lighter;
 `;
