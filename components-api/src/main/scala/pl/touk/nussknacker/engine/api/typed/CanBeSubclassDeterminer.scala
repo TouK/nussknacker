@@ -137,7 +137,7 @@ trait CanBeSubclassDeterminer {
 
   // TODO: Conversions should be checked during typing, not during generic usage of TypingResult.canBeSubclassOf(...)
   private def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {
-    val errMsgPrefix = s"${givenType.display} cannot be converted to ${superclassCandidate.display}"
+    val errMsgPrefix = s"${givenType.objType.display} cannot be converted to ${superclassCandidate.display}"
     condNel(TypeConversionHandler.canBeConvertedTo(givenType, superclassCandidate), (), errMsgPrefix)
   }
 
