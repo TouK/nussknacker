@@ -11,7 +11,7 @@ import { CssFade } from "../../CssFade";
 import ProcessStateIcon from "../../Process/ProcessStateIcon";
 import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { DefaultToolbarPanel, ToolbarPanelProps } from "../../toolbarComponents/DefaultToolbarPanel";
-import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons/index";
+import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons";
 import { ActionButton } from "../../toolbarSettings/buttons";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
 import {

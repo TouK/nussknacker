@@ -47,7 +47,7 @@ export function ProcessHistoryComponent(props: { isReadOnly?: boolean }): JSX.El
             autoHeightMax={300}
             hideTracksWhenNotNeeded={true}
         >
-            <ProcessHistoryWrapper>
+            <ProcessHistoryWrapper id="process-history">
                 {history.map((version, index) => {
                     const isLatest = index === 0;
                     const { createDate, processVersionId } = version;

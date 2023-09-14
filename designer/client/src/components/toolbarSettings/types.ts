@@ -1,5 +1,5 @@
 import { ToolbarsSide } from "../../reducers/toolbars";
-import { ButtonsVariant } from "../toolbarComponents/toolbarButtons/index";
+import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
 import { ToolbarButton } from "./buttons";
 
 export interface ToolbarConfig {

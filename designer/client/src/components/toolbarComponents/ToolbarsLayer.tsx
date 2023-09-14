@@ -58,13 +58,13 @@ function ToolbarsLayer(props: { toolbars: Toolbar[]; configId: string }): JSX.El
     return (
         <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
             <SidePanel side={PanelSide.Left} className={cn(styles.left, isDragging && styles.isDraggingStarted)}>
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} />
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} />
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopLeft} className={cn(styles.top)} />
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomLeft} className={cn(styles.bottom)} />
             </SidePanel>
 
             <SidePanel side={PanelSide.Right} className={cn(styles.right, isDragging && styles.isDraggingStarted)}>
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} />
-                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} />
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.TopRight} className={cn(styles.top)} />
+                <ToolbarsContainer availableToolbars={availableToolbars} side={ToolbarsSide.BottomRight} className={cn(styles.bottom)} />
             </SidePanel>
         </DragDropContext>
     );

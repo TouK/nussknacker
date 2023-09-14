@@ -5,7 +5,7 @@ import Icon from "../../../../assets/img/toolbarButtons/compare.svg";
 import { hasOneVersion } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager/WindowKind";
-import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons/index";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 
 type Props = ToolbarButtonProps;

@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 import { ToolbarWrapper, ToolbarWrapperProps } from "./toolbarWrapper/ToolbarWrapper";
-import { ButtonsVariant, ToolbarButtons } from "../toolbarComponents/toolbarButtons/index";
+import { ButtonsVariant, ToolbarButtons } from "../toolbarComponents/toolbarButtons";
 
 export type ToolbarPanelProps = PropsWithChildren<{
     id: string;

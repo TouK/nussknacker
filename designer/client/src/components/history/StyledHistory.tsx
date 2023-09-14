@@ -28,11 +28,11 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
         padding-left: 10px;
     }
 
-    &:last-child::before {
+    &:last-of-type::before {
         height: 14px;
     }
 
-    &:first-child::before {
+    &:first-of-type::before {
         top: 14px;
     }
 
@@ -55,11 +55,9 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
         props.type === VersionType.current &&
         `
     color: ${variables.defaultTextColor};
-
     &:hover::after {
         background-color: ${variables.defaultTextColor};
     }
-
     &::after {
         background-color: ${variables.defaultTextColor};
     }
@@ -68,13 +66,13 @@ export const HistoryItemStyled = styled("li")<{ type: VersionType }>`
     ${(props) =>
         props.type === VersionType.past &&
         `
-    color: rgba(${variables.defaultTextColor}, 0.8);
+    color: rgba(${variables.historyItemColor}, 0.8);
   `}
 
   ${(props) =>
         props.type === VersionType.future &&
         `
-    color: rgba(${variables.defaultTextColor}, 0.3);
+    color: rgba(${variables.historyItemColor}, 0.3);
   `}
 
   &:hover {

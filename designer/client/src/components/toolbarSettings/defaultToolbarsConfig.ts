@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import { ToolbarsSide } from "../../reducers/toolbars";
 import { WithId } from "../../types/common";
-import { ButtonsVariant } from "../toolbarComponents/toolbarButtons/index";
+import { ButtonsVariant } from "../toolbarComponents/toolbarButtons";
 import { BuiltinButtonTypes } from "./buttons";
 import { DEV_TOOLBARS } from "./DEV_TOOLBARS";
 import { ToolbarsConfig } from "./types";
