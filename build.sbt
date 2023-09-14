@@ -1287,6 +1287,7 @@ lazy val componentsApi = (project in file("components-api")).
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "com.iheart" %% "ficus" % ficusV,
         "org.springframework" % "spring-core" % springV,
+        "com.google.code.findbugs" % "jsr305" % "3.0.2",
       )
     }
   ).dependsOn(commonApi, testUtils % "test")
