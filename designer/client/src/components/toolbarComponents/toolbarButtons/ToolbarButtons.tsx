@@ -1,5 +1,5 @@
 import React, { PropsWithChildren, createContext } from "react";
-import styled from "@emotion/styled";
+import { ToolbarButtonWrapper } from "./ToolbarButtonStyled";
 
 export enum ButtonsVariant {
     small = "small",
@@ -9,12 +9,6 @@ export enum ButtonsVariant {
 type Props = {
     variant?: ButtonsVariant;
 };
-
-const ToolbarButtonWrapper = styled.div(() => ({
-    display: "flex",
-    flexDirection: "row",
-    flexWrap: "wrap",
-}));
 
 export const ToolbarButtonsContext = createContext<{ variant: ButtonsVariant }>({ variant: ButtonsVariant.label });
 

@@ -15,3 +15,9 @@ export const Label = styled("div")<{
 }>(({ variant }) => ({
     display: variant === ButtonsVariant.small ? "none" : "unset",
 }));
+
+export const ToolbarButtonWrapper = styled("div")(() => ({
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+}));

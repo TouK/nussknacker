@@ -1,6 +1,6 @@
 import React, { DetailedHTMLProps, TextareaHTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
-import { TextAreaWithFocus } from "./withFocus";
+import { TextAreaWithFocus } from "../withFocus";
 
 type Props = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>;
 

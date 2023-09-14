@@ -12,4 +12,7 @@ export const variables = {
     buttonSmallSize: "48",
     panelBackground: "#4D4D4D",
     sidebarWidth: "290px",
+    defaultTextColor: "#ccc",
+    panelBkgColor: "#444444",
+    historyItemBackground: "#8d8d8d",
 };

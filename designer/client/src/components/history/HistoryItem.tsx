@@ -1,10 +1,8 @@
-import { css, cx } from "@emotion/css";
-import React, { useMemo } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import styles from "../stylesheets/processHistory.styl";
-import Date from "./common/Date";
-import Badge from "./deployed.svg";
-import { ActionType, ProcessVersionType } from "./Process/types";
+import Date from "../common/Date";
+import { ActionType, ProcessVersionType } from "../Process/types";
+import { HistoryItemStyled, StyledBadge } from "./StyledHistory";
 
 type HistoryItemProps = {
     isLatest?: boolean;
@@ -20,17 +18,6 @@ export enum VersionType {
     future,
 }
 
-const mapVersionToClassName = (v: VersionType): string => {
-    switch (v) {
-        case VersionType.current:
-            return styles.current;
-        case VersionType.past:
-            return styles.past;
-        case VersionType.future:
-            return styles.future;
-    }
-};
-
 const HDate = ({ date }: { date: string }) => (
     <small>
         <i>
@@ -42,17 +29,15 @@ const HDate = ({ date }: { date: string }) => (
 export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: HistoryItemProps): JSX.Element {
     const { t } = useTranslation();
     const { user, createDate, processVersionId, actions } = version;
-    const className = useMemo(() => mapVersionToClassName(type), [type]);
 
-    const flex = css({ display: "flex", justifyContent: "space-between", alignItems: "flex-start" });
-    const badgeStyles = css({ height: "1.2em", margin: "0 1.2em" });
     return (
-        <li className={cx(className, flex)} onClick={() => onClick(version)}>
+        <HistoryItemStyled type={type} onClick={() => onClick(version)}>
             <div>
                 {`v${processVersionId}`} | {user}
                 {isLatest && !isDeployed && (
                     <small>
                         <span
+                            style={{ margin: "0 3px" }}
                             title={t("processHistory.lastVersionIsNotDeployed", "Last version is not deployed")}
                             className="glyphicon glyphicon-warning-sign"
                         />
@@ -63,7 +48,7 @@ export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: Hi
                 <br />
                 {isDeployed && <HDate date={actions.find((a) => a.actionType === ActionType.Deploy)?.performedAt} />}
             </div>
-            {isDeployed && <Badge className={badgeStyles} />}
-        </li>
+            {isDeployed && <StyledBadge />}
+        </HistoryItemStyled>
     );
 }

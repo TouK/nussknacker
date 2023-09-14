@@ -14,6 +14,14 @@ import { DefaultToolbarPanel, ToolbarPanelProps } from "../../toolbarComponents/
 import { ToolbarButtons } from "../../toolbarComponents/toolbarButtons/index";
 import { ActionButton } from "../../toolbarSettings/buttons";
 import ProcessStateUtils from "../../Process/ProcessStateUtils";
+import {
+    PanelProcessInfo,
+    PanelProcessInfoIcon,
+    ProcessInfoDescription,
+    ProcessInfoText,
+    ProcessName,
+    ProcessRename,
+} from "./ProcessInfoComponents";
 
 type State = UnknownRecord;
 
@@ -31,21 +39,19 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
             <ToolbarWrapper title={i18next.t("panels.status.title", "Status")} id={this.props.id}>
                 <SwitchTransition>
                     <CssFade key={transitionKey}>
-                        <div className={"panel-process-info"}>
-                            <div className={"process-info-icon"}>
+                        <PanelProcessInfo>
+                            <PanelProcessInfoIcon>
                                 <ProcessStateIcon process={process} processState={processState} />
-                            </div>
-                            <div className={"process-info-text"}>
+                            </PanelProcessInfoIcon>
+                            <ProcessInfoText>
                                 {isRenamePending ? (
-                                    <div className="process-name process-name-rename" title={process.name}>
-                                        {unsavedNewName}*
-                                    </div>
+                                    <ProcessRename title={process.name}>{unsavedNewName}*</ProcessRename>
                                 ) : (
-                                    <div className="process-name">{process.name}</div>
+                                    <ProcessName>{process.name}</ProcessName>
                                 )}
-                                <div className={"process-info-description"}>{description}</div>
-                            </div>
-                        </div>
+                                <ProcessInfoDescription>{description}</ProcessInfoDescription>
+                            </ProcessInfoText>
+                        </PanelProcessInfo>
                     </CssFade>
                 </SwitchTransition>
                 <ToolbarButtons variant={this.props.buttonsVariant}>
