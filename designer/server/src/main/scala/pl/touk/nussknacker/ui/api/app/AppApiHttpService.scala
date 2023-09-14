@@ -39,13 +39,12 @@ class AppApiHttpService(config: Config,
     with LazyLogging {
 
   private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
+  val allEndpoints = appApiEndpoints.allEndpoints
 
-  def publicServerEndpoints: List[ServerEndpoint[Any, Future]] = List(
-    healthCheck, buildInfo
-  )
-
-  def securedServerEndpoints: List[ServerEndpoint[Any, Future]] =
+  def serverEndpoints: List[ServerEndpoint[Any, Future]] =
     List(
+      healthCheck,
+      buildInfo,
       processDeploymentHealthCheck,
       processValidationHealthCheck,
       userCategoriesWithProcessingTypes,
@@ -59,7 +58,7 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  private def processDeploymentHealthCheck = {
+  private val processDeploymentHealthCheck = {
     appApiEndpoints.processDeploymentHealthCheckEndpoint
       .serverSecurityLogic(authorize[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
@@ -71,7 +70,7 @@ class AppApiHttpService(config: Config,
               } else {
                 logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
                 logger.debug(s"Scenarios with status PROBLEM: $set")
-                Left(Right(HealthCheckProcessErrorResponseDto(
+                Left(Left(HealthCheckProcessErrorResponseDto(
                   message = Some("Scenarios with status PROBLEM"),
                   processes = Some(set.keys.toSet)
                 )))
@@ -80,7 +79,7 @@ class AppApiHttpService(config: Config,
             .recover {
               case NonFatal(e) =>
                 logger.error("Failed to get statuses", e)
-                Left(Right(HealthCheckProcessErrorResponseDto(
+                Left(Left(HealthCheckProcessErrorResponseDto(
                   message = Some("Failed to retrieve job statuses"),
                   processes = None
                 )))
@@ -88,7 +87,7 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  private def processValidationHealthCheck = {
+  private val processValidationHealthCheck = {
     appApiEndpoints.processValidationHealthCheckEndpoint
       .serverSecurityLogic(authorize[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
@@ -97,7 +96,7 @@ class AppApiHttpService(config: Config,
             if (processes.isEmpty) {
               Right(HealthCheckProcessSuccessResponseDto)
             } else {
-              Left(Right(HealthCheckProcessErrorResponseDto(
+              Left(Left(HealthCheckProcessErrorResponseDto(
                 message = Some("Scenarios with validation errors"),
                 processes = Some(processes.toSet)
               )))
@@ -118,9 +117,9 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  private def serverConfigInfo = {
+  private val serverConfigInfo = {
     appApiEndpoints.serverConfigEndpoint
-      .serverSecurityLogic(authorizeAdmin)
+      .serverSecurityLogic(authorizeAdmin[Unit])
       .serverLogic { _ => _ =>
         Future {
           val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
@@ -135,9 +134,9 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  private def userCategoriesWithProcessingTypes = {
+  private val userCategoriesWithProcessingTypes = {
     appApiEndpoints.userCategoriesWithProcessingTypesEndpoint
-      .serverSecurityLogic(authorize)
+      .serverSecurityLogic(authorize[Unit])
       .serverLogicSuccess { loggedUser =>
         _ =>
           Future {
@@ -146,9 +145,9 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  private def processingTypeDataReload =
+  private val processingTypeDataReload =
     appApiEndpoints.processingTypeDataReloadEndpoint
-      .serverSecurityLogic(authorizeAdmin)
+      .serverSecurityLogic(authorizeAdmin[Unit])
       .serverLogic { _ => _ =>
         Future(Right {
           processingTypeDataReloader.reloadAll()

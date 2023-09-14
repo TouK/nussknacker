@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.security.basicauth
 
-import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.server.directives.Credentials.Provided
 import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}

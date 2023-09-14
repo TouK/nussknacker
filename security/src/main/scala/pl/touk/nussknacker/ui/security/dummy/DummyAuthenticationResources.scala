@@ -5,7 +5,11 @@ import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsMissin
 import akka.http.scaladsl.server.directives.AuthenticationDirective
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1}
 import pl.touk.nussknacker.ui.security.api.{AnonymousAccess, AuthCredentials, AuthenticatedUser, AuthenticationResources, FrontendStrategySettings}
+import sttp.model.headers.WWWAuthenticateChallenge
+import sttp.tapir.EndpointInput.Auth
+import sttp.tapir._
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 
 class DummyAuthenticationResources(override val name: String, configuration: DummyAuthenticationConfiguration)
@@ -20,7 +24,9 @@ class DummyAuthenticationResources(override val name: String, configuration: Dum
     reject(AuthenticationFailedRejection(CredentialsMissing, HttpChallenge("Dummy", "Dummy"))): Directive1[AuthenticatedUser]
   }
 
-  override def authenticationMethod(): sttp.tapir.EndpointInput.Auth[AuthCredentials, _] = ???
+  override def authenticationMethod(): Auth[AuthCredentials, _] =
+    auth.basic(new WWWAuthenticateChallenge("Dummy", ListMap.empty).realm("Dummy"))
 
-  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = ???
+  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] =
+    Future.successful(None)
 }

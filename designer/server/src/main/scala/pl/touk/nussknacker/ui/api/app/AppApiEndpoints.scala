@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.api.app
 
-//import io.circe.generic.auto._
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.EndpointError
-import pl.touk.nussknacker.ui.api.{BaseEndpointDefinitions, SecurityError}
+import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions
+import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions._
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import sttp.model.StatusCode._
 import sttp.tapir.EndpointInput.Auth
@@ -19,98 +18,80 @@ private[api] class AppApiEndpoints(auth: Auth[AuthCredentials, _])
   import AppApiEndpoints.Dtos.Codecs._
   import AppApiEndpoints.Dtos._
 
-  override val allEndpoints: List[AnyEndpoint] = List(
-    appHealthCheckEndpoint,
-    buildInfoEndpoint
-  )
-
-  def appHealthCheckEndpoint: Endpoint[Unit, Unit, Unit, HealthCheckProcessSuccessResponseDto.type, Any] =
+  lazy val appHealthCheckEndpoint: PublicEndpoint[Unit, Unit, HealthCheckProcessSuccessResponseDto.type, Any] =
     baseNuApiPublicEndpoint
       .get
       .in("app" / "healthCheck")
       .out(statusCode(Ok))
       .out(jsonBody[HealthCheckProcessSuccessResponseDto.type])
 
-  def processDeploymentHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
-    baseNuApiUserSecuredEndpoint
+  lazy val processDeploymentHealthCheckEndpoint =
+    baseNuApiPublicEndpoint
       .get
       .in("app" / "healthCheck" / "process" / "deployment")
-      .out(statusCode(Ok))
-      .out(jsonBody[HealthCheckProcessSuccessResponseDto.type])
+      .out(
+        statusCode(Ok).and(jsonBody[HealthCheckProcessSuccessResponseDto.type])
+      )
       .errorOut(
         statusCode(InternalServerError).and(jsonBody[HealthCheckProcessErrorResponseDto])
       )
-//      .errorOut(
-//        oneOf[EndpointError[HealthCheckProcessErrorResponseDto]](
-//          oneOfVariantFromMatchType(Unauthorized, emptyOutputAs(Left(SecurityError.AuthenticationError))),
-//          oneOfVariantFromMatchType(Forbidden, emptyOutputAs(Left(SecurityError.AuthorizationError))),
-////          oneOfVariantFromMatchType(InternalServerError, jsonBody[Right[SecurityError, HealthCheckProcessErrorResponseDto]]),
-//        )
-//      )
+      .withSecurity(auth)
 
-  def processValidationHealthCheckEndpoint =
-    baseNuApiUserSecuredEndpoint
+  lazy val processValidationHealthCheckEndpoint =
+    baseNuApiPublicEndpoint
       .get
       .in("app" / "healthCheck" / "process" / "validation")
-      .out(statusCode(Ok))
-      .out(jsonBody[HealthCheckProcessSuccessResponseDto.type])
-      .errorOutEither[HealthCheckProcessErrorResponseDto](
+      .out(
+        statusCode(Ok).and(jsonBody[HealthCheckProcessSuccessResponseDto.type])
+      )
+      .errorOut(
         statusCode(InternalServerError).and(jsonBody[HealthCheckProcessErrorResponseDto])
       )
-//      .errorOut(
-//
-//        oneOf[Either[SecurityError, HealthCheckProcessErrorResponseDto]](
-//          oneOfVariantFromMatchType(Unauthorized, emptyOutputAs(Left(SecurityError.AuthenticationError))),
-//          oneOfVariantFromMatchType(Forbidden, emptyOutputAs(Left(SecurityError.AuthorizationError))),
-//
-//          statusMapping()
-//        )
-//      )
+      .withSecurity(auth)
 
-  def buildInfoEndpoint: Endpoint[Unit, Unit, Unit, BuildInfoDto, Any] =
+  lazy val buildInfoEndpoint: Endpoint[Unit, Unit, Unit, BuildInfoDto, Any] =
     baseNuApiPublicEndpoint
       .get
       .in("app" / "buildInfo")
       .out(statusCode(Ok))
       .out(jsonBody[BuildInfoDto])
 
-  def serverConfigEndpoint: SecuredEndpoint[Unit, Nothing, ServerConfigInfoDto, Any] =
-    baseNuApiUserSecuredEndpoint
+  // todo: conditionally excluded from API docs as well
+  lazy val serverConfigEndpoint =
+    baseNuApiPublicEndpoint
+      .withSecurity(auth)
       .get
       .in("app" / "config")
-      .out(statusCode(Ok))
-      .out(jsonBody[ServerConfigInfoDto])
-      .errorOut(
-        oneOf[EndpointError[Nothing]](
-          oneOfVariantFromMatchType(Unauthorized, emptyOutputAs(Left(SecurityError.AuthenticationError))),
-          oneOfVariantFromMatchType(Forbidden, emptyOutputAs(Left(SecurityError.AuthorizationError)))
-        )
+      .out(
+        statusCode(Ok).and(jsonBody[ServerConfigInfoDto])
       )
 
-  def userCategoriesWithProcessingTypesEndpoint: SecuredEndpoint[Unit, Nothing, UserCategoriesWithProcessingTypesDto, Any] =
-    baseNuApiUserSecuredEndpoint
+  lazy val userCategoriesWithProcessingTypesEndpoint =
+    baseNuApiPublicEndpoint
+      .withSecurity(auth)
       .get
       .in("app" / "config" / "categoriesWithProcessingType")
-      .out(statusCode(Ok))
-      .out(jsonBody[UserCategoriesWithProcessingTypesDto])
-      .errorOut(
-        oneOf[EndpointError[Nothing]](
-          oneOfVariantFromMatchType(Unauthorized, emptyOutputAs(Left(SecurityError.AuthenticationError))),
-          oneOfVariantFromMatchType(Forbidden, emptyOutputAs(Left(SecurityError.AuthorizationError)))
-        )
+      .out(
+        statusCode(Ok).and(jsonBody[UserCategoriesWithProcessingTypesDto])
       )
 
-  def processingTypeDataReloadEndpoint: SecuredEndpoint[Unit, Nothing, Unit, Any] =
-    baseNuApiUserSecuredEndpoint
+  lazy val processingTypeDataReloadEndpoint =
+    baseNuApiPublicEndpoint
+      .withSecurity(auth)
       .post
       .in("app" / "processingtype" / "reload")
       .out(statusCode(NoContent))
-      .errorOut(
-        oneOf[EndpointError[Nothing]](
-          oneOfVariantFromMatchType(Unauthorized, emptyOutputAs(Left(SecurityError.AuthenticationError))),
-          oneOfVariantFromMatchType(Forbidden, emptyOutputAs(Left(SecurityError.AuthorizationError)))
-        )
-      )
+
+  override val allEndpoints: List[AnyEndpoint] = List(
+    buildInfoEndpoint,
+    serverConfigEndpoint,
+    userCategoriesWithProcessingTypesEndpoint,
+    appHealthCheckEndpoint,
+    processDeploymentHealthCheckEndpoint,
+    processValidationHealthCheckEndpoint,
+    processingTypeDataReloadEndpoint
+  )
+
 }
 object AppApiEndpoints {
   object Dtos {
@@ -155,9 +136,7 @@ object AppApiEndpoints {
         )
       }
 
-      implicit val hh: io.circe.Codec[HealthCheckProcessErrorResponseDto] = ???
-
-      implicit val healthCheckProcessErrorResponseDtoCodec: io.circe.Codec[Right[SecurityError,HealthCheckProcessErrorResponseDto]] = {
+      implicit val healthCheckProcessErrorResponseDtoCodec: io.circe.Codec[HealthCheckProcessErrorResponseDto] = {
         io.circe.Codec.from(
           Decoder
             .forProduct3[HealthCheckProcessErrorResponseDto, String, Option[String], Option[Set[String]]](
@@ -167,15 +146,13 @@ object AppApiEndpoints {
                 HealthCheckProcessErrorResponseDto(message, processes)
               case invalid =>
                 throw new IllegalArgumentException(s"Cannot deserialize [$invalid]")
-            }
-            .map(Right.apply),
+            },
           Encoder
             .forProduct3[HealthCheckProcessErrorResponseDto, String, Option[String], Option[Set[String]]](
               "status", "message", "processes"
             )(
               dto => ("ERROR", dto.message, dto.processes)
             )
-            .contramap(_.value)
         )
       }
 

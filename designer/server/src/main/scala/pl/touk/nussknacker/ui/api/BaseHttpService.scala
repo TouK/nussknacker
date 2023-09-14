@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.EndpointError
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.security.api.{AdminUser, AuthCredentials, AuthenticationConfiguration, AuthenticationResources, CommonUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -12,16 +11,16 @@ abstract class BaseHttpService(config: Config,
                                authenticator: AuthenticationResources)
                               (implicit executionContext: ExecutionContext) {
 
-  protected def authorizeAdmin[ERROR](credentials: AuthCredentials): Future[Either[EndpointError[ERROR], LoggedUser]] = {
+  protected def authorizeAdmin[ERROR](credentials: AuthCredentials): Future[Either[Either[ERROR, SecurityError], LoggedUser]] = {
     authorize[ERROR](credentials)
       .map {
         case right@Right(AdminUser(_, _)) => right
-        case Right(_: CommonUser) => Left(Left(SecurityError.AuthorizationError))
+        case Right(_: CommonUser) => Left(Right(SecurityError.AuthorizationError))
         case error@Left(_) => error
       }
   }
 
-  protected def authorize[ERROR](credentials: AuthCredentials): Future[Either[EndpointError[ERROR], LoggedUser]] = {
+  protected def authorize[ERROR](credentials: AuthCredentials): Future[Either[Either[ERROR, SecurityError], LoggedUser]] = {
     authenticator
       .authenticate(credentials)
       .map {
@@ -32,9 +31,9 @@ abstract class BaseHttpService(config: Config,
             processCategories = processCategoryService.getAllCategories
           ))
         case Some(_) =>
-          Left(Left(SecurityError.AuthorizationError))
+          Left(Right(SecurityError.AuthorizationError))
         case None =>
-          Left(Left(SecurityError.AuthenticationError))
+          Left(Right(SecurityError.AuthenticationError))
       }
   }
 }
