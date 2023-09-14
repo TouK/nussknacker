@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "target": "es5",
-        "lib": ["es5", "dom"],
+        "lib": ["ES7", "dom"],
         "types": ["cypress", "@frsource/cypress-plugin-visual-regression-diff", "@4tw/cypress-drag-drop"],
         "resolveJsonModule": true
     },
