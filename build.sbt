@@ -914,7 +914,6 @@ lazy val commonUtils = (project in utils("utils")).
     name := "nussknacker-utils",
     libraryDependencies ++= {
       Seq(
-        "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
@@ -1287,6 +1286,7 @@ lazy val componentsApi = (project in file("components-api")).
         "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "com.iheart" %% "ficus" % ficusV,
+        "org.springframework" % "spring-core" % springV,
       )
     }
   ).dependsOn(commonApi, testUtils % "test")

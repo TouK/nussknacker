@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.spel.internal
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.core.convert.converter.{ConditionalConverter, Converter, ConverterFactory}
 import org.springframework.core.convert.support.GenericConversionService
-import org.springframework.util.{NumberUtils, StringUtils}
+import org.springframework.util.NumberUtils
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
+import pl.touk.nussknacker.engine.api.typed.TypeConversionHandler.stringConversionsMap
 
 import java.nio.charset.Charset
 import java.time._
@@ -24,17 +25,11 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
   override def getConversionService: GenericConversionService = {
     val service = new GenericConversionService
     service.addConverterFactory(new NumberToNumberConverterFactory())
-    service.addConverter(classOf[String], classOf[ZoneId], (source: String) => ZoneId.of(source))
-    service.addConverter(classOf[String], classOf[ZoneOffset], (source: String) => ZoneOffset.of(source))
-    service.addConverter(classOf[String], classOf[Locale], (source: String) => StringUtils.parseLocale(source))
-    service.addConverter(classOf[String], classOf[Charset], (source: String) => Charset.forName(source))
-    service.addConverter(classOf[String], classOf[Currency], (source: String) => Currency.getInstance(source))
-    service.addConverter(classOf[String], classOf[UUID], (source: String) => if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null)
-    service.addConverter(classOf[String], classOf[LocalTime], (source: String) => LocalTime.parse(source))
-    service.addConverter(classOf[String], classOf[LocalDate], (source: String) => LocalDate.parse(source))
-    service.addConverter(classOf[String], classOf[LocalDateTime], (source: String) => LocalDateTime.parse(source))
-    service.addConverter(classOf[String], classOf[ChronoLocalDate], (source: String) => LocalDate.parse(source))
-    service.addConverter(classOf[String], classOf[ChronoLocalDateTime[_]], (source: String) => LocalDateTime.parse(source))
+
+    stringConversionsMap.foreach { case (klass, conversion) =>
+      service.addConverter(classOf[String], klass.asInstanceOf[Class[Any]], (source: String) => conversion(source))
+    }
+
     // This is used only to prevent errors when calling function with
     // varArgs with exactly one argument.
     // TODO: Remove it once Spring is updated; it should work with version 5.3.22

@@ -36,7 +36,7 @@ import java.math.{BigDecimal, BigInteger}
 import java.time.chrono.ChronoLocalDate
 import java.time.{LocalDate, LocalDateTime}
 import java.util
-import java.util.{Collections, Locale}
+import java.util.{Collections, Currency, Locale}
 import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
@@ -905,9 +905,27 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     }
   }
 
-  test("should be able to spel type conversions") {
+  test("should be able to handle spel type conversions") {
     parse[String]("T(java.text.NumberFormat).getNumberInstance('PL').format(12.34)", ctx).validExpression.evaluateSync[String](ctx) shouldBe "12,34"
     parse[Locale]("'PL'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe Locale.forLanguageTag("PL")
+    parse[LocalDate]("'2007-12-03'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe LocalDate.parse("2007-12-03")
+  }
+
+  test("shouldn't allow invalid spel type conversions") {
+    inside(parse[LocalDate]("'qwerty'")) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe s"Bad expression type, expected: LocalDate, found: String(qwerty)"
+    }
+
+    inside(parse[LocalDate]("''")) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe s"Bad expression type, expected: LocalDate, found: String()"
+    }
+
+    inside(parse[Currency]("'qwerty'")) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe s"Bad expression type, expected: Currency, found: String(qwerty)"
+    }
   }
 
   test("comparison of generic type with not generic type") {

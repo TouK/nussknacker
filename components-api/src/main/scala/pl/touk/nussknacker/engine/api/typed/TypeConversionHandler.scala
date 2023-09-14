@@ -2,16 +2,17 @@ package pl.touk.nussknacker.engine.api.typed
 
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
 
 import java.nio.charset.Charset
+import java.time._
 import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZoneOffset}
 import java.util.{Currency, Locale, UUID}
+import org.springframework.util.StringUtils
 
 /**
   * This class handle conversion logic which is done in SpEL's org.springframework.expression.TypeConverter.
-  * See pl.touk.nussknacker.engine.spel.internal.NuConversionServiceFactory for full conversion list
+  * See pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider for full conversion list
   */
 object TypeConversionHandler {
 
@@ -24,12 +25,35 @@ object TypeConversionHandler {
   // TODO: Add feature flag: strictBigDecimalChecking (default false?) and rename strictTypeChecking to strictClassesTypeChecking
   private val ConversionFromClassesForDecimals = NumberTypesPromotionStrategy.DecimalNumbers.toSet + classOf[java.math.BigDecimal]
 
-  private val ValueClassesThatBeConvertedFromString = List[Class[_]](classOf[ZoneId], classOf[ZoneOffset], classOf[Locale], classOf[Charset], classOf[Currency], classOf[UUID],
-    classOf[LocalTime], classOf[LocalDate], classOf[LocalDateTime], classOf[ChronoLocalDate], classOf[ChronoLocalDateTime[_]])
+  val stringConversionsMap: Map[Class[_], String => Object] = Map(
+    classOf[ZoneId] -> ((source: String) => ZoneId.of(source)),
+    classOf[ZoneOffset] -> ((source: String) => ZoneOffset.of(source)),
+    classOf[Locale] -> ((source: String) => StringUtils.parseLocale(source)),
+    classOf[Charset] -> ((source: String) => Charset.forName(source)),
+    classOf[Currency] -> ((source: String) => Currency.getInstance(source)),
+    classOf[UUID] -> ((source: String) => if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null),
+    classOf[LocalTime] -> ((source: String) => LocalTime.parse(source)),
+    classOf[LocalDate] -> ((source: String) => LocalDate.parse(source)),
+    classOf[LocalDateTime] -> ((source: String) => LocalDateTime.parse(source)),
+    classOf[ChronoLocalDate] -> ((source: String) => LocalDate.parse(source)),
+    classOf[ChronoLocalDateTime[_]] -> ((source: String) => LocalDateTime.parse(source)),
+    classOf[ChronoLocalDateTime[_]] -> ((source: String) => LocalDateTime.parse(source)),
+  )
 
-  def canBeConvertedTo(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
-    handleNumberConversions(givenClass, superclassCandidate) ||
-      handleStringToValueClassConversions(givenClass, superclassCandidate)
+  private def valueClassesThatBeConvertedFromString(typed: TypedObjectWithValue): List[Class[_]] = {
+    stringConversionsMap.filter { case (_, conversion) =>
+      try {
+        conversion(typed.value.asInstanceOf[String])
+        true
+      } catch {
+        case _: Throwable => false
+      }
+    }.keys.toList
+  }
+
+  def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean = {
+    handleNumberConversions(givenType.objType, superclassCandidate) ||
+      handleStringToValueClassConversions(givenType, superclassCandidate)
   }
 
   // See org.springframework.core.convert.support.NumberToNumberConverterFactory
@@ -47,8 +71,9 @@ object TypeConversionHandler {
     }
   }
 
-  private def handleStringToValueClassConversions(givenClass: TypedClass, superclassCandidate: TypedClass): Boolean = {
-    givenClass == Typed[String] && ValueClassesThatBeConvertedFromString.exists(ClassUtils.isAssignable(superclassCandidate.klass, _, true))
+  private def handleStringToValueClassConversions(givenType: SingleTypingResult, superclassCandidate: TypedClass): Boolean = {
+    givenType.isInstanceOf[TypedObjectWithValue] &&
+      valueClassesThatBeConvertedFromString(givenType.asInstanceOf[TypedObjectWithValue]).exists(ClassUtils.isAssignable(superclassCandidate.klass, _, true))
   }
 
 }

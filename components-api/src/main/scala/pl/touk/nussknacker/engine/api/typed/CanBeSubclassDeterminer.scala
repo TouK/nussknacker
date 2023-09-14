@@ -97,16 +97,17 @@ trait CanBeSubclassDeterminer {
         case _ => ().validNel
       }
     }
-    classCanBeSubclassOf(givenType.objType, superclassCandidate.objType) andThen
+    classCanBeSubclassOf(givenType, superclassCandidate.objType) andThen
       (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction combine dataValueRestriction)
   }
 
-  protected def classCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {
+  protected def classCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {
 
     def canBeSubOrSuperclass(t1: TypingResult, t2: TypingResult) =
       condNel(canBeSubclassOf(t1, t2).isValid || canBeSubclassOf(t2, t1).isValid, (),
         f"None of ${t1.display} and ${t2.display} is a subclass of another")
 
+    val givenClass = givenType.objType
     val hasSameTypeParams = (_: Unit) =>
       //we are lax here - the generic type may be co- or contra-variant - and we don't want to
       //throw validation errors in this case. It's better to accept to much than too little
@@ -118,7 +119,7 @@ trait CanBeSubclassDeterminer {
         isAssignable(givenClass.klass, superclassCandidate.klass)
 
     val canBeSubclass = equalClassesOrCanAssign andThen hasSameTypeParams
-    canBeSubclass orElse canBeConvertedTo(givenClass, superclassCandidate)
+    canBeSubclass orElse canBeConvertedTo(givenType, superclassCandidate)
   }
 
   private def canBeSubclassOf(givenTypes: Set[SingleTypingResult], superclassCandidates: Set[SingleTypingResult]): ValidatedNel[String, Unit] = {
@@ -135,9 +136,9 @@ trait CanBeSubclassDeterminer {
   }
 
   // TODO: Conversions should be checked during typing, not during generic usage of TypingResult.canBeSubclassOf(...)
-  private def canBeConvertedTo(givenClass: TypedClass, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {
-    val errMsgPrefix = s"${givenClass.display} cannot be converted to ${superclassCandidate.display}"
-    condNel(TypeConversionHandler.canBeConvertedTo(givenClass, superclassCandidate), (), errMsgPrefix)
+  private def canBeConvertedTo(givenType: SingleTypingResult, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {
+    val errMsgPrefix = s"${givenType.display} cannot be converted to ${superclassCandidate.display}"
+    condNel(TypeConversionHandler.canBeConvertedTo(givenType, superclassCandidate), (), errMsgPrefix)
   }
 
   //we use explicit autoboxing = true flag, as ClassUtils in commons-lang3:3.3 (used in Flink) cannot handle JDK 11...
