@@ -11,7 +11,10 @@ import scala.concurrent.{ExecutionContext, Future}
 trait AuthenticationProvider extends NamedServiceProvider {
   val realm = "nussknacker"
 
-  def createAuthenticationResources(config: Config, classLoader: ClassLoader)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): AuthenticationResources
+  def createAuthenticationResources(config: Config,
+                                    classLoader: ClassLoader)
+                                   (implicit ec: ExecutionContext,
+                                    sttpBackend: SttpBackend[Future, Any]): AuthenticationResources
 }
 
 object AuthenticationProvider extends LazyLogging {

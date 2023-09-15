@@ -8,7 +8,8 @@ import org.typelevel.ci._
 object CorsSupport {
 
   val headers = List(
-    (ci"Access-Control-Allow-Origin", "http://localhost:3000"),
+//    (ci"Access-Control-Allow-Origin", "https://31cc-79-184-150-183.ngrok-free.app"), // todo:
+    (ci"Access-Control-Allow-Origin", "*"), // todo:
     (ci"Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS, PATCH, DELETE"),
     (ci"Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization"),
     (ci"Access-Control-Allow-Credentials", "true")

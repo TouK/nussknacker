@@ -10,9 +10,13 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
+import pl.touk.nussknacker.engine.util.config.URIExtensions._
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api._
 import sttp.client3.SttpBackend
+import sttp.model.headers.WWWAuthenticateChallenge
+import sttp.tapir.EndpointInput.Auth
+import sttp.tapir._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -29,9 +33,32 @@ class OAuth2AuthenticationResources(override val name: String,
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable
 
-  override def authenticationMethod(): sttp.tapir.EndpointInput.Auth[AuthCredentials, _] = ???
+  private val authenticator = OAuth2Authenticator(service)
 
-  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = ???
+  override def authenticationMethod(): Auth[AuthCredentials, _] =
+    auth.oauth2
+      .authorizationCode(
+        authorizationUrl = configuration.authorizeUrl.map(_.toString),
+        tokenUrl = Some {
+          configuration.nuDesignerApiUri match {
+            case Some(uri) => s"${uri.withTrailingSlash.toString}authentication/oauth2"
+            case None => "http://NU-API-ADDR-NOT-CONFIGURED/authentication/oauth"
+          }
+        }, // todo: explain
+        challenge = WWWAuthenticateChallenge.bearer(realm)
+      )
+      .map(Mapping.from[String, AuthCredentials](AuthCredentials.apply)(_.value))
+
+  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = {
+    authenticator.authenticate(authCredentials.value)
+  }
+
+  override def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
+    SecurityDirectives.authenticateOAuth2Async(
+      authenticator = authenticator,
+      realm = realm
+    )
+  }
 
   override val frontendStrategySettings: FrontendStrategySettings = configuration.overrideFrontendAuthenticationStrategy.getOrElse(
     FrontendStrategySettings.OAuth2(
@@ -44,16 +71,9 @@ class OAuth2AuthenticationResources(override val name: String,
 
   val anonymousUserRole: Option[String] = configuration.anonymousUserRole
 
-  override def authenticateReally(): AuthenticationDirective[AuthenticatedUser] = {
-    SecurityDirectives.authenticateOAuth2Async(
-      authenticator = OAuth2Authenticator(configuration, service),
-      realm = realm
-    )
-  }
-
   override lazy val additionalRoute: Route =
     pathEnd {
-      parameters(Symbol("code"),  Symbol("redirect_uri").?) { (authorizationCode, redirectUri) =>
+      parameters(Symbol("code"), Symbol("redirect_uri").?) { (authorizationCode, redirectUri) =>
         get {
           Seq(redirectUri, configuration.redirectUri.map(_.toString)).flatten.exactlyOne.map { redirectUri =>
             complete {
@@ -63,12 +83,22 @@ class OAuth2AuthenticationResources(override val name: String,
             complete((NotFound, "Redirect URI must be provided either in configuration or in query params"))
           }
         }
+      } ~
+      formFields("code", "redirect_uri") { case (authorizationCode, redirectUri) =>
+        (get | post) {
+          complete {
+            oAuth2Authenticate(authorizationCode, redirectUri)
+          }
+        }
       }
     }
 
   private def oAuth2Authenticate(authorizationCode: String, redirectUri: String): Future[ToResponseMarshallable] = {
     service.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (auth, _) =>
-      val response = Oauth2AuthenticationResponse(auth.accessToken, auth.tokenType)
+      val response = Oauth2AuthenticationResponse(
+        auth.accessToken, auth.tokenType,
+        auth.accessToken, auth.tokenType
+      )
       val cookieHeader = configuration.tokenCookie.map { config =>
         `Set-Cookie`(HttpCookie(config.name,
           auth.accessToken,
@@ -96,4 +126,7 @@ class OAuth2AuthenticationResources(override val name: String,
   }
 }
 
-@JsonCodec case class Oauth2AuthenticationResponse(accessToken: String, tokenType: String)
+@JsonCodec case class Oauth2AuthenticationResponse(accessToken: String,
+                                                   tokenType: String,
+                                                   access_token: String, // todo: explain
+                                                   token_type: String)

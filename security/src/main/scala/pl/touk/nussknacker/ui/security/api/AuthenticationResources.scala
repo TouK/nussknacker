@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.security.api
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
@@ -12,6 +14,8 @@ import scala.concurrent.{ExecutionContext, Future}
 trait AuthenticationResources extends Directives with FailFastCirceSupport {
   val name: String
   val frontendStrategySettings: FrontendStrategySettings
+
+  implicit val system = ActorSystem("proxy")
 
   def authenticate(): Directive1[AuthenticatedUser]
 
@@ -32,6 +36,7 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
         }
       }
     }
+
   protected lazy val additionalRoute: Route = Directives.reject
 }
 

@@ -26,6 +26,7 @@ case class OAuth2Configuration(usersFile: URI,
                                profileFormat: Option[ProfileFormat],
                                accessTokenUri: URI,
                                redirectUri: Option[URI],
+                               nuDesignerApiUri: Option[URI],
                                implicitGrantEnabled: Boolean = false,
                                jwt: Option[JwtConfiguration],
                                accessTokenParams: Map[String, String] = Map.empty,
@@ -63,7 +64,6 @@ object OAuth2Configuration {
   import net.ceedubs.ficus.readers.EnumerationReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   private implicit val valueReader: ValueReader[FrontendStrategySettings] = forDecoder
-
 
   val name = "OAuth2"
   def create(config: Config): OAuth2Configuration = config.as[OAuth2Configuration](authenticationConfigPath)

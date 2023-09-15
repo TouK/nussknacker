@@ -9,7 +9,7 @@ abstract class BaseEndpointDefinitions(auth: Auth[AuthCredentials, _]) {
 
   val baseNuApiEndpoint =
     // TODO: when all services are moved to Tapir (including authn & authz), we can uncomment this path here
-    endpoint.in("api")
+    endpoint.in("api2")
 
   val baseNuApiPublicEndpoint =
     baseNuApiEndpoint
