@@ -24,7 +24,6 @@ export const variables = {
     panelBackground: "#4D4D4D",
     sidebarWidth: "290px",
     defaultTextColor: "#ccc",
-    historyItemColor: "204, 204, 204",
     panelBkgColor: "#444444",
     historyItemBackground: "#8d8d8d",
     buttonBorderColor: "#666666",
