@@ -33,10 +33,11 @@ import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVararg
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.math.{BigDecimal, BigInteger}
+import java.nio.charset.Charset
 import java.time.chrono.ChronoLocalDate
 import java.time.{LocalDate, LocalDateTime}
 import java.util
-import java.util.{Collections, Currency, Locale}
+import java.util.{Collections, Currency, Locale, UUID}
 import scala.annotation.varargs
 import scala.jdk.CollectionConverters._
 import scala.language.implicitConversions
@@ -925,6 +926,21 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     inside(parse[Currency]("'qwerty'")) {
       case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
         error.message shouldBe s"Bad expression type, expected: Currency, found: String(qwerty)"
+    }
+
+    inside(parse[UUID]("'qwerty'")) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe s"Bad expression type, expected: UUID, found: String(qwerty)"
+    }
+
+    inside(parse[Locale]("'qwerty'")) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe s"Bad expression type, expected: Locale, found: String(qwerty)"
+    }
+
+    inside(parse[Charset]("'qwerty'")) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe s"Bad expression type, expected: Charset, found: String(qwerty)"
     }
   }
 

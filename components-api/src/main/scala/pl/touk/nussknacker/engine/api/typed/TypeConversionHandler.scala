@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import org.apache.commons.lang3.ClassUtils
+import org.apache.commons.lang3.{ClassUtils, LocaleUtils}
 import pl.touk.nussknacker.engine.api.typed.supertype.NumberTypesPromotionStrategy
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypedClass, TypedObjectWithValue}
 
@@ -30,7 +30,11 @@ object TypeConversionHandler {
   val stringConversions: Seq[StringConversion[_]] = List(
     StringConversion(classOf[ZoneId], (source: String) => ZoneId.of(source)),
     StringConversion(classOf[ZoneOffset], (source: String) => ZoneOffset.of(source)),
-    StringConversion(classOf[Locale], (source: String) => StringUtils.parseLocale(source)),
+    StringConversion(classOf[Locale], (source: String) => {
+      val locale = StringUtils.parseLocale(source)
+      assert(LocaleUtils.isAvailableLocale(locale)) // without this check even "qwerty" is considered a Locale
+      locale
+    }),
     StringConversion(classOf[Charset], (source: String) => Charset.forName(source)),
     StringConversion(classOf[Currency], (source: String) => Currency.getInstance(source)),
     StringConversion(classOf[UUID], (source: String) => if (StringUtils.hasLength(source)) UUID.fromString(source.trim) else null),
