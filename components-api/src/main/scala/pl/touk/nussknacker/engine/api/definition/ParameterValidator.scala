@@ -54,7 +54,7 @@ case class CustomExpressionParameterValidator(validationExpression: String,
     }
   }
 
-  def isValidatorValid(paramName: String): Boolean = {
+  def isValidatorValid(paramName: String): Boolean = { // TODO use SpelExpressionValidator
     val context = new StandardEvaluationContext() // TODO should be context with access to function that the user can input, for example #DATE.now
 
     context.setVariable(paramName, defaultForType(expectedValueType))

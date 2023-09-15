@@ -54,7 +54,10 @@ object SingleComponentConfig {
 @JsonCodec case class ParameterConfig(defaultValue: Option[String],
                                       editor: Option[ParameterEditor],
                                       validators: Option[List[ParameterValidator]],
-                                      label: Option[String])
+                                      label: Option[String],
+                                      validationFailedMessage: Option[String] = None,
+                                      hintText: Option[String] = None
+                                     )
 
 object ParameterConfig {
   val empty: ParameterConfig = ParameterConfig(None, None, None, None)

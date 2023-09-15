@@ -223,7 +223,7 @@ object node {
                                             required: Boolean = false,
                                             validationExpression: Option[Expression] = None,
                                             validationErrorMessage: Option[String]   = None,
-                                            defaultValue: Option[Expression]         = None,
+                                            defaultValue: Option[Expression]         = None, // maybe Option[String], maybe change name to `initialValue`
                                             hintText: Option[String]                 = None,
                                            )
 
