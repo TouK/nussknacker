@@ -41,8 +41,8 @@ class OAuth2AuthenticationResources(override val name: String,
         authorizationUrl = configuration.authorizeUrl.map(_.toString),
         tokenUrl = Some {
           configuration.nuDesignerApiUri match {
-            case Some(uri) => s"${uri.withTrailingSlash.toString}authentication/oauth2"
-            case None => "http://NU-API-ADDR-NOT-CONFIGURED/authentication/oauth"
+            case Some(uri) => s"${uri.withTrailingSlash.toString}authentication/${name.toLowerCase()}"
+            case None => s"http://NU-API-ADDR-NOT-CONFIGURED/authentication/${name.toLowerCase()}"
           }
         }, // todo: explain
         challenge = WWWAuthenticateChallenge.bearer(realm)
@@ -84,38 +84,46 @@ class OAuth2AuthenticationResources(override val name: String,
           }
         }
       } ~
-      formFields("code", "redirect_uri") { case (authorizationCode, redirectUri) =>
-        (get | post) {
-          complete {
-            oAuth2Authenticate(authorizationCode, redirectUri)
+        formFields("code", "redirect_uri") { case (authorizationCode, redirectUri) =>
+          (get | post) {
+            complete {
+              oAuth2Authenticate(authorizationCode, redirectUri)
+            }
           }
         }
-      }
     }
 
   private def oAuth2Authenticate(authorizationCode: String, redirectUri: String): Future[ToResponseMarshallable] = {
-    service.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (auth, _) =>
-      val response = Oauth2AuthenticationResponse(
-        auth.accessToken, auth.tokenType,
-        auth.accessToken, auth.tokenType
-      )
-      val cookieHeader = configuration.tokenCookie.map { config =>
-        `Set-Cookie`(HttpCookie(config.name,
-          auth.accessToken,
-          httpOnly = true,
-          secure = true, // consider making it configurable (with default value 'true') so one could setup development environment easier (by setting it to 'false')
-          path = config.path,
-          domain = config.domain,
-          maxAge = auth.expirationPeriod.map(_.toSeconds),
+    service
+      .obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
+      .map { case (auth, _) =>
+        val response = Oauth2AuthenticationResponse(
+          auth.accessToken, auth.tokenType,
+          auth.accessToken, auth.tokenType
+        )
+        val cookieHeader = configuration
+          .tokenCookie
+          .map { config =>
+            `Set-Cookie`(HttpCookie(config.name,
+              auth.accessToken,
+              httpOnly = true,
+              secure = true, // consider making it configurable (with default value 'true') so one could setup development environment easier (by setting it to 'false')
+              path = config.path,
+              domain = config.domain,
+              maxAge = auth.expirationPeriod.map(_.toSeconds),
+            ))
+          }
+        ToResponseMarshallable(HttpResponse(
+          entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces),
+          headers = cookieHeader.toList
         ))
       }
-      ToResponseMarshallable(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces), headers = cookieHeader.toList))
-    }.recover {
-      case OAuth2ErrorHandler(ex) => {
-        logger.debug("Retrieving access token error:", ex)
-        toResponseReject(Map("message" -> "Retrieving access token error. Please try authenticate again."))
+      .recover {
+        case OAuth2ErrorHandler(ex) => {
+          logger.debug("Retrieving access token error:", ex)
+          toResponseReject(Map("message" -> "Retrieving access token error. Please try authenticate again."))
+        }
       }
-    }
   }
 
   private def toResponseReject(entity: Map[String, String]): ToResponseMarshallable = {
