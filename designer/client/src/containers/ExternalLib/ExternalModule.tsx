@@ -1,6 +1,6 @@
 import { lazy } from "@loadable/component";
 import React, { PropsWithChildren, useMemo } from "react";
-import { SuspenseSpinner } from "../../components/SuspenseSpinner";
+import { SuspenseSpinner } from "../../components/spinner/SuspenseSpinner";
 import { LibContextProvider } from "./store";
 import { loadComponent, splitUrl } from "./tools";
 import { Module, ModuleUrl } from "./types";
