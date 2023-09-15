@@ -2,7 +2,7 @@
 
 1.12.0 (Not released yet)
 -------------------------
-* [#4677](https://github.com/TouK/nussknacker/pull/4677) Added validation to SPeL string conversions (allow only constant that convert successfully)
+* [#4677](https://github.com/TouK/nussknacker/pull/4677) Added validation to SpEL string conversions (allow only constant that convert successfully)
 * [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
 * [#4582](https://github.com/TouK/nussknacker/pull/4582) Fixed: Releasing app resources on the designer close 
 * [#4540](https://github.com/TouK/nussknacker/pull/4540) Improvement: Allow selecting a claim from OIDC JWT to represent the username
