@@ -1,7 +1,7 @@
 import React from "react";
 import { Provider } from "react-redux";
 import configureMockStore from "redux-mock-store";
-import { ProcessHistoryComponent } from "../src/components/ProcessHistory";
+import { ProcessHistoryComponent } from "../src/components/history/ProcessHistory";
 import { render, within } from "@testing-library/react";
 
 const mockStore = configureMockStore();
