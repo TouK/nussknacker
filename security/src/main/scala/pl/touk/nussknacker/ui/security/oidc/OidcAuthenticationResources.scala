@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.security.oidc
 
-import pl.touk.nussknacker.ui.security.api.{AuthCredentials, AuthenticatedUser}
 import pl.touk.nussknacker.ui.security.oauth2._
 import sttp.client3.SttpBackend
 
@@ -22,10 +21,4 @@ class OidcAuthenticationResources(name: String,
       configuration.oAuth2Configuration
     ),
     configuration = configuration.oAuth2Configuration
-  ) {
-
-  override def authenticationMethod(): sttp.tapir.EndpointInput.Auth[AuthCredentials, _] = ???
-
-  override def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]] = ???
-
-}
+  )
