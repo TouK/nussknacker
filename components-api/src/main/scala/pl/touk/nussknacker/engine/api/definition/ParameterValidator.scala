@@ -40,6 +40,7 @@ trait Validator {
 
 case class CustomExpressionParameterValidator(validationExpression: String,
                                               expectedValueType: String,
+                                              validationFailedMessage: Option[String]
                                              ) extends ParameterValidator {
 
   // TODO validate this validator (returns bool, uses only the field it's bound to)
@@ -89,7 +90,7 @@ case class CustomExpressionParameterValidator(validationExpression: String,
   }
 
   private def error(paramName: String, nodeId: String): CustomParameterValidationError = CustomParameterValidationError(
-    "This field has to satisfy the validation expression",
+    validationFailedMessage.getOrElse("This field has to satisfy the validation expression"),
     s"Please correct the provided value to satisfy the expression \"$validationExpression\"",
     paramName,
     nodeId

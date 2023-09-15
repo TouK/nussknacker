@@ -32,7 +32,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
       ("#param + 10", "param", "Number", false),
       // TODO more tests
     )) { (validationExpression, paramName, expectedValueType, expected) =>
-      CustomExpressionParameterValidator(validationExpression, expectedValueType).isValidatorValid(paramName) shouldBe expected
+      CustomExpressionParameterValidator(validationExpression, expectedValueType, None).isValidatorValid(paramName) shouldBe expected
     }
   }
 
@@ -48,7 +48,7 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
       ("#param.compareTo(#DATE.now) < 0", "Time", "'2020-05-01'", true), // #DATE is null, lacking context
       // TODO more tests
     )) { (validationExpression, expectedValueType,inputExpression, isValid) =>
-      CustomExpressionParameterValidator(validationExpression, expectedValueType).isValid("param", inputExpression, None)(nodeId).isValid shouldBe isValid
+      CustomExpressionParameterValidator(validationExpression, expectedValueType, None).isValid("param", inputExpression, None)(nodeId).isValid shouldBe isValid
     }
   }
 

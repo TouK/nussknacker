@@ -55,7 +55,6 @@ object SingleComponentConfig {
                                       editor: Option[ParameterEditor],
                                       validators: Option[List[ParameterValidator]],
                                       label: Option[String],
-                                      validationFailedMessage: Option[String] = None,
                                       hintText: Option[String] = None
                                      )
 

@@ -101,7 +101,7 @@ class FragmentComponentDefinitionExtractor(componentConfig: String => Option[Sin
         "String"
       }
 
-      val validator = CustomExpressionParameterValidator(expr.expression, expectedValueType)
+      val validator = CustomExpressionParameterValidator(expr.expression, expectedValueType, fragmentParameter.validationFailedMessage)
       assert(validator.isValidatorValid(fragmentParameter.name)) // TODO we probably want other handling than just an assert
       validator
     })
@@ -113,7 +113,6 @@ class FragmentComponentDefinitionExtractor(componentConfig: String => Option[Sin
       defaultValue = fragmentParameter.defaultValue.orElse(
         DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(parameterData, isOptional = isOptional, config, extractedEditor))
       ),
-      validationErrorMessage = fragmentParameter.validationErrorMessage,
       hintText = fragmentParameter.hintText
     )
   }

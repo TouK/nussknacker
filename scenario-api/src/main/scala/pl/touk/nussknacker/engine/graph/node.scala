@@ -222,7 +222,7 @@ object node {
                                             typ: FragmentClazzRef,
                                             required: Boolean = false,
                                             validationExpression: Option[Expression] = None,
-                                            validationErrorMessage: Option[String]   = None,
+                                            validationFailedMessage: Option[String]  = None,
                                             defaultValue: Option[Expression]         = None, // maybe Option[String], maybe change name to `initialValue`
                                             hintText: Option[String]                 = None,
                                            )

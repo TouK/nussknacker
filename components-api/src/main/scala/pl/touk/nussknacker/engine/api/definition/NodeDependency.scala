@@ -90,7 +90,6 @@ case class Parameter(name: String,
                      isLazyParameter: Boolean,
                      scalaOptionParameter: Boolean,
                      javaOptionalParameter: Boolean,
-                     validationErrorMessage: Option[String] = None,
                      hintText: Option[String] = None
                     ) extends NodeDependency {
 

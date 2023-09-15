@@ -98,7 +98,7 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
       FragmentParameter("name", FragmentClazzRef[String],
         required = true,
         validationExpression = Some(Expression.spel("#name.length() < 100")),
-        validationErrorMessage = Some("some validation error"),
+        validationFailedMessage = Some("some validation error"),
         defaultValue = Some(Expression.spel("Tomasz")),
         hintText = Some("some hint text")
         )

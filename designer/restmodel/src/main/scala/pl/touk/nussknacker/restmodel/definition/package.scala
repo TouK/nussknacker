@@ -54,7 +54,6 @@ package object definition {
                                                        additionalVariables: Map[String, TypingResult],
                                                        variablesToHide: Set[String],
                                                        branchParam: Boolean,
-                                                       validationErrorMessage: Option[String],
                                                        hintText: Option[String]
                                                       ) {
 
