@@ -16,4 +16,6 @@ export const variables = {
     menuButtonBorderColor: "#666666",
     menuButtonActiveBKColor: "#5d5d5d",
     buttonTextColor: "#f6f6f6",
+    panelBackground: "#4D4D4D",
+    sidebarWidth: 290,
 };

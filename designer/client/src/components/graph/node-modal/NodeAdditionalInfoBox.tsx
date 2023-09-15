@@ -7,6 +7,7 @@ import { NodeType } from "../../../types";
 import { useSelector } from "react-redux";
 import { getProcessId } from "./NodeDetailsContent/selectors";
 import NodeUtils from "../NodeUtils";
+import { styled } from "@mui/material";
 
 interface Props {
     node: NodeType;
@@ -19,6 +20,12 @@ interface MarkdownAdditionalInfo {
     type: "MarkdownAdditionalInfo";
     content: string;
 }
+
+const ReactMD = styled(ReactMarkdown)`
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 14px;
+`;
 
 export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
     const { node } = props;

@@ -5,7 +5,7 @@ import customAttrs from "../../../assets/json/nodeAttributes.json";
 import { ProcessCounts } from "../../../reducers/graph";
 import { NodeType, ProcessDefinitionData } from "../../../types";
 import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
-import { setLinksHovered } from "../dragHelpers";
+import { setLinksHovered } from "../utils/dragHelpers";
 import { isConnected, isModelElement } from "../GraphPartialsInTS";
 import { Events } from "../joint-events";
 import NodeUtils from "../NodeUtils";
