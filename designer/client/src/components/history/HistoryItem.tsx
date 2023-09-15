@@ -18,6 +18,17 @@ export enum VersionType {
     future,
 }
 
+const mapVersionToClassName = (v: VersionType): string => {
+    switch (v) {
+        case VersionType.current:
+            return "current";
+        case VersionType.past:
+            return "past";
+        case VersionType.future:
+            return "future";
+    }
+};
+
 const HDate = ({ date }: { date: string }) => (
     <small>
         <i>
@@ -31,7 +42,7 @@ export function HistoryItem({ onClick, version, type, isLatest, isDeployed }: Hi
     const { user, createDate, processVersionId, actions } = version;
 
     return (
-        <HistoryItemStyled type={type} onClick={() => onClick(version)}>
+        <HistoryItemStyled className={mapVersionToClassName(type)} type={type} onClick={() => onClick(version)}>
             <div>
                 {`v${processVersionId}`} | {user}
                 {isLatest && !isDeployed && (
