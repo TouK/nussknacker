@@ -1,5 +1,4 @@
 import React, { PropsWithChildren } from "react";
-import "../stylesheets/spinner.styl";
 import LoaderSpinner from "./Spinner";
 
 type Props = {

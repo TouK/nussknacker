@@ -1,5 +1,5 @@
 import loadable from "@loadable/component";
-import LoaderSpinner from "../components/Spinner";
+import LoaderSpinner from "../components/spinner/Spinner";
 import React, { useMemo } from "react";
 import * as Paths from "./paths";
 import { MetricsBasePath, RootPath, ScenariosBasePath, VisualizationBasePath } from "./paths";
