@@ -12,8 +12,6 @@ trait BaseEndpointDefinitions {
 
   val baseNuApiEndpoint: PublicEndpoint[Unit, Unit, Unit, Any] = endpoint.in("api")
 
-  def allEndpoints: List[AnyEndpoint]
-
   implicit def toSecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R](endpoint: Endpoint[Unit, INPUT, BUSINESS_ERROR, OUTPUT, R]): ToSecure[INPUT, BUSINESS_ERROR, OUTPUT, R] =
     new ToSecure(endpoint)
 }

@@ -3,13 +3,34 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api._
+import sttp.tapir.AnyEndpoint
+import sttp.tapir.server.ServerEndpoint
 
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 
 abstract class BaseHttpService(config: Config,
                                processCategoryService: ProcessCategoryService,
                                authenticator: AuthenticationResources)
                               (implicit executionContext: ExecutionContext) {
+
+  private val allServerEndpoints = new AtomicReference(List.empty[ServerEndpoint[Any, Future]])
+
+  protected def expose(serverEndpoint: ServerEndpoint[Any, Future]): Unit = {
+    allServerEndpoints
+      .accumulateAndGet(
+        List(serverEndpoint),
+        (l1, l2) => l1 ::: l2
+      )
+  }
+
+  protected def expose(when: => Boolean)(serverEndpoint: ServerEndpoint[Any, Future]): Unit = {
+    if(when) expose(serverEndpoint)
+  }
+
+  def allEndpointDefinitions: List[AnyEndpoint] = serverEndpoints.map(_.endpoint)
+
+  def serverEndpoints: List[ServerEndpoint[Any, Future]] = allServerEndpoints.get()
 
   protected def authorizeAdmin[ERROR](credentials: AuthCredentials): Future[Either[Either[ERROR, SecurityError], LoggedUser]] = {
     authorize[ERROR](credentials)

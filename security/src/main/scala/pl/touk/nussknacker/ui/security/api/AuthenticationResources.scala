@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.security.api
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
@@ -15,8 +14,7 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
   val name: String
   val frontendStrategySettings: FrontendStrategySettings
 
-  implicit val system = ActorSystem("proxy")
-
+  // TODO: deprecated - it will be removed when all endpoints are moved to Tapir
   def authenticate(): Directive1[AuthenticatedUser]
 
   def authenticationMethod(): sttp.tapir.EndpointInput.Auth[AuthCredentials, _]

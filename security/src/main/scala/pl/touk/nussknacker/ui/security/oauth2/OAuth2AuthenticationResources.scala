@@ -8,7 +8,6 @@ import akka.http.scaladsl.server.directives.{AuthenticationDirective, SecurityDi
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
-import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.util.config.URIExtensions._
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
@@ -40,11 +39,13 @@ class OAuth2AuthenticationResources(override val name: String,
       .authorizationCode(
         authorizationUrl = configuration.authorizeUrl.map(_.toString),
         tokenUrl = Some {
+          // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
+          // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
           configuration.nuDesignerApiUri match {
             case Some(uri) => s"${uri.withTrailingSlash.toString}authentication/${name.toLowerCase()}"
             case None => s"http://NU-API-ADDR-NOT-CONFIGURED/authentication/${name.toLowerCase()}"
           }
-        }, // todo: explain
+        },
         challenge = WWWAuthenticateChallenge.bearer(realm)
       )
       .map(Mapping.from[String, AuthCredentials](AuthCredentials.apply)(_.value))
@@ -75,32 +76,34 @@ class OAuth2AuthenticationResources(override val name: String,
     pathEnd {
       parameters(Symbol("code"), Symbol("redirect_uri").?) { (authorizationCode, redirectUri) =>
         get {
-          Seq(redirectUri, configuration.redirectUri.map(_.toString)).flatten.exactlyOne.map { redirectUri =>
-            complete {
-              oAuth2Authenticate(authorizationCode, redirectUri)
-            }
-          }.getOrElse {
-            complete((NotFound, "Redirect URI must be provided either in configuration or in query params"))
-          }
+          completeOAuth2Authenticate(authorizationCode, redirectUri)
         }
       } ~
-        formFields("code", "redirect_uri") { case (authorizationCode, redirectUri) =>
+        formFields(Symbol("code"), Symbol("redirect_uri").?) { (authorizationCode, redirectUri) =>
           (get | post) {
-            complete {
-              oAuth2Authenticate(authorizationCode, redirectUri)
-            }
+            completeOAuth2Authenticate(authorizationCode, redirectUri)
           }
         }
     }
+
+  private def completeOAuth2Authenticate(authorizationCode: String, redirectUri: Option[String]) = {
+    Seq(redirectUri, configuration.redirectUri.map(_.toString)).flatten
+      .exactlyOne
+      .map { redirectUri =>
+        complete {
+          oAuth2Authenticate(authorizationCode, redirectUri)
+        }
+      }
+      .getOrElse {
+        complete((NotFound, "Redirect URI must be provided either in configuration or in query params"))
+      }
+  }
 
   private def oAuth2Authenticate(authorizationCode: String, redirectUri: String): Future[ToResponseMarshallable] = {
     service
       .obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
       .map { case (auth, _) =>
-        val response = Oauth2AuthenticationResponse(
-          auth.accessToken, auth.tokenType,
-          auth.accessToken, auth.tokenType
-        )
+        val response = Oauth2AuthenticationResponse(auth.accessToken, auth.tokenType)
         val cookieHeader = configuration
           .tokenCookie
           .map { config =>
@@ -134,7 +137,12 @@ class OAuth2AuthenticationResources(override val name: String,
   }
 }
 
-@JsonCodec case class Oauth2AuthenticationResponse(accessToken: String,
-                                                   tokenType: String,
-                                                   access_token: String, // todo: explain
-                                                   token_type: String)
+final case class Oauth2AuthenticationResponse(accessToken: String, tokenType: String)
+object Oauth2AuthenticationResponse {
+
+  implicit val encoder: Encoder[Oauth2AuthenticationResponse] = Encoder
+    // OpenAPI UI uses snake case instead of camel case, so we produce the response in these two cases
+    .forProduct4("accessToken", "tokenType", "access_token", "token_type")(r =>
+      (r.accessToken, r.tokenType, r.accessToken, r.tokenType)
+    )
+}

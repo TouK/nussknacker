@@ -14,7 +14,7 @@ class NuDesignerOpenApi(appApiHttpService: AppApiHttpService) {
       swaggerUIOptions = SwaggerUIOptions.default.copy(pathPrefix = "api" :: "docs" :: Nil)
     )
       .fromEndpoints(
-        appApiHttpService.allEndpoints,
+        appApiHttpService.allEndpointDefinitions,
         "Nussknacker Designer API",
         "1.0.0"
       )

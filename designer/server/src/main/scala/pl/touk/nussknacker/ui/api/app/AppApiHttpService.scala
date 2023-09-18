@@ -20,7 +20,6 @@ import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import sttp.tapir.server.ServerEndpoint
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -39,26 +38,15 @@ class AppApiHttpService(config: Config,
     with LazyLogging {
 
   private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
-  lazy val allEndpoints = serverEndpoints.map(_.endpoint)
 
-  def serverEndpoints: List[ServerEndpoint[Any, Future]] =
-    List(
-      healthCheck,
-      buildInfo,
-      processDeploymentHealthCheck,
-      processValidationHealthCheck,
-      userCategoriesWithProcessingTypes,
-      processingTypeDataReload
-    ) ::: (if (exposeConfig) serverConfigInfo :: Nil else Nil)
-
-  private val healthCheck = {
+  expose {
     appApiEndpoints.appHealthCheckEndpoint
       .serverLogicSuccess { _ =>
         Future.successful(HealthCheckProcessSuccessResponseDto)
       }
   }
 
-  private val processDeploymentHealthCheck = {
+  expose {
     appApiEndpoints.processDeploymentHealthCheckEndpoint
       .serverSecurityLogic(authorize[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
@@ -87,7 +75,7 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  private val processValidationHealthCheck = {
+  expose {
     appApiEndpoints.processValidationHealthCheckEndpoint
       .serverSecurityLogic(authorize[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
@@ -105,7 +93,7 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  private val buildInfo = {
+  expose {
     appApiEndpoints.buildInfoEndpoint
       .serverLogicSuccess { _ =>
         Future {
@@ -117,24 +105,25 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  private val serverConfigInfo = {
+  expose(when = exposeConfig) {
     appApiEndpoints.serverConfigEndpoint
       .serverSecurityLogic(authorizeAdmin[Unit])
-      .serverLogic { _ => _ =>
-        Future {
-          val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
-          configJson match {
-            case Right(json) =>
-              Right(ServerConfigInfoDto(json))
-            case Left(errorMessage) =>
-              logger.error(s"Cannot create JSON from the Nussknacker configuration. Error: $errorMessage")
-              throw new Exception("Cannot prepare configuration")
+      .serverLogic { _ =>
+        _ =>
+          Future {
+            val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
+            configJson match {
+              case Right(json) =>
+                Right(ServerConfigInfoDto(json))
+              case Left(errorMessage) =>
+                logger.error(s"Cannot create JSON from the Nussknacker configuration. Error: $errorMessage")
+                throw new Exception("Cannot prepare configuration")
+            }
           }
-        }
       }
   }
 
-  private val userCategoriesWithProcessingTypes = {
+  expose {
     appApiEndpoints.userCategoriesWithProcessingTypesEndpoint
       .serverSecurityLogic(authorize[Unit])
       .serverLogicSuccess { loggedUser =>
@@ -145,14 +134,16 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  private val processingTypeDataReload =
+  expose {
     appApiEndpoints.processingTypeDataReloadEndpoint
       .serverSecurityLogic(authorizeAdmin[Unit])
-      .serverLogic { _ => _ =>
-        Future(Right {
-          processingTypeDataReloader.reloadAll()
-        })
+      .serverLogic { _ =>
+        _ =>
+          Future(Right {
+            processingTypeDataReloader.reloadAll()
+          })
       }
+  }
 
   private def problemStateByProcessName(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
     for {

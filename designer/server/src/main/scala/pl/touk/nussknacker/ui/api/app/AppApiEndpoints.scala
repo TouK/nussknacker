@@ -56,7 +56,6 @@ private[api] class AppApiEndpoints(auth: Auth[AuthCredentials, _])
       .out(statusCode(Ok))
       .out(jsonBody[BuildInfoDto])
 
-  // todo: conditionally excluded from API docs as well
   lazy val serverConfigEndpoint: SecuredEndpoint[Unit, Unit, ServerConfigInfoDto, Any] =
     baseNuApiEndpoint
       .withSecurity(auth)
@@ -81,16 +80,6 @@ private[api] class AppApiEndpoints(auth: Auth[AuthCredentials, _])
       .post
       .in("app" / "processingtype" / "reload")
       .out(statusCode(NoContent))
-
-  override val allEndpoints: List[AnyEndpoint] = List(
-    buildInfoEndpoint,
-    serverConfigEndpoint,
-    userCategoriesWithProcessingTypesEndpoint,
-    appHealthCheckEndpoint,
-    processDeploymentHealthCheckEndpoint,
-    processValidationHealthCheckEndpoint,
-    processingTypeDataReloadEndpoint
-  )
 
 }
 object AppApiEndpoints {
