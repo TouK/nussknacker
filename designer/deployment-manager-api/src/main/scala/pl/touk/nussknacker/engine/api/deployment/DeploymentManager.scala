@@ -57,7 +57,7 @@ trait DeploymentManager extends AutoCloseable {
 
   def customActions: List[CustomAction]
 
-  def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]]
+  def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Future[CustomActionResult]]
 
   //TODO: this is very flink specific, we should handle it via custom action
   def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult]

@@ -17,9 +17,9 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.ui.BadRequestError
-import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponseTryPF
+import pl.touk.nussknacker.ui.api.EspErrorToHttp.{errorToHttp, toResponseTryPF}
 import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
@@ -31,6 +31,7 @@ import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCoun
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object ManagementResources {
 
@@ -245,19 +246,18 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
             (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
               val params = req.params.getOrElse(Map.empty)
               complete {
-                customActionInvokerService.invokeCustomAction(req.actionName, process, params)
-                  .flatMap {
-                    case res@Right(_) =>
-                      toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
-                    case res@Left(err) =>
-                      val response = toHttpResponse(CustomActionResponse(res)) _
-                      err match {
-                        case _: CustomActionFailure => response(StatusCodes.InternalServerError)
-                        case _: CustomActionInvalidStatus => response(StatusCodes.Forbidden)
-                        case _: CustomActionForbidden => response(StatusCodes.Forbidden)
-                        case _: CustomActionNotImplemented => response(StatusCodes.NotImplemented)
-                        case _: CustomActionNonExisting => response(StatusCodes.NotFound)
-                      }
+                customActionInvokerService
+                  .invokeCustomAction(req.actionName, process, params).map(_ => ())
+                  .andThen {
+                    case Success(_) => HttpResponse(status = StatusCodes.OK)
+                    case Failure(err) => err match {
+                      case _: CustomActionFailure => HttpResponse(status = StatusCodes.InternalServerError)
+                      case _: CustomActionInvalidStatus => HttpResponse(status = StatusCodes.Forbidden)
+                      case _: CustomActionForbidden => HttpResponse(status = StatusCodes.Forbidden)
+                      case _: CustomActionNotImplemented => HttpResponse(status = StatusCodes.NotImplemented)
+                      case _: CustomActionNonExisting => HttpResponse(status = StatusCodes.NotFound)
+                      case other => errorToHttp(other)
+                    }
                   }
               }
             }
