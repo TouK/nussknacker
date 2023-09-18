@@ -1,23 +1,12 @@
 import React, { useMemo } from "react";
 import { isEmpty } from "lodash";
-import { styled } from "@mui/material";
 import xss from "xss";
+import { PanelComment } from "./StyledComment";
 
 interface Props {
     content: string;
     commentSettings: { substitutionPattern?: string; substitutionLink?: string };
 }
-
-const PanelComment = styled("div")`
-    margin-top: 1px;
-    font-size: 12px;
-    word-break: break-word;
-    p {
-        width: 90%;
-        margin-left: 0;
-        margin-right: 0;
-    }
-`;
 
 function CommentContent({ commentSettings, content }: Props): JSX.Element {
     const newContent = useMemo(() => {

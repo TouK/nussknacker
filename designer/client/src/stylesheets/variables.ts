@@ -29,5 +29,8 @@ export const variables = {
     menuButtonBorderColor: "#666666",
     menuButtonActiveBKColor: "#5d5d5d",
     sidebarWidth: 290,
+    commentHeaderColor: "#afafaf",
+    commentBkgColor: "#333333",
+    formControllHeight: 46,
     // buttonTextColor: "#f6f6f6",
 };

@@ -32,14 +32,14 @@ export const NodeDetailsContent = ({
         <NodeTable editable={!!onChange}>
             <NodeErrors errors={otherErrors} message="Node has errors" />
             <TestResultsWrapper nodeId={node.id}>
-                {/* <NodeTypeDetailsContent
+                <NodeTypeDetailsContent
                     node={node}
                     edges={edges}
                     onChange={onChange}
                     fieldErrors={fieldErrors}
                     showValidation={showValidation}
                     showSwitch={showSwitch}
-                /> */}
+                />
             </TestResultsWrapper>
             <NodeAdditionalInfoBox node={node} />
         </NodeTable>

@@ -1,5 +1,5 @@
 import React from "react";
-import { ProcessAttachments } from "../src/components/ProcessAttachments"; //import redux-independent component
+import { ProcessAttachments } from "../src/components/processAttach/ProcessAttachments"; //import redux-independent component
 import configureMockStore from "redux-mock-store";
 import thunk from "redux-thunk";
 import { Provider } from "react-redux";
