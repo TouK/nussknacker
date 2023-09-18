@@ -39,7 +39,7 @@ class AppApiHttpService(config: Config,
     with LazyLogging {
 
   private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
-  val allEndpoints = serverEndpoints.map(_.endpoint)
+  lazy val allEndpoints = serverEndpoints.map(_.endpoint)
 
   def serverEndpoints: List[ServerEndpoint[Any, Future]] =
     List(
