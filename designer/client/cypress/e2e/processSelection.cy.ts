@@ -29,7 +29,7 @@ describe("Process mouse drag", () => {
     it("should allow pan view", () => {
         cy.get("@canvas")
             .trigger("mousedown", 10, 10, { force: true })
-            .trigger("mousemove", 200, 100, { force: true })
+            .trigger("mousemove", 200, 100, { force: true, moveThreshold: 5 })
             .trigger("mouseup", { force: true })
             .wait(200);
         cy.get("@graph").matchImage(snapshotParams);
@@ -39,7 +39,7 @@ describe("Process mouse drag", () => {
         cy.get("@canvas")
             .trigger("keydown", { key: "Meta" })
             .trigger("mousedown", 300, 100, { metaKey: true, force: true })
-            .trigger("mousemove", 700, 500, { metaKey: true, force: true });
+            .trigger("mousemove", 700, 500, { metaKey: true, force: true, moveThreshold: 5 });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas").trigger("mouseup", { force: true });
         cy.get("@graph").matchImage(snapshotParams);
@@ -49,7 +49,7 @@ describe("Process mouse drag", () => {
         cy.get("@canvas")
             .trigger("keydown", { key: "Meta" })
             .trigger("mousedown", 700, 100, { metaKey: true, force: true })
-            .trigger("mousemove", 500, 500, { metaKey: true, force: true });
+            .trigger("mousemove", 500, 500, { metaKey: true, force: true, moveThreshold: 5 });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas").trigger("mouseup", { force: true });
         cy.get("@graph").matchImage(snapshotParams);
@@ -59,14 +59,14 @@ describe("Process mouse drag", () => {
         cy.get("@canvas")
             .trigger("keydown", { key: "Meta" })
             .trigger("mousedown", 700, 100, { metaKey: true, force: true })
-            .trigger("mousemove", 500, 400, { metaKey: true, force: true });
+            .trigger("mousemove", 500, 400, { metaKey: true, force: true, moveThreshold: 5 });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas").trigger("mouseup", { force: true }).trigger("keyup", { key: "Meta" });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas")
             .trigger("keydown", { key: "Shift" })
             .trigger("mousedown", 700, 150, { shiftKey: true, force: true })
-            .trigger("mousemove", 500, 550, { shiftKey: true, force: true });
+            .trigger("mousemove", 500, 550, { shiftKey: true, force: true, moveThreshold: 5 });
         cy.get("@graph").matchImage(snapshotParams);
         cy.get("@canvas").trigger("mouseup", { force: true });
         cy.get("@graph").matchImage(snapshotParams);

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { unsavedProcessChanges } from "../common/DialogMessages";
 import { useWindows } from "../windowManager";
 import { unstable_useBlocker as useBlocker } from "react-router-dom";

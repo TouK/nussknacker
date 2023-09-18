@@ -12,6 +12,10 @@ declare global {
             y: number;
         }
 
+        interface TriggerOptions {
+            moveThreshold?: number;
+        }
+
         interface MatchImageOptionsExtended extends Cypress.MatchImageOptions {
             updateSnapshotsOnFail?: boolean;
         }
@@ -22,8 +26,14 @@ declare global {
     }
 }
 
-const getRequestOptions = (...args): Partial<Cypress.RequestOptions> => {
-    const [first, second, third] = args;
+type RequestArgs =
+    | [string]
+    | [string, Cypress.RequestBody]
+    | [Cypress.HttpMethod, string]
+    | [Cypress.HttpMethod, string, Cypress.RequestBody]
+    | [Partial<Cypress.RequestOptions>];
+
+const getRequestOptions = (...[first, second, third]: RequestArgs): Partial<Cypress.RequestOptions> => {
     return typeof first === "string"
         ? typeof second === "string"
             ? { method: first, url: second, body: third }
@@ -31,7 +41,7 @@ const getRequestOptions = (...args): Partial<Cypress.RequestOptions> => {
         : first;
 };
 
-Cypress.Commands.overwrite("request", (original: Cypress.Chainable["request"], ...args) =>
+Cypress.Commands.overwrite("request", (original, ...args: RequestArgs) =>
     original({
         auth: {
             username: Cypress.env("testUserUsername"),
@@ -40,7 +50,17 @@ Cypress.Commands.overwrite("request", (original: Cypress.Chainable["request"], .
         ...getRequestOptions(...args),
     }),
 );
-Cypress.Commands.overwrite("visit", (original: Cypress.Chainable["visit"], first, second) => {
+
+type VisitArgs =
+    | [string]
+    | [string, Partial<Cypress.VisitOptions>]
+    | [
+          Partial<Cypress.VisitOptions> & {
+              url: string;
+          },
+      ];
+Cypress.Commands.overwrite("visit", (original, ...args: VisitArgs) => {
+    const [first, second] = args;
     const auth = {
         username: Cypress.env("testUserUsername"),
         password: Cypress.env("testUserPassword"),
@@ -60,13 +80,9 @@ Cypress.Commands.overwrite("visit", (original: Cypress.Chainable["visit"], first
     return original(typeof first === "string" ? { auth, ...second, url: first } : { auth, ...first });
 });
 
-Cypress.Commands.overwrite(
+Cypress.Commands.overwrite<"matchImage", "element">(
     "matchImage",
-    (
-        originalFn: Cypress.CommandOriginalFnWithSubject<"matchImage", any>,
-        $el,
-        { updateSnapshotsOnFail, ...options }: Cypress.MatchImageOptionsExtended = {},
-    ) => {
+    (originalFn, $el, { updateSnapshotsOnFail, ...options }: Cypress.MatchImageOptionsExtended = {}) => {
         cy.wait(200);
         if (updateSnapshotsOnFail || Cypress.env("updateSnapshotsOnFail")) {
             let path = null;
@@ -102,3 +118,17 @@ Cypress.Commands.overwrite(
         return originalFn($el, options);
     },
 );
+
+Cypress.Commands.overwrite<"trigger", "element">("trigger", (originalFn, subject, eventName, ...args) => {
+    // Number of required mousemove events before the first pointermove event will be triggered. (for jointjs)
+    const options = args[2];
+    const moveThreshold = options?.moveThreshold;
+    if (["mousemove", "pointermove", "touchmove"].includes(eventName) && moveThreshold) {
+        for (let i = 0; i < moveThreshold; i++) {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            originalFn(subject, eventName, options);
+        }
+    }
+    return originalFn(subject, eventName, ...args);
+});

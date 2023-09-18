@@ -7,3 +7,9 @@ export function isTouchDevice() {
         navigator.msMaxTouchPoints > 0
     );
 }
+
+export function isTouchEvent<E extends Event | JQuery.Event>(event: E) {
+    return "ontouchstart" in window && event instanceof Touch;
+}
+
+export const LONG_PRESS_TIME = 500;

@@ -5,7 +5,7 @@ import Icon from "../../../../assets/img/toolbarButtons/properties.svg";
 import { getProcessToDisplay, getProcessUnsavedNewName, hasError, hasPropertiesErrors } from "../../../../reducers/selectors/graph";
 import { useWindows } from "../../../../windowManager";
 import NodeUtils from "../../../graph/NodeUtils";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 
 function PropertiesButton(props: ToolbarButtonProps): JSX.Element {

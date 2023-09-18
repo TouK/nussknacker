@@ -1,6 +1,5 @@
 import React, { PropsWithChildren, createContext } from "react";
-import styles from "./ToolbarButtons.styl";
-import cn from "classnames";
+import { ToolbarButtonWrapper } from "./ToolbarButtonStyled";
 
 export enum ButtonsVariant {
     small = "small",
@@ -18,7 +17,7 @@ export function ToolbarButtons(props: PropsWithChildren<Props>): JSX.Element {
 
     return (
         <ToolbarButtonsContext.Provider value={{ variant }}>
-            <div className={cn(styles.list)}>{props.children}</div>
+            <ToolbarButtonWrapper>{props.children}</ToolbarButtonWrapper>
         </ToolbarButtonsContext.Provider>
     );
 }
