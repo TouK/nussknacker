@@ -158,7 +158,7 @@ class ProcessesResourcesSpec
 
     deploymentManager.withProcessRunning(processName) {
       archiveProcess(processName) { status =>
-        status shouldEqual StatusCodes.Conflict
+        status shouldEqual StatusCodes.Forbidden
       }
     }
   }
@@ -219,7 +219,7 @@ class ProcessesResourcesSpec
       val newName = ProcessName("ProcessChangedName")
 
       renameProcess(processName, newName) { status =>
-        status shouldEqual StatusCodes.Conflict
+        status shouldEqual StatusCodes.Forbidden
       }
     }
   }
@@ -229,7 +229,7 @@ class ProcessesResourcesSpec
     val newName = ProcessName("ProcessChangedName")
 
     renameProcess(processName, newName) { status =>
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 
@@ -263,7 +263,7 @@ class ProcessesResourcesSpec
     val process = ProcessTestData.validProcess
 
     updateProcess(processName, process) {
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 
@@ -326,7 +326,7 @@ class ProcessesResourcesSpec
     createArchivedProcess(processName)
 
     changeProcessCategory(processName, TestCat2, isAdmin = true) { status =>
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 
@@ -769,7 +769,7 @@ class ProcessesResourcesSpec
     createArchivedProcess(processName)
 
     archiveProcess(processName) { status =>
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 
@@ -777,7 +777,7 @@ class ProcessesResourcesSpec
     createEmptyProcess(processName)
 
     unArchiveProcess(processName) { status =>
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 
@@ -804,7 +804,7 @@ class ProcessesResourcesSpec
     createEmptyProcess(processName)
 
     deleteProcess(processName) { status =>
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 

@@ -22,6 +22,7 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
       case e: BadRequestError       => StatusCodes.BadRequest
       case e: FatalValidationError  => StatusCodes.BadRequest
       case e: IllegalOperationError => StatusCodes.Conflict
+      case e: ForbiddenError        => StatusCodes.Forbidden
       // unknown?
       case _ =>
         logger.error(s"Unknown EspError: ${error.getMessage}", error)
@@ -36,8 +37,14 @@ object EspErrorToHttp extends LazyLogging with FailFastCirceSupport {
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
       HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
     case ex =>
-      logger.error(s"Unknown error: ${ex.getMessage}", ex)
-      HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)
+      ex.getCause match {
+        case _: NotImplementedError =>
+          logger.error(s"Not implemented: ${ex.getMessage}", ex)
+          HttpResponse(status = StatusCodes.NotImplemented, entity = ex.getMessage)
+        case _ =>
+          logger.error(s"Unknown error: ${ex.getMessage}", ex)
+          HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)
+      }
   }
 
   def espErrorHandler: ExceptionHandler = {

@@ -21,11 +21,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class MockableDeploymentManagerProvider extends DeploymentManagerProvider {
 
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)
-                                      (implicit ec: ExecutionContext,
-                                       actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Any],
-                                       deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
+  override def createDeploymentManager(modelData: BaseModelData, config: Config)(
+      implicit ec: ExecutionContext,
+      actorSystem: ActorSystem,
+      sttpBackend: SttpBackend[Future, Any],
+      deploymentService: ProcessingTypeDeploymentService
+  ): DeploymentManager =
     MockableDeploymentManager
 
   override def metaDataInitializer(config: Config): MetaDataInitializer =
@@ -49,26 +50,30 @@ object MockableDeploymentManagerProvider {
       this.processesStates.set(Map.empty)
     }
 
-    override def validate(processVersion: ProcessVersion,
-                          deploymentData: DeploymentData,
-                          canonicalProcess: CanonicalProcess): Future[Unit] =
+    override def validate(
+        processVersion: ProcessVersion,
+        deploymentData: DeploymentData,
+        canonicalProcess: CanonicalProcess
+    ): Future[Unit] =
       Future.successful(())
 
-    override def deploy(processVersion: ProcessVersion,
-                        deploymentData: DeploymentData,
-                        canonicalProcess: CanonicalProcess,
-                        savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] =
+    override def deploy(
+        processVersion: ProcessVersion,
+        deploymentData: DeploymentData,
+        canonicalProcess: CanonicalProcess,
+        savepointPath: Option[String]
+    ): Future[Option[ExternalDeploymentId]] =
       Future.successful(None)
 
-    override def stop(name: ProcessName,
-                      savepointDir: Option[String],
-                      user: User): Future[SavepointResult] =
+    override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] =
       Future.successful(SavepointResult(""))
 
-    override def stop(name: ProcessName,
-                      deploymentId: DeploymentId,
-                      savepointDir: Option[String],
-                      user: User): Future[SavepointResult] =
+    override def stop(
+        name: ProcessName,
+        deploymentId: DeploymentId,
+        savepointDir: Option[String],
+        user: User
+    ): Future[SavepointResult] =
       Future.successful(SavepointResult(""))
 
     override def cancel(name: ProcessName, user: User): Future[Unit] =
@@ -77,14 +82,16 @@ object MockableDeploymentManagerProvider {
     override def cancel(name: ProcessName, deploymentId: DeploymentId, user: User): Future[Unit] =
       Future.successful(())
 
-    override def test[T](name: ProcessName,
-                         canonicalProcess: CanonicalProcess,
-                         scenarioTestData: ScenarioTestData,
-                         variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
+    override def test[T](
+        name: ProcessName,
+        canonicalProcess: CanonicalProcess,
+        scenarioTestData: ScenarioTestData,
+        variableEncoder: Any => T
+    ): Future[TestProcess.TestResults[T]] = ???
 
-    override def getProcessState(idWithName: ProcessIdWithName,
-                                 lastStateAction: Option[ProcessAction])
-                                (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[ProcessState]] = {
+    override def getProcessState(idWithName: ProcessIdWithName, lastStateAction: Option[ProcessAction])(
+        implicit freshnessPolicy: DataFreshnessPolicy
+    ): Future[WithDataFreshnessStatus[ProcessState]] = {
       Future {
         val status = processesStates.get().getOrElse(idWithName.name, SimpleStateStatus.NotDeployed)
         WithDataFreshnessStatus(
@@ -94,8 +101,7 @@ object MockableDeploymentManagerProvider {
       }
     }
 
-    override def savepoint(name: ProcessName,
-                           savepointDir: Option[String]): Future[SavepointResult] =
+    override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =
       Future.successful(SavepointResult(""))
 
     override def processStateDefinitionManager: ProcessStateDefinitionManager =
@@ -103,12 +109,14 @@ object MockableDeploymentManagerProvider {
 
     override def customActions: List[CustomAction] = Nil
 
-    override def invokeCustomAction(actionRequest: CustomActionRequest,
-                                    canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
-      Future.successful(Left(CustomActionNotImplemented(actionRequest)))
+    override def invokeCustomAction(
+        actionRequest: CustomActionRequest,
+        canonicalProcess: CanonicalProcess
+    ): Future[CustomActionResult] = ???
 
-    override def getProcessStates(name: ProcessName)
-                                 (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
+    override def getProcessStates(name: ProcessName)(
+        implicit freshnessPolicy: DataFreshnessPolicy
+    ): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
       Future.successful(WithDataFreshnessStatus(List.empty, cached = false))
 
     override def close(): Unit = {}

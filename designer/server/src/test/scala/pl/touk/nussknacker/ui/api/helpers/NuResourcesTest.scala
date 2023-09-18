@@ -96,7 +96,9 @@ trait NuResourcesTest
     futureFetchingProcessRepository
   )
 
-  protected implicit val deploymentService: DeploymentService =
+  protected def deploymentService(
+    deploymentCommentSettings: Option[DeploymentCommentSettings] = None
+  ): DeploymentService =
     new DeploymentServiceImpl(
       dmDispatcher,
       fetchingProcessRepository,
@@ -105,11 +107,12 @@ trait NuResourcesTest
       processValidation,
       scenarioResolver,
       processChangeListener,
-      None
+      None,
+      deploymentCommentSettings
     )
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
-    new DefaultProcessingTypeDeploymentService(Streaming, deploymentService)
+    new DefaultProcessingTypeDeploymentService(Streaming, deploymentService())
 
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
@@ -137,15 +140,17 @@ trait NuResourcesTest
 
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
-  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _] =
+  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _] = {
+    implicit val deploymentServiceImpl: DeploymentService = deploymentService()
     ProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(testConfig))
+  }
 
   protected val customActionInvokerService =
-    new CustomActionInvokerServiceImpl(futureFetchingProcessRepository, dmDispatcher, deploymentService)
+    new CustomActionInvokerServiceImpl(futureFetchingProcessRepository, dmDispatcher, deploymentService())
 
   protected val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
 
-  protected val processService: DBProcessService = createDBProcessService(deploymentService)
+  protected val processService: DBProcessService = createDBProcessService(deploymentService())
 
   protected val scenarioTestService: ScenarioTestService = createScenarioTestService(
     testModelDataProvider.mapValues(new ModelDataTestInfoProvider(_))
@@ -157,7 +162,7 @@ trait NuResourcesTest
   protected val processesRoute = new ProcessesResources(
     processRepository = futureFetchingProcessRepository,
     processService = processService,
-    deploymentService = deploymentService,
+    deploymentService = deploymentService(),
     processToolbarService = configProcessToolbarService,
     processResolving = processResolving,
     processAuthorizer = processAuthorizer,
@@ -202,8 +207,7 @@ trait NuResourcesTest
     new ManagementResources(
       processAuthorizer = processAuthorizer,
       processRepository = futureFetchingProcessRepository,
-      deploymentCommentSettings = deploymentCommentSettings,
-      deploymentService = deploymentService,
+      deploymentService = deploymentService(deploymentCommentSettings),
       dispatcher = dmDispatcher,
       customActionInvokerService = customActionInvokerService,
       metricRegistry = new MetricRegistry,

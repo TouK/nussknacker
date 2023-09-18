@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,11 +30,11 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
   override def deployProcessAsync(
       id: ProcessIdWithName,
       savepointPath: Option[String],
-      deploymentComment: Option[DeploymentComment]
+      comment: Option[String]
   )(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] =
     Future.successful(Future.successful(None))
 
-  override def cancelProcess(id: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(
+  override def cancelProcess(id: ProcessIdWithName, comment: Option[String])(
       implicit loggedUser: LoggedUser,
       ec: ExecutionContext
   ): Future[Unit] = Future.successful(())

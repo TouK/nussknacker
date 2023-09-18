@@ -38,15 +38,10 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
 
+  //CustomActions here are used to change status of scenario, for clarity action names are the same as new status names.
   private val customActionAfterRunning = CustomAction(AfterRunningStatus.name, List(Running.name))
   private val customActionPreparingResources = CustomAction(PreparingResourcesStatus.name, List(NotDeployed.name, Canceled.name))
   private val customActionTest = CustomAction(TestStatus.name, Nil, icon = Some(URI.create("/assets/buttons/test_deploy.svg")))
-
-  private val customActionStatusMapping = Map(
-    customActionAfterRunning -> AfterRunningStatus,
-    customActionPreparingResources -> PreparingResourcesStatus,
-    customActionTest -> TestStatus
-  )
 
   private val memory: TrieMap[ProcessName, StatusDetails] = TrieMap[ProcessName, StatusDetails]()
   private val random = new scala.util.Random()
@@ -130,30 +125,25 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   override def processStateDefinitionManager: ProcessStateDefinitionManager =
     new DevelopmentProcessStateDefinitionManager(SimpleProcessStateDefinitionManager)
 
-  override def customActions: List[CustomAction] = customActionStatusMapping.keys.toList
+  override def customActions: List[CustomAction] = List(
+    customActionAfterRunning,
+    customActionPreparingResources,
+    customActionTest
+  )
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(
-      customActions
-        .find(_.name.equals(actionRequest.name))
-        .map(customAction => {
-          val processName = actionRequest.processVersion.processName
-          val statusDetails = memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
-
-          if (customAction.allowedStateStatusNames.contains(statusDetails.status.name)) {
-            customActionStatusMapping
-              .get(customAction)
-              .map { status =>
-                asyncChangeState(processName, status)
-                Right(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
-              }
-              .getOrElse(Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
-          } else {
-            Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name))
-          }
-        })
-        .getOrElse(Left(CustomActionNotImplemented(actionRequest)))
+  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[CustomActionResult] = {
+    val actionNameToNewStatusMapping = Map(
+      customActionAfterRunning.name -> AfterRunningStatus,
+      customActionPreparingResources.name -> PreparingResourcesStatus,
+      customActionTest.name -> TestStatus
     )
+
+    val processName = actionRequest.processVersion.processName
+    val newStatus = actionNameToNewStatusMapping(actionRequest.name)
+
+    asyncChangeState(processName, newStatus)
+    Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
+  }
 
   override def close(): Unit = {}
 

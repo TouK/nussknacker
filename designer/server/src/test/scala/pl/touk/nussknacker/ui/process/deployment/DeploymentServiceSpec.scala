@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
@@ -101,7 +102,8 @@ class DeploymentServiceSpec
       processValidation,
       TestFactory.scenarioResolver,
       listener,
-      scenarioStateTimeout = scenarioStateTimeout
+      scenarioStateTimeout = scenarioStateTimeout,
+      deploymentCommentSettings = None
     )
   }
 

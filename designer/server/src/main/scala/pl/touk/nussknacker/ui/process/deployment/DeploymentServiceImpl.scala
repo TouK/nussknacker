@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, ProcessActionType}
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy, StateActionsTypes}
 import pl.touk.nussknacker.ui.BadRequestError
-import pl.touk.nussknacker.ui.api.ListenerApiUser
+import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -33,7 +34,7 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 // Responsibility of this class is to wrap communication with DeploymentManager with persistent, transactional context.
-// It ensures that all actions are done consistently: do validations and ensures that only allowed actions
+// It ensures that all actions are done consistently: does validations and ensures that only allowed actions
 // will be executed in given state. It sends notifications about finished actions.
 // Also thanks to it we are able to check if state on remote engine is the same as persisted state.
 class DeploymentServiceImpl(
@@ -45,10 +46,13 @@ class DeploymentServiceImpl(
     scenarioResolver: ScenarioResolver,
     processChangeListener: ProcessChangeListener,
     scenarioStateTimeout: Option[FiniteDuration],
+    deploymentCommentSettings: Option[DeploymentCommentSettings],
     clock: Clock = Clock.systemUTC()
 )(implicit system: ActorSystem)
     extends DeploymentService
     with LazyLogging {
+
+  case class ValidationError(message: String) extends Exception(message) with BadRequestError
 
   def getDeployedScenarios(
       processingType: ProcessingType
@@ -88,7 +92,7 @@ class DeploymentServiceImpl(
 
   override def cancelProcess(
       processId: ProcessIdWithName,
-      deploymentComment: Option[DeploymentComment]
+      comment: Option[String]
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[Unit] = {
     val actionType = ProcessActionType.Cancel
     checkCanPerformActionAndAddInProgressAction[Unit](
@@ -97,16 +101,19 @@ class DeploymentServiceImpl(
       _.lastDeployedAction.map(_.processVersionId),
       _ => None
     ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-      runDeploymentActionWithNotifications(
-        actionType,
-        actionId,
-        processId,
-        versionOnWhichActionIsDone,
-        deploymentComment,
-        buildInfoProcessIngType
-      ) {
-        dispatcher.deploymentManagerUnsafe(processDetails.processingType).cancel(processId.name, user.toManagerUser)
-      }
+      for {
+        deploymentCommentOpt <- validateDeploymentComment(comment)
+        _ <- runDeploymentActionWithNotifications(
+          actionType,
+          actionId,
+          processId,
+          versionOnWhichActionIsDone,
+          deploymentCommentOpt,
+          buildInfoProcessIngType
+        ) {
+          dispatcher.deploymentManagerUnsafe(processDetails.processingType).cancel(processId.name, user.toManagerUser)
+        }
+      } yield ()
     }
   }
 
@@ -117,7 +124,7 @@ class DeploymentServiceImpl(
   override def deployProcessAsync(
       processIdWithName: ProcessIdWithName,
       savepointPath: Option[String],
-      deploymentComment: Option[DeploymentComment]
+      comment: Option[String]
   )(implicit user: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] = {
     val actionType = ProcessActionType.Deploy
     checkCanPerformActionAndAddInProgressAction[CanonicalProcess](
@@ -126,32 +133,43 @@ class DeploymentServiceImpl(
       d => Some(d.processVersionId),
       d => Some(d.processingType)
     ).flatMap { case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-      validateBeforeDeploy(processDetails, actionId).transformWith {
-        case Failure(ex) =>
-          dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
-        case Success(validationResult) =>
-          // we notify of deployment finish/fail only if initial validation succeeded
-          val deploymentFuture = runDeploymentActionWithNotifications(
-            actionType,
-            actionId,
-            processIdWithName,
-            versionOnWhichActionIsDone,
-            deploymentComment,
-            buildInfoProcessIngType
-          ) {
-            dispatcher
-              .deploymentManagerUnsafe(processDetails.processingType)
-              .deploy(
-                validationResult.processVersion,
-                validationResult.deploymentData,
-                validationResult.resolvedScenario,
-                savepointPath
-              )
+        for {
+          deploymentCommentOpt <- validateDeploymentComment(comment)
+          deployment <- validateBeforeDeploy(processDetails, actionId).transformWith {
+            case Failure(ex) =>
+              dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
+            case Success(validationResult) =>
+              // we notify of deployment finish/fail only if initial validation succeeded
+              val deploymentFuture = runDeploymentActionWithNotifications(
+                actionType,
+                actionId,
+                processIdWithName,
+                versionOnWhichActionIsDone,
+                deploymentCommentOpt,
+                buildInfoProcessIngType
+              ) {
+                dispatcher
+                  .deploymentManagerUnsafe(processDetails.processingType)
+                  .deploy(
+                    validationResult.processVersion,
+                    validationResult.deploymentData,
+                    validationResult.resolvedScenario,
+                    savepointPath
+                  )
+              }
+              Future.successful(deploymentFuture)
           }
-          Future.successful(deploymentFuture)
-      }
+        } yield deployment
     }
   }
+
+  // TODO: this is temporary step: we want ParameterValidator here. The aim is to align deployment and custom actions
+  //  and validate deployment comment (and other action parameters) the same way as in node expressions or additional properties.
+  private def validateDeploymentComment(comment: Option[String]): Future[Option[DeploymentComment]] =
+    DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
+      case Valid(deploymentComment) => Future.successful(deploymentComment)
+      case Invalid(exc) => Future.failed(ValidationError(exc.getMessage))
+    }
 
   protected def validateBeforeDeploy(
       processDetails: BaseProcessDetails[CanonicalProcess],
@@ -231,9 +249,9 @@ class DeploymentServiceImpl(
       processDetails: BaseProcessDetails[PS]
   ): Unit = {
     if (processDetails.isArchived) {
-      throw ProcessIllegalAction.archived(actionType, processDetails.idWithName)
+      throw ProcessIllegalAction.archived(actionType.toString, processDetails.idWithName)
     } else if (processDetails.isFragment) {
-      throw ProcessIllegalAction.fragment(actionType, processDetails.idWithName)
+      throw ProcessIllegalAction.fragment(actionType.toString, processDetails.idWithName)
     }
   }
 
@@ -244,7 +262,7 @@ class DeploymentServiceImpl(
   ): Unit = {
     if (!ps.allowedActions.contains(actionType)) {
       logger.debug(s"Action: $actionType on process: ${processDetails.name} not allowed in ${ps.status} state")
-      throw ProcessIllegalAction(actionType, processDetails.idWithName, ps)
+      throw ProcessIllegalAction(actionType.toString, processDetails.idWithName, ps)
     }
   }
 

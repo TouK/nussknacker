@@ -341,7 +341,7 @@ class DBProcessService(
         if (state.allowedActions.contains(actionToCheck)) {
           callback
         } else {
-          Future(Left(ProcessIllegalAction(actionToCheck, process.idWithName, state)))
+          Future(Left(ProcessIllegalAction(actionToCheck.toString, process.idWithName, state)))
         }
       })
   }
@@ -412,7 +412,7 @@ class DBProcessService(
   )(implicit user: LoggedUser): Future[XError[T]] =
     withProcess(processIdWithName) { process =>
       if (process.isArchived) {
-        Future(Left(ProcessIllegalAction.archived(action, process.idWithName)))
+        Future(Left(ProcessIllegalAction.archived(action.toString, process.idWithName)))
       } else {
         callback(process)
       }

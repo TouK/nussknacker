@@ -23,7 +23,7 @@ trait PeriodicCustomActionsProvider {
   def invokeCustomAction(
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[Either[CustomActionError, CustomActionResult]]
+  ): Future[CustomActionResult]
 }
 
 object EmptyPeriodicCustomActionsProvider extends PeriodicCustomActionsProvider {
@@ -32,6 +32,5 @@ object EmptyPeriodicCustomActionsProvider extends PeriodicCustomActionsProvider 
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
+  ): Future[CustomActionResult] = ???
 }
