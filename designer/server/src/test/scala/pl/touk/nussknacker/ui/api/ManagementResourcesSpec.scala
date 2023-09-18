@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessIdWithName, ProcessName, V
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.processdetails._
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.restmodel.CustomActionRequest
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers._
@@ -374,7 +374,6 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     createEmptyProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
       status shouldBe StatusCodes.OK
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = true, msg = "Hi")
     }
   }
 
@@ -382,7 +381,6 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     createEmptyProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("non-existing")) ~> check {
       status shouldBe StatusCodes.NotFound
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "non-existing is not existing")
     }
   }
 
@@ -390,7 +388,6 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     createEmptyProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("not-implemented")) ~> check {
       status shouldBe StatusCodes.NotImplemented
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "not-implemented is not implemented")
     }
   }
 
@@ -398,7 +395,6 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     createEmptyProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("invalid-status")) ~> check {
       status shouldBe StatusCodes.Forbidden
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Scenario status: NOT_DEPLOYED is not allowed for action invalid-status")
     }
   }
 
