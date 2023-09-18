@@ -83,7 +83,7 @@ Order is also visible on graph in edges description as a number. Be aware that l
 
 Split node logically splits processing into two or more parallel branches. Each branch receives all data records and processes them independently and in parallel.
 
-In the Request - Response processing mode you can use this feature to paralellize and hence speed up the processing. You must use a sequence of [Union](./BasicNodes.md#union) and [Collect](./RRDataSourcesAndSinks.md#collect) nodes to merge parallelly executed branches and collect the results from these branches. 
+In the Request - Response processing mode you can use this feature to paralellize and hence speed up the processing. You must use a sequence of [Union](./BasicNodes.md#union) and [Collect](./RRDataSourcesAndSinks.md#collect) nodes to merge parallelly executed branches and collect the results from these branches. A discussion of Request - Response scenario with multiple branches can be found [here](./RRDataSourcesAndSinks.md#scenario-response-in-scenarios-with-split-and-for-each-nodes).
 In the Streaming processing mode the most typical reason for using a Split node is to define dedicated logic and dedicated sink for each of the branches. 
 
 ![split graph](../autoScreenshotChangeDocs/Auto_Screenshot_Change_Docs_-_basic_components_-_split0.png)
@@ -116,7 +116,10 @@ then nodes that follow `for-each` will be executed twice and the value of curren
 Union merges multiple branches into one branch. 
 
 In the Streaming processing mode events from the incoming branches are passed to the output branch without an attempt to combine or match them.
-In the Request - Response mode the Union node merges parallel branches of processing back to one branch. You will need to take an extra step using the [Collect](./RRDataSourcesAndSinks.md#collect) node if you need to collect results of processing in each of the merged branches. 
+&nbsp;
+
+In the Request - Response processing mode only one [response sink](./RRDataSourcesAndSinks.md#sink) can return value. If you have parallel branches of processing the Union node is used to merge them and then [Collect](./RRDataSourcesAndSinks.md#collect) node to collect results of processing in each of the merged branches. Check [Into doc](./Intro.md#nussknacker-scenario-diagram) for details on how to interpret scenario graph in different processing modes.
+
 The #input variable will be no longer available downstream the union node; a new variable will be available instead, which is defined in the union node.
 
 

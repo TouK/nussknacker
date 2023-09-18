@@ -20,7 +20,7 @@ deploymentConfig {
 }
 ```
 
-`type` parameter determines engine to which the scenario is deployed.The `type` parameter is set in both the [minimal configuration file](./Common.md#minimal-configuration-file) in the case of docker image, binary distribution and Helm chart - you will not need to set it on your own.
+`type` parameter determines engine to which the scenario is deployed. It is set in the [minimal configuration file](./Common.md#minimal-configuration-file) (docker image, binary distribution) and in the Helm chart - you will not need to set it on your own.
 
 ## Kubernetes native Lite engine configuration
 
@@ -39,7 +39,7 @@ other Nussknacker non K8s configuration.
 
 | Parameter                     | Type                                                | Default value                     | Description                                                                              |
 |-------------------------------|-----------------------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------|
-| mode                          | string                                              |                                   | (Processing) mode: either streaming or request-response                                                     |
+| mode                          | string                                              |                                   | Processing mode: either streaming or request-response                                                     |
 | dockerImageName               | string                                              | touk/nussknacker-lite-runtime-app | Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
 | dockerImageTag                | string                                              | current nussknacker version       |                                                                                          |
 | scalingConfig *(Streaming processing mode)*| {tasksPerReplica: int}                   | { tasksPerReplica: 4 }            | see [below](#configuring-replicas-count)                                                 |
@@ -281,7 +281,7 @@ Deployment Manager of type `lite-embedded` has the following configuration optio
 
 | Parameter                                                 | Type   | Default value   | Description                                                                                                                                              |
 |-----------------------------------------------------------|--------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| mode                                                      | string |                 | (Processing) mode: either  streaming-lite or request-response                                                                                                                     |
+| mode                                                      | string |                 | Processing mode: either  streaming-lite or request-response                                                                                                                     |
 | http.interface                                            | string | 0.0.0.0         | (Request-Response only) Interface on which REST API of scenarios will be exposed                                                                         |
 | http.port                                                 | int    | 8181            | (Request-Response only) Port on which REST API of scenarios will be exposed                                                                              | 
 | request-response.definitionMetadata.servers               | string | [{"url": "./"}] | (Request-Response only) Configuration of exposed servers in scenario's OpenAPI definition. When not configured, will be used server with ./ relative url | 

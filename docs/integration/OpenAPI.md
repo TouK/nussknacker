@@ -66,8 +66,8 @@ components {
 
 | Parameter      | Required | Default | Description                                                                                                                   |
 |----------------|----------|---------|-------------------------------------------------------------------------------------------------------------------------------|
-| url            | true     |         | URL of the *OpenAPI document*, as defined in the [OpenAPI specification](https://swagger.io/specification/v3/)                |
-| rootUrl        | false    |         | Base URL of service, can be used in NAT settings to override value specified in the *OpenAPI document*                         |
+| url            | true     |         | URL of the [*OpenAPI document*](https://swagger.io/specification/v3/). It contains specification of the service you want to interact with.             |
+| rootUrl        | false    |         | The URL of the service. If not specified, the URL of the service is taken from the *OpenAPI document*.  |
 | allowedMethods | false    | ["GET"] | Usually only GET services should be used as enrichers are meant to be idempotent and not change data                          |
 | namePattern    | false    | .*      | Regexp for filtering operations by operationId (i.e. enricher name)                                                           |
 | security       | false    |         | Configuration for [authentication](https://swagger.io/docs/specification/authentication/). Currently only apiKey is supported |
