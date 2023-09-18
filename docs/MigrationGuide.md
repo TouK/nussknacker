@@ -21,9 +21,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Removed backward compatibility for subprocess fields.
 
 ### Other changes
-* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow to test fragments using ad hoc testing.
+* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad-hoc testing method.
   By default, NU enables that feature but if you have some custom `processToolbarConfig` settings then
-  You would like to remove `hidden: { fragment: true }` flag for `type: "test-with-form"`, `type: "test-counts"` and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
+  You would like to remove `hidden: { fragment: true }` flag for `type: "test-with-form"`, `type: "test-counts"` 
+  and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
+* [#4685]((https://github.com/TouK/nussknacker/pull/4685)) When NU uses OAuth2 or OIDC, to enable Swagger UI "Try it out"
+  feature, there should be configured `authentication.nuDesignerApiUri` optional setting. It should contain externally
+  reachable URL address of NU API (e.g. `authentication.nuDesignerApiUri: https://demo.nussknacker.io/api`
 
 ## In version 1.11.0
 
