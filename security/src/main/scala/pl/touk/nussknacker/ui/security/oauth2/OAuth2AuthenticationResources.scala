@@ -87,16 +87,34 @@ class OAuth2AuthenticationResources(override val name: String,
     }
 
   private def completeOAuth2Authenticate(authorizationCode: String, redirectUri: Option[String]) = {
-    Seq(redirectUri, configuration.redirectUri.map(_.toString)).flatten
-      .exactlyOne
-      .map { redirectUri =>
+    determineRedirectUri(redirectUri) match {
+      case Some(redirectUri) =>
         complete {
           oAuth2Authenticate(authorizationCode, redirectUri)
         }
-      }
-      .getOrElse {
+      case None =>
         complete((NotFound, "Redirect URI must be provided either in configuration or in query params"))
-      }
+    }
+  }
+
+  private def determineRedirectUri(redirectUriFromRequest: Option[String]): Option[String] = {
+    val redirectUriFromConfiguration = configuration.redirectUri.map(_.toString)
+    configuration.nuDesignerApiUri match {
+      case Some(nuDesignerApiUri) =>
+        redirectUriFromRequest match {
+          // for Swagger UI and "Try It Out" feature purposes
+          case Some(uri) if uri == s"${nuDesignerApiUri.withTrailingSlash.toString}docs/oauth2-redirect.html" =>
+            redirectUriFromRequest
+          case Some(_) =>
+            Seq(redirectUriFromRequest, redirectUriFromConfiguration).flatten
+              .exactlyOne
+          case None =>
+            redirectUriFromConfiguration
+        }
+      case None =>
+        Seq(redirectUriFromRequest, redirectUriFromConfiguration).flatten
+          .exactlyOne
+    }
   }
 
   private def oAuth2Authenticate(authorizationCode: String, redirectUri: String): Future[ToResponseMarshallable] = {
@@ -141,7 +159,7 @@ final case class Oauth2AuthenticationResponse(accessToken: String, tokenType: St
 object Oauth2AuthenticationResponse {
 
   implicit val encoder: Encoder[Oauth2AuthenticationResponse] = Encoder
-    // OpenAPI UI uses snake case instead of camel case, so we produce the response in these two cases
+    // Swagger UI uses snake case instead of camel case, so we produce the response in these two cases
     .forProduct4("accessToken", "tokenType", "access_token", "token_type")(r =>
       (r.accessToken, r.tokenType, r.accessToken, r.tokenType)
     )
