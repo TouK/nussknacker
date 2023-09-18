@@ -8,7 +8,7 @@ import { AttachmentDetails, DownloadAttachment, DownloadButton, AttachHeader } f
 export function AttachmentEl({ data }: { data: Attachment }) {
     return (
         <li style={{ display: "flex" }}>
-            <DownloadAttachment>
+            <DownloadAttachment className="download-attachment">
                 <DownloadButton
                     onClick={() => HttpService.downloadAttachment(data.processId, data.processVersionId, data.id, data.fileName)}
                 >
