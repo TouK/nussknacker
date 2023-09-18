@@ -30,7 +30,7 @@ const processAttachment = (id) => ({
 });
 
 describe("ProcessAttachments suite", () => {
-    it.only("should render with no problems", () => {
+    it("should render with no problems", () => {
         const store = mockStore({
             graphReducer: { history: { present: { fetchedProcessDetails: { name: "proc1", processVersionId: 1 } } } },
             processActivity: { attachments: [processAttachment(3), processAttachment(2), processAttachment(1)] },

@@ -6,10 +6,10 @@ export const variables = {
         warning: "#FF9A4D",
         error: "#f25c6e",
         okColor: "#8fad60",
-        sucsess: "#64d864",
         text: "#333333",
     },
-
+    sucess: "#64d864",
+    primary: "#0058a9",
     panelTitleTextColor: "#808080",
     panelHeaderBackground: "#3e3e3e",
     buttonSize: "72",
@@ -32,5 +32,6 @@ export const variables = {
     commentHeaderColor: "#afafaf",
     commentBkgColor: "#333333",
     formControllHeight: 46,
+    warningColor: "#FF9A4D",
     // buttonTextColor: "#f6f6f6",
 };
