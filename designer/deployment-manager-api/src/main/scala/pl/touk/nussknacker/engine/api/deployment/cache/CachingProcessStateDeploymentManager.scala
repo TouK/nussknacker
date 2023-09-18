@@ -62,7 +62,7 @@ class CachingProcessStateDeploymentManager(delegate: DeploymentManager,
 
   override def customActions: List[CustomAction] = delegate.customActions
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
+  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Future[CustomActionResult]] =
     delegate.invokeCustomAction(actionRequest, canonicalProcess)
 
   override def savepoint(name: ProcessName, savepointDir: Option[String]): Future[SavepointResult] =

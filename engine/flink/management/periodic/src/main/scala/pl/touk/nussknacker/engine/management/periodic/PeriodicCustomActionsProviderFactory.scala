@@ -16,12 +16,12 @@ object PeriodicCustomActionsProviderFactory {
 
 trait PeriodicCustomActionsProvider {
   def customActions: List[CustomAction]
-  def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]]
+  def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Future[CustomActionResult]]
 }
 
 object EmptyPeriodicCustomActionsProvider extends PeriodicCustomActionsProvider {
   override def customActions: List[CustomAction] = Nil
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(Left(CustomActionNotImplemented(actionRequest)))
+  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Future[CustomActionResult]] =
+    Future.failed(CustomActionNotImplemented(actionRequest))
 }
