@@ -15,7 +15,7 @@
     - allow passing classLoader at `ResourceLoader.load`
 * [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
 * [#4640](https://github.com/TouK/nussknacker/pull/4640) Expand timestamp support to handle more types/formats
-* [#4685](https://github.com/TouK/nussknacker/pull/4685) App API OpenAPI-based documentation
+* [#4685](https://github.com/TouK/nussknacker/pull/4685) App API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
 
 1.11.3 (11 Sep 2023)
 -------------------------
