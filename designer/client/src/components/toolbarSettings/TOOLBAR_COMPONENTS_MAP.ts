@@ -2,7 +2,7 @@
 import { ComponentType } from "react";
 import TipsPanel from "../tips/Tips";
 import { AttachmentsPanel } from "../toolbars/AttachmentsPanel";
-import { CommentsPanel } from "../toolbars/CommentsPanel";
+import { CommentsPanel } from "../comment/CommentsPanel";
 import { CreatorPanel } from "../toolbars/creator/CreatorPanel";
 import { DefaultToolbarPanel, ToolbarPanelProps } from "../toolbarComponents/DefaultToolbarPanel";
 import ProcessInfo from "../toolbars/status/ProcessInfo";

@@ -346,6 +346,7 @@ val tapirV = "1.7.3"
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.18.0"
 val wireMockV = "2.35.0"
+val findBugsV = "3.0.2"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion, Seq(),
@@ -914,7 +915,6 @@ lazy val commonUtils = (project in utils("utils")).
     name := "nussknacker-utils",
     libraryDependencies ++= {
       Seq(
-        "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
@@ -1287,6 +1287,8 @@ lazy val componentsApi = (project in file("components-api")).
         "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "com.iheart" %% "ficus" % ficusV,
+        "org.springframework" % "spring-core" % springV,
+        "com.google.code.findbugs" % "jsr305" % findBugsV,
       )
     }
   ).dependsOn(commonApi, testUtils % "test")
@@ -1299,7 +1301,7 @@ lazy val extensionsApi = (project in file("extensions-api")).
     libraryDependencies ++= Seq(
       "org.springframework" % "spring-expression" % springV,
       //needed by scala-compiler for spring-expression...
-      "com.google.code.findbugs" % "jsr305" % "3.0.2",
+      "com.google.code.findbugs" % "jsr305" % findBugsV,
     )
   ).dependsOn(testUtils % "test", componentsApi, scenarioApi)
 

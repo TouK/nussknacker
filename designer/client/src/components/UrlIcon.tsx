@@ -1,4 +1,4 @@
-import React, { ComponentType, DetailedHTMLProps, ImgHTMLAttributes, PropsWithChildren, useEffect, useState } from "react";
+import React, { ComponentType, DetailedHTMLProps, ImgHTMLAttributes, useEffect, useState } from "react";
 import { absoluteBePath } from "../common/UrlUtils";
 import { InlineSvg, InlineSvgProps } from "./SvgDiv";
 import { ErrorBoundaryFallbackComponent } from "./common/ErrorBoundary";

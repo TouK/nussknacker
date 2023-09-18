@@ -1,5 +1,5 @@
-import { ToolbarWrapper } from "../toolbarComponents/ToolbarWrapper";
-import ProcessComments from "../ProcessComments";
+import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
+import ProcessComments from "./ProcessComments";
 import React from "react";
 import { useTranslation } from "react-i18next";
 

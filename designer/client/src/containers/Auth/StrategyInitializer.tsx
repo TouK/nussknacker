@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, useCallback, useEffect, useRef, useState } from "react";
 import api from "../../api";
-import LoaderSpinner from "../../components/Spinner";
+import LoaderSpinner from "../../components/spinner/Spinner";
 import { AuthErrorCodes } from "./AuthErrorCodes";
 import { Strategy } from "./Strategy";
 import { InitErrorComponent, InitErrorComponentProps } from "./InitErrorComponent";

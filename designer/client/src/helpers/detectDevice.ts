@@ -9,7 +9,7 @@ export function isTouchDevice() {
 }
 
 export function isTouchEvent<E extends Event | JQuery.Event>(event: E) {
-    return event instanceof Touch;
+    return "ontouchstart" in window && event instanceof Touch;
 }
 
 export const LONG_PRESS_TIME = 500;

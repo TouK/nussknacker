@@ -9,7 +9,7 @@ import { GraphProvider } from "../components/graph/GraphContext";
 import SelectionContextProvider from "../components/graph/SelectionContextProvider";
 import { BindKeyboardShortcuts } from "./BindKeyboardShortcuts";
 import Toolbars from "../components/toolbars/Toolbars";
-import SpinnerWrapper from "../components/SpinnerWrapper";
+import SpinnerWrapper from "../components/spinner/SpinnerWrapper";
 import { ProcessGraph as GraphEl } from "../components/graph/ProcessGraph";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ProcessUtils from "../common/ProcessUtils";

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useNkTheme } from "../../containers/theme";
 import React, { useCallback } from "react";
-import { ToolbarWrapper } from "../toolbarComponents/ToolbarWrapper";
+import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import { DragHandle } from "../toolbarComponents/DragHandle";
 import { Button, Stack, Typography } from "@mui/material";
 import { useWindows, WindowKind } from "../../windowManager";
