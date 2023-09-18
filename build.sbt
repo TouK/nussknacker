@@ -1479,7 +1479,7 @@ lazy val flinkBaseComponents = (project in flink("components/base")).
         ExclusionRule("it.unimi.dsi", "fastutil"),
         )
     ),
-  ).dependsOn(flinkComponentsUtils % Provided, componentsUtils % Provided, flinkComponentsTestkit % "it, test", kafkaTestUtils % "it,test")
+  ).dependsOn(commonApi, flinkComponentsUtils % Provided, componentsUtils % Provided, flinkComponentsTestkit % "it, test", kafkaTestUtils % "it,test")
 
 lazy val flinkKafkaComponents = (project in flink("components/kafka")).
   settings(commonSettings).

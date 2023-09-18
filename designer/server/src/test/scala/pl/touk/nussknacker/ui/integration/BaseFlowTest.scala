@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.graph.node.{FragmentInputDefinition, FragmentOutputDefinition, Processor}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -112,9 +112,16 @@ class BaseFlowTest
       ),
       "multipleParamsService" -> SingleComponentConfig(
         params = Some(Map(
-          "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))), None, None),
+          "foo" -> ParameterConfig(None,
+            Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+            None,
+            None),
           "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
-          "baz" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))), None, None)
+          "baz" -> ParameterConfig(None,
+            Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
+            None,
+            None,
+            Some("some hint text"))
         )),
         icon = None,
         docsUrl = None,

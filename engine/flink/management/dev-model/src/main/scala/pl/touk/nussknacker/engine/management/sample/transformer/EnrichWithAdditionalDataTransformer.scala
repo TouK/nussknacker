@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, OneParamLazyParameterFunction}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /*

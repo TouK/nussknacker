@@ -6,7 +6,7 @@ import cats.implicits.toTraverseOps
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MultipleOutputsForName, FragmentParamClassLoadError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentParamClassLoadError, MultipleOutputsForName}
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDet
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
-import pl.touk.nussknacker.engine.graph.node.{Join, FragmentInput, FragmentInputDefinition, FragmentOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{FragmentInput, FragmentInputDefinition, FragmentOutputDefinition, Join}
 
 // We have two implementations of FragmentDefinitionExtractor. The only difference is that FragmentGraphDefinitionExtractor
 // extract parts of definition that is used for graph resolution wheres FragmentComponentDefinitionExtractor is used
@@ -76,25 +76,34 @@ class FragmentComponentDefinitionExtractor(componentConfig: String => Option[Sin
       .mapWritten(_.map(data => FragmentParamClassLoadError(data.fieldName, data.refClazzName, nodeId.id)))
   }
 
-  private def toParameter(componentConfig: SingleComponentConfig)(p: FragmentParameter): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {
-    val paramName = p.name
-    p.typ.toRuntimeClass(classLoader).map(Typed(_))
+  private def toParameter(componentConfig: SingleComponentConfig)(fragmentParameter: FragmentParameter): Writer[List[FragmentParamClassLoadErrorData], Parameter] = {
+    fragmentParameter.typ.toRuntimeClass(classLoader).map(Typed(_))
       .map(Writer.value[List[FragmentParamClassLoadErrorData], TypingResult])
       .getOrElse(Writer
         .value[List[FragmentParamClassLoadErrorData], TypingResult](Unknown)
-        .tell(List(FragmentParamClassLoadErrorData(paramName, p.typ.refClazzName)))
-      ).map(toParameter(componentConfig, paramName, _))
+        .tell(List(FragmentParamClassLoadErrorData(fragmentParameter.name, fragmentParameter.typ.refClazzName)))
+      ).map(toParameter(componentConfig, _, fragmentParameter))
   }
 
-  private def toParameter(componentConfig: SingleComponentConfig, paramName: String, typ: typing.TypingResult) = {
-    val config = componentConfig.params.flatMap(_.get(paramName)).getOrElse(ParameterConfig.empty)
+  private def toParameter(componentConfig: SingleComponentConfig, typ: typing.TypingResult, fragmentParameter: FragmentParameter) = {
+    val config = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
-    val extractedEditor = EditorExtractor.extract(parameterData, config)
-    Parameter.optional(paramName, typ).copy(
+    val extractedEditor = EditorExtractor.extract(
+      parameterData,
+      config,
+      fragmentParameter.fixedValueList,
+      fragmentParameter.allowBasicMode
+    )
+
+    val isOptional = !fragmentParameter.required
+    Parameter.optional(fragmentParameter.name, typ).copy(
       editor = extractedEditor,
-      validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional = true, config, extractedEditor)),
-      // TODO: ability to pick a default value from gui
-      defaultValue = DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(parameterData, isOptional = true, config, extractedEditor)))
+      validators = ValidatorsExtractor.extract(ValidatorExtractorParameters(parameterData, isOptional = isOptional, config, extractedEditor)),
+      defaultValue = fragmentParameter.defaultValue.orElse(
+        DefaultValueDeterminerChain.determineParameterDefaultValue(DefaultValueDeterminerParameters(parameterData, isOptional = isOptional, config, extractedEditor))
+      ),
+      hintText = fragmentParameter.hintText
+    )
   }
 
 }

@@ -6,7 +6,7 @@ import io.circe.{Decoder, Encoder}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.{CirceUtil, JoinReference, LayoutData}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.FragmentParameter
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -218,7 +218,14 @@ object node {
   //shape of this data should probably change, currently we leave it for backward compatibility
   object FragmentInputDefinition {
 
-    @JsonCodec case class FragmentParameter(name: String, typ: FragmentClazzRef)
+    @JsonCodec case class FragmentParameter(name: String,
+                                            typ: FragmentClazzRef,
+                                            required: Boolean                          = false,
+                                            allowBasicMode: Boolean                    = true,
+                                            fixedValueList: List[FixedExpressionValue] = List.empty,
+                                            defaultValue: Option[Expression]           = None, // maybe change name to `initialValue`
+                                            hintText: Option[String]                   = None,
+                                           )
 
     object FragmentClazzRef {
 

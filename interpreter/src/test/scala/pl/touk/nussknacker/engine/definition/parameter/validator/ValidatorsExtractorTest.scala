@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.validation.Literal
 import pl.touk.nussknacker.engine.definition.parameter.{OptionalDeterminer, ParameterData}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
+import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 class ValidatorsExtractorTest extends AnyFunSuite with Matchers {

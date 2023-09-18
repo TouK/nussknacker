@@ -6,7 +6,7 @@ import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableProvidedInRuntime, FixedExpressionValue, FixedValuesValidator, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
+import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableProvidedInRuntime, FixedValuesValidator, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{GenericNodeTransformationMethodDef, MethodBasedComponentImplementationInvoker, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ModelDefinitionWithTypes
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 
