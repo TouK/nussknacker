@@ -5,7 +5,7 @@ import { connect } from "react-redux";
 import { hideRunProcessDetails } from "../../../../actions/nk/process";
 import { getShowRunProcessDetails } from "../../../../reducers/selectors/graph";
 import Icon from "../../../../assets/img/toolbarButtons/hide.svg";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 
 type Props = StateProps & ToolbarButtonProps;

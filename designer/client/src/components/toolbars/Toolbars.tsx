@@ -1,9 +1,7 @@
 import React, { memo } from "react";
 import { useSelector } from "react-redux";
 import { getFetchedProcessDetails } from "../../reducers/selectors/graph";
-
-import "../../stylesheets/userPanel.styl";
-import SpinnerWrapper from "../SpinnerWrapper";
+import SpinnerWrapper from "../spinner/SpinnerWrapper";
 import ToolbarsLayer from "../toolbarComponents/ToolbarsLayer";
 import { useToolbarConfig } from "../toolbarSettings/useToolbarConfig";
 import { MuiThemeProvider } from "../../containers/muiThemeProvider";

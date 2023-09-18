@@ -1,17 +1,17 @@
 import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createSelector } from "reselect";
-import { addComment, deleteComment } from "../actions/nk";
-import * as DialogMessages from "../common/DialogMessages";
-import { getProcessId, getProcessVersionId } from "../reducers/selectors/graph";
-import { getFeatureSettings, getLoggedUser } from "../reducers/selectors/settings";
-import { useWindows } from "../windowManager";
+import { addComment, deleteComment } from "../../actions/nk";
+import * as DialogMessages from "../../common/DialogMessages";
+import { getProcessId, getProcessVersionId } from "../../reducers/selectors/graph";
+import { getFeatureSettings, getLoggedUser } from "../../reducers/selectors/settings";
+import { useWindows } from "../../windowManager";
 import CommentContent from "./CommentContent";
 import CommentInput from "./CommentInput";
-import Date from "./common/Date";
-import { ListSeparator } from "./common/ListSeparator";
-import { NkButton } from "./NkButton";
-import { getCapabilities } from "../reducers/selectors/other";
+import Date from "../common/Date";
+import { ListSeparator } from "../common/ListSeparator";
+import { NkButton } from "../NkButton";
+import { getCapabilities } from "../../reducers/selectors/other";
 
 const getComments = (state) => state.processActivity?.comments || [];
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});

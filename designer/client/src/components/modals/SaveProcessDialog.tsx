@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { displayCurrentProcessVersion, displayProcessActivity, loadProcessToolbarsConfiguration } from "../../actions/nk";
 import { PromptContent } from "../../windowManager";
-import { CommentInput } from "../CommentInput";
+import { CommentInput } from "../comment/CommentInput";
 import { ThunkAction } from "../../actions/reduxTypes";
 import { getProcessToDisplay, getProcessUnsavedNewName, isProcessRenamed } from "../../reducers/selectors/graph";
 import HttpService from "../../http/HttpService";

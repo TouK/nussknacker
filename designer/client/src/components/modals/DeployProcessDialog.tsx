@@ -7,7 +7,7 @@ import { getProcessId } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
 import { ProcessId } from "../../types";
 import { PromptContent, WindowKind } from "../../windowManager";
-import CommentInput from "../CommentInput";
+import CommentInput from "../comment/CommentInput";
 import { ValidationLabel } from "../common/ValidationLabel";
 import ProcessDialogWarnings from "./ProcessDialogWarnings";
 
