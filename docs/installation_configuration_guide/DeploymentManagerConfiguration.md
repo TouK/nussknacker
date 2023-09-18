@@ -24,18 +24,17 @@ deploymentConfig {
 
 ## Kubernetes native Lite engine configuration
 
-Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
-in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you
-have to configure `.kube/config` properly.
+Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you have to configure `.kube/config` properly.
 
 Except the `servicePort` configuration option, all remaining configuration options apply to
-both `streaming` and `request-response` processing modes.
+both `streaming` and `request-response` processing modes. 
 
-The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can customize
-the Helm chart to use different values for
-these [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). If you install
-Designer outside the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any
-other Nussknacker non K8s configuration.
+The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can use Helm values override mechanism to supply your own values for these [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). As the the result of the Helm template rendering "classical" configuration file will be generated. W
+
+&nbsp;
+If you install Designer outside the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any other Nussknacker non K8s configuration.
+
+
 
 | Parameter                     | Type                                                | Default value                     | Description                                                                              |
 |-------------------------------|-----------------------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------|
@@ -198,9 +197,7 @@ fixedReplicasCount configuration key; its default value is 2:
 
 `{ fixedReplicasCount: x }`.
 
-​In the  **Streaming** processing mode the scenario parallelism is set in the scenario properties; it determines the
-minimal number of tasks used to process events. The count of replicas, scenario parallelism and number of tasks per
-replica are connected with a simple formula:
+​In the  **Streaming** processing mode the scenario parallelism is set in the scenario properties; it determines the minimal number of tasks used to process events. The count of replicas, scenario parallelism and number of tasks per replica are connected with a simple formula:
 
 *scenarioParallelism = replicasCount \* tasksPerReplica*
 
