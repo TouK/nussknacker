@@ -28,13 +28,6 @@ class BasicAuthenticationResources(realm: String, configuration: BasicAuthentica
     )
 
   override def authenticationMethod(): Auth[AuthCredentials, _] = {
-    // todo:
-    implicit val authCredentialsCodec: Codec[String, AuthCredentials, CodecFormat.TextPlain] =
-      Codec
-        .id(CodecFormat.TextPlain(), Schema.string[String])
-        .map(
-          Mapping.from[String, AuthCredentials](AuthCredentials.apply)(_.value)
-        )
     auth.basic[AuthCredentials](WWWAuthenticateChallenge.basic.realm(realm))
   }
 

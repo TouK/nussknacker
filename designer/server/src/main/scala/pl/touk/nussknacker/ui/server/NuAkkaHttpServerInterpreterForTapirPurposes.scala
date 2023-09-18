@@ -16,7 +16,6 @@ class NuAkkaHttpServerInterpreterForTapirPurposes(implicit val executionContext:
   override val akkaHttpServerOptions: AkkaHttpServerOptions =
     AkkaHttpServerOptions
       .customiseInterceptors
-//      .customiseInterceptors.corsInterceptor(CORSInterceptor.customOrThrow[Future](CORSConfig.default)) // todo:
       .decodeFailureHandler(customDecodeFailureHandler)
       .options
 

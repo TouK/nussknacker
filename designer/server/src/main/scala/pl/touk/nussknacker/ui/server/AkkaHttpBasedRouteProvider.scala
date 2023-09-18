@@ -221,10 +221,6 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
           new DefinitionResources(modelData, typeToConfig, fragmentRepository, processCategoryService),
           new UserResources(processCategoryService),
           new NotificationResources(notificationService),
-//          new RouteWithUser {
-//            override def securedRoute(implicit user: LoggedUser): Route =
-//              akkaHttpServerInterpreter.toRoute(appHttpService.securedServerEndpoints)
-//          }, // todo: remove
           new TestInfoResources(processAuthorizer, futureProcessRepository, scenarioTestService),
           new ComponentResource(componentService),
           new AttachmentResources(
@@ -273,7 +269,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
       createAppRoute(
         resolvedConfig = resolvedConfig,
         authenticationResources = authenticationResources,
-        otherRoutes = List(
+        tapirRelatedRoutes = List(
           akkaHttpServerInterpreter.toRoute(nuDesignerOpenApi.publicServerEndpoints),
           akkaHttpServerInterpreter.toRoute(appApiHttpService.serverEndpoints)
         ),
@@ -303,7 +299,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
 
   private def createAppRoute(resolvedConfig: Config,
                              authenticationResources: AuthenticationResources,
-                             otherRoutes: List[Route],
+                             tapirRelatedRoutes: List[Route],
                              apiResourcesWithAuthentication: List[RouteWithUser],
                              apiResourcesWithoutAuthentication: List[Route],
                              processCategoryService: ProcessCategoryService,
@@ -311,8 +307,8 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
                             (implicit executionContext: ExecutionContext): Route = {
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(resolvedConfig.getString("http.publicPath"))
-    WithDirectives(CorsSupport.cors(true), SecurityHeadersSupport(), OptionsMethodSupport()) { // todo:
-      otherRoutes.reduce(_ ~ _) ~
+    WithDirectives(CorsSupport.cors(developmentMode), SecurityHeadersSupport(), OptionsMethodSupport()) {
+      tapirRelatedRoutes.reduce(_ ~ _) ~
       pathPrefixTest(!"api") {
         webResources.route
       } ~ pathPrefix("api") {

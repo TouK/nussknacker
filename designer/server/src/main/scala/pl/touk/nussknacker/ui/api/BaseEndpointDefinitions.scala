@@ -1,43 +1,32 @@
 package pl.touk.nussknacker.ui.api
 
+import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.ToSecure
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import sttp.model.StatusCode.{Forbidden, Unauthorized}
 import sttp.tapir.EndpointInput.Auth
 import sttp.tapir._
 
-abstract class BaseEndpointDefinitions(auth: Auth[AuthCredentials, _]) {
+import scala.language.implicitConversions
 
-  val baseNuApiEndpoint =
-    // TODO: when all services are moved to Tapir (including authn & authz), we can uncomment this path here
-    endpoint.in("api2")
+trait BaseEndpointDefinitions {
 
-  val baseNuApiPublicEndpoint =
-    baseNuApiEndpoint
-
-//  type SecuredEndpoint[INPUT, ERROR_OUTPUT, OUTPUT, -R] =
-//    Endpoint[AuthCredentials, INPUT, Either[ERROR_OUTPUT, SecurityError], OUTPUT, R]
-//
-//  private def baseNuApiUserSecuredEndpoint =
-//    baseNuApiEndpoint
-//      .securityIn(auth)
-//      .errorOutEither(
-//        oneOf(
-//          oneOfVariantFromMatchType(Unauthorized, emptyOutputAs(SecurityError.AuthenticationError)),
-//          oneOfVariantFromMatchType(Forbidden, emptyOutputAs(SecurityError.AuthorizationError)),
-//        )
-//      )
+  val baseNuApiEndpoint: PublicEndpoint[Unit, Unit, Unit, Any] = endpoint.in("api")
 
   def allEndpoints: List[AnyEndpoint]
 
+  implicit def toSecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R](endpoint: Endpoint[Unit, INPUT, BUSINESS_ERROR, OUTPUT, R]): ToSecure[INPUT, BUSINESS_ERROR, OUTPUT, R] =
+    new ToSecure(endpoint)
 }
 object BaseEndpointDefinitions {
-  type EndpointError[ERROR] = Either[SecurityError, ERROR]
 
-  implicit class ToSecure[INPUT, ERROR_OUTPUT, OUTPUT, -R](val endpoint: Endpoint[Unit, INPUT, ERROR_OUTPUT, OUTPUT, R]) extends AnyVal {
+  type EndpointError[ERROR] = Either[SecurityError, ERROR]
+  type SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, -R] = Endpoint[AuthCredentials, INPUT, Either[BUSINESS_ERROR, SecurityError], OUTPUT, R]
+
+  implicit class ToSecure[INPUT, BUSINESS_ERROR, OUTPUT, -R](val endpoint: PublicEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R]) extends AnyVal {
 
     import Codecs._
 
-    def withSecurity(auth: Auth[AuthCredentials, _]): Endpoint[AuthCredentials, INPUT, Either[ERROR_OUTPUT, SecurityError], OUTPUT, R] = {
+    def withSecurity(auth: Auth[AuthCredentials, _]): SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R] = {
       endpoint
         .securityIn(auth)
         .errorOutEither(
