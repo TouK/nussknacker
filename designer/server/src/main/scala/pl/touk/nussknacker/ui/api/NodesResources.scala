@@ -32,7 +32,8 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorus
+
 import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareTypingResultDecoder, prepareValidationContext}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
