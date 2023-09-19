@@ -67,8 +67,9 @@ export const CommentButton = styled(NkButton)`
     background-color: ${variables.commentBkgColor} !important;
     border: none !important;
     width: 20% !important;
+    height: 30px !important;
     align-self: flex-end !important;
-    margin-top: 5px !important;
+    margin: 5px 0 10px !important;
     padding: 3px 0 !important;
     border-radius: 3px !important;
     cursor: pointer;
