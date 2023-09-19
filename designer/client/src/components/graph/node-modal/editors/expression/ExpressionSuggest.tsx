@@ -137,14 +137,14 @@ function ExpressionSuggest(props: Props): JSX.Element {
 
     const definitionData = useSelector(getProcessDefinitionData);
     const dataResolved = !isEmpty(definitionData);
-    const { id, processingType } = useSelector(getProcessToDisplay);
+    const { processingType } = useSelector(getProcessToDisplay);
 
     const { value, onValueChange, language } = inputProps;
     const [editorFocused, setEditorFocused] = useState(false);
 
     const expressionSuggester = useMemo(() => {
-        return new BackendExpressionSuggester(language, id, variableTypes, processingType, HttpService);
-    }, [id, processingType, variableTypes, language]);
+        return new BackendExpressionSuggester(language, variableTypes, processingType, HttpService);
+    }, [processingType, variableTypes, language]);
 
     const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester));
     useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester]);

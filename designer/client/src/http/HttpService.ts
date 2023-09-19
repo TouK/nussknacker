@@ -414,12 +414,12 @@ class HttpService {
     }
 
     getExpressionSuggestions(
-        processId: string,
+        processingType: string,
         expression: Expression,
         caretPosition2d: CaretPosition2d,
         variables: Record<string, any>,
     ): Promise<AxiosResponse<ExpressionSuggestion[]>> {
-        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processId)}/suggestions`, {
+        const promise = api.post<ExpressionSuggestion[]>(`/suggestions/${encodeURIComponent(processingType)}`, {
             expression,
             caretPosition2d,
             variables,

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.model._
 import cats.data.OptionT
 import cats.data.Validated.Invalid
 import cats.instances.future._
@@ -23,7 +24,6 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, Va
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -33,6 +33,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
+import pl.touk.nussknacker.ui.NotFoundError
 import pl.touk.nussknacker.ui.api.NodesResources.{preparePropertiesRequestDecoder, prepareTypingResultDecoder, prepareValidationContext}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
@@ -114,22 +115,24 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               ParametersValidationResult(validationErrors = validationResults, validationPerformed = true)
             }
           }
-        } ~ path("suggestions") {
-          val modelData = typeToConfig.forTypeUnsafe(process.processingType)
-          val expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(process.processingType)
-          implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
-          implicit val expressionSuggestionRequestDecoder: Decoder[ExpressionSuggestionRequest] = ExpressionSuggestionRequest.decoder(typeDecoder)
-
-          entity(as[ExpressionSuggestionRequest]) { expressionSuggestionRequest =>
-            complete {
-              expressionSuggester.expressionSuggestions(
-                expressionSuggestionRequest.expression,
-                expressionSuggestionRequest.caretPosition2d,
-                expressionSuggestionRequest.variables,
-              )
-            }
+        }
+      }
+    } ~ pathPrefix("suggestions" / Segment) { processingType =>
+      typeToConfig.forType(processingType).map { modelData =>
+        val expressionSuggester = typeToExpressionSuggester.forTypeUnsafe(processingType)
+        implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+        implicit val expressionSuggestionRequestDecoder: Decoder[ExpressionSuggestionRequest] = ExpressionSuggestionRequest.decoder(typeDecoder)
+        (post & entity(as[ExpressionSuggestionRequest])) { expressionSuggestionRequest =>
+          complete {
+            expressionSuggester.expressionSuggestions(
+              expressionSuggestionRequest.expression,
+              expressionSuggestionRequest.caretPosition2d,
+              expressionSuggestionRequest.variables
+            )
           }
         }
+      }.getOrElse {
+        complete(HttpResponse(status = StatusCodes.NotFound, entity = s"ProcessingType type: $processingType not found"))
       }
     }
   }
@@ -175,7 +178,7 @@ object NodesResources {
 
   def prepareValidationContext(modelData: ModelData)(variableTypes: Map[String, TypingResult])(implicit metaData: MetaData): ValidationContext = {
     val emptyCtx = GlobalVariablesPreparer(modelData.modelDefinition.expressionConfig).emptyValidationContext(metaData)
-    //It's a bit tricky, because FE does not distinguish between global and local vars...
+    // It's a bit tricky, because FE does not distinguish between global and local vars...
     val localVars = variableTypes.filterNot(e => emptyCtx.globalVariables.keys.toSet.contains(e._1))
     emptyCtx.copy(localVariables = localVars)
   }
@@ -196,8 +199,8 @@ class NodeValidator {
       case ValidationPerformed(errors, parameters, expressionType) =>
         val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter))
 
-        //We don't return MissingParameter error when we are returning those missing parameters to be added - since
-        //it's not really exception ATM
+        // We don't return MissingParameter error when we are returning those missing parameters to be added - since
+        // it's not really exception ATM
         def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
           case MissingParameters(params, _) => params.forall(missing => uiParams.exists(_.exists(_.name == missing)))
           case _ => false
@@ -208,7 +211,8 @@ class NodeValidator {
           parameters = uiParams,
           expressionType = expressionType,
           validationErrors = uiErrors,
-          validationPerformed = true)
+          validationPerformed = true
+        )
     }
   }
 }
