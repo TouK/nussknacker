@@ -6,7 +6,7 @@ import { css, cx } from "@emotion/css";
 import { variables } from "../../../stylesheets/variables";
 import { Icon, Label } from "./ToolbarButtonStyled";
 
-const { button, rightPanelButtonFontSize, focus, error, ok } = variables;
+const { button, buttonTextColor, buttonBkgHover, buttonBkgColor, rightPanelButtonFontSize, focus, error, ok } = variables;
 
 export function ToolbarButton({ onDrop, title, className, disabled, name, icon, hasError, isActive, ...props }: ToolbarButtonProps) {
     const { variant } = useContext(ToolbarButtonsContext);
@@ -35,10 +35,10 @@ export function ToolbarButton({ onDrop, title, className, disabled, name, icon, 
             borderColor: focus,
         },
 
-        color: hasError ? error : isActive ? ok : button.text,
-        backgroundColor: button.bkgColor,
+        color: hasError ? error : isActive ? ok : buttonTextColor,
+        backgroundColor: buttonBkgColor,
         ":hover": {
-            backgroundColor: disabled ? button.bkgColor : button.bkgHover,
+            backgroundColor: disabled ? buttonBkgColor : buttonBkgHover,
         },
     });
 
