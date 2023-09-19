@@ -62,7 +62,7 @@ export const AddCommentPanel = styled("div")`
     }
 `;
 
-export const CommentNKButton = styled(NkButton)`
+export const CommentButton = styled(NkButton)`
     font-size: 12px !important;
     background-color: ${variables.commentBkgColor} !important;
     border: none !important;

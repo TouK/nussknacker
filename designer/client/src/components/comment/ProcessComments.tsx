@@ -11,7 +11,7 @@ import CommentInput from "./CommentInput";
 import Date from "../common/Date";
 import { ListSeparator } from "../common/ListSeparator";
 import { getCapabilities } from "../../reducers/selectors/other";
-import { AddCommentPanel, CommentNKButton, ProcessCommentsList, ProcessCommentsWrapper } from "./StyledComment";
+import { AddCommentPanel, CommentButton, ProcessCommentsList, ProcessCommentsWrapper } from "./StyledComment";
 
 const getComments = (state) => state.processActivity?.comments || [];
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
@@ -77,9 +77,9 @@ function ProcessComments(): JSX.Element {
             {capabilities.write ? (
                 <AddCommentPanel>
                     <CommentInput onChange={onInputChange.bind(this)} value={comment} />
-                    <CommentNKButton type="button" onClick={_addComment} disabled={pending || comment == ""}>
+                    <CommentButton type="button" onClick={_addComment} disabled={pending || comment == ""}>
                         Add
-                    </CommentNKButton>
+                    </CommentButton>
                 </AddCommentPanel>
             ) : null}
         </ProcessCommentsWrapper>

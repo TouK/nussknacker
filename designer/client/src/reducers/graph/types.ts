@@ -1,5 +1,5 @@
 import { Layout } from "../../actions/nk";
-import { ProcessStateType, ProcessType } from "../../components/Process/types";
+import { ProcessType } from "../../components/Process/types";
 import { Process } from "../../types";
 import { TestCapabilities, TestResults, TestFormParameters } from "../../common/TestResultUtils";
 
