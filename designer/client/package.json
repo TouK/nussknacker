@@ -104,8 +104,6 @@
         "redux-thunk": "2.4.1",
         "redux-undo": "1.0.1",
         "reselect": "4.1.5",
-        "styled-components": "6.0.8",
-        "styled-normalize": "8.0.7",
         "svg-pan-zoom": "3.6.1",
         "url-join": "4.0.1",
         "use-debounce": "3.4.3",
