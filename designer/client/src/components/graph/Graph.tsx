@@ -22,7 +22,7 @@ import { isEdgeEditable } from "../../common/EdgeUtils";
 import { NodeId, NodeType, Process, ProcessDefinitionData } from "../../types";
 import { Layout, NodePosition, Position } from "../../actions/nk";
 import { UserSettings } from "../../reducers/userSettings";
-import { GraphProps } from "./types/index";
+import { GraphProps } from "./types";
 import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";

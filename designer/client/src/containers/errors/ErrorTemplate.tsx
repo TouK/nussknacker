@@ -44,7 +44,7 @@ export function ErrorTemplate({ description = "", message = "", children }: Prop
     const { t } = useTranslation();
 
     return (
-        <ErrorTemplateWrapper className="center-block">
+        <ErrorTemplateWrapper>
             <h1>{t("error.title", "Oops!")}</h1>
             <h2>{message}</h2>
             <ErrorDetails>
