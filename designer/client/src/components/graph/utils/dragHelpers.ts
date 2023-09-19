@@ -1,6 +1,6 @@
 import { dia, g } from "jointjs";
-import { NodeType } from "../../types";
-import { rafThrottle } from "./rafThrottle";
+import { NodeType } from "../../../types";
+import { rafThrottle } from "../rafThrottle";
 
 export function getLinkNodes(link: dia.Link): { sourceNode: NodeType; targetNode: NodeType } {
     const { graph } = link;

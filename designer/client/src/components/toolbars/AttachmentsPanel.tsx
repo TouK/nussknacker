@@ -1,5 +1,5 @@
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import ProcessAttachments from "../ProcessAttachments";
+import ProcessAttachments from "../processAttach/ProcessAttachments";
 import React from "react";
 import { useTranslation } from "react-i18next";
 

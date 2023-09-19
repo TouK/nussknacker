@@ -4,7 +4,7 @@ import { mapValues } from "lodash";
 import { useDrop } from "react-dnd";
 import { useDispatch, useSelector } from "react-redux";
 import { getFetchedProcessDetails, getLayout, getProcessCounts, getProcessToDisplay } from "../../reducers/selectors/graph";
-import { setLinksHovered } from "./dragHelpers";
+import { setLinksHovered } from "./utils/dragHelpers";
 import { Graph } from "./Graph";
 import GraphWrapped from "./GraphWrapped";
 import { RECT_HEIGHT, RECT_WIDTH } from "./EspNode/esp";
