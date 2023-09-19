@@ -2,9 +2,9 @@ import { PaletteColorOptions, createTheme } from "@mui/material/styles";
 
 declare module "@mui/material/styles" {
     interface Palette {
-        ok: PaletteColorOptions;
-        inputBorderFocus: string;
-        button: {
+        ok?: PaletteColorOptions;
+        inputBorderFocus?: string;
+        button?: {
             background: string;
             hover: string;
             text: string;
@@ -12,7 +12,7 @@ declare module "@mui/material/styles" {
             blueTextColor: string;
             border: string;
         };
-        panel: {
+        panel?: {
             panelTitleTextColor: string;
             panelHeaderBackground: string;
             panelBackground: string;
@@ -21,11 +21,11 @@ declare module "@mui/material/styles" {
             panelHeaderText: string;
             panelBorder: string;
         };
-        tool: {
+        tool?: {
             toolHoverBkg: string;
             toolHover: string;
         };
-        process: {
+        process?: {
             processesTableHeaderColor: string;
             processesTableEvenColor: string;
             processesTableOddColor: string;
@@ -33,12 +33,12 @@ declare module "@mui/material/styles" {
             processesTopBar: string;
             processesHoverColor: string;
         };
-        comment: {
+        comment?: {
             commentBkgColor: string;
             commentBorderColor: string;
             commentHeaderColor: string;
         };
-        modal: {
+        modal?: {
             modalBkgColor: string;
             modalInputBkgColor: string;
             modalInputTextColor: string;
@@ -47,29 +47,29 @@ declare module "@mui/material/styles" {
             modalConfirmButtonColor: string;
             modalBorder: string;
         };
-        menu: {
+        menu?: {
             menuButtonBk: string;
             menuBkgColor: string;
             menuTxtColor: string;
             menuButtonBorderColor: string;
             menuButtonActiveBKColor: string;
         };
-        scrollbar: string;
-        labelBkg: string;
-        graphBkg: string;
-        defaultText: string;
-        docsIconColor: string;
-        docsIconColorHover: string;
-        testResultsColor: string;
-        mark: string;
-        listBorder: string;
-        focus: string;
-        hr: string;
+        scrollbar?: string;
+        labelBkg?: string;
+        graphBkg?: string;
+        defaultText?: string;
+        docsIconColor?: string;
+        docsIconColorHover?: string;
+        testResultsColor?: string;
+        mark?: string;
+        listBorder?: string;
+        focus?: string;
+        hr?: string;
     }
     interface PaletteOptions {
-        ok: PaletteColorOptions;
-        inputBorderFocus: string;
-        button: {
+        ok?: PaletteColorOptions;
+        inputBorderFocus?: string;
+        button?: {
             background: string;
             hover: string;
             text: string;
@@ -77,7 +77,7 @@ declare module "@mui/material/styles" {
             blueTextColor: string;
             border: string;
         };
-        panel: {
+        panel?: {
             panelTitleTextColor: string;
             panelHeaderBackground: string;
             panelBackground: string;
@@ -86,11 +86,11 @@ declare module "@mui/material/styles" {
             panelHeaderText: string;
             panelBorder: string;
         };
-        tool: {
+        tool?: {
             toolHoverBkg: string;
             toolHover: string;
         };
-        process: {
+        process?: {
             processesTableHeaderColor: string;
             processesTableEvenColor: string;
             processesTableOddColor: string;
@@ -98,12 +98,12 @@ declare module "@mui/material/styles" {
             processesTopBar: string;
             processesHoverColor: string;
         };
-        comment: {
+        comment?: {
             commentBkgColor: string;
             commentBorderColor: string;
             commentHeaderColor: string;
         };
-        modal: {
+        modal?: {
             modalBkgColor: string;
             modalInputBkgColor: string;
             modalInputTextColor: string;
@@ -112,24 +112,24 @@ declare module "@mui/material/styles" {
             modalConfirmButtonColor: string;
             modalBorder: string;
         };
-        menu: {
+        menu?: {
             menuButtonBk: string;
             menuBkgColor: string;
             menuTxtColor: string;
             menuButtonBorderColor: string;
             menuButtonActiveBKColor: string;
         };
-        scrollbar: string;
-        labelBkg: string;
-        graphBkg: string;
-        defaultText: string;
-        docsIconColor: string;
-        docsIconColorHover: string;
-        testResultsColor: string;
-        mark: string;
-        listBorder: string;
-        focus: string;
-        hr: string;
+        scrollbar?: string;
+        labelBkg?: string;
+        graphBkg?: string;
+        defaultText?: string;
+        docsIconColor?: string;
+        docsIconColorHover?: string;
+        testResultsColor?: string;
+        mark?: string;
+        listBorder?: string;
+        focus?: string;
+        hr?: string;
     }
 }
 
