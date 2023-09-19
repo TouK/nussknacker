@@ -7,7 +7,7 @@ import { NodeType, ProcessDefinitionData } from "../../../types";
 import { getComponentIconSrc } from "../../toolbars/creator/ComponentIcon";
 import { setLinksHovered } from "../utils/dragHelpers";
 import { isConnected, isModelElement } from "../GraphPartialsInTS";
-import { Events } from "../joint-events";
+import { Events } from "../types";
 import NodeUtils from "../NodeUtils";
 import { EspNodeShape } from "./esp";
 import millify from "millify";

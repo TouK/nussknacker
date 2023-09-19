@@ -9,7 +9,7 @@ import { updateNodeCounts } from "./EspNode/element";
 import { GraphPaperContainer } from "./focusable";
 import { applyCellChanges, calcLayout, createPaper, isModelElement } from "./GraphPartialsInTS";
 import styles from "./graphTheme.styl";
-import { Events } from "./joint-events";
+import { Events } from "./types";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
 import { RangeSelectedEventData, RangeSelectPlugin, SelectionMode } from "./RangeSelectPlugin";

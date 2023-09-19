@@ -4,7 +4,7 @@ import { debounce, throttle } from "lodash";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import svgPanZoom from "svg-pan-zoom";
 import { CursorMask } from "./CursorMask";
-import { Events } from "./joint-events";
+import { Events } from "./types";
 
 const getAnimationClass = (disabled?: boolean) =>
     css({
