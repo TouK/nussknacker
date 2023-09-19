@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, 
 import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresolvedVersion, ProcessingTypeData}
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
-import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.api.{NuDesignerExposedApi, _}
 import pl.touk.nussknacker.ui.api.app.AppApiHttpService
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, ComponentLinksConfigExtractor, FeatureTogglesConfig, UsageStatisticsReportsConfig}
@@ -264,15 +264,12 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
         authenticationResources.routeWithPathPrefix,
       )
 
-      val nuDesignerOpenApi = new NuDesignerOpenApi(appApiHttpService)
+      val nuDesignerApi = new NuDesignerExposedApi(appApiHttpService)
 
       createAppRoute(
         resolvedConfig = resolvedConfig,
         authenticationResources = authenticationResources,
-        tapirRelatedRoutes = List(
-          akkaHttpServerInterpreter.toRoute(nuDesignerOpenApi.publicServerEndpoints),
-          akkaHttpServerInterpreter.toRoute(appApiHttpService.serverEndpoints)
-        ),
+        tapirRelatedRoutes = akkaHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
         apiResourcesWithAuthentication = apiResourcesWithAuthentication,
         apiResourcesWithoutAuthentication = apiResourcesWithoutAuthentication,
         processCategoryService = processCategoryService,

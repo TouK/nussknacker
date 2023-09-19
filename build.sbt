@@ -1593,11 +1593,14 @@ lazy val designer = (project in file("designer/server"))
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.8",
 
+        "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "0.6.0",
         "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % tapirV,
         "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirV,
         "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirV,
         "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirV,
         "io.circe" %% "circe-generic-extras" % circeGenericExtrasV,
+
+        "org.reflections" % "reflections" % "0.10.2",
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
 

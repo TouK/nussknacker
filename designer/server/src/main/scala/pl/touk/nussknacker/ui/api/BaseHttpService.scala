@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.api
 import com.typesafe.config.Config
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api._
-import sttp.tapir.AnyEndpoint
 import sttp.tapir.server.ServerEndpoint
 
 import java.util.concurrent.atomic.AtomicReference
@@ -27,8 +26,6 @@ abstract class BaseHttpService(config: Config,
   protected def expose(when: => Boolean)(serverEndpoint: ServerEndpoint[Any, Future]): Unit = {
     if(when) expose(serverEndpoint)
   }
-
-  def allEndpointDefinitions: List[AnyEndpoint] = serverEndpoints.map(_.endpoint)
 
   def serverEndpoints: List[ServerEndpoint[Any, Future]] = allServerEndpoints.get()
 
