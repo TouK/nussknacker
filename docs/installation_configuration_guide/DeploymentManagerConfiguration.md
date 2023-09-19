@@ -24,12 +24,14 @@ deploymentConfig {
 
 ## Kubernetes native Lite engine configuration
 
+Please check high level [Lite engine description](https://nussknacker.io/documentation/about/engines/LiteArchitecture/#scenario-deployment) before proceeding to configuration details. 
+
 Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you have to configure `.kube/config` properly.
 
 Except the `servicePort` configuration option, all remaining configuration options apply to
 both `streaming` and `request-response` processing modes. 
 
-The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can use Helm values override mechanism to supply your own values for these [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). As the the result of the Helm template rendering "classical" configuration file will be generated. W
+The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can use Helm values override mechanism to supply your own values for these [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). As the the result of the Helm template rendering "classic" Nussknacker configuration file will be generated.
 
 &nbsp;
 If you install Designer outside the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any other Nussknacker non K8s configuration.
@@ -56,7 +58,7 @@ If you install Designer outside the K8s cluster then the required changes should
 
 ### Customizing K8s deployment resource definition
 
-By default, each scenario creates K8s Deployment. By default, Nussknacker will create following deployment:
+By default, each scenario is deployed as the following K8s deployment:
 
 ```yaml
 apiVersion: apps/v1
@@ -191,6 +193,9 @@ modelConfig {
 ```
 
 ### Configuring replicas count
+
+Replicas count is configured under `scalingConfig` configuration key. 
+&nbsp;
 
 ​In the **Request-Response** processing mode you can affect the count of scenario pods (replicas) by setting
 fixedReplicasCount configuration key; its default value is 2:
