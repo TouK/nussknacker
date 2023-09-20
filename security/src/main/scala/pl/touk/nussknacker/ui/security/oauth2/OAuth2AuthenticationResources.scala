@@ -74,8 +74,8 @@ class OAuth2AuthenticationResources(override val name: String,
         }
       } ~
         formFields(Symbol("code"), Symbol("redirect_uri").?) { (authorizationCode, redirectUri) =>
-          (get | post) { req =>
-            completeOAuth2Authenticate(authorizationCode, redirectUri).apply(req)
+          (get | post) {
+            completeOAuth2Authenticate(authorizationCode, redirectUri)
           }
         }
     }
