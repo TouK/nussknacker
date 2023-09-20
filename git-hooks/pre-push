@@ -1,0 +1,8 @@
+#!/bin/bash
+
+sbt --client "project root; runMain pl.touk.nussknacker.ui.util.GenerateDesignerOpenApiYamlFile"
+if [ $? -eq 0 ]; then
+    exit 0
+else
+    exit 1
+fi
