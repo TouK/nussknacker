@@ -110,7 +110,7 @@ In the table below there are all environment variables used in Nussknacker image
 | OAUTH2_AUTHORIZE_URI                            | string  |                    |
 | OAUTH2_REDIRECT_URI                             | string  |                    |
 | OAUTH2_ACCESS_TOKEN_URI                         | string  |                    |
-| OAUTH2_PROFILE_URI                              | string  |                    |
+| OAUTH2_PROFILE_URI                              | string  | x                  |
 | OAUTH2_PROFILE_FORMAT                           | string  |                    |
 | OAUTH2_IMPLICIT_GRANT_ENABLED                   | boolean |                    |
 | OAUTH2_ACCESS_TOKEN_IS_JWT                      | boolean | false              |
