@@ -405,8 +405,8 @@ class HttpService {
         return promise;
     }
 
-    validateGenericActionParameters(processId: string, validationRequest): Promise<AxiosResponse<ValidationData>> {
-        const promise = api.post(`/parameters/${encodeURIComponent(processId)}/validate`, validationRequest);
+    validateGenericActionParameters(processingType: string, validationRequest): Promise<AxiosResponse<ValidationData>> {
+        const promise = api.post(`/parameters/${encodeURIComponent(processingType)}/validate`, validationRequest);
         promise.catch((error) =>
             this.#addError(i18next.t("notification.error.failedToValidateGenericParameters", "Failed to validate parameters"), error, true),
         );
@@ -414,12 +414,12 @@ class HttpService {
     }
 
     getExpressionSuggestions(
-        processId: string,
+        processingType: string,
         expression: Expression,
         caretPosition2d: CaretPosition2d,
         variables: Record<string, any>,
     ): Promise<AxiosResponse<ExpressionSuggestion[]>> {
-        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processId)}/suggestions`, {
+        const promise = api.post<ExpressionSuggestion[]>(`/parameters/${encodeURIComponent(processingType)}/suggestions`, {
             expression,
             caretPosition2d,
             variables,
