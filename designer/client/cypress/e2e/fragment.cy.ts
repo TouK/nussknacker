@@ -63,7 +63,7 @@ describe("Fragment", () => {
                 request.alias = "validation";
             }
         });
-        cy.intercept("POST", "/api/suggestions/*", (request) => {
+        cy.intercept("POST", "/api/parameters/*/suggestions", (request) => {
             if (request?.body.expression.expression == "#fragmentResult.") {
                 request.alias = "suggestions";
             }
