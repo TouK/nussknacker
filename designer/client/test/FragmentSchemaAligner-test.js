@@ -1,4 +1,4 @@
-import * as FragmentSchemaAligner from "../src/components/graph/FragmentSchemaAligner";
+import * as FragmentSchemaAligner from "../src/components/graph/utils/fragmentSchemaAligner";
 import { omit } from "lodash";
 
 const fragmentProcessDefinitionData = {
