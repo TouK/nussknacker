@@ -55,7 +55,6 @@ object ExampleOAuth2ServiceFactory {
       profileFormat = Some(ProfileFormat.GITHUB),
       accessTokenUri = URI.create("https://github.com/login/oauth/access_token"),
       redirectUri = None,
-      nuDesignerApiUri = Some(URI.create("https://localhost:8080/api")),
       implicitGrantEnabled = false,
       jwt = None
     )

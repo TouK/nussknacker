@@ -25,15 +25,15 @@ abstract class BaseHttpService(config: Config,
   }
 
   protected def expose(when: => Boolean)(serverEndpoint: ServerEndpoint[Any, Future]): Unit = {
-    if(when) expose(serverEndpoint)
+    if (when) expose(serverEndpoint)
   }
 
   def allEndpointDefinitions: List[AnyEndpoint] = serverEndpoints.map(_.endpoint)
 
   def serverEndpoints: List[ServerEndpoint[Any, Future]] = allServerEndpoints.get()
 
-  protected def authorizeAdmin[ERROR](credentials: AuthCredentials): Future[Either[Either[ERROR, SecurityError], LoggedUser]] = {
-    authorize[ERROR](credentials)
+  protected def authorizeAdminUser[ERROR](credentials: AuthCredentials): Future[Either[Either[ERROR, SecurityError], LoggedUser]] = {
+    authorizeCommonUser[ERROR](credentials)
       .map {
         case right@Right(AdminUser(_, _)) => right
         case Right(_: CommonUser) => Left(Right(SecurityError.AuthorizationError))
@@ -41,7 +41,7 @@ abstract class BaseHttpService(config: Config,
       }
   }
 
-  protected def authorize[ERROR](credentials: AuthCredentials): Future[Either[Either[ERROR, SecurityError], LoggedUser]] = {
+  protected def authorizeCommonUser[ERROR](credentials: AuthCredentials): Future[Either[Either[ERROR, SecurityError], LoggedUser]] = {
     authenticator
       .authenticate(credentials)
       .map {
@@ -57,4 +57,8 @@ abstract class BaseHttpService(config: Config,
           Left(Right(SecurityError.AuthenticationError))
       }
   }
+
+  protected def success[RESULT](value: RESULT) = Right(value)
+
+  protected def businessError[ERROR](error: ERROR) = Left(Left(error))
 }

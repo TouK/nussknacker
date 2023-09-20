@@ -32,7 +32,7 @@ class AppApiHttpService(config: Config,
                         processValidation: ProcessValidation,
                         deploymentService: DeploymentService,
                         processCategoryService: ProcessCategoryService,
-                        exposeConfig: Boolean)
+                        shouldExposeConfig: Boolean)
                        (implicit executionContext: ExecutionContext)
   extends BaseHttpService(config, processCategoryService, authenticator)
     with LazyLogging {
@@ -48,46 +48,46 @@ class AppApiHttpService(config: Config,
 
   expose {
     appApiEndpoints.processDeploymentHealthCheckEndpoint
-      .serverSecurityLogic(authorize[HealthCheckProcessErrorResponseDto])
+      .serverSecurityLogic(authorizeCommonUser[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
         _ =>
           problemStateByProcessName
             .map { set =>
               if (set.isEmpty) {
-                Right(HealthCheckProcessSuccessResponseDto)
+                success(HealthCheckProcessSuccessResponseDto)
               } else {
                 logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
                 logger.debug(s"Scenarios with status PROBLEM: $set")
-                Left(Left(HealthCheckProcessErrorResponseDto(
+                businessError(HealthCheckProcessErrorResponseDto(
                   message = Some("Scenarios with status PROBLEM"),
                   processes = Some(set.keys.toSet)
-                )))
+                ))
               }
             }
             .recover {
               case NonFatal(e) =>
                 logger.error("Failed to get statuses", e)
-                Left(Left(HealthCheckProcessErrorResponseDto(
+                businessError(HealthCheckProcessErrorResponseDto(
                   message = Some("Failed to retrieve job statuses"),
                   processes = None
-                )))
+                ))
             }
       }
   }
 
   expose {
     appApiEndpoints.processValidationHealthCheckEndpoint
-      .serverSecurityLogic(authorize[HealthCheckProcessErrorResponseDto])
+      .serverSecurityLogic(authorizeCommonUser[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
         _ =>
           processesWithValidationErrors.map { processes =>
             if (processes.isEmpty) {
-              Right(HealthCheckProcessSuccessResponseDto)
+              success(HealthCheckProcessSuccessResponseDto)
             } else {
-              Left(Left(HealthCheckProcessErrorResponseDto(
+              businessError(HealthCheckProcessErrorResponseDto(
                 message = Some("Scenarios with validation errors"),
                 processes = Some(processes.toSet)
-              )))
+              ))
             }
           }
       }
@@ -105,16 +105,16 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  expose(when = exposeConfig) {
+  expose(when = shouldExposeConfig) {
     appApiEndpoints.serverConfigEndpoint
-      .serverSecurityLogic(authorizeAdmin[Unit])
+      .serverSecurityLogic(authorizeAdminUser[Unit])
       .serverLogic { _ =>
         _ =>
           Future {
             val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
             configJson match {
               case Right(json) =>
-                Right(ServerConfigInfoDto(json))
+                success(ServerConfigInfoDto(json))
               case Left(errorMessage) =>
                 logger.error(s"Cannot create JSON from the Nussknacker configuration. Error: $errorMessage")
                 throw new Exception("Cannot prepare configuration")
@@ -125,7 +125,7 @@ class AppApiHttpService(config: Config,
 
   expose {
     appApiEndpoints.userCategoriesWithProcessingTypesEndpoint
-      .serverSecurityLogic(authorize[Unit])
+      .serverSecurityLogic(authorizeCommonUser[Unit])
       .serverLogicSuccess { loggedUser =>
         _ =>
           Future {
@@ -136,12 +136,12 @@ class AppApiHttpService(config: Config,
 
   expose {
     appApiEndpoints.processingTypeDataReloadEndpoint
-      .serverSecurityLogic(authorizeAdmin[Unit])
+      .serverSecurityLogic(authorizeAdminUser[Unit])
       .serverLogic { _ =>
         _ =>
-          Future(Right {
-            processingTypeDataReloader.reloadAll()
-          })
+          Future(
+            success(processingTypeDataReloader.reloadAll())
+          )
       }
   }
 

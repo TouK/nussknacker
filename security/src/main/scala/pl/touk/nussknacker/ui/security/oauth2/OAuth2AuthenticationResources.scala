@@ -9,7 +9,6 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.util.config.URIExtensions._
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api._
 import sttp.client3.SttpBackend
@@ -38,14 +37,9 @@ class OAuth2AuthenticationResources(override val name: String,
     auth.oauth2
       .authorizationCode(
         authorizationUrl = configuration.authorizeUrl.map(_.toString),
-        tokenUrl = Some {
-          // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
-          // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
-          configuration.nuDesignerApiUri match {
-            case Some(uri) => s"${uri.withTrailingSlash.toString}authentication/${name.toLowerCase()}"
-            case None => s"http://NU-API-ADDR-NOT-CONFIGURED/authentication/${name.toLowerCase()}"
-          }
-        },
+        // it's only for OpenAPI UI purpose to be able to use "Try It Out" feature. UI calls authorization URL
+        // (e.g. Github) and then calls our proxy for Bearer token. It uses the received token while calling the NU API
+        tokenUrl = Some(s"../authentication/${name.toLowerCase()}"),
         challenge = WWWAuthenticateChallenge.bearer(realm)
       )
       .map(Mapping.from[String, AuthCredentials](AuthCredentials.apply)(_.value))
@@ -80,8 +74,8 @@ class OAuth2AuthenticationResources(override val name: String,
         }
       } ~
         formFields(Symbol("code"), Symbol("redirect_uri").?) { (authorizationCode, redirectUri) =>
-          (get | post) {
-            completeOAuth2Authenticate(authorizationCode, redirectUri)
+          (get | post) { req =>
+            completeOAuth2Authenticate(authorizationCode, redirectUri).apply(req)
           }
         }
     }
@@ -99,21 +93,12 @@ class OAuth2AuthenticationResources(override val name: String,
 
   private def determineRedirectUri(redirectUriFromRequest: Option[String]): Option[String] = {
     val redirectUriFromConfiguration = configuration.redirectUri.map(_.toString)
-    configuration.nuDesignerApiUri match {
-      case Some(nuDesignerApiUri) =>
-        redirectUriFromRequest match {
-          // for Swagger UI and "Try It Out" feature purposes
-          case Some(uri) if uri == s"${nuDesignerApiUri.withTrailingSlash.toString}docs/oauth2-redirect.html" =>
-            redirectUriFromRequest
-          case Some(_) =>
-            Seq(redirectUriFromRequest, redirectUriFromConfiguration).flatten
-              .exactlyOne
-          case None =>
-            redirectUriFromConfiguration
-        }
-      case None =>
-        Seq(redirectUriFromRequest, redirectUriFromConfiguration).flatten
-          .exactlyOne
+    redirectUriFromRequest match {
+      // when the redirect URI is the Swagger UI one, force to use the URI
+      case Some(uri) if uri.endsWith("/docs/oauth2-redirect.html") =>
+        Some(uri)
+      case _ =>
+        Seq(redirectUriFromRequest, redirectUriFromConfiguration).flatten.exactlyOne
     }
   }
 
