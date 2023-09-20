@@ -1,0 +1,213 @@
+openapi: 3.1.0
+info:
+  title: Nussknacker Designer API
+  version: 1.0.0
+paths:
+  /api/app/healthCheck:
+    get:
+      operationId: getApiAppHealthcheck
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessSuccessResponseDto'
+  /api/app/buildInfo:
+    get:
+      operationId: getApiAppBuildinfo
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildInfoDto'
+  /api/app/healthCheck/process/deployment:
+    get:
+      operationId: getApiAppHealthcheckProcessDeployment
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessSuccessResponseDto'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessErrorResponseDto'
+      security:
+      - httpAuth: []
+  /api/app/healthCheck/process/validation:
+    get:
+      operationId: getApiAppHealthcheckProcessValidation
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessSuccessResponseDto'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckProcessErrorResponseDto'
+      security:
+      - httpAuth: []
+  /api/app/processingtype/reload:
+    post:
+      operationId: postApiAppProcessingtypeReload
+      responses:
+        '204':
+          description: ''
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - httpAuth: []
+  /api/app/config:
+    get:
+      operationId: getApiAppConfig
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerConfigInfoDto'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - httpAuth: []
+  /api/app/config/categoriesWithProcessingType:
+    get:
+      operationId: getApiAppConfigCategorieswithprocessingtype
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCategoriesWithProcessingTypesDto'
+        '401':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+        '403':
+          description: ''
+          content:
+            text/plain:
+              schema:
+                type: string
+      security:
+      - httpAuth: []
+components:
+  schemas:
+    BuildInfoDto:
+      required:
+      - name
+      - gitCommit
+      - buildTime
+      - version
+      - processingType
+      - otherProperties
+      type: object
+      properties:
+        name:
+          type: string
+        gitCommit:
+          type: string
+        buildTime:
+          type: string
+        version:
+          type: string
+        processingType:
+          $ref: '#/components/schemas/Map_Map_String_String'
+        otherProperties:
+          $ref: '#/components/schemas/Map_String'
+    HealthCheckProcessErrorResponseDto:
+      type: object
+      properties:
+        message:
+          type: string
+        processes:
+          type: array
+          items:
+            type: string
+    HealthCheckProcessSuccessResponseDto:
+      type: object
+    Map_Map_String_String:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Map_String'
+    Map_String:
+      type: object
+      additionalProperties:
+        type: string
+    ServerConfigInfoDto:
+      required:
+      - configJson
+      type: object
+      properties:
+        configJson: {}
+    UserCategoriesWithProcessingTypesDto:
+      required:
+      - map
+      type: object
+      properties:
+        map:
+          $ref: '#/components/schemas/Map_String'
+  securitySchemes:
+    httpAuth:
+      type: http
+      scheme: basic

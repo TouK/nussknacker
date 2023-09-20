@@ -1601,6 +1601,7 @@ lazy val designer = (project in file("designer/server"))
         "io.circe" %% "circe-generic-extras" % circeGenericExtrasV,
 
         "org.reflections" % "reflections" % "0.10.2",
+        "com.github.pathikrit" %% "better-files" % "3.9.2",
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
 
