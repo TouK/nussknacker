@@ -2,9 +2,10 @@ package pl.touk.nussknacker.ui.util
 
 import better.files.Dsl._
 import cats.effect.{ExitCode, IO, IOApp}
+import com.typesafe.scalalogging.StrictLogging
 import pl.touk.nussknacker.ui.api.NuDesignerAvailableToExposeApi
 
-object GenerateDesignerOpenApiYamlFile extends IOApp {
+object GenerateDesignerOpenApiYamlFile extends IOApp with StrictLogging {
 
   override def run(args: List[String]): IO[ExitCode] =
     generateAndSave()
@@ -18,6 +19,7 @@ object GenerateDesignerOpenApiYamlFile extends IOApp {
 
     if (savedNuDesignerOpenApiYaml != newNuDesignerOpenApiYaml) {
       file.overwrite(newNuDesignerOpenApiYaml)
+      logger.error(s"Content of ${file.path} has changed! Commit it manually and try to push again")
       ExitCode.Error
     } else {
       ExitCode.Success
