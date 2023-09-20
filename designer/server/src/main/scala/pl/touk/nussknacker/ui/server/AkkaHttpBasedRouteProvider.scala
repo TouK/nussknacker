@@ -171,7 +171,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
         processRepository = futureProcessRepository,
         processValidation = processValidation,
         deploymentService = deploymentService,
-        exposeConfig = featureTogglesConfig.enableConfigEndpoint,
+        shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
         processCategoryService = processCategoryService
       )
 

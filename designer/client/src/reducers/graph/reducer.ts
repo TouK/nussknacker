@@ -2,7 +2,7 @@
 import { concat, defaultsDeep, isEqual, omit as _omit, pick as _pick, sortBy, uniq, xor, zipObject } from "lodash";
 import undoable, { ActionTypes as UndoActionTypes, combineFilters, excludeAction, StateWithHistory } from "redux-undo";
 import { Action, Reducer } from "../../actions/reduxTypes";
-import * as GraphUtils from "../../components/graph/GraphUtils";
+import * as GraphUtils from "../../components/graph/utils/graphUtils";
 import * as LayoutUtils from "../layoutUtils";
 import { nodes } from "../layoutUtils";
 import { mergeReducers } from "../mergeReducers";

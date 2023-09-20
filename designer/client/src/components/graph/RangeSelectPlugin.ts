@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, g, shapes } from "jointjs";
 import { CursorMask } from "./CursorMask";
-import { Events } from "./joint-events";
+import { Events } from "./types";
 import { pressedKeys } from "./KeysObserver";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 

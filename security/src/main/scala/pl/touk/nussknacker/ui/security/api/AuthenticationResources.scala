@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import sttp.client3.SttpBackend
+import sttp.tapir.EndpointInput.Auth
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -14,10 +15,17 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
   val name: String
   val frontendStrategySettings: FrontendStrategySettings
 
-  // TODO: deprecated - it will be removed when all endpoints are moved to Tapir
+  // TODO: deprecated
+  // The `authenticationMethod` & `authenticate(authCredentials: AuthCredentials)` are equivalent for the below one.
+  // The `authenticationMethod` is to define what authentication method will be used in this resource. The latter one
+  // will do the authentication based on the provided `AuthCredentials`. So, exactly what the `authenticate` directive
+  // does. When we migrate fully to Tapir, we will get rid of Akka HTTP and the `authenticate` directive won't be needed.
+  // Currently, in the implementation of `authenticate(authCredentials: AuthCredentials)` we use Akka HTTP classes,
+  // so before we throw away Akka HTTPl, we should migrate to some other implementations (e.g. from the Tapir's server
+  // interpreter) or create our own.
   def authenticate(): Directive1[AuthenticatedUser]
 
-  def authenticationMethod(): sttp.tapir.EndpointInput.Auth[AuthCredentials, _]
+  def authenticationMethod(): Auth[AuthCredentials, _]
 
   def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]
 

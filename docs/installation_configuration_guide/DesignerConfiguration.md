@@ -353,7 +353,6 @@ authentication: {
   profileUri: ${?OAUTH2_PROFILE_URI}
   profileFormat: ${?OAUTH2_PROFILE_FORMAT}
   accessTokenUri: ${?OAUTH2_ACCESS_TOKEN_URI}
-  nuDesignerApiUri: ${?OAUTH2_NU_DESIGNER_API_URI}
   redirectUri: ${?OAUTH2_REDIRECT_URI}
   implicitGrantEnabled: ${?OAUTH2_IMPLICIT_GRANT_ENABLED}
   jwt {

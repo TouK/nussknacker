@@ -103,29 +103,28 @@ In the table below there are all environment variables used in Nussknacker image
 
 ### OAuth2 environment variables
 
-| Variable name                                   | Type    | Default value      |
-|-------------------------------------------------|---------|--------------------|
-| OAUTH2_CLIENT_SECRET                            | string  |                    |
-| OAUTH2_CLIENT_ID                                | string  |                    |
-| OAUTH2_AUTHORIZE_URI                            | string  |                    |
-| OAUTH2_REDIRECT_URI                             | string  |                    |
-| OAUTH2_ACCESS_TOKEN_URI                         | string  |                    |
-| OAUTH2_NU_DESIGNER_API_URI                      | string  |                    |
-| OAUTH2_PROFILE_URI                              | string  |                    |
-| OAUTH2_PROFILE_FORMAT                           | string  |                    |
-| OAUTH2_IMPLICIT_GRANT_ENABLED                   | boolean |                    |
-| OAUTH2_ACCESS_TOKEN_IS_JWT                      | boolean | false              |
-| OAUTH2_USERINFO_FROM_ID_TOKEN                   | string  | false              |
-| OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY               | string  |                    |
-| OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY_FILE          | string  |                    |
-| OAUTH2_JWT_AUTH_SERVER_CERTIFICATE              | string  |                    |
-| OAUTH2_JWT_AUTH_SERVER_CERTIFICATE_FILE         | string  |                    |
-| OAUTH2_JWT_ID_TOKEN_NONCE_VERIFICATION_REQUIRED | string  |                    |
+| Variable name                                   | Type    | Default value     |
+|-------------------------------------------------|---------|-------------------|
+| OAUTH2_CLIENT_SECRET                            | string  |                   |
+| OAUTH2_CLIENT_ID                                | string  |                   |
+| OAUTH2_AUTHORIZE_URI                            | string  |                   |
+| OAUTH2_REDIRECT_URI                             | string  |                   |
+| OAUTH2_ACCESS_TOKEN_URI                         | string  |                   |
+| OAUTH2_PROFILE_URI                              | string  |                   |
+| OAUTH2_PROFILE_FORMAT                           | string  |                   |
+| OAUTH2_IMPLICIT_GRANT_ENABLED                   | boolean |                   |
+| OAUTH2_ACCESS_TOKEN_IS_JWT                      | boolean | false             |
+| OAUTH2_USERINFO_FROM_ID_TOKEN                   | string  | false             |
+| OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY               | string  |                   |
+| OAUTH2_JWT_AUTH_SERVER_PUBLIC_KEY_FILE          | string  |                   |
+| OAUTH2_JWT_AUTH_SERVER_CERTIFICATE              | string  |                   |
+| OAUTH2_JWT_AUTH_SERVER_CERTIFICATE_FILE         | string  |                   |
+| OAUTH2_JWT_ID_TOKEN_NONCE_VERIFICATION_REQUIRED | string  |                   |
 | OAUTH2_GRANT_TYPE                               | string  | authorization_code |
-| OAUTH2_RESPONSE_TYPE                            | string  | code               |
-| OAUTH2_SCOPE                                    | string  | read:user          |
-| OAUTH2_AUDIENCE                                 | string  |                    |
-| OAUTH2_USERNAME_CLAIM                           | string  |                    |
+| OAUTH2_RESPONSE_TYPE                            | string  | code              |
+| OAUTH2_SCOPE                                    | string  | read:user         |
+| OAUTH2_AUDIENCE                                 | string  |                   |
+| OAUTH2_USERNAME_CLAIM                           | string  |                   |
 
 ## Binary package installation
 

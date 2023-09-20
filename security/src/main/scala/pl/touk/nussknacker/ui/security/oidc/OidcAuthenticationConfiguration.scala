@@ -19,7 +19,6 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
                                            clientId: String,
                                            clientSecret: Option[String],
                                            redirectUri: Option[URI] = None,
-                                           nuDesignerApiUri: Option[URI] = None,
                                            audience: Option[String] = None,
                                            scope: String = "openid profile",
 
@@ -49,7 +48,6 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
     accessTokenUri = tokenEndpoint.map(resolveAgainstIssuer)
       .getOrElse(throw new NoSuchElementException("A tokenEndpoint must provided or OIDC Discovery available")),
     redirectUri = redirectUri,
-    nuDesignerApiUri = nuDesignerApiUri,
     jwt = Some(new JwtConfiguration {
       def accessTokenIsJwt: Boolean = OidcAuthenticationConfiguration.this.accessTokenIsJwt
       def userinfoFromIdToken: Boolean = true
