@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sbt --client "project root; runMain pl.touk.nussknacker.ui.util.GenerateDesignerOpenApiYamlFile"
+sbt --client "project designer; runMain pl.touk.nussknacker.ui.util.GenerateDesignerOpenApiYamlFile; project root"
 if [ $? -eq 0 ]; then
     exit 0
 else
