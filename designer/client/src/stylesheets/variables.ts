@@ -14,7 +14,7 @@ export const variables = {
     ok: "#8fad60",
     panelTitleTextColor: "#808080",
     panelHeaderBackground: "#3e3e3e",
-    buttonSize: "72",
+    buttonSize: "72px",
     buttonTextColor: "#cccccc",
     buttonBkgColor: "#4d4d4d",
     buttonBkgHover: "#444444",
@@ -36,8 +36,8 @@ export const variables = {
     panelWidth: 290 + 8,
     rightPanelButtonFontSize: 11,
     button: {
-        buttonSize: 72,
-        smallSize: 48,
+        buttonSize: "72px",
+        smallSize: "48px",
     },
 };
 

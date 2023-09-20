@@ -12,7 +12,7 @@ export function ToolbarButton({ onDrop, title, className, disabled, name, icon, 
     const { variant } = useContext(ToolbarButtonsContext);
 
     const margin = 2;
-    const width = variant === ButtonsVariant.small ? button.smallSize : button.buttonSize - 2 * margin;
+    const width = parseFloat(variant === ButtonsVariant.small ? String(button.smallSize) : String(button.buttonSize)) - 2 * margin;
     const styles = css({
         margin,
         padding: variant === ButtonsVariant.small ? 0 : "4px 0",
@@ -25,7 +25,7 @@ export function ToolbarButton({ onDrop, title, className, disabled, name, icon, 
         userSelect: "none",
         opacity: disabled ? 0.3 : 1,
         cursor: disabled ? "not-allowed" : "pointer",
-        fontSize: `${rightPanelButtonFontSize} px`,
+        fontSize: `${rightPanelButtonFontSize}px`,
         width,
         height: width,
         outline: "none",
