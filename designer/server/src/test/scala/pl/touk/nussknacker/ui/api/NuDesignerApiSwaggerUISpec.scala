@@ -7,7 +7,7 @@ import org.scalatest.freespec.AnyFreeSpecLike
 import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
 
-class NuApiSwaggerSpec
+class NuDesignerApiSwaggerUISpec
   extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager
