@@ -11,6 +11,8 @@ object GenerateDesignerOpenApiYamlFile extends IOApp with StrictLogging {
     generateAndSave()
 
   private def generateAndSave() = IO {
+    logger.error("STARTING") // todo: remove
+
     val file = (pwd / "docs" / "api" / "internal" / "nu-designer-openapi.yaml")
       .createFileIfNotExists(createParents = true)
 
