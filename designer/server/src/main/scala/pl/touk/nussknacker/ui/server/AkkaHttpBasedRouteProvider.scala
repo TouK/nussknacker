@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresol
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.api.app.AppApiHttpService
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, ComponentLinksConfigExtractor, FeatureTogglesConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.db.DbRef
@@ -35,6 +34,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.services.{AppApiHttpService, NuDesignerOpenApiHttpService}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
@@ -264,7 +264,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
         authenticationResources.routeWithPathPrefix,
       )
 
-      val nuDesignerOpenApi = new NuDesignerOpenApi(appApiHttpService)
+      val nuDesignerOpenApi = new NuDesignerOpenApiHttpService(appApiHttpService)
 
       createAppRoute(
         resolvedConfig = resolvedConfig,

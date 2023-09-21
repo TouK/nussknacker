@@ -1,15 +1,12 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.services
 
-import pl.touk.nussknacker.ui.api.app.AppApiHttpService
-import sttp.tapir.server.ServerEndpoint
+import pl.touk.nussknacker.ui.services.BaseHttpService.NoRequirementServerEndpoint
 import sttp.tapir.swagger.SwaggerUIOptions
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
-import scala.concurrent.Future
+class NuDesignerOpenApiHttpService(appApiHttpService: AppApiHttpService) {
 
-class NuDesignerOpenApi(appApiHttpService: AppApiHttpService) {
-
-  val publicServerEndpoints: List[ServerEndpoint[Any, Future]] =
+  val publicServerEndpoints: List[NoRequirementServerEndpoint] =
     SwaggerInterpreter(
       swaggerUIOptions = SwaggerUIOptions.default.copy(pathPrefix = "api" :: "docs" :: Nil)
     )

@@ -1,9 +1,11 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.ui.api.SecurityError
 import pl.touk.nussknacker.ui.api.SecurityError.{AuthenticationError, AuthorizationError}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api._
+import pl.touk.nussknacker.ui.services.BaseHttpService.NoRequirementServerEndpoint
 import sttp.tapir.AnyEndpoint
 import sttp.tapir.server.ServerEndpoint
 
@@ -14,9 +16,6 @@ abstract class BaseHttpService(config: Config,
                                processCategoryService: ProcessCategoryService,
                                authenticator: AuthenticationResources)
                               (implicit executionContext: ExecutionContext) {
-
-  // we assume that our endpoints have no special requirements (in the Tapir sense)
-  type NoRequirementServerEndpoint = ServerEndpoint[Any, Future]
 
   // the discussion about this approach can be found here: https://github.com/TouK/nussknacker/pull/4685#discussion_r1329794444
   type LogicResult[BUSINESS_ERROR, RESULT] = Either[Either[BUSINESS_ERROR, SecurityError], RESULT]
@@ -70,4 +69,9 @@ abstract class BaseHttpService(config: Config,
   protected def businessError[BUSINESS_ERROR](error: BUSINESS_ERROR) = Left(Left(error))
 
   protected def securityError[SE <: SecurityError](error: SE) = Left(Right(error))
+}
+object BaseHttpService {
+
+  // we assume that our endpoints have no special requirements (in the Tapir sense)
+  type NoRequirementServerEndpoint = ServerEndpoint[Any, Future]
 }

@@ -1,9 +1,8 @@
-package pl.touk.nussknacker.ui.api.app
+package pl.touk.nussknacker.ui.api
 
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, Codec => CirceCodec}
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import sttp.model.StatusCode._
@@ -12,7 +11,7 @@ import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
-private[api] class AppApiEndpoints(auth: Auth[AuthCredentials, _])
+class AppApiEndpoints(auth: Auth[AuthCredentials, _])
   extends BaseEndpointDefinitions {
 
   import AppApiEndpoints.Dtos.Codecs._

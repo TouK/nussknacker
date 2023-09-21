@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api.app
+package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
@@ -11,8 +11,9 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.api.BaseHttpService
-import pl.touk.nussknacker.ui.api.app.AppApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.HealthCheckProcessSuccessResponseDto
+import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.AppApiEndpoints
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
