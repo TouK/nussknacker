@@ -27,7 +27,7 @@ function PDFButton(props: Props) {
                 // TODO: add busy indicator
                 // TODO: try to do this in worker
                 // TODO: try to do this more in redux/react style
-                const exportedGraph = await graphGetter().exportGraph();
+                const exportedGraph = await graphGetter?.()?.exportGraph();
                 HttpService.exportProcessToPdf(processId, versionId, exportedGraph);
             }}
         />
