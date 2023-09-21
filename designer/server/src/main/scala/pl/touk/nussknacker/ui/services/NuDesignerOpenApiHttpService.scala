@@ -13,6 +13,6 @@ class NuDesignerOpenApiHttpService(appApiHttpService: AppApiHttpService) {
       .fromEndpoints(
         appApiHttpService.allEndpointDefinitions,
         "Nussknacker Designer API",
-        "1.0.0"
+        ""
       )
 }
