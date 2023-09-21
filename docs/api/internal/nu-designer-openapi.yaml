@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Nussknacker Designer API
-  version: 1.0.0
+  version: ''
 paths:
   /api/app/healthCheck:
     get:

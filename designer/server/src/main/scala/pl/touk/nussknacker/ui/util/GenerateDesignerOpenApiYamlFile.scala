@@ -7,24 +7,15 @@ import pl.touk.nussknacker.ui.services.NuDesignerApiAvailableToExpose
 
 object GenerateDesignerOpenApiYamlFile extends IOApp with StrictLogging {
 
-  override def run(args: List[String]): IO[ExitCode] =
-    generateAndSave()
+  override def run(args: List[String]): IO[ExitCode] = for {
+    _ <- IO.delay(logger.info("Generating Nu Designer OpenAPI document ..."))
+    _ <- generateAndSave()
+    _ <- IO.delay(logger.info("DONE!"))
+  } yield ExitCode.Success
 
   private def generateAndSave() = IO {
-    logger.error("STARTING") // todo: remove
-
-    val file = (pwd / "docs" / "api" / "internal" / "nu-designer-openapi.yaml")
+    (pwd / "docs" / "api" / "internal" / "nu-designer-openapi.yaml")
       .createFileIfNotExists(createParents = true)
-
-    val savedNuDesignerOpenApiYaml = file.contentAsString
-    val newNuDesignerOpenApiYaml = NuDesignerApiAvailableToExpose.generateOpenApiYaml
-
-    if (savedNuDesignerOpenApiYaml != newNuDesignerOpenApiYaml) {
-      file.overwrite(newNuDesignerOpenApiYaml)
-      logger.error(s"Content of ${file.path} has changed! Commit it manually and try to push again")
-      ExitCode.Error
-    } else {
-      ExitCode.Success
-    }
+      .overwrite(NuDesignerApiAvailableToExpose.generateOpenApiYaml)
   }
 }

@@ -29,10 +29,10 @@ object NuDesignerApiAvailableToExpose {
   }
 
   private def findApiEndpointsClasses() = {
-    // todo: fixme
-    val reflections = new Reflections(new ConfigurationBuilder().forPackages("pl.touk.nussknacker.ui.api"))
+    val baseEndpointDefinitionsClass = classOf[BaseEndpointDefinitions]
+    val reflections = new Reflections(new ConfigurationBuilder().forPackages(baseEndpointDefinitionsClass.getPackageName))
     reflections
-      .getSubTypesOf(classOf[BaseEndpointDefinitions]).asScala
+      .getSubTypesOf(baseEndpointDefinitionsClass).asScala
       .toList
       .sortBy(_.getName)
   }

@@ -20,7 +20,7 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
   lazy val appHealthCheckEndpoint: PublicEndpoint[Unit, Unit, HealthCheckProcessSuccessResponseDto.type, Any] =
     baseNuApiEndpoint
       .get
-      .in("app" / "healthCheck1")
+      .in("app" / "healthCheck")
       .out(statusCode(Ok))
       .out(jsonBody[HealthCheckProcessSuccessResponseDto.type])
 

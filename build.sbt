@@ -1,4 +1,3 @@
-import NuGitHooksPlugin._
 import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
@@ -1740,8 +1739,8 @@ buildClient := {
 }
 
 lazy val generateDesignerOpenApi = taskKey[Unit]("Generate Nu Designer API documentation in OpenAPI format")
-generateDesignerOpenApi := Def.task {
-  (runMain in Compile)
+generateDesignerOpenApi := {
+  (designer / Compile / runMain)
     .toTask(" pl.touk.nussknacker.ui.util.GenerateDesignerOpenApiYamlFile")
     .value
 }
