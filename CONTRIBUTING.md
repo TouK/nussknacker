@@ -153,7 +153,8 @@ To run streaming Lite scenarios with K8s, we recommend using [k3d](https://k3d.i
 
 #### Accessing service
 
-Service should be available at http://localhost:8080/api
+Service should be available at `http://localhost:8080/api`. Swagger UI with the OpenAPI document of the API will
+be available at `http://localhost:8080/api/docs`.
 
 #### Troubleshooting
 
