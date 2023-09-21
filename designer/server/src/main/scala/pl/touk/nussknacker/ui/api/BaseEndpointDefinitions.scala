@@ -10,9 +10,9 @@ import scala.language.implicitConversions
 
 trait BaseEndpointDefinitions {
 
-  protected val baseNuApiEndpoint: PublicEndpoint[Unit, Unit, Unit, Any] = endpoint.in("api")
+  val baseNuApiEndpoint: PublicEndpoint[Unit, Unit, Unit, Any] = endpoint.in("api")
 
-  implicit protected def toSecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R](endpoint: Endpoint[Unit, INPUT, BUSINESS_ERROR, OUTPUT, R]): ToSecure[INPUT, BUSINESS_ERROR, OUTPUT, R] =
+  implicit def toSecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R](endpoint: Endpoint[Unit, INPUT, BUSINESS_ERROR, OUTPUT, R]): ToSecure[INPUT, BUSINESS_ERROR, OUTPUT, R] =
     new ToSecure(endpoint)
 }
 object BaseEndpointDefinitions {

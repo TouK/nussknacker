@@ -2,6 +2,9 @@
 
 1.12.0 (Not released yet)
 -------------------------
+* [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
+  * Use `processingType` instead of `processName`
+  * Add `scenarioName` parameter to `ParametersValidationRequest` used in `api/parameters/*/validate`
 * [#4677](https://github.com/TouK/nussknacker/pull/4677) Added validation to SpEL string literal conversions (allow only constant that convert successfully)
 * [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
 * [#4582](https://github.com/TouK/nussknacker/pull/4582) Fixed: Releasing app resources on the designer close 

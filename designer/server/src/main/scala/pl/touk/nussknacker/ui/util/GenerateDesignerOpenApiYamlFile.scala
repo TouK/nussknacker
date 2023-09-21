@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.util
 import better.files.Dsl._
 import cats.effect.{ExitCode, IO, IOApp}
 import com.typesafe.scalalogging.StrictLogging
-import pl.touk.nussknacker.ui.api.NuDesignerAvailableToExposeApi
+import pl.touk.nussknacker.ui.services.NuDesignerApiAvailableToExpose
 
 object GenerateDesignerOpenApiYamlFile extends IOApp with StrictLogging {
 
@@ -15,7 +15,7 @@ object GenerateDesignerOpenApiYamlFile extends IOApp with StrictLogging {
       .createFileIfNotExists(createParents = true)
 
     val savedNuDesignerOpenApiYaml = file.contentAsString
-    val newNuDesignerOpenApiYaml = NuDesignerAvailableToExposeApi.generateOpenApiYaml
+    val newNuDesignerOpenApiYaml = NuDesignerApiAvailableToExpose.generateOpenApiYaml
 
     if (savedNuDesignerOpenApiYaml != newNuDesignerOpenApiYaml) {
       file.overwrite(newNuDesignerOpenApiYaml)

@@ -1,34 +1,35 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.services
 
 import org.reflections.Reflections
 import org.reflections.util.ConfigurationBuilder
+import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
 import sttp.tapir.EndpointInput.Auth
-import sttp.tapir._
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
+import sttp.tapir.{Endpoint, auth}
 
-import java.lang.reflect.{Method, Modifier}
 import scala.jdk.CollectionConverters._
+import java.lang.reflect.{Method, Modifier}
 import scala.util.Try
 
-object NuDesignerAvailableToExposeApi {
+object NuDesignerApiAvailableToExpose {
 
   val name = "Nussknacker Designer API"
-  val version = "1.0.0"
 
   def generateOpenApiYaml: String = {
     val endpoints = findApiEndpointsClasses().flatMap(findEndpointsInClass)
     val docs = OpenAPIDocsInterpreter().toOpenAPI(
       es = endpoints,
-      title = NuDesignerAvailableToExposeApi.name,
-      version = NuDesignerAvailableToExposeApi.version
+      title = NuDesignerApiAvailableToExpose.name,
+      version = ""
     )
 
     docs.toYaml
   }
 
   private def findApiEndpointsClasses() = {
+    // todo: fixme
     val reflections = new Reflections(new ConfigurationBuilder().forPackages("pl.touk.nussknacker.ui.api"))
     reflections
       .getSubTypesOf(classOf[BaseEndpointDefinitions]).asScala

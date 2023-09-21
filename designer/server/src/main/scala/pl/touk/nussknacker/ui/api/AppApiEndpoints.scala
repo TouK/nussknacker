@@ -17,14 +17,14 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
   import AppApiEndpoints.Dtos.Codecs._
   import AppApiEndpoints.Dtos._
 
-  val appHealthCheckEndpoint: PublicEndpoint[Unit, Unit, HealthCheckProcessSuccessResponseDto.type, Any] =
+  lazy val appHealthCheckEndpoint: PublicEndpoint[Unit, Unit, HealthCheckProcessSuccessResponseDto.type, Any] =
     baseNuApiEndpoint
       .get
       .in("app" / "healthCheck")
       .out(statusCode(Ok))
       .out(jsonBody[HealthCheckProcessSuccessResponseDto.type])
 
-  val processDeploymentHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
+  lazy val processDeploymentHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
     baseNuApiEndpoint
       .get
       .in("app" / "healthCheck" / "process" / "deployment")
@@ -36,7 +36,7 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
       )
       .withSecurity(auth)
 
-  val processValidationHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
+  lazy val processValidationHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto.type, Any] =
     baseNuApiEndpoint
       .get
       .in("app" / "healthCheck" / "process" / "validation")
@@ -48,14 +48,14 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
       )
       .withSecurity(auth)
 
-  val buildInfoEndpoint: PublicEndpoint[Unit, Unit, BuildInfoDto, Any] =
+  lazy val buildInfoEndpoint: PublicEndpoint[Unit, Unit, BuildInfoDto, Any] =
     baseNuApiEndpoint
       .get
       .in("app" / "buildInfo")
       .out(statusCode(Ok))
       .out(jsonBody[BuildInfoDto])
 
-  val serverConfigEndpoint: SecuredEndpoint[Unit, Unit, ServerConfigInfoDto, Any] =
+  lazy val serverConfigEndpoint: SecuredEndpoint[Unit, Unit, ServerConfigInfoDto, Any] =
     baseNuApiEndpoint
       .withSecurity(auth)
       .get
@@ -64,7 +64,7 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
         statusCode(Ok).and(jsonBody[ServerConfigInfoDto])
       )
 
-  val userCategoriesWithProcessingTypesEndpoint: SecuredEndpoint[Unit, Unit, UserCategoriesWithProcessingTypesDto, Any] =
+  lazy val userCategoriesWithProcessingTypesEndpoint: SecuredEndpoint[Unit, Unit, UserCategoriesWithProcessingTypesDto, Any] =
     baseNuApiEndpoint
       .withSecurity(auth)
       .get
@@ -73,7 +73,7 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
         statusCode(Ok).and(jsonBody[UserCategoriesWithProcessingTypesDto])
       )
 
-  val processingTypeDataReloadEndpoint: SecuredEndpoint[Unit, Unit, Unit, Any] =
+  lazy val processingTypeDataReloadEndpoint: SecuredEndpoint[Unit, Unit, Unit, Any] =
     baseNuApiEndpoint
       .withSecurity(auth)
       .post
@@ -81,7 +81,6 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
       .out(statusCode(NoContent))
 
 }
-
 object AppApiEndpoints {
   object Dtos {
 

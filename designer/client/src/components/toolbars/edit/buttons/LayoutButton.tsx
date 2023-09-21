@@ -19,7 +19,7 @@ function LayoutButton(props: ToolbarButtonProps) {
             name={t("panels.actions.edit-layout.button", "layout")}
             icon={<Icon />}
             disabled={disabled}
-            onClick={() => dispatch(layout(() => graphGetter()?.forceLayout()))}
+            onClick={() => dispatch(layout(() => graphGetter?.()?.forceLayout()))}
         />
     );
 }

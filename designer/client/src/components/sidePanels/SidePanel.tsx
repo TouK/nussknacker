@@ -4,7 +4,7 @@ import { ScrollbarsExtended } from "./ScrollbarsExtended";
 import TogglePanel from "../TogglePanel";
 import { useDispatch, useSelector } from "react-redux";
 import { isLeftPanelOpened, isRightPanelOpened } from "../../reducers/selectors/toolbars";
-import { togglePanel } from "../../actions/nk/ui/layout";
+import { togglePanel } from "../../actions/nk";
 import { useGraph } from "../graph/GraphContext";
 import { Graph } from "../graph/Graph";
 import styled from "@emotion/styled";
@@ -100,8 +100,8 @@ function useGraphViewportAdjustment(side: keyof Graph["viewportAdjustment"], isO
     const ref = useRef<HTMLDivElement>();
     const getGraph = useGraph();
     useEffect(() => {
-        getGraph().adjustViewport({
-            [side]: isOccupied ? ref.current.getBoundingClientRect().width : 0,
+        getGraph?.()?.adjustViewport({
+            [side]: isOccupied ? ref.current?.getBoundingClientRect().width : 0,
         });
     }, [getGraph, isOccupied, side]);
     return ref;

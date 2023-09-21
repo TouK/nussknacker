@@ -1738,3 +1738,10 @@ buildClient := {
     throw new IllegalStateException("Frontend build failed!")
   }
 }
+
+lazy val generateDesignerOpenApi = taskKey[Unit]("Generate Nu Designer API documentation in OpenAPI format")
+generateDesignerOpenApi := Def.task {
+  (runMain in Compile)
+    .toTask(" pl.touk.nussknacker.ui.util.GenerateDesignerOpenApiYamlFile")
+    .value
+}

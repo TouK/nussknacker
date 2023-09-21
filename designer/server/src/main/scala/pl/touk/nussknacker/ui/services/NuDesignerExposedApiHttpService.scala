@@ -1,13 +1,12 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.services
 
-import pl.touk.nussknacker.ui.api.app.AppApiHttpService
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.swagger.SwaggerUIOptions
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 import scala.concurrent.Future
 
-class NuDesignerExposedApi(appApiHttpService: AppApiHttpService) {
+class NuDesignerExposedApiHttpService(appApiHttpService: AppApiHttpService) {
 
   private val apiEndpoints = appApiHttpService.serverEndpoints
   private val endpointDefinitions = apiEndpoints.map(_.endpoint)
@@ -20,8 +19,8 @@ class NuDesignerExposedApi(appApiHttpService: AppApiHttpService) {
       )
     ).fromEndpoints(
       endpointDefinitions,
-      NuDesignerAvailableToExposeApi.name,
-      NuDesignerAvailableToExposeApi.version
+      NuDesignerApiAvailableToExpose.name,
+      "" // we don't want to have versioning of this API yet
     )
 
   def allEndpoints: List[ServerEndpoint[Any, Future]] = {
