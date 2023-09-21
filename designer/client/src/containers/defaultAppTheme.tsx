@@ -1,22 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
-import React from "react";
 import vars from "../stylesheets/_variables.styl";
+import { variables } from "../stylesheets/variables";
 import { tintPrimary } from "./theme";
-
-type DeepPartial<T> = {
-    [P in keyof T]?: DeepPartial<T[P]>;
-};
-
-const {
-    borderRadius,
-    formControllHeight,
-    fontSize,
-    primary,
-    warningColor: warning,
-    errorColor: error,
-    okColor: ok,
-    sucessColor: sucess,
-} = vars;
+const { primary, warningColor: warning, errorColor: error, okColor: ok, sucess } = variables;
+const { borderRadius, formControllHeight, fontSize } = vars;
 
 export const defaultAppTheme = {
     themeClass: "",

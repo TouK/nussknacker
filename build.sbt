@@ -341,10 +341,12 @@ val cronParserV = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "3.1.6"
 val sttpV = "3.8.15"
+val tapirV = "1.7.3"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.18.0"
 val wireMockV = "2.35.0"
+val findBugsV = "3.0.2"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion, Seq(),
@@ -913,7 +915,6 @@ lazy val commonUtils = (project in utils("utils")).
     name := "nussknacker-utils",
     libraryDependencies ++= {
       Seq(
-        "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
@@ -1286,6 +1287,8 @@ lazy val componentsApi = (project in file("components-api")).
         "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "com.iheart" %% "ficus" % ficusV,
+        "org.springframework" % "spring-core" % springV,
+        "com.google.code.findbugs" % "jsr305" % findBugsV,
       )
     }
   ).dependsOn(commonApi, testUtils % "test")
@@ -1298,7 +1301,7 @@ lazy val extensionsApi = (project in file("extensions-api")).
     libraryDependencies ++= Seq(
       "org.springframework" % "spring-expression" % springV,
       //needed by scala-compiler for spring-expression...
-      "com.google.code.findbugs" % "jsr305" % "3.0.2",
+      "com.google.code.findbugs" % "jsr305" % findBugsV,
     )
   ).dependsOn(testUtils % "test", componentsApi, scenarioApi)
 
@@ -1585,6 +1588,11 @@ lazy val designer = (project in file("designer/server"))
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.8",
+
+        "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirV,
+        "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirV,
+        "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % tapirV,
+        "io.circe" %% "circe-generic-extras" % circeGenericExtrasV,
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
 

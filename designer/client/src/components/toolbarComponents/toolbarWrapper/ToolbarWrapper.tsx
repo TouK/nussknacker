@@ -1,16 +1,14 @@
 import React, { PropsWithChildren, useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toggleToolbar } from "../../actions/nk/toolbars";
-import CollapseIcon from "../../assets/img/arrows/panel-hide-arrow.svg";
-import CloseIcon from "../../assets/img/close.svg";
-import { getIsCollapsed, getToolbarsConfigId } from "../../reducers/selectors/toolbars";
-import ErrorBoundary from "../common/ErrorBoundary";
-import styleVariables from "../../stylesheets/_variables.styl";
-import { styled } from "@mui/material";
-import { useDragHandler } from "./DragHandle";
-import { CollapsiblePanelContent, Panel, PanelHeader } from "./Panel";
+import { toggleToolbar } from "../../../actions/nk/toolbars";
+import { getIsCollapsed, getToolbarsConfigId } from "../../../reducers/selectors/toolbars";
+import ErrorBoundary from "../../common/ErrorBoundary";
+import { variables } from "../../../stylesheets/variables";
+import { useDragHandler } from "../DragHandle";
+import { CollapsiblePanelContent, Panel, PanelHeader } from "../Panel";
+import { IconWrapper, StyledCloseIcon, StyledCollapseIcon, Title } from "./ToolbarStyled";
 
-const { panelBackground, sidebarWidth } = styleVariables;
+const { panelBackground, sidebarWidth } = variables;
 
 export type ToolbarWrapperProps = PropsWithChildren<{
     id?: string;
@@ -18,36 +16,6 @@ export type ToolbarWrapperProps = PropsWithChildren<{
     onClose?: () => void;
     color?: string;
 }>;
-
-const Title = styled("div")({
-    padding: "0 .25em",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    flex: 1,
-});
-
-const IconWrapper = styled("div")({
-    padding: 0,
-    flexShrink: 0,
-    border: 0,
-    background: "none",
-    display: "flex",
-    alignItems: "center",
-});
-
-const StyledCollapseIcon = styled(CollapseIcon, {
-    shouldForwardProp: (name) => name !== "collapsed",
-})<{ collapsed?: boolean }>(({ collapsed, theme }) => ({
-    padding: "0 .25em",
-    height: "1em",
-    transition: theme.transitions.create("transform", { duration: theme.transitions.duration.standard }),
-    transform: `rotate(${collapsed ? 180 : 90}deg)`,
-}));
-
-const StyledCloseIcon = styled(CloseIcon)({
-    height: "1em",
-    width: "1em",
-});
 
 export function ToolbarWrapper(props: ToolbarWrapperProps): React.JSX.Element | null {
     const { title, children, id, onClose, color = panelBackground } = props;

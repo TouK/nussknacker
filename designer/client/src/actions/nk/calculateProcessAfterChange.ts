@@ -1,12 +1,12 @@
 import NodeUtils from "../../components/graph/NodeUtils";
 import { fetchProcessDefinition } from "./processDefinitionData";
 import { getProcessDefinitionData } from "../../reducers/selectors/settings";
-import { mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/graph/GraphUtils";
-import { alignFragmentWithSchema } from "../../components/graph/FragmentSchemaAligner";
-import { Edge, NodeType, Process } from "../../types";
+import { mapProcessWithNewNode, replaceNodeOutputEdges } from "../../components/graph/utils/graphUtils";
+import { alignFragmentWithSchema } from "../../components/graph/utils/fragmentSchemaAligner";
+import { Edge, NodeType, Process, ProcessDefinitionData } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 
-function alignFragmentsNodeWithSchema(process, processDefinitionData) {
+function alignFragmentsNodeWithSchema(process, processDefinitionData: ProcessDefinitionData) {
     return {
         ...process,
         nodes: process.nodes.map((node) => {

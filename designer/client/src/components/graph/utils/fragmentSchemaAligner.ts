@@ -1,6 +1,7 @@
 import fp from "lodash/fp";
+import { NodeType, ProcessDefinitionData } from "../../../types";
 
-export function alignFragmentWithSchema(processDefinitionData, fragmentNode) {
+export function alignFragmentWithSchema(processDefinitionData: ProcessDefinitionData, fragmentNode: NodeType) {
     const fragmentId = fragmentNode.ref.id;
     const fragmentSchema = processDefinitionData.componentGroups
         .find((componentGroups) => {

@@ -11,7 +11,7 @@ import {
 } from "../../../../reducers/selectors/graph";
 import { useWindows, WindowKind } from "../../../../windowManager";
 import { ToolbarButtonProps } from "../../types";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { TestFormParameters } from "../../../../common/TestResultUtils";
 import { testProcessWithParameters } from "../../../../actions/nk/displayTestResults";
 import { GenericActionParameters } from "../../../modals/GenericActionDialog";
@@ -30,7 +30,7 @@ function TestWithFormButton(props: Props) {
     const processIsLatestVersion = useSelector(isLatestProcessVersion);
     const testCapabilities = useSelector(getTestCapabilities);
     const testFormParameters: TestFormParameters[] = useSelector(getTestParameters);
-    const processId = useSelector(getProcessId);
+    const scenarioName = useSelector(getProcessId);
     const processToDisplay = useSelector(getProcessToDisplay);
     const findAvailableVariables = useSelector(getFindAvailableVariables);
     const dispatch = useDispatch();
@@ -93,7 +93,7 @@ function TestWithFormButton(props: Props) {
                 sourceId: selectedSource as string,
                 parameterExpressions: parameters,
             };
-            dispatch(testProcessWithParameters(processId, request, processToDisplay));
+            dispatch(testProcessWithParameters(scenarioName, request, processToDisplay));
         },
         [sourceParameters, selectedSource],
     );
@@ -117,12 +117,14 @@ function TestWithFormButton(props: Props) {
     useEffect(() => {
         setAction({
             variableTypes: variableTypes,
+            processingType: processToDisplay.processingType,
             layout: {
                 name: "Test",
                 confirmText: "Test",
             },
             ...sourceParameters[selectedSource],
             onConfirmAction,
+            scenarioName,
         });
     }, [testFormParameters, sourceParameters, selectedSource]);
 

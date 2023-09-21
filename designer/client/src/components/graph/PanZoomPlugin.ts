@@ -1,13 +1,10 @@
 import { css } from "@emotion/css";
 import { dia, g } from "jointjs";
 import { debounce, throttle } from "lodash";
+import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import svgPanZoom from "svg-pan-zoom";
 import { CursorMask } from "./CursorMask";
-import { Events } from "./joint-events";
-import { isTouchDevice } from "../../helpers/detectDevice";
-
-type EventData = { panStart?: { x: number; y: number; touched?: boolean } };
-type Event = JQuery.MouseEventBase<any, EventData>;
+import { Events } from "./types";
 
 const getAnimationClass = (disabled?: boolean) =>
     css({
@@ -20,6 +17,11 @@ export class PanZoomPlugin {
     private cursorMask: CursorMask;
     private instance: SvgPanZoom.Instance;
     private animationClassHolder: HTMLElement;
+    private panStart: {
+        x: number;
+        y: number;
+        touched?: boolean;
+    };
 
     constructor(private paper: dia.Paper) {
         this.cursorMask = new CursorMask();
@@ -49,35 +51,50 @@ export class PanZoomPlugin {
             }, 500),
         );
 
-        paper.on(Events.BLANK_POINTERDOWN, (event: Event, x, y) => {
-            const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
-            if (!isModified) {
-                this.cursorMask.enable("move");
-                event.data = { ...event.data, panStart: { x, y } };
+        paper.on(Events.BLANK_POINTERDOWN, (event: dia.Event) => {
+            this.initMove(event);
+            if (isTouchEvent(event)) {
+                const pressTimer = setTimeout(() => this.cleanup(), LONG_PRESS_TIME);
+                this.paper.once(Events.BLANK_POINTERUP, () => clearTimeout(pressTimer));
+                this.paper.once(Events.BLANK_POINTERMOVE, () => clearTimeout(pressTimer));
             }
         });
 
-        paper.on(Events.BLANK_POINTERMOVE, (event: Event, eventX, eventY) => {
+        paper.on(Events.BLANK_POINTERMOVE, (event: dia.Event) => {
             const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
-            const panStart = event.data?.panStart;
+            const panStart = this.panStart;
             if (!isModified && panStart) {
-                const zoom = this.instance.getZoom();
-                const dx = (eventX - panStart.x) * zoom;
-                const dy = (eventY - panStart.y) * zoom;
-                const { movementX: x = dx, movementY: y = dy } = event.originalEvent;
-                this.instance.panBy({ x, y });
-                panStart.touched = true;
+                this.instance.panBy({
+                    x: event.clientX - panStart.x,
+                    y: event.clientY - panStart.y,
+                });
+                this.panStart = {
+                    x: event.clientX,
+                    y: event.clientY,
+                    touched: true,
+                };
             } else {
-                this.cleanup(event);
+                this.cleanup();
             }
         });
 
-        paper.on(Events.BLANK_POINTERUP, (event: Event) => {
-            if (event.data?.panStart?.touched) {
+        paper.on(Events.BLANK_POINTERUP, (event: dia.Event) => {
+            if (this.panStart?.touched) {
                 event.stopImmediatePropagation();
             }
-            this.cleanup(event);
+            this.cleanup();
         });
+    }
+
+    private initMove(event: dia.Event): void {
+        const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
+        if (!isModified) {
+            this.cursorMask.enable("move");
+            this.panStart = {
+                x: event.clientX,
+                y: event.clientY,
+            };
+        }
     }
 
     private setAnimationClass({ enabled }: { enabled: boolean }) {
@@ -92,8 +109,8 @@ export class PanZoomPlugin {
         return this.instance.getZoom();
     }
 
-    private cleanup(event: Event) {
-        delete event.data?.panStart;
+    private cleanup() {
+        this.panStart = null;
         this.cursorMask.disable();
     }
 

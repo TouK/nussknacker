@@ -2,9 +2,9 @@
 import React, { createContext, PropsWithChildren, useContext, useMemo } from "react";
 import { Graph } from "./Graph";
 
-type GraphContextType = () => Graph;
+type GraphContextType = () => Graph | null;
 
-const GraphContext = createContext<GraphContextType>(null);
+const GraphContext = createContext<GraphContextType | null>(null);
 
 export const GraphProvider = ({
     graph: _graphGetter,

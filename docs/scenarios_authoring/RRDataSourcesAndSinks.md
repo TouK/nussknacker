@@ -30,7 +30,7 @@ If parallel branches end with response nodes and more than one response is gener
 split), the only response which is returned is the one which was chronologically generated first. There is no way to
 determine which one will be generated first. If all responses are important to you, you need to take additional
 measures - use [union](./BasicNodes.md#union) node to merge branches and [collect](#collect) node to collect data
-records into a list. Your scenario should have only one response node.
+records coming from individual branches into a list. 
 
 If you use for-each node and need to collect all the results into a list of values, use [collect](#collect) node.
 

@@ -185,7 +185,7 @@ There are a few notable exceptions:
 | <code>true &#124;&#124; false</code>         | true      | boolean  |
 | `2 > 1 ? 'a' : 'b'`                          | "a"       | String   |
 | `2 < 1 ? 'a' : 'b'`                          | "b"       | String   |
-| `#nonNullVar == null ? 'Unkown' : 'Success'` | "Success" | String   |
+| `#nonNullVar == null ? 'Unknown' : 'Success'` | "Success" | String   |
 | `#nullVar == null ? 'Unknown' : 'Success'`   | "Unknown" | String   |
 | `#nullVar?:'Unknown'`                        | "Unknown" | String   |
 | `'john'?:'Unknown'`                          | "john"    | String   |

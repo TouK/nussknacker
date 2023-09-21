@@ -1,11 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, g, shapes } from "jointjs";
 import { CursorMask } from "./CursorMask";
-import { Events } from "./joint-events";
+import { Events } from "./types";
 import { pressedKeys } from "./KeysObserver";
-
-type EventData = { selectStart?: { x: number; y: number } };
-type Event = JQuery.TriggeredEvent<any, EventData>;
+import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 
 export enum SelectionMode {
     replace = "replace",
@@ -22,6 +20,10 @@ export class RangeSelectPlugin {
     private readonly rectangle = new shapes.standard.Rectangle();
     private readonly pressedKeys = pressedKeys.map((events) => events.map((e) => e.key));
     private keys: string[];
+    private selectStart: {
+        x: number;
+        y: number;
+    };
 
     constructor(private paper: dia.Paper) {
         this.pressedKeys.onValue(this.onPressedKeysChange);
@@ -59,40 +61,90 @@ export class RangeSelectPlugin {
         });
     };
 
-    private onInit(event: Event, x, y) {
-        if (this.hasModifier(event)) {
-            event.stopImmediatePropagation();
-            this.cursorMask.enable("crosshair");
-            this.rectangle.position(x, y).size(0, 0).addTo(this.paper.model);
+    private handleLongPress(action: (event: dia.Event, ...args: unknown[]) => void) {
+        let pressTimer;
 
-            event.data = { ...event.data, selectStart: { x, y } };
+        const releasePress = () => {
+            clearTimeout(pressTimer);
+        };
+
+        return (event: dia.Event, ...args: unknown[]) => {
+            const paper = this.paper;
+
+            paper.once(Events.BLANK_POINTERMOVE, releasePress);
+            paper.once(Events.BLANK_POINTERUP, releasePress);
+
+            pressTimer = window.setTimeout(() => {
+                paper.off(Events.BLANK_POINTERMOVE, releasePress);
+                action(event, ...args);
+            }, LONG_PRESS_TIME);
+        };
+    }
+
+    private startSelection(event: dia.Event, x: number, y: number) {
+        event.stopImmediatePropagation();
+        this.cursorMask.enable("crosshair");
+        this.updateRectangleSize(
+            {
+                x,
+                y,
+                width: 0,
+                height: 0,
+            },
+            isTouchEvent(event),
+        ).addTo(this.paper.model);
+
+        this.selectStart = {
+            x,
+            y,
+        };
+    }
+
+    private onInit(event: dia.Event, x: number, y: number) {
+        if (isTouchEvent(event)) {
+            this.handleLongPress(this.startSelection.bind(this))(event, x, y);
+        } else {
+            this.hasModifier(event) && this.startSelection(event, x, y);
         }
     }
 
-    private hasModifier(event: JQuery.TriggeredEvent<any, EventData>): boolean {
+    private hasModifier(event: dia.Event): boolean {
         return event?.shiftKey || event?.ctrlKey || event?.metaKey;
     }
 
-    private onChange(event: Event, x, y) {
-        if (this.hasModifier(event) && event.data?.selectStart) {
-            const { selectStart } = event.data;
+    private onChange(event: dia.Event, x: number, y: number) {
+        if (this.selectStart) {
+            const { selectStart } = this;
             const dx = x - selectStart.x;
             const dy = y - selectStart.y;
 
-            const bbox = new g.Rect(selectStart.x, selectStart.y, dx, dy).normalize();
+            event.stopImmediatePropagation();
+            event.stopPropagation();
 
-            this.rectangle
-                .position(bbox.x, bbox.y)
-                .size(Math.max(bbox.width, 1), Math.max(bbox.height, 1))
+            this.updateRectangleSize(
+                {
+                    x: selectStart.x,
+                    y: selectStart.y,
+                    width: dx,
+                    height: dy,
+                },
+                isTouchEvent(event),
+            )
                 .toFront()
                 .attr("body/strokeDasharray", dx < 0 ? "5 5" : null);
         } else {
-            this.cleanup(event.data);
+            this.cleanup();
         }
     }
 
-    private onExit(event: Event): void {
-        if (event.data?.selectStart) {
+    private updateRectangleSize(plainRect: g.PlainRect, inflate?: boolean) {
+        const rect = new g.Rect(plainRect).normalize();
+        const bbox = inflate ? rect.inflate(30, 30) : rect;
+        return this.rectangle.position(bbox.x, bbox.y).size(Math.max(bbox.width, 1), Math.max(bbox.height, 1));
+    }
+
+    private onExit(event: dia.Event): void {
+        if (this.selectStart) {
             const strict = !this.rectangle.attr("body/strokeDasharray");
             const elements = this.paper.model.findModelsInArea(this.rectangle.getBBox(), { strict });
             if (this.isActive) {
@@ -101,13 +153,13 @@ export class RangeSelectPlugin {
                 this.paper.trigger("rangeSelect:selected", eventData);
             }
         }
-        this.cleanup(event.data);
+        this.cleanup();
     }
 
-    private cleanup(data?: EventData): void {
+    private cleanup(): void {
         this.cursorMask.disable();
         this.rectangle.remove();
-        delete data?.selectStart;
+        this.selectStart = null;
     }
 
     private destroy(): void {

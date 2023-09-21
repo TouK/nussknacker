@@ -9,7 +9,7 @@ import { getCapabilities } from "../../../../reducers/selectors/other";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import { ToggleProcessActionModalData } from "../../../modals/DeployProcessDialog";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 
 export default function CancelDeployButton(props: ToolbarButtonProps) {

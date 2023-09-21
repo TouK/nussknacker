@@ -16,6 +16,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   to implement it only if your DM will be wrapped by `PeriodicDeploymentManager`
 
 ### REST API changes
+* [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
+  * Use `processingType` instead of `processName`
+  * Add `scenarioName` parameter to `ParametersValidationRequest` used in `api/parameters/*/validate`
 * [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
   * Removed isSubprocess endpoint param, use isFragment from now on.
   * Removed backward compatibility for subprocess fields.

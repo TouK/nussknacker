@@ -1,17 +1,17 @@
 import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createSelector } from "reselect";
-import { addComment, deleteComment } from "../actions/nk";
-import * as DialogMessages from "../common/DialogMessages";
-import { getProcessId, getProcessVersionId } from "../reducers/selectors/graph";
-import { getFeatureSettings, getLoggedUser } from "../reducers/selectors/settings";
-import { useWindows } from "../windowManager";
+import { addComment, deleteComment } from "../../actions/nk";
+import * as DialogMessages from "../../common/DialogMessages";
+import { getProcessId, getProcessVersionId } from "../../reducers/selectors/graph";
+import { getFeatureSettings, getLoggedUser } from "../../reducers/selectors/settings";
+import { useWindows } from "../../windowManager";
 import CommentContent from "./CommentContent";
 import CommentInput from "./CommentInput";
-import Date from "./common/Date";
-import { ListSeparator } from "./common/ListSeparator";
-import { NkButton } from "./NkButton";
-import { getCapabilities } from "../reducers/selectors/other";
+import Date from "../common/Date";
+import { ListSeparator } from "../common/ListSeparator";
+import { getCapabilities } from "../../reducers/selectors/other";
+import { AddCommentPanel, CommentButton, ProcessCommentsList, ProcessCommentsWrapper } from "./StyledComment";
 
 const getComments = (state) => state.processActivity?.comments || [];
 const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
@@ -58,8 +58,8 @@ function ProcessComments(): JSX.Element {
     const isLastComment = useCallback((index) => index + 1 === comments.length, [comments.length]);
 
     return (
-        <div className="process-comments">
-            <ul className="process-comments-list">
+        <ProcessCommentsWrapper>
+            <ProcessCommentsList>
                 {comments.map((comment, index) => (
                     <div key={comment.id}>
                         <div className="header">
@@ -73,16 +73,16 @@ function ProcessComments(): JSX.Element {
                         {!isLastComment(index) && <ListSeparator />}
                     </div>
                 ))}
-            </ul>
+            </ProcessCommentsList>
             {capabilities.write ? (
-                <div className="add-comment-panel">
+                <AddCommentPanel>
                     <CommentInput onChange={onInputChange.bind(this)} value={comment} />
-                    <NkButton type="button" className="add-comment" onClick={_addComment} disabled={pending || comment == ""}>
+                    <CommentButton type="button" onClick={_addComment} disabled={pending || comment == ""}>
                         Add
-                    </NkButton>
-                </div>
+                    </CommentButton>
+                </AddCommentPanel>
             ) : null}
-        </div>
+        </ProcessCommentsWrapper>
     );
 }
 

@@ -5,7 +5,7 @@ import { CustomAction } from "../../../../types";
 import { useWindows } from "../../../../windowManager";
 import { WindowKind } from "../../../../windowManager/WindowKind";
 import { StatusType } from "../../../Process/types";
-import ToolbarButton from "../../../toolbarComponents/ToolbarButton";
+import { ToolbarButton } from "../../../toolbarComponents/toolbarButtons";
 import { ToolbarButtonProps } from "../../types";
 import UrlIcon from "../../../UrlIcon";
 import { FallbackProps } from "react-error-boundary";

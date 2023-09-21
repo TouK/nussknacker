@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { isEmpty } from "lodash";
 import xss from "xss";
+import { PanelComment } from "./StyledComment";
 
 interface Props {
     content: string;
@@ -31,9 +32,9 @@ function CommentContent({ commentSettings, content }: Props): JSX.Element {
     );
 
     return (
-        <div className={"panel-comment"}>
+        <PanelComment>
             <p dangerouslySetInnerHTML={{ __html }} />
-        </div>
+        </PanelComment>
     );
 }
 

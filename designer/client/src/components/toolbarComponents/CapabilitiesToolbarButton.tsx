@@ -1,7 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { getCapabilities } from "../../reducers/selectors/other";
-import ToolbarButton, { ToolbarButtonProps } from "./ToolbarButton";
+import { ToolbarButton, ToolbarButtonProps } from "./toolbarButtons/index";
 
 interface Props {
     write?: boolean;

@@ -4,32 +4,32 @@ import { cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without } from "lo
 import React from "react";
 import { findDOMNode } from "react-dom";
 import "../../stylesheets/graph.styl";
-import { filterDragHovered, getLinkNodes, setLinksHovered } from "./dragHelpers";
+import { filterDragHovered, getLinkNodes, setLinksHovered } from "./utils/dragHelpers";
 import { updateNodeCounts } from "./EspNode/element";
 import { GraphPaperContainer } from "./focusable";
 import { applyCellChanges, calcLayout, createPaper, isModelElement } from "./GraphPartialsInTS";
 import styles from "./graphTheme.styl";
-import { Events } from "./joint-events";
+import { Events } from "./types";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
 import { RangeSelectedEventData, RangeSelectPlugin, SelectionMode } from "./RangeSelectPlugin";
 import "./svg-export/export.styl";
 import { prepareSvg } from "./svg-export/prepareSvg";
-import * as GraphUtils from "./GraphUtils";
+import * as GraphUtils from "./utils/graphUtils";
 import { ComponentDragPreview } from "../ComponentDragPreview";
 import { rafThrottle } from "./rafThrottle";
 import { isEdgeEditable } from "../../common/EdgeUtils";
 import { NodeId, NodeType, Process, ProcessDefinitionData } from "../../types";
 import { Layout, NodePosition, Position } from "../../actions/nk";
 import { UserSettings } from "../../reducers/userSettings";
-import { GraphProps } from "./GraphWrapped";
+import { GraphProps } from "./types";
 import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import ProcessUtils from "../../common/ProcessUtils";
+import { isTouchDevice, isTouchEvent } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
-import { isTouchDevice } from "../../helpers/detectDevice";
 
 interface Props extends GraphProps {
     processCategory: string;
@@ -39,6 +39,38 @@ interface Props extends GraphProps {
     userSettings: UserSettings;
     showModalNodeDetails: (node: NodeType, process: Process, readonly?: boolean) => void;
     isPristine?: boolean;
+}
+
+function handleActionOnLongPress(
+    shortPressAction: (cellView: dia.CellView, event: dia.Event) => void,
+    longPressAction: (cellView: dia.CellView, event: dia.Event) => void,
+) {
+    let pressTimer;
+
+    const releasePress = () => {
+        clearTimeout(pressTimer);
+    };
+
+    return (cellView: dia.CellView, evt: dia.Event) => {
+        const { paper, model } = cellView;
+
+        // let's clear all pointer click events on start
+        paper.off(Events.CELL_POINTERCLICK, shortPressAction);
+        paper.on(Events.CELL_POINTERCLICK, shortPressAction);
+        paper.on(Events.CELL_POINTERUP, releasePress);
+
+        const LONG_PRESS_TIME = 500;
+
+        // Discard specific events on long press action
+        model.once(Events.CHANGE_POSITION, releasePress);
+        model.once(Events.CELL_POINTERUP, releasePress);
+
+        pressTimer = window.setTimeout(() => {
+            // Stop single click event when longPress fired
+            paper.off(Events.CELL_POINTERCLICK, shortPressAction);
+            longPressAction(cellView, evt);
+        }, LONG_PRESS_TIME);
+    };
 }
 
 export class Graph extends React.Component<Props> {
@@ -197,8 +229,6 @@ export class Graph extends React.Component<Props> {
     }
 
     bindEventHandlers(): void {
-        let pressTimer;
-
         const showNodeDetails = (cellView: dia.CellView) => {
             const { processToDisplay, readonly, nodeIdPrefixForFragmentTests = "" } = this.props;
             const { nodeData, edgeData } = cellView.model.attributes;
@@ -214,32 +244,7 @@ export class Graph extends React.Component<Props> {
                 );
             }
         };
-        const handleActionOnLongPress =
-            (
-                longPressAction: (cellView: dia.CellView, event: dia.Event) => void,
-                shortPressAction: (cellView: dia.CellView, event: dia.Event) => void,
-            ) =>
-            (cellView: dia.CellView, evt) => {
-                // let's clear all pointer click events on start
-                this.processGraphPaper.off(Events.CELL_POINTERCLICK, shortPressAction);
-                this.processGraphPaper.on(Events.CELL_POINTERCLICK, shortPressAction);
 
-                const LONG_PRESS_TIME = 500;
-                const model = cellView.model;
-
-                // Discard specific events on long press action
-                model.once(Events.CHANGE_POSITION, releasePress);
-                model.once(Events.CELL_POINTERUP, releasePress);
-
-                pressTimer = window.setTimeout(() => {
-                    // Stop single click event when longPress fired
-                    this.processGraphPaper.off(Events.CELL_POINTERCLICK, shortPressAction);
-                    longPressAction(cellView, evt);
-                }, LONG_PRESS_TIME);
-            };
-        const releasePress = () => {
-            clearTimeout(pressTimer);
-        };
         const selectNode = (cellView, evt) => {
             if (this.props.nodeSelectionEnabled) {
                 const nodeDataId = cellView.model.attributes.nodeData?.id;
@@ -247,13 +252,14 @@ export class Graph extends React.Component<Props> {
                     return;
                 }
 
-                if (evt.shiftKey || evt.ctrlKey || evt.metaKey) {
+                if (evt.shiftKey || evt.ctrlKey || evt.metaKey || isTouchEvent(evt)) {
                     this.props.toggleSelection(nodeDataId);
                 } else {
                     this.props.resetSelection(nodeDataId);
                 }
             }
         };
+
         const deselectNodes = (event: JQuery.Event) => {
             if (event.isPropagationStopped()) {
                 return;
@@ -264,8 +270,7 @@ export class Graph extends React.Component<Props> {
         };
 
         if (isTouchDevice()) {
-            this.processGraphPaper.on(Events.CELL_POINTERUP, releasePress);
-            this.processGraphPaper.on(Events.CELL_POINTERDOWN, handleActionOnLongPress(selectNode, showNodeDetails));
+            this.processGraphPaper.on(Events.CELL_POINTERDOWN, handleActionOnLongPress(showNodeDetails, selectNode));
         } else {
             this.processGraphPaper.on(Events.CELL_POINTERCLICK, selectNode);
             this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, showNodeDetails);

@@ -4,7 +4,7 @@ import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SearchIcon } from "../../table/SearchFilter";
 import { InputWithIcon } from "../../themed/InputWithIcon";
-import { ToolbarWrapper } from "../../toolbarComponents/ToolbarWrapper";
+import { ToolbarWrapper } from "../../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import ToolBox from "./ToolBox";
 
 export function CreatorPanel(): JSX.Element {

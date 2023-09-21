@@ -6,7 +6,7 @@ sidebar_position: 6
 
 ## Overview
 
-Usually not all required data are in the Kafka event streams - some data may reside in an external database or may be served by an external service. For this purpose Nussknacker provides enrichers - specialized components which allow to get data from sources other than Kafka streams.
+Usually not all required data are in the data record - some data may reside in an external database or may be served by an external service. For this purpose Nussknacker provides enrichers - specialized components which allow to get data from sources other than Kafka streams.
 
 
 ## Concepts
