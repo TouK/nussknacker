@@ -4,15 +4,15 @@ import DangerousIcon from "@mui/icons-material/Dangerous";
 import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import i18next from "i18next";
 import { concat, difference, isEmpty } from "lodash";
-import { NodeType, Process, ValidationErrors } from "../../types";
-import { variables } from "../../stylesheets/variables";
+import { NodeType, Process, ValidationErrors } from "../../../types";
+import { variables } from "../../../stylesheets/variables";
+import { styledIcon } from "../Styled";
 
 interface Props {
     errors: ValidationErrors;
     showDetails: (event: SyntheticEvent, details: NodeType) => void;
     currentProcess: Process;
 }
-
 export default class Errors extends React.Component<Props> {
     render() {
         const {
@@ -23,17 +23,19 @@ export default class Errors extends React.Component<Props> {
             },
         } = this.props;
         return (
-            <div key={uuid4()} className={"error-tips"}>
+            <div key={uuid4()} style={{ display: "flex", alignItems: "center" }}>
                 {this.headerIcon(errors)}
                 {this.errorTips(errors)}
             </div>
         );
     }
 
-    headerIcon = (errors) =>
-        isEmpty(errors.globalErrors) && isEmpty(errors.invalidNodes) && isEmpty(errors.processPropertiesErrors) ? null : (
-            <DangerousIcon className={"icon"} sx={{ color: variables.alert.error, alignSelf: "center" }} />
+    headerIcon = (errors) => {
+        const StyledDangerousIcon = styledIcon(DangerousIcon);
+        return isEmpty(errors.globalErrors) && isEmpty(errors.invalidNodes) && isEmpty(errors.processPropertiesErrors) ? null : (
+            <StyledDangerousIcon sx={{ color: variables.alert.error, alignSelf: "center" }} />
         );
+    };
 
     errorTips = (errors) => {
         const globalErrors = errors.globalErrors;
@@ -41,11 +43,9 @@ export default class Errors extends React.Component<Props> {
         const propertiesErrors = errors.processPropertiesErrors;
 
         return isEmpty(nodeErrors) && isEmpty(propertiesErrors) && isEmpty(globalErrors) ? null : (
-            <div className={"node-error-section"}>
-                <div>
-                    {this.globalErrorsTips(globalErrors)}
-                    {this.nodeErrorsTips(propertiesErrors, nodeErrors)}
-                </div>
+            <div>
+                {this.globalErrorsTips(globalErrors)}
+                {this.nodeErrorsTips(propertiesErrors, nodeErrors)}
             </div>
         );
     };
@@ -68,30 +68,28 @@ export default class Errors extends React.Component<Props> {
         const errorsOnTop = this.errorsOnTopPresent(otherNodeErrorIds, propertiesErrors);
 
         return (
-            <div className={"node-error-tips"}>
-                <div className={"node-error-links"}>
-                    <NodeErrorsLinkSection
-                        nodeIds={concat(otherNodeErrorIds, isEmpty(propertiesErrors) ? [] : "properties")}
-                        message={i18next.t("errors.errorsIn", "Errors in: ")}
-                        showDetails={showDetails}
-                        currentProcess={currentProcess}
-                    />
-                    <NodeErrorsLinkSection
-                        nodeIds={looseNodeIds}
-                        message={i18next.t("errors.looseNodes", "Loose nodes: ")}
-                        showDetails={showDetails}
-                        currentProcess={currentProcess}
-                        className={errorsOnTop ? "error-secondary-container" : null}
-                    />
-                    <NodeErrorsLinkSection
-                        nodeIds={invalidEndNodeIds}
-                        message={i18next.t("errors.invalidScenarioEnd", "Scenario must end with a sink, processor or fragment: ")}
-                        showDetails={showDetails}
-                        currentProcess={currentProcess}
-                        className={errorsOnTop ? "error-secondary-container" : null}
-                    />
-                </div>
-            </div>
+            <>
+                <NodeErrorsLinkSection
+                    nodeIds={concat(otherNodeErrorIds, isEmpty(propertiesErrors) ? [] : "properties")}
+                    message={i18next.t("errors.errorsIn", "Errors in: ")}
+                    showDetails={showDetails}
+                    currentProcess={currentProcess}
+                />
+                <NodeErrorsLinkSection
+                    nodeIds={looseNodeIds}
+                    message={i18next.t("errors.looseNodes", "Loose nodes: ")}
+                    showDetails={showDetails}
+                    currentProcess={currentProcess}
+                    errorsOnTop={errorsOnTop}
+                />
+                <NodeErrorsLinkSection
+                    nodeIds={invalidEndNodeIds}
+                    message={i18next.t("errors.invalidScenarioEnd", "Scenario must end with a sink, processor or fragment: ")}
+                    showDetails={showDetails}
+                    currentProcess={currentProcess}
+                    errorsOnTop={errorsOnTop}
+                />
+            </>
         );
     };
 

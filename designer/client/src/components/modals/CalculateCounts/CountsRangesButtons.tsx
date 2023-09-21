@@ -1,8 +1,7 @@
 import { Moment } from "moment";
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
+import { PredefinedDropdownButton, PredefinedRangeButton } from "./CountsStyled";
 import { useTranslation } from "react-i18next";
-import { DropdownButton } from "../../common/DropdownButton";
-import { ButtonWithFocus } from "../../withFocus";
 
 export interface Range {
     name: string;
@@ -26,25 +25,23 @@ export function CountsRangesButtons({ children, ranges, onChange, limit = -1 }: 
     return (
         <>
             {visible.map((range) => (
-                <ButtonWithFocus
+                <PredefinedRangeButton
                     key={range.name}
                     type="button"
                     title={range.name}
-                    className="predefinedRangeButton"
                     onClick={() => changeHandler(range)}
                     style={{
                         flex: 1,
                     }}
                 >
                     {range.name}
-                </ButtonWithFocus>
+                </PredefinedRangeButton>
             ))}
 
             {collapsed.length > 0 ? (
-                <DropdownButton
+                <PredefinedDropdownButton
                     options={collapsed.map((value) => ({ label: value.name, value }))}
                     onRangeSelect={changeHandler}
-                    className="predefinedRangeButton"
                     style={{
                         flex: 1,
                     }}
@@ -54,7 +51,7 @@ export function CountsRangesButtons({ children, ranges, onChange, limit = -1 }: 
                     }}
                 >
                     {children || t("calculateCounts.more", "Select more...")}
-                </DropdownButton>
+                </PredefinedDropdownButton>
             ) : null}
         </>
     );

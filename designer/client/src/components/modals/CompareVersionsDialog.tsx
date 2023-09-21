@@ -2,20 +2,20 @@
 import { css, cx } from "@emotion/css";
 import { WindowContentProps } from "@touk/window-manager";
 import { keys } from "lodash";
-import React from "react";
-import { connect } from "react-redux";
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { WindowContent } from "../../windowManager";
 import { formatAbsolutely } from "../../common/DateUtils";
 import { flattenObj, objectDiff } from "../../common/JsonUtils";
 import HttpService from "../../http/HttpService";
 import { getProcessId, getProcessVersionId, getVersions } from "../../reducers/selectors/graph";
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
-import "../../stylesheets/visualization.styl";
-import { WindowContent } from "../../windowManager";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
 import { ProcessVersionType } from "../Process/types";
 import { SelectWithFocus } from "../withFocus";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
+import { NodeType } from "../../types";
 
 interface State {
     currentDiffId: string;
@@ -24,136 +24,88 @@ interface State {
     difference: unknown;
 }
 
-//TODO: handle different textarea heights
-class VersionsForm extends React.Component<Props, State> {
-    //TODO: better way of detecting remote version? also: how to sort versions??
-    remotePrefix = "remote-";
-    initState: State = {
+const VersionsForm = () => {
+    const remotePrefix = "remote-";
+    const initState: State = {
         otherVersion: null,
         currentDiffId: null,
         difference: null,
         remoteVersions: [],
     };
 
-    state = this.initState;
+    const [state, setState] = useState<State>(initState);
+    const processId = useSelector(getProcessId);
+    const version = useSelector(getProcessVersionId);
+    const otherEnvironment = useSelector(getTargetEnvironmentId);
+    const versions = useSelector(getVersions);
 
-    isLayoutChangeOnly(diffId: string): boolean {
-        const { type, currentNode, otherNode } = this.state.difference[diffId];
-        if (type === "NodeDifferent") {
-            return this.differentPathsForObjects(currentNode, otherNode).every((path) => path.startsWith("additionalFields.layoutData"));
-        }
-    }
-
-    componentDidMount() {
-        if (this.props.processId && this.props.otherEnvironment) {
-            HttpService.fetchRemoteVersions(this.props.processId).then((response) =>
-                this.setState({ remoteVersions: response.data || [] }),
+    useEffect(() => {
+        if (processId && otherEnvironment) {
+            HttpService.fetchRemoteVersions(processId).then((response) =>
+                setState((prevState) => ({ ...prevState, remoteVersions: response.data || [] })),
             );
         }
-    }
+    }, [processId, otherEnvironment]);
 
-    loadVersion(versionId: string) {
-        if (versionId) {
-            HttpService.compareProcesses(
-                this.props.processId,
-                this.props.version,
-                this.versionToPass(versionId),
-                this.isRemote(versionId),
-            ).then((response) => this.setState({ difference: response.data, otherVersion: versionId, currentDiffId: null }));
-        } else {
-            this.setState(this.initState);
+    function isLayoutChangeOnly(diffId: string): boolean {
+        const { type, currentNode, otherNode } = state.difference[diffId];
+        if (type === "NodeDifferent") {
+            return differentPathsForObjects(currentNode, otherNode).every((path) => path.startsWith("additionalFields.layoutData"));
         }
     }
 
-    isRemote(versionId: string) {
-        return versionId.startsWith(this.remotePrefix);
-    }
+    const loadVersion = (versionId: string) => {
+        if (versionId) {
+            HttpService.compareProcesses(processId, version, versionToPass(versionId), isRemote(versionId)).then((response) =>
+                setState((prevState) => ({ ...prevState, difference: response.data, otherVersion: versionId, currentDiffId: null })),
+            );
+        } else {
+            setState(initState);
+        }
+    };
 
-    versionToPass(versionId: string) {
-        return versionId.replace(this.remotePrefix, "");
-    }
+    const isRemote = (versionId: string) => {
+        return versionId.startsWith(remotePrefix);
+    };
 
-    versionDisplayString(versionId: string) {
-        return this.isRemote(versionId) ? `${this.versionToPass(versionId)} on ${this.props.otherEnvironment}` : versionId;
-    }
+    const versionToPass = (versionId: string) => {
+        return versionId.replace(remotePrefix, "");
+    };
 
-    createVersionElement(version: ProcessVersionType, versionPrefix = "") {
+    const versionDisplayString = (versionId: string) => {
+        return isRemote(versionId) ? `${versionToPass(versionId)} on ${otherEnvironment}` : versionId;
+    };
+
+    const createVersionElement = (version: ProcessVersionType, versionPrefix = "") => {
         const versionId = versionPrefix + version.processVersionId;
         return (
             <option key={versionId} value={versionId}>
-                {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {formatAbsolutely(version.createDate)}
+                {versionDisplayString(versionId)} - created by {version.user} &nbsp; {formatAbsolutely(version.createDate)}
             </option>
         );
-    }
+    };
 
-    render() {
-        return (
-            <>
-                <div className="esp-form-row">
-                    <p>Version to compare</p>
-                    <SelectWithFocus
-                        autoFocus={true}
-                        id="otherVersion"
-                        className="node-input"
-                        value={this.state.otherVersion || ""}
-                        onChange={(e) => this.loadVersion(e.target.value)}
-                    >
-                        <option key="" value="" />
-                        {this.props.versions
-                            .filter((version) => this.props.version !== version.processVersionId)
-                            .map((version) => this.createVersionElement(version))}
-                        {this.state.remoteVersions.map((version) => this.createVersionElement(version, this.remotePrefix))}
-                    </SelectWithFocus>
-                </div>
-                {this.state.otherVersion ? (
-                    <div>
-                        <div className="esp-form-row">
-                            <p>Difference to pick</p>
-                            <SelectWithFocus
-                                id="otherVersion"
-                                className="node-input"
-                                value={this.state.currentDiffId || ""}
-                                onChange={(e) => this.setState({ currentDiffId: e.target.value })}
-                            >
-                                <option key="" value="" />
-                                {keys(this.state.difference).map((diffId) => {
-                                    const isLayoutOnly = this.isLayoutChangeOnly(diffId);
-                                    return (
-                                        <option key={diffId} value={diffId} disabled={isLayoutOnly}>
-                                            {diffId} {isLayoutOnly && "(position only)"}
-                                        </option>
-                                    );
-                                })}
-                            </SelectWithFocus>
-                        </div>
-                        {this.state.currentDiffId ? this.printDiff(this.state.currentDiffId) : null}
-                    </div>
-                ) : null}
-            </>
-        );
-    }
-
-    printDiff(diffId) {
-        const diff = this.state.difference[diffId];
+    const printDiff = (diffId: string) => {
+        const diff = state.difference[diffId];
 
         switch (diff.type) {
             case "NodeNotPresentInOther":
             case "NodeNotPresentInCurrent":
             case "NodeDifferent":
-                return this.renderDiff(diff.currentNode, diff.otherNode, this.printNode);
+                return renderDiff(diff.currentNode, diff.otherNode, printNode);
             case "EdgeNotPresentInCurrent":
             case "EdgeNotPresentInOther":
             case "EdgeDifferent":
-                return this.renderDiff(diff.currentEdge, diff.otherEdge, this.printEdge);
+                return renderDiff(diff.currentEdge, diff.otherEdge, printEdge);
             case "PropertiesDifferent":
-                return this.renderDiff(diff.currentProperties, diff.otherProperties, this.printProperties);
+                return renderDiff(diff.currentProperties, diff.otherProperties, printProperties);
             default:
                 console.error(`Difference type ${diff.type} is not supported`);
         }
-    }
+    };
 
-    renderDiff(currentElement, otherElement, printElement) {
-        const differentPaths = this.differentPathsForObjects(currentElement, otherElement);
+    const renderDiff = (currentElement, otherElement, printElement) => {
+        const differentPaths = differentPathsForObjects(currentElement, otherElement);
         return (
             <div className="compareContainer">
                 <PathsToMarkProvider value={differentPaths}>
@@ -162,37 +114,37 @@ class VersionsForm extends React.Component<Props, State> {
                         {printElement(currentElement)}
                     </div>
                     <div>
-                        <div className="versionHeader">Version {this.versionDisplayString(this.state.otherVersion)}</div>
+                        <div className="versionHeader">Version {versionDisplayString(state.otherVersion)}</div>
                         {printElement(otherElement)}
                     </div>
                 </PathsToMarkProvider>
             </div>
         );
-    }
+    };
 
-    differentPathsForObjects(currentNode, otherNode) {
+    const differentPathsForObjects = (currentNode, otherNode) => {
         const diffObject = objectDiff(currentNode, otherNode);
         const flatObj = flattenObj(diffObject);
         return Object.keys(flatObj);
-    }
+    };
 
-    printNode(node) {
+    const printNode = (node: NodeType) => {
         return node ? <NodeDetailsContent node={node} /> : <div className="notPresent">Node not present</div>;
-    }
+    };
 
-    stubOnChange = () => {
+    const stubOnChange = () => {
         return;
     };
 
-    printEdge = (edge) => {
+    const printEdge = (edge) => {
         return edge ? (
             <EdgeDetailsContent
                 edge={edge}
                 readOnly={true}
                 showValidation={false}
                 showSwitch={false}
-                changeEdgeTypeValue={this.stubOnChange}
-                changeEdgeTypeCondition={this.stubOnChange}
+                changeEdgeTypeValue={stubOnChange}
+                changeEdgeTypeCondition={stubOnChange}
                 variableTypes={{}}
             />
         ) : (
@@ -200,33 +152,64 @@ class VersionsForm extends React.Component<Props, State> {
         );
     };
 
-    printProperties(property) {
+    const printProperties = (property) => {
         return property ? <NodeDetailsContent node={property} /> : <div className="notPresent">Properties not present</div>;
-    }
-}
-
-function mapState(state) {
-    return {
-        processId: getProcessId(state),
-        version: getProcessVersionId(state),
-        otherEnvironment: getTargetEnvironmentId(state),
-        versions: getVersions(state),
     };
-}
 
-type Props = ReturnType<typeof mapState>;
+    return (
+        <>
+            <div className="esp-form-row">
+                <p>Version to compare</p>
+                <SelectWithFocus
+                    autoFocus={true}
+                    id="otherVersion"
+                    className="node-input"
+                    value={state.otherVersion || ""}
+                    onChange={(e) => loadVersion(e.target.value)}
+                >
+                    <option key="" value="" />
+                    {versions
+                        .filter((currentVersion) => version !== currentVersion.processVersionId)
+                        .map((version) => createVersionElement(version))}
+                    {state.remoteVersions.map((version) => createVersionElement(version, remotePrefix))}
+                </SelectWithFocus>
+            </div>
+            {state.otherVersion ? (
+                <div>
+                    <div className="esp-form-row">
+                        <p>Difference to pick</p>
+                        <SelectWithFocus
+                            id="otherVersion"
+                            className="node-input"
+                            value={state.currentDiffId || ""}
+                            onChange={(e) => setState({ ...state, currentDiffId: e.target.value })}
+                        >
+                            <option key="" value="" />
+                            {keys(state.difference).map((diffId) => {
+                                const isLayoutOnly = isLayoutChangeOnly(diffId);
+                                return (
+                                    <option key={diffId} value={diffId} disabled={isLayoutOnly}>
+                                        {diffId} {isLayoutOnly && "(position only)"}
+                                    </option>
+                                );
+                            })}
+                        </SelectWithFocus>
+                    </div>
+                    {state.currentDiffId ? printDiff(state.currentDiffId) : null}
+                </div>
+            ) : null}
+        </>
+    );
+};
 
-//TODO: move to hooks
-const CompareVersionsForm = connect(mapState)(VersionsForm);
-
-export function CompareVersionsDialog(props: WindowContentProps): JSX.Element {
+const CompareVersionsDialog = (props: WindowContentProps) => {
     return (
         <WindowContent {...props}>
             <div className={cx("compareModal", "modalContentDark", css({ minWidth: 980, padding: "1em" }))}>
-                <CompareVersionsForm />
+                <VersionsForm />
             </div>
         </WindowContent>
     );
-}
+};
 
 export default CompareVersionsDialog;
