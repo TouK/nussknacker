@@ -48,7 +48,7 @@ class AppApiHttpService(config: Config,
 
   expose {
     appApiEndpoints.processDeploymentHealthCheckEndpoint
-      .serverSecurityLogic(authorizeCommonUser[HealthCheckProcessErrorResponseDto])
+      .serverSecurityLogic(authorizeKnownUser[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
         _ =>
           problemStateByProcessName
@@ -77,7 +77,7 @@ class AppApiHttpService(config: Config,
 
   expose {
     appApiEndpoints.processValidationHealthCheckEndpoint
-      .serverSecurityLogic(authorizeCommonUser[HealthCheckProcessErrorResponseDto])
+      .serverSecurityLogic(authorizeKnownUser[HealthCheckProcessErrorResponseDto])
       .serverLogic { implicit loggedUser =>
         _ =>
           processesWithValidationErrors.map { processes =>
@@ -125,7 +125,7 @@ class AppApiHttpService(config: Config,
 
   expose {
     appApiEndpoints.userCategoriesWithProcessingTypesEndpoint
-      .serverSecurityLogic(authorizeCommonUser[Unit])
+      .serverSecurityLogic(authorizeKnownUser[Unit])
       .serverLogicSuccess { loggedUser =>
         _ =>
           Future {

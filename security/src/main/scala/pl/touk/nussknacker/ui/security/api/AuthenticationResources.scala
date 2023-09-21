@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.security.api
 
 import akka.http.scaladsl.marshalling.ToResponseMarshallable
-import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.AuthenticationDirective
 import com.typesafe.config.Config
@@ -21,7 +20,7 @@ trait AuthenticationResources extends Directives with FailFastCirceSupport {
   // will do the authentication based on the provided `AuthCredentials`. So, exactly what the `authenticate` directive
   // does. When we migrate fully to Tapir, we will get rid of Akka HTTP and the `authenticate` directive won't be needed.
   // Currently, in the implementation of `authenticate(authCredentials: AuthCredentials)` we use Akka HTTP classes,
-  // so before we throw away Akka HTTPl, we should migrate to some other implementations (e.g. from the Tapir's server
+  // so before we throw away Akka HTTP, we should migrate to some other implementations (e.g. from the Tapir's server
   // interpreter) or create our own.
   def authenticate(): Directive1[AuthenticatedUser]
 
