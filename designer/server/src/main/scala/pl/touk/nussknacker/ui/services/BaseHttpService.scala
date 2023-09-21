@@ -1,6 +1,7 @@
-package pl.touk.nussknacker.ui.api
+package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.ui.api.SecurityError
 import pl.touk.nussknacker.ui.api.SecurityError.{AuthenticationError, AuthorizationError}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.security.api._
@@ -50,7 +51,7 @@ abstract class BaseHttpService(config: Config,
       .authenticate(credentials)
       .map {
         case Some(user) if user.roles.nonEmpty =>
-          Right(LoggedUser(
+          success(LoggedUser(
             authenticatedUser = user,
             rules = AuthenticationConfiguration.getRules(config),
             processCategories = processCategoryService.getAllCategories

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.ui.api.app
+package pl.touk.nussknacker.ui.services
 
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
@@ -11,16 +11,15 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.api.{ApiEndpointsCreator, BaseHttpService}
-import pl.touk.nussknacker.ui.api.app.AppApiEndpoints.Dtos._
+import pl.touk.nussknacker.ui.api.AppApiEndpoints
+import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.security.api.{AuthCredentials, AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.{AuthenticationResources, LoggedUser}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import sttp.tapir.EndpointInput
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -38,7 +37,7 @@ class AppApiHttpService(config: Config,
   extends BaseHttpService(config, processCategoryService, authenticator)
     with LazyLogging {
 
-  private val appApiEndpoints = AppApiHttpService.create(authenticator.authenticationMethod())
+  private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
 
   expose {
     appApiEndpoints.appHealthCheckEndpoint
@@ -172,9 +171,4 @@ class AppApiHttpService(config: Config,
           .map(_.id)
       }
   }
-}
-object AppApiHttpService extends ApiEndpointsCreator[AppApiEndpoints] {
-
-  override def create(auth: EndpointInput.Auth[AuthCredentials, _]): AppApiEndpoints =
-    new AppApiEndpoints(auth)
 }
