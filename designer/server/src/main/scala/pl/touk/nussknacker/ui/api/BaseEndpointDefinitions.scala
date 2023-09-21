@@ -1,21 +1,66 @@
 package pl.touk.nussknacker.ui.api
 
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.ToSecure
+import pl.touk.nussknacker.ui.security.api.AuthCredentials
+import sttp.model.StatusCode.{Forbidden, Unauthorized}
+import sttp.tapir.EndpointInput.Auth
 import sttp.tapir._
+
+import scala.language.implicitConversions
 
 trait BaseEndpointDefinitions {
 
-  private val baseNuApiEndpoint =
-    // TODO: when all services are moved to Tapir (including authn & authz), we can uncomment this path here
-    endpoint//.in("api")
+  val baseNuApiEndpoint: PublicEndpoint[Unit, Unit, Unit, Any] = endpoint.in("api")
 
-  protected val baseNuApiPublicEndpoint: PublicEndpoint[Unit, Unit, Unit, Any] =
-    baseNuApiEndpoint
+  implicit def toSecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R](endpoint: Endpoint[Unit, INPUT, BUSINESS_ERROR, OUTPUT, R]): ToSecure[INPUT, BUSINESS_ERROR, OUTPUT, R] =
+    new ToSecure(endpoint)
+}
+object BaseEndpointDefinitions {
 
-  type SecuredEndpoint[INPUT, ERROR_OUTPUT, OUTPUT, -R] = Endpoint[LoggedUser, INPUT, ERROR_OUTPUT, OUTPUT, R]
+  type EndpointError[ERROR] = Either[SecurityError, ERROR]
+  type SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, -R] = Endpoint[AuthCredentials, INPUT, Either[BUSINESS_ERROR, SecurityError], OUTPUT, R]
 
-  protected def baseNuApiUserSecuredEndpoint(loggedUser: LoggedUser): SecuredEndpoint[Unit, Unit, Unit, Any] =
-    baseNuApiEndpoint
-      .securityIn(auth.apiKey(extractFromRequest(_ => loggedUser)))
+  implicit class ToSecure[INPUT, BUSINESS_ERROR, OUTPUT, -R](val endpoint: PublicEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R]) extends AnyVal {
 
+    import Codecs._
+
+    def withSecurity(auth: Auth[AuthCredentials, _]): SecuredEndpoint[INPUT, BUSINESS_ERROR, OUTPUT, R] = {
+      endpoint
+        .securityIn(auth)
+        .errorOutEither(
+          oneOf(
+            oneOfVariantFromMatchType(Unauthorized, plainBody[SecurityError.AuthenticationError.type]),
+            oneOfVariantFromMatchType(Forbidden, plainBody[SecurityError.AuthorizationError.type])
+          )
+        )
+    }
+  }
+
+  private object Codecs {
+    implicit val authenticationErrorCodec: Codec[String, SecurityError.AuthenticationError.type, CodecFormat.TextPlain] = {
+      Codec.string.map(
+        Mapping.from[String, SecurityError.AuthenticationError.type](
+          _ => SecurityError.AuthenticationError
+        )(
+          _ => "The supplied authentication is invalid"
+        )
+      )
+    }
+
+    implicit val authorizationErrorCodec: Codec[String, SecurityError.AuthorizationError.type, CodecFormat.TextPlain] = {
+      Codec.string.map(
+        Mapping.from[String, SecurityError.AuthorizationError.type](
+          _ => SecurityError.AuthorizationError
+        )(
+          _ => "The supplied authentication is not authorized to access this resource"
+        )
+      )
+    }
+  }
+}
+
+sealed trait SecurityError
+object SecurityError {
+  case object AuthenticationError extends SecurityError
+  case object AuthorizationError extends SecurityError
 }
