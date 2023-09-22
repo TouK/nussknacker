@@ -249,21 +249,20 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                 customActionInvokerService
                   .invokeCustomAction(req.actionName, process, params)
                   .map(_ => HttpResponse(status = StatusCodes.OK))
-                  .recover {
-                    case _: CustomActionFailure => HttpResponse(status = StatusCodes.InternalServerError)
-                    case _: CustomActionInvalidStatus => HttpResponse(status = StatusCodes.Forbidden)
-                    case _: CustomActionForbidden => HttpResponse(status = StatusCodes.Forbidden)
-                    case _: CustomActionNotImplemented => HttpResponse(status = StatusCodes.NotImplemented)
-                    case _: CustomActionNonExisting => HttpResponse(status = StatusCodes.NotFound)
-                  }
+                  .recover(customActionErrorToHttp orElse EspErrorToHttp.errorToHttp)
               }
             }
           }
       }
   }
 
-  private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
-    Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
+  private def customActionErrorToHttp : PartialFunction[Throwable, HttpResponse] = {
+    case _: CustomActionFailure => HttpResponse(status = StatusCodes.InternalServerError)
+    case _: CustomActionInvalidStatus => HttpResponse(status = StatusCodes.Forbidden)
+    case _: CustomActionForbidden => HttpResponse(status = StatusCodes.Forbidden)
+    case _: CustomActionNotImplemented => HttpResponse(status = StatusCodes.NotImplemented)
+    case _: CustomActionNonExisting => HttpResponse(status = StatusCodes.NotFound)
+  }
 
   private def convertSavepointResultToResponse(future: Future[SavepointResult]) = {
     future
