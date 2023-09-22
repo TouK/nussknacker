@@ -195,12 +195,6 @@ class AkkaHttpBasedRouteProvider(
         )
       }
 
-      val customActionInvokerService = new CustomActionInvokerServiceImpl(
-        futureProcessRepository,
-        dmDispatcher,
-        deploymentService
-      )
-
       val stateDefinitionService = new ProcessStateDefinitionService(
         typeToConfig
           .mapValues(_.category)
@@ -296,7 +290,6 @@ class AkkaHttpBasedRouteProvider(
             featureTogglesConfig.deploymentCommentSettings,
             deploymentService,
             dmDispatcher,
-            customActionInvokerService,
             metricsRegistry,
             scenarioTestService,
             typeToConfig.mapValues(_.modelData)
