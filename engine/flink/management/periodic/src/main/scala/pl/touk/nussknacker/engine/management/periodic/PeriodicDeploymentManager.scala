@@ -164,6 +164,6 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
   override def customActions: List[CustomAction] = customActionsProvider.customActions
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Future[CustomActionResult]] =
+  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[CustomActionResult] =
     customActionsProvider.invokeCustomAction(actionRequest, canonicalProcess)
 }
