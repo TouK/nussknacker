@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.requestresponse
 
-import akka.http.scaladsl.model.headers.{CacheDirectives, `Cache-Control`}
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 

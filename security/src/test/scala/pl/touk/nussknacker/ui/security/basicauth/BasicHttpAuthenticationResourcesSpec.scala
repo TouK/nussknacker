@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.{ConfigRule, ConfigUser}
 
 import java.net.URI
-
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
   class DummyConfiguration(usersList: List[ConfigUser], rulesList: List[ConfigRule] = List.empty,
@@ -24,14 +24,14 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
   it("should authenticate using plain password") {
     val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(ConfigUser("foo", None, Some(matchingSecret), None, Set
       .empty))))
-    authenticator.authenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe Symbol("defined")
-    authenticator.authenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe Symbol("empty")
+    authenticator.doAuthenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe Symbol("defined")
+    authenticator.doAuthenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe Symbol("empty")
   }
 
   it("should authenticate using bcrypt password") {
     val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPassword)))
-    authenticator.authenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe Symbol("defined")
-    authenticator.authenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe Symbol("empty")
+    authenticator.doAuthenticate(new SampleProvidedCredentials("foo",matchingSecret)) shouldBe Symbol("defined")
+    authenticator.doAuthenticate(new SampleProvidedCredentials("foo",notMatchingSecret)) shouldBe Symbol("empty")
   }
 
   it("should authenticate using bcrypt password with 2y identifier") {
@@ -40,8 +40,8 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
     val userWithEncryptedPasswordWithPrefix2y = ConfigUser("foo", None, None, Some(encryptedPasswordWithPrefix2y), Set.empty)
 
     val authenticator = new BasicHttpAuthenticator(new DummyConfiguration(List(userWithEncryptedPasswordWithPrefix2y)))
-    authenticator.authenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
-    authenticator.authenticate(new SampleProvidedCredentials("foo", notMatchingSecret)) shouldBe Symbol("empty")
+    authenticator.doAuthenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
+    authenticator.doAuthenticate(new SampleProvidedCredentials("foo", notMatchingSecret)) shouldBe Symbol("empty")
   }
 
   it("should cache hashes") {
@@ -52,10 +52,10 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
         super.computeBCryptHash(receivedSecret, encryptedPassword)
       }
     }
-    authenticator.authenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
+    authenticator.doAuthenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
     hashComputationCount shouldEqual 1
 
-    authenticator.authenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
+    authenticator.doAuthenticate(new SampleProvidedCredentials("foo", matchingSecret)) shouldBe Symbol("defined")
     hashComputationCount shouldEqual 1
   }
 

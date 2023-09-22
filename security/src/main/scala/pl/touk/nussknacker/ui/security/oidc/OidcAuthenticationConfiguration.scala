@@ -87,9 +87,9 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
 object OidcAuthenticationConfiguration {
 
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.readers.EnumerationReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.authenticationConfigPath
-  import net.ceedubs.ficus.readers.EnumerationReader._
 
   def create(config: Config): OidcAuthenticationConfiguration =
     config.as[OidcAuthenticationConfiguration](authenticationConfigPath)

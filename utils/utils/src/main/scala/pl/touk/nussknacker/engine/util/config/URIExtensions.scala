@@ -9,3 +9,4 @@ trait URIExtensions {
     def withTrailingSlash: URI = if (uri.getPath.endsWith("/")) uri else URI.create(uri.toString + "/")
   }
 }
+object URIExtensions extends URIExtensions

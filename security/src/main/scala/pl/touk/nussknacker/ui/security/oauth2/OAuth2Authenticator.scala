@@ -14,9 +14,10 @@ import sttp.client3.SttpBackend
 import java.security.Key
 import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Service[AuthenticatedUser, _])
+class OAuth2Authenticator(service: OAuth2Service[AuthenticatedUser, _])
                          (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
   extends SecurityDirectives.AsyncAuthenticator[AuthenticatedUser] with LazyLogging {
+
   def apply(credentials: Credentials): Future[Option[AuthenticatedUser]] =
     authenticate(credentials)
 
@@ -36,8 +37,10 @@ class OAuth2Authenticator(configuration: OAuth2Configuration, service: OAuth2Ser
 }
 
 object OAuth2Authenticator extends LazyLogging {
-  def apply(configuration: OAuth2Configuration, service: OAuth2Service[AuthenticatedUser, _])(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OAuth2Authenticator =
-    new OAuth2Authenticator(configuration, service)
+  def apply(service: OAuth2Service[AuthenticatedUser, _])
+           (implicit ec: ExecutionContext,
+            sttpBackend: SttpBackend[Future, Any]): OAuth2Authenticator =
+    new OAuth2Authenticator(service)
 }
 
 object OAuth2ErrorHandler {
