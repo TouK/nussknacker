@@ -21,7 +21,6 @@ export function CountsRangesButtons({ children, ranges, onChange, limit = -1 }: 
 
     const visible = useMemo(() => (limit >= 0 ? ranges.slice(0, limit) : ranges), [ranges, limit]);
     const collapsed = useMemo(() => (limit >= 0 ? ranges.slice(limit) : []), [ranges, limit]);
-
     return (
         <>
             {visible.map((range) => (
@@ -30,9 +29,7 @@ export function CountsRangesButtons({ children, ranges, onChange, limit = -1 }: 
                     type="button"
                     title={range.name}
                     onClick={() => changeHandler(range)}
-                    style={{
-                        flex: 1,
-                    }}
+                    style={{ flex: 1 }}
                 >
                     {range.name}
                 </PredefinedRangeButton>
@@ -42,9 +39,7 @@ export function CountsRangesButtons({ children, ranges, onChange, limit = -1 }: 
                 <PredefinedDropdownButton
                     options={collapsed.map((value) => ({ label: value.name, value }))}
                     onRangeSelect={changeHandler}
-                    style={{
-                        flex: 1,
-                    }}
+                    style={{ flex: 1 }}
                     wrapperStyle={{
                         display: "flex",
                         flex: 2,
