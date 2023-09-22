@@ -47,16 +47,16 @@ object ExampleOAuth2ServiceFactory {
 
   def testConfig: OAuth2Configuration =
     OAuth2Configuration(
-      URI.create("classpath:oauth2-users.conf"),
-      URI.create("https://github.com/login/oauth/authorize"),
-      "clientSecret",
-      "clientId",
-      URI.create("https://api.github.com/user"),
-      Some(ProfileFormat.GITHUB),
-      URI.create("https://github.com/login/oauth/access_token"),
-      None,
-      false,
-      None
+      usersFile = URI.create("classpath:oauth2-users.conf"),
+      authorizeUri = URI.create("https://github.com/login/oauth/authorize"),
+      clientSecret = "clientSecret",
+      clientId = "clientId",
+      profileUri = URI.create("https://api.github.com/user"),
+      profileFormat = Some(ProfileFormat.GITHUB),
+      accessTokenUri = URI.create("https://github.com/login/oauth/access_token"),
+      redirectUri = None,
+      implicitGrantEnabled = false,
+      jwt = None
     )
 
   val testRules: List[AuthenticationConfiguration.ConfigRule] = AuthenticationConfiguration.getRules(testConfig.usersFile)

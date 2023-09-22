@@ -1,22 +1,27 @@
 package pl.touk.nussknacker.ui.security.oidc
 
 import cats.data.Validated.Invalid
-import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pdi.jwt.{JwtAlgorithm, JwtBase64, JwtCirce, JwtClaim, JwtHeader}
+import org.scalatest.{Inside, OptionValues}
+import pdi.jwt._
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2JwtDecodeClaimsError, OAuth2JwtDecodeClaimsJsonError, OAuth2JwtDecodeRawError, OAuth2JwtKeyDetermineError}
 import pl.touk.nussknacker.ui.security.oauth2.OpenIdConnectUserInfo
 
 import java.net.URI
-import java.nio.charset.StandardCharsets
-import javax.crypto.spec.SecretKeySpec
 
 class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetailedMessage with OptionValues with Inside {
 
   test("validate jwt format") {
-    val validator = OidcService.createJwtValidator(OidcAuthenticationConfiguration(URI.create("http://foo"), issuer = URI.create("http://foo"), clientId = "foo", clientSecret = None))
+    val validator = OidcService.createJwtValidator(
+      OidcAuthenticationConfiguration(
+        URI.create("http://foo"),
+        issuer = URI.create("http://foo"),
+        clientId = "foo",
+        clientSecret = None,
+      )
+    )
     validator.introspect[OpenIdConnectUserInfo]("") should matchPattern {
       case Invalid(OAuth2JwtDecodeRawError(_, _)) =>
     }
@@ -26,9 +31,9 @@ class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetaile
     inside(validator.introspect[OpenIdConnectUserInfo]("foo.barbar.bazbaz")) {
       case Invalid(err: OAuth2JwtDecodeRawError) =>
         err.msg should not include "barbar"
-        err.msg should include ("ba**ar")
+        err.msg should include("ba**ar")
         err.msg should not include "bazbaz"
-        err.msg should include ("ba**az")
+        err.msg should include("ba**az")
     }
   }
 

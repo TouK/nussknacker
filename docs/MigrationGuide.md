@@ -14,6 +14,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#4583](https://github.com/TouK/nussknacker/pull/4583) `DeploymentManager` has new variants of method `cancel` and `stop`
   taking `DeployomentId` next to `ProcessName`. They will be used with batch processing mechanism (periodic DM) so it is necessary
   to implement it only if your DM will be wrapped by `PeriodicDeploymentManager`
+* [#4685]((https://github.com/TouK/nussknacker/pull/4685)) In `AuthenticationResources` trait it was added two new
+  methods that have to be implemented in the child classes: `def authenticationMethod(): Auth[AuthCredentials, _]` and
+  `def authenticate(authCredentials: AuthCredentials): Future[Option[AuthenticatedUser]]`. The first one tells what
+  authentication method will be used (it's for Tapir-based API purposes) and the latter one is the authentication
+  action itself. The `def authenticate(): Directive1[AuthenticatedUser]` should be treated as deprecated. It's 
+  used in the NU APIs which are still Akka HTTP-based. When we get rid of Akka HTTP, it will be removed.
 
 ### REST API changes
 * [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
@@ -24,9 +30,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Removed backward compatibility for subprocess fields.
 
 ### Other changes
-* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow to test fragments using ad hoc testing.
+* [#4492](https://github.com/TouK/nussknacker/pull/4492) Allow testing fragments using ad-hoc testing method.
   By default, NU enables that feature but if you have some custom `processToolbarConfig` settings then
-  You would like to remove `hidden: { fragment: true }` flag for `type: "test-with-form"`, `type: "test-counts"` and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
+  You would like to remove `hidden: { fragment: true }` flag for `type: "test-with-form"`, `type: "test-counts"` 
+  and `type: "test-hide"` inside `processToolbarConfig -> "test-panel"`.
 
 ## In version 1.11.0
 

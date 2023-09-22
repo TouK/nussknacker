@@ -9,7 +9,7 @@ import { updateNodeCounts } from "./EspNode/element";
 import { GraphPaperContainer } from "./focusable";
 import { applyCellChanges, calcLayout, createPaper, isModelElement } from "./GraphPartialsInTS";
 import styles from "./graphTheme.styl";
-import { Events } from "./types";
+import { Events, GraphProps } from "./types";
 import NodeUtils from "./NodeUtils";
 import { PanZoomPlugin } from "./PanZoomPlugin";
 import { RangeSelectedEventData, RangeSelectPlugin, SelectionMode } from "./RangeSelectPlugin";
@@ -22,7 +22,6 @@ import { isEdgeEditable } from "../../common/EdgeUtils";
 import { NodeId, NodeType, Process, ProcessDefinitionData } from "../../types";
 import { Layout, NodePosition, Position } from "../../actions/nk";
 import { UserSettings } from "../../reducers/userSettings";
-import { GraphProps } from "./types";
 import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
@@ -245,7 +244,7 @@ export class Graph extends React.Component<Props> {
             }
         };
 
-        const selectNode = (cellView, evt) => {
+        const selectNode = (cellView: dia.CellView, evt: dia.Event) => {
             if (this.props.nodeSelectionEnabled) {
                 const nodeDataId = cellView.model.attributes.nodeData?.id;
                 if (!nodeDataId) {
