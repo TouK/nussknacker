@@ -172,29 +172,18 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
   override def invokeCustomAction(
       actionRequest: CustomActionRequest,
       canonicalProcess: CanonicalProcess
-  ): Future[Either[CustomActionError, CustomActionResult]] =
-    Future.successful(
-      customActions
-        .find(_.name.equals(actionRequest.name))
-        .map(customAction => {
-          val processName = actionRequest.processVersion.processName
-          val statusDetails =
-            memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
+  ): Future[CustomActionResult] = {
+    val processName = actionRequest.processVersion.processName
+    val statusOpt = customActionStatusMapping
+      .collectFirst { case (customAction, status) if customAction.name == actionRequest.name => status }
 
-          if (customAction.allowedStateStatusNames.contains(statusDetails.status.name)) {
-            customActionStatusMapping
-              .get(customAction)
-              .map { status =>
-                asyncChangeState(processName, status)
-                Right(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
-              }
-              .getOrElse(Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
-          } else {
-            Left(CustomActionInvalidStatus(actionRequest, statusDetails.status.name))
-          }
-        })
-        .getOrElse(Left(CustomActionNotImplemented(actionRequest)))
-    )
+    statusOpt match {
+      case Some(newStatus) =>
+        asyncChangeState(processName, newStatus)
+        Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
+      case _ => ???
+    }
+  }
 
   override def close(): Unit = {}
 

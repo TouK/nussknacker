@@ -28,8 +28,14 @@ object NuDesignerErrorToHttp extends LazyLogging with FailFastCirceSupport {
       logger.debug(s"Illegal argument: ${ex.getMessage}", ex)
       HttpResponse(status = StatusCodes.BadRequest, entity = ex.getMessage)
     case ex =>
-      logger.error(s"Unknown error: ${ex.getMessage}", ex)
-      HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)
+      ex.getCause match {
+        case ni: NotImplementedError =>
+          logger.error(s"Not implemented: ${ni.getMessage}", ni)
+          HttpResponse(status = StatusCodes.NotImplemented, entity = ni.getMessage)
+        case _ =>
+          logger.error(s"Unknown error: ${ex.getMessage}", ex)
+          HttpResponse(status = StatusCodes.InternalServerError, entity = ex.getMessage)
+      }
   }
 
   def toResponseEither[T: Encoder](either: Either[NuDesignerError, T]): ToResponseMarshallable = either match {

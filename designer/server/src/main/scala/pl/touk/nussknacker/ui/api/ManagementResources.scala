@@ -12,7 +12,6 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{ComponentId, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.graph.ScenarioGraph
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -26,11 +25,7 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessUnmarshallingError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.ProcessService
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
-import pl.touk.nussknacker.ui.process.deployment.{
-  CustomActionInvokerService,
-  DeploymentManagerDispatcher,
-  DeploymentService
-}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
@@ -120,7 +115,6 @@ class ManagementResources(
     deploymentCommentSettings: Option[DeploymentCommentSettings],
     deploymentService: DeploymentService,
     dispatcher: DeploymentManagerDispatcher,
-    customActionInvokerService: CustomActionInvokerService,
     metricRegistry: MetricRegistry,
     scenarioTestServices: ProcessingTypeDataProvider[ScenarioTestService, _],
     typeToConfig: ProcessingTypeDataProvider[ModelData, _]
@@ -317,21 +311,9 @@ class ManagementResources(
             (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
               val params = req.params.getOrElse(Map.empty)
               complete {
-                customActionInvokerService
+                deploymentService
                   .invokeCustomAction(req.actionName, process, params)
-                  .flatMap {
-                    case res @ Right(_) =>
-                      toHttpResponse(CustomActionResponse(res))(StatusCodes.OK)
-                    case res @ Left(err) =>
-                      val response = toHttpResponse(CustomActionResponse(res)) _
-                      err match {
-                        case _: CustomActionFailure        => response(StatusCodes.InternalServerError)
-                        case _: CustomActionInvalidStatus  => response(StatusCodes.Forbidden)
-                        case _: CustomActionForbidden      => response(StatusCodes.Forbidden)
-                        case _: CustomActionNotImplemented => response(StatusCodes.NotImplemented)
-                        case _: CustomActionNonExisting    => response(StatusCodes.NotFound)
-                      }
-                  }
+                  .flatMap(actionResult => toHttpResponse(CustomActionResponse(actionResult))(StatusCodes.OK))
               }
             }
           }
