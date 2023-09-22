@@ -123,8 +123,6 @@ trait NuResourcesTest
     ProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(testConfig))
   }
 
-  protected val customActionInvokerService = new CustomActionInvokerServiceImpl(futureFetchingProcessRepository, dmDispatcher, deploymentService())
-
   protected val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
 
   protected val processService: DBProcessService = createDBProcessService(deploymentService())
@@ -166,7 +164,6 @@ trait NuResourcesTest
     processRepository = futureFetchingProcessRepository,
     deploymentService = deploymentService(deploymentCommentSettings),
     dispatcher = dmDispatcher,
-    customActionInvokerService = customActionInvokerService,
     metricRegistry = new MetricRegistry,
     scenarioTestService = scenarioTestService,
     typeToConfig = typeToConfig.mapValues(_.modelData)

@@ -4,7 +4,6 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.{HttpResponse, MessageEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
@@ -18,13 +17,12 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
-import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponseTryPF
 import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
-import pl.touk.nussknacker.ui.process.deployment.{CustomActionInvokerService, DeploymentManagerDispatcher, DeploymentService}
+import pl.touk.nussknacker.ui.process.deployment.{DeploymentManagerDispatcher, DeploymentService}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
@@ -77,7 +75,6 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository[Future],
                           deploymentService: DeploymentService,
                           dispatcher: DeploymentManagerDispatcher,
-                          customActionInvokerService: CustomActionInvokerService,
                           metricRegistry: MetricRegistry,
                           scenarioTestService: ScenarioTestService,
                           typeToConfig: ProcessingTypeDataProvider[ModelData, _])
@@ -227,8 +224,8 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
             (post & processId(processName) & entity(as[CustomActionRequest])) { (process, req) =>
               val params = req.params.getOrElse(Map.empty)
               complete {
-                customActionInvokerService
-                  .invokeCustomAction(req.actionName, process, params)
+                deploymentService
+                  .invokeCustomAction(process, req.actionName, params)
                   .flatMap(actionResult => toHttpResponse(CustomActionResponse(actionResult))(StatusCodes.OK))
                   .recover(EspErrorToHttp.errorToHttp)
               }

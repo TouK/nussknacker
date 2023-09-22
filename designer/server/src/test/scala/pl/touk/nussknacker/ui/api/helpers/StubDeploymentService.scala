@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import pl.touk.nussknacker.engine.api.deployment.{DataFreshnessPolicy, DeployedScenarioData, ProcessAction, ProcessActionId, ProcessState}
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.{CustomActionRequest, CustomActionResult, DataFreshnessPolicy, DeployedScenarioData, ProcessAction, ProcessActionId, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, ProcessName}
-import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
+import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
@@ -26,6 +27,10 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
 
   override def cancelProcess(id: ProcessIdWithName, comment: Option[String])
                             (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Unit] = Future.successful(())
+
+  override def invokeCustomAction(id: ProcessIdWithName, actionName: String, params: Map[String, String])
+                                 (implicit user: LoggedUser, ec: ExecutionContext): Future[CustomActionResult] =
+    Future.successful(CustomActionResult(req = CustomActionRequest(actionName, ProcessVersion.empty, User(user.id, user.username), params), msg = "stub response"))
 
   override def getDeployedScenarios(processingType: ProcessingType)(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] =
     Future.successful(List.empty)

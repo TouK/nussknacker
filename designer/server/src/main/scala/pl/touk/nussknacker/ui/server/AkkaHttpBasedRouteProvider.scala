@@ -144,11 +144,6 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
 
       val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
-      val customActionInvokerService = new CustomActionInvokerServiceImpl(
-        futureProcessRepository,
-        dmDispatcher,
-        deploymentService
-      )
       val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
       val processService = new DBProcessService(deploymentService, newProcessPreparer,
         processCategoryService, processResolving, dbioRunner, futureProcessRepository, actionRepository,
@@ -211,7 +206,6 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
             futureProcessRepository,
             deploymentService,
             dmDispatcher,
-            customActionInvokerService,
             metricsRegistry,
             scenarioTestService,
             typeToConfig.mapValues(_.modelData)

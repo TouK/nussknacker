@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy, StateActionsTypes}
-import pl.touk.nussknacker.ui.BadRequestError
+import pl.touk.nussknacker.ui.{BadRequestError, IllegalOperationError, NotFoundError}
 import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
@@ -144,7 +144,7 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     for {
       processDetailsOpt <- dbioRunner.run(processRepository.fetchLatestProcessDetailsForProcessId[PS](processId))
       processDetails <- dbioRunner.run(existsOrFail(processDetailsOpt, ProcessNotFoundError(processId.value.toString)))
-      _ = checkIfCanPerformActionOnProcess(actionType, processDetails)
+      _ = checkIfCanPerformActionOnProcess(actionType.toString, processDetails)
       versionOnWhichActionIsDone = getVersionOnWhichActionIsDone(processDetails)
       buildInfoProcessIngType = getBuildInfoProcessingType(processDetails)
       // We wrap only in progress action adding to avoid long transactions and potential deadlocks
@@ -164,23 +164,23 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
         implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
         getProcessState(processDetails, inProgressActionTypes)
       }
-      _ = checkIfCanPerformActionInState(actionType, processDetails, processState)
+      _ = checkIfCanPerformActionInState(actionType.toString, processDetails, processState)
       actionId <- actionRepository.addInProgressAction(processDetails.processId, actionType, versionOnWhichActionIsDone, buildInfoProcessIngType)
     } yield actionId)
   }
 
-  private def checkIfCanPerformActionOnProcess[PS: ProcessShapeFetchStrategy](actionType: ProcessActionType, processDetails: BaseProcessDetails[PS]): Unit = {
+  private def checkIfCanPerformActionOnProcess[PS: ProcessShapeFetchStrategy](actionName: String, processDetails: BaseProcessDetails[PS]): Unit = {
     if (processDetails.isArchived) {
-      throw ProcessIllegalAction.archived(actionType.toString, processDetails.idWithName)
+      throw ProcessIllegalAction.archived(actionName, processDetails.idWithName)
     } else if (processDetails.isFragment) {
-      throw ProcessIllegalAction.fragment(actionType.toString, processDetails.idWithName)
+      throw ProcessIllegalAction.fragment(actionName, processDetails.idWithName)
     }
   }
 
-  private def checkIfCanPerformActionInState[PS: ProcessShapeFetchStrategy](actionType: ProcessActionType, processDetails: BaseProcessDetails[PS], ps: ProcessState): Unit = {
-    if (!ps.allowedActions.contains(actionType)) {
-      logger.debug(s"Action: $actionType on process: ${processDetails.name} not allowed in ${ps.status} state")
-      throw ProcessIllegalAction(actionType.toString, processDetails.idWithName, ps)
+  private def checkIfCanPerformActionInState[PS: ProcessShapeFetchStrategy](actionName: String, processDetails: BaseProcessDetails[PS], ps: ProcessState): Unit = {
+    if (!ps.allowedActions.map(_.toString).contains(actionName)) {
+      logger.debug(s"Action: $actionName on process: ${processDetails.name} not allowed in ${ps.status} state")
+      throw ProcessIllegalAction(actionName, processDetails.idWithName, ps)
     }
   }
 
@@ -397,6 +397,32 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     Await.result(dbioRunner.run(actionRepository.deleteInProgressActions()), 10 seconds)
   }
 
+  override def invokeCustomAction(processIdWithName: ProcessIdWithName, actionName: String, params: Map[String, String])
+                                 (implicit user: LoggedUser, ec: ExecutionContext): Future[CustomActionResult] = {
+    implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
+    dbioRunner.run(
+      for {
+        processDetailsOpt <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processIdWithName.id)
+        processDetails <- existsOrFail(processDetailsOpt, ProcessNotFoundError(processIdWithName.id.value.toString))
+        _ = checkIfCanPerformActionOnProcess(actionName, processDetails)
+        processState <- DBIOAction.from(getProcessState(processDetails))
+        manager = dispatcher.deploymentManagerUnsafe(processDetails.processingType)
+        actionReq = CustomActionRequest(actionName, processDetails.toEngineProcessVersion, user.toManagerUser, params)
+        customAction = manager.customActions.find(_.name == actionReq.name)
+        invokeActionResult <- customAction match {
+          case Some(customAction) if customAction.allowedStateStatusNames.contains(processState.status.name) =>
+            DBIOAction.from(manager.invokeCustomAction(actionReq, processDetails.json))
+          case Some(_) =>
+            throw ProcessIllegalAction(actionReq.name, processIdWithName, processState)
+          case None =>
+            throw new CustomActionNonExisting(actionReq)
+        }
+      } yield invokeActionResult
+    )
+  }
 }
 
 private class FragmentStateException extends Exception("Fragment doesn't have state.") with BadRequestError
+
+private class CustomActionNonExisting(request: CustomActionRequest)
+  extends Exception(s"""Action "${request.name}" does not exist""") with NotFoundError
