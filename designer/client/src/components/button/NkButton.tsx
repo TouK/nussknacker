@@ -1,10 +1,10 @@
 import React from "react";
 import { ButtonProps, ButtonWithFocus } from "../withFocus";
 import { styled } from "@mui/material";
-import { espButtonBaseStyle } from "./EspStyle";
+import { buttonBaseStyle } from "./ButtonBaseStyle";
 
 const NkButtonStyled = styled(ButtonWithFocus)`
-    ${espButtonBaseStyle};
+    ${buttonBaseStyle};
     width: 180px;
     height: 44px;
     font-weight: 600;

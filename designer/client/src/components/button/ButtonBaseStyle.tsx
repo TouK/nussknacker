@@ -1,7 +1,7 @@
 import { variables } from "../../stylesheets/variables";
 import { css } from "@mui/material";
 
-export const espButtonBaseStyle = css({
+export const buttonBaseStyle = css({
     border: `1px solid ${variables.buttonBorderColor}`,
     borderRadius: 0,
     backgroundColor: `${variables.buttonBkgColor}`,
