@@ -16,6 +16,7 @@ exports[`CountsRangesButtons tests should render buttons 1`] = `
   font-size: 12px;
   padding: 5px;
   font-weight: 400;
+  margin: 10px;
 }
 
 .emotion-0:disabled,
@@ -40,11 +41,11 @@ exports[`CountsRangesButtons tests should render buttons 1`] = `
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  min-width: 80px;
   width: 100%;
   font-size: 12px;
   padding: 5px;
   font-weight: 400;
+  margin: 10px;
 }
 
 .emotion-2:disabled,

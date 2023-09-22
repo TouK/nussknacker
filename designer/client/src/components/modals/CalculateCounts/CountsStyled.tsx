@@ -15,8 +15,8 @@ export const PredefinedRangeButton = styled(ButtonWithFocus)`
 export const PredefinedDropdownButton = styled(DropdownButton)`
     ${espButtonBaseStyle};
     width: 100%;
-    font-size: 12px !important;
-    padding: 5px !important;
+    font-size: 12px;
+    padding: 5px;
     font-weight: 400;
     margin: 10px;
 `;
