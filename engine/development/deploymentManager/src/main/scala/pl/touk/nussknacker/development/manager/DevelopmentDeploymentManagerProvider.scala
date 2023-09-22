@@ -132,7 +132,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
 
   override def customActions: List[CustomAction] = customActionStatusMapping.keys.toList
 
-  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[Future[CustomActionResult]] =
+  override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[CustomActionResult] =
     customActions
       .find(_.name.equals(actionRequest.name))
       .map(customAction => {
@@ -144,7 +144,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem)
             .get(customAction)
             .map { status =>
               asyncChangeState(processName, status)
-              Future.successful(Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}")))
+              Future.successful(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
             }
             .getOrElse(Future.failed(CustomActionInvalidStatus(actionRequest, statusDetails.status.name)))
         } else {

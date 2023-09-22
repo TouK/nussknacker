@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait CustomActionInvokerService {
 
   def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
-                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[CustomActionResult]]
+                        (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[CustomActionResult]
 
 }
 
@@ -27,7 +27,7 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
                                      dispatcher: DeploymentManagerDispatcher,
                                      processStateService: ProcessStateService) extends CustomActionInvokerService {
   override def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
-                                 (implicit user: LoggedUser, ec: ExecutionContext): Future[Future[CustomActionResult]] = {
+                                 (implicit user: LoggedUser, ec: ExecutionContext): Future[CustomActionResult] = {
 
     def createCustomAction(process: BaseProcessDetails[_]) =
       engine.api.deployment.CustomActionRequest(
@@ -63,6 +63,6 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
     }
   }
 
-  private def actionError(error: CustomActionError): Future[Future[CustomActionResult]] = Future.failed(error)
+  private def actionError(error: CustomActionError): Future[CustomActionResult] = Future.failed(error)
 
 }
