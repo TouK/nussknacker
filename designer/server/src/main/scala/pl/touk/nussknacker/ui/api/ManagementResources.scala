@@ -247,17 +247,14 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
               val params = req.params.getOrElse(Map.empty)
               complete {
                 customActionInvokerService
-                  .invokeCustomAction(req.actionName, process, params).map(_ => ())
-                  .andThen {
-                    case Success(_) => HttpResponse(status = StatusCodes.OK)
-                    case Failure(err) => err match {
-                      case _: CustomActionFailure => HttpResponse(status = StatusCodes.InternalServerError)
-                      case _: CustomActionInvalidStatus => HttpResponse(status = StatusCodes.Forbidden)
-                      case _: CustomActionForbidden => HttpResponse(status = StatusCodes.Forbidden)
-                      case _: CustomActionNotImplemented => HttpResponse(status = StatusCodes.NotImplemented)
-                      case _: CustomActionNonExisting => HttpResponse(status = StatusCodes.NotFound)
-                      case other => errorToHttp(other)
-                    }
+                  .invokeCustomAction(req.actionName, process, params)
+                  .map(_ => HttpResponse(status = StatusCodes.OK))
+                  .recover {
+                    case _: CustomActionFailure => HttpResponse(status = StatusCodes.InternalServerError)
+                    case _: CustomActionInvalidStatus => HttpResponse(status = StatusCodes.Forbidden)
+                    case _: CustomActionForbidden => HttpResponse(status = StatusCodes.Forbidden)
+                    case _: CustomActionNotImplemented => HttpResponse(status = StatusCodes.NotImplemented)
+                    case _: CustomActionNonExisting => HttpResponse(status = StatusCodes.NotFound)
                   }
               }
             }
