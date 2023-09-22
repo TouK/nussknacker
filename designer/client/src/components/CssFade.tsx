@@ -3,7 +3,7 @@ import React, { ReactNode, useCallback, useMemo } from "react";
 import { CSSTransition } from "react-transition-group";
 import { styled } from "@mui/material";
 
-const CSSTransactionStyled = styled(CSSTransition)`
+const CSSFadeStyled = styled(CSSTransition)`
     opacity: inherit;
     .group {
         position: relative;
@@ -47,5 +47,5 @@ export function CssFade(props: { key: string; children: ReactNode }) {
 
     const timeout = useMemo(() => ({ enter: 500, appear: 500, exit: 500 }), []);
 
-    return <CSSTransactionStyled timeout={timeout} addEndListener={addEndListener} {...props} />;
+    return <CSSFadeStyled timeout={timeout} addEndListener={addEndListener} {...props} />;
 }
