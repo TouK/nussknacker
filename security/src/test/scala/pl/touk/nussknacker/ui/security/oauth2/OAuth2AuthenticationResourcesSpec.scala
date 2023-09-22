@@ -8,6 +8,7 @@ import io.circe.Json
 import org.scalatest.EitherValues
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.ui.security.api.FrontendStrategySettings
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
 import sttp.client3.Response
 import sttp.client3.testing.SttpBackendStub
@@ -102,4 +103,26 @@ class OAuth2AuthenticationResourcesSpec
       header[`Set-Cookie`] shouldBe Some(`Set-Cookie`(HttpCookie(name = cookieConfig.name, value = accessToken, httpOnly = true, secure = true, path = cookieConfig.path)))
     }
   }
+
+  it("should return authentication settings") {
+    Get(s"/authentication/oauth2/settings") ~> routes(authenticationResources()) ~> check {
+      status shouldBe StatusCodes.OK
+      val response = responseAs[Json]
+      response.hcursor.downField("authorizeUrl").as[String].value shouldBe defaultConfig.authorizeUri.toString + "?client_id=" + defaultConfig.clientId
+      response.hcursor.downField("jwtIdTokenNonceVerificationRequired").as[Boolean].value shouldBe false
+      response.hcursor.downField("implicitGrantEnabled").as[Boolean].value shouldBe false
+      response.hcursor.downField("anonymousAccessAllowed").as[Boolean].value shouldBe false
+      response.hcursor.downField("strategy").as[String].value shouldBe "OAuth2"
+    }
+  }
+
+  it("should return overriden authentication settings") {
+    val frontendSettings = FrontendStrategySettings.Remote("http://some.remote.url")
+    Get(s"/authentication/oauth2/settings") ~> routes(authenticationResources(defaultConfig.copy(overrideFrontendAuthenticationStrategy = Some(frontendSettings)))) ~> check {
+      status shouldBe StatusCodes.OK
+      val response = responseAs[Json]
+      response.hcursor.downField("moduleUrl").as[String].value shouldBe frontendSettings.moduleUrl
+    }
+  }
+
 }

@@ -1,7 +1,10 @@
 package pl.touk.nussknacker.ui.security.oidc
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.readers.ValueReader
+import pl.touk.nussknacker.engine.util.config.FicusReaders.forDecoder
 import pl.touk.nussknacker.engine.util.config.URIExtensions
+import pl.touk.nussknacker.ui.security.api.FrontendStrategySettings
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.OIDC
 import pl.touk.nussknacker.ui.security.oauth2.UsernameClaim.UsernameClaim
 import pl.touk.nussknacker.ui.security.oauth2.{JwtConfiguration, OAuth2Configuration, TokenCookieConfig}
@@ -33,6 +36,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
                                            tokenCookie: Option[TokenCookieConfig] = None,
                                            usernameClaim: Option[UsernameClaim] = None,
                                            accessTokenIsJwt: Boolean = false,
+                                           overrideFrontendAuthenticationStrategy: Option[FrontendStrategySettings] = None,
                                           ) extends URIExtensions {
 
   lazy val oAuth2Configuration: OAuth2Configuration = OAuth2Configuration(
@@ -65,6 +69,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
     accessTokenRequestContentType = MediaType.ApplicationXWwwFormUrlencoded.toString(),
     anonymousUserRole = anonymousUserRole,
     tokenCookie = tokenCookie,
+    overrideFrontendAuthenticationStrategy = overrideFrontendAuthenticationStrategy,
     usernameClaim = usernameClaim
   )
 
@@ -90,6 +95,7 @@ object OidcAuthenticationConfiguration {
   import net.ceedubs.ficus.readers.EnumerationReader._
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.authenticationConfigPath
+  private implicit val valueReader: ValueReader[FrontendStrategySettings] = forDecoder
 
   def create(config: Config): OidcAuthenticationConfiguration =
     config.as[OidcAuthenticationConfiguration](authenticationConfigPath)
