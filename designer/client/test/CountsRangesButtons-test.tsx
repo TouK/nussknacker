@@ -25,7 +25,7 @@ describe("CountsRangesButtons tests", () => {
         changeFn.mockReset();
     });
 
-    it.only("should render buttons", () => {
+    it("should render buttons", () => {
         const { container } = render(<CountsRangesButtons ranges={ranges} onChange={changeFn} limit={2} />);
         expect(container).toMatchSnapshot();
     });
