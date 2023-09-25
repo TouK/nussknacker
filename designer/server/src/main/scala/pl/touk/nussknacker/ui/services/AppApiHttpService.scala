@@ -105,7 +105,7 @@ class AppApiHttpService(config: Config,
       }
   }
 
-  expose(when = true) { // todo: fixme
+  expose(when = shouldExposeConfig) {
     appApiEndpoints.serverConfigEndpoint
       .serverSecurityLogic(authorizeAdminUser[Unit])
       .serverLogic { _ =>

@@ -2,6 +2,8 @@ package pl.touk.nussknacker.ui.api
 
 import derevo.circe.{decoder, encoder}
 import derevo.derive
+import enumeratum.EnumEntry.Uppercase
+import enumeratum.{EnumEntry, _}
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, Json, Codec => CirceCodec}
 import pl.touk.nussknacker.engine.api.CirceUtil.HCursorExt
@@ -11,6 +13,7 @@ import sttp.model.StatusCode.{InternalServerError, NoContent, Ok}
 import sttp.tapir.EndpointIO.Example
 import sttp.tapir.EndpointInput.Auth
 import sttp.tapir._
+import sttp.tapir.codec.enumeratum._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 
@@ -215,21 +218,38 @@ object AppApiEndpoints {
   object Dtos {
 
     @derive(encoder, decoder, schema)
-    final case class HealthCheckProcessSuccessResponseDto private(status: String,
+    final case class HealthCheckProcessSuccessResponseDto private(status: HealthCheckProcessSuccessResponseDto.Status,
                                                                   message: Option[String],
                                                                   processes: Option[Set[String]])
     object HealthCheckProcessSuccessResponseDto {
-      def apply() = new HealthCheckProcessSuccessResponseDto(status = "OK", message = None, processes = None)
+
+      sealed trait Status extends EnumEntry with Uppercase
+      object Status extends Enum[Status] with CirceEnum[Status] {
+        case object Ok extends Status
+
+        override def values: IndexedSeq[Status] = findValues
+      }
+
+
+      def apply() = new HealthCheckProcessSuccessResponseDto(status = Status.Ok, message = None, processes = None)
     }
 
     @derive(encoder, decoder, schema)
-    final case class HealthCheckProcessErrorResponseDto private(status: String,
+    final case class HealthCheckProcessErrorResponseDto private(status: HealthCheckProcessErrorResponseDto.Status,
                                                                 message: Option[String],
                                                                 processes: Option[Set[String]])
     object HealthCheckProcessErrorResponseDto {
+
+      sealed trait Status extends EnumEntry with Uppercase
+      object Status extends Enum[Status] with CirceEnum[Status] {
+        case object Error extends Status
+
+        override def values: IndexedSeq[Status] = findValues
+      }
+
       def apply(message: Option[String],
                 processes: Option[Set[String]]) =
-        new HealthCheckProcessErrorResponseDto(status = "ERROR", message, processes)
+        new HealthCheckProcessErrorResponseDto(status = Status.Error, message, processes)
     }
 
     @derive(schema)
