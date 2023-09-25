@@ -21,7 +21,7 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
                 <div className="node-label">
                     <NodeTip
                         title={"Variables in test case"}
-                        icon={<InfoIcon sx={{ color: variables.alert.infoColor, alignSelf: "center" }} />}
+                        icon={<InfoIcon sx={{ color: variables.infoColor, alignSelf: "center" }} />}
                     />
                 </div>
             </div>

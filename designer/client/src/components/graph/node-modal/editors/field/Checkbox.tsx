@@ -1,5 +1,5 @@
 import React from "react";
-import { InputWithFocus } from "../../../../withFocus";
+import { NodeInput } from "../../../../withFocus";
 import { LabeledInputProps } from "./LabeledInput";
 
 export interface CheckboxProps extends Pick<LabeledInputProps, "children" | "autoFocus" | "isMarked" | "onChange" | "readOnly"> {
@@ -14,7 +14,7 @@ export default function Checkbox(props: CheckboxProps): JSX.Element {
         <div className="node-row">
             {children}
             <div className={`node-value${isMarked ? " marked" : ""}${readOnly ? " read-only " : ""}`}>
-                <InputWithFocus autoFocus={autoFocus} type="checkbox" checked={!!value} onChange={onChange} disabled={readOnly} />
+                <NodeInput autoFocus={autoFocus} type="checkbox" checked={!!value} onChange={onChange} disabled={readOnly} />
             </div>
         </div>
     );

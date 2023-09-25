@@ -24,7 +24,7 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
                 <div className="node-label">
                     <NodeTip
                         title={"Value evaluated in test case"}
-                        icon={<InfoIcon sx={{ color: variables.alert.infoColor, alignSelf: "center" }} />}
+                        icon={<InfoIcon sx={{ color: variables.infoColor, alignSelf: "center" }} />}
                     />
                     {testValue.pretty ? <span className={showIconClass} onClick={() => toggleTestResults((s) => !s)} /> : null}
                 </div>

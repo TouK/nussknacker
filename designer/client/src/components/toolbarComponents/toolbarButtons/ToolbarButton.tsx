@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
-import { InputWithFocus } from "../../withFocus";
+import { NodeInput } from "../../withFocus";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { css, cx } from "@emotion/css";
 import { variables } from "../../../stylesheets/variables";
@@ -71,7 +71,7 @@ export function ToolbarButton({ onDrop, title, className, disabled, name, icon, 
                 {({ getRootProps, getInputProps }) => (
                     <>
                         <div {...getRootProps(buttonProps)} />
-                        <InputWithFocus {...getInputProps()} />
+                        <NodeInput {...getInputProps()} />
                     </>
                 )}
             </Dropzone>

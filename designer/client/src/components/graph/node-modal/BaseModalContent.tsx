@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import React, { PropsWithChildren } from "react";
 import { UnknownFunction } from "../../../types/common";
-import { InputWithFocus } from "../../withFocus";
+import { NodeInput } from "../../withFocus";
 import NodeErrors from "./NodeErrors";
 import { EdgeKind, NodeValidationError } from "../../../types";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";
@@ -38,13 +38,13 @@ export default function BaseModalContent(props: PropsWithChildren<Props>): JSX.E
                 <div className="node-row">
                     <div className="node-label">From</div>
                     <div className="node-value">
-                        <InputWithFocus readOnly={true} type="text" className="node-input" value={edge.from} />
+                        <NodeInput readOnly={true} type="text" value={edge.from} />
                     </div>
                 </div>
                 <div className="node-row">
                     <div className="node-label">To</div>
                     <div className="node-value">
-                        <InputWithFocus readOnly={true} type="text" className="node-input" value={edge.to} />
+                        <NodeInput readOnly={true} type="text" value={edge.to} />
                     </div>
                 </div>
                 <div className="node-row">
