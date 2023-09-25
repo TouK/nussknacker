@@ -148,10 +148,13 @@ export class PanZoomPlugin {
     };
 
     private initPinchZooming(paper: dia.Paper) {
+        let lastScale = 1;
+
         const hammer = new Hammer(paper.el);
         hammer.get("pinch").set({ enable: true });
 
         hammer.on("pinchstart", () => {
+            this.paper.setInteractivity(false);
             this.instance.setZoomScaleSensitivity(0.01);
         });
 
@@ -159,12 +162,14 @@ export class PanZoomPlugin {
             this.instance.setZoomScaleSensitivity(0.4);
         });
 
-        hammer.on("pinchin", () => {
-            this.instance.zoomOut();
-        });
+        hammer.on("pinchin pinchout", (e) => {
+            if (e.scale < lastScale) {
+                this.instance.zoomIn();
+            } else if (e.scale > lastScale) {
+                this.instance.zoomOut();
+            }
 
-        hammer.on("pinchout", () => {
-            this.instance.zoomIn();
+            lastScale = e.scale;
         });
     }
 
