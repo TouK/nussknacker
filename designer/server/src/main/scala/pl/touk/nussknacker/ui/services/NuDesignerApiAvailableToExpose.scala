@@ -6,7 +6,7 @@ import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import sttp.apispec.openapi.circe.yaml.RichOpenAPI
 import sttp.tapir.EndpointInput.Auth
-import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
+import sttp.tapir.docs.openapi.{OpenAPIDocsInterpreter, OpenAPIDocsOptions}
 import sttp.tapir.{Endpoint, auth}
 
 import scala.jdk.CollectionConverters._
@@ -17,9 +17,12 @@ object NuDesignerApiAvailableToExpose {
 
   val name = "Nussknacker Designer API"
 
+  val openAPIDocsOptions: OpenAPIDocsOptions = OpenAPIDocsOptions.default
+    .copy(markOptionsAsNullable = true)
+
   def generateOpenApiYaml: String = {
     val endpoints = findApiEndpointsClasses().flatMap(findEndpointsInClass)
-    val docs = OpenAPIDocsInterpreter().toOpenAPI(
+    val docs = OpenAPIDocsInterpreter(openAPIDocsOptions).toOpenAPI(
       es = endpoints,
       title = NuDesignerApiAvailableToExpose.name,
       version = ""

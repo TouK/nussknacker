@@ -11,9 +11,8 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.HealthCheckProcessSuccessResponseDto
-import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.api.AppApiEndpoints
+import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
@@ -43,7 +42,7 @@ class AppApiHttpService(config: Config,
   expose {
     appApiEndpoints.appHealthCheckEndpoint
       .serverLogicSuccess { _ =>
-        Future.successful(HealthCheckProcessSuccessResponseDto)
+        Future.successful(HealthCheckProcessSuccessResponseDto())
       }
   }
 
@@ -55,7 +54,7 @@ class AppApiHttpService(config: Config,
           problemStateByProcessName
             .map { set =>
               if (set.isEmpty) {
-                success(HealthCheckProcessSuccessResponseDto)
+                success(HealthCheckProcessSuccessResponseDto())
               } else {
                 logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
                 logger.debug(s"Scenarios with status PROBLEM: $set")
@@ -83,7 +82,7 @@ class AppApiHttpService(config: Config,
         _ =>
           processesWithValidationErrors.map { processes =>
             if (processes.isEmpty) {
-              success(HealthCheckProcessSuccessResponseDto)
+              success(HealthCheckProcessSuccessResponseDto())
             } else {
               businessError(HealthCheckProcessErrorResponseDto(
                 message = Some("Scenarios with validation errors"),
@@ -101,12 +100,12 @@ class AppApiHttpService(config: Config,
           import net.ceedubs.ficus.Ficus._
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
           val modelDataInfo: Map[ProcessingType, Map[String, String]] = modelData.all.mapValuesNow(_.configCreator.buildInfo())
-          BuildInfoDto(BuildInfo.name, BuildInfo.gitCommit, BuildInfo.buildTime, BuildInfo.version, modelDataInfo, configuredBuildInfo)
+          BuildInfoDto(BuildInfo.name, BuildInfo.gitCommit, BuildInfo.buildTime, BuildInfo.version, modelDataInfo, configuredBuildInfo.toSeq: _*)
         }
       }
   }
 
-  expose(when = shouldExposeConfig) {
+  expose(when = true) { // todo: fixme
     appApiEndpoints.serverConfigEndpoint
       .serverSecurityLogic(authorizeAdminUser[Unit])
       .serverLogic { _ =>
@@ -115,7 +114,7 @@ class AppApiHttpService(config: Config,
             val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
             configJson match {
               case Right(json) =>
-                success(ServerConfigInfoDto(json))
+                success(ServerConfigInfoDto())
               case Left(errorMessage) =>
                 logger.error(s"Cannot create JSON from the Nussknacker configuration. Error: $errorMessage")
                 throw new Exception("Cannot prepare configuration")

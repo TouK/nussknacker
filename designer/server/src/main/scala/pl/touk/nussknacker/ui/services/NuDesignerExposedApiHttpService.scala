@@ -16,7 +16,8 @@ class NuDesignerExposedApiHttpService(appApiHttpService: AppApiHttpService) {
       swaggerUIOptions = SwaggerUIOptions.default.copy(
         pathPrefix = "api" :: "docs" :: Nil,
         yamlName = "nu-designer-openapi.yaml"
-      )
+      ),
+      openAPIInterpreterOptions = NuDesignerApiAvailableToExpose.openAPIDocsOptions
     ).fromEndpoints(
       endpointDefinitions,
       NuDesignerApiAvailableToExpose.name,
