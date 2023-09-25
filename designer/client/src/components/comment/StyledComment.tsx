@@ -1,5 +1,5 @@
 import { styled } from "@mui/material";
-import { NkButton } from "../NkButton";
+import { NkButton } from "../button/NkButton";
 import { variables } from "../../stylesheets/variables";
 
 export const ProcessCommentsWrapper = styled("div")`
@@ -10,35 +10,13 @@ export const ProcessCommentsList = styled("div")`
     font-size: 10px;
     margin: 15px 0;
     padding: 0;
-    p {
-        font-size: 12px;
-    }
-    .header {
-        width: 100%;
-        span {
-            color: ${variables.commentHeaderColor};
-            &.date {
-                color: ${variables.commentHeaderColor};
-                font-style: italic;
-            }
-        }
-        p {
-            font-style: italic;
-            color: ${variables.panelTitleTextColor};
-        }
-        .footer {
-            font-style: italic;
-            p {
-                margin-bottom: 0;
-            }
-        }
-        .remove {
-            float: right;
-            &:hover {
-                cursor: pointer;
-                opacity: 0.5;
-            }
-        }
+`;
+
+export const RemoveButton = styled("span")`
+    float: right;
+    &:hover {
+        cursor: pointer;
+        opacity: 0.5;
     }
 `;
 

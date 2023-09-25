@@ -1,6 +1,6 @@
+import React from "react";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
 import ProcessComments from "./ProcessComments";
-import React from "react";
 import { useTranslation } from "react-i18next";
 
 export function CommentsPanel() {
