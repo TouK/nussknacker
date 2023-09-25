@@ -108,7 +108,7 @@ class OAuth2AuthenticationResourcesSpec
     Get(s"/authentication/oauth2/settings") ~> routes(authenticationResources()) ~> check {
       status shouldBe StatusCodes.OK
       val response = responseAs[Json]
-      response.hcursor.downField("authorizeUrl").as[String].value shouldBe defaultConfig.authorizeUri.toString + "?client_id=" + defaultConfig.clientId
+      response.hcursor.downField("authorizeUrl").as[String].value shouldBe s"${defaultConfig.authorizeUri}?client_id=${defaultConfig.clientId}"
       response.hcursor.downField("jwtIdTokenNonceVerificationRequired").as[Boolean].value shouldBe false
       response.hcursor.downField("implicitGrantEnabled").as[Boolean].value shouldBe false
       response.hcursor.downField("anonymousAccessAllowed").as[Boolean].value shouldBe false
