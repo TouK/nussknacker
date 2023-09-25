@@ -6,7 +6,6 @@ import { useSelector } from "react-redux";
 import HttpService from "../../http/HttpService";
 import { getProcessId, getProcessToDisplay } from "../../reducers/selectors/graph";
 import { getFeatureSettings } from "../../reducers/selectors/settings";
-import "../../stylesheets/visualization.styl";
 import { PromptContent } from "../../windowManager";
 import {
     literalIntegerValueValidator,

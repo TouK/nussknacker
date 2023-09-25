@@ -5,6 +5,15 @@ linkColor = white
 .arrow-marker path
     fill linkColor
 
+.joint-theme-default.touch
+    .joint-link
+        .link-tool
+        &:hover .connection-wrap
+            display none
+        .marker-arrowhead
+            opacity 0
+            transform scale(.3)
+
 .joint-theme-default.joint-link
     .marker-arrowhead
         // small element with big stroke allows arrow to overflow link path
@@ -23,6 +32,7 @@ linkColor = white
     .connection-wrap
         cursor pointer
         stroke #33a369
+
     &:hover .connection-wrap
         opacity .5
         stroke-opacity .5

@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { visualizationUrl } from "../common/VisualizationUrl";
 import { useProcessNameValidators } from "../containers/hooks/useProcessNameValidators";
 import HttpService from "../http/HttpService";
-import "../stylesheets/visualization.styl";
 import { WindowContent } from "../windowManager";
 import { AddProcessForm } from "./AddProcessForm";
 import { allValid, errorValidator } from "./graph/node-modal/editors/Validators";

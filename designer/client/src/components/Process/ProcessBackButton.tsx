@@ -27,7 +27,6 @@ const ProcessLinkButton = styled(ProcessLink)(() => ({
     alignItems: "center",
     padding: "0 8px",
     cursor: "pointer",
-
     "&:hover, &:focus": {
         backgroundColor: variables.menuButtonActiveBKColor,
     },

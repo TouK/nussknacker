@@ -12,11 +12,11 @@ import { getProcessId, getProcessVersionId, getVersions } from "../../reducers/s
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
 import { ProcessVersionType } from "../Process/types";
-import { SelectWithFocus } from "../withFocus";
+import { SelectNodeWithFocus } from "../withFocus";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { NodeType } from "../../types";
-import { CompareModal } from "./Styled";
+import { CompareModal, FormRow } from "./Styled";
 
 interface State {
     currentDiffId: string;
@@ -159,9 +159,9 @@ const VersionsForm = () => {
 
     return (
         <>
-            <div className="esp-form-row">
+            <FormRow>
                 <p>Version to compare</p>
-                <SelectWithFocus
+                <SelectNodeWithFocus
                     autoFocus={true}
                     id="otherVersion"
                     value={state.otherVersion || ""}
@@ -172,13 +172,13 @@ const VersionsForm = () => {
                         .filter((currentVersion) => version !== currentVersion.processVersionId)
                         .map((version) => createVersionElement(version))}
                     {state.remoteVersions.map((version) => createVersionElement(version, remotePrefix))}
-                </SelectWithFocus>
-            </div>
+                </SelectNodeWithFocus>
+            </FormRow>
             {state.otherVersion ? (
                 <div>
-                    <div className="esp-form-row">
+                    <FormRow>
                         <p>Difference to pick</p>
-                        <SelectWithFocus
+                        <SelectNodeWithFocus
                             id="otherVersion"
                             value={state.currentDiffId || ""}
                             onChange={(e) => setState({ ...state, currentDiffId: e.target.value })}
@@ -192,8 +192,8 @@ const VersionsForm = () => {
                                     </option>
                                 );
                             })}
-                        </SelectWithFocus>
-                    </div>
+                        </SelectNodeWithFocus>
+                    </FormRow>
                     {state.currentDiffId ? printDiff(state.currentDiffId) : null}
                 </div>
             ) : null}

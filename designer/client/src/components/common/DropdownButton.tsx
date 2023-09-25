@@ -11,13 +11,13 @@ interface Option<T> {
     value: T;
 }
 
-interface Props<T = any> {
+export interface DropdownButtonProps<T> {
     options: Option<T>[];
     onRangeSelect: (value: T) => void;
     wrapperStyle?: CSSProperties;
 }
 
-export function DropdownButton<T = any>(props: PropsWithChildren<ButtonProps & Props<T>>): JSX.Element {
+export function DropdownButton<T>(props: PropsWithChildren<ButtonProps & DropdownButtonProps<T>>): JSX.Element {
     const [isOpen, setIsOpen] = useState<boolean>();
     const { options, onRangeSelect: onSelect, children, onClick, wrapperStyle, ...buttonProps } = props;
 

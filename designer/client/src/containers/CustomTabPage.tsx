@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { getTabs } from "../reducers/selectors/settings";
 import { DynamicTab, DynamicTabData } from "./DynamicTab";
-import "../stylesheets/visualization.styl";
 import { Page } from "./Page";
 import { Navigate } from "react-router-dom";
 
