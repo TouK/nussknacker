@@ -270,6 +270,10 @@ class AppApiSpec
              |      "generation-time": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}\\\\.\\\\d{6}$$"
              |    }
              |  },
+             |  "globalBuildInfo": {
+             |    "build-config-1": "1",
+             |    "build-config-2": "2"
+             |  },
              |  "build-config-1": "1",
              |  "build-config-2": "2"
              |}""".stripMargin

@@ -127,8 +127,7 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
                       "engine-version" -> "0.2",
                       "generation-time" -> "2023-09-25T09:26:30.402299"
                     )
-                  ),
-                  otherProperties = Map.empty
+                  )
                 )
               )
             )
@@ -148,7 +147,7 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
             .example(
               Example.of(
                 summary = Some("Application build info response"),
-                value = ServerConfigInfoDto()
+                value = ServerConfigInfoDto(Json.obj()) // todo: example
               )
             )
         )
@@ -219,15 +218,14 @@ object AppApiEndpoints {
         new HealthCheckProcessErrorResponseDto(status = "ERROR", message, processes)
     }
 
+    @derive(schema)
     final case class BuildInfoDto(name: String,
                                   gitCommit: String,
                                   buildTime: String,
                                   version: String,
                                   processingType: Map[String, Map[String, String]],
-                                  otherProperties: Map[String, String])
+                                  globalBuildInfo: Option[Map[String, String]] = None)
     object BuildInfoDto {
-
-      implicit val schema: Schema[BuildInfoDto] = Schema.string[BuildInfoDto]  // todo:
 
       implicit val circeCodec: CirceCodec[BuildInfoDto] = {
         CirceCodec.from(
@@ -238,12 +236,23 @@ object AppApiEndpoints {
               buildTime <- c.downField("buildTime").as[String]
               gitCommit <- c.downField("gitCommit").as[String]
               processingType <- c.downField("processingType").as[Map[String, Map[String, String]]]
-              otherProperties <- c.toMapExcluding("name", "version", "buildTime", "gitCommit", "processingType")
-            } yield BuildInfoDto(name, gitCommit, buildTime, version, processingType, otherProperties)
+              globalBuildInfoOpt <- c.downField("globalBuildInfo").as[Option[Map[String, String]]]
+              globalBuildInfo <- globalBuildInfoOpt match {
+                case globalBuildInfo@Some(_) =>
+                  Right(globalBuildInfo)
+                case None =>
+                  // for the purpose of backward compatibility
+                  c.toMapExcluding("name", "version", "buildTime", "gitCommit", "processingType")
+                    .map {
+                      case m if m.isEmpty => None
+                      case m => Some(m)
+                    }
+              }
+            } yield BuildInfoDto(name, gitCommit, buildTime, version, processingType, globalBuildInfo)
           },
           Encoder.encodeJson.contramap { buildInfo =>
             buildInfo
-              .otherProperties.asJson
+              .globalBuildInfo.asJson // for the purpose of backward compatibility
               .deepMerge {
                 Json
                   .obj(
@@ -251,7 +260,8 @@ object AppApiEndpoints {
                     "version" -> Json.fromString(buildInfo.version),
                     "buildTime" -> Json.fromString(buildInfo.buildTime),
                     "gitCommit" -> Json.fromString(buildInfo.gitCommit),
-                    "processingType" -> buildInfo.processingType.asJson
+                    "processingType" -> buildInfo.processingType.asJson,
+                    "globalBuildInfo" -> buildInfo.globalBuildInfo.asJson
                   )
               }
           }
@@ -259,15 +269,18 @@ object AppApiEndpoints {
       }
     }
 
-    @derive(encoder, decoder, schema)
-    final case class ServerConfigInfoDto()
+    final case class ServerConfigInfoDto(configJson: Json)
     object ServerConfigInfoDto {
-      //      implicit val serverConfigInfoDtoCodec: CirceCodec[ServerConfigInfoDto] = {
-      //        CirceCodec.from(
-      //          Decoder.decodeJson.map(ServerConfigInfoDto.apply),
-      //          Encoder.encodeJson.contramap[ServerConfigInfoDto](_.configJson)
-      //        )
-      //      }
+      implicit val serverConfigInfoDtoSchema: Schema[ServerConfigInfoDto] = Schema
+        .anyObject[Json]
+        .map[ServerConfigInfoDto](json => Some(ServerConfigInfoDto(json)))(_.configJson)
+
+      implicit val serverConfigInfoDtoCodec: CirceCodec[ServerConfigInfoDto] = {
+        CirceCodec.from(
+          Decoder.decodeJson.map(ServerConfigInfoDto.apply),
+          Encoder.encodeJson.contramap[ServerConfigInfoDto](_.configJson)
+        )
+      }
     }
 
     type UserCategoriesWithProcessingTypesDto = Map[String, String]

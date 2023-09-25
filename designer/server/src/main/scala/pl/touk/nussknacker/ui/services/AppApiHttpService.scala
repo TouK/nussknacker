@@ -98,7 +98,7 @@ class AppApiHttpService(config: Config,
       .serverLogicSuccess { _ =>
         Future {
           import net.ceedubs.ficus.Ficus._
-          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
+          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").flatMap(Some.apply)
           val modelDataInfo: Map[ProcessingType, Map[String, String]] = modelData.all.mapValuesNow(_.configCreator.buildInfo())
           BuildInfoDto(BuildInfo.name, BuildInfo.gitCommit, BuildInfo.buildTime, BuildInfo.version, modelDataInfo, configuredBuildInfo)
         }
@@ -114,7 +114,7 @@ class AppApiHttpService(config: Config,
             val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
             configJson match {
               case Right(json) =>
-                success(ServerConfigInfoDto())
+                success(ServerConfigInfoDto(json))
               case Left(errorMessage) =>
                 logger.error(s"Cannot create JSON from the Nussknacker configuration. Error: $errorMessage")
                 throw new Exception("Cannot prepare configuration")
