@@ -8,9 +8,10 @@ import { getProcessToDisplay, getTestResults } from "../../reducers/selectors/gr
 import { getUi } from "../../reducers/selectors/ui";
 import { useWindows } from "../../windowManager";
 import { ToolbarWrapper } from "../toolbarComponents/toolbarWrapper/ToolbarWrapper";
-import Errors from "./Errors";
+import Errors from "./error/Errors";
 import ValidTips from "./ValidTips";
 import Warnings from "./Warnings";
+import { TipPanelStyled } from "./Styled";
 
 export default function Tips(): JSX.Element {
     const { openNodeWindow } = useWindows();
@@ -26,14 +27,14 @@ export default function Tips(): JSX.Element {
 
     const { isToolTipsHighlighted: isHighlighted } = useSelector(getUi);
     const testResults = useSelector(getTestResults);
-
     const { errors, warnings } = ProcessUtils.getValidationResult(currentProcess);
 
     return (
         <ToolbarWrapper title={i18next.t("panels.tips.title", "Tips")} id="TIPS-PANEL">
-            <div id="tipsPanel" className={isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"}>
+            <TipPanelStyled id="tipsPanel" isHighlighted={isHighlighted}>
                 <Scrollbars
-                    renderThumbVertical={(props) => <div key={uuid4()} {...props} className="thumbVertical" />}
+                    style={{ borderRadius: 3, position: "relative" }}
+                    renderThumbVertical={(props) => <div key={uuid4()} {...props} />}
                     hideTracksWhenNotNeeded={true}
                 >
                     {
@@ -53,7 +54,7 @@ export default function Tips(): JSX.Element {
                         />
                     )}
                 </Scrollbars>
-            </div>
+            </TipPanelStyled>
         </ToolbarWrapper>
     );
 }

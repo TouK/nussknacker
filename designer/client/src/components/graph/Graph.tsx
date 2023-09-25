@@ -26,9 +26,10 @@ import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import ProcessUtils from "../../common/ProcessUtils";
-import { isTouchDevice, isTouchEvent } from "../../helpers/detectDevice";
+import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
+import { cx } from "@emotion/css";
 
 interface Props extends GraphProps {
     processCategory: string;
@@ -40,9 +41,10 @@ interface Props extends GraphProps {
     isPristine?: boolean;
 }
 
-function handleActionOnLongPress(
-    shortPressAction: (cellView: dia.CellView, event: dia.Event) => void,
-    longPressAction: (cellView: dia.CellView, event: dia.Event) => void,
+function handleActionOnLongPress<T extends dia.CellView>(
+    shortPressAction: ((cellView: T, event: dia.Event) => void) | null,
+    longPressAction: (cellView: T, event: dia.Event) => void,
+    longPressTime = LONG_PRESS_TIME,
 ) {
     let pressTimer;
 
@@ -50,25 +52,26 @@ function handleActionOnLongPress(
         clearTimeout(pressTimer);
     };
 
-    return (cellView: dia.CellView, evt: dia.Event) => {
-        const { paper, model } = cellView;
+    return (cellView: T, evt: dia.Event) => {
+        const { paper } = cellView;
 
         // let's clear all pointer click events on start
-        paper.off(Events.CELL_POINTERCLICK, shortPressAction);
-        paper.on(Events.CELL_POINTERCLICK, shortPressAction);
-        paper.on(Events.CELL_POINTERUP, releasePress);
+        if (shortPressAction) {
+            paper.off(Events.CELL_POINTERCLICK, shortPressAction);
+            paper.once(Events.CELL_POINTERCLICK, shortPressAction);
+        }
 
-        const LONG_PRESS_TIME = 500;
-
-        // Discard specific events on long press action
-        model.once(Events.CHANGE_POSITION, releasePress);
-        model.once(Events.CELL_POINTERUP, releasePress);
+        // Discard long press action on specific events
+        paper.once(Events.CELL_POINTERUP, releasePress);
+        paper.once(Events.CELL_POINTERMOVE, releasePress);
 
         pressTimer = window.setTimeout(() => {
             // Stop single click event when longPress fired
-            paper.off(Events.CELL_POINTERCLICK, shortPressAction);
+            if (shortPressAction) {
+                paper.off(Events.CELL_POINTERCLICK, shortPressAction);
+            }
             longPressAction(cellView, evt);
-        }, LONG_PRESS_TIME);
+        }, longPressTime);
     };
 }
 
@@ -270,6 +273,10 @@ export class Graph extends React.Component<Props> {
 
         if (isTouchDevice()) {
             this.processGraphPaper.on(Events.CELL_POINTERDOWN, handleActionOnLongPress(showNodeDetails, selectNode));
+            this.processGraphPaper.on(
+                Events.LINK_POINTERDOWN,
+                handleActionOnLongPress(null, ({ model }) => model.remove(), LONG_PRESS_TIME * 1.5),
+            );
         } else {
             this.processGraphPaper.on(Events.CELL_POINTERCLICK, selectNode);
             this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, showNodeDetails);
@@ -583,6 +590,7 @@ export class Graph extends React.Component<Props> {
         return (
             <>
                 <GraphPaperContainer
+                    className={cx({ touch: isTouchDevice() })}
                     ref={this.setEspGraphRef}
                     onResize={isFragment ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
                     id={divId}

@@ -1,20 +1,13 @@
 import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { createSelector } from "reselect";
 import { addComment, deleteComment } from "../../actions/nk";
-import * as DialogMessages from "../../common/DialogMessages";
 import { getProcessId, getProcessVersionId } from "../../reducers/selectors/graph";
-import { getFeatureSettings, getLoggedUser } from "../../reducers/selectors/settings";
-import { useWindows } from "../../windowManager";
-import CommentContent from "./CommentContent";
 import CommentInput from "./CommentInput";
-import Date from "../common/Date";
-import { ListSeparator } from "../common/ListSeparator";
+import { useWindows } from "../../windowManager";
+import * as DialogMessages from "../../common/DialogMessages";
 import { getCapabilities } from "../../reducers/selectors/other";
-import { AddCommentPanel, CommentButton, ProcessCommentsList, ProcessCommentsWrapper } from "./StyledComment";
-
-const getComments = (state) => state.processActivity?.comments || [];
-const getCommentSettings = createSelector(getFeatureSettings, (f) => f.commentSettings || {});
+import { AddCommentPanel, CommentButton, ProcessCommentsWrapper } from "./StyledComment";
+import CommentsList from "./CommentsList";
 
 function ProcessComments(): JSX.Element {
     const [comment, setComment] = useState("");
@@ -22,19 +15,9 @@ function ProcessComments(): JSX.Element {
     const dispatch = useDispatch();
     const { confirm } = useWindows();
 
-    const comments = useSelector(getComments);
     const processId = useSelector(getProcessId);
     const processVersionId = useSelector(getProcessVersionId);
-    const loggedUser = useSelector(getLoggedUser);
     const capabilities = useSelector(getCapabilities);
-    const commentSettings = useSelector(getCommentSettings);
-
-    const _addComment = useCallback(async () => {
-        setPending(true);
-        await dispatch(addComment(processId, processVersionId, comment));
-        setPending(false);
-        setComment("");
-    }, [dispatch, processId, processVersionId, comment]);
 
     const _deleteComment = useCallback(
         (comment) => {
@@ -54,26 +37,18 @@ function ProcessComments(): JSX.Element {
         [confirm, dispatch, processId],
     );
 
+    const _addComment = useCallback(async () => {
+        setPending(true);
+        await dispatch(addComment(processId, processVersionId, comment));
+        setPending(false);
+        setComment("");
+    }, [dispatch, processId, processVersionId, comment]);
+
     const onInputChange = useCallback((e) => setComment(e.target.value), []);
-    const isLastComment = useCallback((index) => index + 1 === comments.length, [comments.length]);
 
     return (
         <ProcessCommentsWrapper>
-            <ProcessCommentsList>
-                {comments.map((comment, index) => (
-                    <div key={comment.id}>
-                        <div className="header">
-                            <Date date={comment.createDate} />
-                            <span className="comment-header">{`| v${comment.processVersionId} | ${comment.user}`}</span>
-                            {comment.user != loggedUser.id ? null : (
-                                <span className="remove glyphicon glyphicon-remove" onClick={() => _deleteComment(comment)} />
-                            )}
-                        </div>
-                        <CommentContent content={comment.content} commentSettings={commentSettings} />
-                        {!isLastComment(index) && <ListSeparator />}
-                    </div>
-                ))}
-            </ProcessCommentsList>
+            <CommentsList deleteComment={_deleteComment} />
             {capabilities.write ? (
                 <AddCommentPanel>
                     <CommentInput onChange={onInputChange.bind(this)} value={comment} />
