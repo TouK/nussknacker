@@ -147,7 +147,21 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
             .example(
               Example.of(
                 summary = Some("Application build info response"),
-                value = ServerConfigInfoDto(Json.obj()) // todo: example
+                value = ServerConfigInfoDto(Json.obj(
+                  "environment" -> Json.fromString("local"),
+                  "scenarioTypes" -> Json.obj(
+                    "development-tests" -> Json.obj(
+                      "type" -> Json.fromString("development-tests")
+                    ),
+                    "modelConfig" -> Json.obj(
+                      "classPath" -> Json.arr(
+                        Json.fromString("model/devModel.jar"),
+                        Json.fromString("model/flinkExecutor.jar"),
+                        Json.fromString("components/flink")
+                      )
+                    )
+                  )
+                ))
               )
             )
         )
