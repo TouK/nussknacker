@@ -68,7 +68,10 @@ export class PanZoomPlugin {
     private initMove(event: MouseEvent): void {
         const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
         if (!isModified) {
-            this.cursorMask.enable("move");
+            if (!isTouchDevice()) {
+                this.cursorMask.enable("move");
+            }
+
             this.panStart = {
                 x: event.clientX,
                 y: event.clientY,
