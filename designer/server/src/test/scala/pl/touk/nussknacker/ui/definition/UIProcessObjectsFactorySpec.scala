@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{AdditionalComponentsUIConfigProvider, ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -135,6 +135,36 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")))
 
     processObjects.componentsConfig.get(fragment.id) shouldBe empty
+  }
+
+  class TestAdditionalComponentsUIConfigProvider extends AdditionalComponentsUIConfigProvider {
+    override def getAllForCategory(category: String): Map[String, SingleComponentConfig] =
+      Map(
+        "enricher" -> SingleComponentConfig.zero.copy(
+          params = Some(Map(
+            "paramDualEditor" -> ParameterConfig.empty.copy(
+              validators = Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("otherExpression", "otherLabel")))))
+            )
+          ))
+        )
+      )
+  }
+
+  test("should override component's parameter config with additionally provided config") {
+    val model: ModelData = LocalModelData(ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"), new EmptyProcessConfigCreator() {
+      override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+        Map("enricher" -> WithCategories(TestService))
+    },
+      additionalComponentsUIConfigProvider = new TestAdditionalComponentsUIConfigProvider
+    )
+
+    val processObjects = prepareUIProcessObjects(model, Set.empty)
+
+    processObjects.componentsConfig("enricher").params.map(_.map { case (key, value) => key -> value.validators }) shouldBe Some(Map(
+      "paramDualEditor" -> Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("otherExpression", "otherLabel"))))),
+      "paramStringEditor" -> List(MandatoryParameterValidator), // FIXME this isn't present in the test because componentsConfig isn't consistent with processDefinition
+      "paramRawEditor" -> List(MandatoryParameterValidator)
+    ))
   }
 
   private def prepareUIProcessObjects(model: ModelData,
