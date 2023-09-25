@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.readers.ValueReader
 import pl.touk.nussknacker.engine.util.config.FicusReaders.forDecoder
 import pl.touk.nussknacker.engine.util.config.URIExtensions
-import pl.touk.nussknacker.ui.security.api.FrontendStrategySettings
+import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, FrontendStrategySettings}
 import pl.touk.nussknacker.ui.security.oauth2.ProfileFormat.OIDC
 import pl.touk.nussknacker.ui.security.oauth2.UsernameClaim.UsernameClaim
 import pl.touk.nussknacker.ui.security.oauth2.{JwtConfiguration, OAuth2Configuration, TokenCookieConfig}
@@ -91,14 +91,13 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
 
 object OidcAuthenticationConfiguration {
 
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import net.ceedubs.ficus.readers.EnumerationReader._
-  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
-  import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.authenticationConfigPath
-  private implicit val valueReader: ValueReader[FrontendStrategySettings] = forDecoder
-
-  def create(config: Config): OidcAuthenticationConfiguration =
-    config.as[OidcAuthenticationConfiguration](authenticationConfigPath)
+  def create(config: Config): OidcAuthenticationConfiguration = {
+    import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+    import net.ceedubs.ficus.readers.EnumerationReader._
+    import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
+    implicit val valueReader: ValueReader[FrontendStrategySettings] = forDecoder
+    config.as[OidcAuthenticationConfiguration](AuthenticationConfiguration.authenticationConfigPath)
+  }
 
   def createWithDiscovery(config: Config)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OidcAuthenticationConfiguration =
     create(config).withDiscovery
