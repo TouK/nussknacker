@@ -23,7 +23,6 @@ export function EdgeTypeSelect(props: Props): JSX.Element {
         <SelectNodeWithFocus
             id={id}
             disabled={readOnly}
-            className="node-input"
             value={edge.edgeType.type}
             onChange={(e) => onChange(getStringEnumElement(EdgeKind, e.target.value))}
         >
