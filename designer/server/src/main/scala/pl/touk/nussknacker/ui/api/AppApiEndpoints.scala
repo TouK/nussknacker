@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.api
 import derevo.circe.{decoder, encoder}
 import derevo.derive
 import enumeratum.EnumEntry.Uppercase
-import enumeratum.{EnumEntry, _}
+import enumeratum._
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, Json, Codec => CirceCodec}
 import pl.touk.nussknacker.engine.api.CirceUtil.HCursorExt
@@ -227,7 +227,7 @@ object AppApiEndpoints {
       object Status extends Enum[Status] with CirceEnum[Status] {
         case object Ok extends Status
 
-        override def values: IndexedSeq[Status] = findValues
+        override def values = findValues
       }
 
 
@@ -244,7 +244,7 @@ object AppApiEndpoints {
       object Status extends Enum[Status] with CirceEnum[Status] {
         case object Error extends Status
 
-        override def values: IndexedSeq[Status] = findValues
+        override def values = findValues
       }
 
       def apply(message: Option[String],
@@ -305,11 +305,11 @@ object AppApiEndpoints {
 
     final case class ServerConfigInfoDto(configJson: Json)
     object ServerConfigInfoDto {
-      implicit val serverConfigInfoDtoSchema: Schema[ServerConfigInfoDto] = Schema
+      implicit val schema: Schema[ServerConfigInfoDto] = Schema
         .anyObject[Json]
         .map[ServerConfigInfoDto](json => Some(ServerConfigInfoDto(json)))(_.configJson)
 
-      implicit val serverConfigInfoDtoCodec: CirceCodec[ServerConfigInfoDto] = {
+      implicit val circeCodec: CirceCodec[ServerConfigInfoDto] = {
         CirceCodec.from(
           Decoder.decodeJson.map(ServerConfigInfoDto.apply),
           Encoder.encodeJson.contramap[ServerConfigInfoDto](_.configJson)
