@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.component.{AdditionalComponentsUIConfigProvider, DefaultAdditionalComponentsUIConfigProvider}
 import pl.touk.nussknacker.engine.api.dict.{DictServicesFactory, EngineDictRegistry, UiDictServices}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ProcessConfigCreator, ProcessObjectDependencies}
@@ -62,6 +63,15 @@ case class ClassLoaderModelData private(private val resolveInputConfigDuringExec
     }
   }
 
+  override lazy val additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider = {
+    Multiplicity(ScalaServiceLoader.load[AdditionalComponentsUIConfigProvider](modelClassLoader.classLoader)) match {
+      case Empty() => new DefaultAdditionalComponentsUIConfigProvider
+      case One(provider) => provider
+      case Many(moreThanOne) =>
+        throw new IllegalArgumentException(s"More than one AdditionalComponentsUIConfigProvider instance found: $moreThanOne")
+    }
+  }
+
   override lazy val inputConfigDuringExecution: InputConfigDuringExecution = resolveInputConfigDuringExecution(modelConfigLoader)
 
   override lazy val migrations: ProcessMigrations = {
@@ -115,6 +125,8 @@ trait ModelData extends BaseModelData with AutoCloseable {
   def modelClassLoader : ModelClassLoader
 
   def modelConfigLoader: ModelConfigLoader
+
+  def additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider
 
   override lazy val processConfig: Config = modelConfigLoader.resolveConfig(inputConfigDuringExecution, modelClassLoader.classLoader)
 

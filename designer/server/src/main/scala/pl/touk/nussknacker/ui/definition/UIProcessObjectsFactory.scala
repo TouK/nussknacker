@@ -51,10 +51,12 @@ object UIProcessObjectsFactory {
 
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
 
+    val additionalComponentsUIConfig = modelDataForType.additionalComponentsUIConfigProvider.getAllForCategory(processingType)
+
     val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
     //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fragmentsComponentsConfig, fixedComponentsUiConfig, dynamicComponentsConfig)
+    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fragmentsComponentsConfig, additionalComponentsUIConfig, fixedComponentsUiConfig, dynamicComponentsConfig) // todo pomyśleć nad kolejnością
 
     val componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(processConfig)
 
