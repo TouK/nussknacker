@@ -157,7 +157,6 @@ export class PanZoomPlugin {
         hammer.get("pinch").set({ enable: true });
 
         hammer.on("pinchstart", () => {
-            this.paper.setInteractivity(false);
             this.instance.setZoomScaleSensitivity(0.01);
         });
 
@@ -173,6 +172,19 @@ export class PanZoomPlugin {
             }
 
             lastScale = e.scale;
+        });
+
+        document.addEventListener("touchmove", (event) => {
+            if (event.touches.length > 1) {
+                paper.setInteractivity(false);
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+            }
+        });
+
+        document.addEventListener("touchend", () => {
+            paper.setInteractivity(true);
         });
     }
 
