@@ -27,7 +27,7 @@ class SystemUtils {
         localStorage.setItem(SystemUtils.ACCESS_TOKEN_NAMESPACE, token);
     };
 
-    public getAccessToken = (): string => {
+    public getAccessToken = (): string | null => {
         const token = localStorage.getItem(SystemUtils.ACCESS_TOKEN_NAMESPACE);
         if (token) {
             this.tokenPromise.resolve(token);
