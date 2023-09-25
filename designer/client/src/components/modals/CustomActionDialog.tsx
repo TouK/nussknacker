@@ -15,6 +15,8 @@ import { editors } from "../graph/node-modal/editors/expression/Editor";
 import { ExpressionLang } from "../graph/node-modal/editors/expression/types";
 import { NodeTable } from "../graph/node-modal/NodeDetailsContent/NodeTable";
 import { ValidationLabel } from "../common/ValidationLabel";
+import { NodeLabelStyled } from "../graph/node-modal/fragment-input-definition/NodeStyled";
+import { NodeRow } from "../graph/node-modal/NodeDetailsContent/NodeStyled";
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
     action: CustomAction;
@@ -44,10 +46,8 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                 const Editor = editors[editorType];
                 const fieldName = param.name;
                 return (
-                    <div className={"node-row"} key={param.name}>
-                        <div className="node-label" title={fieldName}>
-                            {fieldName}:
-                        </div>
+                    <NodeRow key={param.name}>
+                        <NodeLabelStyled title={fieldName}>{fieldName}:</NodeLabelStyled>
                         <Editor
                             editorConfig={param?.editor}
                             className={"node-value"}
@@ -63,7 +63,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
                             showValidation={false}
                             variableTypes={{}}
                         />
-                    </div>
+                    </NodeRow>
                 );
             })}
         </NodeTable>

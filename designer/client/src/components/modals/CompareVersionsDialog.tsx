@@ -164,7 +164,6 @@ const VersionsForm = () => {
                 <SelectWithFocus
                     autoFocus={true}
                     id="otherVersion"
-                    className="node-input"
                     value={state.otherVersion || ""}
                     onChange={(e) => loadVersion(e.target.value)}
                 >
@@ -181,7 +180,6 @@ const VersionsForm = () => {
                         <p>Difference to pick</p>
                         <SelectWithFocus
                             id="otherVersion"
-                            className="node-input"
                             value={state.currentDiffId || ""}
                             onChange={(e) => setState({ ...state, currentDiffId: e.target.value })}
                         >

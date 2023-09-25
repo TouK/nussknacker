@@ -9,6 +9,7 @@ import { ParameterExpressionField } from "./ParameterExpressionField";
 import { NodeInput } from "../../withFocus";
 import { DescriptionField } from "./DescriptionField";
 import OutputParametersList from "./OutputParametersList";
+import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 
 export interface FragmentInmput {
     fieldErrors?: NodeValidationError[];
@@ -76,12 +77,12 @@ export function FragmentInput(props: FragmentInmput): JSX.Element {
                     );
                 }}
                 createReadOnlyField={(params) => (
-                    <div className="node-row">
+                    <NodeRow>
                         {renderFieldLabel(params.name)}
                         <div className="node-value">
                             <NodeInput type="text" value={params.expression.expression} disabled={true} />
                         </div>
-                    </div>
+                    </NodeRow>
                 )}
             />
             <OutputParametersList

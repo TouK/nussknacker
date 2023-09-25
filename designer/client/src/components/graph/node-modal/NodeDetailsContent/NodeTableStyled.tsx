@@ -5,39 +5,11 @@ import { customCheckbox } from "./CustomCheckbox";
 export const NodeTableStyled = styled("div")`
     font-size: 11px;
     margin: 0 25px;
-    .node-table-body {
-        clear: both;
-    }
-    .node-row {
-        margin-bottom: 14px;
-        margin-top: 14px;
-        display: flex;
-        flex-wrap: wrap;
-    }
     .movable-row {
         margin-top: 0;
         flex-wrap: nowrap;
         column-gap: 5px;
         row-gap: 5px;
-    }
-    .node-label {
-        color: ${variables.modalLabelTextColor};
-        flex-basis: 20%;
-        max-width: 20em;
-        display: inline-block;
-        vertical-align: sub;
-        margin-top: 9px;
-        font-size: 12px;
-        font-weight: 700;
-        span {
-            margin-top: 10px;
-            margin-left: 10px;
-            font-size: 15px;
-
-            &:hover {
-                cursor: pointer;
-            }
-        }
     }
     .node-block {
         &.removed {

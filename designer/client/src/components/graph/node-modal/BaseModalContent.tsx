@@ -6,6 +6,8 @@ import NodeErrors from "./NodeErrors";
 import { EdgeKind, NodeValidationError } from "../../../types";
 import { EdgeTypeSelect } from "./EdgeTypeSelect";
 import { NodeTable, NodeTableBody } from "./NodeDetailsContent/NodeTable";
+import { NodeLabelStyled } from "./fragment-input-definition/NodeStyled";
+import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 
 interface Props {
     edge?;
@@ -35,20 +37,20 @@ export default function BaseModalContent(props: PropsWithChildren<Props>): JSX.E
         <NodeTable>
             <NodeErrors errors={edgeErrors} message={"Edge has errors"} />
             <NodeTableBody>
-                <div className="node-row">
-                    <div className="node-label">From</div>
+                <NodeRow>
+                    <NodeLabelStyled>From</NodeLabelStyled>
                     <div className="node-value">
                         <NodeInput readOnly={true} type="text" value={edge.from} />
                     </div>
-                </div>
-                <div className="node-row">
-                    <div className="node-label">To</div>
+                </NodeRow>
+                <NodeRow>
+                    <NodeLabelStyled>To</NodeLabelStyled>
                     <div className="node-value">
                         <NodeInput readOnly={true} type="text" value={edge.to} />
                     </div>
-                </div>
-                <div className="node-row">
-                    <div className="node-label">Type</div>
+                </NodeRow>
+                <NodeRow>
+                    <NodeLabelStyled>Type</NodeLabelStyled>
                     <div className={`node-value${isMarked("edgeType.type") ? " marked" : ""}`}>
                         <EdgeTypeSelect
                             id="processCategory"
@@ -58,7 +60,7 @@ export default function BaseModalContent(props: PropsWithChildren<Props>): JSX.E
                             options={types}
                         />
                     </div>
-                </div>
+                </NodeRow>
                 {props.children}
             </NodeTableBody>
         </NodeTable>

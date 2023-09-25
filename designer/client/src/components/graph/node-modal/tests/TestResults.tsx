@@ -7,6 +7,8 @@ import { useTestResults } from "../TestResultsWrapper";
 import { NodeId } from "../../../../types";
 import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
 import { variables } from "../../../../stylesheets/variables";
+import { NodeLabelStyled } from "../fragment-input-definition/NodeStyled";
+import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element {
     const results = useTestResults();
@@ -17,19 +19,19 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
 
     return (
         <NodeTableBody className="node-test-results">
-            <div className="node-row">
-                <div className="node-label">
+            <NodeRow>
+                <NodeLabelStyled>
                     <NodeTip
                         title={"Variables in test case"}
                         icon={<InfoIcon sx={{ color: variables.infoColor, alignSelf: "center" }} />}
                     />
-                </div>
-            </div>
+                </NodeLabelStyled>
+            </NodeRow>
             {Object.keys(results.testResultsToShow.context.variables).map((key, ikey) => (
-                <div className="node-row" key={ikey}>
-                    <div className="node-label">{key}:</div>
+                <NodeRow key={ikey}>
+                    <NodeLabelStyled>{key}:</NodeLabelStyled>
                     <TestValue value={results.testResultsToShow.context.variables[key]} shouldHideTestResults={false} />
-                </div>
+                </NodeRow>
             ))}
             {results.testResultsToShow && !isEmpty(results.testResultsToShow.externalInvocationResultsForCurrentContext)
                 ? results.testResultsToShow.externalInvocationResultsForCurrentContext.map((mockedValue, index) => (

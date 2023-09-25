@@ -3,6 +3,7 @@ import TestResultUtils, { NodeTestResults, StateForSelectTestResults } from "../
 import { SelectNodeWithFocus } from "../../../withFocus";
 import { css, cx } from "@emotion/css";
 import { useNkTheme } from "../../../../containers/theme";
+import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 export interface TestResultsSelectProps {
     results: NodeTestResults;
@@ -20,7 +21,7 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
     }
 
     return (
-        <div className="node-row">
+        <NodeRow>
             <div
                 className={cx(
                     "node-label",
@@ -46,6 +47,6 @@ export default function TestResultsSelect(props: TestResultsSelectProps): JSX.El
                     ))}
                 </SelectNodeWithFocus>
             </div>
-        </div>
+        </NodeRow>
     );
 }

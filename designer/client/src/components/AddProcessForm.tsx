@@ -6,7 +6,9 @@ import { ChangeableValue } from "./ChangeableValue";
 import { Validator } from "./graph/node-modal/editors/Validators";
 import ValidationLabels from "./modals/ValidationLabels";
 import { NodeTable, NodeTableBody } from "./graph/node-modal/NodeDetailsContent/NodeTable";
-import { NodeInput } from "./withFocus";
+import { NodeInput, SelectNodeWithFocus } from "./withFocus";
+import { NodeLabelStyled } from "./graph/node-modal/fragment-input-definition/NodeStyled";
+import { NodeRow } from "./graph/node-modal/NodeDetailsContent/NodeStyled";
 import "../stylesheets/graph.styl";
 
 type FormValue = { processId: string; processCategory: string };
@@ -29,7 +31,6 @@ export function AddProcessForm({ nameValidators, value, onChange }: AddProcessFo
     return (
         <div
             className={cx(
-                "modalContentDark",
                 css({
                     minWidth: 600,
                     paddingTop: 10,
@@ -39,8 +40,8 @@ export function AddProcessForm({ nameValidators, value, onChange }: AddProcessFo
         >
             <NodeTable>
                 <NodeTableBody>
-                    <div className="node-row">
-                        <div className="node-label">Name</div>
+                    <NodeRow>
+                        <NodeLabelStyled>Name</NodeLabelStyled>
                         <div className="node-value">
                             <NodeInput
                                 type="text"
@@ -50,11 +51,11 @@ export function AddProcessForm({ nameValidators, value, onChange }: AddProcessFo
                             />
                             <ValidationLabels validators={nameValidators} values={[value.processId]} />
                         </div>
-                    </div>
-                    <div className="node-row">
-                        <div className="node-label">Category</div>
+                    </NodeRow>
+                    <NodeRow>
+                        <NodeLabelStyled>Category</NodeLabelStyled>
                         <div className="node-value">
-                            <NodeInput
+                            <SelectNodeWithFocus
                                 id="processCategory"
                                 value={value.processCategory}
                                 onChange={(e) => onFieldChange("processCategory", e.target.value)}
@@ -64,9 +65,9 @@ export function AddProcessForm({ nameValidators, value, onChange }: AddProcessFo
                                         {cat}
                                     </option>
                                 ))}
-                            </NodeInput>
+                            </SelectNodeWithFocus>
                         </div>
-                    </div>
+                    </NodeRow>
                 </NodeTableBody>
             </NodeTable>
         </div>

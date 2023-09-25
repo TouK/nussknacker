@@ -13,11 +13,11 @@ const DocsLinkStyled = styled("a")`
     }
 `;
 
-export const Docs = (props: PropsWithChildren<{ className: string; docsUrl: string }>) => {
-    const { className, children, docsUrl } = props;
+export const Docs = (props: PropsWithChildren<{ docsUrl: string }>) => {
+    const { children, docsUrl } = props;
     return (
         <DocsLinkStyled target="_blank" href={docsUrl} title="Documentation" rel="noreferrer">
-            <div className={className}>
+            <div>
                 {children && <span style={{ paddingRight: 5 }}>{children}</span>}
                 <Icon />
             </div>

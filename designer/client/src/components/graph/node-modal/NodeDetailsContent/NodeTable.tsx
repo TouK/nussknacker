@@ -7,5 +7,9 @@ export function NodeTable({ children, className, editable }: PropsWithChildren<{
 }
 
 export function NodeTableBody({ children, className }: PropsWithChildren<{ className?: string }>): JSX.Element {
-    return <div className={cx("node-table-body", className)}>{children}</div>;
+    return (
+        <div style={{ clear: "both" }} className={className}>
+            {children}
+        </div>
+    );
 }

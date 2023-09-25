@@ -32,19 +32,11 @@ const getModalHeaderType = (docsUrl?: string, nodeClass?: string) => {
 export const NodeClassDocs = ({ nodeClass, docsUrl }: { nodeClass?: string; docsUrl?: string }) => {
     switch (getModalHeaderType(docsUrl, nodeClass)) {
         case HeaderType.SUBTYPE_DOCS:
-            return (
-                <SubtypeHeaderDocs docsUrl={docsUrl} className="">
-                    {nodeClass}
-                </SubtypeHeaderDocs>
-            );
+            return <SubtypeHeaderDocs docsUrl={docsUrl}>{nodeClass}</SubtypeHeaderDocs>;
         case HeaderType.SUBTYPE:
             return <Subtype>{nodeClass}</Subtype>;
         case HeaderType.DOCS:
-            return (
-                <SubtypeHeaderDocs docsUrl={docsUrl} className="">
-                    {nodeClass}
-                </SubtypeHeaderDocs>
-            );
+            return <SubtypeHeaderDocs docsUrl={docsUrl}>{nodeClass}</SubtypeHeaderDocs>;
         default:
             return null;
     }
