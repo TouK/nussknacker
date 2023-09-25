@@ -71,10 +71,7 @@ export default function OutputParametersList({
     showValidation?: boolean;
     isEditMode?: boolean;
 }): JSX.Element {
-    const outputParameters = ProcessUtils.findNodeObjectTypeDefinition(
-        editedNode,
-        processDefinitionData.processDefinition,
-    )?.outputParameters;
+    const { outputParameters } = ProcessUtils.findNodeObjectTypeDefinition(editedNode, processDefinitionData.processDefinition);
     const [params, setParams] = useState(() =>
         outputParameters.reduce(
             (previousValue, currentValue) => ({
