@@ -86,7 +86,7 @@ object UIProcessObjectsFactory {
     val componentIdToName: Map[ComponentId, String] = getComponentIdToNameMap(componentIdProvider, processingType, uiProcessDefinition, isFragment)
 
     val additionalComponentsUIConfig = modelDataForType.additionalComponentsUIConfigProvider.getAllForCategory(processingType).map {
-      case (componentId, config) => componentIdToName(componentId) -> config
+      case (componentId, config) => componentIdToName(componentId) -> config.toSingleComponentConfig
     }
 
     val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)

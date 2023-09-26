@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{AdditionalComponentsUIConfigProvider, ComponentGroupName, ComponentId, ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{AdditionalComponentsUIConfigProvider, ComponentGroupName, ComponentId, ParameterConfig, SingleComponentConfig, SingleComponentUIConfig}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -138,9 +138,9 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   }
 
   class TestAdditionalComponentsUIConfigProvider extends AdditionalComponentsUIConfigProvider {
-    override def getAllForCategory(category: String): Map[ComponentId, SingleComponentConfig] =
+    override def getAllForCategory(category: String): Map[ComponentId, SingleComponentUIConfig] =
       Map(
-        "processingType-enricher-enricher" -> SingleComponentConfig.zero.copy(
+        "processingType-enricher-enricher" -> SingleComponentUIConfig.zero.copy(
           params = Some(Map(
             "paramDualEditor" -> ParameterConfig.empty.copy(
               validators = Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("otherExpression", "otherLabel")))))
@@ -148,6 +148,8 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
           ))
         )
       )
+
+    override def getAll: Map[ComponentId, SingleComponentUIConfig] = ???
   }
 
   test("should override component's parameter config with additionally provided config") {
