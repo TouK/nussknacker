@@ -175,7 +175,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus)(implicit
   override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[CustomActionResult] =
     actionRequest.name match {
       case "hello" | "invalid-status" => Future.successful(CustomActionResult(actionRequest, "Hi"))
-      case _ => Future.failed(CustomActionNotImplemented(actionRequest))
+      case _ => Future.failed(new IllegalArgumentException("Not implemented"))
     }
 
   override def close(): Unit = {}
