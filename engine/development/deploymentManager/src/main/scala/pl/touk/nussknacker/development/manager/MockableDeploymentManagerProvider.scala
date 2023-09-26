@@ -104,7 +104,7 @@ object MockableDeploymentManagerProvider {
     override def customActions: List[CustomAction] = Nil
 
     override def invokeCustomAction(actionRequest: CustomActionRequest, canonicalProcess: CanonicalProcess): Future[CustomActionResult] =
-      Future.failed(CustomActionNotImplemented(actionRequest))
+      Future.failed(new IllegalArgumentException("Not implemented"))
 
     override def getProcessStates(name: ProcessName)
                                  (implicit freshnessPolicy: DataFreshnessPolicy): Future[WithDataFreshnessStatus[List[StatusDetails]]] =
