@@ -10,7 +10,7 @@ export const NodeInputCss = css`
     color: ${variables.defaultTextColor} !important;
     font-weight: 400;
     font-size: 14px;
-    outline: 1px solid rgba(255, 255, 255, 0.075) !important;
+    outline: 1px solid rgba(255, 255, 255, 0.075);
     &:-moz-disabled {
         background-color: ${variables.panelBkgColor};
     }
