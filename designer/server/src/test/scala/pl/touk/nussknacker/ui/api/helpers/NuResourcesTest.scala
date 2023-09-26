@@ -91,11 +91,11 @@ trait NuResourcesTest
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
     futureFetchingProcessRepository)
 
-  protected implicit val deploymentService: DeploymentService =
-    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, scenarioResolver, processChangeListener, None)
+  protected def deploymentService(deploymentCommentSettings: Option[DeploymentCommentSettings] = None): DeploymentService =
+    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, scenarioResolver, processChangeListener, None, deploymentCommentSettings)
 
   private implicit val processingTypeDeploymentService: DefaultProcessingTypeDeploymentService =
-    new DefaultProcessingTypeDeploymentService(Streaming, deploymentService)
+    new DefaultProcessingTypeDeploymentService(Streaming, deploymentService())
 
   protected val processingTypeConfig: ProcessingTypeConfig =
     ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
@@ -118,14 +118,16 @@ trait NuResourcesTest
 
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
-  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _] =
+  protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _] = {
+    implicit val stefan: DeploymentService = deploymentService()
     ProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(testConfig))
+  }
 
-  protected val customActionInvokerService = new CustomActionInvokerServiceImpl(futureFetchingProcessRepository, dmDispatcher, deploymentService)
+  protected val customActionInvokerService = new CustomActionInvokerServiceImpl(futureFetchingProcessRepository, dmDispatcher, deploymentService())
 
   protected val testExecutorService = new ScenarioTestExecutorServiceImpl(scenarioResolver, dmDispatcher)
 
-  protected val processService: DBProcessService = createDBProcessService(deploymentService)
+  protected val processService: DBProcessService = createDBProcessService(deploymentService())
 
   protected val scenarioTestService: ScenarioTestService = createScenarioTestService(testModelDataProvider.mapValues(new ModelDataTestInfoProvider(_)))
 
@@ -134,7 +136,7 @@ trait NuResourcesTest
   protected val processesRoute = new ProcessesResources(
     processRepository = futureFetchingProcessRepository,
     processService = processService,
-    deploymentService = deploymentService,
+    deploymentService = deploymentService(),
     processToolbarService = configProcessToolbarService,
     processResolving = processResolving,
     processAuthorizer = processAuthorizer,
@@ -162,8 +164,7 @@ trait NuResourcesTest
   protected def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) = new ManagementResources(
     processAuthorizer = processAuthorizer,
     processRepository = futureFetchingProcessRepository,
-    deploymentCommentSettings = deploymentCommentSettings,
-    deploymentService = deploymentService,
+    deploymentService = deploymentService(deploymentCommentSettings),
     dispatcher = dmDispatcher,
     customActionInvokerService = customActionInvokerService,
     metricRegistry = new MetricRegistry,

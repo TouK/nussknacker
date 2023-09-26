@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentId, ExternalDeploymentId}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, NuScalaTestAssertions, PatientScalaFutures}
+import pl.touk.nussknacker.ui.api.DeploymentCommentSettings
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.{existingSinkFactory, existingSourceFactory, processorId}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
@@ -68,7 +69,7 @@ class DeploymentServiceSpec extends AnyFunSuite with Matchers with PatientScalaF
   deploymentManager = new MockDeploymentManager(SimpleStateStatus.Running)(new DefaultProcessingTypeDeploymentService(TestProcessingTypes.Streaming, deploymentService))
 
   private def createDeploymentService(scenarioStateTimeout: Option[FiniteDuration]): DeploymentService = {
-    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, TestFactory.scenarioResolver, listener, scenarioStateTimeout = scenarioStateTimeout)
+    new DeploymentServiceImpl(dmDispatcher, fetchingProcessRepository, actionRepository, dbioRunner, processValidation, TestFactory.scenarioResolver, listener, scenarioStateTimeout = scenarioStateTimeout, deploymentCommentSettings = None)
   }
 
   test("should return state correctly when state is deployed") {
