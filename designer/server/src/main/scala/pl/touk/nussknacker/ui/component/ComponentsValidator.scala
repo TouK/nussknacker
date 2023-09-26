@@ -63,6 +63,7 @@ private[component] object ComponentsValidator {
     val wrongConfiguredIcons = checkUniqueAttributeValue(IconAttribute, components.map(_.icon))
     val wrongConfiguredGroups = checkUniqueAttributeValue(ComponentGroupNameAttribute, components.map(_.componentGroupName))
     val wrongConfiguredTypes = checkUniqueAttributeValue(ComponentTypeAttribute, components.map(_.componentType))
+    // this doesn't check component params (maybe it doesn't have to?)
     val wrongConfigurations = wrongConfiguredNames ++ wrongConfiguredTypes ++ wrongConfiguredGroups ++ wrongConfiguredIcons
     wrongConfigurations.toList
   }

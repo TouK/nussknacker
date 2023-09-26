@@ -35,7 +35,7 @@ object DefaultComponentIdProvider extends LazyLogging {
 
 class DefaultComponentIdProvider(configs: Map[ProcessingType, ComponentsUiConfig]) extends ComponentIdProvider {
 
-  override def createComponentId(processingType: ProcessingType, name: Option[ProcessingType], componentType: ComponentType): ComponentId = {
+  override def createComponentId(processingType: ProcessingType, name: Option[String], componentType: ComponentType): ComponentId = {
     name match {
       case Some(value) => createComponentId(processingType, value, componentType)
       case None => ComponentId.forBaseComponent(componentType)

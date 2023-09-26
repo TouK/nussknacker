@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.listener
 
 import scala.concurrent.ExecutionContext
 
-trait ProcessChangeListener {
+trait ProcessChangeListener { // TODO listener for changes in ComponentId (?)
   def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: User): Unit
 }
 

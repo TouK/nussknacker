@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ComponentId, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.generics
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, MetaDataInitializer}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
+import pl.touk.nussknacker.ui.component.{ComponentDefinitionPreparer, ComponentIdProvider}
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
@@ -41,6 +41,8 @@ object UIProcessObjectsFactory {
 
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
+    val componentIdProvider: ComponentIdProvider = ??? // TODO
+
     //FIXME: how to handle dynamic configuration of fragments??
     val fragmentInputs = extractFragmentInputs(fragmentsDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
     val uiClazzDefinitions = modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition)
@@ -49,9 +51,27 @@ object UIProcessObjectsFactory {
 
     val customTransformerAdditionalData = staticObjectsDefinition.customStreamTransformers.mapValuesNow(_._2)
 
+    val virtualComponentGroups = ComponentDefinitionPreparer.getVirtualComponentGroups(
+      user = user,
+      processDefinition = uiProcessDefinition,
+      isFragment = isFragment,
+      processCategoryService = processCategoryService,
+      customTransformerAdditionalData = customTransformerAdditionalData,
+      processingType
+    )
+
+    val componentIdToName: Map[ComponentId, String] = virtualComponentGroups
+      .flatten
+      .flatMap(_.components)
+      .map(component =>
+        componentIdProvider.createComponentId(processingType, Some(component.label), component.`type`) -> component.label
+      ).toMap
+
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
 
-    val additionalComponentsUIConfig = modelDataForType.additionalComponentsUIConfigProvider.getAllForCategory(processingType)
+    val additionalComponentsUIConfig = modelDataForType.additionalComponentsUIConfigProvider.getAllForCategory(processingType).map {
+      case (componentId, config) => componentIdToName(componentId) -> config
+    }
 
     val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
     //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
@@ -69,14 +89,9 @@ object UIProcessObjectsFactory {
 
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
-        user = user,
-        processDefinition = uiProcessDefinition,
-        isFragment = isFragment,
+        virtualComponentGroups = virtualComponentGroups,
         componentsConfig = finalComponentsConfig,
-        componentsGroupMapping = componentsGroupMapping,
-        processCategoryService = processCategoryService,
-        customTransformerAdditionalData = customTransformerAdditionalData,
-        processingType
+        componentsGroupMapping = componentsGroupMapping
       ),
       processDefinition = uiProcessDefinition,
       componentsConfig = finalComponentsConfig,
@@ -132,7 +147,7 @@ object UIProcessObjectsFactory {
       parameters = objectDefinition.parameters.map(createUIParameter),
       returnType = objectDefinition.returnType,
       categories = objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
-      componentConfig = objectDefinition.componentConfig
+      componentConfig = objectDefinition.componentConfig // TODO `|+| additionalConfig.getOrElse(name, SingleComponentConfig.zero)`  here could combine with additionalConfig via name matching
     )
   }
 

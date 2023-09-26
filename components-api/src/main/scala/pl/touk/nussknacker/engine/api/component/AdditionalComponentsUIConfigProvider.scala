@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.component
 
-trait AdditionalComponentsUIConfigProvider {
+trait AdditionalComponentsUIConfigProvider extends Serializable {
 
-  def getAllForCategory(category: String): Map[String, SingleComponentConfig]
+  def getAllForCategory(category: String): Map[ComponentId, SingleComponentConfig]
 
 }

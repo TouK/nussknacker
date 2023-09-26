@@ -32,15 +32,13 @@ object ComponentDefinitionPreparer {
   import cats.instances.map._
   import cats.syntax.semigroup._
 
-  def prepareComponentsGroupList(user: LoggedUser,
+  def getVirtualComponentGroups(user: LoggedUser,
                                  processDefinition: UIProcessDefinition,
                                  isFragment: Boolean,
-                                 componentsConfig: ComponentsUiConfig,
-                                 componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                                  processCategoryService: ProcessCategoryService,
                                  customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData],
                                  processingType: ProcessingType
-                                ): List[ComponentGroup] = {
+                                ): List[List[ComponentGroup]] = {
     val userCategories = processCategoryService.getUserCategories(user)
     val processingTypeCategories = processCategoryService.getProcessingTypeCategories(processingType)
     val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
@@ -138,18 +136,24 @@ object ComponentDefinitionPreparer {
       List.empty
     }
 
-    // return none if component group should be hidden
-    def getComponentGroupName(componentName: String, baseComponentGroupName: ComponentGroupName): Option[ComponentGroupName] = {
-      val groupName = componentsConfig.get(componentName).flatMap(_.componentGroup).getOrElse(baseComponentGroupName)
-      componentsGroupMapping.getOrElse(groupName, Some(groupName))
-    }
-
-    val virtualComponentGroups = List(
+    List(
       List(inputs),
       List(base),
       List(enrichers, customTransformers) ++ fragments,
       List(services, optionalEndingCustomTransformers, sinks)
     )
+  }
+
+  def prepareComponentsGroupList(virtualComponentGroups: List[List[ComponentGroup]],
+                                 componentsConfig: ComponentsUiConfig,
+                                 componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
+                                ): List[ComponentGroup] = {
+
+    // return none if component group should be hidden
+    def getComponentGroupName(componentName: String, baseComponentGroupName: ComponentGroupName): Option[ComponentGroupName] = {
+      val groupName = componentsConfig.get(componentName).flatMap(_.componentGroup).getOrElse(baseComponentGroupName)
+      componentsGroupMapping.getOrElse(groupName, Some(groupName))
+    }
 
     virtualComponentGroups
       .zipWithIndex
