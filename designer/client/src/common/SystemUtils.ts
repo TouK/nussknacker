@@ -3,7 +3,7 @@ import { AxiosRequestConfig } from "axios";
 import { v4 as uuid4 } from "uuid";
 import api from "../api";
 import { isEmpty, set } from "lodash";
-import { getPromiseWithResolve, PromiseWithResolve } from "./promiseWithResolve";
+import { PendingPromise } from "./PendingPromise";
 
 class SystemUtils {
     public static AUTHORIZATION_HEADER_NAMESPACE = "Authorization";
@@ -12,10 +12,10 @@ class SystemUtils {
     public static BEARER_CASE = "Bearer";
     public static NONCE = "nonce";
 
-    #tokenPromise: PromiseWithResolve<string> | null;
-    get tokenPromise(): PromiseWithResolve<string> {
+    #tokenPromise: PendingPromise<string> | null;
+    get tokenPromise(): PendingPromise<string> {
         if (!this.#tokenPromise) {
-            this.#tokenPromise = getPromiseWithResolve<string>();
+            this.#tokenPromise = new PendingPromise<string>();
         }
         return this.#tokenPromise;
     }
