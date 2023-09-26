@@ -126,7 +126,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
       val dmDispatcher = new DeploymentManagerDispatcher(managers, futureProcessRepository)
 
       val deploymentService = new DeploymentServiceImpl(dmDispatcher, processRepository, actionRepository, dbioRunner,
-        processValidation, scenarioResolver, processChangeListener, featureTogglesConfig.scenarioStateTimeout)
+        processValidation, scenarioResolver, processChangeListener, featureTogglesConfig.scenarioStateTimeout, featureTogglesConfig.deploymentCommentSettings)
       deploymentService.invalidateInProgressActions()
 
       deploymentServiceSupplier.set(deploymentService)
@@ -209,7 +209,6 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
           new ManagementResources(
             processAuthorizer,
             futureProcessRepository,
-            featureTogglesConfig.deploymentCommentSettings,
             deploymentService,
             dmDispatcher,
             customActionInvokerService,
