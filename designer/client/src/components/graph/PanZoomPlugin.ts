@@ -1,7 +1,7 @@
 import { css } from "@emotion/css";
 import { dia, g } from "jointjs";
 import { debounce, throttle } from "lodash";
-import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { isMultiTouchEvent, isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import svgPanZoom from "svg-pan-zoom";
 import { CursorMask } from "./CursorMask";
 import { Events } from "./types";
@@ -175,16 +175,9 @@ export class PanZoomPlugin {
         });
 
         document.addEventListener("touchmove", (event) => {
-            if (event.touches.length > 1) {
-                paper.setInteractivity(false);
-                event.preventDefault();
-                event.stopPropagation();
+            if (isMultiTouchEvent(event)) {
                 event.stopImmediatePropagation();
             }
-        });
-
-        document.addEventListener("touchend", () => {
-            paper.setInteractivity(true);
         });
     }
 

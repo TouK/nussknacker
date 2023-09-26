@@ -26,7 +26,7 @@ import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import ProcessUtils from "../../common/ProcessUtils";
-import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { isMultiTouchEvent, isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { cx } from "@emotion/css";
@@ -54,6 +54,10 @@ function handleActionOnLongPress<T extends dia.CellView>(
 
     return (cellView: T, evt: dia.Event) => {
         const { paper } = cellView;
+
+        if (isMultiTouchEvent) {
+            return;
+        }
 
         // let's clear all pointer click events on start
         if (shortPressAction) {

@@ -3,7 +3,7 @@ import { dia, g, shapes } from "jointjs";
 import { CursorMask } from "./CursorMask";
 import { Events } from "./types";
 import { pressedKeys } from "./KeysObserver";
-import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { isMultiTouchEvent, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 
 export enum SelectionMode {
     replace = "replace",
@@ -69,6 +69,10 @@ export class RangeSelectPlugin {
         };
 
         return (event: dia.Event, ...args: unknown[]) => {
+            if (isMultiTouchEvent(event)) {
+                return;
+            }
+
             const paper = this.paper;
 
             paper.once(Events.BLANK_POINTERMOVE, releasePress);
