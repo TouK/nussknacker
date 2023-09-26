@@ -2,6 +2,8 @@ package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ComponentId, ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
+import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ComponentId, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.generics
@@ -14,7 +16,7 @@ import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtract
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{ModelData, MetaDataInitializer}
+import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.{ComponentDefinitionPreparer, ComponentIdProvider}
@@ -27,6 +29,35 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 object UIProcessObjectsFactory {
 
   import net.ceedubs.ficus.Ficus._
+
+  private def getComponentIdToNameMap(componentIdProvider: ComponentIdProvider,
+                                      processingType: ProcessingType,
+                                      uiProcessDefinition: UIProcessDefinition,
+                                      isFragment: Boolean
+                                     ): Map[ComponentId, ProcessingType] = {
+    val createMapping = (name: String, componentType: ComponentType) => componentIdProvider.createComponentId(processingType, Some(name), componentType) -> name
+
+    uiProcessDefinition.services.map { case (name, obj) =>
+      createMapping(
+        name,
+        if (obj.hasNoReturn) ComponentType.Processor else ComponentType.Enricher
+      )
+    } ++
+      uiProcessDefinition.customStreamTransformers.keySet.map(
+        createMapping(_, ComponentType.CustomNode)
+      ) ++
+      uiProcessDefinition.sinkFactories.keySet.map(
+        createMapping(_, ComponentType.Sink)
+      ) ++
+      (if (!isFragment) {
+        uiProcessDefinition.sourceFactories.keySet.map(
+          createMapping(_, ComponentType.Source)
+        ) ++
+          uiProcessDefinition.fragmentInputs.keySet.map(
+            createMapping(_, ComponentType.Fragments)
+          )
+      } else Map.empty)
+  }
 
   def prepareUIProcessObjects(modelDataForType: ModelData,
                               staticObjectsDefinition: ProcessDefinition[ObjectDefinition],
@@ -41,8 +72,6 @@ object UIProcessObjectsFactory {
 
     val fixedComponentsUiConfig = ComponentsUiConfigExtractor.extract(processConfig)
 
-    val componentIdProvider: ComponentIdProvider = ??? // TODO
-
     //FIXME: how to handle dynamic configuration of fragments??
     val fragmentInputs = extractFragmentInputs(fragmentsDetails, modelDataForType.modelClassLoader.classLoader, fixedComponentsUiConfig)
     val uiClazzDefinitions = modelDataForType.modelDefinitionWithTypes.typeDefinitions.all.map(prepareClazzDefinition)
@@ -51,23 +80,10 @@ object UIProcessObjectsFactory {
 
     val customTransformerAdditionalData = staticObjectsDefinition.customStreamTransformers.mapValuesNow(_._2)
 
-    val virtualComponentGroups = ComponentDefinitionPreparer.getVirtualComponentGroups(
-      user = user,
-      processDefinition = uiProcessDefinition,
-      isFragment = isFragment,
-      processCategoryService = processCategoryService,
-      customTransformerAdditionalData = customTransformerAdditionalData,
-      processingType
-    )
-
-    val componentIdToName: Map[ComponentId, String] = virtualComponentGroups
-      .flatten
-      .flatMap(_.components)
-      .map(component =>
-        componentIdProvider.createComponentId(processingType, Some(component.label), component.`type`) -> component.label
-      ).toMap
-
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
+
+    val componentIdProvider: ComponentIdProvider = ??? // TODO
+    val componentIdToName: Map[ComponentId, String] = getComponentIdToNameMap(componentIdProvider, processingType, uiProcessDefinition, isFragment)
 
     val additionalComponentsUIConfig = modelDataForType.additionalComponentsUIConfigProvider.getAllForCategory(processingType).map {
       case (componentId, config) => componentIdToName(componentId) -> config
@@ -89,9 +105,14 @@ object UIProcessObjectsFactory {
 
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
-        virtualComponentGroups = virtualComponentGroups,
+        user = user,
+        processDefinition = uiProcessDefinition,
+        isFragment = isFragment,
         componentsConfig = finalComponentsConfig,
-        componentsGroupMapping = componentsGroupMapping
+        componentsGroupMapping = componentsGroupMapping,
+        processCategoryService = processCategoryService,
+        customTransformerAdditionalData = customTransformerAdditionalData,
+        processingType
       ),
       processDefinition = uiProcessDefinition,
       componentsConfig = finalComponentsConfig,

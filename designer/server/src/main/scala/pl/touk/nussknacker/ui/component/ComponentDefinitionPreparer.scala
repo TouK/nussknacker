@@ -32,26 +32,28 @@ object ComponentDefinitionPreparer {
   import cats.instances.map._
   import cats.syntax.semigroup._
 
-  def getVirtualComponentGroups(user: LoggedUser,
+  def prepareComponentsGroupList(user: LoggedUser,
                                  processDefinition: UIProcessDefinition,
                                  isFragment: Boolean,
+                                 componentsConfig: ComponentsUiConfig,
+                                 componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                                  processCategoryService: ProcessCategoryService,
                                  customTransformerAdditionalData: Map[String, CustomTransformerAdditionalData],
                                  processingType: ProcessingType
-                                ): List[List[ComponentGroup]] = {
+                                ): List[ComponentGroup] = {
     val userCategories = processCategoryService.getUserCategories(user)
     val processingTypeCategories = processCategoryService.getProcessingTypeCategories(processingType)
     val userProcessingTypeCategories = userCategories.intersect(processingTypeCategories)
 
     def filterCategories(objectDefinition: UIObjectDefinition): List[String] = userProcessingTypeCategories.intersect(objectDefinition.categories)
 
-    def objDefParams(id: String, objDefinition: UIObjectDefinition): List[Parameter] =
+    def objDefParams(objDefinition: UIObjectDefinition): List[Parameter] =
       EvaluatedParameterPreparer.prepareEvaluatedParameter(objDefinition.parameters)
 
-    def objDefBranchParams(id: String, objDefinition: UIObjectDefinition): List[Parameter] =
+    def objDefBranchParams(objDefinition: UIObjectDefinition): List[Parameter] =
       EvaluatedParameterPreparer.prepareEvaluatedBranchParameter(objDefinition.parameters)
 
-    def serviceRef(id: String, objDefinition: UIObjectDefinition) = ServiceRef(id, objDefParams(id, objDefinition))
+    def serviceRef(id: String, objDefinition: UIObjectDefinition) = ServiceRef(id, objDefParams(objDefinition))
 
     val returnsUnit = ((_: String, objectDefinition: UIObjectDefinition) => objectDefinition.hasNoReturn).tupled
 
@@ -86,24 +88,24 @@ object ComponentDefinitionPreparer {
         // Also it is not the best design pattern to reply with backend's NodeData as a template in API.
         // TODO: keep only custom node ids in componentGroups element and move templates to parameters definition API
         case (id, uiObjectDefinition) if customTransformerAdditionalData(id).manyInputs => ComponentTemplate(ComponentType.CustomNode, id,
-          node.Join("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition), List.empty),
-          filterCategories(uiObjectDefinition), objDefBranchParams(id, uiObjectDefinition))
+          node.Join("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(uiObjectDefinition), List.empty),
+          filterCategories(uiObjectDefinition), objDefBranchParams(uiObjectDefinition))
         case (id, uiObjectDefinition) if !customTransformerAdditionalData(id).canBeEnding => ComponentTemplate(ComponentType.CustomNode, id,
-          CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition))
+          CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(uiObjectDefinition)), filterCategories(uiObjectDefinition))
       }.toList
     )
 
     val optionalEndingCustomTransformers = ComponentGroup(OptionalEndingCustomGroupName,
       processDefinition.customStreamTransformers.collect {
         case (id, uiObjectDefinition) if customTransformerAdditionalData(id).canBeEnding => ComponentTemplate(ComponentType.CustomNode, id,
-          CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(id, uiObjectDefinition)), filterCategories(uiObjectDefinition))
+          CustomNode("", if (uiObjectDefinition.hasNoReturn) None else Some("outputVar"), id, objDefParams(uiObjectDefinition)), filterCategories(uiObjectDefinition))
       }.toList
     )
 
     val sinks = ComponentGroup(SinksGroupName,
       processDefinition.sinkFactories.map {
         case (id, uiObjectDefinition) => ComponentTemplate(ComponentType.Sink, id,
-          Sink("", SinkRef(id, objDefParams(id, uiObjectDefinition))), filterCategories(uiObjectDefinition)
+          Sink("", SinkRef(id, objDefParams(uiObjectDefinition))), filterCategories(uiObjectDefinition)
         )
       }.toList)
 
@@ -111,7 +113,7 @@ object ComponentDefinitionPreparer {
       ComponentGroup(SourcesGroupName,
         processDefinition.sourceFactories.map {
           case (id, objDefinition) => ComponentTemplate(ComponentType.Source, id,
-            Source("", SourceRef(id, objDefParams(id, objDefinition))),
+            Source("", SourceRef(id, objDefParams(objDefinition))),
             filterCategories(objDefinition)
           )
         }.toList)
@@ -136,24 +138,18 @@ object ComponentDefinitionPreparer {
       List.empty
     }
 
-    List(
-      List(inputs),
-      List(base),
-      List(enrichers, customTransformers) ++ fragments,
-      List(services, optionalEndingCustomTransformers, sinks)
-    )
-  }
-
-  def prepareComponentsGroupList(virtualComponentGroups: List[List[ComponentGroup]],
-                                 componentsConfig: ComponentsUiConfig,
-                                 componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
-                                ): List[ComponentGroup] = {
-
     // return none if component group should be hidden
     def getComponentGroupName(componentName: String, baseComponentGroupName: ComponentGroupName): Option[ComponentGroupName] = {
       val groupName = componentsConfig.get(componentName).flatMap(_.componentGroup).getOrElse(baseComponentGroupName)
       componentsGroupMapping.getOrElse(groupName, Some(groupName))
     }
+
+    val virtualComponentGroups = List(
+      List(inputs),
+      List(base),
+      List(enrichers, customTransformers) ++ fragments,
+      List(services, optionalEndingCustomTransformers, sinks)
+    )
 
     virtualComponentGroups
       .zipWithIndex
