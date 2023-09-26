@@ -1,14 +1,24 @@
-export class PendingPromise<T> {
-    public resolve: (value: PromiseLike<T> | T) => void;
-    public reject: (reason?: any) => void;
-    public promise: Promise<T>;
+export class PendingPromise<T> extends Promise<T> {
+    resolve: (value: PromiseLike<T> | T) => void;
+    reject: (reason?: any) => void;
 
-    constructor(timeoutTime = 30000) {
-        this.promise = new Promise<T>((resolve, reject) => {
+    constructor(timeoutTime?: number) {
+        super((resolve, reject) => {
             this.resolve = resolve;
             this.reject = reject;
         });
-        const timeout = setTimeout(() => this.reject(new Error("timeout")), timeoutTime);
-        this.promise.finally(() => clearTimeout(timeout));
+
+        if (timeoutTime) {
+            this.#setTimeout(timeoutTime);
+        }
+    }
+
+    static withTimeout<T>(timeoutTime = 60000) {
+        return new PendingPromise<T>(timeoutTime);
+    }
+
+    #setTimeout(time: number) {
+        const timeout = setTimeout(() => this.reject(new Error(`Timed out waiting (${time}ms) for resolve!`)), time);
+        this.finally(() => clearTimeout(timeout));
     }
 }

@@ -3,6 +3,7 @@ import SystemUtils, { AUTHORIZATION_HEADER_NAMESPACE } from "./common/SystemUtil
 import { API_URL } from "./config";
 
 const headers = {};
+
 if (SystemUtils.hasAccessToken()) {
     headers[AUTHORIZATION_HEADER_NAMESPACE] = SystemUtils.authorizationToken();
 }
