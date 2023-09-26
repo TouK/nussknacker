@@ -387,28 +387,28 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("execute not implemented custom action") {
     createEmptyProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("not-implemented")) ~> check {
-      status shouldBe StatusCodes.NotImplemented
+      status shouldBe StatusCodes.BadRequest
     }
   }
 
   test("execute custom action with not allowed process status") {
     createEmptyProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("invalid-status")) ~> check {
-      status shouldBe StatusCodes.Forbidden
+      status shouldBe StatusCodes.BadRequest
     }
   }
 
-  test("should return 403 when execute custom action on archived process") {
+  test("should return 409 when execute custom action on archived process") {
     createArchivedProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
-      status shouldBe StatusCodes.Forbidden
+      status shouldBe StatusCodes.Conflict
     }
   }
 
-  test("should return 403 when execute custom action on fragment") {
+  test("should return 409 when execute custom action on fragment") {
     createEmptyProcess(SampleProcess.processName, isFragment = true)
     customAction(SampleProcess.processName, CustomActionRequest("hello")) ~> check {
-      status shouldBe StatusCodes.Forbidden
+      status shouldBe StatusCodes.Conflict
     }
   }
 
