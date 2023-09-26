@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.ui.process.deployment
 
-import pl.touk.nussknacker.engine
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
+import pl.touk.nussknacker.ui.{BadRequestError, EspError, IllegalOperationError, NotFoundError}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -28,24 +27,20 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
                                      processStateService: ProcessStateService) extends CustomActionInvokerService {
   override def invokeCustomAction(actionName: String, id: ProcessIdWithName, params: Map[String, String])
                                  (implicit user: LoggedUser, ec: ExecutionContext): Future[CustomActionResult] = {
-
-    def createCustomAction(process: BaseProcessDetails[_]) =
-      engine.api.deployment.CustomActionRequest(
-        name = actionName,
-        processVersion = process.toEngineProcessVersion,
-        user = user.toManagerUser,
-        params = params
-      )
-
     val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)
     maybeProcess.flatMap {
       case Some(process) if process.isFragment =>
-        actionError(CustomActionForbidden(createCustomAction(process), "Invoke custom action on fragment is forbidden."))
+        actionError(CustomActionOnFragmentForbidden())
       case Some(process) if process.isArchived =>
-        actionError(CustomActionForbidden(createCustomAction(process), "Invoke custom action on archived scenario is forbidden."))
+        actionError(CustomActionOnArchivedForbidden())
       case Some(process) =>
-        val actionReq = createCustomAction(process)
         val manager = dispatcher.deploymentManagerUnsafe(process.processingType)
+        val actionReq = CustomActionRequest(
+          name = actionName,
+          processVersion = process.toEngineProcessVersion,
+          user = user.toManagerUser,
+          params = params
+        )
         manager.customActions.find(_.name == actionName) match {
           case Some(customAction) =>
             implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
@@ -63,6 +58,18 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
     }
   }
 
-  private def actionError(error: CustomActionError): Future[CustomActionResult] = Future.failed(error)
+  private def actionError(error: Exception with EspError): Future[CustomActionResult] = Future.failed(error)
 
 }
+
+case class CustomActionInvalidStatus(request: CustomActionRequest, stateStatusName: String)
+  extends Exception(s"""Invalid scenario status: $stateStatusName is not allowed for action "${request.name}"""") with BadRequestError
+
+case class CustomActionNonExisting(request: CustomActionRequest)
+  extends Exception(s"""Action "${request.name}" does not exist""") with NotFoundError
+
+case class CustomActionOnFragmentForbidden()
+  extends Exception("Invoke custom action on fragment is forbidden.") with IllegalOperationError
+
+case class CustomActionOnArchivedForbidden()
+  extends Exception("Invoke custom action on archived scenario is forbidden.") with IllegalOperationError

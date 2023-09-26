@@ -17,9 +17,9 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.CustomActionRequest
+import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
-import pl.touk.nussknacker.ui.api.EspErrorToHttp.{errorToHttp, toResponseTryPF}
+import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponseTryPF
 import pl.touk.nussknacker.ui.api.NodesResources.prepareTestFromParametersDecoder
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
@@ -31,7 +31,6 @@ import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCoun
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 object ManagementResources {
 
@@ -248,21 +247,16 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
               complete {
                 customActionInvokerService
                   .invokeCustomAction(req.actionName, process, params)
-                  .map(_ => HttpResponse(status = StatusCodes.OK))
-                  .recover(customActionErrorToHttp orElse EspErrorToHttp.errorToHttp)
+                  .flatMap(actionResult => toHttpResponse(CustomActionResponse(actionResult))(StatusCodes.OK))
+                  .recover(EspErrorToHttp.errorToHttp)
               }
             }
           }
       }
   }
 
-  private def customActionErrorToHttp : PartialFunction[Throwable, HttpResponse] = {
-    case _: CustomActionFailure => HttpResponse(status = StatusCodes.InternalServerError)
-    case _: CustomActionInvalidStatus => HttpResponse(status = StatusCodes.Forbidden)
-    case _: CustomActionForbidden => HttpResponse(status = StatusCodes.Forbidden)
-    case _: CustomActionNotImplemented => HttpResponse(status = StatusCodes.NotImplemented)
-    case _: CustomActionNonExisting => HttpResponse(status = StatusCodes.NotFound)
-  }
+  private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
+    Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
 
   private def convertSavepointResultToResponse(future: Future[SavepointResult]) = {
     future
