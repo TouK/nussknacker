@@ -19,3 +19,5 @@ class OidcAuthenticationProvider extends AuthenticationProvider {
     )
   }
 }
+
+object OidcAuthenticationProvider extends OidcAuthenticationProvider
