@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessIdWithName, Pro
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,10 +18,10 @@ trait DeploymentService extends ProcessStateService {
   // We split deploy process that way because we want to be able to split FE logic into two phases:
   // - validations - it is quick part, the result will be displayed on deploy modal
   // - deployment on engine side - it is longer part, the result will be shown as a notification
-  def deployProcessAsync(id: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])
+  def deployProcessAsync(id: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])
                         (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]]
 
-  def cancelProcess(id: ProcessIdWithName, deploymentComment: Option[DeploymentComment])
+  def cancelProcess(id: ProcessIdWithName, comment: Option[String])
                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Unit]
   def invalidateInProgressActions(): Unit
 

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Cancel, Deploy, Pause, ProcessActionType}
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy, StateActionsTypes}
 import pl.touk.nussknacker.ui.BadRequestError
-import pl.touk.nussknacker.ui.api.ListenerApiUser
+import pl.touk.nussknacker.ui.api.{DeploymentCommentSettings, ListenerApiUser}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess, OnFinished}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
@@ -33,7 +34,7 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 // Responsibility of this class is to wrap communication with DeploymentManager with persistent, transactional context.
-// It ensures that all actions are done consistently: do validations and ensures that only allowed actions
+// It ensures that all actions are done consistently: does validations and ensures that only allowed actions
 // will be executed in given state. It sends notifications about finished actions.
 // Also thanks to it we are able to check if state on remote engine is the same as persisted state.
 class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
@@ -44,8 +45,11 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
                             scenarioResolver: ScenarioResolver,
                             processChangeListener: ProcessChangeListener,
                             scenarioStateTimeout: Option[FiniteDuration],
+                            deploymentCommentSettings: Option[DeploymentCommentSettings],
                             clock: Clock = Clock.systemUTC())
                            (implicit system: ActorSystem) extends DeploymentService with LazyLogging {
+
+  case class ValidationError(message: String) extends Exception(message) with BadRequestError
 
   def getDeployedScenarios(processingType: ProcessingType)
                           (implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] = {
@@ -72,13 +76,17 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     } yield dataList
   }
 
-  override def cancelProcess(processId: ProcessIdWithName, deploymentComment: Option[DeploymentComment])
+  override def cancelProcess(processId: ProcessIdWithName, comment: Option[String])
                             (implicit user: LoggedUser, ec: ExecutionContext): Future[Unit] = {
     val actionType = ProcessActionType.Cancel
     checkCanPerformActionAndAddInProgressAction[Unit](processId.id, actionType, _.lastDeployedAction.map(_.processVersionId), _ => None).flatMap {
       case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-        runDeploymentActionWithNotifications(actionType, actionId, processId, versionOnWhichActionIsDone, deploymentComment, buildInfoProcessIngType) {
-          dispatcher.deploymentManagerUnsafe(processDetails.processingType).cancel(processId.name, user.toManagerUser)
+        DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
+          case Valid(deploymentComment) =>
+            runDeploymentActionWithNotifications(actionType, actionId, processId, versionOnWhichActionIsDone, deploymentComment, buildInfoProcessIngType) {
+              dispatcher.deploymentManagerUnsafe(processDetails.processingType).cancel(processId.name, user.toManagerUser)
+            }
+          case Invalid(exc) => Future.failed(ValidationError(exc.getMessage))
         }
     }
   }
@@ -89,21 +97,25 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
   // - deployment on engine side - it is longer part, the result will be shown as a notification
   override def deployProcessAsync(processIdWithName: ProcessIdWithName,
                                   savepointPath: Option[String],
-                                  deploymentComment: Option[DeploymentComment])
+                                  comment: Option[String])
                                  (implicit user: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] = {
     val actionType = ProcessActionType.Deploy
     checkCanPerformActionAndAddInProgressAction[CanonicalProcess](processIdWithName.id, actionType, d => Some(d.processVersionId), d => Some(d.processingType)).flatMap {
       case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-        validateBeforeDeploy(processDetails, actionId).transformWith {
-          case Failure(ex) =>
-            dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
-          case Success(validationResult) =>
-            //we notify of deployment finish/fail only if initial validation succeeded
-            val deploymentFuture = runDeploymentActionWithNotifications(actionType, actionId, processIdWithName, versionOnWhichActionIsDone, deploymentComment, buildInfoProcessIngType) {
-              dispatcher.deploymentManagerUnsafe(processDetails.processingType)
-                .deploy(validationResult.processVersion, validationResult.deploymentData, validationResult.resolvedScenario, savepointPath)
+        DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
+          case Valid(deploymentComment) =>
+            validateBeforeDeploy(processDetails, actionId).transformWith {
+              case Failure(ex) =>
+                dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
+              case Success(validationResult) =>
+                //we notify of deployment finish/fail only if initial validation succeeded
+                val deploymentFuture = runDeploymentActionWithNotifications(actionType, actionId, processIdWithName, versionOnWhichActionIsDone, deploymentComment, buildInfoProcessIngType) {
+                  dispatcher.deploymentManagerUnsafe(processDetails.processingType)
+                    .deploy(validationResult.processVersion, validationResult.deploymentData, validationResult.resolvedScenario, savepointPath)
+                }
+                Future.successful(deploymentFuture)
             }
-            Future.successful(deploymentFuture)
+          case Invalid(exc) => Future.failed(ValidationError(exc.getMessage))
         }
     }
   }

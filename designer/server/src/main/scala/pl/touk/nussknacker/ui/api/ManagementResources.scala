@@ -75,7 +75,6 @@ object ManagementResources {
 
 class ManagementResources(val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository[Future],
-                          deploymentCommentSettings: Option[DeploymentCommentSettings],
                           deploymentService: DeploymentService,
                           dispatcher: DeploymentManagerDispatcher,
                           customActionInvokerService: CustomActionInvokerService,
@@ -95,17 +94,6 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
   //TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
   private implicit final val plainBytes: FromEntityUnmarshaller[Array[Byte]] = Unmarshaller.byteArrayUnmarshaller
   private implicit final val plainString: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller
-
-  case class ValidationError(message: String) extends Exception(message) with BadRequestError
-
-  private def withDeploymentComment: Directive1[Option[DeploymentComment]] = {
-    entity(as[Option[String]]).flatMap { comment =>
-      DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
-        case Valid(deploymentComment) => provide(deploymentComment)
-        case Invalid(exc) => complete(EspErrorToHttp.espErrorToHttp(ValidationError(exc.getMessage)))
-      }
-    }
-  }
 
   def securedRoute(implicit user: LoggedUser): Route = {
     pathPrefix("adminProcessManagement") {
@@ -132,10 +120,10 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
         path("deploy" / Segment) { processName =>
           (post & processId(processName) & parameters(Symbol("savepointPath"))) { (processId, savepointPath) =>
             canDeploy(processId) {
-              withDeploymentComment { deploymentComment =>
+              entity(as[Option[String]]) { comment =>
                 complete {
                   deploymentService
-                    .deployProcessAsync(processId, Some(savepointPath), deploymentComment).map(_ => ())
+                    .deployProcessAsync(processId, Some(savepointPath), comment).map(_ => ())
                     .andThen(toResponseTryPF(StatusCodes.OK))
                 }
               }
@@ -147,11 +135,11 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
         path("deploy" / Segment) { processName =>
           (post & processId(processName)) { processId =>
             canDeploy(processId) {
-              withDeploymentComment { deploymentComment =>
+              entity(as[Option[String]]) { comment =>
                 complete {
                   measureTime("deployment", metricRegistry) {
                     deploymentService
-                      .deployProcessAsync(processId, None, deploymentComment).map(_ => ())
+                      .deployProcessAsync(processId, None, comment).map(_ => ())
                       .andThen(toResponseTryPF(StatusCodes.OK))
                   }
                 }
@@ -162,11 +150,11 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
           path("cancel" / Segment) { processName =>
             (post & processId(processName)) { processId =>
               canDeploy(processId) {
-                withDeploymentComment { deploymentComment =>
+                entity(as[Option[String]]) { comment =>
                   complete {
                     measureTime("cancel", metricRegistry) {
                       deploymentService
-                        .cancelProcess(processId, deploymentComment)
+                        .cancelProcess(processId, comment)
                         .andThen(toResponseTryPF(StatusCodes.OK))
                     }
                   }

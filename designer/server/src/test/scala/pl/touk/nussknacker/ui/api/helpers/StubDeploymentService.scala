@@ -20,11 +20,11 @@ class StubDeploymentService(states: Map[ProcessName, ProcessState]) extends Depl
                               (implicit user: LoggedUser, ec: ExecutionContext, freshnessPolicy: DataFreshnessPolicy): Future[ProcessState] =
     Future.successful(states(processIdWithName.name))
 
-  override def deployProcessAsync(id: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])
+  override def deployProcessAsync(id: ProcessIdWithName, savepointPath: Option[String], comment: Option[String])
                                  (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Future[Option[ExternalDeploymentId]]] =
     Future.successful(Future.successful(None))
 
-  override def cancelProcess(id: ProcessIdWithName, deploymentComment: Option[DeploymentComment])
+  override def cancelProcess(id: ProcessIdWithName, comment: Option[String])
                             (implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Unit] = Future.successful(())
 
   override def getDeployedScenarios(processingType: ProcessingType)(implicit ec: ExecutionContext): Future[List[DeployedScenarioData]] =
