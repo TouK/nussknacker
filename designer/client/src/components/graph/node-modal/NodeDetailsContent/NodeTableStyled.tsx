@@ -5,11 +5,33 @@ import { customCheckbox } from "./CustomCheckbox";
 export const NodeTableStyled = styled("div")`
     font-size: 11px;
     margin: 0 25px;
+    .node-table-body {
+        clear: both;
+    }
     .movable-row {
         margin-top: 0;
         flex-wrap: nowrap;
         column-gap: 5px;
         row-gap: 5px;
+    }
+    .node-label {
+        color: ${variables.modalLabelTextColor};
+        flex-basis: 20%;
+        max-width: 20em;
+        display: inline-block;
+        vertical-align: sub;
+        margin-top: 9px;
+        font-size: 12px;
+        font-weight: 700;
+        span {
+            margin-top: 10px;
+            margin-left: 10px;
+            font-size: 15px;
+
+            &:hover {
+                cursor: pointer;
+            }
+        }
     }
     .node-block {
         &.removed {
@@ -100,6 +122,7 @@ export const NodeTableStyled = styled("div")`
         font-size: 14px;
         outline: 1px solid rgba(255, 255, 255, 0.075);
     }
+
     .node-input:-moz-disabled {
         background-color: ${variables.panelBkgColor};
     }
@@ -139,10 +162,11 @@ export const NodeTableStyled = styled("div")`
     }
     .testResultDownload {
         padding-left: 15px;
-        font-size: 14;
+        font-size: 14px;
         a {
             color: ${variables.modalLabelTextColor};
             text-decoration: none;
+
             &:hover {
                 color: ${variables.infoColor};
             }

@@ -4,7 +4,6 @@ import NodeTip from "../NodeTip";
 import TestValue from "./TestValue";
 import { NodeResultsForContext } from "../../../../common/TestResultUtils";
 import { variables } from "../../../../stylesheets/variables";
-import { NodeLabelStyled } from "../fragment-input-definition/NodeStyled";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 interface ExpressionTestResultsProps {
@@ -23,13 +22,13 @@ export default function ExpressionTestResults(props: PropsWithChildren<Expressio
         <div>
             {props.children}
             <NodeRow className="node-test-results">
-                <NodeLabelStyled>
+                <div className="node-label">
                     <NodeTip
                         title={"Value evaluated in test case"}
                         icon={<InfoIcon sx={{ color: variables.infoColor, alignSelf: "center" }} />}
                     />
                     {testValue.pretty ? <span className={showIconClass} onClick={() => toggleTestResults((s) => !s)} /> : null}
-                </NodeLabelStyled>
+                </div>
                 <TestValue value={testValue} shouldHideTestResults={hideTestResults} />
             </NodeRow>
         </div>

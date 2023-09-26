@@ -29,7 +29,7 @@ export default function TestResults({ nodeId }: { nodeId: NodeId }): JSX.Element
             </NodeRow>
             {Object.keys(results.testResultsToShow.context.variables).map((key, ikey) => (
                 <NodeRow key={ikey}>
-                    <NodeLabelStyled>{key}:</NodeLabelStyled>
+                    <div className="node-label">{key}:</div>
                     <TestValue value={results.testResultsToShow.context.variables[key]} shouldHideTestResults={false} />
                 </NodeRow>
             ))}

@@ -5,7 +5,6 @@ import { NodeType, NodeValidationError, ProcessDefinitionData } from "../../../t
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useDiffMark } from "./PathsToMark";
 import { useTranslation } from "react-i18next";
-import { NodeLabelStyled } from "./fragment-input-definition/NodeStyled";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 
 type OutputFieldProps = {
@@ -101,9 +100,9 @@ export default function OutputParametersList({
 
     return outputParameters && outputParameters.length === 0 ? null : (
         <NodeRow key="outputVariableNames">
-            <NodeLabelStyled title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
+            <div className="node-label" title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
                 {t("parameterOutputs.outputsText", "Outputs names:")}
-            </NodeLabelStyled>
+            </div>
             <div className="node-value">
                 <div className="fieldsControl">
                     {outputParameters.map((paramName) => (

@@ -11,7 +11,7 @@ import { DescriptionField } from "./DescriptionField";
 import OutputParametersList from "./OutputParametersList";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 
-export interface FragmentInmput {
+interface FragmentInmput {
     fieldErrors?: NodeValidationError[];
     findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
     isEditMode?: boolean;

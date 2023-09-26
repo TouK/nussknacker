@@ -4,7 +4,6 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { NodeType, UIParameter } from "../../../types";
 import { Error } from "./editors/Validators";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
-import { NodeLabelStyled } from "./fragment-input-definition/NodeStyled";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 
 export interface BranchParametersProps {
@@ -38,7 +37,9 @@ export default function BranchParameters({
                 const paramName = param.name;
                 return (
                     <NodeRow key={paramName}>
-                        <NodeLabelStyled title={paramName}>{paramName}:</NodeLabelStyled>
+                        <div className="node-label" title={paramName}>
+                            {paramName}:
+                        </div>
                         <div className="node-value">
                             <div className="fieldsControl">
                                 {node.branchParameters.map((branchParameter, branchIndex) => {

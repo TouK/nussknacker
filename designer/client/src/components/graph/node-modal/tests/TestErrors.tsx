@@ -4,7 +4,6 @@ import NodeTip from "../NodeTip";
 import { useTestResults } from "../TestResultsWrapper";
 import { NodeTableBody } from "../NodeDetailsContent/NodeTable";
 import { variables } from "../../../../stylesheets/variables";
-import { NodeLabelStyled } from "../fragment-input-definition/NodeStyled";
 import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 export default function TestErrors(): JSX.Element {
@@ -17,9 +16,9 @@ export default function TestErrors(): JSX.Element {
     return (
         <NodeTableBody>
             <NodeRow>
-                <NodeLabelStyled>
+                <div className="node-label">
                     <NodeTip title={"Test case error"} icon={<WarningIcon sx={{ color: variables.alert.warningIcon }} />} />
-                </NodeLabelStyled>
+                </div>
                 <div className="node-value">
                     <div className="node-error">
                         <>{results.testResultsToShow.error}</>

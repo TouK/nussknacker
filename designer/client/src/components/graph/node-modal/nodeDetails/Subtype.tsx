@@ -1,19 +1,14 @@
 import React from "react";
-import { css, styled } from "@mui/material";
+import { styled } from "@mui/material";
 import { PropsWithChildren } from "react";
 import { variables } from "../../../../stylesheets/variables";
 
-export const SubTypeHeader = css({
-    height: `${variables.modalHeaderHeight}px`,
-    background: "#3a3a3a",
-    display: "flex",
-    alignItems: "center",
-    paddingLeft: "10px",
-    paddingRight: "10px",
-});
-
 const SubtypeStyled = styled("div")`
-    ${SubTypeHeader}
+    height: ${variables.modalHeaderHeight}px;
+    background: #3a3a3a;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
 `;
 
 export const Subtype = ({ children }: PropsWithChildren<unknown>) => {

@@ -1,5 +1,5 @@
-import React from "react";
 import { isEmpty } from "lodash";
+import React from "react";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { TextAreaWithFocus, TextAreaWithFocusProps } from "../../../../withFocus";
 import { LabeledInputProps } from "./LabeledInput";
