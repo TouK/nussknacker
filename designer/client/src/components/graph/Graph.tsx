@@ -26,7 +26,7 @@ import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import ProcessUtils from "../../common/ProcessUtils";
-import { isMultiTouchEvent, isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
 import { cx } from "@emotion/css";
@@ -44,6 +44,7 @@ interface Props extends GraphProps {
 function handleActionOnLongPress<T extends dia.CellView>(
     shortPressAction: ((cellView: T, event: dia.Event) => void) | null,
     longPressAction: (cellView: T, event: dia.Event) => void,
+    getPinchEventActive: () => boolean,
     longPressTime = LONG_PRESS_TIME,
 ) {
     let pressTimer;
@@ -54,10 +55,6 @@ function handleActionOnLongPress<T extends dia.CellView>(
 
     return (cellView: T, evt: dia.Event) => {
         const { paper } = cellView;
-
-        if (isMultiTouchEvent) {
-            return;
-        }
 
         // let's clear all pointer click events on start
         if (shortPressAction) {
@@ -74,6 +71,11 @@ function handleActionOnLongPress<T extends dia.CellView>(
             if (shortPressAction) {
                 paper.off(Events.CELL_POINTERCLICK, shortPressAction);
             }
+
+            if (getPinchEventActive()) {
+                return;
+            }
+
             longPressAction(cellView, evt);
         }, longPressTime);
     };
@@ -276,10 +278,13 @@ export class Graph extends React.Component<Props> {
         };
 
         if (isTouchDevice()) {
-            this.processGraphPaper.on(Events.CELL_POINTERDOWN, handleActionOnLongPress(showNodeDetails, selectNode));
+            this.processGraphPaper.on(
+                Events.CELL_POINTERDOWN,
+                handleActionOnLongPress(showNodeDetails, selectNode, this.panAndZoom.getPinchEventActive),
+            );
             this.processGraphPaper.on(
                 Events.LINK_POINTERDOWN,
-                handleActionOnLongPress(null, ({ model }) => model.remove(), LONG_PRESS_TIME * 1.5),
+                handleActionOnLongPress(null, ({ model }) => model.remove(), this.panAndZoom.getPinchEventActive, LONG_PRESS_TIME * 1.5),
             );
         } else {
             this.processGraphPaper.on(Events.CELL_POINTERCLICK, selectNode);
@@ -300,7 +305,7 @@ export class Graph extends React.Component<Props> {
         this.panAndZoom = new PanZoomPlugin(this.processGraphPaper);
 
         if (this.props.nodeSelectionEnabled) {
-            new RangeSelectPlugin(this.processGraphPaper);
+            new RangeSelectPlugin(this.processGraphPaper, this.panAndZoom.getPinchEventActive);
             this.processGraphPaper.on("rangeSelect:selected", ({ elements, mode }: RangeSelectedEventData) => {
                 const nodes = elements.filter((el) => isModelElement(el)).map(({ id }) => id.toString());
                 if (mode === SelectionMode.toggle) {

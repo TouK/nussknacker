@@ -19,5 +19,3 @@ export function isTouchEvent<E extends Event | dia.Event>(event: E) {
 }
 
 export const LONG_PRESS_TIME = 500;
-
-export const isMultiTouchEvent = (e: TouchEvent | dia.Event) => e.touches.length > 1;

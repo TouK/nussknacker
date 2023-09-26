@@ -3,7 +3,7 @@ import { dia, g, shapes } from "jointjs";
 import { CursorMask } from "./CursorMask";
 import { Events } from "./types";
 import { pressedKeys } from "./KeysObserver";
-import { isMultiTouchEvent, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 
 export enum SelectionMode {
     replace = "replace",
@@ -24,8 +24,10 @@ export class RangeSelectPlugin {
         x: number;
         y: number;
     };
+    private getPinchEventActive: () => boolean;
 
-    constructor(private paper: dia.Paper) {
+    constructor(private paper: dia.Paper, getPinchEventActive: () => boolean) {
+        this.getPinchEventActive = getPinchEventActive;
         this.pressedKeys.onValue(this.onPressedKeysChange);
         paper.on(Events.BLANK_POINTERDOWN, this.onInit.bind(this));
         paper.on(Events.BLANK_POINTERMOVE, this.onChange.bind(this));
@@ -69,10 +71,6 @@ export class RangeSelectPlugin {
         };
 
         return (event: dia.Event, ...args: unknown[]) => {
-            if (isMultiTouchEvent(event)) {
-                return;
-            }
-
             const paper = this.paper;
 
             paper.once(Events.BLANK_POINTERMOVE, releasePress);
@@ -80,6 +78,11 @@ export class RangeSelectPlugin {
 
             pressTimer = window.setTimeout(() => {
                 paper.off(Events.BLANK_POINTERMOVE, releasePress);
+
+                if (this.getPinchEventActive()) {
+                    return;
+                }
+
                 action(event, ...args);
             }, LONG_PRESS_TIME);
         };

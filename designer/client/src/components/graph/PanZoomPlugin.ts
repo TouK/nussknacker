@@ -1,7 +1,7 @@
 import { css } from "@emotion/css";
 import { dia, g } from "jointjs";
 import { debounce, throttle } from "lodash";
-import { isMultiTouchEvent, isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import svgPanZoom from "svg-pan-zoom";
 import { CursorMask } from "./CursorMask";
 import { Events } from "./types";
@@ -17,12 +17,15 @@ const getAnimationClass = (disabled?: boolean) =>
 export class PanZoomPlugin {
     private cursorMask: CursorMask;
     private instance: SvgPanZoom.Instance;
+    private pinchEventActive = false;
     private animationClassHolder: HTMLElement;
     private panStart: {
         x: number;
         y: number;
         touched?: boolean;
     };
+
+    private disabledPan = false;
 
     constructor(private paper: dia.Paper) {
         this.cursorMask = new CursorMask();
@@ -59,7 +62,9 @@ export class PanZoomPlugin {
 
     private handleBlankPointerDown = (event: dia.Event) => {
         if (isTouchEvent(event)) {
-            const pressTimer = setTimeout(() => this.cleanup(), LONG_PRESS_TIME);
+            const pressTimer = setTimeout(() => {
+                this.disabledPan = true;
+            }, LONG_PRESS_TIME);
             this.paper.once(Events.BLANK_POINTERUP, () => clearTimeout(pressTimer));
             this.paper.once(Events.BLANK_POINTERMOVE, () => clearTimeout(pressTimer));
         }
@@ -157,25 +162,27 @@ export class PanZoomPlugin {
         hammer.get("pinch").set({ enable: true });
 
         hammer.on("pinchstart", () => {
-            this.instance.setZoomScaleSensitivity(0.01);
+            this.pinchEventActive = true;
+            this.instance.setZoomScaleSensitivity(0.015);
         });
 
         hammer.on("pinchend", () => {
+            this.pinchEventActive = false;
             this.instance.setZoomScaleSensitivity(0.4);
         });
 
         hammer.on("pinchin pinchout", (e) => {
             if (e.scale < lastScale) {
-                this.instance.zoomIn();
-            } else if (e.scale > lastScale) {
                 this.instance.zoomOut();
+            } else if (e.scale > lastScale) {
+                this.instance.zoomIn();
             }
 
             lastScale = e.scale;
         });
 
         document.addEventListener("touchmove", (event) => {
-            if (isMultiTouchEvent(event)) {
+            if (this.pinchEventActive) {
                 event.stopImmediatePropagation();
             }
         });
@@ -185,9 +192,12 @@ export class PanZoomPlugin {
         const hammer = new Hammer(paper.el);
         hammer.get("pan").set({ threshold: 2 });
 
+        paper.on("cell:pointerdown", () => {
+            this.disabledPan = true;
+        });
+
         hammer.on("panstart", (event) => {
-            const isPaperElementTargeting = event.target.parentElement.id === paper.el.id;
-            if (!isPaperElementTargeting) {
+            if (this.disabledPan) {
                 this.cleanup();
                 return;
             }
@@ -214,12 +224,15 @@ export class PanZoomPlugin {
         });
 
         hammer.on("panend", (event) => {
-            event.srcEvent.stopPropagation();
-
             if (this.panStart?.touched) {
                 event.pointers[0].stopImmediatePropagation();
             }
             this.cleanup();
+            this.disabledPan = false;
         });
+    };
+
+    getPinchEventActive = () => {
+        return this.pinchEventActive;
     };
 }
