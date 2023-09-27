@@ -118,14 +118,12 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
           }
         } ~
         path("deploy" / Segment) { processName =>
-          (post & processId(processName) & parameters(Symbol("savepointPath"))) { (processId, savepointPath) =>
+          (post & processId(processName) & entity(as[Option[String]]) & parameters(Symbol("savepointPath"))) { (processId, comment, savepointPath) =>
             canDeploy(processId) {
-              entity(as[Option[String]]) { comment =>
-                complete {
-                  deploymentService
-                    .deployProcessAsync(processId, Some(savepointPath), comment).map(_ => ())
-                    .andThen(toResponseTryPF(StatusCodes.OK))
-                }
+              complete {
+                deploymentService
+                  .deployProcessAsync(processId, Some(savepointPath), comment).map(_ => ())
+                  .andThen(toResponseTryPF(StatusCodes.OK))
               }
             }
           }
@@ -133,30 +131,26 @@ class ManagementResources(val processAuthorizer: AuthorizeProcess,
     } ~
       pathPrefix("processManagement") {
         path("deploy" / Segment) { processName =>
-          (post & processId(processName)) { processId =>
+          (post & processId(processName) & entity(as[Option[String]])) { (processId, comment) =>
             canDeploy(processId) {
-              entity(as[Option[String]]) { comment =>
-                complete {
-                  measureTime("deployment", metricRegistry) {
-                    deploymentService
-                      .deployProcessAsync(processId, None, comment).map(_ => ())
-                      .andThen(toResponseTryPF(StatusCodes.OK))
-                  }
+              complete {
+                measureTime("deployment", metricRegistry) {
+                  deploymentService
+                    .deployProcessAsync(processId, None, comment).map(_ => ())
+                    .andThen(toResponseTryPF(StatusCodes.OK))
                 }
               }
             }
           }
         } ~
           path("cancel" / Segment) { processName =>
-            (post & processId(processName)) { processId =>
+            (post & processId(processName) & entity(as[Option[String]])) { (processId, comment) =>
               canDeploy(processId) {
-                entity(as[Option[String]]) { comment =>
-                  complete {
-                    measureTime("cancel", metricRegistry) {
-                      deploymentService
-                        .cancelProcess(processId, comment)
-                        .andThen(toResponseTryPF(StatusCodes.OK))
-                    }
+                complete {
+                  measureTime("cancel", metricRegistry) {
+                    deploymentService
+                      .cancelProcess(processId, comment)
+                      .andThen(toResponseTryPF(StatusCodes.OK))
                   }
                 }
               }
