@@ -141,7 +141,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
     deploymentManager.withProcessRunning(processName) {
       archiveProcess(processName) { status =>
-        status shouldEqual StatusCodes.Conflict
+        status shouldEqual StatusCodes.Forbidden
       }
     }
   }
@@ -201,7 +201,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       val newName = ProcessName("ProcessChangedName")
 
       renameProcess(processName, newName) { status =>
-        status shouldEqual StatusCodes.Conflict
+        status shouldEqual StatusCodes.Forbidden
       }
     }
   }
@@ -211,7 +211,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     val newName = ProcessName("ProcessChangedName")
 
     renameProcess(processName, newName) { status =>
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 
@@ -245,7 +245,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     val process = ProcessTestData.validProcess
 
     updateProcess(processName, process) {
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 
@@ -305,7 +305,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createArchivedProcess(processName)
 
     changeProcessCategory(processName, TestCat2, isAdmin = true) { status =>
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 
@@ -721,7 +721,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createArchivedProcess(processName)
 
     archiveProcess(processName) { status =>
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 
@@ -729,7 +729,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createEmptyProcess(processName)
 
     unArchiveProcess(processName) { status =>
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 
@@ -756,7 +756,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createEmptyProcess(processName)
 
     deleteProcess(processName) { status =>
-      status shouldEqual StatusCodes.Conflict
+      status shouldEqual StatusCodes.Forbidden
     }
   }
 

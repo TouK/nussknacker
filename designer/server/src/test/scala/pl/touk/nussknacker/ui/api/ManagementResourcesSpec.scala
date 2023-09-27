@@ -69,7 +69,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.DuringDeploy) {
       deployProcess(processName.value) ~> check {
-        status shouldBe StatusCodes.Conflict
+        status shouldBe StatusCodes.Forbidden
       }
     }
   }
@@ -79,7 +79,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       cancelProcess(processName.value) ~> check {
-        status shouldBe StatusCodes.Conflict
+        status shouldBe StatusCodes.Forbidden
       }
     }
   }
@@ -90,8 +90,8 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
       deployProcess(processName.value) ~> check {
-        status shouldBe StatusCodes.Conflict
-        responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy, processIdWithName).message
+        status shouldBe StatusCodes.Forbidden
+        responseAs[String] shouldBe ProcessIllegalAction.archived(ProcessActionType.Deploy.toString, processIdWithName).message
       }
     }
   }
@@ -101,8 +101,8 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
-      status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processIdWithName).message
+      status shouldBe StatusCodes.Forbidden
+      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy.toString, processIdWithName).message
     }
   }
 
@@ -111,8 +111,8 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
-      status shouldBe StatusCodes.Conflict
-      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy, processIdWithName).message
+      status shouldBe StatusCodes.Forbidden
+      responseAs[String] shouldBe ProcessIllegalAction.fragment(ProcessActionType.Deploy.toString, processIdWithName).message
     }
   }
 
@@ -394,7 +394,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("execute custom action with not allowed process status") {
     createEmptyProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("invalid-status")) ~> check {
-      status shouldBe StatusCodes.BadRequest
+      status shouldBe StatusCodes.Forbidden
     }
   }
 
