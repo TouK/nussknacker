@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process.deployment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.{BadRequestError, EspError, IllegalOperationError, NotFoundError}
+import pl.touk.nussknacker.ui.{BadRequestError, EspError, ForbiddenError, NotFoundError}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -30,9 +30,9 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
     val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)
     maybeProcess.flatMap {
       case Some(process) if process.isFragment =>
-        actionError(CustomActionOnFragmentForbidden())
+        actionError(CustomActionOnFragmentForbidden)
       case Some(process) if process.isArchived =>
-        actionError(CustomActionOnArchivedForbidden())
+        actionError(CustomActionOnArchivedForbidden)
       case Some(process) =>
         val manager = dispatcher.deploymentManagerUnsafe(process.processingType)
         val actionReq = CustomActionRequest(
@@ -68,8 +68,8 @@ case class CustomActionInvalidStatus(request: CustomActionRequest, stateStatusNa
 case class CustomActionNonExisting(request: CustomActionRequest)
   extends Exception(s"""Action "${request.name}" does not exist""") with NotFoundError
 
-case class CustomActionOnFragmentForbidden()
-  extends Exception("Invoke custom action on fragment is forbidden.") with IllegalOperationError
+case object CustomActionOnFragmentForbidden
+  extends Exception("Invoke custom action on fragment is forbidden.") with ForbiddenError
 
-case class CustomActionOnArchivedForbidden()
-  extends Exception("Invoke custom action on archived scenario is forbidden.") with IllegalOperationError
+case object CustomActionOnArchivedForbidden
+  extends Exception("Invoke custom action on archived scenario is forbidden.") with ForbiddenError
