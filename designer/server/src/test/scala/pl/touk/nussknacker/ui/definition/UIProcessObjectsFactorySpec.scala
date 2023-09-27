@@ -140,7 +140,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   class TestAdditionalComponentsUIConfigProvider extends AdditionalComponentsUIConfigProvider {
     override def getAllForCategory(category: String): Map[ComponentId, SingleComponentUIConfig] =
       Map(
-        "processingType-enricher-enricher" -> SingleComponentUIConfig.zero.copy(
+        ComponentId("streaming-enricher-enricher") -> SingleComponentUIConfig.zero.copy(
           params = Some(Map(
             "paramDualEditor" -> ParameterConfig.empty.copy(
               validators = Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("otherExpression", "otherLabel")))))
@@ -164,8 +164,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     processObjects.componentsConfig("enricher").params.map(_.map { case (key, value) => key -> value.validators }) shouldBe Some(Map(
       "paramDualEditor" -> Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("otherExpression", "otherLabel"))))),
-      "paramStringEditor" -> List(MandatoryParameterValidator), // FIXME this isn't present in the test because componentsConfig isn't consistent with processDefinition
-      "paramRawEditor" -> List(MandatoryParameterValidator)
+      "param" -> None // from designer.conf, which also goes into `componentsConfig`
     ))
   }
 

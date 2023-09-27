@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.ui.component.{ComponentDefinitionPreparer, ComponentIdProvider}
+import pl.touk.nussknacker.ui.component.{ComponentDefinitionPreparer, ComponentIdProvider, DefaultComponentIdProvider}
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
@@ -31,9 +31,9 @@ object UIProcessObjectsFactory {
   import net.ceedubs.ficus.Ficus._
 
   private def getComponentIdToNameMap(componentIdProvider: ComponentIdProvider,
-                                      processingType: ProcessingType,
                                       uiProcessDefinition: UIProcessDefinition,
-                                      isFragment: Boolean
+                                      isFragment: Boolean,
+                                      processingType: ProcessingType
                                      ): Map[ComponentId, ProcessingType] = {
     val createMapping = (name: String, componentType: ComponentType) => componentIdProvider.createComponentId(processingType, Some(name), componentType) -> name
 
@@ -81,18 +81,20 @@ object UIProcessObjectsFactory {
     val customTransformerAdditionalData = staticObjectsDefinition.customStreamTransformers.mapValuesNow(_._2)
 
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
+    val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
 
-    val componentIdProvider: ComponentIdProvider = ??? // TODO
-    val componentIdToName: Map[ComponentId, String] = getComponentIdToNameMap(componentIdProvider, processingType, uiProcessDefinition, isFragment)
+    //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
+    //maybe we can put them also in uiProcessDefinition.allDefinitions?
+    val combinedComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fragmentsComponentsConfig, fixedComponentsUiConfig, dynamicComponentsConfig)
+
+    val componentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map(processingType -> combinedComponentsConfig))
+    val componentIdToName: Map[ComponentId, String] = getComponentIdToNameMap(componentIdProvider, uiProcessDefinition, isFragment, processingType)
 
     val additionalComponentsUIConfig = modelDataForType.additionalComponentsUIConfigProvider.getAllForCategory(processingType).map {
       case (componentId, config) => componentIdToName(componentId) -> config.toSingleComponentConfig
     }
 
-    val fragmentsComponentsConfig = fragmentInputs.mapValuesNow(_.objectDefinition.componentConfig)
-    //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
-    //maybe we can put them also in uiProcessDefinition.allDefinitions?
-    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fragmentsComponentsConfig, additionalComponentsUIConfig, fixedComponentsUiConfig, dynamicComponentsConfig) // TODO consider the ordering
+    val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(additionalComponentsUIConfig, combinedComponentsConfig)
 
     val componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(processConfig)
 
@@ -168,7 +170,7 @@ object UIProcessObjectsFactory {
       parameters = objectDefinition.parameters.map(createUIParameter),
       returnType = objectDefinition.returnType,
       categories = objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
-      componentConfig = objectDefinition.componentConfig // TODO `|+| additionalConfig.getOrElse(name, SingleComponentConfig.zero)`  here could combine with additionalConfig via name matching
+      componentConfig = objectDefinition.componentConfig
     )
   }
 
