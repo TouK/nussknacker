@@ -171,16 +171,16 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
 
   private def checkIfCanPerformActionOnProcess[PS: ProcessShapeFetchStrategy](actionType: ProcessActionType, processDetails: BaseProcessDetails[PS]): Unit = {
     if (processDetails.isArchived) {
-      throw ProcessIllegalAction.archived(actionType, processDetails.idWithName)
+      throw ProcessIllegalAction.archived(actionType.toString, processDetails.idWithName)
     } else if (processDetails.isFragment) {
-      throw ProcessIllegalAction.fragment(actionType, processDetails.idWithName)
+      throw ProcessIllegalAction.fragment(actionType.toString, processDetails.idWithName)
     }
   }
 
   private def checkIfCanPerformActionInState[PS: ProcessShapeFetchStrategy](actionType: ProcessActionType, processDetails: BaseProcessDetails[PS], ps: ProcessState): Unit = {
     if (!ps.allowedActions.contains(actionType)) {
       logger.debug(s"Action: $actionType on process: ${processDetails.name} not allowed in ${ps.status} state")
-      throw ProcessIllegalAction(actionType, processDetails.idWithName, ps)
+      throw ProcessIllegalAction(actionType.toString, processDetails.idWithName, ps)
     }
   }
 

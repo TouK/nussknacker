@@ -3,8 +3,9 @@ package pl.touk.nussknacker.ui.process.deployment
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessIdWithName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.ui.{BadRequestError, EspError, ForbiddenError, NotFoundError}
+import pl.touk.nussknacker.ui.{EspError, NotFoundError}
 import pl.touk.nussknacker.ui.process.deployment.LoggedUserConversions.LoggedUserOps
+import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -30,9 +31,9 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
     val maybeProcess = processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](id.id)
     maybeProcess.flatMap {
       case Some(process) if process.isFragment =>
-        actionError(CustomActionOnFragmentForbidden)
+        actionError(ProcessIllegalAction.fragment(actionName, id))
       case Some(process) if process.isArchived =>
-        actionError(CustomActionOnArchivedForbidden)
+        actionError(ProcessIllegalAction.archived(actionName, id))
       case Some(process) =>
         val manager = dispatcher.deploymentManagerUnsafe(process.processingType)
         val actionReq = CustomActionRequest(
@@ -48,7 +49,7 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
               if (customAction.allowedStateStatusNames.contains(status.status.name)) {
                 manager.invokeCustomAction(actionReq, process.json)
               } else
-                actionError(CustomActionInvalidStatus(actionReq, status.status.name))
+                actionError(ProcessIllegalAction(actionName, id, status))
             }
           case None =>
             actionError(CustomActionNonExisting(actionReq))
@@ -62,14 +63,5 @@ class CustomActionInvokerServiceImpl(processRepository: FetchingProcessRepositor
 
 }
 
-case class CustomActionInvalidStatus(request: CustomActionRequest, stateStatusName: String)
-  extends Exception(s"""Invalid scenario status: $stateStatusName is not allowed for action "${request.name}"""") with BadRequestError
-
 case class CustomActionNonExisting(request: CustomActionRequest)
   extends Exception(s"""Action "${request.name}" does not exist""") with NotFoundError
-
-case object CustomActionOnFragmentForbidden
-  extends Exception("Invoke custom action on fragment is forbidden.") with ForbiddenError
-
-case object CustomActionOnArchivedForbidden
-  extends Exception("Invoke custom action on archived scenario is forbidden.") with ForbiddenError
