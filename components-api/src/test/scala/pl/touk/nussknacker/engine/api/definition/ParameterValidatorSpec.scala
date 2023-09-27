@@ -40,10 +40,10 @@ class ParameterValidatorSpec extends AnyFunSuite with TableDrivenPropertyChecks 
   test("CustomExpressionParameterValidator") {
     forAll(Table(
       ("validationExpression", "paramType", "inputExpression", "isValid"),
-//      ("#param > 10", Typed[Long], "-14", false),
-//      ("#param > 10", Typed[Long], "14.5", true),
+      ("#param > 10", Typed[Long], "-14", false),
+      ("#param > 10", Typed[Long], "14.5", true),
       ("#param.toLowerCase() == \"left\" || #param.toLowerCase() == \"right\"", Typed[String], "\"lEfT\"", true),
-//      ("#param.toLowerCase() == \"left\" || #param.toLowerCase() == \"right\"", Typed[String], "\"forward\"", false),
+      ("#param.toLowerCase() == \"left\" || #param.toLowerCase() == \"right\"", Typed[String], "\"forward\"", false),
       // TODO more tests
     )) { (validationExpression, paramType, inputExpression, isValid) =>
       CustomExpressionParameterValidator(validationExpression, None).isValid("param", inputExpression, Some(paramType), None)(nodeId).isValid shouldBe isValid
