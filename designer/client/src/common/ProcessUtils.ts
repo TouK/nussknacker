@@ -193,7 +193,6 @@ class ProcessUtils {
         const emptyDefinition = {
             parameters: null,
             returnType: null,
-            outputParameters: [],
         };
         return foundDefinition || emptyDefinition;
     };
