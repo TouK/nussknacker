@@ -98,7 +98,7 @@ class AppApiHttpService(config: Config,
       .serverLogicSuccess { _ =>
         Future {
           import net.ceedubs.ficus.Ficus._
-          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").flatMap(Some.apply)
+          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
           val modelDataInfo: Map[ProcessingType, Map[String, String]] = modelData.all.mapValuesNow(_.configCreator.buildInfo())
           BuildInfoDto(BuildInfo.name, BuildInfo.gitCommit, BuildInfo.buildTime, BuildInfo.version, modelDataInfo, configuredBuildInfo)
         }

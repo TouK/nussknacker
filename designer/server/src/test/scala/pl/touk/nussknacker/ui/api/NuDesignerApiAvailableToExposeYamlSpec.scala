@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.api
 
-import better.files.Dsl._
+import better.files._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.services.NuDesignerApiAvailableToExpose
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.services.NuDesignerApiAvailableToExpose
 class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
   test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
-    val currentNuDesignerOpenApiYamlContent = (pwd / "docs" / "api" / "internal" / "nu-designer-openapi.yaml").contentAsString
+    val currentNuDesignerOpenApiYamlContent = (File(System.getProperty("user.dir")) / "docs" / "api" / "internal" / "nu-designer-openapi.yaml").contentAsString
     NuDesignerApiAvailableToExpose.generateOpenApiYaml should be (currentNuDesignerOpenApiYamlContent)
   }
 }
