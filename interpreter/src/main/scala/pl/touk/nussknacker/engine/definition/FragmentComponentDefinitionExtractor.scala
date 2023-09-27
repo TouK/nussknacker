@@ -91,14 +91,8 @@ class FragmentComponentDefinitionExtractor(componentConfig: String => Option[Sin
     val extractedEditor = EditorExtractor.extract(parameterData, config)
 
     val customExpressionValidator = fragmentParameter.validationExpression.map(expr => {
-      val expectedValueType = if (typ.canBeSubclassOf(Typed(classOf[Number]))) { // TODO this is just a draft
-        "Number"
-      } else {
-        "String"
-      }
-
-      val validator = CustomExpressionParameterValidator(expr.expression, expectedValueType, fragmentParameter.validationFailedMessage)
-      assert(validator.isValidatorValid(fragmentParameter.name)) // TODO we probably want other handling than just an assert
+      val validator = CustomExpressionParameterValidator(expr.expression, fragmentParameter.validationFailedMessage)
+      assert(validator.isValidatorValid(fragmentParameter.name, typ)) // TODO we probably want other handling than just an assert
       validator
     })
 

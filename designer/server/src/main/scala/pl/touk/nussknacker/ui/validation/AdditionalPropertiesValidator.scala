@@ -55,7 +55,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
 
     propertiesWithConfiguredValidator.collect {
       case (property, Some(config), validator: ParameterValidator) =>
-        validator.isValid(property._1, property._2, config.label).toValidatedNel
+        validator.isValid(property._1, property._2, None, config.label).toValidatedNel
     }.sequence.map(_ => ())
   }
 

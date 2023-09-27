@@ -77,7 +77,7 @@ object DelayedKafkaSourceFactory {
     params(DelayParameterName).asInstanceOf[Long]
 
   def validateDelay(value: java.lang.Long)(implicit nodeId: NodeId): List[ProcessCompilationError] = {
-    delayValidators.flatMap(_.isValid(DelayParameterName, value.toString, None).swap.toList)
+    delayValidators.flatMap(_.isValid(DelayParameterName, value.toString, None, None).swap.toList)
   }
 
   def validateTimestampField(field: String, typingResult: TypingResult)(implicit nodeId: NodeId): List[ProcessCompilationError] = {

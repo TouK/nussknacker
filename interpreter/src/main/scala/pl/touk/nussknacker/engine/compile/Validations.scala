@@ -59,7 +59,7 @@ object Validations {
   def validate(paramDefinition: Parameter, parameter: evaluatedparam.Parameter)
               (implicit nodeId: NodeId): ValidatedNel[PartSubGraphCompilationError, Unit] = {
     paramDefinition.validators.map { validator =>
-      validator.isValid(parameter.name, parameter.expression.expression, None).toValidatedNel
+      validator.isValid(parameter.name, parameter.expression.expression, Some(paramDefinition.typ), None).toValidatedNel
     }.sequence.map(_ => ())
   }
 }

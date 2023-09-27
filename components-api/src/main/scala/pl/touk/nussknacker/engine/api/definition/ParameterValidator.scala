@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.definition
 import java.util.ServiceLoader
 import java.util.regex.Pattern
 import cats.data.Validated
-import cats.data.Validated.{invalid, valid}
+import cats.data.Validated.{catchOnly, invalid, valid}
 import io.circe.ParsingFailure
 import io.circe.generic.extras.ConfiguredJsonCodec
 import org.apache.commons.lang3.StringUtils
@@ -19,11 +19,13 @@ import pl.touk.nussknacker.engine.api.NodeId
 import org.springframework.expression.ExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
 
+import java.time.LocalDateTime
+import java.time.temporal.Temporal
 import scala.collection.concurrent.TrieMap
 
 
 trait Validator {
-  def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit]
+  def isValid(paramName: String, value: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] // instead of adding paramType here, can also add new method `isValidWithType`
 }
 
 /**
@@ -39,26 +41,21 @@ trait Validator {
 //TODO: These validators should be moved to separated module
 
 case class CustomExpressionParameterValidator(validationExpression: String,
-                                              expectedValueType: String, // TODO type should probably be TypeResult not string, but it needs to be @JsonCodec-able
                                               validationFailedMessage: Option[String]
                                              ) extends ParameterValidator {
 
   private val parser: ExpressionParser = new SpelExpressionParser()
   private val parsedValidationExpression = parser.parseExpression(validationExpression)
 
-
-
-  def isValidatorValid(paramName: String): Boolean = { // TODO use SpelExpressionValidator, result has to be Boolean and computable during validation (no reliance on input)
+  def isValidatorValid(paramName: String, typ: TypingResult): Boolean = {
+    // TODO use SpelExpressionValidator, result has to be Boolean and computable during validation (no reliance on input)
     val context = new StandardEvaluationContext()
 
-    def defaultForType(valueType: String): Any = {
-      valueType match {
-        case "Number" => 123
-        case _ => ""
-      }
+    def defaultForType(valueType: TypingResult): Any = {
+      if (valueType.canBeSubclassOf(Typed[Number])) 0 else ""
     }
 
-    context.setVariable(paramName, defaultForType(expectedValueType))
+    context.setVariable(paramName, defaultForType(typ))
     try {
       parsedValidationExpression.getValue(context, classOf[Boolean])
       true
@@ -69,16 +66,20 @@ case class CustomExpressionParameterValidator(validationExpression: String,
     }
   }
 
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (evaluateToBoolean(paramName, value)) valid(()) else invalid(error(paramName, nodeId.id))
+  override def isValid(paramName: String, value: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+    if (evaluateToBoolean(paramName, paramType, value)) valid(()) else invalid(error(paramName, nodeId.id))
 
-  private def evaluateToBoolean(paramName: String, value: String): Boolean = { // paramName has to be the same as in validationExpression (and same as the field name)
+  private def evaluateToBoolean(paramName: String, paramType: Option[TypingResult], value: String): Boolean = { // paramName has to be the same as in validationExpression (and same as the field name)
     val context: StandardEvaluationContext = new StandardEvaluationContext()  // TODO should be context with access to function that the user can input, for example #DATE.now
 
-    expectedValueType match { // TODO expand/fix, this is just an example
-      case "Number" => context.setVariable(paramName, value.toDouble)
-      case "String" => context.setVariable(paramName, value.drop(1).dropRight(1)) // drop quotes
-      case _        => context.setVariable(paramName, value)
+
+    // TODO use some already present classes from `interpreter` module ?
+
+    paramType match { // TODO expand/fix, this is just an example
+      case Some(t) if t.canBeSubclassOf(Typed[Number])   => context.setVariable(paramName, value.toDouble/*parseToNumber(value)*/)
+      case Some(t) if t.canBeSubclassOf(Typed[Temporal]) => context.setVariable(paramName, LocalDateTime.now()/*parseToTime(value)*/)
+      case Some(t) if t.canBeSubclassOf(Typed[String])   => context.setVariable(paramName, value.drop(1).dropRight(1))
+      case _ => context.setVariable(paramName, value)
     }
 
     try {
@@ -99,7 +100,7 @@ case class CustomExpressionParameterValidator(validationExpression: String,
 
 case object MandatoryParameterValidator extends ParameterValidator {
 
-  override def isValid(paramName: String, expression: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+  override def isValid(paramName: String, expression: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isNotBlank(expression)) valid(()) else invalid(error(paramName, nodeId.id))
 
   private def error(paramName: String, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
@@ -115,7 +116,7 @@ case object NotBlankParameterValidator extends ParameterValidator {
   private final lazy val blankStringLiteralPattern: Pattern = Pattern.compile("['\"]\\s*['\"]")
 
   // TODO: for now we correctly detect only literal expression with blank string - on this level (not evaluated expression) it is the only thing that we can do
-  override def isValid(paramName: String, expression: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+  override def isValid(paramName: String, expression: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (isBlankStringLiteral(expression)) invalid(error(paramName, nodeId.id)) else valid(())
 
   private def error(paramName: String, nodeId: String): BlankParameter = BlankParameter(
@@ -130,7 +131,7 @@ case object NotBlankParameterValidator extends ParameterValidator {
 }
 
 case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) extends ParameterValidator {
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
+  override def isValid(paramName: String, value: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
     val values = possibleValues.map(possibleValue => possibleValue.expression)
 
     if (StringUtils.isBlank(value) || values.contains(value))
@@ -145,7 +146,7 @@ case class RegExpParameterValidator(pattern: String, message: String, descriptio
   lazy val regexpPattern: Pattern = Pattern.compile(pattern)
 
   //Blank value should be not validate - we want to chain validators
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
+  override def isValid(paramName: String, value: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
     if (StringUtils.isBlank(value) || regexpPattern.matcher(value).matches())
       valid(())
     else
@@ -155,7 +156,7 @@ case class RegExpParameterValidator(pattern: String, message: String, descriptio
 
 case object LiteralIntegerValidator extends ParameterValidator {
   //Blank value should be not validate - we want to chain validators
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+  override def isValid(paramName: String, value: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isBlank(value) || Try(value.toInt).isSuccess) valid(()) else invalid(error(paramName, nodeId.id))
 
   private def error(paramName: String, nodeId: String): InvalidIntegerLiteralParameter = InvalidIntegerLiteralParameter(
@@ -171,7 +172,7 @@ case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterVa
   import NumberValidatorHelper._
 
   //Blank value should be not validate - we want to chain validators
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+  override def isValid(paramName: String, value: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isBlank(value) || Try(BigDecimal(normalizeStringToNumber(value))).filter(_ >= minimalNumber).isSuccess)
       valid(())
     else
@@ -190,7 +191,7 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
   import NumberValidatorHelper._
 
   //Blank value should be not validate - we want to chain validators
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+  override def isValid(paramName: String, value: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isBlank(value) || Try(BigDecimal(normalizeStringToNumber(value))).filter(_ <= maximalNumber).isSuccess)
       valid(())
     else
@@ -209,7 +210,7 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
 case object JsonValidator extends ParameterValidator {
 
   //Blank value should be not validate - we want to chain validators
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
+  override def isValid(paramName: String, value: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
     val strippedValue = value.stripPrefix("'").stripSuffix("'").trim
     val parsingResult = parse(strippedValue)
 
@@ -252,8 +253,8 @@ trait CustomParameterValidator extends Validator {
 case class CustomParameterValidatorDelegate(name: String) extends ParameterValidator {
   import CustomParameterValidatorDelegate._
 
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId)
-  : Validated[PartSubGraphCompilationError, Unit] = getOrLoad(name).isValid(paramName, value, label)
+  override def isValid(paramName: String, value: String, paramType: Option[TypingResult], label: Option[String])(implicit nodeId: NodeId)
+  : Validated[PartSubGraphCompilationError, Unit] = getOrLoad(name).isValid(paramName, value, paramType, label)
 }
 
 object CustomParameterValidatorDelegate {
