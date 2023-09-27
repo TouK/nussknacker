@@ -1,6 +1,5 @@
 import { createSelector } from "reselect";
 import { MetricsType } from "../../actions/nk";
-import ProcessUtils from "../../common/ProcessUtils";
 import { DynamicTabData } from "../../containers/DynamicTab";
 import { ProcessDefinitionData } from "../../types";
 import { RootState } from "../index";
