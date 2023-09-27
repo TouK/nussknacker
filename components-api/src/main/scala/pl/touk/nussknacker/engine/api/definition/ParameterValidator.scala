@@ -11,10 +11,13 @@ import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import io.circe.parser._
+import org.springframework.expression.spel.standard.SpelExpressionParser
 
 import scala.util.Try
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.NodeId
+import org.springframework.expression.ExpressionParser
+import org.springframework.expression.spel.support.StandardEvaluationContext
 
 import scala.collection.concurrent.TrieMap
 
@@ -34,6 +37,65 @@ trait Validator {
 @ConfiguredJsonCodec sealed trait ParameterValidator extends Validator
 
 //TODO: These validators should be moved to separated module
+
+case class CustomExpressionParameterValidator(validationExpression: String,
+                                              expectedValueType: String, // TODO type should probably be TypeResult not string, but it needs to be @JsonCodec-able
+                                              validationFailedMessage: Option[String]
+                                             ) extends ParameterValidator {
+
+  private val parser: ExpressionParser = new SpelExpressionParser()
+  private val parsedValidationExpression = parser.parseExpression(validationExpression)
+
+
+
+  def isValidatorValid(paramName: String): Boolean = { // TODO use SpelExpressionValidator, result has to be Boolean and computable during validation (no reliance on input)
+    val context = new StandardEvaluationContext()
+
+    def defaultForType(valueType: String): Any = {
+      valueType match {
+        case "Number" => 123
+        case _ => ""
+      }
+    }
+
+    context.setVariable(paramName, defaultForType(expectedValueType))
+    try {
+      parsedValidationExpression.getValue(context, classOf[Boolean])
+      true
+    } catch {
+      case e: Throwable =>
+        println(s"Invalid validation expression: ${e.getMessage}")
+        false
+    }
+  }
+
+  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+    if (evaluateToBoolean(paramName, value)) valid(()) else invalid(error(paramName, nodeId.id))
+
+  private def evaluateToBoolean(paramName: String, value: String): Boolean = { // paramName has to be the same as in validationExpression (and same as the field name)
+    val context: StandardEvaluationContext = new StandardEvaluationContext()  // TODO should be context with access to function that the user can input, for example #DATE.now
+
+    expectedValueType match { // TODO expand/fix, this is just an example
+      case "Number" => context.setVariable(paramName, value.toDouble)
+      case "String" => context.setVariable(paramName, value.drop(1).dropRight(1)) // drop quotes
+      case _        => context.setVariable(paramName, value)
+    }
+
+    try {
+      parsedValidationExpression.getValue(context, classOf[Boolean])
+    } catch {
+//      case _: EvaluationException => false // TODO better handling? it will throw if paramName != fieldName
+      case e: Throwable => throw new IllegalArgumentException(s"Expression evaluation failed: ${e.getMessage}")
+    }
+  }
+
+  private def error(paramName: String, nodeId: String): CustomParameterValidationError = CustomParameterValidationError(
+    validationFailedMessage.getOrElse("This field has to satisfy the validation expression"),
+    s"Please correct the provided value to satisfy the expression \"$validationExpression\"",
+    paramName,
+    nodeId
+  )
+}
 
 case object MandatoryParameterValidator extends ParameterValidator {
 

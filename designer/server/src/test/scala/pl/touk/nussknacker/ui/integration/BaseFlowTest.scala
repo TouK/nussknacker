@@ -112,9 +112,15 @@ class BaseFlowTest
       ),
       "multipleParamsService" -> SingleComponentConfig(
         params = Some(Map(
-          "foo" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))), None, None),
+          "foo" -> ParameterConfig(None,
+            Some(FixedValuesParameterEditor(List(FixedExpressionValue("'test'", "test")))),
+            Some(List(CustomExpressionParameterValidator("#foo.length() < 100", "String", Some("some validation failed message")))),
+            None),
           "bar" -> ParameterConfig(None, Some(StringParameterEditor), None, None),
-          "baz" -> ParameterConfig(None, Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))), None, None)
+          "baz" -> ParameterConfig(None,
+            Some(FixedValuesParameterEditor(List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2")))),
+            None,
+            None)
         )),
         icon = None,
         docsUrl = None,

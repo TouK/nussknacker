@@ -613,6 +613,52 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  test("validates scenario with fragment parameters - P1 with validation expression and satisfying value") {
+    val fragmentId = "fragment1"
+    val paramName = "name"
+
+    val configWithValidators: Config = defaultConfig
+      .withValue(s"componentsUiConfig.$fragmentId.params.$paramName.validators", fromIterable(List(Map(
+        "type" -> "CustomExpressionParameterValidator",
+        "validationExpression" -> s"#$paramName.length() < 7",
+        "expectedValueType" -> "String",
+      ).asJava).asJava))
+
+    val fragmentDefinition: CanonicalProcess = createFragmentDefinition(fragmentId, List(FragmentParameter(paramName, FragmentClazzRef[String])))
+    val processWithFragment = createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter(paramName, "\"Tomasz\"")))
+
+    val processValidation = mockedProcessValidation(fragmentDefinition, configWithValidators)
+    val result = processValidation.validate(processWithFragment)
+    print(result)
+    result.hasErrors shouldBe false
+    result.errors.invalidNodes shouldBe Symbol("empty")
+    result.errors.globalErrors shouldBe Symbol("empty")
+    result.saveAllowed shouldBe true
+  }
+
+  test("validates scenario with fragment parameters - P1 with validation expression and unsatisfying value") {
+    val fragmentId = "fragment1"
+    val paramName = "name"
+
+    val configWithValidators: Config = defaultConfig
+      .withValue(s"componentsUiConfig.$fragmentId.params.$paramName.validators", fromIterable(List(Map(
+        "type" -> "CustomExpressionParameterValidator",
+        "validationExpression" -> s"#$paramName.length() < 7",
+        "expectedValueType" -> "String"
+      ).asJava).asJava))
+
+    val fragmentDefinition: CanonicalProcess = createFragmentDefinition(fragmentId, List(FragmentParameter(paramName, FragmentClazzRef[String])))
+    val processWithFragment = createProcessWithFragmentParams(fragmentId, List(evaluatedparam.Parameter(paramName, "\"Barabasz\"")))
+
+    val processValidation = mockedProcessValidation(fragmentDefinition, configWithValidators)
+    val result = processValidation.validate(processWithFragment)
+    result.hasErrors shouldBe true
+    result.errors.globalErrors shouldBe empty
+    result.errors.invalidNodes.get("subIn") should matchPattern {
+      case Some(List(NodeValidationError("CustomParameterValidationError", _, _, Some(paramName), NodeValidationErrorType.SaveAllowed))) =>
+    }
+  }
+
   test("validates with custom validator") {
     val process = ScenarioBuilder
       .streaming(SampleCustomProcessValidator.badName)
