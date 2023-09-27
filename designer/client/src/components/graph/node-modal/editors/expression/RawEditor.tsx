@@ -40,11 +40,13 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
 
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
     const language = useMemo(() => expressionObj.language, [expressionObj.language]);
+    const className1 = useMemo(() => cn("node-input"), []);
 
     const inputProps = useMemo(
         () => ({
             rows: rows,
             cols: cols,
+            className: className1,
             style: NodeInputCss,
             value: value,
             language: language,
@@ -53,7 +55,7 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
             ref: forwardedRef,
             editorMode: editorMode,
         }),
-        [rows, cols, value, language, onValueChange, readOnly, forwardedRef, editorMode],
+        [rows, cols, className1, value, language, onValueChange, readOnly, forwardedRef, editorMode],
     );
 
     return (
