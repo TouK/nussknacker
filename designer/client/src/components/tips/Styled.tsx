@@ -1,5 +1,5 @@
 import { ComponentType, SVGProps } from "react";
-import { styled } from "@mui/material";
+import { lighten, styled } from "@mui/material";
 import { variables } from "../../stylesheets/variables";
 import { Link } from "react-router-dom";
 import { alpha } from "../../containers/theme";
@@ -9,7 +9,7 @@ export const LinkStyled = styled(Link)`
     font-weight: 600;
     white-space: normal !important;
     &:hover {
-        color: lighten(${variables.warningColor}, 25%);
+        color: ${lighten(variables.warningColor, 0.25)};
     }
     &:focus {
         color: ${variables.warningColor};

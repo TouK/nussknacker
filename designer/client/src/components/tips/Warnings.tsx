@@ -27,8 +27,8 @@ const Warnings = ({ warnings, showDetails, currentProcess }: WarningsProps) => {
     const separator = ", ";
 
     return (
-        <div key={uuid4()}>
-            {warnings.length > 0 && <TipsWarning className={"icon"} />}
+        <div key={uuid4()} style={{ display: "flex" }}>
+            {warnings.length > 0 && <TipsWarning className={"icon"} style={{ width: 16, marginRight: 5 }} />}
             <div>
                 {Object.entries(groupedByType).map(([warningType, warnings]) => (
                     <div key={uuid4()} className={"warning-tips"} title={warnings[0]?.error.description}>
