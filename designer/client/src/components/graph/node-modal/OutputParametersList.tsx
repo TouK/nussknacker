@@ -6,6 +6,7 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { useDiffMark } from "./PathsToMark";
 import { useTranslation } from "react-i18next";
 import { NodeRow } from "./NodeDetailsContent/NodeStyled";
+import { NodeLabelStyled } from "./fragment-input-definition/NodeStyled";
 
 type OutputFieldProps = {
     autoFocus?: boolean;
@@ -77,7 +78,7 @@ export default function OutputParametersList({
         processDefinitionData.processDefinition,
     )?.outputParameters;
     const [params, setParams] = useState(() =>
-        outputParameters.reduce(
+        outputParameters?.reduce(
             (previousValue, currentValue) => ({
                 ...previousValue,
                 [currentValue]: editedNode.ref?.outputVariableNames?.[currentValue],
@@ -93,19 +94,19 @@ export default function OutputParametersList({
     }, [params, setProperty]);
 
     outputParameters
-        .filter((paramName) => params[paramName] === undefined)
+        ?.filter((paramName) => params[paramName] === undefined)
         .forEach((paramName) => {
             setParams((prevState) => ({ ...prevState, [paramName]: paramName }));
         });
 
     return outputParameters && outputParameters.length === 0 ? null : (
         <NodeRow key="outputVariableNames">
-            <div className="node-label" title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
+            <NodeLabelStyled title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
                 {t("parameterOutputs.outputsText", "Outputs names:")}
-            </div>
+            </NodeLabelStyled>
             <div className="node-value">
                 <div className="fieldsControl">
-                    {outputParameters.map((paramName) => (
+                    {outputParameters?.map((paramName) => (
                         <OutputField
                             key={paramName}
                             isEditMode={isEditMode}

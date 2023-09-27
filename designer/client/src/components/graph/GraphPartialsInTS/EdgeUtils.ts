@@ -8,6 +8,6 @@ export function isEdgeConnected(edge: Edge): boolean {
 export function withoutHackOfEmptyEdges(processJson: Process): Process {
     return {
         ...processJson,
-        edges: processJson.edges.filter(isEdgeConnected),
+        edges: processJson.edges?.filter(isEdgeConnected),
     };
 }

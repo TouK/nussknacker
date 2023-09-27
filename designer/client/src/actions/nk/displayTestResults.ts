@@ -4,7 +4,6 @@ import { TestResults } from "../../common/TestResultUtils";
 import { Expression, Process, ProcessId } from "../../types";
 import { ThunkAction } from "../reduxTypes";
 import { withoutHackOfEmptyEdges } from "../../components/graph/GraphPartialsInTS/EdgeUtils";
-import { UIValueParameter } from "./genericAction";
 
 export function testProcessFromFile(id: ProcessId, testDataFile: File, process: Process): ThunkAction {
     return (dispatch) => {
