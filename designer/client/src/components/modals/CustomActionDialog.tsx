@@ -34,7 +34,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
         ),
     );
 
-    const setParam = useCallback((name: string) => (value: any) => setState((current) => ({ ...current, [name]: value })), []);
+    const setParam = useCallback((name: string) => (value) => setState((current) => ({ ...current, [name]: value })), []);
 
     useEffect(() => onChange(state), [onChange, state]);
 

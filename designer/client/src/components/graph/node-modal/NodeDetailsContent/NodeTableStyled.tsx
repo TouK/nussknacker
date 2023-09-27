@@ -91,20 +91,15 @@ export const NodeTableStyled = styled("div")`
         color: ${variables.errorColor};
         font-size: 14px;
         font-weight: 400;
-        margin-bottom: 10px;
-        margin-top: 10px;
     }
     .node-tip {
-        margin-left: 10px;
-        width: 15px;
-        height: 15px;
+        width: 24px;
+        height: 24px;
         svg {
             // disable svg <title> behavior
             pointer-events: none;
         }
         &.node-error-tip {
-            margin-right: 10px;
-            float: right;
         }
     }
     .node-test-results {

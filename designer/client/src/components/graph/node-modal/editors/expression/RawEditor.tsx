@@ -5,6 +5,7 @@ import ExpressionSuggest from "./ExpressionSuggest";
 import { VariableTypes } from "../../../../../types";
 import { EditorMode, ExpressionObj } from "./types";
 import { Validator } from "../Validators";
+import { NodeInputCss } from "../../../../../components/NodeInput";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
@@ -39,13 +40,12 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
 
     const value = useMemo(() => expressionObj.expression, [expressionObj.expression]);
     const language = useMemo(() => expressionObj.language, [expressionObj.language]);
-    const className1 = useMemo(() => cn("node-input"), []);
 
     const inputProps = useMemo(
         () => ({
             rows: rows,
             cols: cols,
-            className: className1,
+            style: NodeInputCss,
             value: value,
             language: language,
             onValueChange: onValueChange,
@@ -53,11 +53,11 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
             ref: forwardedRef,
             editorMode: editorMode,
         }),
-        [rows, cols, className1, value, language, onValueChange, readOnly, forwardedRef, editorMode],
+        [rows, cols, value, language, onValueChange, readOnly, forwardedRef, editorMode],
     );
 
     return (
-        <div className={className}>
+        <div className={className} style={{ width: "100%" }}>
             <ExpressionSuggest
                 inputProps={inputProps}
                 variableTypes={variableTypes}

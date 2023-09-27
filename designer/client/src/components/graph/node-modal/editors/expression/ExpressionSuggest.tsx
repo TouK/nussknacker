@@ -2,7 +2,7 @@ import ace from "ace-builds/src-noconflict/ace";
 import { isEmpty, map, overSome } from "lodash";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { getFeatureSettings, getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
+import { getProcessDefinitionData } from "../../../../../reducers/selectors/settings";
 import { getProcessToDisplay } from "../../../../../reducers/selectors/graph";
 import { BackendExpressionSuggester, ExpressionSuggester } from "./ExpressionSuggester";
 import HttpService from "../../../../../http/HttpService";
@@ -15,6 +15,8 @@ import ValidationLabels from "../../../../modals/ValidationLabels";
 import ReactAce from "react-ace/lib/ace";
 import { EditorMode, ExpressionLang } from "./types";
 import type { Ace } from "ace-builds";
+import { styled } from "@mui/material";
+import { SerializedStyles } from "@emotion/react";
 
 const { TokenIterator } = ace.require("ace/token_iterator");
 
@@ -47,7 +49,8 @@ interface InputProps {
     rows?: number;
     onValueChange: (value: string) => void;
     ref: React.Ref<ReactAce>;
-    className: string;
+    className?: string;
+    style: SerializedStyles;
     cols: number;
     editorMode?: EditorMode;
 }
@@ -139,7 +142,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
     const dataResolved = !isEmpty(definitionData);
     const { processingType } = useSelector(getProcessToDisplay);
 
-    const { value, onValueChange, language } = inputProps;
+    const { value, onValueChange, language, style } = inputProps;
     const [editorFocused, setEditorFocused] = useState(false);
 
     const expressionSuggester = useMemo(() => {
@@ -152,9 +155,16 @@ function ExpressionSuggest(props: Props): JSX.Element {
     const onChange = useCallback((value: string) => onValueChange(value), [onValueChange]);
     const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), []);
 
+    const StyledWrapper = styled("div")`
+        ${style}
+        width: 100%;
+        margin: 0;
+        height: max-content;
+    `;
+
     return dataResolved ? (
         <>
-            <div
+            <StyledWrapper
                 className={cn([
                     "row-ace-editor",
                     showValidation && !allValid(validators, [value]) && "node-input-with-error",
@@ -172,7 +182,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
                     inputProps={inputProps}
                     customAceEditorCompleter={customAceEditorCompleter}
                 />
-            </div>
+            </StyledWrapper>
             {showValidation && <ValidationLabels validators={validators} values={[value]} validationLabelInfo={validationLabelInfo} />}
         </>
     ) : null;

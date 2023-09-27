@@ -19,6 +19,7 @@ export const LinkStyled = styled(Link)`
 export const styledIcon = (Icon: ComponentType<SVGProps<SVGSVGElement>>) => styled(Icon)`
     width: 16px;
     height: 16px;
+    color: ${variables.okColor};
     float: left;
     margin-right: 5px;
     margin-top: 2px;
@@ -32,7 +33,7 @@ export const TipPanelStyled = styled("div")((props: { isHighlighted: boolean }) 
     fontSize: "14px",
     color: props.isHighlighted && variables.defaultTextColor,
     ...(props.isHighlighted && {
-        outline: `2px solid ${variables.errorColor}`, // Use backticks to interpolate the errorColor variable
-        outlineOffset: "-2px", // Use camelCase for CSS properties
+        outline: `2px solid ${variables.errorColor}`,
+        outlineOffset: "-2px",
     }),
 }));
