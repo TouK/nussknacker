@@ -12,7 +12,8 @@ export const LinkStyled = styled(Link)`
         color: lighten(${variables.warningColor}, 25%);
     }
     &:focus {
-        color: ${variables.warningColor}, text-decoration none;
+        color: ${variables.warningColor};
+        text-decoration: none;
     }
 `;
 
