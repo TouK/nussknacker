@@ -27,7 +27,7 @@ export const styledIcon = (Icon: ComponentType<SVGProps<SVGSVGElement>>) => styl
 export const TipPanelStyled = styled("div")((props: { isHighlighted: boolean }) => ({
     height: "75px",
     backgroundColor: props.isHighlighted ? alpha(variables.errorColor, 0.1) : variables.panelBackground,
-    padding: "8px 1px 8px 10px",
+    padding: "8px 10px 8px 10px",
     fontWeight: "lighter",
     fontSize: "14px",
     color: props.isHighlighted && variables.defaultTextColor,

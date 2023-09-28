@@ -12,13 +12,14 @@ import Errors from "./error/Errors";
 import ValidTips from "./ValidTips";
 import Warnings from "./Warnings";
 import { TipPanelStyled } from "./Styled";
+import { NodeType } from "../../types";
 
 export default function Tips(): JSX.Element {
     const { openNodeWindow } = useWindows();
     const currentProcess = useSelector(getProcessToDisplay);
 
     const showDetails = useCallback(
-        (event, node) => {
+        (event: React.MouseEvent, node: NodeType) => {
             event.preventDefault();
             openNodeWindow(node, currentProcess);
         },
@@ -37,12 +38,10 @@ export default function Tips(): JSX.Element {
                     renderThumbVertical={(props) => <div key={uuid4()} {...props} />}
                     hideTracksWhenNotNeeded={true}
                 >
-                    {
-                        <ValidTips
-                            testing={!!testResults}
-                            hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(currentProcess)}
-                        />
-                    }
+                    <ValidTips
+                        testing={!!testResults}
+                        hasNeitherErrorsNorWarnings={ProcessUtils.hasNeitherErrorsNorWarnings(currentProcess)}
+                    />
                     {!ProcessUtils.hasNoErrors(currentProcess) && (
                         <Errors errors={errors} showDetails={showDetails} currentProcess={currentProcess} />
                     )}
