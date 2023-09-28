@@ -1,7 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import ErrorBoundary from "./components/common/ErrorBoundary";
 import NussknackerInitializer from "./containers/NussknackerInitializer";
 import { SettingsProvider } from "./containers/SettingsInitializer";
 import "./i18n";
@@ -9,6 +8,7 @@ import { StoreProvider } from "./store/provider";
 import rootRoutes from "./containers/RootRoutes";
 import { BASE_PATH } from "./config";
 import { css } from "@emotion/css";
+import RootErrorBoundary from "./components/common/RootErrorBoundary";
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -22,7 +22,7 @@ const router = createBrowserRouter(rootRoutes, { basename: BASE_PATH.replace(/\/
 
 const Root = () => {
     return (
-        <ErrorBoundary>
+        <RootErrorBoundary>
             <StoreProvider>
                 <SettingsProvider>
                     <NussknackerInitializer>
@@ -30,7 +30,7 @@ const Root = () => {
                     </NussknackerInitializer>
                 </SettingsProvider>
             </StoreProvider>
-        </ErrorBoundary>
+        </RootErrorBoundary>
     );
 };
 
