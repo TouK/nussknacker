@@ -138,7 +138,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
   }
 
   class TestAdditionalComponentsUIConfigProvider extends AdditionalComponentsUIConfigProvider {
-    override def getAllForCategory(category: String): Map[ComponentId, SingleComponentUIConfig] =
+    override def getAllForProcessingType(processingType: String): Map[ComponentId, SingleComponentUIConfig] =
       Map(
         ComponentId("streaming-enricher-enricher") -> SingleComponentUIConfig.zero.copy(
           params = Some(Map(
