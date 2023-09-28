@@ -262,14 +262,12 @@ object ScenarioInterpreterFactory {
     private def interpretationInvoke(partInvokers: Map[String, PartInterpreterType])
                                     (pr: PartReference, irs: List[InterpretationResult]): InterpreterOutputType = {
       val results: InterpreterOutputType = pr match {
-        case fer: FragmentEndReference =>
-          Monad[F].pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(fer.nodeId, ir.finalContext, fer.outputFields.asInstanceOf[Res]))))
-        case _: DeadEndReference =>
-          Monad[F].pure[ResultType[PartResult]](Writer.value(Nil))
-        case r: JoinReference =>
-          Monad[F].pure[ResultType[PartResult]](Writer.value(irs.map(ir => JoinResult(r, ir.finalContext))))
         case NextPartReference(id) =>
           partInvokers.getOrElse(id, throw new Exception("Unknown reference"))(DataBatch(irs.map(_.finalContext)))
+        case r: JoinReference =>
+          Monad[F].pure[ResultType[PartResult]](Writer.value(irs.map(ir => JoinResult(r, ir.finalContext))))
+        case _: DeadEndReference =>
+          Monad[F].pure[ResultType[PartResult]](Writer.value(Nil))
         case er: EndingReference => //FIXME: do we need it at all
           Monad[F].pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, null.asInstanceOf[Res]))))
       }

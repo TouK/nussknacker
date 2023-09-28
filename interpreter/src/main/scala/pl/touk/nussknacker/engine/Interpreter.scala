@@ -14,21 +14,22 @@ import pl.touk.nussknacker.engine.compiledgraph.service._
 import pl.touk.nussknacker.engine.compiledgraph.variable._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 private class InterpreterInternal[F[_] : Monad](listeners: Seq[ProcessListener],
-                                        expressionEvaluator: ExpressionEvaluator,
-                                        interpreterShape: InterpreterShape[F],
-                                        componentUseCase: ComponentUseCase
-                                       )(implicit metaData: MetaData,
-                                         executionContext: ExecutionContext) {
+                                                expressionEvaluator: ExpressionEvaluator,
+                                                interpreterShape: InterpreterShape[F],
+                                                componentUseCase: ComponentUseCase
+                                               )(implicit metaData: MetaData,
+                                                 executionContext: ExecutionContext) {
 
   type Result[T] = Either[T, NuExceptionInfo[_ <: Throwable]]
 
-//  private implicit val monad: Monad[F] = interpreterShape.monad
+  //  private implicit val monad: Monad[F] = interpreterShape.monad
 
   private val expressionName = "expression"
 
@@ -101,10 +102,20 @@ private class InterpreterInternal[F[_] : Monad](listeners: Seq[ProcessListener],
       case FragmentOutput(id, _, true) =>
         Monad[F].pure(List(Left(InterpretationResult(FragmentEndReference(id, Map.empty), ctx))))
       case FragmentOutput(id, fieldsWithExpression, false) =>
-        val fields = fieldsWithExpression.map(a => a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value)
-        val newCtx = ctx.withVariables(fields)
-        listeners.foreach(_.nodeEntered(node.id, newCtx, metaData))
-        Monad[F].pure(List(Left(InterpretationResult(FragmentEndReference(id, fields), newCtx))))
+        fieldsWithExpression.toList
+          .traverse(a => Either.catchNonFatal(a._1 -> expressionEvaluator.evaluate(a._2.expression, a._1, id, ctx).value).toValidatedNel)
+          .map(_.toMap)
+          .fold(
+            exceptions => {
+              listeners.foreach(_.nodeEntered(node.id, ctx, metaData))
+              Monad[F].pure(exceptions.toList.map(exc => Right(handleError(node, ctx)(exc))))
+            },
+            fields => {
+              val newCtx = ctx.withVariables(fields)
+              listeners.foreach(_.nodeEntered(node.id, newCtx, metaData))
+              Monad[F].pure(List(Left(InterpretationResult(FragmentEndReference(id, fields), newCtx))))
+            }
+          )
       case Enricher(_, ref, outName, next) =>
         invokeWrappedInInterpreterShape(ref, ctx).flatMap {
           case Left(ValueWithContext(out, newCtx)) => interpretNext(next, newCtx.withVariable(outName, out))
@@ -203,14 +214,14 @@ private class InterpreterInternal[F[_] : Monad](listeners: Seq[ProcessListener],
 
   private def invoke(ref: ServiceRef, ctx: Context)
                     (implicit node: Node, executionContext: ExecutionContext) = {
-      implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
-      val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator)
-      resultFuture.onComplete { result =>
-        //TODO: what about implicit??
-        listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
-      }
-      resultFuture.map(ValueWithContext(_, ctx))
+    implicit val implicitComponentUseCase: ComponentUseCase = componentUseCase
+    val (preparedParams, resultFuture) = ref.invoke(ctx, expressionEvaluator)
+    resultFuture.onComplete { result =>
+      //TODO: what about implicit??
+      listeners.foreach(_.serviceInvoked(node.id, ref.id, ctx, metaData, preparedParams, result))
     }
+    resultFuture.map(ValueWithContext(_, ctx))
+  }
 
   private def evaluateExpression[R](expr: Expression, ctx: Context, name: String)
                                    (implicit metaData: MetaData, node: Node): ValueWithContext[R] = {
