@@ -75,4 +75,21 @@ object ParameterConfig {
 
 object AdditionalPropertyConfig {
   val empty: AdditionalPropertyConfig = AdditionalPropertyConfig(None, None, None, None)
+
+  implicit val semigroup: Semigroup[AdditionalPropertyConfig] = {
+    implicit def takeLeftOptionSemi[T]: Semigroup[Option[T]] = Semigroup.instance[Option[T]] {
+      case (None, None) => None
+      case (None, Some(x)) => Some(x)
+      case (Some(x), _) => Some(x)
+    }
+
+    Semigroup.instance[AdditionalPropertyConfig] { (x, y) =>
+      AdditionalPropertyConfig(
+        x.defaultValue |+| y.defaultValue,
+        x.editor |+| y.editor,
+        x.validators |+| y.validators,
+        x.label |+| y.label
+      )
+    }
+  }
 }

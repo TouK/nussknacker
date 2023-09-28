@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.{AdditionalComponentsUIConfigProvider, DefaultAdditionalComponentsUIConfigProvider}
+import pl.touk.nussknacker.engine.api.component.{AdditionalUIConfigProvider, DefaultAdditionalUIConfigProvider}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessConfigCreator}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
@@ -23,7 +23,7 @@ class StubModelDataWithProcessDefinition(definition: ProcessDefinition[Definitio
 
   override def modelConfigLoader: ModelConfigLoader = new DefaultModelConfigLoader
 
-  override def additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider = new DefaultAdditionalComponentsUIConfigProvider
+  override def additionalUIConfigProvider: AdditionalUIConfigProvider = new DefaultAdditionalUIConfigProvider
 
   override def objectNaming: ObjectNaming = DefaultNamespacedObjectNaming
 

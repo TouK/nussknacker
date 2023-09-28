@@ -1,22 +1,21 @@
 package pl.touk.nussknacker.ui.definition
 
+import cats.implicits.catsSyntaxSemigroup
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ComponentId, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ComponentId, ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.generics
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
+import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, ToStaticObjectDefinitionTransformer}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.{ComponentDefinitionPreparer, ComponentIdProvider, DefaultComponentIdProvider}
@@ -90,7 +89,7 @@ object UIProcessObjectsFactory {
     val componentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map(processingType -> combinedComponentsConfig))
     val componentIdToName: Map[ComponentId, String] = getComponentIdToNameMap(componentIdProvider, uiProcessDefinition, isFragment, processingType)
 
-    val additionalComponentsUIConfig = modelDataForType.additionalComponentsUIConfigProvider.getAllForProcessingType(processingType).map {
+    val additionalComponentsUIConfig = modelDataForType.additionalUIConfigProvider.getComponentUIConfigs(processingType).map {
       case (componentId, config) => componentIdToName(componentId) -> config.toSingleComponentConfig
     }
 
@@ -98,9 +97,10 @@ object UIProcessObjectsFactory {
 
     val componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(processConfig)
 
-    val additionalPropertiesConfigForUi = additionalPropertiesConfig
-      .filter(_ => !isFragment) // fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
-      .mapValuesNow(createUIAdditionalPropertyConfig)
+    val additionalPropertiesConfigForUi: Map[String, UiAdditionalPropertyConfig] = if (!isFragment) {
+      (modelDataForType.additionalUIConfigProvider.getAdditionalPropertiesUIConfigs(processingType) |+| additionalPropertiesConfig)
+        .mapValuesNow(createUIAdditionalPropertyConfig)
+    } else Map.empty // fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
 
     val defaultUseAsyncInterpretationFromConfig = processConfig.as[Option[Boolean]]("asyncExecutionConfig.defaultUseAsyncInterpretation")
     val defaultAsyncInterpretation: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(defaultUseAsyncInterpretationFromConfig)

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.definition
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.{AdditionalComponentsUIConfigProvider, ComponentGroupName, ComponentId, ParameterConfig, SingleComponentConfig, SingleComponentUIConfig}
+import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, AdditionalUIConfigProvider, ComponentGroupName, ComponentId, ParameterConfig, SingleComponentConfig, SingleComponentUIConfig}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
@@ -14,9 +14,11 @@ import pl.touk.nussknacker.engine.definition.ToStaticObjectDefinitionTransformer
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, ProcessTestData, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIAdditionalPropertyConfig
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.fragment.FragmentDetails
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.concurrent.Future
 
@@ -72,7 +74,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
         Map("enricher" -> WithCategories(TestService))
     })
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, Set.empty, Map.empty)
 
     processObjects.processDefinition.services("enricher").parameters.map(p => (p.name, p.editor)).toMap shouldBe Map(
       "paramDualEditor" -> DualParameterEditor(
@@ -95,7 +97,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
         )
     })
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, Set.empty, Map.empty)
 
     processObjects.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
   }
@@ -109,7 +111,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
         )
     })
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, Set.empty, Map.empty)
 
     val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
     componentsGroups should not be empty
@@ -122,7 +124,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val docsUrl = "https://nussknacker.io/documentation/"
     val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.withTypeSpecificData(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
 
-    val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragmentWithDocsUrl, "Category1")))
+    val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragmentWithDocsUrl, "Category1")), Map.empty)
 
     processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
   }
@@ -132,24 +134,35 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
 
     val fragment = CanonicalProcess(MetaData("emptyFragment", FragmentSpecificData()), List.empty, List.empty)
-    val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")))
+    val processObjects = prepareUIProcessObjects(model, Set(FragmentDetails(fragment, "Category1")), Map.empty)
 
     processObjects.componentsConfig.get(fragment.id) shouldBe empty
   }
 
-  class TestAdditionalComponentsUIConfigProvider extends AdditionalComponentsUIConfigProvider {
-    override def getAllForProcessingType(processingType: String): Map[ComponentId, SingleComponentUIConfig] =
+  private val validatorsOverride = Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("otherExpression", "otherLabel")))))
+  private val additionalPropertiesOverride = Map(
+    "property1" -> AdditionalPropertyConfig.empty.copy(
+      defaultValue = Some("defaultOverride")
+    )
+  )
+
+  class TestAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
+
+    override def getComponentUIConfigs(processingType: String): Map[ComponentId, SingleComponentUIConfig] =
       Map(
         ComponentId("streaming-enricher-enricher") -> SingleComponentUIConfig.zero.copy(
           params = Some(Map(
             "paramDualEditor" -> ParameterConfig.empty.copy(
-              validators = Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("otherExpression", "otherLabel")))))
+              validators = validatorsOverride
             )
           ))
         )
       )
 
-    override def getAll: Map[ComponentId, SingleComponentUIConfig] = ???
+    override def getAllComponentUIConfigs: Map[ComponentId, SingleComponentUIConfig] = ???
+
+    override def getAdditionalPropertiesUIConfigs(category: String): Map[String, AdditionalPropertyConfig] = additionalPropertiesOverride
+
   }
 
   test("should override component's parameter config with additionally provided config") {
@@ -157,19 +170,37 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map("enricher" -> WithCategories(TestService))
     },
-      additionalComponentsUIConfigProvider = new TestAdditionalComponentsUIConfigProvider
+      additionalComponentsUIConfigProvider = new TestAdditionalUIConfigProvider
     )
 
-    val processObjects = prepareUIProcessObjects(model, Set.empty)
+    val processObjects = prepareUIProcessObjects(model, Set.empty, Map.empty)
 
     processObjects.componentsConfig("enricher").params.map(_.map { case (key, value) => key -> value.validators }) shouldBe Some(Map(
-      "paramDualEditor" -> Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("otherExpression", "otherLabel"))))),
+      "paramDualEditor" -> validatorsOverride,
       "param" -> None // from designer.conf, which also goes into `componentsConfig`
     ))
   }
 
+  test("should override additional properties with additionally provided config") {
+    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+    val model: ModelData = LocalModelData(typeConfig.modelConfig.resolved, new EmptyProcessConfigCreator())
+
+    val additionalPropertyConfig = Map(
+      "property1" -> AdditionalPropertyConfig.empty.copy(
+        defaultValue = Some("defaultOverride") // TODO should it be possible to override Some("default") to None? (currently it's not)
+      )
+    )
+
+    val processObjects = prepareUIProcessObjects(model, Set.empty, additionalPropertyConfig)
+
+    processObjects.additionalPropertiesConfig shouldBe additionalPropertiesOverride.mapValuesNow(createUIAdditionalPropertyConfig)
+  }
+
+
   private def prepareUIProcessObjects(model: ModelData,
-                                      fragmentDetails: Set[FragmentDetails]) = {
+                                      fragmentDetails: Set[FragmentDetails],
+                                      additionalPropertiesConfig: Map[String, AdditionalPropertyConfig]
+                                     ) = {
     val staticObjectsDefinition = ToStaticObjectDefinitionTransformer.transformModel(model, initialData.create(_, Map.empty))
     UIProcessObjectsFactory.prepareUIProcessObjects(
       model,
@@ -179,7 +210,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       fragmentDetails,
       isFragment = false,
       new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
-      Map.empty,
+      additionalPropertiesConfig,
       TestProcessingTypes.Streaming
     )
   }
