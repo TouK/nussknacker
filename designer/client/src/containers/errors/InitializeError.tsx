@@ -21,7 +21,7 @@ export function InitializeError({ error, retry }: InitErrorComponentProps): JSX.
                         "auth.StrategyInitializer.errors.401.description",
                         "It seems you are not authenticated... Why not try to authenticate again?",
                     ),
-                    button: t("auth.StrategyInitializer.errors.401.buttonLabel", "Try authenticate again"),
+                    button: t("auth.StrategyInitializer.errors.401.buttonLabel", "Authenticate again"),
                 };
             case AuthErrorCodes.HTTP_TIMEOUT_CODE:
                 return {
@@ -30,7 +30,7 @@ export function InitializeError({ error, retry }: InitErrorComponentProps): JSX.
                         "auth.StrategyInitializer.errors.504.description",
                         "It seems server has some problems... Why not to try refreshing your page? Or you can contact with system administrators.",
                     ),
-                    button: t("InitializeError.buttonLabel", "Try to refresh page"),
+                    button: t("InitializeError.buttonLabel", "Refresh the page"),
                 };
             case AuthErrorCodes.HTTP_APPLICATION_CODE:
                 return {
