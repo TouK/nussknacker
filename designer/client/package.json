@@ -240,7 +240,6 @@
     },
     "@comment lint-staged": "We add svgo preprocessing as a pre-commit hook to avoid surprise that someone based on global style classes from svgo that won't be available anymore after preprocessing",
     "lint-staged": {
-        "*.svg": "npm run svgo",
         "*.{js,jsx,ts,tsx}": "eslint --cache --fix --rule 'i18next/no-literal-string: warn'",
         "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
     },
