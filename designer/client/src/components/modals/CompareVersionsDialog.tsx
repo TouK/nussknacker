@@ -16,7 +16,7 @@ import { SelectNodeWithFocus } from "../withFocus";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { NodeType } from "../../types";
-import { CompareModal, FormRow } from "./Styled";
+import { CompareModal, FormRow, VersionHeader } from "./Styled";
 
 interface State {
     currentDiffId: string;
@@ -111,11 +111,11 @@ const VersionsForm = () => {
             <div className="compareContainer">
                 <PathsToMarkProvider value={differentPaths}>
                     <div>
-                        <div className="versionHeader">Current version</div>
+                        <VersionHeader>Current version</VersionHeader>
                         {printElement(currentElement)}
                     </div>
                     <div>
-                        <div className="versionHeader">Version {versionDisplayString(state.otherVersion)}</div>
+                        <VersionHeader>Version {versionDisplayString(state.otherVersion)}</VersionHeader>
                         {printElement(otherElement)}
                     </div>
                 </PathsToMarkProvider>

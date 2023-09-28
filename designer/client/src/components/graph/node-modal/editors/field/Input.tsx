@@ -46,8 +46,7 @@ export default function Input(props: InputProps): JSX.Element {
                         onFocus={onFocus}
                         type={type}
                         className={cx([
-                            (!showValidation || !allValid(validators, [formattedValue ? formattedValue : value])) &&
-                                "node-input-with-error",
+                            (showValidation || !allValid(validators, [formattedValue ? formattedValue : value])) && "node-input-with-error",
                             inputClassName,
                         ])}
                         value={value || ""}
