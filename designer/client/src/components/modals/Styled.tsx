@@ -14,29 +14,25 @@ export const CompareModal = styled("div")`
     max-width: 1000px;
     font-size: 15px;
     font-weight: 700;
+`;
 
-    .compareContainer {
-        zoom: 0.9;
-        > :first-of-type {
-            width: 50%;
-            display: inline-block;
-            vertical-align: top;
-        }
+export const CompareContainer = styled("div")`
+    zoom: 0.9;
+    > :first-child {
+        width: 50%;
+        display: inline-block;
+        vertical-align: top;
+    }
 
-        > :nth-of-type(2) {
-            width: 50%;
-            display: inline-block;
-            vertical-align: top;
-        }
+    > :nth-child(2) {
+        width: 50%;
+        display: inline-block;
+        vertical-align: top;
     }
 `;
 
 export const FormRow = styled("div")`
-    margin-bottom: 8px;
-    margin-top: 7px;
-    margin-left: 30px;
-    margin-right: 30px;
-
+    margin: 7px 30px 8px 30px;
     > :first-child {
         width: 20%;
         color: ${variables.modalLabelTextColor};

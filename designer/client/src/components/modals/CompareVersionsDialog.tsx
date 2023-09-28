@@ -16,7 +16,7 @@ import { SelectNodeWithFocus } from "../withFocus";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { NodeType } from "../../types";
-import { CompareModal, FormRow, VersionHeader } from "./Styled";
+import { CompareContainer, CompareModal, FormRow, VersionHeader } from "./Styled";
 
 interface State {
     currentDiffId: string;
@@ -108,7 +108,7 @@ const VersionsForm = () => {
     const renderDiff = (currentElement, otherElement, printElement) => {
         const differentPaths = differentPathsForObjects(currentElement, otherElement);
         return (
-            <div className="compareContainer">
+            <CompareContainer>
                 <PathsToMarkProvider value={differentPaths}>
                     <div>
                         <VersionHeader>Current version</VersionHeader>
@@ -119,7 +119,7 @@ const VersionsForm = () => {
                         {printElement(otherElement)}
                     </div>
                 </PathsToMarkProvider>
-            </div>
+            </CompareContainer>
         );
     };
 
@@ -164,6 +164,7 @@ const VersionsForm = () => {
                 <SelectNodeWithFocus
                     autoFocus={true}
                     id="otherVersion"
+                    className="selectNode"
                     value={state.otherVersion || ""}
                     onChange={(e) => loadVersion(e.target.value)}
                 >
@@ -180,6 +181,7 @@ const VersionsForm = () => {
                         <p>Difference to pick</p>
                         <SelectNodeWithFocus
                             id="otherVersion"
+                            className="selectNode"
                             value={state.currentDiffId || ""}
                             onChange={(e) => setState({ ...state, currentDiffId: e.target.value })}
                         >
