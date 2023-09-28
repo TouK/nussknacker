@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AuthErrorCodes } from "../Auth/AuthErrorCodes";
 import { InitErrorComponentProps } from "../Auth/InitErrorComponent";
 import { ErrorTemplate } from "./ErrorTemplate";
-
+import { SyledBlueButton } from "./StyledBlueButton";
 interface ErrorProps {
     message: string;
     description: string;
@@ -56,11 +56,7 @@ export function InitializeError({ error, retry }: InitErrorComponentProps): JSX.
 
     return (
         <ErrorTemplate message={message} description={description}>
-            {button && (
-                <button className="big-blue-button" style={{ border: "none" }} onClick={() => retry()}>
-                    {button}
-                </button>
-            )}
+            {button && <SyledBlueButton onClick={() => retry()}>{button}</SyledBlueButton>}
         </ErrorTemplate>
     );
 }

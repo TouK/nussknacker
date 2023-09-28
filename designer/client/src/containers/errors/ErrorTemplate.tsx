@@ -34,8 +34,7 @@ const ErrorTemplateWrapper = styled("div")`
 
 const ErrorDetails = styled("div")`
     font-size: 24px;
-
-    .big-blue-button {
+    button {
         margin: 45px auto;
     }
 `;
