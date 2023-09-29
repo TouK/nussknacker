@@ -3,6 +3,7 @@ import { AxiosRequestConfig } from "axios";
 import { v4 as uuid4 } from "uuid";
 import api from "../api";
 import { isEmpty, set } from "lodash";
+import { PendingPromise } from "./PendingPromise";
 
 class SystemUtils {
     public static AUTHORIZATION_HEADER_NAMESPACE = "Authorization";
@@ -11,11 +12,28 @@ class SystemUtils {
     public static BEARER_CASE = "Bearer";
     public static NONCE = "nonce";
 
+    #tokenPromise: PendingPromise<string> | null;
+    get tokenPromise(): PendingPromise<string> {
+        if (!this.#tokenPromise) {
+            this.#tokenPromise = new PendingPromise<string>();
+        }
+        return this.#tokenPromise;
+    }
+
+    public asyncAuthorizationToken = (): Promise<string> => this.tokenPromise.then(this.authorizationToken);
     public authorizationToken = (): string => `${SystemUtils.BEARER_CASE} ${this.getAccessToken()}`;
 
-    public saveAccessToken = (token: string): void => localStorage.setItem(SystemUtils.ACCESS_TOKEN_NAMESPACE, token);
+    public saveAccessToken = (token: string): void => {
+        localStorage.setItem(SystemUtils.ACCESS_TOKEN_NAMESPACE, token);
+    };
 
-    public getAccessToken = (): string => localStorage.getItem(SystemUtils.ACCESS_TOKEN_NAMESPACE);
+    public getAccessToken = (): string | null => {
+        const token = localStorage.getItem(SystemUtils.ACCESS_TOKEN_NAMESPACE);
+        if (token) {
+            this.tokenPromise.resolve(token);
+        }
+        return token;
+    };
 
     public hasAccessToken = (): boolean => this.getAccessToken() !== null;
 
@@ -26,6 +44,8 @@ class SystemUtils {
     public getNonce = (): string => localStorage.getItem(SystemUtils.NONCE);
 
     public clearAuthorizationToken = (): void => {
+        this.#tokenPromise = null;
+
         api.interceptors.request.use((config: AxiosRequestConfig) => {
             delete config.headers[SystemUtils.AUTHORIZATION_HEADER_NAMESPACE];
             return config;
@@ -34,7 +54,11 @@ class SystemUtils {
         return this.removeAccessToken();
     };
 
-    public setAuthorizationToken = (token): void => {
+    public setAuthorizationToken = (token: string): void => {
+        if (token) {
+            this.tokenPromise.resolve(token);
+        }
+
         api.interceptors.request.use((config: AxiosRequestConfig) => {
             set(config.headers, SystemUtils.AUTHORIZATION_HEADER_NAMESPACE, this.authorizationToken());
             return config;

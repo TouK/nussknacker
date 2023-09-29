@@ -25,7 +25,7 @@ function createAuthWrapper({ url, scope }: { url: ModuleUrl; scope: ModuleString
 }
 
 export const RemoteAuthStrategy: StrategyConstructor = class RemoteAuthStrategy implements Strategy {
-    private pendingClient = new PendingPromise<AuthClient>();
+    private pendingClient = PendingPromise.withTimeout<AuthClient>();
     Wrapper = createAuthWrapper(this.urlWithScope, (auth) => this.pendingClient.resolve(auth));
 
     async inteceptor(error?: { response?: { status?: AuthErrorCodes } }): Promise<unknown> {
@@ -36,7 +36,7 @@ export const RemoteAuthStrategy: StrategyConstructor = class RemoteAuthStrategy 
     }
 
     async handleAuth(): Promise<void> {
-        const auth = await this.pendingClient.promise;
+        const auth = await this.pendingClient;
         if (!auth.isAuthenticated) {
             auth.login();
         }

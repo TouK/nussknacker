@@ -38,7 +38,7 @@ export const loadExternalReactModule = (url, props) => {
 };
 
 export const loadExternalReactModuleWithAuth = (url, props) => {
-    const getAuthToken = () => Promise.resolve(SystemUtils.authorizationToken());
+    const getAuthToken: () => Promise<string> = () => SystemUtils.asyncAuthorizationToken();
     loadExternalReactModule(url, { getAuthToken, ...props });
 };
 

@@ -35,5 +35,7 @@ export const variables = {
     warningColor: "#FF9A4D",
     modalHeaderHeight: 30,
     modalLabelTextColor: "#999999",
-    // buttonTextColor: "#f6f6f6",
+    buttonBlueColor: "#FFFFFF",
+    buttonBlueBkgColor: "#0E9AE0",
+    processesHoverColor: "#b3b3b3",
 };
