@@ -1,5 +1,10 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
 
-npm run commit --if-present --prefix designer/client
-npm run commit --if-present --prefix designer/submodules
+if [ "$(git diff --cached --name-only --diff-filter=ACM | grep -E "^designer/client|designer/submodules" | wc -l)" -gt 0 ]; then
+  ./designer/formatStagedFrontendFiles.sh
+fi
+
+# fixme: will be enabled in the next PR
+#if [ "$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.scala$|\.sbt$' | wc -l)" -gt 0 ]; then
+#  ./sbtwrapper formatStagedScalaFiles
+#fi

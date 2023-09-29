@@ -1,16 +1,17 @@
+import FormatStagedScalaFilesPlugin._
+import NuGitHooksPathConfiguratorPlugin._
 import com.typesafe.sbt.packager.SettingsHelper
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.dockerUsername
 import pl.project13.scala.sbt.JmhPlugin
 import pl.project13.scala.sbt.JmhPlugin._
-
-import scala.sys.process._
 import sbt.Keys._
-import sbt.{Def, _}
+import sbt._
 import sbtassembly.AssemblyPlugin.autoImport.assembly
 import sbtassembly.MergeStrategy
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 import scala.language.postfixOps
+import scala.sys.process._
 import scala.util.Try
 import scala.xml.Elem
 import scala.xml.transform.{RewriteRule, RuleTransformer}
