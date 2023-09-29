@@ -119,7 +119,7 @@ trait NuResourcesTest
   protected val featureTogglesConfig: FeatureTogglesConfig = FeatureTogglesConfig.create(testConfig)
 
   protected val typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData, _] = {
-    implicit val stefan: DeploymentService = deploymentService()
+    implicit val deploymentServiceImpl: DeploymentService = deploymentService()
     ProcessingTypeDataReader.loadProcessingTypeData(ConfigWithUnresolvedVersion(testConfig))
   }
 
