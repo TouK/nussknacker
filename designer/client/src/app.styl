@@ -26,27 +26,11 @@ body
   font-family "Open Sans"
   font-size: 16px
 
-.container-fluid
-  padding-left: containerPadding
-  padding-right: containerPadding
-
 .hide
   display none
   
   .details
     display inline-block
-
-.label-info
-  background-color labelBkgColor
-  padding 0 3px
-  margin: 0 4px;
-  color #ccc
-  font-weight 600
-  font-size 9px
-
-.typeSuggestion
-  float: right
-  opacity: 0.7
 
 .modalContentDark
   input
@@ -60,11 +44,6 @@ body
   h3
     font-size 1.3em
 
-
-.full-dark
-  width: 100%
-  height: 100%
-  background-color modalBkgColor
 
 .ace_hidden-cursors .ace_cursor {
   opacity: 0.0;
@@ -105,40 +84,3 @@ body
 .services
   height 100%
   overflow-y auto
-
-.queryServiceResults
-  margin-left 30px
-  margin-right 30px
-  font-size 15px
-  hr
-    border-top: 1px solid black;
-  .alert
-    font-size 15px
-  p
-    font-size 25px
-    color black
-
-.big-blue-button
-  margin: 45px 50px
-  width 360px
-  min-width: 300px
-  height: formControllHeight
-  background-color: buttonBlueBkgColor
-  color: buttonBlueColor
-  display flex
-  align-items: center
-  justify-content: center
-  font-family 'Open Sans'
-  font-size: 21px
-  font-weight: 600
-  border-radius: 0
-  &:hover
-    color buttonBlueColor
-    background: lighten(buttonBlueBkgColor, 25%)
-  &:focus
-    color buttonBlueColor
-  #add-icon
-    width: 20px
-    margin-left: 20px
-    &:hover
-      background: processesHoverColor

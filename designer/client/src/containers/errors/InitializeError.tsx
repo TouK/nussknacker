@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthErrorCodes } from "../Auth/AuthErrorCodes";
 import { InitErrorComponentProps } from "../Auth/InitErrorComponent";
+import { SyledBlueButton } from "./StyledBlueButton";
 import { RootErrorPage } from "../../components/common/RootErrorBoundary";
 
 interface ErrorProps {
@@ -53,14 +54,9 @@ export function InitializeError({ error, retry }: InitErrorComponentProps): JSX.
     }, [error, t]);
 
     const { description, button, message } = errorProps;
-
     return (
         <RootErrorPage message={message} description={description}>
-            {button && (
-                <button className="big-blue-button" style={{ border: "none", textAlign: "center" }} onClick={() => retry()}>
-                    {button}
-                </button>
-            )}
+            {button && <SyledBlueButton onClick={() => retry()}>{button}</SyledBlueButton>}
         </RootErrorPage>
     );
 }

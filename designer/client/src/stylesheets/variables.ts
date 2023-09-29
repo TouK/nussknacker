@@ -33,5 +33,7 @@ export const variables = {
     commentBkgColor: "#333333",
     formControllHeight: 46,
     warningColor: "#FF9A4D",
-    // buttonTextColor: "#f6f6f6",
+    buttonBlueColor: "#FFFFFF",
+    buttonBlueBkgColor: "#0E9AE0",
+    processesHoverColor: "#b3b3b3",
 };

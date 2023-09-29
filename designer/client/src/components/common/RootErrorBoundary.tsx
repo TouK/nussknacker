@@ -3,6 +3,7 @@ import { styled } from "@mui/material";
 import ProblemOccurredSvg from "./problem-occurred.svg";
 import { ErrorBoundary as ErrorBoundaryLibrary, ErrorBoundaryProps } from "react-error-boundary";
 import { t } from "i18next";
+import { SyledBlueButton } from "../../containers/errors/StyledBlueButton";
 
 type RootErrorPageProps = {
     message: string;
@@ -87,6 +88,10 @@ const StylesWrapper = styled("div")`
         font-size: 1.42em;
     }
 
+    button {
+        margin: 45px 0;
+    }
+
     .artwork {
         --top-margin: 8vh;
         --bottom-margin: 3vh;
@@ -123,9 +128,9 @@ export default function RootErrorBoundary({ children }: PropsWithChildren<Partia
                 "Please refresh the page. If the problem persists, please contact your system administrator.",
             )}
         >
-            <button className="big-blue-button" style={{ border: "none", textAlign: "center" }} onClick={() => window.location.reload()}>
+            <SyledBlueButton style={{ border: "none", textAlign: "center" }} onClick={() => window.location.reload()}>
                 {t("InitializeError.buttonLabel", "Refresh the page")}
-            </button>
+            </SyledBlueButton>
         </RootErrorPage>
     );
 
