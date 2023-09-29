@@ -29,8 +29,6 @@ private class InterpreterInternal[F[_] : Monad](listeners: Seq[ProcessListener],
 
   type Result[T] = Either[T, NuExceptionInfo[_ <: Throwable]]
 
-  //  private implicit val monad: Monad[F] = interpreterShape.monad
-
   private val expressionName = "expression"
 
   def interpret(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
