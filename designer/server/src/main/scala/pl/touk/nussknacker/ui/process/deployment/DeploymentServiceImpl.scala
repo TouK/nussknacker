@@ -81,13 +81,12 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     val actionType = ProcessActionType.Cancel
     checkCanPerformActionAndAddInProgressAction[Unit](processId.id, actionType, _.lastDeployedAction.map(_.processVersionId), _ => None).flatMap {
       case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-        DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
-          case Valid(deploymentComment) =>
-            runDeploymentActionWithNotifications(actionType, actionId, processId, versionOnWhichActionIsDone, deploymentComment, buildInfoProcessIngType) {
-              dispatcher.deploymentManagerUnsafe(processDetails.processingType).cancel(processId.name, user.toManagerUser)
-            }
-          case Invalid(exc) => Future.failed(ValidationError(exc.getMessage))
-        }
+        for {
+          deploymentCommentOpt <- validateDeploymentComment(comment)
+          _ <- runDeploymentActionWithNotifications(actionType, actionId, processId, versionOnWhichActionIsDone, deploymentCommentOpt, buildInfoProcessIngType) {
+            dispatcher.deploymentManagerUnsafe(processDetails.processingType).cancel(processId.name, user.toManagerUser)
+          }
+        } yield ()
     }
   }
 
@@ -102,23 +101,30 @@ class DeploymentServiceImpl(dispatcher: DeploymentManagerDispatcher,
     val actionType = ProcessActionType.Deploy
     checkCanPerformActionAndAddInProgressAction[CanonicalProcess](processIdWithName.id, actionType, d => Some(d.processVersionId), d => Some(d.processingType)).flatMap {
       case (processDetails, actionId, versionOnWhichActionIsDone, buildInfoProcessIngType) =>
-        DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
-          case Valid(deploymentComment) =>
-            validateBeforeDeploy(processDetails, actionId).transformWith {
-              case Failure(ex) =>
-                dbioRunner.runInTransaction(actionRepository.removeAction(actionId)).transform(_ => Failure(ex))
-              case Success(validationResult) =>
-                //we notify of deployment finish/fail only if initial validation succeeded
-                val deploymentFuture = runDeploymentActionWithNotifications(actionType, actionId, processIdWithName, versionOnWhichActionIsDone, deploymentComment, buildInfoProcessIngType) {
-                  dispatcher.deploymentManagerUnsafe(processDetails.processingType)
-                    .deploy(validationResult.processVersion, validationResult.deploymentData, validationResult.resolvedScenario, savepointPath)
-                }
-                Future.successful(deploymentFuture)
-            }
-          case Invalid(exc) => Future.failed(ValidationError(exc.getMessage))
-        }
+        for {
+          deploymentCommentOpt <- validateDeploymentComment(comment)
+          deployment <- validateBeforeDeploy (processDetails, actionId).transformWith {
+            case Failure (ex) =>
+              dbioRunner.runInTransaction (actionRepository.removeAction (actionId)).transform (_ => Failure (ex))
+            case Success (validationResult) =>
+              //we notify of deployment finish/fail only if initial validation succeeded
+              val deploymentFuture = runDeploymentActionWithNotifications (actionType, actionId, processIdWithName, versionOnWhichActionIsDone, deploymentCommentOpt, buildInfoProcessIngType) {
+                dispatcher.deploymentManagerUnsafe (processDetails.processingType)
+                  .deploy (validationResult.processVersion, validationResult.deploymentData, validationResult.resolvedScenario, savepointPath)
+              }
+              Future.successful (deploymentFuture)
+          }
+        } yield deployment
     }
   }
+
+  // TODO: this is temporary step: we want ParameterValidator here. The aim is to align deployment and custom actions
+  //  and validate deployment comment (and other action parameters) the same way as in node expressions or additional properties.
+  private def validateDeploymentComment(comment: Option[String]): Future[Option[DeploymentComment]] =
+    DeploymentComment.createDeploymentComment(comment, deploymentCommentSettings) match {
+      case Valid(deploymentComment) => Future.successful(deploymentComment)
+      case Invalid(exc) => Future.failed(ValidationError(exc.getMessage))
+    }
 
   protected def validateBeforeDeploy(processDetails: BaseProcessDetails[CanonicalProcess], actionId: ProcessActionId)
                                     (implicit user: LoggedUser, ec: ExecutionContext): Future[DeployedScenarioData] = {
