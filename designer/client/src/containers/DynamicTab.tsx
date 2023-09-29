@@ -1,8 +1,8 @@
 import * as queryString from "query-string";
 import React, { memo, useMemo } from "react";
 import ErrorBoundary from "../components/common/ErrorBoundary";
-import { ExternalModule, splitUrl } from "./ExternalLib";
-import { ModuleString, ModuleUrl } from "./ExternalLib/types";
+import { splitUrl } from "./ExternalLib";
+import { ModuleUrl } from "./ExternalLib/types";
 import { MuiThemeProvider } from "./muiThemeProvider";
 import { NotFound } from "./errors/NotFound";
 import SystemUtils from "../common/SystemUtils";

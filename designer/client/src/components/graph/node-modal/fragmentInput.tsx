@@ -6,10 +6,8 @@ import { IdField } from "./IdField";
 import { DisableField } from "./DisableField";
 import ParameterList from "./ParameterList";
 import { ParameterExpressionField } from "./ParameterExpressionField";
-import { NodeInput } from "../../withFocus";
 import { DescriptionField } from "./DescriptionField";
 import OutputParametersList from "./OutputParametersList";
-import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 
 interface FragmentInmput {
     fieldErrors?: NodeValidationError[];
@@ -57,32 +55,22 @@ export function FragmentInput(props: FragmentInmput): JSX.Element {
             <ParameterList
                 processDefinitionData={processDefinitionData}
                 editedNode={node}
-                savedNode={node}
                 setNodeState={setNodeState}
-                createListField={(param, index) => {
-                    return (
-                        <ParameterExpressionField
-                            showSwitch={showSwitch}
-                            findAvailableVariables={findAvailableVariables}
-                            parameterDefinitions={parameterDefinitions}
-                            fieldErrors={fieldErrors}
-                            node={node}
-                            isEditMode={isEditMode}
-                            showValidation={showValidation}
-                            renderFieldLabel={renderFieldLabel}
-                            setProperty={setProperty}
-                            parameter={param}
-                            listFieldPath={`ref.parameters[${index}]`}
-                        />
-                    );
-                }}
-                createReadOnlyField={(params) => (
-                    <NodeRow>
-                        {renderFieldLabel(params.name)}
-                        <div className="node-value">
-                            <NodeInput type="text" value={params.expression.expression} disabled={true} />
-                        </div>
-                    </NodeRow>
+                isEditMode={isEditMode}
+                ListField={({ param, path }) => (
+                    <ParameterExpressionField
+                        showSwitch={showSwitch}
+                        findAvailableVariables={findAvailableVariables}
+                        parameterDefinitions={parameterDefinitions}
+                        fieldErrors={fieldErrors}
+                        node={node}
+                        isEditMode={isEditMode}
+                        showValidation={showValidation}
+                        renderFieldLabel={renderFieldLabel}
+                        setProperty={setProperty}
+                        parameter={param}
+                        listFieldPath={path}
+                    />
                 )}
             />
             <OutputParametersList

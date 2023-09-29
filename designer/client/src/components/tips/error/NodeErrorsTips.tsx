@@ -1,12 +1,20 @@
 import React from "react";
-import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
 import i18next from "i18next";
 import { concat, difference, isEmpty } from "lodash";
+import NodeErrorsLinkSection from "./NodeErrorsLinkSection";
+import { NodeType, Process, NodeValidationError } from "../../../types";
 
-export const NodeErrorsTips = ({ propertiesErrors, nodeErrors, showDetails, currentProcess }) => {
+interface NodeErrorsTips {
+    propertiesErrors: NodeValidationError[];
+    nodeErrors: Record<string, NodeValidationError[]>;
+    showDetails: (event: React.SyntheticEvent<Element, Event>, details: NodeType) => void;
+    currentProcess: Process;
+}
+
+export const NodeErrorsTips = ({ propertiesErrors, nodeErrors, showDetails, currentProcess }: NodeErrorsTips) => {
     const nodeIds = Object.keys(nodeErrors);
 
-    const errorsOnTopPresent = (otherNodeErrorIds, propertiesErrors) => {
+    const errorsOnTopPresent = (otherNodeErrorIds: string[], propertiesErrors: NodeValidationError[]) => {
         return !isEmpty(otherNodeErrorIds) || !isEmpty(propertiesErrors);
     };
 

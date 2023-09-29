@@ -36,7 +36,6 @@ ace.define("ace/mode/spelTemplate_highlight_rules", ["require", "exports", "modu
 
         this.embedRules(SpelHighlightRules, "spelTemplate-", endRules);
         this.normalizeRules();
-        console.log(this.$rules)
     };
 
     oop.inherits(SpelTemplateHighlightRules, TextHighlightRules);

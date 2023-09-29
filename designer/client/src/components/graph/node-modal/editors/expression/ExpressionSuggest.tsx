@@ -155,16 +155,9 @@ function ExpressionSuggest(props: Props): JSX.Element {
     const onChange = useCallback((value: string) => onValueChange(value), [onValueChange]);
     const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), []);
 
-    const StyledWrapper = styled("div")`
-        ${style}
-        width: 100%;
-        margin: 0;
-        height: max-content;
-    `;
-
     return dataResolved ? (
         <>
-            <StyledWrapper
+            <div
                 className={cn([
                     "row-ace-editor",
                     showValidation && !allValid(validators, [value]) && "node-input-with-error",
@@ -182,7 +175,7 @@ function ExpressionSuggest(props: Props): JSX.Element {
                     inputProps={inputProps}
                     customAceEditorCompleter={customAceEditorCompleter}
                 />
-            </StyledWrapper>
+            </div>
             {showValidation && <ValidationLabels validators={validators} values={[value]} validationLabelInfo={validationLabelInfo} />}
         </>
     ) : null;

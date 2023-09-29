@@ -62,7 +62,7 @@ export const NodeTableStyled = styled("div")`
             background-color: ${variables.panelBkgColor};
         }
         input:read-only {
-            background-color: ${variables.panelBkgColor};
+            background-color: ${variables.panelBkgColor} !important;
         }
         ${customCheckbox("20px")};
         input[type="checkbox"] {

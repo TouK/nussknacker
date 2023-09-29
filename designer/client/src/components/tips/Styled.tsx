@@ -1,5 +1,5 @@
 import { ComponentType, SVGProps } from "react";
-import { styled } from "@mui/material";
+import { lighten, styled } from "@mui/material";
 import { variables } from "../../stylesheets/variables";
 import { Link } from "react-router-dom";
 import { alpha } from "../../containers/theme";
@@ -9,10 +9,11 @@ export const LinkStyled = styled(Link)`
     font-weight: 600;
     white-space: normal !important;
     &:hover {
-        color: lighten(${variables.warningColor}, 25%);
+        color: ${lighten(variables.warningColor, 0.25)};
     }
     &:focus {
-        color: ${variables.warningColor}, text-decoration none;
+        color: ${variables.warningColor};
+        text-decoration: none;
     }
 `;
 
@@ -28,7 +29,7 @@ export const styledIcon = (Icon: ComponentType<SVGProps<SVGSVGElement>>) => styl
 export const TipPanelStyled = styled("div")((props: { isHighlighted: boolean }) => ({
     height: "75px",
     backgroundColor: props.isHighlighted ? alpha(variables.errorColor, 0.1) : variables.panelBackground,
-    padding: "8px 1px 8px 10px",
+    padding: "8px 10px 8px 10px",
     fontWeight: "lighter",
     fontSize: "14px",
     color: props.isHighlighted && variables.defaultTextColor,

@@ -1,10 +1,12 @@
 import React from "react";
 import { v4 as uuid4 } from "uuid";
-import TipsWarning from "../../assets/img/icons/tipsWarning.svg";
+import WarningIcon from "@mui/icons-material/Warning";
 import NodeUtils from "../graph/NodeUtils";
 import { groupBy } from "lodash";
 import { LinkStyled } from "./Styled";
-import { Process } from "../../types";
+import { NodeType, Process } from "../../types";
+import { variables } from "../../stylesheets/variables";
+import { styled } from "@mui/material";
 
 interface Warning {
     error: {
@@ -14,9 +16,17 @@ interface Warning {
     key: string;
 }
 
+const StyledWarningIcon = styled(WarningIcon)`
+    width: 16px;
+    height: 16px;
+    align-self: flex-start;
+    margin-right: 5px;
+    color: ${variables.warningColor};
+`;
+
 interface WarningsProps {
     warnings: Warning[];
-    showDetails: (event: React.MouseEvent, node) => void; // You can specify the actual type for "node" here
+    showDetails: (event: React.MouseEvent, node: NodeType) => void;
     currentProcess: Process;
 }
 
@@ -27,11 +37,11 @@ const Warnings = ({ warnings, showDetails, currentProcess }: WarningsProps) => {
     const separator = ", ";
 
     return (
-        <div key={uuid4()}>
-            {warnings.length > 0 && <TipsWarning className={"icon"} />}
+        <div key={uuid4()} style={{ display: "flex" }}>
+            {warnings.length > 0 && <StyledWarningIcon />}
             <div>
                 {Object.entries(groupedByType).map(([warningType, warnings]) => (
-                    <div key={uuid4()} className={"warning-tips"} title={warnings[0]?.error.description}>
+                    <div key={uuid4()} title={warnings[0]?.error.description}>
                         <span>{headerMessageByWarningType.get(warningType)}</span>
                         <div style={{ display: "inline" }}>
                             {warnings.map((warning, index) => (
