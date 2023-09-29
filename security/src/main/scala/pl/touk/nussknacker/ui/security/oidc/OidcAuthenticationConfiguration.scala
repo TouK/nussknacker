@@ -36,6 +36,7 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
                                            tokenCookie: Option[TokenCookieConfig] = None,
                                            usernameClaim: Option[UsernameClaim] = None,
                                            accessTokenIsJwt: Boolean = false,
+                                           userinfoFromIdToken: Option[Boolean] = None,
                                            overrideFrontendAuthenticationStrategy: Option[FrontendStrategySettings] = None,
                                           ) extends URIExtensions {
 
@@ -54,7 +55,9 @@ case class OidcAuthenticationConfiguration(usersFile: URI,
     redirectUri = redirectUri,
     jwt = Some(new JwtConfiguration {
       def accessTokenIsJwt: Boolean = OidcAuthenticationConfiguration.this.accessTokenIsJwt
-      def userinfoFromIdToken: Boolean = true
+      def userinfoFromIdToken: Boolean = OidcAuthenticationConfiguration.this.userinfoFromIdToken.getOrElse {
+        userinfoEndpoint.forall(_ => false)
+      }
       def audience: Option[String] = OidcAuthenticationConfiguration.this.audience
       def authServerPublicKey: Option[PublicKey] = None
       def idTokenNonceVerificationRequired: Boolean = false
