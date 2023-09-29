@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Field, { FieldType } from "./editors/field/Field";
 import { allValid, errorValidator, Validator } from "./editors/Validators";
 import { NodeType, NodeValidationError, ProcessDefinitionData } from "../../../types";
@@ -15,7 +15,7 @@ type OutputFieldProps = {
     isEditMode?: boolean;
     readonly?: boolean;
     renderedFieldLabel: JSX.Element;
-    onChange: (value: string | boolean) => void;
+    onChange: (value: string) => void;
     showValidation?: boolean;
     validators?: Validator[];
 };
@@ -72,50 +72,72 @@ export default function OutputParametersList({
     showValidation?: boolean;
     isEditMode?: boolean;
 }): JSX.Element {
-    const outputParameters = ProcessUtils.findNodeObjectTypeDefinition(
-        editedNode,
-        processDefinitionData.processDefinition,
-    )?.outputParameters;
-    const [params, setParams] = useState(() =>
-        outputParameters.reduce(
-            (previousValue, currentValue) => ({
-                ...previousValue,
-                [currentValue]: editedNode.ref?.outputVariableNames?.[currentValue],
-            }),
-            {},
-        ),
+    const currentVariableNames = editedNode.ref?.outputVariableNames;
+
+    const typeDefinition = useMemo(
+        () => ProcessUtils.findNodeObjectTypeDefinition(editedNode, processDefinitionData.processDefinition),
+        [editedNode, processDefinitionData.processDefinition],
     );
+    const isDefinitionAvailable = !!typeDefinition.outputParameters && isEditMode;
+
+    const [variableNames, setVariableNames] = useState<Record<string, string>>(() => {
+        if (!isDefinitionAvailable) {
+            return currentVariableNames;
+        }
+
+        const entries = typeDefinition.outputParameters.map((value) => [value, currentVariableNames?.[value]]);
+        return Object.fromEntries(entries);
+    });
 
     const { t } = useTranslation();
 
     useEffect(() => {
-        setProperty(outputVariablePath, params);
-    }, [params, setProperty]);
+        if (!isDefinitionAvailable) {
+            return;
+        }
+        setProperty(outputVariablePath, variableNames);
+    }, [variableNames, setProperty, isDefinitionAvailable]);
 
-    outputParameters
-        .filter((paramName) => params[paramName] === undefined)
-        .forEach((paramName) => {
-            setParams((prevState) => ({ ...prevState, [paramName]: paramName }));
-        });
+    useEffect(() => {
+        typeDefinition.outputParameters
+            ?.filter((paramName) => variableNames[paramName] === undefined)
+            .forEach((paramName) => {
+                setVariableNames((prevState) => ({
+                    ...prevState,
+                    [paramName]: paramName,
+                }));
+            });
+    }, [typeDefinition.outputParameters, variableNames]);
 
-    return outputParameters && outputParameters.length === 0 ? null : (
+    const entries = Object.entries(variableNames);
+
+    if (entries.length <= 0) {
+        return null;
+    }
+
+    return (
         <NodeRow key="outputVariableNames">
             <div className="node-label" title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
                 {t("parameterOutputs.outputsText", "Outputs names:")}
             </div>
             <div className="node-value">
                 <div className="fieldsControl">
-                    {outputParameters.map((paramName) => (
+                    {entries.map(([name, value]) => (
                         <OutputField
-                            key={paramName}
+                            key={name}
                             isEditMode={isEditMode}
                             showValidation={showValidation}
-                            value={params[paramName] === undefined ? paramName : params[paramName]}
-                            renderedFieldLabel={renderFieldLabel(paramName)}
-                            onChange={(value) => setParams((prevState) => ({ ...prevState, [paramName]: value }))}
+                            value={value === undefined ? name : value}
+                            renderedFieldLabel={renderFieldLabel(name)}
+                            onChange={(value) =>
+                                setVariableNames((prevState) => ({
+                                    ...prevState,
+                                    [name]: value,
+                                }))
+                            }
                             fieldType={FieldType.input}
-                            fieldProperty={paramName}
-                            validators={[errorValidator(fieldErrors || [], `${outputVariablePath}.${paramName}`)]}
+                            fieldProperty={name}
+                            validators={[errorValidator(fieldErrors || [], `${outputVariablePath}.${name}`)]}
                         />
                     ))}
                 </div>
