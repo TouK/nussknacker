@@ -21,7 +21,7 @@ export const NodeDetailsModalTitle = styled("div")`
 
 export const ModalHeader = styled("div")`
     text-transform: lowercase;
-    font-size: 14px;
+    font-size: 14px !important;
     font-weight: 600;
     height: ${variables.modalHeaderHeight}px;
     span {
