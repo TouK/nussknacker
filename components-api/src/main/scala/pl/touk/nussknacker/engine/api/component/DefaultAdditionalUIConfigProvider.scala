@@ -6,5 +6,5 @@ class DefaultAdditionalUIConfigProvider extends AdditionalUIConfigProvider {
 
   override def getAllComponentUIConfigs: Map[ComponentId, SingleComponentUIConfig] = Map.empty
 
-  override def getAdditionalPropertiesUIConfigs(category: String): Map[String, AdditionalPropertyConfig] = Map.empty
+  override def getAdditionalPropertiesUIConfigs(processingType: String): Map[String, AdditionalPropertyConfig] = Map.empty
 }

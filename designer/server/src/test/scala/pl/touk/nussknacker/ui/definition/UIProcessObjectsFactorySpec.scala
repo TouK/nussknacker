@@ -161,7 +161,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     override def getAllComponentUIConfigs: Map[ComponentId, SingleComponentUIConfig] = ???
 
-    override def getAdditionalPropertiesUIConfigs(category: String): Map[String, AdditionalPropertyConfig] = additionalPropertiesOverride
+    override def getAdditionalPropertiesUIConfigs(processingType: String): Map[String, AdditionalPropertyConfig] = additionalPropertiesOverride
 
   }
 

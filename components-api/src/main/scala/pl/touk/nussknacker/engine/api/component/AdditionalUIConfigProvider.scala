@@ -6,6 +6,6 @@ trait AdditionalUIConfigProvider extends Serializable {
 
   def getAllComponentUIConfigs: Map[ComponentId, SingleComponentUIConfig]
 
-  def getAdditionalPropertiesUIConfigs(category: String): Map[String, AdditionalPropertyConfig]
+  def getAdditionalPropertiesUIConfigs(processingType: String): Map[String, AdditionalPropertyConfig]
 
 }
