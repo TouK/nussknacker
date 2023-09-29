@@ -37,7 +37,7 @@ class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteT
         secondStatus = status
       }
       val statuses = List(firstStatus, secondStatus)
-      statuses should contain only (StatusCodes.OK, StatusCodes.Conflict)
+      statuses should contain only (StatusCodes.OK, StatusCodes.Forbidden)
       eventually {
         deploymentManager.deploys.asScala.count(_ == ProcessName(processName)) shouldBe 1
       }
