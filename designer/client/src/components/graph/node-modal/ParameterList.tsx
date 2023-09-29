@@ -4,7 +4,7 @@ import { NodeType, Parameter, ProcessDefinitionData } from "../../../types";
 interface ParameterListProps {
     processDefinitionData: ProcessDefinitionData;
     editedNode: NodeType;
-    setNodeState: (newParams: unknown) => void;
+    setNodeState: (newParams: Parameter[]) => void;
     ListField: ComponentType<{ param: Parameter; path: string }>;
     isEditMode?: boolean;
 }

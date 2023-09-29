@@ -9,6 +9,19 @@ import { ParameterExpressionField } from "./ParameterExpressionField";
 import { DescriptionField } from "./DescriptionField";
 import OutputParametersList from "./OutputParametersList";
 
+type FragmentInputProps = {
+    fieldErrors?: NodeValidationError[];
+    findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
+    isEditMode?: boolean;
+    node: NodeType;
+    parameterDefinitions: UIParameter[];
+    processDefinitionData?: ProcessDefinitionData;
+    renderFieldLabel: (paramName: string) => JSX.Element;
+    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
+    showSwitch?: boolean;
+    showValidation?: boolean;
+};
+
 export function FragmentInput({
     fieldErrors,
     findAvailableVariables,
@@ -20,18 +33,7 @@ export function FragmentInput({
     setProperty,
     showSwitch,
     showValidation,
-}: {
-    fieldErrors?: NodeValidationError[];
-    findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>;
-    isEditMode?: boolean;
-    node: NodeType;
-    parameterDefinitions: UIParameter[];
-    processDefinitionData?: ProcessDefinitionData;
-    renderFieldLabel: (paramName: string) => JSX.Element;
-    setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
-    showSwitch?: boolean;
-    showValidation?: boolean;
-}): JSX.Element {
+}: FragmentInputProps): JSX.Element {
     const setNodeState = useCallback((newParams) => setProperty("ref.parameters", newParams), [setProperty]);
     return (
         <NodeTableBody>
