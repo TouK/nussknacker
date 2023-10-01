@@ -3,7 +3,10 @@ package pl.touk.nussknacker.processCounts.influxdb
 import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, scenarioIdTag}
 import sttp.client3.UriContext
 
-case class InfluxConfig(influxUrl: String, user: Option[String], password: Option[String],
+case class InfluxConfig(influxUrl: String,
+                        user: Option[String],
+                        password: Option[String],
+                        additionalHeaders: Map[String, String] = Map.empty,
                         database: String,
                         queryMode: QueryMode.Value = QueryMode.OnlySumOfDifferences,
                         metricsConfig: Option[MetricsConfig]) {
