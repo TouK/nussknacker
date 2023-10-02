@@ -43,6 +43,7 @@ export function FragmentInput({
                 showValidation={showValidation}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={fieldErrors}
             />
             <DisableField
                 node={node}

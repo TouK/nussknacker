@@ -39,6 +39,7 @@ export const SourceSinkCommon = ({
                 node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
+                errors={fieldErrors}
             />
             {node.ref.parameters?.map((param, index) => (
                 <div className="node-block" key={node.id + param.name + index}>

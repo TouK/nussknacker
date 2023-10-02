@@ -24,6 +24,11 @@ export interface ValidationRequest {
     branchVariableTypes: Record<string, VariableTypes>;
     processProperties: PropertiesType;
     outgoingEdges: Edge[];
+    nodeNameRequest?: NodeNameValidationRequest;
+}
+
+export interface NodeNameValidationRequest {
+    newName: string;
 }
 
 export function nodeValidationDataUpdated(nodeId: string, validationData: ValidationData): NodeValidationUpdated {

@@ -36,6 +36,8 @@ export function Properties({
         [additionalPropertiesConfig],
     );
 
+    // TODO: add errors for id field
+    // TODO: add scenario/fragment name validation in properties validation endpoint
     return (
         <NodeTableBody>
             <IdField

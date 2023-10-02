@@ -29,6 +29,7 @@ import { Split } from "./split";
 import { Properties } from "./properties";
 import { NodeDetailsFallback } from "./NodeDetailsContent/NodeDetailsFallback";
 import Variable from "./Variable";
+import { FAKE_NAME_PROP_NAME } from "./IdField";
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never;
 
@@ -131,6 +132,8 @@ export function NodeTypeDetailsContent({
 
     useEffect(() => {
         if (showValidation) {
+            console.log(node);
+            console.log(node[FAKE_NAME_PROP_NAME]);
             dispatch(
                 validateNodeData(processId, {
                     //see NODES_CONNECTED/NODES_DISCONNECTED
@@ -139,6 +142,9 @@ export function NodeTypeDetailsContent({
                     processProperties,
                     branchVariableTypes: getBranchVariableTypes(node.id),
                     variableTypes,
+                    nodeNameRequest: {
+                        newName: node[FAKE_NAME_PROP_NAME] || node[FAKE_NAME_PROP_NAME] === "" ? node[FAKE_NAME_PROP_NAME] : node.id,
+                    },
                 }),
             );
         }
