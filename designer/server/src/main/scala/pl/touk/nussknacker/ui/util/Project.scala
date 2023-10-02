@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.util
 
-import better.files._
-
-import java.nio.file.{Path => JPath}
+import better.files.File
+import java.nio.file.Path
 
 object Project {
 
   def root: File = {
-    val targetItClassesDir = JPath.of(getClass.getResource("/").toURI)
+    val targetItClassesDir = Path.of(getClass.getResource("/").toURI)
     val rootDir = targetItClassesDir.getParent.getParent.getParent.getParent.getParent
     File(rootDir)
   }
