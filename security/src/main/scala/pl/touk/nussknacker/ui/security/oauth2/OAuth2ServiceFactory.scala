@@ -15,14 +15,21 @@ trait OAuth2AuthorizationData {
   val refreshToken: Option[String]
 }
 
-trait OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2AuthorizationData] {
+abstract class OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2AuthorizationData](implicit ec: ExecutionContext) {
   /*
   According to the OAuth2 specification, the redirect URI previously passed to the authorization endpoint is required
   along with an authorization code to obtain an access token. At this step, the URI is used solely for verification.
    String comparison is performed by the authorization server, hence the type.
    */
   def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, UserInfoData)]
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])]
+  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] = {
+    for {
+      accessTokenIntrospectionResult <- introspectAccessToken(accessToken)
+      userInfo <- obtainUserInfo(accessToken, accessTokenIntrospectionResult.subject)
+    } yield (userInfo, accessTokenIntrospectionResult.expirationTime)
+  }
+  def introspectAccessToken(accessToken: String): Future[AccessTokenIntrospectionResult]
+  def obtainUserInfo(accessToken: String, accessTokenSubject: Option[String]): Future[UserInfoData]
 }
 
 

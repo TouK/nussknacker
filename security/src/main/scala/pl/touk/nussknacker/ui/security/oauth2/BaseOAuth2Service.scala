@@ -24,12 +24,6 @@ class BaseOAuth2Service[
     } yield (authorizationData, userInfo)
   }
 
-  final def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] =
-    for {
-      expirationInstant <- introspectAccessToken(accessToken)
-      userInfo <- obtainUserInfo(accessToken)
-    } yield (userInfo, expirationInstant)
-
   protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
     clientApi.accessTokenRequest(authorizationCode, redirectUri)
 
@@ -38,7 +32,7 @@ class BaseOAuth2Service[
   or use a CachingOAuthService wrapper so that only previously-stored (immediately after retrieval) tokens are accepted
   or do both.
   */
-  protected def introspectAccessToken(accessToken: String): Future[Option[Instant]] = {
+  def introspectAccessToken(accessToken: String): Future[AccessTokenIntrospectionResult] = {
     Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("The access token cannot be validated"))))
   }
 
@@ -48,11 +42,13 @@ class BaseOAuth2Service[
   The following two methods shall call such a resource.
    */
   protected def obtainUserInfo(authorizationData: AuthorizationData): Future[UserInfoData] =
-    obtainUserInfo(authorizationData.accessToken)
+    obtainUserInfo(authorizationData.accessToken, None)
 
-  protected def obtainUserInfo(accessToken: String): Future[UserInfoData] =
+  def obtainUserInfo(accessToken: String, accessTokenSubject: Option[String]): Future[UserInfoData] =
     clientApi.profileRequest(accessToken)
 }
+
+case class AccessTokenIntrospectionResult(subject: Option[String], expirationTime: Option[Instant])
 
 @ConfiguredJsonCodec case class DefaultOAuth2AuthorizationData
 (

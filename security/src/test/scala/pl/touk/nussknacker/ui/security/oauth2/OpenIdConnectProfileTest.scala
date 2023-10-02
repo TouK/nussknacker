@@ -4,11 +4,14 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 
 import java.util.UUID
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits._
 
-class OpenIdConnectProfileTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
+class OpenIdConnectProfileTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks with PatientScalaFutures {
 
   import UsernameClaim._
 
@@ -66,7 +69,7 @@ class OpenIdConnectProfileTest extends AnyFunSuite with Matchers with TableDrive
     )
 
     forAll(data){ (config, profile,  expected) =>
-      val result = OpenIdConnectProfile.getAuthenticatedUser(profile, config)
+      val result = OpenIdConnectProfile.getAuthenticatedUser(None, Future.successful(profile), config).futureValue
       result shouldBe expected
     }
 

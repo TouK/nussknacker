@@ -7,6 +7,7 @@ import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, usernameBasedOnUsersConfiguration}
 
 import java.time.{Instant, LocalDate}
+import scala.concurrent.{ExecutionContext, Future}
 
 @ConfiguredJsonCodec(decodeOnly = true) case class OpenIdConnectUserInfo
 (
@@ -67,30 +68,53 @@ object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
 }
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
-  def getAuthenticatedUser(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration): AuthenticatedUser = {
-    val userIdentity = profile.subject.getOrElse(throw new IllegalStateException("Missing user identity"))
-    val userRoles = profile.roles ++ getUserRoles(userIdentity ,configuration)
-
-    val usernameBasedOnConfigurationClaim = configuration.usernameClaim match {
-      case Some(UsernameClaim.PreferredUsername) =>
-        profile.preferredUsername
-      case Some(UsernameClaim.GivenName) =>
-        profile.givenName
-      case Some(UsernameClaim.Nickname) =>
-        profile.nickname
-      case Some(UsernameClaim.Name) =>
-        profile.name
-      case _ =>
-        None
-    }
-
-    val username =
-      usernameBasedOnUsersConfiguration(userIdentity, configuration)
-        .orElse(usernameBasedOnConfigurationClaim)
-        .orElse(profile.preferredUsername) // backward compatibility
-        .orElse(profile.nickname) // backward compatibility
-        .getOrElse(userIdentity)
-
-    AuthenticatedUser(id = userIdentity, username = username, userRoles)
+  def getAuthenticatedUser(accessTokenSubject: Option[String],
+                           getProfile: => Future[OpenIdConnectUserInfo],
+                           configuration: OAuth2Configuration)
+                          (implicit ec: ExecutionContext): Future[AuthenticatedUser] = {
+    authenticateUserBasedOnUsersConfiguration(accessTokenSubject, configuration).getOrElse(
+      authenticateUserBasedOnProfile(accessTokenSubject, getProfile, configuration)
+    )
   }
+
+  private def authenticateUserBasedOnProfile(accessTokenSubject: Option[String],
+                                             getProfile: => Future[OpenIdConnectUserInfo],
+                                             configuration: OAuth2Configuration)
+                                            (implicit ec: ExecutionContext) = {
+    getProfile.map { profile =>
+      val userIdentity = profile.subject.orElse(accessTokenSubject).getOrElse(throw new IllegalStateException("Missing user identity"))
+      val userRoles = profile.roles ++ getUserRoles(userIdentity, configuration)
+
+      val usernameBasedOnConfigurationClaim = configuration.usernameClaim match {
+        case Some(UsernameClaim.PreferredUsername) =>
+          profile.preferredUsername
+        case Some(UsernameClaim.GivenName) =>
+          profile.givenName
+        case Some(UsernameClaim.Nickname) =>
+          profile.nickname
+        case Some(UsernameClaim.Name) =>
+          profile.name
+        case _ =>
+          None
+      }
+
+      val username =
+        usernameBasedOnUsersConfiguration(userIdentity, configuration)
+          .orElse(usernameBasedOnConfigurationClaim)
+          .orElse(profile.preferredUsername) // backward compatibility
+          .orElse(profile.nickname) // backward compatibility
+          .getOrElse(userIdentity)
+
+      AuthenticatedUser(id = userIdentity, username = username, userRoles)
+    }
+  }
+
+  private def authenticateUserBasedOnUsersConfiguration(accessTokenSubject: Option[String], configuration: OAuth2Configuration) = {
+    for {
+      definedAccessTokenSubject <- accessTokenSubject
+      configUser <- configuration.findUserById(definedAccessTokenSubject)
+      username <- configUser.username
+    } yield Future.successful(AuthenticatedUser(definedAccessTokenSubject, username, configUser.roles))
+  }
+
 }

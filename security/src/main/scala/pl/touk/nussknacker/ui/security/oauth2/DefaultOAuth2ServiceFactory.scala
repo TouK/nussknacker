@@ -15,14 +15,14 @@ class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory with LazyLogging 
       } match {
         case ProfileFormat.OIDC =>
           logger.warn("Switch to the OIDC authentication provider instead of the OIDC format in the generic OAuth2 provider")
-          new UserMappingOAuth2Service(
+          new UserMappingOAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](
             GenericOidcService(configuration),
-            (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, configuration)
+            params => OpenIdConnectProfile.getAuthenticatedUser(params.accessTokenSubject, params.getUserInfo(), configuration)
           )
         case ProfileFormat.GITHUB =>
-          new UserMappingOAuth2Service(
+          new UserMappingOAuth2Service[GitHubProfileResponse, DefaultOAuth2AuthorizationData] (
             BaseOAuth2Service[GitHubProfileResponse](configuration),
-            (profileResponse: GitHubProfileResponse) => GitHubProfile.getAuthenticatedUser(profileResponse, configuration)
+            params => GitHubProfile.getAuthenticatedUser(params.accessTokenSubject, params.getUserInfo(), configuration)
           )
       }
       , configuration)

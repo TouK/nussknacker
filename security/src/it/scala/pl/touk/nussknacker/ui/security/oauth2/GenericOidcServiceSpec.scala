@@ -31,9 +31,9 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 
   test("Basic OpenIDConnect flow") {
     val config = oauth2Conf
-    val oidcService = new UserMappingOAuth2Service(
+    val oidcService = new UserMappingOAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](
       new OidcService(config),
-      (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, config.oAuth2Configuration)
+      params => OpenIdConnectProfile.getAuthenticatedUser(params.accessTokenSubject, params.getUserInfo(), config.oAuth2Configuration)
     )
 
     val oidcServiceWithCache = new CachingOAuth2Service(oidcService, config.oAuth2Configuration)
@@ -50,7 +50,6 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       val profile = open.checkAuthorizationAndObtainUserinfo(authData.accessToken).futureValue
       profile._1.username shouldBe "user1"
       profile._1.roles should contain("ARole")
-
     }
   }
 
@@ -81,9 +80,9 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       clientId = realmClientId,
       clientSecret = Some(realmClientSecret),
       redirectUri = Some(URI.create("http://localhost:1234")),
+      audience = Some("test-client"),
       rolesClaims = Some(List("http://namespace/roles", "http://other.namespace/roles")),
       usernameClaim = Some(UsernameClaim.PreferredUsername),
-      accessTokenIsJwt = true,
     ).withDiscovery
 }
 

@@ -4,24 +4,30 @@ import io.circe.Decoder
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import sttp.client3.SttpBackend
 
-import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth2AuthorizationData : Decoder]
 (
   delegate: OAuth2Service[UserInfoData, AuthorizationData],
-  loggedUserFunction: UserInfoData => AuthenticatedUser
+  loggedUserFunction: LoggedUserFunctionParameters[UserInfoData] => Future[AuthenticatedUser]
 )
 (implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
   extends OAuth2Service[AuthenticatedUser, AuthorizationData] {
 
-  def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, AuthenticatedUser)] =
-    delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (authorization, userInfo) =>
-      (authorization, loggedUserFunction(userInfo))
-    }
+  def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, AuthenticatedUser)] = {
+    for {
+      (authorization, userInfo) <- delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
+      loggedUser <- loggedUserFunction(LoggedUserFunctionParameters(None, () => Future.successful(userInfo)))
+    } yield (authorization, loggedUser)
+  }
 
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(AuthenticatedUser, Option[Instant])] =
-    delegate.checkAuthorizationAndObtainUserinfo(accessToken).map { case (userInfo, expiration) =>
-      (loggedUserFunction(userInfo), expiration)
-    }
+  override def introspectAccessToken(accessToken: String): Future[AccessTokenIntrospectionResult] =
+    delegate.introspectAccessToken(accessToken)
+
+  override def obtainUserInfo(accessToken: String, accessTokenSubject: Option[String]): Future[AuthenticatedUser] = {
+    loggedUserFunction(LoggedUserFunctionParameters(accessTokenSubject, () => delegate.obtainUserInfo(accessToken, accessTokenSubject)))
+  }
+
 }
+
+case class LoggedUserFunctionParameters[UserInfoData](accessTokenSubject: Option[String], getUserInfo: () => Future[UserInfoData])

@@ -33,7 +33,7 @@ class CachingOAuth2Service[
     }
   }
 
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] = {
+  override def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] = {
     val userInfo = authorizationsCache.get(accessToken) match {
       case Some(value) =>
         Future.successful(value)
@@ -51,6 +51,12 @@ class CachingOAuth2Service[
     }
     userInfo.map { case (userInfo, expiration) => (userInfo, Some(expiration)) }
   }
+
+  override def introspectAccessToken(accessToken: String): Future[AccessTokenIntrospectionResult] =
+    throw new IllegalAccessError("CachingOAuth2Service.introspectAccessToken shouldn't be used directly - checkAuthorizationAndObtainUserinfo should be called instead")
+
+  override def obtainUserInfo(accessToken: String, accessTokenSubject: Option[String]): Future[UserInfoData] =
+    throw new IllegalAccessError("CachingOAuth2Service.obtainUserInfo shouldn't be used directly - checkAuthorizationAndObtainUserinfo should be called instead")
 
   private lazy val defaultExpirationDuration = configuration.defaultTokenExpirationDuration
 }
