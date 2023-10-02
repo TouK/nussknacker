@@ -90,14 +90,17 @@ case class RegExpParameterValidator(pattern: String, message: String, descriptio
   lazy val regexpPattern: Pattern = Pattern.compile(pattern)
 
   // Blank value should be not validate - we want to chain validators
-  override def isValid(paramName: String, value: String, label: Option[String])(
-      implicit nodeId: NodeId
-  ): Validated[PartSubGraphCompilationError, Unit] = {
-    if (StringUtils.isBlank(value) || regexpPattern.matcher(value).matches())
-      valid(())
-    else
-      invalid(MismatchParameter(message, description, paramName, nodeId.id))
+  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
+    def toResult(validated: Boolean) = if (validated) valid(()) else invalid(MismatchParameter(message, description, paramName, nodeId.id))
+
+    if (value.matches("^'.*'$")) { //workaround for SPeL comprehension
+      val trimmedSPeLValue = value.replaceAll("^'|'$", "")
+      toResult(regexpPattern.matcher(trimmedSPeLValue).matches())
+    } else {
+      toResult(StringUtils.isBlank(value) || regexpPattern.matcher(value).matches())
+    }
   }
+
 }
 
 case object LiteralIntegerValidator extends ParameterValidator {
@@ -243,3 +246,4 @@ object NumberValidatorHelper {
   def normalizeStringToNumber(value: String): String =
     numberRegexp.replaceAllIn(value, "")
 }
+
