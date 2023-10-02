@@ -26,10 +26,9 @@ import User from "../../common/models/User";
 import { updateLayout } from "./GraphPartialsInTS/updateLayout";
 import { getDefaultLinkCreator } from "./EspNode/link";
 import ProcessUtils from "../../common/ProcessUtils";
-import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import { batchGroupBy } from "../../reducers/graph/batchGroupBy";
 import { createUniqueArrowMarker } from "./arrowMarker";
-import { cx } from "@emotion/css";
 import { handleGraphEvent } from "./utils/graphUtils";
 
 interface Props extends GraphProps {
@@ -601,7 +600,6 @@ export class Graph extends React.Component<Props> {
         return (
             <>
                 <GraphPaperContainer
-                    className={cx({ touch: isTouchDevice() })}
                     ref={this.setEspGraphRef}
                     onResize={isFragment ? () => this.panAndZoom.fitSmallAndLargeGraphs() : null}
                     id={divId}

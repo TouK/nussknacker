@@ -43,7 +43,9 @@ export class PanZoomPlugin {
         //appear animation starting point, fitSmallAndLargeGraphs will set animation end point in componentDidMount
         this.instance.zoom(0.001);
 
-        this.initPinchZooming(this.paper);
+        if (isTouchDevice()) {
+            this.initPinchZooming(this.paper);
+        }
 
         this.animationClassHolder = paper.el;
         this.animationClassHolder.addEventListener(
