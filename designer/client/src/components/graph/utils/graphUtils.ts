@@ -6,6 +6,8 @@ import {
     enrichNodeWithProcessDependentData,
     removeBranchParameter,
 } from "../../../reducers/graph/utils";
+import { dia } from "jointjs";
+import { isTouchEvent } from "../../../helpers/detectDevice";
 
 export function mapProcessWithNewNode(process: Process, before: NodeType, after: NodeType): Process {
     return {
@@ -121,3 +123,11 @@ function addEdge(process: Process, fromId: NodeId, toId: NodeId): Process {
         edges: process.edges.concat({ from: fromId, to: toId }),
     };
 }
+
+export const handleGraphEvent =
+    (
+        touchEvent: ((cellView: dia.CellView, event: dia.Event) => void) | null,
+        mouseEvent: ((cellView: dia.CellView, event: dia.Event) => void) | null,
+    ) =>
+    (cellView: dia.CellView, event: dia.Event) =>
+        isTouchEvent(event) ? touchEvent?.(cellView, event) : mouseEvent?.(cellView, event);
