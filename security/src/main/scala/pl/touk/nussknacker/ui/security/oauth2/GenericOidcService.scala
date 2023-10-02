@@ -18,12 +18,11 @@ trait OidcAuthorizationData extends OAuth2AuthorizationData {
   */
 class GenericOidcService[
   UserData <: JwtStandardClaims: Decoder,
-  AuthorizationData <: OidcAuthorizationData,
-  AccessTokenClaims <: JwtStandardClaims : Decoder
+  AuthorizationData <: OidcAuthorizationData
 ](clientApi: OAuth2ClientApi[UserData, AuthorizationData],
   configuration: OAuth2Configuration)
  (implicit ec: ExecutionContext)
-  extends JwtOAuth2Service[UserData, AuthorizationData, AccessTokenClaims](
+  extends JwtOAuth2Service[UserData, AuthorizationData, UserData](
     clientApi, configuration)
     with LazyLogging {
 
@@ -39,14 +38,6 @@ class GenericOidcService[
     }
   }
 
-  override protected def obtainUserInfo(accessToken: String): Future[UserData] = {
-    if (accessTokenIsJwt) {
-      introspectJwtToken[UserData](accessToken)
-        .filter(verifyAccessTokenAudience)
-    } else {
-      super.obtainUserInfo(accessToken)
-    }
-  }
 }
 
 @ConfiguredJsonCodec case class DefaultOidcAuthorizationData
@@ -63,6 +54,10 @@ object DefaultOidcAuthorizationData extends RelativeSecondsCodecs {
 }
 
 object GenericOidcService {
-  def apply(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any]): GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData, DefaultJwtAccessToken] =
-    new GenericOidcService(OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration), configuration)
+  def apply(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any]): GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData] =
+    new GenericOidcService(OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration), configuration) {
+      override protected def toIntrospectionResult(claims: OpenIdConnectUserInfo): AccessTokenData = {
+        super.toIntrospectionResult(claims).copy(roles = claims.roles)
+      }
+    }
 }

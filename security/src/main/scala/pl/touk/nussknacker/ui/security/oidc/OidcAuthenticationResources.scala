@@ -14,9 +14,9 @@ class OidcAuthenticationResources(name: String,
     name = name,
     realm = realm,
     service = new CachingOAuth2Service(
-      new UserMappingOAuth2Service(
+      new UserMappingOAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](
         new OidcService(configuration),
-        (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, configuration.oAuth2Configuration)
+        params => OpenIdConnectProfile.getAuthenticatedUser(params.accessTokenData, params.getUserInfo(), configuration.oAuth2Configuration)
       ),
       configuration.oAuth2Configuration
     ),
