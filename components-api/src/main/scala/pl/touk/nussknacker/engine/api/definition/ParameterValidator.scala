@@ -84,11 +84,16 @@ case class RegExpParameterValidator(pattern: String, message: String, descriptio
 
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-    if (StringUtils.isBlank(value) || regexpPattern.matcher(value).matches())
-      valid(())
-    else
-      invalid(MismatchParameter(message, description, paramName, nodeId.id))
+    def isValid(value: String, allowBlankString: Boolean) = if (regexpPattern.matcher(value).matches() || allowBlankString && StringUtils.isBlank(value)) valid(())
+      else invalid(MismatchParameter(message, description, paramName, nodeId.id))
+
+    if (value.matches("^'.*'$")) { //workaround for SPeL comprehension
+      isValid(value.replaceAll("^'|'$", ""), allowBlankString = false)
+    } else {
+      isValid(value, allowBlankString = true)
+    }
   }
+
 }
 
 case object LiteralIntegerValidator extends ParameterValidator {
