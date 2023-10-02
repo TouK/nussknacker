@@ -178,7 +178,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
     val result = validator.validate(process)
 
-    result.errors.globalErrors shouldBe List(NodeValidationError("EmptyNodeId", "Nodes cannot have empty id", "Nodes cannot have empty id", None, RenderNotAllowed))
+    result.errors.globalErrors shouldBe List(NodeValidationError("EmptyNodeId", "Nodes cannot have empty id", "Nodes cannot have empty id", Some("id"), RenderNotAllowed))
   }
 
 
