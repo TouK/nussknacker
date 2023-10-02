@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.definition.parameter.editor
 
 import java.time.temporal.ChronoUnit
 import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
+
 import com.cronutils.model.Cron
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -11,7 +12,6 @@ import pl.touk.nussknacker.engine.api.editor._
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 import pl.touk.nussknacker.engine.types.JavaSampleEnum
 
 import scala.reflect.ClassTag
@@ -178,27 +178,6 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
     ))
     EditorExtractor.extract(charseqParam, ParameterConfig.empty) shouldBe expectedEditor
     EditorExtractor.extract(stringParam, ParameterConfig.empty) shouldBe expectedEditor
-  }
-
-  test("handle allowRawMode parameter") {
-    EditorExtractor.extract(paramDualEditorLazyAnnotated, ParameterConfig.empty, allowRawMode = false) shouldBe Some(DateParameterEditor)
-
-    EditorExtractor.extract(paramSimpleEditorAnnotated, ParameterConfig.empty, allowRawMode = false) shouldBe Some(BoolParameterEditor)
-
-    EditorExtractor.extract(getSimpleParamByType[LocalDateTime], ParameterConfig.empty, allowRawMode = false) shouldBe Some(DateTimeParameterEditor)
-  }
-
-  test("handle fixedValueList parameter") {
-    val fixedValueList = List(FixedExpressionValue("'aaa'", "aaa"), FixedExpressionValue("'bbb'", "bbb"))
-
-    EditorExtractor.extract(paramSimpleEditorAnnotated, ParameterConfig.empty, fixedValueList = fixedValueList
-    ) shouldBe Some(DualParameterEditor(
-      simpleEditor = FixedValuesParameterEditor(possibleValues = fixedValueList),
-      defaultMode = DualEditorMode.SIMPLE
-    ))
-
-    EditorExtractor.extract(paramSimpleEditorAnnotated, ParameterConfig.empty, fixedValueList = fixedValueList, allowRawMode = false
-    ) shouldBe Some(FixedValuesParameterEditor(possibleValues = fixedValueList))
   }
 
   private def getFirstParam(name: String, params: Class[_]*) = {

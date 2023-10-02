@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
-import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
-import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, JsonSchemaExtractor}
+import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSchemaBasedParameter}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
-import pl.touk.nussknacker.engine.util.parameters.{SchemaBasedParameter, SingleSchemaBasedParameter}
+import pl.touk.nussknacker.engine.util.parameters.{SingleSchemaBasedParameter, SchemaBasedParameter}
 
 object JsonRequestResponseSink {
 

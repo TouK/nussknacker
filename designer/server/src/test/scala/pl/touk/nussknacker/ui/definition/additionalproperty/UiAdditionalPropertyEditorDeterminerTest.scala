@@ -2,9 +2,8 @@ package pl.touk.nussknacker.ui.definition.additionalproperty
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.definition.{FixedValuesParameterEditor, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
+import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ParameterConfig}
 
 class UiAdditionalPropertyEditorDeterminerTest extends AnyFunSuite with Matchers {
 

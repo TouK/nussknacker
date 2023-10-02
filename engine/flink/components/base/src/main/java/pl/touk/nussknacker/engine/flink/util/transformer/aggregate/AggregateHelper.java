@@ -5,10 +5,10 @@ import java.util.Map;
 import pl.touk.nussknacker.engine.api.Hidden;
 import pl.touk.nussknacker.engine.api.ParamName;
 import pl.touk.nussknacker.engine.api.definition.DualParameterEditor;
+import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue;
 import pl.touk.nussknacker.engine.api.definition.FixedValuesParameterEditor;
 import pl.touk.nussknacker.engine.api.definition.SimpleParameterEditor;
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode;
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue;
 import scala.collection.JavaConverters;
 
 /**

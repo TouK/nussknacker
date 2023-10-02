@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.api.definition
 
 
 import java.time.temporal.ChronoUnit
+
 import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import io.circe.Json
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 
 import scala.util.Try
 
@@ -71,6 +71,8 @@ object PeriodParameterEditor {
 case object CronParameterEditor extends SimpleParameterEditor
 
 @JsonCodec case class FixedValuesParameterEditor(possibleValues: List[FixedExpressionValue]) extends SimpleParameterEditor
+
+@JsonCodec case class FixedExpressionValue(expression: String, label: String)
 
 @JsonCodec case class DualParameterEditor(simpleEditor: SimpleParameterEditor, defaultMode: DualEditorMode) extends ParameterEditor
 

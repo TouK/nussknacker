@@ -10,11 +10,12 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.compile.StubbedFragmentInputTestSource
 import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.expression.{Expression, FixedExpressionValue}
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition
 import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentClazzRef, FragmentParameter}
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sources.JsonSchemaRequestResponseSource
+import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FixedExpressionValue => FragmentFixedExpressionValue}
 
 class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
@@ -94,7 +95,6 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
     val fragmentInputDefinition = FragmentInputDefinition("", List(
       FragmentParameter("name", FragmentClazzRef[String],
         required = true,
-        allowBasicMode = true,
         fixedValueList = List(),
         defaultValue = Some(Expression.spel("'Tomasz'")),
         hintText = Some("some hint text")
@@ -115,11 +115,10 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
   test("should generate complex test parameters for fragment input definition - 2") {
     val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
 
-    val fixedValueList = List(FixedExpressionValue("'aaa'", "aaa"), FixedExpressionValue("'bbb'", "bbb"))
+    val fixedValueList = List(FragmentFixedExpressionValue("'aaa'", "aaa"), FragmentFixedExpressionValue("'bbb'", "bbb"))
     val fragmentInputDefinition = FragmentInputDefinition("", List(
       FragmentParameter("name", FragmentClazzRef[String],
         required = false,
-        allowBasicMode = false,
         fixedValueList = fixedValueList,
         defaultValue = None,
         hintText = None
@@ -130,35 +129,11 @@ class RequestResponseTestWithParametersTest extends AnyFunSuite with Matchers {
 
     parameter.name shouldBe "name"
     parameter.typ shouldBe Typed(classOf[String])
-    parameter.editor shouldBe Some(FixedValuesParameterEditor(fixedValueList))
-    parameter.validators should contain theSameElementsAs List(FixedValuesValidator(fixedValueList))
+    parameter.editor shouldBe Some(DualParameterEditor(FixedValuesParameterEditor(fixedValueList.map(v => FixedExpressionValue(v.expression, v.label))), DualEditorMode.SIMPLE))
+    parameter.validators should contain theSameElementsAs List()
     parameter.defaultValue shouldBe Some(Expression("spel", ""))
     parameter.isOptional shouldBe true
-  }
-
-  test("should generate complex test parameters for fragment input definition - 3") {
-    val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
-
-    val fixedValueList = List(FixedExpressionValue("aaa", "aaa"), FixedExpressionValue("bbb", "bbb"))
-    val fragmentInputDefinition = FragmentInputDefinition("", List(
-      FragmentParameter("name", FragmentClazzRef[String],
-        required = true,
-        allowBasicMode = true,
-        fixedValueList = fixedValueList,
-        defaultValue = Some(Expression.spel("aaa")),
-        hintText = Some("some hint text")
-      )
-    ))
-    val stubbedSource = new StubbedFragmentInputTestSource(fragmentInputDefinition, fragmentDefinitionExtractor)
-    val parameter: Parameter = stubbedSource.createSource().testParametersDefinition.head
-
-    parameter.name shouldBe "name"
-    parameter.typ shouldBe Typed(classOf[String])
-    parameter.editor shouldBe Some(DualParameterEditor(FixedValuesParameterEditor(fixedValueList), DualEditorMode.SIMPLE))
-    parameter.validators should contain theSameElementsAs List(MandatoryParameterValidator)
-    parameter.defaultValue shouldBe Some(Expression.spel("aaa"))
-    parameter.isOptional shouldBe false
-    parameter.hintText shouldBe Some("some hint text")
+    parameter.hintText shouldBe None
   }
 
 }

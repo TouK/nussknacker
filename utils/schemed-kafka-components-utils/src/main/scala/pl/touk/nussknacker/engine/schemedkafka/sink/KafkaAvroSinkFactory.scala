@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeP
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.graph.expression.FixedExpressionValue
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.extractValidationMode
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
 

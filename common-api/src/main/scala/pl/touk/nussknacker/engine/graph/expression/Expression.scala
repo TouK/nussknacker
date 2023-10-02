@@ -14,5 +14,3 @@ object Expression {
 
   def spelTemplate(expression: String): Expression = Expression(Language.SpelTemplate, expression)
 }
-
-@JsonCodec case class FixedExpressionValue(expression: String, label: String)

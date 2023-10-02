@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.{ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentParamClassLoadError, MultipleOutputsForName}
 import pl.touk.nussknacker.engine.api.context.{PartSubGraphCompilationError, ProcessCompilationError}
-import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, Parameter}
+import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NodeId}
@@ -88,12 +89,13 @@ class FragmentComponentDefinitionExtractor(componentConfig: String => Option[Sin
   private def toParameter(componentConfig: SingleComponentConfig, typ: typing.TypingResult, fragmentParameter: FragmentParameter) = {
     val config = componentConfig.params.flatMap(_.get(fragmentParameter.name)).getOrElse(ParameterConfig.empty)
     val parameterData = ParameterData(typ, Nil)
-    val extractedEditor = EditorExtractor.extract(
-      parameterData,
-      config,
-      fragmentParameter.fixedValueList,
-      fragmentParameter.allowBasicMode
-    )
+    val extractedEditor = if (fragmentParameter.fixedValueList.nonEmpty)
+      Some(DualParameterEditor(FixedValuesParameterEditor(
+        fragmentParameter.fixedValueList.map(v => FixedExpressionValue(v.expression, v.label))),
+        DualEditorMode.SIMPLE
+      ))
+    else
+      EditorExtractor.extract(parameterData, config)
 
     val isOptional = !fragmentParameter.required
     Parameter.optional(fragmentParameter.name, typ).copy(
