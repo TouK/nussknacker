@@ -7,6 +7,7 @@ import { spelFormatters } from "./expression/Formatter";
 import { ExpressionLang, ExpressionObj } from "./expression/types";
 import { ParamType } from "./types";
 import { Error, Validator } from "./Validators";
+import { NodeRow } from "../NodeDetailsContent/NodeStyled";
 
 interface Props {
     expressionObj: ExpressionObj;
@@ -62,12 +63,12 @@ function EditableEditorRow({
     renderFieldLabel?: UnknownFunction;
 }): JSX.Element {
     return (
-        <div className={`${rowClassName ? rowClassName : " node-row"}`}>
+        <NodeRow className={`${rowClassName && rowClassName}`} style={{ width: "100%", margin: rowClassName && 0 }}>
             <>
                 {fieldLabel && renderFieldLabel?.(fieldLabel)}
                 <EditableEditor {...props} />
             </>
-        </div>
+        </NodeRow>
     );
 }
 

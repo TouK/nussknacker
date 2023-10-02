@@ -12,10 +12,11 @@ import { getProcessId, getProcessVersionId, getVersions } from "../../reducers/s
 import { getTargetEnvironmentId } from "../../reducers/selectors/settings";
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent";
 import { ProcessVersionType } from "../Process/types";
-import { SelectWithFocus } from "../withFocus";
+import { SelectNodeWithFocus } from "../withFocus";
 import { NodeDetailsContent } from "../graph/node-modal/NodeDetailsContent";
 import { PathsToMarkProvider } from "../graph/node-modal/PathsToMark";
 import { NodeType } from "../../types";
+import { CompareContainer, CompareModal, FormRow, VersionHeader } from "./Styled";
 
 interface State {
     currentDiffId: string;
@@ -107,18 +108,18 @@ const VersionsForm = () => {
     const renderDiff = (currentElement, otherElement, printElement) => {
         const differentPaths = differentPathsForObjects(currentElement, otherElement);
         return (
-            <div className="compareContainer">
+            <CompareContainer>
                 <PathsToMarkProvider value={differentPaths}>
                     <div>
-                        <div className="versionHeader">Current version</div>
+                        <VersionHeader>Current version</VersionHeader>
                         {printElement(currentElement)}
                     </div>
                     <div>
-                        <div className="versionHeader">Version {versionDisplayString(state.otherVersion)}</div>
+                        <VersionHeader>Version {versionDisplayString(state.otherVersion)}</VersionHeader>
                         {printElement(otherElement)}
                     </div>
                 </PathsToMarkProvider>
-            </div>
+            </CompareContainer>
         );
     };
 
@@ -158,12 +159,12 @@ const VersionsForm = () => {
 
     return (
         <>
-            <div className="esp-form-row">
+            <FormRow>
                 <p>Version to compare</p>
-                <SelectWithFocus
+                <SelectNodeWithFocus
                     autoFocus={true}
                     id="otherVersion"
-                    className="node-input"
+                    className="selectNode"
                     value={state.otherVersion || ""}
                     onChange={(e) => loadVersion(e.target.value)}
                 >
@@ -172,15 +173,15 @@ const VersionsForm = () => {
                         .filter((currentVersion) => version !== currentVersion.processVersionId)
                         .map((version) => createVersionElement(version))}
                     {state.remoteVersions.map((version) => createVersionElement(version, remotePrefix))}
-                </SelectWithFocus>
-            </div>
+                </SelectNodeWithFocus>
+            </FormRow>
             {state.otherVersion ? (
                 <div>
-                    <div className="esp-form-row">
+                    <FormRow>
                         <p>Difference to pick</p>
-                        <SelectWithFocus
+                        <SelectNodeWithFocus
                             id="otherVersion"
-                            className="node-input"
+                            className="selectNode"
                             value={state.currentDiffId || ""}
                             onChange={(e) => setState({ ...state, currentDiffId: e.target.value })}
                         >
@@ -193,8 +194,8 @@ const VersionsForm = () => {
                                     </option>
                                 );
                             })}
-                        </SelectWithFocus>
-                    </div>
+                        </SelectNodeWithFocus>
+                    </FormRow>
                     {state.currentDiffId ? printDiff(state.currentDiffId) : null}
                 </div>
             ) : null}
@@ -205,9 +206,9 @@ const VersionsForm = () => {
 const CompareVersionsDialog = (props: WindowContentProps) => {
     return (
         <WindowContent {...props}>
-            <div className={cx("compareModal", "modalContentDark", css({ minWidth: 980, padding: "1em" }))}>
+            <CompareModal className={cx("modalContentDark", css({ minWidth: 980, padding: "1em" }))}>
                 <VersionsForm />
-            </div>
+            </CompareModal>
         </WindowContent>
     );
 };
