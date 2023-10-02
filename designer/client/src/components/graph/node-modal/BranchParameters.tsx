@@ -4,6 +4,7 @@ import ProcessUtils from "../../../common/ProcessUtils";
 import { NodeType, UIParameter } from "../../../types";
 import { Error } from "./editors/Validators";
 import { NodeResultsForContext } from "../../../common/TestResultUtils";
+import { NodeRow } from "./NodeDetailsContent/NodeStyled";
 
 export interface BranchParametersProps {
     node: NodeType;
@@ -35,7 +36,7 @@ export default function BranchParameters({
             {branchParameters?.map((param) => {
                 const paramName = param.name;
                 return (
-                    <div className="node-row" key={paramName}>
+                    <NodeRow key={paramName}>
                         <div className="node-label" title={paramName}>
                             {paramName}:
                         </div>
@@ -83,7 +84,7 @@ export default function BranchParameters({
                                 })}
                             </div>
                         </div>
-                    </div>
+                    </NodeRow>
                 );
             })}
         </>

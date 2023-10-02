@@ -1,5 +1,5 @@
 import { Edge, EdgeKind } from "../../../types";
-import { SelectWithFocus } from "../../withFocus";
+import { SelectNodeWithFocus } from "../../withFocus";
 import React from "react";
 import { getStringEnumElement } from "../../../common/enumUtils";
 
@@ -20,10 +20,9 @@ interface Props {
 export function EdgeTypeSelect(props: Props): JSX.Element {
     const { readOnly, edge, onChange, id, options } = props;
     return (
-        <SelectWithFocus
+        <SelectNodeWithFocus
             id={id}
             disabled={readOnly}
-            className="node-input"
             value={edge.edgeType.type}
             onChange={(e) => onChange(getStringEnumElement(EdgeKind, e.target.value))}
         >
@@ -32,6 +31,6 @@ export function EdgeTypeSelect(props: Props): JSX.Element {
                     {o.label}
                 </option>
             ))}
-        </SelectWithFocus>
+        </SelectNodeWithFocus>
     );
 }

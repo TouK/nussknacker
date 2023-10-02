@@ -5,6 +5,7 @@ import ExpressionSuggest from "./ExpressionSuggest";
 import { VariableTypes } from "../../../../../types";
 import { EditorMode, ExpressionObj } from "./types";
 import { Validator } from "../Validators";
+import { NodeInputCss } from "../../../../../components/NodeInput";
 
 export type RawEditorProps = {
     expressionObj: ExpressionObj;
@@ -46,6 +47,7 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
             rows: rows,
             cols: cols,
             className: className1,
+            style: NodeInputCss,
             value: value,
             language: language,
             onValueChange: onValueChange,
@@ -57,7 +59,7 @@ const RawEditor = forwardRef(function RawEditor(props: RawEditorProps, forwarded
     );
 
     return (
-        <div className={className}>
+        <div className={className} style={{ width: "100%" }}>
             <ExpressionSuggest
                 inputProps={inputProps}
                 variableTypes={variableTypes}

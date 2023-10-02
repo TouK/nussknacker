@@ -12,7 +12,7 @@ import { WindowContent, WindowKind } from "../../../../windowManager";
 import { parseWindowsQueryParams } from "../../../../windowManager/useWindows";
 import ErrorBoundary from "../../../common/ErrorBoundary";
 import NodeUtils from "../../NodeUtils";
-import NodeDetailsModalHeader from "../NodeDetailsModalHeader";
+import NodeDetailsModalHeader from "../nodeDetails/NodeDetailsModalHeader";
 import { NodeGroupContent } from "./NodeGroupContent";
 import { getReadOnly } from "./selectors";
 import urljoin from "url-join";

@@ -1,6 +1,6 @@
 import React from "react";
 import ValidationLabels from "../../../../modals/ValidationLabels";
-import { InputWithFocus, InputWithFocusProps } from "../../../../withFocus";
+import { InputWithFocusProps, NodeInput } from "../../../../withFocus";
 import { allValid, Validator } from "../Validators";
 import { cx } from "@emotion/css";
 
@@ -33,12 +33,11 @@ export default function Input(props: InputProps): JSX.Element {
         onFocus,
         onChange,
     } = props;
-
     return (
         <div className={className}>
             <div className={isMarked ? " marked" : ""}>
                 {
-                    <InputWithFocus
+                    <NodeInput
                         autoFocus={autoFocus}
                         readOnly={readOnly}
                         placeholder={placeholder}
@@ -46,9 +45,7 @@ export default function Input(props: InputProps): JSX.Element {
                         onFocus={onFocus}
                         type={type}
                         className={cx([
-                            !showValidation || allValid(validators, [formattedValue ? formattedValue : value])
-                                ? "node-input"
-                                : "node-input node-input-with-error",
+                            showValidation && !allValid(validators, [formattedValue ? formattedValue : value]) && "node-input-with-error",
                             inputClassName,
                         ])}
                         value={value || ""}
