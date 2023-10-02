@@ -148,8 +148,6 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
           ))
         )
       )
-
-    override def getAll: Map[ComponentId, SingleComponentUIConfig] = ???
   }
 
   test("should override component's parameter config with additionally provided config") {

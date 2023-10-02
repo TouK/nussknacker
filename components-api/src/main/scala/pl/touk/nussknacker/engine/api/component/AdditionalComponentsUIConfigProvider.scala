@@ -4,6 +4,8 @@ trait AdditionalComponentsUIConfigProvider extends Serializable {
 
   def getAllForProcessingType(processingType: String): Map[ComponentId, SingleComponentUIConfig]
 
-  def getAll: Map[ComponentId, SingleComponentUIConfig]
+}
 
+object AdditionalComponentsUIConfigProvider {
+  val empty = new DefaultAdditionalComponentsUIConfigProvider(Map.empty)
 }

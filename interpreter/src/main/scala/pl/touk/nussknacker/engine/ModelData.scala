@@ -65,7 +65,7 @@ case class ClassLoaderModelData private(private val resolveInputConfigDuringExec
 
   override lazy val additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider = {
     Multiplicity(ScalaServiceLoader.load[AdditionalComponentsUIConfigProvider](modelClassLoader.classLoader)) match {
-      case Empty() => new DefaultAdditionalComponentsUIConfigProvider
+      case Empty() => AdditionalComponentsUIConfigProvider.empty
       case One(provider) => provider
       case Many(moreThanOne) =>
         throw new IllegalArgumentException(s"More than one AdditionalComponentsUIConfigProvider instance found: $moreThanOne")

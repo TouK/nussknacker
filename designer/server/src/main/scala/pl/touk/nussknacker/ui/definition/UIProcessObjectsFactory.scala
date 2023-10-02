@@ -34,7 +34,7 @@ object UIProcessObjectsFactory {
                                       uiProcessDefinition: UIProcessDefinition,
                                       isFragment: Boolean,
                                       processingType: ProcessingType
-                                     ): Map[ComponentId, ProcessingType] = {
+                                     ): Map[ComponentId, String] = {
     val createMapping = (name: String, componentType: ComponentType) => componentIdProvider.createComponentId(processingType, Some(name), componentType) -> name
 
     uiProcessDefinition.services.map { case (name, obj) =>
