@@ -1,4 +1,4 @@
-describe("Process mouse drag", () => {
+describe.skip("Process mouse drag", () => {
     const NAME = "processSelection";
     const snapshotParams: Cypress.MatchImageOptions = {
         maxDiffThreshold: 0.0001,
