@@ -99,8 +99,8 @@ object UIProcessObjectsFactory {
     val componentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map(processingType -> combinedComponentsConfig))
     val componentIdToName: Map[ComponentId, String] = getComponentIdToNameMap(componentIdProvider, uiProcessDefinition, isFragment, processingType)
 
-    val additionalComponentsUIConfig = additionalComponentsUIConfigProvider.getAllForProcessingType(processingType).map {
-      case (componentId, config) => componentIdToName(componentId) -> config.toSingleComponentConfig
+    val additionalComponentsUIConfig = additionalComponentsUIConfigProvider.getAllForProcessingType(processingType).flatMap {
+      case (componentId, config) => componentIdToName.get(componentId).map(_ -> config.toSingleComponentConfig)
     }
 
     val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(additionalComponentsUIConfig, combinedComponentsConfig)
