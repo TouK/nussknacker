@@ -12,9 +12,14 @@ export function CreatorPanel(): JSX.Element {
 
     const styles = css({
         borderRadius: 0,
-        border: `none`,
-        "&, &:focus": {
-            boxShadow: `none`,
+        height: "36px !important",
+        color: "#FFFFFF",
+        padding: "6px 12px !important",
+        backgroundColor: "#333333",
+        border: "none",
+        outline: "none !important",
+        "&:focus": {
+            boxShadow: "none",
         },
     });
 

@@ -12,7 +12,7 @@ import {
     maximalNumberValidator,
     minimalNumberValidator,
 } from "../graph/node-modal/editors/Validators";
-import { InputWithFocus } from "../withFocus";
+import { NodeInput } from "../withFocus";
 import ValidationLabels from "./ValidationLabels";
 import { testScenarioWithGeneratedData } from "../../actions/nk/displayTestResults";
 
@@ -47,7 +47,7 @@ function GenerateDataAndTestDialog(props: WindowContentProps): JSX.Element {
         <PromptContent {...props} buttons={buttons}>
             <div className={cx("modalContentDark", css({ minWidth: 400 }))}>
                 <h3>{t("generate-and-test.title", "Generate scenario test data and run tests")}</h3>
-                <InputWithFocus
+                <NodeInput
                     value={testSampleSize}
                     onChange={(event) => setState({ testSampleSize: event.target.value })}
                     className={css({

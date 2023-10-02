@@ -5,6 +5,8 @@ import { NodeType, NodeValidationError, ProcessDefinitionData } from "../../../t
 import ProcessUtils from "../../../common/ProcessUtils";
 import { useDiffMark } from "./PathsToMark";
 import { useTranslation } from "react-i18next";
+import { NodeRow } from "./NodeDetailsContent/NodeStyled";
+import { NodeLabelStyled } from "./fragment-input-definition/NodeStyled";
 
 type OutputFieldProps = {
     autoFocus?: boolean;
@@ -115,10 +117,10 @@ export default function OutputParametersList({
     }
 
     return (
-        <div className="node-row" key="outputVariableNames">
-            <div className="node-label" title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
+        <NodeRow key="outputVariableNames">
+            <NodeLabelStyled title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}>
                 {t("parameterOutputs.outputsText", "Outputs names:")}
-            </div>
+            </NodeLabelStyled>
             <div className="node-value">
                 <div className="fieldsControl">
                     {entries.map(([name, value]) => (
@@ -141,6 +143,6 @@ export default function OutputParametersList({
                     ))}
                 </div>
             </div>
-        </div>
+        </NodeRow>
     );
 }

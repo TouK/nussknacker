@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
-import { InputWithFocus } from "../../withFocus";
+import { NodeInput } from "../../withFocus";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { css, cx } from "@emotion/css";
 import { variables } from "../../../stylesheets/variables";
@@ -73,8 +73,8 @@ export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement
             <Dropzone onDrop={onDrop}>
                 {({ getRootProps, getInputProps }) => (
                     <>
-                        <div ref={ref} {...getRootProps(buttonProps)} />
-                        <InputWithFocus {...getInputProps()} />
+                        <div {...getRootProps(buttonProps)} />
+                        <NodeInput {...getInputProps()} />
                     </>
                 )}
             </Dropzone>
