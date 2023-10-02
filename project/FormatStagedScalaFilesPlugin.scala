@@ -1,10 +1,8 @@
 import org.scalafmt.sbt.ScalafmtPlugin
 import sbt.Keys._
 import sbt.nio.Keys.{ReloadOnSourceChanges, onChangedBuildSource}
-import sbt.{Compile, Def, File, Global, IO, Setting, taskKey}
+import sbt.{Compile, Global, Setting, taskKey}
 import utils.Step
-
-import scala.util.{Failure, Success, Try}
 
 object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {
   override def trigger = noTrigger
@@ -56,23 +54,8 @@ object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {
       _ <- Step.task {
         streams.map(_.log.info("Formatting backend files ..."))
       }
-      // todo: improve
-      resolvedFiles <- Step.task {
-        Def.task {
-          files.map { file =>
-            Try(IO.resolve(baseDirectory.value, new File(file))) match {
-              case Failure(e) =>
-                streams.value.log.error(s"Error with file: $e")
-                throw e
-              case Success(file) =>
-                file.getAbsolutePath
-            }
-          }
-
-        }
-      }
       _ <- Step.task {
-        (Compile / ScalafmtPlugin.autoImport.scalafmtOnly).toTask(s" ${resolvedFiles.mkString(" ")}")
+        (Compile / ScalafmtPlugin.autoImport.scalafmtOnly).toTask(s" ${files.mkString(" ")}")
       }
     } yield ()
 
