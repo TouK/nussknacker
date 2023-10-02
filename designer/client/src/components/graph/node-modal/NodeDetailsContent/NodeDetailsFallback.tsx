@@ -10,6 +10,7 @@ export function NodeDetailsFallback(props: {
     isEditMode?: boolean;
     showValidation?: boolean;
 }): JSX.Element {
+    // TODO: add errors for id field
     return (
         <>
             <NodeTableBody>

@@ -1,4 +1,4 @@
-import { allValid, mandatoryValueValidator, uniqueScenarioValueValidator, Validator } from "./editors/Validators";
+import { allValid, Error, errorValidator, mandatoryValueValidator, uniqueScenarioValueValidator, Validator } from "./editors/Validators";
 import Field, { FieldType } from "./editors/field/Field";
 import React, { useMemo } from "react";
 import { useDiffMark } from "./PathsToMark";
@@ -13,11 +13,12 @@ interface IdFieldProps {
     setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
     additionalValidators?: Validator[];
+    errors?: Error[];
 }
 
 // wise decision to treat a name as an id forced me to do so.
 // now we have consisten id for validation, branch params etc
-const FAKE_NAME_PROP_NAME = "$name";
+export const FAKE_NAME_PROP_NAME = "$name";
 
 export function applyIdFromFakeName({ id, ...editedNode }: NodeType & { [FAKE_NAME_PROP_NAME]?: string }): NodeType {
     const name = editedNode[FAKE_NAME_PROP_NAME];
@@ -32,11 +33,16 @@ export function IdField({
     setProperty,
     showValidation,
     additionalValidators,
+    errors,
 }: IdFieldProps): JSX.Element {
     const nodes = useSelector(getProcessNodesIds);
     const otherNodes = useMemo(() => nodes.filter((n) => n !== node.id), [node.id, nodes]);
 
-    const validators = (additionalValidators || []).concat(mandatoryValueValidator, uniqueScenarioValueValidator(otherNodes));
+    const validators = (additionalValidators || []).concat(
+        mandatoryValueValidator,
+        uniqueScenarioValueValidator(otherNodes),
+        errorValidator(errors, "id"),
+    );
     const [isMarked] = useDiffMark();
     const propName = `id`;
     const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node, propName]);

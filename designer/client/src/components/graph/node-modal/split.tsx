@@ -17,6 +17,7 @@ export function Split({
     setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void;
     showValidation?: boolean;
 }): JSX.Element {
+    // TODO: add errors for id field
     return (
         <NodeTableBody>
             <IdField
