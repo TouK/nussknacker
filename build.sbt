@@ -1527,6 +1527,7 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
 
 lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
+  .enablePlugins(GenerateDesignerOpenApiPlugin)
   .settings(slowTestsSettings)
   .settings(commonSettings)
   .settings(assemblySettings("nussknacker-designer-assembly.jar", includeScala = includeFlinkAndScala, filterProvidedDeps = false): _*)
@@ -1740,11 +1741,4 @@ buildClient := {
   } else {
     throw new IllegalStateException("Frontend build failed!")
   }
-}
-
-lazy val generateDesignerOpenApi = taskKey[Unit]("Generate Nu Designer API documentation in OpenAPI format")
-generateDesignerOpenApi := {
-  (designer / Compile / runMain)
-    .toTask(" pl.touk.nussknacker.ui.util.GenerateDesignerOpenApiYamlFile")
-    .value
 }

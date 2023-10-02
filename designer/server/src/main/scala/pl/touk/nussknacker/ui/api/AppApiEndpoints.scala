@@ -123,7 +123,7 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
                   name = "nussknacker",
                   gitCommit = "d4e42ee5c594ffe70a37faca3579eb535dac9820",
                   buildTime = "2023-09-25T09:26:30.402299",
-                  version = "1.12.0-SNAPSHOT",
+                  version = "1.234.0",
                   processingType = Map(
                     "streaming" -> Map(
                       "process-version" -> "0.1",
@@ -149,7 +149,7 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
           jsonBody[ServerConfigInfoDto]
             .example(
               Example.of(
-                summary = Some("Application build info response"),
+                summary = Some("Server configuration response"),
                 value = ServerConfigInfoDto(Json.obj(
                   "environment" -> Json.fromString("local"),
                   "scenarioTypes" -> Json.obj(
