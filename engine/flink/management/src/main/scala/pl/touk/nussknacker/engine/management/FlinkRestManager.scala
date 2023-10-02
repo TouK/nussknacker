@@ -17,9 +17,7 @@ import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
 import sttp.client3._
 
 import java.io.File
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)
                       (implicit ec: ExecutionContext, backend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService)
@@ -169,7 +167,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
       Future.successful(())
   }
 
-  override def close(): Unit = Await.result(backend.close(), Duration(10, TimeUnit.SECONDS))
+  override def close(): Unit = {
+    logger.info("Closing Flink REST manager")
+  }
 
 }
 
