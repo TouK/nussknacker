@@ -68,7 +68,8 @@ object UIProcessObjectsFactory {
     UIProcessObjects(
       componentGroups = ComponentDefinitionPreparer.prepareComponentsGroupList(
         user = user,
-        processDefinition = uiProcessDefinition,
+        processDefinition = staticObjectsDefinition,
+        fragmentInputs = fragmentInputs,
         isFragment = isFragment,
         componentsConfig = finalComponentsConfig,
         componentsGroupMapping = componentsGroupMapping,
