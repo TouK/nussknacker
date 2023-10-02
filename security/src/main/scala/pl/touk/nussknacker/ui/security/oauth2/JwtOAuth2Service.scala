@@ -4,13 +4,10 @@ import cats.data.NonEmptyList.one
 import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Decoder
-import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException}
 import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
 
-import java.time.{Duration, Instant}
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{Deadline, FiniteDuration}
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
@@ -46,17 +43,15 @@ class JwtOAuth2Service[
     case Invalid(jwtError) => Future.failed(OAuth2CompoundException(one(jwtError)))
   }
 
-  override def introspectAccessToken(accessToken: String): Future[Option[Instant]] = {
+  override def introspectAccessToken(accessToken: String): Future[AccessTokenData] = {
     if (accessTokenIsJwt) {
-      Future(accessToken)
-        .flatMap(accessToken => introspectJwtToken[AccessTokenClaims](accessToken))
-        .flatMap(claims =>
-          if (verifyAccessTokenAudience(claims)) {
-            Future.successful(claims.expirationTime)
-          }
-          else
-            Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("Invalid audience claim"))))
-        )
+      introspectJwtToken[AccessTokenClaims](accessToken).map { claims =>
+        if (verifyAccessTokenAudience(claims)) {
+          toIntrospectionResult(claims)
+        } else {
+          throw OAuth2CompoundException(one(OAuth2AccessTokenRejection("Invalid audience claim")))
+        }
+      }
     } else {
       super.introspectAccessToken(accessToken)
     }
@@ -66,22 +61,12 @@ class JwtOAuth2Service[
     requiredAccessTokenAudience.isEmpty || claims.audienceAsList.exists(requiredAccessTokenAudience.contains)
   }
 
+  protected def toIntrospectionResult(claims: AccessTokenClaims): AccessTokenData = {
+    AccessTokenData(claims.subject, claims.expirationTime, Set.empty)
+  }
+
   override protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
     clientApi.accessTokenRequest(authorizationCode, redirectUri)
       .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
-}
 
-@ConfiguredJsonCodec(decodeOnly = true) case class DefaultJwtAccessToken
-(
-  @JsonKey("iss") issuer: Option[String],
-  @JsonKey("sub") subject: Option[String],
-  @JsonKey("aud") audience: Option[Either[List[String], String]],
-  @JsonKey("exp") expirationTime: Option[Instant],
-  @JsonKey("nbf") notBefore: Option[Instant],
-  @JsonKey("iat") issuedAt: Option[Instant],
-  @JsonKey("jti") jwtId: Option[String]
-) extends JwtStandardClaims
-
-object DefaultJwtAccessToken extends EitherCodecs with EpochSecondsCodecs {
-  implicit val config: Configuration = Configuration.default
 }

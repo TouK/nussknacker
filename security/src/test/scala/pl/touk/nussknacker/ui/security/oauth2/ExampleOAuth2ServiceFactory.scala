@@ -8,7 +8,6 @@ import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestA
 import sttp.client3.SttpBackend
 
 import java.net.URI
-import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,14 +20,19 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
       authenticatedUser <- checkAuthorizationAndObtainUserinfo(accessTokenResponse.accessToken).map(_._1)
     } yield (accessTokenResponse, authenticatedUser)
 
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(AuthenticatedUser, Option[Instant])] =
-    clientApi.profileRequest(accessToken).map{ prf: TestProfileResponse =>
+
+  override def introspectAccessToken(accessToken: String): Future[AccessTokenData] =
+    Future.successful(AccessTokenData.empty)
+
+  override def obtainUserInfo(accessToken: String, accessTokenData: AccessTokenData): Future[AuthenticatedUser] =
+    clientApi.profileRequest(accessToken).map { prf: TestProfileResponse =>
       AuthenticatedUser(
         prf.uid,
         username = prf.email,
         prf.clearance.roles
       )
-    }.map((_, None))
+    }
+
 }
 
 class ExampleOAuth2ServiceFactory extends OAuth2ServiceFactory {

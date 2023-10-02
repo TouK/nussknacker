@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, LoggedUser}
+import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
-
 
 class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory with LazyLogging {
   override def create(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any]): OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] = {
@@ -15,14 +14,14 @@ class DefaultOAuth2ServiceFactory extends OAuth2ServiceFactory with LazyLogging 
       } match {
         case ProfileFormat.OIDC =>
           logger.warn("Switch to the OIDC authentication provider instead of the OIDC format in the generic OAuth2 provider")
-          new UserMappingOAuth2Service(
+          new UserMappingOAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](
             GenericOidcService(configuration),
-            (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, configuration)
+            params => OpenIdConnectProfile.getAuthenticatedUser(params.accessTokenData, params.getUserInfo(), configuration)
           )
         case ProfileFormat.GITHUB =>
-          new UserMappingOAuth2Service(
+          new UserMappingOAuth2Service[GitHubProfileResponse, DefaultOAuth2AuthorizationData] (
             BaseOAuth2Service[GitHubProfileResponse](configuration),
-            (profileResponse: GitHubProfileResponse) => GitHubProfile.getAuthenticatedUser(profileResponse, configuration)
+            params => GitHubProfile.getAuthenticatedUser(params.accessTokenData, params.getUserInfo(), configuration)
           )
       }
       , configuration)

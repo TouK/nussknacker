@@ -7,6 +7,7 @@ import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, usernameBasedOnUsersConfiguration}
 
 import java.time.{Instant, LocalDate}
+import scala.concurrent.{ExecutionContext, Future}
 
 @ConfiguredJsonCodec(decodeOnly = true) case class OpenIdConnectUserInfo
 (
@@ -67,30 +68,54 @@ object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
 }
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
-  def getAuthenticatedUser(profile: OpenIdConnectUserInfo, configuration: OAuth2Configuration): AuthenticatedUser = {
-    val userIdentity = profile.subject.getOrElse(throw new IllegalStateException("Missing user identity"))
-    val userRoles = profile.roles ++ getUserRoles(userIdentity ,configuration)
-
-    val usernameBasedOnConfigurationClaim = configuration.usernameClaim match {
-      case Some(UsernameClaim.PreferredUsername) =>
-        profile.preferredUsername
-      case Some(UsernameClaim.GivenName) =>
-        profile.givenName
-      case Some(UsernameClaim.Nickname) =>
-        profile.nickname
-      case Some(UsernameClaim.Name) =>
-        profile.name
-      case _ =>
-        None
-    }
-
-    val username =
-      usernameBasedOnUsersConfiguration(userIdentity, configuration)
-        .orElse(usernameBasedOnConfigurationClaim)
-        .orElse(profile.preferredUsername) // backward compatibility
-        .orElse(profile.nickname) // backward compatibility
-        .getOrElse(userIdentity)
-
-    AuthenticatedUser(id = userIdentity, username = username, userRoles)
+  override def getAuthenticatedUser(accessTokenData: AccessTokenData,
+                                    getProfile: => Future[OpenIdConnectUserInfo],
+                                    configuration: OAuth2Configuration)
+                                   (implicit ec: ExecutionContext): Future[AuthenticatedUser] = {
+    authenticateUserBasedOnAccessTokenDataAndUsersConfigurationOnly(accessTokenData, configuration).getOrElse(
+      authenticateUserBasedOnProfile(accessTokenData, getProfile, configuration)
+    )
   }
+
+  private def authenticateUserBasedOnAccessTokenDataAndUsersConfigurationOnly(accessTokenData: AccessTokenData,
+                                                                              configuration: OAuth2Configuration) = {
+    for {
+      definedAccessTokenSubject <- accessTokenData.subject
+      configUser <- configuration.findUserById(definedAccessTokenSubject)
+      username <- configUser.username
+    } yield Future.successful(AuthenticatedUser(definedAccessTokenSubject, username, accessTokenData.roles ++ configUser.roles))
+  }
+
+  private def authenticateUserBasedOnProfile(accessTokenData: AccessTokenData,
+                                             getProfile: => Future[OpenIdConnectUserInfo],
+                                             configuration: OAuth2Configuration)
+                                            (implicit ec: ExecutionContext) = {
+    getProfile.map { profile =>
+      val userIdentity = profile.subject.orElse(accessTokenData.subject).getOrElse(throw new IllegalStateException("Missing user identity"))
+      val userRoles = profile.roles ++ getUserRoles(userIdentity, configuration)
+
+      val usernameBasedOnConfigurationClaim = configuration.usernameClaim match {
+        case Some(UsernameClaim.PreferredUsername) =>
+          profile.preferredUsername
+        case Some(UsernameClaim.GivenName) =>
+          profile.givenName
+        case Some(UsernameClaim.Nickname) =>
+          profile.nickname
+        case Some(UsernameClaim.Name) =>
+          profile.name
+        case _ =>
+          None
+      }
+
+      val username =
+        usernameBasedOnUsersConfiguration(userIdentity, configuration)
+          .orElse(usernameBasedOnConfigurationClaim)
+          .orElse(profile.preferredUsername) // backward compatibility
+          .orElse(profile.nickname) // backward compatibility
+          .getOrElse(userIdentity)
+
+      AuthenticatedUser(id = userIdentity, username = username, userRoles)
+    }
+  }
+
 }
