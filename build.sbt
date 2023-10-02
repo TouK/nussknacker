@@ -363,8 +363,8 @@ lazy val commonDockerSettings = {
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerBuildCommand := {
       if (sys.props("os.arch") != "amd64") {
-//         use buildx with platform to build supported amd64 images on other CPU architectures
-//         this may require that you have first run 'docker buildx create' to set docker buildx up
+        //         use buildx with platform to build supported amd64 images on other CPU architectures
+        //         this may require that you have first run 'docker buildx create' to set docker buildx up
         dockerExecCommand.value ++ Seq("buildx", "build", "--platform=linux/amd64", "--load") ++ dockerBuildOptions.value :+ "."
       } else dockerBuildCommand.value
     },
@@ -798,13 +798,13 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
         ),
         "com.microsoft.azure" % "azure-schemaregistry-kafka-avro" % azureKafkaSchemaRegistryV excludeAll (
           ExclusionRule("com.azure", "azure-core-http-netty")
-        ),
+          ),
         "com.azure" % "azure-data-schemaregistry" % azureSchemaRegistryV excludeAll (
           ExclusionRule("com.azure", "azure-core-http-netty")
-        ),
+          ),
         "com.azure" % "azure-identity" % azureIdentityV excludeAll(
           ExclusionRule("com.azure", "azure-core-http-netty")
-        ),
+          ),
         // we use azure-core-http-okhttp instead of azure-core-http-netty to avoid netty version collisions
         //TODO: switch to jdk implementation after releasing it: https://github.com/Azure/azure-sdk-for-java/issues/27065
         "com.azure" % "azure-core-http-okhttp" % "1.11.9",
@@ -1364,7 +1364,7 @@ lazy val security = (project in file("security")).
       "com.github.dasniko" % "testcontainers-keycloak" % "2.5.0" % "it,test" excludeAll(
         // we're using testcontainers-scala which requires a proper junit4 dependency
         ExclusionRule("io.quarkus", "quarkus-junit4-mock")
-      )
+        )
     )
   )
   .dependsOn(utilsInternal, httpUtils, testUtils % "it,test")
@@ -1688,6 +1688,7 @@ lazy val modules = List[ProjectReference](
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
 lazy val root = (project in file("."))
+  .enablePlugins(FormatStagedScalaFilesPlugin)
   .aggregate(modulesWithBom: _*)
   .settings(commonSettings)
   .settings(
