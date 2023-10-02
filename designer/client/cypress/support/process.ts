@@ -99,7 +99,7 @@ function deleteTestProcess(processName: string, force?: boolean) {
     }
 
     return archiveThenDeleteProcess()
-        .then((response) => (force && response.status === 409 ? cancelProcess().then(archiveThenDeleteProcess) : cy.wrap(response)))
+        .then((response) => (force && response.status === 403 ? cancelProcess().then(archiveThenDeleteProcess) : cy.wrap(response)))
         .its("status")
         .should("be.oneOf", [200, 404]);
 }
