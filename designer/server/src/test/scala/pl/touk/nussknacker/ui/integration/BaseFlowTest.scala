@@ -104,7 +104,10 @@ class BaseFlowTest
         componentId = None
       ),
       "enricher" -> SingleComponentConfig(
-        params = Some(Map("param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None))),
+        params = Some(Map(
+          "param" -> ParameterConfig(Some("'default value'"), Some(StringParameterEditor), None, None),
+          "paramDualEditor" -> ParameterConfig(None, None, Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))), None)
+        )),
         icon = Some("/assets/components/Filter.svg"),
         docsUrl = Some("https://touk.github.io/nussknacker/enricher"),
         componentGroup = None,

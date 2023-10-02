@@ -1,22 +1,22 @@
 package pl.touk.nussknacker.ui.definition
 
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ComponentId, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
-import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ComponentId, ComponentType, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component._
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.generics
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
+import pl.touk.nussknacker.engine.definition.FragmentComponentDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{FragmentComponentDefinitionExtractor, ToStaticObjectDefinitionTransformer}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-import pl.touk.nussknacker.engine.{MetaDataInitializer, ModelData}
+import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
+import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.component.{ComponentDefinitionPreparer, ComponentIdProvider, DefaultComponentIdProvider}
@@ -29,6 +29,15 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 object UIProcessObjectsFactory {
 
   import net.ceedubs.ficus.Ficus._
+
+  private lazy val additionalComponentsUIConfigProvider: AdditionalComponentsUIConfigProvider = {
+    Multiplicity(ScalaServiceLoader.load[AdditionalComponentsUIConfigProvider](getClass.getClassLoader)) match {
+      case Empty() => AdditionalComponentsUIConfigProvider.empty
+      case One(provider) => provider
+      case Many(moreThanOne) =>
+        throw new IllegalArgumentException(s"More than one AdditionalComponentsUIConfigProvider instance found: $moreThanOne")
+    }
+  }
 
   private def getComponentIdToNameMap(componentIdProvider: ComponentIdProvider,
                                       uiProcessDefinition: UIProcessDefinition,
@@ -90,7 +99,7 @@ object UIProcessObjectsFactory {
     val componentIdProvider: ComponentIdProvider = new DefaultComponentIdProvider(Map(processingType -> combinedComponentsConfig))
     val componentIdToName: Map[ComponentId, String] = getComponentIdToNameMap(componentIdProvider, uiProcessDefinition, isFragment, processingType)
 
-    val additionalComponentsUIConfig = modelDataForType.additionalComponentsUIConfigProvider.getAllForProcessingType(processingType).map {
+    val additionalComponentsUIConfig = additionalComponentsUIConfigProvider.getAllForProcessingType(processingType).map {
       case (componentId, config) => componentIdToName(componentId) -> config.toSingleComponentConfig
     }
 

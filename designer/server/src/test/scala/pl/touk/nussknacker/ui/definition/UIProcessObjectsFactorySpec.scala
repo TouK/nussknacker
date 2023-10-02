@@ -137,31 +137,16 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     processObjects.componentsConfig.get(fragment.id) shouldBe empty
   }
 
-  class TestAdditionalComponentsUIConfigProvider extends AdditionalComponentsUIConfigProvider {
-    override def getAllForProcessingType(processingType: String): Map[ComponentId, SingleComponentUIConfig] =
-      Map(
-        ComponentId("streaming-enricher-enricher") -> SingleComponentUIConfig.zero.copy(
-          params = Some(Map(
-            "paramDualEditor" -> ParameterConfig.empty.copy(
-              validators = Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("otherExpression", "otherLabel")))))
-            )
-          ))
-        )
-      )
-  }
-
   test("should override component's parameter config with additionally provided config") {
     val model: ModelData = LocalModelData(ConfigWithScalaVersion.StreamingProcessTypeConfig.resolved.getConfig("modelConfig"), new EmptyProcessConfigCreator() {
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map("enricher" -> WithCategories(TestService))
-    },
-      additionalComponentsUIConfigProvider = new TestAdditionalComponentsUIConfigProvider
-    )
+    })
 
     val processObjects = prepareUIProcessObjects(model, Set.empty)
 
     processObjects.componentsConfig("enricher").params.map(_.map { case (key, value) => key -> value.validators }) shouldBe Some(Map(
-      "paramDualEditor" -> Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("otherExpression", "otherLabel"))))),
+      "paramDualEditor" -> Some(List(FixedValuesValidator(possibleValues = List(FixedExpressionValue("someExpression", "someLabel"))))),
       "param" -> None // from designer.conf, which also goes into `componentsConfig`
     ))
   }
