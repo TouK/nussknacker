@@ -39,7 +39,7 @@ paths:
                   summary: Application build info response
                   value:
                     name: nussknacker
-                    version: 1.12.0-SNAPSHOT
+                    version: 1.234.0
                     buildTime: '2023-09-25T09:26:30.402299'
                     gitCommit: d4e42ee5c594ffe70a37faca3579eb535dac9820
                     processingType:
@@ -206,7 +206,7 @@ paths:
                 type: object
               examples:
                 Example:
-                  summary: Application build info response
+                  summary: Server configuration response
                   value:
                     environment: local
                     scenarioTypes:
