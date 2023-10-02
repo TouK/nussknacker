@@ -14,7 +14,9 @@ object GenerateDesignerOpenApiPlugin extends sbt.AutoPlugin {
   override def projectSettings = Seq(
     generateDesignerOpenApi := {
       (Compile / runMain)
-        .toTask(" pl.touk.nussknacker.ui.util.GenerateDesignerOpenApiYamlFile")
+        .toTask(
+          " pl.touk.nussknacker.ui.util.GenerateDesignerOpenApiYamlFile docs-internal/api/nu-designer-openapi.yaml"
+        )
         .value
     }
   )
