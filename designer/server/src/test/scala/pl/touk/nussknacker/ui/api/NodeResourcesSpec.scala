@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, InvalidPropertyFixedValue}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyNodeId, ExpressionParserCompilationError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
@@ -77,7 +77,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   test("validates filter nodes") {
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression.spel("#existButString"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None, NodeNameValidationRequest(data.id))
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
@@ -95,7 +95,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
         Parameter(SinkValueParamName, Expression.spel("notvalidspelexpression")),
         Parameter(TopicParamName, Expression.spel("'test-topic'")))),
         None, None)
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None, NodeNameValidationRequest(data.id))
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] should matchPattern {
@@ -110,7 +110,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   test("validates nodes using dictionaries") {
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression.spel("#DICT.Bar != #DICT.Foo"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None, NodeNameValidationRequest(data.id))
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
@@ -136,11 +136,25 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
           "b1" -> Map("existButString" -> Typed[String], "meta" -> Typed[MetaData]),
           "b2" -> Map("longValue" -> Typed[Long], "meta" -> Typed[MetaData])
         )
-      ), None)
+      ), None, NodeNameValidationRequest(data.id))
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         val res = responseAs[NodeValidationResult]
         res.validationErrors shouldBe Nil
+      }
+    }
+  }
+
+  test("validates nodes empty id") {
+    saveProcess(testProcess) {
+      val data: node.Variable = node.Variable("", "varName", Expression.spel("'true'"))
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None, NodeNameValidationRequest(data.id))
+
+      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+        responseAs[NodeValidationResult] should matchPattern {
+          case NodeValidationResult(_, _, validationErrors, _) if validationErrors == List(
+            PrettyValidationErrors.formatErrorMessage(EmptyNodeId)) =>
+        }
       }
     }
   }
