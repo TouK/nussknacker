@@ -22,6 +22,7 @@ export interface GenericValidationRequest {
     parameters: UIValueParameter[];
     variableTypes: VariableTypes;
     processProperties: PropertiesType;
+    scenarioName: string;
 }
 
 function nodeGenericValidationDataUpdated(validationData: GenericValidationData): GenericActionValidationUpdated {
@@ -29,16 +30,16 @@ function nodeGenericValidationDataUpdated(validationData: GenericValidationData)
 }
 
 const validate = debounce(
-    async (processId: string, validationRequestData: GenericValidationRequest, callback: (data: GenericValidationData) => void) => {
-        const { data } = await HttpService.validateGenericActionParameters(processId, validationRequestData);
+    async (processingType: string, validationRequestData: GenericValidationRequest, callback: (data: GenericValidationData) => void) => {
+        const { data } = await HttpService.validateGenericActionParameters(processingType, validationRequestData);
         callback(data);
     },
     500,
 );
 
-export function validateGenericActionParameters(processId: string, validationRequestData: GenericValidationRequest): ThunkAction {
+export function validateGenericActionParameters(processingType: string, validationRequestData: GenericValidationRequest): ThunkAction {
     return (dispatch) =>
-        validate(processId, validationRequestData, (data) => {
+        validate(processingType, validationRequestData, (data) => {
             dispatch(nodeGenericValidationDataUpdated(data));
         });
 }

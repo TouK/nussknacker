@@ -1,11 +1,11 @@
-import NodeUtils from "./NodeUtils";
+import NodeUtils from "../NodeUtils";
 import { cloneDeep, isEqual, map, reject } from "lodash";
-import { Edge, NodeId, NodeType, Process, ProcessDefinitionData } from "../../types";
+import { Edge, NodeId, NodeType, Process, ProcessDefinitionData } from "../../../types";
 import {
     adjustBranchParametersAfterDisconnect,
     enrichNodeWithProcessDependentData,
     removeBranchParameter,
-} from "../../reducers/graph/utils";
+} from "../../../reducers/graph/utils";
 
 export function mapProcessWithNewNode(process: Process, before: NodeType, after: NodeType): Process {
     return {

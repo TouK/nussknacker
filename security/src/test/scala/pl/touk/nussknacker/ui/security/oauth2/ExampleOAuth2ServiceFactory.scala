@@ -12,7 +12,8 @@ import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]) extends OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] with LazyLogging {
+class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse])(implicit ec: ExecutionContext)
+  extends OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] with LazyLogging {
 
   def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(OAuth2AuthorizationData, AuthenticatedUser)] =
     for {
@@ -40,23 +41,23 @@ object ExampleOAuth2ServiceFactory {
   def apply(): ExampleOAuth2ServiceFactory = new ExampleOAuth2ServiceFactory()
 
   def service(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any]): ExampleOAuth2Service =
-    new ExampleOAuth2Service(testClient(configuration), configuration)
+    new ExampleOAuth2Service(testClient(configuration))
 
   def testClient(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, backend: SttpBackend[Future, Any]): OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse]
     = new OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse](configuration)
 
   def testConfig: OAuth2Configuration =
     OAuth2Configuration(
-      URI.create("classpath:oauth2-users.conf"),
-      URI.create("https://github.com/login/oauth/authorize"),
-      "clientSecret",
-      "clientId",
-      URI.create("https://api.github.com/user"),
-      Some(ProfileFormat.GITHUB),
-      URI.create("https://github.com/login/oauth/access_token"),
-      None,
-      false,
-      None
+      usersFile = URI.create("classpath:oauth2-users.conf"),
+      authorizeUri = URI.create("https://github.com/login/oauth/authorize"),
+      clientSecret = "clientSecret",
+      clientId = "clientId",
+      profileUri = URI.create("https://api.github.com/user"),
+      profileFormat = Some(ProfileFormat.GITHUB),
+      accessTokenUri = URI.create("https://github.com/login/oauth/access_token"),
+      redirectUri = None,
+      implicitGrantEnabled = false,
+      jwt = None
     )
 
   val testRules: List[AuthenticationConfiguration.ConfigRule] = AuthenticationConfiguration.getRules(testConfig.usersFile)

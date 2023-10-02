@@ -1,10 +1,11 @@
 import { css } from "@emotion/css";
 import { dia, g } from "jointjs";
 import { debounce, throttle } from "lodash";
-import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
+import { isTouchDevice, isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 import svgPanZoom from "svg-pan-zoom";
 import { CursorMask } from "./CursorMask";
-import { Events } from "./joint-events";
+import { Events } from "./types";
+import Hammer from "hammerjs";
 
 const getAnimationClass = (disabled?: boolean) =>
     css({
@@ -16,12 +17,15 @@ const getAnimationClass = (disabled?: boolean) =>
 export class PanZoomPlugin {
     private cursorMask: CursorMask;
     private instance: SvgPanZoom.Instance;
+    private pinchEventActive = false;
     private animationClassHolder: HTMLElement;
     private panStart: {
         x: number;
         y: number;
         touched?: boolean;
     };
+
+    private disabledPan = false;
 
     constructor(private paper: dia.Paper) {
         this.cursorMask = new CursorMask();
@@ -39,6 +43,10 @@ export class PanZoomPlugin {
         //appear animation starting point, fitSmallAndLargeGraphs will set animation end point in componentDidMount
         this.instance.zoom(0.001);
 
+        if (isTouchDevice()) {
+            this.initPinchZooming(this.paper);
+        }
+
         this.animationClassHolder = paper.el;
         this.animationClassHolder.addEventListener(
             "transitionend",
@@ -47,45 +55,28 @@ export class PanZoomPlugin {
             }, 500),
         );
 
-        paper.on(Events.BLANK_POINTERDOWN, (event: dia.Event) => {
-            this.initMove(event);
-            if (isTouchEvent(event)) {
-                const pressTimer = setTimeout(() => this.cleanup(), LONG_PRESS_TIME);
-                this.paper.once(Events.BLANK_POINTERUP, () => clearTimeout(pressTimer));
-                this.paper.once(Events.BLANK_POINTERMOVE, () => clearTimeout(pressTimer));
-            }
-        });
+        paper.on(Events.BLANK_POINTERDOWN, this.handleBlankPointerDown);
 
-        paper.on(Events.BLANK_POINTERMOVE, (event: dia.Event) => {
-            const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
-            const panStart = this.panStart;
-            if (!isModified && panStart) {
-                this.instance.panBy({
-                    x: event.clientX - panStart.x,
-                    y: event.clientY - panStart.y,
-                });
-                this.panStart = {
-                    x: event.clientX,
-                    y: event.clientY,
-                    touched: true,
-                };
-            } else {
-                this.cleanup();
-            }
-        });
-
-        paper.on(Events.BLANK_POINTERUP, (event: dia.Event) => {
-            if (this.panStart?.touched) {
-                event.stopImmediatePropagation();
-            }
-            this.cleanup();
-        });
+        this.initPanMove(paper);
     }
 
-    private initMove(event: dia.Event): void {
+    private handleBlankPointerDown = (event: dia.Event) => {
+        if (isTouchEvent(event)) {
+            const pressTimer = setTimeout(() => {
+                this.disabledPan = true;
+            }, LONG_PRESS_TIME);
+            this.paper.once(Events.BLANK_POINTERUP, () => clearTimeout(pressTimer));
+            this.paper.once(Events.BLANK_POINTERMOVE, () => clearTimeout(pressTimer));
+        }
+    };
+
+    private initMove(event: MouseEvent): void {
         const isModified = event.shiftKey || event.ctrlKey || event.altKey || event.metaKey;
         if (!isModified) {
-            this.cursorMask.enable("move");
+            if (!isTouchDevice()) {
+                this.cursorMask.enable("move");
+            }
+
             this.panStart = {
                 x: event.clientX,
                 y: event.clientY,
@@ -162,5 +153,86 @@ export class PanZoomPlugin {
         requestAnimationFrame(() => {
             this.panToCells(cells, viewport);
         });
+    };
+
+    private initPinchZooming(paper: dia.Paper) {
+        let lastScale = 1;
+
+        const hammer = new Hammer(paper.el);
+        hammer.get("pinch").set({ enable: true });
+
+        hammer.on("pinchstart", () => {
+            this.pinchEventActive = true;
+            this.instance.setZoomScaleSensitivity(0.015);
+        });
+
+        hammer.on("pinchend", () => {
+            this.pinchEventActive = false;
+            this.instance.setZoomScaleSensitivity(0.4);
+        });
+
+        hammer.on("pinchin pinchout", (e) => {
+            if (e.scale < lastScale) {
+                this.instance.zoomOut();
+            } else if (e.scale > lastScale) {
+                this.instance.zoomIn();
+            }
+
+            lastScale = e.scale;
+        });
+
+        document.addEventListener("touchmove", (event) => {
+            if (this.pinchEventActive) {
+                event.stopImmediatePropagation();
+            }
+        });
+    }
+
+    private initPanMove = (paper: dia.Paper) => {
+        const hammer = new Hammer(paper.el);
+        hammer.get("pan").set({ threshold: 2 });
+
+        paper.on("cell:pointerdown", () => {
+            this.disabledPan = true;
+        });
+
+        hammer.on("panstart", (event) => {
+            if (this.disabledPan) {
+                this.cleanup();
+                return;
+            }
+
+            this.initMove(event.pointers[0]);
+        });
+
+        hammer.on("panmove", (event) => {
+            const isModified = event.srcEvent.shiftKey || event.srcEvent.ctrlKey || event.srcEvent.altKey || event.srcEvent.metaKey;
+
+            if (!isModified && this.panStart) {
+                const panStart = this.panStart;
+                this.instance.panBy({
+                    x: event.pointers[0].clientX - panStart.x,
+                    y: event.pointers[0].clientY - panStart.y,
+                });
+
+                this.panStart = {
+                    x: event.pointers[0].clientX,
+                    y: event.pointers[0].clientY,
+                    touched: true,
+                };
+            }
+        });
+
+        hammer.on("panend", (event) => {
+            if (this.panStart?.touched) {
+                event.pointers[0].stopImmediatePropagation();
+            }
+            this.cleanup();
+            this.disabledPan = false;
+        });
+    };
+
+    getPinchEventActive = () => {
+        return this.pinchEventActive;
     };
 }

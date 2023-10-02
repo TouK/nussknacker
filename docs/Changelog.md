@@ -2,6 +2,10 @@
 
 1.12.0 (Not released yet)
 -------------------------
+* [#4697](https://github.com/TouK/nussknacker/pull/4697) Change `api/parameters/*/validate` and `api/parameters/*/suggestions` endpoints.
+  * Use `processingType` instead of `processName`
+  * Add `scenarioName` parameter to `ParametersValidationRequest` used in `api/parameters/*/validate`
+* [#4677](https://github.com/TouK/nussknacker/pull/4677) Added validation to SpEL string literal conversions (allow only constant that convert successfully)
 * [#4602](https://github.com/TouK/nussknacker/pull/4602) Cleaning subprocess usages after NU 1.11 release
 * [#4582](https://github.com/TouK/nussknacker/pull/4582) Fixed: Releasing app resources on the designer close 
 * [#4540](https://github.com/TouK/nussknacker/pull/4540) Improvement: Allow selecting a claim from OIDC JWT to represent the username
@@ -14,6 +18,8 @@
     - allow passing classLoader at `ResourceLoader.load`
 * [#4574](https://github.com/TouK/nussknacker/pull/4574) Improvements: at `KafkaClient` and `RichKafkaConsumer` in kafka-test-utils
 * [#4640](https://github.com/TouK/nussknacker/pull/4640) Expand timestamp support to handle more types/formats
+* [#4685](https://github.com/TouK/nussknacker/pull/4685) App API OpenAPI-based documentation (e.g. `https://demo.nussknacker.io/api/docs`)
+* [#4707](https://github.com/TouK/nussknacker/pull/4707) Support for `overrideFrontendAuthenticationStrategy` configuration parameter in OIDC security model - works the same as in OAuth2 case.
 
 1.11.3 (11 Sep 2023)
 -------------------------

@@ -4,6 +4,8 @@ sidebar_position: 1
 ---
 # Configuration
 
+## Minimal configuration file
+
 The Docker image and the binary distribution contain minimal working [configuration file](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf), which is designed as a base for further customizations using 
 additional configuration files. 
 This file is not used by the [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker), which prepares its own config file. 

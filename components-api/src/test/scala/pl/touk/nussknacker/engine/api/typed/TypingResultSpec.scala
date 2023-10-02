@@ -6,7 +6,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
 
+import java.time.{LocalDate, LocalDateTime}
 import java.util
+import java.util.Currency
 
 class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
@@ -221,6 +223,14 @@ class TypingResultSpec extends AnyFunSuite with Matchers with OptionValues with 
     Typed.fromInstance(12).canBeSubclassOf(Typed.fromInstance(15)) shouldBe false
     Typed.fromInstance(41).canBeSubclassOf(Typed.fromInstance("t")) shouldBe false
     Typed.typedClass[String].canBeSubclassOf(Typed.fromInstance("t")) shouldBe true
+  }
+
+  test("determine if can be subclass for object with value - use conversion") {
+    Typed.fromInstance("2007-12-03").canBeSubclassOf(Typed.typedClass[LocalDate]) shouldBe true
+    Typed.fromInstance("2007-12-03T10:15:30").canBeSubclassOf(Typed.typedClass[LocalDateTime]) shouldBe true
+
+    Typed.fromInstance("2007-12-03-qwerty").canBeSubclassOf(Typed.typedClass[LocalDate]) shouldBe false
+    Typed.fromInstance("2007-12-03").canBeSubclassOf(Typed.typedClass[Currency]) shouldBe false
   }
 
   test("determinate if can be superclass for objects with value") {

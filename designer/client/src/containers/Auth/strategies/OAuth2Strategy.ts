@@ -64,7 +64,7 @@ export const OAuth2Strategy: StrategyConstructor = class OAuth2Strategy implemen
             if (!this.verifyTokens(queryHashParams)) {
                 return Promise.reject("token not verified");
             } else {
-                SystemUtils.setAuthorizationToken(queryHashParams.access_token);
+                SystemUtils.setAuthorizationToken(queryHashParams.access_token.toString());
                 history.replaceState(null, "", "#");
             }
         }

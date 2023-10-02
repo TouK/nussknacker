@@ -1,19 +1,17 @@
 /* eslint-disable i18next/no-literal-string */
 import { css, cx } from "@emotion/css";
 import { WindowButtonProps, WindowContentProps } from "@touk/window-manager";
-import moment from "moment";
 import React, { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAndDisplayProcessCounts } from "../../../actions/nk";
 import { getProcessId } from "../../../reducers/selectors/graph";
-import "../../../stylesheets/visualization.styl";
 import { WindowContent } from "../../../windowManager";
-import { ChangeableValue } from "../../ChangeableValue";
-import { CountsRanges } from "./CountsRanges";
-import { Picker, PickerInput } from "./Picker";
+import { PickerInput } from "./Picker";
+import { CalculateCountsForm } from "./CalculateCountsForm";
+import moment from "moment";
 
-type State = {
+export type State = {
     from: PickerInput;
     to: PickerInput;
 };
@@ -24,23 +22,6 @@ const initState = (): State => {
         to: moment().endOf("day"),
     };
 };
-
-export function CalculateCountsForm({ value, onChange }: ChangeableValue<State>): JSX.Element {
-    const { t } = useTranslation();
-    const { from, to } = value;
-
-    const setFrom = useCallback((from: PickerInput) => onChange({ ...value, from }), [onChange, value]);
-    const setTo = useCallback((to: PickerInput) => onChange({ ...value, to }), [onChange, value]);
-    const setRange = useCallback(([from, to]: [PickerInput, PickerInput]) => onChange({ ...value, from, to }), [onChange, value]);
-
-    return (
-        <>
-            <Picker label={t("calculateCounts.processCountsFrom", "Scenario counts from")} onChange={setFrom} value={from} />
-            <Picker label={t("calculateCounts.processCountsTo", "Scenario counts to")} onChange={setTo} value={to} />
-            <CountsRanges label={t("calculateCounts.quickRanges", "Quick ranges")} onChange={setRange} />
-        </>
-    );
-}
 
 export function CountsDialog({ children, ...props }: PropsWithChildren<WindowContentProps>): JSX.Element {
     const { t } = useTranslation();

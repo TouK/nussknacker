@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import { dia, g, shapes } from "jointjs";
 import { CursorMask } from "./CursorMask";
-import { Events } from "./joint-events";
+import { Events } from "./types";
 import { pressedKeys } from "./KeysObserver";
 import { isTouchEvent, LONG_PRESS_TIME } from "../../helpers/detectDevice";
 
@@ -24,8 +24,10 @@ export class RangeSelectPlugin {
         x: number;
         y: number;
     };
+    private getPinchEventActive: () => boolean;
 
-    constructor(private paper: dia.Paper) {
+    constructor(private paper: dia.Paper, getPinchEventActive: () => boolean) {
+        this.getPinchEventActive = getPinchEventActive;
         this.pressedKeys.onValue(this.onPressedKeysChange);
         paper.on(Events.BLANK_POINTERDOWN, this.onInit.bind(this));
         paper.on(Events.BLANK_POINTERMOVE, this.onChange.bind(this));
@@ -76,6 +78,11 @@ export class RangeSelectPlugin {
 
             pressTimer = window.setTimeout(() => {
                 paper.off(Events.BLANK_POINTERMOVE, releasePress);
+
+                if (this.getPinchEventActive()) {
+                    return;
+                }
+
                 action(event, ...args);
             }, LONG_PRESS_TIME);
         };

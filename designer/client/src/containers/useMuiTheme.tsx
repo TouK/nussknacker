@@ -73,7 +73,7 @@ export function useMuiTheme(): MuiTheme & Theme {
                                         ".MuiAlert-icon": { color: variables.alert.text, alignSelf: "center" },
                                     },
                                     standardSuccess: {
-                                        backgroundColor: variables.alert.sucsess,
+                                        backgroundColor: variables.sucess,
                                         color: variables.alert.text,
                                     },
                                     standardError: {

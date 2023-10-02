@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.{CombinedProcessingTypeData, ConfigWithUnresol
 import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
-import pl.touk.nussknacker.ui.api.app.AppApiHttpService
 import pl.touk.nussknacker.ui.component.DefaultComponentService
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, ComponentLinksConfigExtractor, FeatureTogglesConfig, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.db.DbRef
@@ -35,6 +34,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, AuthenticationResources, LoggedUser}
+import pl.touk.nussknacker.ui.services.{AppApiHttpService, NuDesignerOpenApiHttpService}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
@@ -163,14 +163,15 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
       )
 
       val processAuthorizer = new AuthorizeProcess(futureProcessRepository)
-      val appHttpService = new AppApiHttpService(
+      val appApiHttpService = new AppApiHttpService(
         config = resolvedConfig,
+        authenticator = authenticationResources,
         processingTypeDataReloader = reload,
         modelData = modelData,
         processRepository = futureProcessRepository,
         processValidation = processValidation,
         deploymentService = deploymentService,
-        exposeConfig = featureTogglesConfig.enableConfigEndpoint,
+        shouldExposeConfig = featureTogglesConfig.enableConfigEndpoint,
         processCategoryService = processCategoryService
       )
 
@@ -220,10 +221,6 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
           new DefinitionResources(modelData, typeToConfig, fragmentRepository, processCategoryService),
           new UserResources(processCategoryService),
           new NotificationResources(notificationService),
-          new RouteWithUser {
-            override def securedRoute(implicit user: LoggedUser): Route =
-              akkaHttpServerInterpreter.toRoute(appHttpService.securedServerEndpoints)
-          },
           new TestInfoResources(processAuthorizer, futureProcessRepository, scenarioTestService),
           new ComponentResource(componentService),
           new AttachmentResources(
@@ -264,13 +261,18 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
       )
       val apiResourcesWithoutAuthentication: List[Route] = List(
         settingsResources.publicRoute(),
-        akkaHttpServerInterpreter.toRoute(appHttpService.publicServerEndpoints),
         authenticationResources.routeWithPathPrefix,
       )
+
+      val nuDesignerOpenApi = new NuDesignerOpenApiHttpService(appApiHttpService)
 
       createAppRoute(
         resolvedConfig = resolvedConfig,
         authenticationResources = authenticationResources,
+        tapirRelatedRoutes = List(
+          akkaHttpServerInterpreter.toRoute(nuDesignerOpenApi.publicServerEndpoints),
+          akkaHttpServerInterpreter.toRoute(appApiHttpService.serverEndpoints)
+        ),
         apiResourcesWithAuthentication = apiResourcesWithAuthentication,
         apiResourcesWithoutAuthentication = apiResourcesWithoutAuthentication,
         processCategoryService = processCategoryService,
@@ -297,6 +299,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
 
   private def createAppRoute(resolvedConfig: Config,
                              authenticationResources: AuthenticationResources,
+                             tapirRelatedRoutes: List[Route],
                              apiResourcesWithAuthentication: List[RouteWithUser],
                              apiResourcesWithoutAuthentication: List[Route],
                              processCategoryService: ProcessCategoryService,
@@ -305,6 +308,7 @@ class AkkaHttpBasedRouteProvider(dbRef: DbRef,
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(resolvedConfig.getString("http.publicPath"))
     WithDirectives(CorsSupport.cors(developmentMode), SecurityHeadersSupport(), OptionsMethodSupport()) {
+      tapirRelatedRoutes.reduce(_ ~ _) ~
       pathPrefixTest(!"api") {
         webResources.route
       } ~ pathPrefix("api") {

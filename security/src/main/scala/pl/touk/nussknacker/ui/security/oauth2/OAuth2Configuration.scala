@@ -64,7 +64,6 @@ object OAuth2Configuration {
   import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
   private implicit val valueReader: ValueReader[FrontendStrategySettings] = forDecoder
 
-
   val name = "OAuth2"
   def create(config: Config): OAuth2Configuration = config.as[OAuth2Configuration](authenticationConfigPath)
 }

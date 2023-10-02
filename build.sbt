@@ -346,6 +346,7 @@ val tapirV = "1.7.3"
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.18.0"
 val wireMockV = "2.35.0"
+val findBugsV = "3.0.2"
 
 // depending on scala version one of this jar lays in Flink lib dir
 def flinkLibScalaDeps(scalaVersion: String, configurations: Option[String] = None) = forScalaVersion(scalaVersion, Seq(),
@@ -914,7 +915,6 @@ lazy val commonUtils = (project in utils("utils")).
     name := "nussknacker-utils",
     libraryDependencies ++= {
       Seq(
-        "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
@@ -1287,6 +1287,8 @@ lazy val componentsApi = (project in file("components-api")).
         "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "com.iheart" %% "ficus" % ficusV,
+        "org.springframework" % "spring-core" % springV,
+        "com.google.code.findbugs" % "jsr305" % findBugsV,
       )
     }
   ).dependsOn(commonApi, testUtils % "test")
@@ -1299,7 +1301,7 @@ lazy val extensionsApi = (project in file("extensions-api")).
     libraryDependencies ++= Seq(
       "org.springframework" % "spring-expression" % springV,
       //needed by scala-compiler for spring-expression...
-      "com.google.code.findbugs" % "jsr305" % "3.0.2",
+      "com.google.code.findbugs" % "jsr305" % findBugsV,
     )
   ).dependsOn(testUtils % "test", componentsApi, scenarioApi)
 
@@ -1354,6 +1356,10 @@ lazy val security = (project in file("security")).
       "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
       "com.auth0" % "jwks-rsa" % "0.22.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
+
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirV,
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirV,
+
       "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersScalaV % "it,test",
       "com.github.dasniko" % "testcontainers-keycloak" % "2.5.0" % "it,test" excludeAll(
@@ -1587,9 +1593,10 @@ lazy val designer = (project in file("designer/server"))
         "org.flywaydb" % "flyway-core" % flywayV,
         "org.apache.xmlgraphics" % "fop" % "2.8",
 
+        "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % tapirV,
         "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirV,
         "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirV,
-        "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % tapirV,
+        "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirV,
         "io.circe" %% "circe-generic-extras" % circeGenericExtrasV,
 
         "com.typesafe.slick" %% "slick-testkit" % slickV % "test",
