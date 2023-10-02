@@ -39,14 +39,6 @@ class GenericOidcService[
     }
   }
 
-  override protected def obtainUserInfo(accessToken: String): Future[UserData] = {
-    if (accessTokenIsJwt) {
-      introspectJwtToken[UserData](accessToken)
-        .filter(verifyAccessTokenAudience)
-    } else {
-      super.obtainUserInfo(accessToken)
-    }
-  }
 }
 
 @ConfiguredJsonCodec case class DefaultOidcAuthorizationData

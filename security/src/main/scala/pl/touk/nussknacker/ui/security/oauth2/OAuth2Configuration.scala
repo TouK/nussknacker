@@ -85,8 +85,6 @@ object UsernameClaim extends Enumeration {
 }
 
 trait JwtConfiguration {
-  def accessTokenIsJwt: Boolean
-
   def userinfoFromIdToken: Boolean
 
   def authServerPublicKey: Option[PublicKey]
@@ -105,8 +103,7 @@ object JwtConfiguration {
 
   implicit val jwtConfigurationVR: ValueReader[JwtConfiguration] = ValueReader.relative(_.rootAs[JwtConfig])
 
-  private case class JwtConfig(accessTokenIsJwt: Boolean = false,
-                               userinfoFromIdToken: Boolean = false,
+  private case class JwtConfig(userinfoFromIdToken: Boolean = false,
                                audience: Option[String],
                                publicKey: Option[String],
                                publicKeyFile: Option[String],
