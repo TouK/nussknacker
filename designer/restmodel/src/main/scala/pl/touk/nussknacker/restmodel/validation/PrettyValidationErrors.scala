@@ -44,9 +44,9 @@ object PrettyValidationErrors {
       case ScenarioNameValidationError(message, description) =>
         node(
           message,
-          description
+          description,
+          fieldName = Some("id")
           // TODO: we should pass id here, but editing scenario id is *really* quirky...
-          //  , fieldName = Some("id")
         )
       case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case EmptyProcess       => node("Empty scenario", "Scenario is empty, please add some nodes")

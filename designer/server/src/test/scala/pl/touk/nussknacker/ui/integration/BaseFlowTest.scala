@@ -24,7 +24,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, WithTestHttpClient}
-import pl.touk.nussknacker.ui.api.NodeValidationRequest
+import pl.touk.nussknacker.ui.api.{NodeNameValidationRequest, NodeValidationRequest}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.createUIAdditionalPropertyConfig
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -334,7 +334,7 @@ class BaseFlowTest
     def dynamicServiceParameters: Option[List[String]] = {
       val request = NodeValidationRequest(
         Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)),
-        ProcessProperties(StreamMetaData()), Map.empty, None, None
+        ProcessProperties(StreamMetaData()), Map.empty, None, None, NodeNameValidationRequest(nodeUsingDynamicServiceId)
       )
 
       val response = httpClient.send(

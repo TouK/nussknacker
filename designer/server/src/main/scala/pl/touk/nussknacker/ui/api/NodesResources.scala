@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyNodeId, MissingParameters}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -190,6 +190,7 @@ object NodesResources {
 
   def prepareNodeRequestDecoder(modelData: ModelData): Decoder[NodeValidationRequest] = {
     implicit val typeDecoder: Decoder[TypingResult] = prepareTypingResultDecoder(modelData)
+    implicit val nodeNameRequestDecoder: Decoder[NodeNameValidationRequest] = deriveConfiguredDecoder[NodeNameValidationRequest]
     deriveConfiguredDecoder[NodeValidationRequest]
   }
 
@@ -236,6 +237,9 @@ class NodeValidator {
 
     val edges            = nodeData.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to, e.edgeType))
     val fragmentResolver = FragmentResolver(k => fragmentRepository.get(k).map(_.canonical))
+
+    val nodeIdErrors = validateNodeId(nodeData.nodeNameRequest)
+
     new NodeDataValidator(modelData, fragmentResolver).validate(
       nodeData.nodeData,
       validationContext,
@@ -246,7 +250,7 @@ class NodeValidator {
         NodeValidationResult(
           parameters = None,
           expressionType = None,
-          validationErrors = Nil,
+          validationErrors = nodeIdErrors.map(PrettyValidationErrors.formatErrorMessage),
           validationPerformed = false
         )
       case ValidationPerformed(errors, parameters, expressionType) =>
@@ -259,7 +263,7 @@ class NodeValidator {
           case _                            => false
         }
 
-        val uiErrors = errors.filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)
+        val uiErrors = (errors ++ nodeIdErrors).filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)
         NodeValidationResult(
           parameters = uiParams,
           expressionType = expressionType,
@@ -268,6 +272,11 @@ class NodeValidator {
         )
     }
   }
+
+  private def validateNodeId(request: NodeNameValidationRequest): List[ProcessCompilationError] = {
+    if (request.newName.isEmpty) List(EmptyNodeId) else Nil
+  }
+
 }
 
 class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData, _]) {
@@ -343,8 +352,11 @@ class AdditionalInfoProviders(typeToConfig: ProcessingTypeDataProvider[ModelData
     variableTypes: Map[String, TypingResult],
     branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
     // TODO: remove Option when FE is ready
-    outgoingEdges: Option[List[Edge]]
+    outgoingEdges: Option[List[Edge]],
+  nodeNameRequest: NodeNameValidationRequest
 )
+
+@JsonCodec(encodeOnly = true) final case class NodeNameValidationRequest(newName: String)
 
 @JsonCodec(encodeOnly = true) final case class PropertiesValidationRequest(processProperties: ProcessProperties)
 
