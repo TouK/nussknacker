@@ -1,14 +1,35 @@
-export class PendingPromise<T> {
-    public resolve: (value: PromiseLike<T> | T) => void;
-    public reject: (reason?: any) => void;
-    public promise: Promise<T>;
+type PromiseResolve<T> = (value: T | PromiseLike<T>) => void;
+type PromiseReject<R = any> = (reason?: R) => void;
+type PromiseExecutor<T> = (resolve: PromiseResolve<T>, reject: PromiseReject) => void;
 
-    constructor(timeoutTime = 30000) {
-        this.promise = new Promise<T>((resolve, reject) => {
-            this.resolve = resolve;
-            this.reject = reject;
+export class PendingPromise<T> extends Promise<T> {
+    resolve: PromiseResolve<T>;
+    reject: PromiseReject;
+
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    constructor(executor: PromiseExecutor<T> = () => {}) {
+        let resolveHandler: PromiseResolve<T>;
+        let rejectHandler: PromiseReject;
+
+        super((resolve, reject) => {
+            executor(resolve, reject);
+            resolveHandler = resolve;
+            rejectHandler = reject;
         });
-        const timeout = setTimeout(() => this.reject(new Error("timeout")), timeoutTime);
-        this.promise.finally(() => clearTimeout(timeout));
+
+        this.resolve = resolveHandler;
+        this.reject = rejectHandler;
+    }
+
+    static withTimeout<T>(timeoutTime = 60000) {
+        const pendingPromise = new PendingPromise<T>(undefined);
+        const timeout = setTimeout(
+            () => pendingPromise.reject(new Error(`Timed out waiting (${timeoutTime}ms) for resolve!`)),
+            timeoutTime,
+        );
+        pendingPromise.finally(() => clearTimeout(timeout));
+        return pendingPromise;
     }
 }
+
+window["PendingPromise"] = PendingPromise;

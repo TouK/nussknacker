@@ -3,6 +3,7 @@ import React from "react";
 import ValidationLabels from "../../../../modals/ValidationLabels";
 import { TextAreaWithFocus, TextAreaWithFocusProps } from "../../../../withFocus";
 import { LabeledInputProps } from "./LabeledInput";
+import { NodeRow } from "../../NodeDetailsContent/NodeStyled";
 
 export interface LabeledTextareaProps
     extends Pick<LabeledInputProps, "value" | "isMarked" | "children" | "showValidation" | "validators">,
@@ -14,7 +15,7 @@ export default function LabeledTextarea(props: LabeledTextareaProps): JSX.Elemen
     const lineEndPattern = /\r\n|\r|\n/;
 
     return (
-        <div className="node-row">
+        <NodeRow>
             {children}
             <div className={`node-value${isMarked ? " marked" : ""}`}>
                 <TextAreaWithFocus
@@ -26,6 +27,6 @@ export default function LabeledTextarea(props: LabeledTextareaProps): JSX.Elemen
                 />
                 {showValidation && <ValidationLabels validators={validators} values={[value]} />}
             </div>
-        </div>
+        </NodeRow>
     );
 }

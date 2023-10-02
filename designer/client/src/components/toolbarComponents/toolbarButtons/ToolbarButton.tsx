@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import Dropzone from "react-dropzone";
-import { InputWithFocus } from "../../withFocus";
+import { NodeInput } from "../../withFocus";
 import { ButtonsVariant, ToolbarButtonProps, ToolbarButtonsContext } from "./index";
 import { css, cx } from "@emotion/css";
 import { variables } from "../../../stylesheets/variables";
@@ -18,7 +18,10 @@ const {
     buttonSmallSize,
 } = variables;
 
-export function ToolbarButton({ onDrop, title, className, disabled, name, icon, hasError, isActive, ...props }: ToolbarButtonProps) {
+export const ToolbarButton = React.forwardRef<HTMLDivElement & HTMLButtonElement, ToolbarButtonProps>(function ToolbarButton(
+    { onDrop, title, className, disabled, name, icon, hasError, isActive, ...props },
+    ref,
+) {
     const { variant } = useContext(ToolbarButtonsContext);
 
     const margin = 2;
@@ -71,12 +74,12 @@ export function ToolbarButton({ onDrop, title, className, disabled, name, icon, 
                 {({ getRootProps, getInputProps }) => (
                     <>
                         <div {...getRootProps(buttonProps)} />
-                        <InputWithFocus {...getInputProps()} />
+                        <NodeInput {...getInputProps()} />
                     </>
                 )}
             </Dropzone>
         );
     }
 
-    return <button type="button" {...buttonProps} disabled={disabled} />;
-}
+    return <button ref={ref} type="button" {...buttonProps} disabled={disabled} />;
+});
