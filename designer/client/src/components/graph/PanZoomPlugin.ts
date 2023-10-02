@@ -25,7 +25,7 @@ export class PanZoomPlugin {
         touched?: boolean;
     };
 
-    private disabledPan = false;
+    private disabledPan = true;
 
     constructor(private paper: dia.Paper) {
         this.cursorMask = new CursorMask();
@@ -43,9 +43,7 @@ export class PanZoomPlugin {
         //appear animation starting point, fitSmallAndLargeGraphs will set animation end point in componentDidMount
         this.instance.zoom(0.001);
 
-        if (isTouchDevice()) {
-            this.initPinchZooming(this.paper);
-        }
+        this.initPinchZooming(this.paper);
 
         this.animationClassHolder = paper.el;
         this.animationClassHolder.addEventListener(
@@ -76,7 +74,6 @@ export class PanZoomPlugin {
             if (!isTouchEvent(event)) {
                 this.cursorMask.enable("move");
             }
-
             this.panStart = {
                 x: event.clientX,
                 y: event.clientY,
@@ -192,8 +189,8 @@ export class PanZoomPlugin {
         const hammer = new Hammer(paper.el);
         hammer.get("pan").set({ threshold: 2 });
 
-        paper.on("cell:pointerdown", () => {
-            this.disabledPan = true;
+        paper.on("blank:pointerdown", (e) => {
+            this.disabledPan = e.target?.parentElement?.id !== "nk-graph-main";
         });
 
         hammer.on("panstart", (event) => {
@@ -228,7 +225,7 @@ export class PanZoomPlugin {
                 event.pointers[0].stopImmediatePropagation();
             }
             this.cleanup();
-            this.disabledPan = false;
+            this.disabledPan = true;
         });
     };
 
