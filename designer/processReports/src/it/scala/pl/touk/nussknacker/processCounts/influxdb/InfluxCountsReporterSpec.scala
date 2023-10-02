@@ -112,7 +112,7 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
     private val influxDB = InfluxDBFactory.connect(container.url, container.username, container.password)
 
     def reporter(queryMode: QueryMode.Value) = new InfluxCountsReporter[Identity](env,
-      InfluxConfig(container.url + "/query", Option(container.username), Option(container.password), container.database, queryMode, Some(config)), identity
+      InfluxConfig(container.url + "/query", Option(container.username), Option(container.password), Map.empty, container.database, queryMode, Some(config)), identity
     )
 
     influxDB.setDatabase(container.database)
