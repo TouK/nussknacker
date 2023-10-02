@@ -51,6 +51,7 @@ const config: Configuration = {
             crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
             stream: require.resolve("stream-browserify"), //reason: jsonwebtoken
             fs: false,
+            "process/browser": require.resolve("process/browser"),
         },
     },
     entry: entry,
