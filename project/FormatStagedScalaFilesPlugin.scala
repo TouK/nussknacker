@@ -1,12 +1,13 @@
-import better.files.File
 import org.scalafmt.sbt.ScalafmtPlugin
-import sbt.Keys.streams
+import sbt.Keys._
 import sbt.nio.Keys.{ReloadOnSourceChanges, onChangedBuildSource}
-import sbt.{Compile, Global, Setting, taskKey}
+import sbt.{Compile, Def, File, Global, IO, Setting, taskKey}
 import utils.Step
 
+import scala.util.{Failure, Success, Try}
+
 object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {
-  override def trigger = allRequirements
+  override def trigger = noTrigger
 
   object autoImport {
     val formatStagedScalaFiles = taskKey[Unit]("Format staged Scala files")
@@ -21,7 +22,7 @@ object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {
   )
 
   override def globalSettings: Seq[Setting[_]] = Seq(
-    Global / onChangedBuildSource := ReloadOnSourceChanges,
+    Global / onChangedBuildSource := ReloadOnSourceChanges
   )
 
   private def formatStagedScalaFilesOnly() = {
@@ -51,14 +52,27 @@ object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {
   }
 
   private def callFormatFiles(files: List[String]) = {
-    val userDir       = getUserDir()
-    val fullPathFiles = files.map(f => s"${(userDir / f).path}")
     for {
       _ <- Step.task {
         streams.map(_.log.info("Formatting backend files ..."))
       }
+      // todo: improve
+      resolvedFiles <- Step.task {
+        Def.task {
+          files.map { file =>
+            Try(IO.resolve(baseDirectory.value, new File(file))) match {
+              case Failure(e) =>
+                streams.value.log.error(s"Error with file: $e")
+                throw e
+              case Success(file) =>
+                file.getAbsolutePath
+            }
+          }
+
+        }
+      }
       _ <- Step.task {
-        (Compile / ScalafmtPlugin.autoImport.scalafmtOnly).toTask(s" ${fullPathFiles.mkString(" ")}")
+        (Compile / ScalafmtPlugin.autoImport.scalafmtOnly).toTask(s" ${resolvedFiles.mkString(" ")}")
       }
     } yield ()
 
@@ -70,7 +84,5 @@ object FormatStagedScalaFilesPlugin extends sbt.AutoPlugin {
       .call()
     ()
   }
-
-  private def getUserDir() = File(System.getProperty("user.dir"))
 
 }

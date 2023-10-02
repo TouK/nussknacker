@@ -9,7 +9,7 @@ import scala.util.Using
 object NuGitHooksPathConfiguratorPlugin extends sbt.AutoPlugin {
   override def trigger = allRequirements
 
-  lazy val configureGitHooksPath                       = taskKey[Unit]("Configure NU Git Hooks path")
+  lazy val configureGitHooksPath                       = taskKey[Unit]("Configure Nu Git Hooks path")
   lazy val configureGitHooksPathOnLoad: State => State = "configureGitHooksPath" :: _
 
   override def projectSettings: Seq[Def.Setting[_]] = Seq(
