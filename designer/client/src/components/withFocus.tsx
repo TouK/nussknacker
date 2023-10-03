@@ -22,9 +22,7 @@ export const InputWithFocus = forwardRef(function InputWithFocus(
     return <input ref={ref} {...props} className={cx(withFocus, className)} />;
 });
 
-export const NodeInput = styled(InputWithFocus)`
-    ${NodeInputCss}
-`;
+export const NodeInput = styled(InputWithFocus)(NodeInputCss);
 
 export type TextAreaWithFocusProps = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>;
 
@@ -33,9 +31,7 @@ export function TextAreaWithFocus({ className, ...props }: TextAreaWithFocusProp
     return <textarea {...props} className={cx(withFocus, className)} />;
 }
 
-export const TextAreaNodeWithFocus = styled(TextAreaWithFocus)`
-    ${NodeInputCss}
-`;
+export const TextAreaNodeWithFocus = styled(TextAreaWithFocus)(NodeInputCss);
 
 export type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
 

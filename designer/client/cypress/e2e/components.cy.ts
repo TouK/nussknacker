@@ -189,6 +189,7 @@ describe("Components list", () => {
             force: true,
         });
         cy.contains(/^save\*$/i).click();
+        cy.get("[data-testid=window]").matchImage();
         cy.contains(/^ok$/i).click();
 
         cy.viewport(1400, 500);
