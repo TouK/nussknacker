@@ -2,13 +2,14 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.so
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import org.everit.json.schema.Schema
+import org.everit.json.schema.{CombinedSchema, Schema}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{SourceTestSupport, TestWithParametersSupport}
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
+import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
 import pl.touk.nussknacker.engine.json.{JsonSchemaBasedParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
@@ -17,10 +18,13 @@ import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sin
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, JsonSchemaUtils}
+import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 import pl.touk.nussknacker.engine.util.parameters.TestingParametersSupport
 
+import scala.jdk.CollectionConverters._
 import java.nio.charset.StandardCharsets
+import scala.util.Try
 
 class JsonSchemaRequestResponseSource(
     val definition: String,
@@ -71,9 +75,42 @@ class JsonSchemaRequestResponseSource(
   }
 
   override def parametersToTestData(params: Map[String, AnyRef]): Any = {
-    val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
-    val json = BestEffortJsonEncoder.defaultForTests.encode(TestingParametersSupport.unflattenParameters(params))
-    JsonToNuStruct(json, swaggerTyped)
+    handleSchemaWithUnionTypes(params)
+  }
+
+  // TODO handle anyOf, allOf, oneOf schemas properly. Ideally with editor support not to use raw editor
+  // As for now when CombinedSchemas (union) is used we validate json through provided schemas and choose first one that works.
+  private def handleSchemaWithUnionTypes(params: Map[String, AnyRef]): Any = {
+    inputSchema match {
+      case cs: CombinedSchema => {
+        params
+          .get(SinkRawValueParamName)
+          .map { params =>
+            val json                       = BestEffortJsonEncoder.defaultForTests.encode(params)
+            val schema                     = getValidatingSchemaForJson(cs, json)
+            val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
+            JsonToNuStruct(json, swaggerTyped)
+          }
+          .getOrElse {
+            throw new IllegalArgumentException( // Should never happen since CombinedSchema is created using SinkRawValueParamName but still...
+              s"Expected CombinedSchema with ${SinkRawValueParamName} parameter but ${cs} was found"
+            )
+          }
+      }
+      case _ =>
+        val json = BestEffortJsonEncoder.defaultForTests.encode(TestingParametersSupport.unflattenParameters(params))
+        val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema)
+        JsonToNuStruct(json, swaggerTyped)
+    }
+  }
+
+  private def getValidatingSchemaForJson(combinedSchema: CombinedSchema, json: Json): Schema = {
+    combinedSchema.getSubschemas.asScala
+      .flatMap { s => s.validateData(JsonSchemaUtils.circeToJson(json)).toOption.map(_ => s) }
+      .headOption
+      .getOrElse(
+        throw new IllegalArgumentException(s"There is no valid input for provided combined schemas ${combinedSchema}")
+      )
   }
 
   private def decodeJsonWithError(str: String): Json =
