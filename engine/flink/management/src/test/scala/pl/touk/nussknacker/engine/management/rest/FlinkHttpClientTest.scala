@@ -21,14 +21,11 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.{Await, Future}
 import scala.util.Failure
 
-class FlinkHttpClientTest extends AnyFunSuite
-  with Matchers
-  with ScalaFutures
-  with PatientScalaFutures {
+class FlinkHttpClientTest extends AnyFunSuite with Matchers with ScalaFutures with PatientScalaFutures {
 
-  private val jarFileName = "example.jar"
-  private val jarFile = new File(s"/tmp/${jarFileName}")
-  private val jarId = s"${UUID.randomUUID()}-example.jar"
+  private val jarFileName  = "example.jar"
+  private val jarFile      = new File(s"/tmp/${jarFileName}")
+  private val jarId        = s"${UUID.randomUUID()}-example.jar"
   private val flinkJarFile = JarFile(jarId, jarFileName)
   private val deploymentId = ExternalDeploymentId("someDeploymentId")
 
@@ -113,14 +110,20 @@ class FlinkHttpClientTest extends AnyFunSuite
   }
 
   test("should throw FlinkError if action failed") {
-    implicit val backend = new SttpBackendStub[Future, Any](new FutureMonad(), {
-      case req if req.uri.path == List("jars") =>
-        Future.successful(Response.ok(Right(JarsResponse(files = Some(List(JarFile(id = jarId, name = jarFileName)))))))
-      case req if req.uri.path == List("jars", jarId, "run") =>
-        Future.failed(HttpError("Error, error".asJson.noSpaces, StatusCode.InternalServerError))
-      case req if req.uri.path == List("jobs", deploymentId.value) && req.method == Method.PATCH =>
-        Future.failed(HttpError("Error, error".asJson.noSpaces, StatusCode.InternalServerError))
-    }, None)
+    implicit val backend = new SttpBackendStub[Future, Any](
+      new FutureMonad(),
+      {
+        case req if req.uri.path == List("jars") =>
+          Future.successful(
+            Response.ok(Right(JarsResponse(files = Some(List(JarFile(id = jarId, name = jarFileName))))))
+          )
+        case req if req.uri.path == List("jars", jarId, "run") =>
+          Future.failed(HttpError("Error, error".asJson.noSpaces, StatusCode.InternalServerError))
+        case req if req.uri.path == List("jobs", deploymentId.value) && req.method == Method.PATCH =>
+          Future.failed(HttpError("Error, error".asJson.noSpaces, StatusCode.InternalServerError))
+      },
+      None
+    )
 
     val flinkClient = new HttpFlinkClient(config)
 

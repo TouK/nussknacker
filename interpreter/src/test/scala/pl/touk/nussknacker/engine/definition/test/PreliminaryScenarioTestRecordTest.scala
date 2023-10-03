@@ -29,7 +29,7 @@ class PreliminaryScenarioTestRecordTest extends AnyFunSuite with Matchers with E
       record = Json.obj("f1" -> Json.fromLong(42), "f2" -> Json.fromString("str")),
     )
     val baseRecord: PreliminaryScenarioTestRecord = specificRecord
-    val recordJsonString = """{"f1":42,"f2":"str"}"""
+    val recordJsonString                          = """{"f1":42,"f2":"str"}"""
 
     specificRecord.asJson.noSpaces shouldBe recordJsonString
     baseRecord.asJson.noSpaces shouldBe recordJsonString

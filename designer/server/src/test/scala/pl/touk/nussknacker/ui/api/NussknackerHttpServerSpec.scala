@@ -20,7 +20,7 @@ import sttp.client3.{UriContext, basicRequest}
 import sttp.model.StatusCode
 
 class NussknackerHttpServerSpec
-  extends AnyFlatSpec
+    extends AnyFlatSpec
     with Matchers
     with WithTestHttpClientCreator
     with DefaultUniquePortProvider {
@@ -28,7 +28,7 @@ class NussknackerHttpServerSpec
   it should "allow client to connect via SSL" in {
     eval {
       val keyStoreConfig = KeyStoreConfig(getClass.getResource("/localhost.p12").toURI, "foobar".toCharArray)
-      val port = nextPort()
+      val port           = nextPort()
       for {
         server <- createHttpServer()
         client <- createHttpClient(Some(prepareSSLContext(keyStoreConfig)))
@@ -46,7 +46,7 @@ class NussknackerHttpServerSpec
         )
       } yield {
         val response = client.send(basicRequest.get(uri"https://localhost:$port/test"))
-        response.code should be (StatusCode.Ok)
+        response.code should be(StatusCode.Ok)
       }
     }
   }

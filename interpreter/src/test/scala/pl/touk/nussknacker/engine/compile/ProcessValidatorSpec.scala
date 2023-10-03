@@ -12,17 +12,42 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar, PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{
+  ContextTransformation,
+  OutputVar,
+  PartSubGraphCompilationError,
+  ProcessCompilationError,
+  ValidationContext
+}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ComponentUseCase, LanguageConfiguration, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{
+  ClassExtractionSettings,
+  ComponentUseCase,
+  LanguageConfiguration,
+  WithCategories
+}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ComponentImplementationInvoker, ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ModelDefinitionWithTypes, ProcessDefinition}
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor, FragmentComponentDefinitionExtractor}
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{
+  ComponentImplementationInvoker,
+  ObjectDefinition,
+  ObjectWithMethodDef,
+  StandardObjectWithMethodDef
+}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
+  CustomTransformerAdditionalData,
+  ExpressionDefinition,
+  ModelDefinitionWithTypes,
+  ProcessDefinition
+}
+import pl.touk.nussknacker.engine.definition.{
+  DefinitionExtractor,
+  FragmentComponentDefinitionExtractor,
+  ProcessObjectDefinitionExtractor
+}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
@@ -45,73 +70,128 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   private val emptyQueryNamesData = CustomTransformerAdditionalData(false, false)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
-    Map("sampleEnricher" -> objectDefinition(List.empty, Some(Typed[SimpleRecord])), "withParamsService" -> objectDefinition(List(Parameter[String]("par1")),
-      Some(Typed[SimpleRecord]))),
-    Map("source" -> objectDefinition(List.empty, Some(Typed[SimpleRecord])),
-      "sourceWithUnknown" -> objectDefinition(List.empty, Some(Unknown)),
-      "sourceWithParam" -> objectDefinition(List(Parameter[Any]("param")), Some(Typed[SimpleRecord])),
-      "typedMapSource" -> objectDefinition(List(Parameter[TypedObjectDefinition]("type")), Some(Typed[TypedMap]))
+    Map(
+      "sampleEnricher"    -> objectDefinition(List.empty, Some(Typed[SimpleRecord])),
+      "withParamsService" -> objectDefinition(List(Parameter[String]("par1")), Some(Typed[SimpleRecord]))
     ),
-    Map("sink" -> objectDefinition(List.empty, None),
-      "sinkWithLazyParam" -> objectDefinition(List(Parameter[String]("lazyString").copy(isLazyParameter = true)), None)),
-
-    Map("customTransformer" -> (objectDefinition(List.empty, Some(Typed[SimpleRecord])), emptyQueryNamesData),
-      "withParamsTransformer" -> (objectDefinition(List(Parameter[String]("par1")), Some(Typed[SimpleRecord])), emptyQueryNamesData),
-      "manyParams" -> (objectDefinition(List(
-        Parameter[String]("par1").copy(isLazyParameter = true),
-        Parameter[String]("par2"),
-        Parameter[String]("par3").copy(isLazyParameter = true),
-        Parameter[String]("par4")), Some(Typed[SimpleRecord])), emptyQueryNamesData),
-      "withManyParameters" -> (objectDefinition(List(
-        Parameter[String]("lazyString").copy(isLazyParameter = true), Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
-        Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0))))
-        , Some(Typed[SimpleRecord])), emptyQueryNamesData),
+    Map(
+      "source"            -> objectDefinition(List.empty, Some(Typed[SimpleRecord])),
+      "sourceWithUnknown" -> objectDefinition(List.empty, Some(Unknown)),
+      "sourceWithParam"   -> objectDefinition(List(Parameter[Any]("param")), Some(Typed[SimpleRecord])),
+      "typedMapSource"    -> objectDefinition(List(Parameter[TypedObjectDefinition]("type")), Some(Typed[TypedMap]))
+    ),
+    Map(
+      "sink"              -> objectDefinition(List.empty, None),
+      "sinkWithLazyParam" -> objectDefinition(List(Parameter[String]("lazyString").copy(isLazyParameter = true)), None)
+    ),
+    Map(
+      "customTransformer" -> (objectDefinition(List.empty, Some(Typed[SimpleRecord])), emptyQueryNamesData),
+      "withParamsTransformer" -> (objectDefinition(
+        List(Parameter[String]("par1")),
+        Some(Typed[SimpleRecord])
+      ), emptyQueryNamesData),
+      "manyParams" -> (objectDefinition(
+        List(
+          Parameter[String]("par1").copy(isLazyParameter = true),
+          Parameter[String]("par2"),
+          Parameter[String]("par3").copy(isLazyParameter = true),
+          Parameter[String]("par4")
+        ),
+        Some(Typed[SimpleRecord])
+      ), emptyQueryNamesData),
+      "withManyParameters" -> (objectDefinition(
+        List(
+          Parameter[String]("lazyString").copy(isLazyParameter = true),
+          Parameter[Integer]("lazyInt").copy(isLazyParameter = true),
+          Parameter[Long]("long").copy(validators = List(MinimalNumberValidator(0)))
+        ),
+        Some(Typed[SimpleRecord])
+      ), emptyQueryNamesData),
       "withoutReturnType" -> (objectDefinition(List(Parameter[String]("par1")), None), emptyQueryNamesData),
-      "withMandatoryParams" -> (objectDefinition(List(Parameter[String]("mandatoryParam")), Some(Unknown)), emptyQueryNamesData),
-      "withNotBlankParams" -> (objectDefinition(List(NotBlankParameter("notBlankParam", Typed[String])), Some(Unknown)), emptyQueryNamesData),
-      "withNullableLiteralIntegerParam" -> (objectDefinition(List(
-        Parameter[Integer]("nullableLiteralIntegerParam").copy(validators = List(LiteralParameterValidator.integerValidator))
-      ), Some(Unknown)), emptyQueryNamesData),
-      "withRegExpParam" -> (objectDefinition(List(
-        Parameter[Integer]("regExpParam").copy(validators = List(LiteralParameterValidator.numberValidator))
-      ), Some(Unknown)), emptyQueryNamesData),
-      "withJsonParam" -> (objectDefinition(List(
-        Parameter[String]("jsonParam").copy(validators = List(JsonValidator))
-      ), Some(Unknown)), emptyQueryNamesData),
-      "withCustomValidatorParam" -> (objectDefinition(List(
-        Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
-      ), Some(Unknown)), emptyQueryNamesData),
-      "withAdditionalVariable" -> (objectDefinition(List(
-        Parameter[String]("param").copy(additionalVariables = Map("additional" -> AdditionalVariableProvidedInRuntime[Int]), isLazyParameter = true)
-      ), Some(Unknown)), emptyQueryNamesData),
-      "withVariablesToHide" -> (objectDefinition(List(
-        Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)
-      ), Some(Unknown)), emptyQueryNamesData)
+      "withMandatoryParams" -> (objectDefinition(
+        List(Parameter[String]("mandatoryParam")),
+        Some(Unknown)
+      ), emptyQueryNamesData),
+      "withNotBlankParams" -> (objectDefinition(
+        List(NotBlankParameter("notBlankParam", Typed[String])),
+        Some(Unknown)
+      ), emptyQueryNamesData),
+      "withNullableLiteralIntegerParam" -> (objectDefinition(
+        List(
+          Parameter[Integer]("nullableLiteralIntegerParam")
+            .copy(validators = List(LiteralParameterValidator.integerValidator))
+        ),
+        Some(Unknown)
+      ), emptyQueryNamesData),
+      "withRegExpParam" -> (objectDefinition(
+        List(
+          Parameter[Integer]("regExpParam").copy(validators = List(LiteralParameterValidator.numberValidator))
+        ),
+        Some(Unknown)
+      ), emptyQueryNamesData),
+      "withJsonParam" -> (objectDefinition(
+        List(
+          Parameter[String]("jsonParam").copy(validators = List(JsonValidator))
+        ),
+        Some(Unknown)
+      ), emptyQueryNamesData),
+      "withCustomValidatorParam" -> (objectDefinition(
+        List(
+          Parameter[String]("param").copy(validators = List(CustomParameterValidatorDelegate("test_custom_validator")))
+        ),
+        Some(Unknown)
+      ), emptyQueryNamesData),
+      "withAdditionalVariable" -> (objectDefinition(
+        List(
+          Parameter[String]("param").copy(
+            additionalVariables = Map("additional" -> AdditionalVariableProvidedInRuntime[Int]),
+            isLazyParameter = true
+          )
+        ),
+        Some(Unknown)
+      ), emptyQueryNamesData),
+      "withVariablesToHide" -> (objectDefinition(
+        List(
+          Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)
+        ),
+        Some(Unknown)
+      ), emptyQueryNamesData)
     ),
     ExpressionDefinition(
-      Map("processHelper" -> objectDefinition(List(), Some(Typed(ProcessHelper.getClass)))), List.empty, List.empty,
-      LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
-      strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false,
-      spelExpressionExcludeList = SpelExpressionExcludeList.default, customConversionsProviders = List.empty),
+      Map("processHelper" -> objectDefinition(List(), Some(Typed(ProcessHelper.getClass)))),
+      List.empty,
+      List.empty,
+      LanguageConfiguration.default,
+      optimizeCompilation = false,
+      strictTypeChecking = true,
+      dictionaries = Map.empty,
+      hideMetaVariable = false,
+      strictMethodsChecking = true,
+      staticMethodInvocationsChecking = true,
+      methodExecutionForUnknownAllowed = false,
+      dynamicPropertyAccessAllowed = false,
+      spelExpressionExcludeList = SpelExpressionExcludeList.default,
+      customConversionsProviders = List.empty
+    ),
     ClassExtractionSettings.Default
   )
 
   test("enable method execution for Unknown") {
     val baseDefinitionCopy = baseDefinition.copy(
-      expressionConfig = baseDefinition.expressionConfig.copy(
-        methodExecutionForUnknownAllowed = true))
+      expressionConfig = baseDefinition.expressionConfig.copy(methodExecutionForUnknownAllowed = true)
+    )
 
     val correctProcess = ScenarioBuilder
       .streaming("process1")
       .source("id1", "sourceWithUnknown")
       .filter("filter1", "#input.imaginary")
       .filter("filter2", "#input.imaginaryMethod()")
-      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input")
+      .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinitionCopy)
 
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -122,12 +202,23 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .source("id1", "sourceWithUnknown")
       .filter("filter1", "#input.imaginary")
       .filter("filter2", "#input.imaginaryMethod()")
-      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input")
+      .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Property access on Unknown is not allowed", "filter1", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Property access on Unknown is not allowed",
+                "filter1",
+                Some(DefaultExpressionId),
+                _
+              ),
+              _
+            )
+          ) =>
     }
 
   }
@@ -141,12 +232,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("TypeReferenceClassValidationSuccess")
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
-        .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
+        .buildSimpleVariable("result-id1", "result", "#input")
+        .emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
 
   }
@@ -160,12 +251,23 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("TypeReferenceClassValidationSuccess")
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
-        .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
+        .buildSimpleVariable("result-id1", "result", "#input")
+        .emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unknown method 'copyValueOf' in String", "filter1", Some(DefaultExpressionId), "T(String).copyValueOf('test')"), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Unknown method 'copyValueOf' in String",
+                "filter1",
+                Some(DefaultExpressionId),
+                "T(String).copyValueOf('test')"
+              ),
+              _
+            )
+          ) =>
     }
 
   }
@@ -179,46 +281,66 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("TypeReferenceClassValidationFailure")
         .source("source1", "source")
         .filter("filter1", filterPredicateExpression)
-        .buildSimpleVariable("result-id1", "result", "#input").emptySink("end-id1", "sink")
+        .buildSimpleVariable("result-id1", "result", "#input")
+        .emptySink("end-id1", "sink")
 
     val compilationResult = validate(testProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("class java.lang.System is not allowed to be passed as TypeReference", "filter1", Some(DefaultExpressionId), "T(System).exit()"), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "class java.lang.System is not allowed to be passed as TypeReference",
+                "filter1",
+                Some(DefaultExpressionId),
+                "T(System).exit()"
+              ),
+              _
+            )
+          ) =>
     }
 
   }
 
   test("Valid dynamic property access when available") {
-    val baseDefinitionCopy = baseDefinition.copy(
-      expressionConfig = baseDefinition.expressionConfig.copy(
-        dynamicPropertyAccessAllowed = true))
+    val baseDefinitionCopy =
+      baseDefinition.copy(expressionConfig = baseDefinition.expressionConfig.copy(dynamicPropertyAccessAllowed = true))
 
     val correctProcess = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
       .filter("filter1", "#input['plainValue'] == 1")
-      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input")
+      .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinitionCopy)
 
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
   }
-
 
   test("Invalid dynamic property access when disabled") {
     val correctProcess = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
       .filter("filter1", "#input['plainValue'] == 1")
-      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input")
+      .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Dynamic property access is not allowed", "filter1", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Dynamic property access is not allowed",
+                "filter1",
+                Some(DefaultExpressionId),
+                _
+              ),
+              _
+            )
+          ) =>
     }
   }
 
@@ -227,12 +349,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .streaming("process1")
       .source("id1", "source")
       .filter("filter1", "{{\"\"}, {0}}[0][0] == 0 ")
-      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input")
+      .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -245,34 +367,75 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .filter("filter3", "#input.intAsAny + 1 > 1")
       .processor("sampleProcessor1", "sampleEnricher")
       .enricher("sampleProcessor2", "out", "sampleEnricher")
-      .buildVariable("bv1", "vars",
-        "v1" -> "42",
-        "mapVariable" -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
+      .buildVariable(
+        "bv1",
+        "vars",
+        "v1"           -> "42",
+        "mapVariable"  -> "{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.plainValue }",
         "spelVariable" -> "(#input.list.?[plainValue == 5]).![plainValue].contains(5)"
       )
       .emptySink("id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
 
-    compilationResult.variablesInNodes.keySet shouldEqual Set("id1", "filter1", "filter2", "filter3", "sampleProcessor1", "sampleProcessor2", "bv1", "id2")
-    compilationResult.variablesInNodes.get("id1").value shouldEqual Map("meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
-    compilationResult.variablesInNodes.get("filter1").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
-    compilationResult.variablesInNodes.get("filter2").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
-    compilationResult.variablesInNodes.get("filter3").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
-    compilationResult.variablesInNodes.get("sampleProcessor1").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
-    compilationResult.variablesInNodes.get("sampleProcessor2").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
-    compilationResult.variablesInNodes.get("bv1").value shouldEqual Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord])
-    val varsType = compilationResult.variablesInNodes.get("id2").value.get("vars").value.asInstanceOf[TypedObjectTypingResult]
+    compilationResult.variablesInNodes.keySet shouldEqual Set(
+      "id1",
+      "filter1",
+      "filter2",
+      "filter3",
+      "sampleProcessor1",
+      "sampleProcessor2",
+      "bv1",
+      "id2"
+    )
+    compilationResult.variablesInNodes.get("id1").value shouldEqual Map(
+      "meta"          -> MetaVariables.typingResult(correctProcess.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass)
+    )
+    compilationResult.variablesInNodes.get("filter1").value shouldEqual Map(
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(correctProcess.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass)
+    )
+    compilationResult.variablesInNodes.get("filter2").value shouldEqual Map(
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(correctProcess.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass)
+    )
+    compilationResult.variablesInNodes.get("filter3").value shouldEqual Map(
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(correctProcess.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass)
+    )
+    compilationResult.variablesInNodes.get("sampleProcessor1").value shouldEqual Map(
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(correctProcess.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass)
+    )
+    compilationResult.variablesInNodes.get("sampleProcessor2").value shouldEqual Map(
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(correctProcess.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass)
+    )
+    compilationResult.variablesInNodes.get("bv1").value shouldEqual Map(
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(correctProcess.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass),
+      "out"           -> Typed[SimpleRecord]
+    )
+    val varsType =
+      compilationResult.variablesInNodes.get("id2").value.get("vars").value.asInstanceOf[TypedObjectTypingResult]
     varsType.fields.get("v1").value shouldEqual Typed.fromInstance(42)
-    varsType.fields.get("mapVariable").value shouldEqual TypedObjectTypingResult(ListMap(
-      "Field1" -> Typed.fromInstance("Field1Value"),
-      "Field2" -> Typed.fromInstance("Field2Value"),
-      "Field3" -> Typed[BigDecimal]
-    ))
+    varsType.fields.get("mapVariable").value shouldEqual TypedObjectTypingResult(
+      ListMap(
+        "Field1" -> Typed.fromInstance("Field1Value"),
+        "Field2" -> Typed.fromInstance("Field2Value"),
+        "Field3" -> Typed[BigDecimal]
+      )
+    )
     varsType.fields.get("spelVariable").value shouldEqual Typed[Boolean]
   }
 
@@ -280,18 +443,19 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val correctProcess = ScenarioBuilder
       .streaming("process1")
       .source("id1", "sourceWithParam", "param" -> "#processHelper")
-      .buildSimpleVariable("result-id2", "result", "#input").emptySink("end-id2", "sink")
+      .buildSimpleVariable("result-id2", "result", "#input")
+      .emptySink("end-id2", "sink")
 
     val compilationResult = validate(correctProcess, baseDefinition)
 
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
   }
 
   test("find duplicated ids") {
     val duplicatedId = "id1"
-    val processWithDuplicatedIds = ScenarioBuilder.streaming("process1").source(duplicatedId, "source").emptySink(duplicatedId, "sink")
+    val processWithDuplicatedIds =
+      ScenarioBuilder.streaming("process1").source(duplicatedId, "source").emptySink(duplicatedId, "sink")
     validate(processWithDuplicatedIds, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(DuplicatedNodeIds(_), _)) =>
     }
@@ -303,7 +467,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("source", "source")
-        .switch("switch", "''", "var",
+        .switch(
+          "switch",
+          "''",
+          "var",
           Case("'1'", GraphBuilder.emptySink(duplicatedId, "sink")),
           Case("'2'", GraphBuilder.emptySink(duplicatedId, "sink"))
         )
@@ -317,7 +484,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .buildSimpleVariable("result-id2", "result", "wtf!!!").emptySink("end-id2", "sink")
+        .buildSimpleVariable("result-id2", "result", "wtf!!!")
+        .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParserCompilationError(_, _, _, _), _)) =>
@@ -350,14 +518,16 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(
-      BlankParameter(_, _, "notBlankParam", "customNodeId1"),
-      List(
-      BlankParameter(_, _, "notBlankParam", "customNodeId2"),
-      BlankParameter(_, _, "notBlankParam", "customNodeId3"),
-      BlankParameter(_, _, "notBlankParam", "customNodeId4")
-      )
-      )) =>
+      case Invalid(
+            NonEmptyList(
+              BlankParameter(_, _, "notBlankParam", "customNodeId1"),
+              List(
+                BlankParameter(_, _, "notBlankParam", "customNodeId2"),
+                BlankParameter(_, _, "notBlankParam", "customNodeId3"),
+                BlankParameter(_, _, "notBlankParam", "customNodeId4")
+              )
+            )
+          ) =>
     }
   }
 
@@ -369,8 +539,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "12")
         .emptySink("emptySink", "sink")
 
-    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -382,8 +551,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "")
         .emptySink("emptySink", "sink")
 
-    validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(processWithInvalidExpression, baseDefinition).result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -393,16 +561,23 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .source("id1", "source")
         .customNode("customNodeId", "event", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "as")
-        .customNode("customNodeId2", "event2", "withNullableLiteralIntegerParam", "nullableLiteralIntegerParam" -> "1.23")
+        .customNode(
+          "customNodeId2",
+          "event2",
+          "withNullableLiteralIntegerParam",
+          "nullableLiteralIntegerParam" -> "1.23"
+        )
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(
-      InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
-      List(
-      InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
-      )
-      )) =>
+      case Invalid(
+            NonEmptyList(
+              InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId"),
+              List(
+                InvalidIntegerLiteralParameter(_, _, "nullableLiteralIntegerParam", "customNodeId2")
+              )
+            )
+          ) =>
     }
   }
 
@@ -416,9 +591,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(
-      MismatchParameter(_, _, "regExpParam", "customNodeId"), _
-      )) =>
+      case Invalid(
+            NonEmptyList(
+              MismatchParameter(_, _, "regExpParam", "customNodeId"),
+              _
+            )
+          ) =>
     }
   }
 
@@ -430,8 +608,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .customNode("customNodeId", "event", "withJsonParam", "jsonParam" -> "'{\"example\": \"json\"}'")
         .emptySink("emptySink", "sink")
 
-    validate(processWithValidExpression, baseDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(processWithValidExpression, baseDefinition).result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -447,14 +624,16 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(
-      JsonRequiredParameter(_, _, "jsonParam", "customNodeId"),
-      List(
-      JsonRequiredParameter(_, _, "jsonParam", "customNodeId2"),
-      JsonRequiredParameter(_, _, "jsonParam", "customNodeId3"),
-      JsonRequiredParameter(_, _, "jsonParam", "customNodeId4")
-      )
-      )) =>
+      case Invalid(
+            NonEmptyList(
+              JsonRequiredParameter(_, _, "jsonParam", "customNodeId"),
+              List(
+                JsonRequiredParameter(_, _, "jsonParam", "customNodeId2"),
+                JsonRequiredParameter(_, _, "jsonParam", "customNodeId3"),
+                JsonRequiredParameter(_, _, "jsonParam", "customNodeId4")
+              )
+            )
+          ) =>
     }
   }
 
@@ -469,24 +648,22 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("sink", "sink")
 
     val compilationResult = validate(processWithRefToMissingService, baseDefinition)
-    compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(MissingService(_, _), _)) =>
+    compilationResult.result should matchPattern { case Invalid(NonEmptyList(MissingService(_, _), _)) =>
     }
     compilationResult.variablesInNodes("sink") shouldBe Map(
-      "input" -> Typed[SimpleRecord],
-      "meta" -> MetaVariables.typingResult(processWithRefToMissingService.metaData),
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(processWithRefToMissingService.metaData),
       "processHelper" -> Typed(ProcessHelper.getClass),
-      "event" -> Typed[SimpleRecord]
+      "event"         -> Typed[SimpleRecord]
     )
 
     val validDefinition = baseDefinition.withService(missingServiceId, Parameter[String]("foo"))
-    validate(processWithRefToMissingService, validDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(processWithRefToMissingService, validDefinition).result should matchPattern { case Valid(_) =>
     }
   }
 
   test("find redundant service parameters") {
-    val serviceId = "serviceId"
+    val serviceId  = "serviceId"
     val definition = baseDefinition.withService(serviceId)
 
     val redundantServiceParameter = "foo"
@@ -512,14 +689,14 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .buildSimpleVariable("simple", "simpleVar", "'simple'")
         .processorEnd("id2", serviceId, "foo" -> "'bar'")
 
-    val definition = ProcessDefinitionBuilder.empty.withService(serviceId, Parameter[String]("foo"))
+    val definition        = ProcessDefinitionBuilder.empty.withService(serviceId, Parameter[String]("foo"))
     val compilationResult = validate(processWithRefToMissingService, definition)
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(MissingSourceFactory("source", "id1"), Nil)) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map(
-      "input" -> Unknown,
-      "meta" -> MetaVariables.typingResult(processWithRefToMissingService.metaData),
+      "input"     -> Unknown,
+      "meta"      -> MetaVariables.typingResult(processWithRefToMissingService.metaData),
       "simpleVar" -> Typed.fromInstance("simple")
     )
 
@@ -546,9 +723,24 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .filter("sampleFilter", "#doesExist.v1 + #doesNotExist1 + #doesNotExist2 > 10")
       .emptySink("id2", "sink")
     validate(process, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(
-      ExpressionParserCompilationError("Unresolved reference 'doesNotExist1'", "sampleFilter", Some(DefaultExpressionId), _),
-      List(ExpressionParserCompilationError("Unresolved reference 'doesNotExist2'", "sampleFilter", Some(DefaultExpressionId), _)))) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Unresolved reference 'doesNotExist1'",
+                "sampleFilter",
+                Some(DefaultExpressionId),
+                _
+              ),
+              List(
+                ExpressionParserCompilationError(
+                  "Unresolved reference 'doesNotExist2'",
+                  "sampleFilter",
+                  Some(DefaultExpressionId),
+                  _
+                )
+              )
+            )
+          ) =>
     }
   }
 
@@ -560,7 +752,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .filter("sampleFilter2", "input.plainValue > 10")
       .emptySink("id2", "sink")
     validate(process, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Non reference 'input' occurred. Maybe you missed '#' in front of it?",
+                "sampleFilter2",
+                Some(DefaultExpressionId),
+                _
+              ),
+              _
+            )
+          ) =>
     }
   }
 
@@ -572,10 +774,19 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .filter("sampleFilter2", "#input.value1.value3 > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "There is no property 'value3' in type: AnotherSimpleRecord",
+                "sampleFilter2",
+                Some(DefaultExpressionId),
+                _
+              ),
+              _
+            )
+          ) =>
     }
   }
-
 
   test("find not existing variables after custom node") {
     val process = ScenarioBuilder
@@ -587,7 +798,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "There is no property 'value3' in type: AnotherSimpleRecord",
+                "sampleFilter2",
+                Some(DefaultExpressionId),
+                _
+              ),
+              _
+            )
+          ) =>
     }
   }
 
@@ -595,7 +816,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .split("split1",
+      .split(
+        "split1",
         GraphBuilder.emptySink("id2", "sink"),
         GraphBuilder.filter("sampleFilter2", "#input.value1.value3 > 10").emptySink("id3", "sink")
       )
@@ -604,10 +826,28 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     val compilationResult = validate(process, definitionWithCustomNode)
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "There is no property 'value3' in type: AnotherSimpleRecord",
+                "sampleFilter2",
+                Some(DefaultExpressionId),
+                _
+              ),
+              _
+            )
+          ) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
-    compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
+    compilationResult.variablesInNodes("id2") shouldBe Map(
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(process.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass)
+    )
+    compilationResult.variablesInNodes("id3") shouldBe Map(
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(process.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass)
+    )
   }
 
   test("validate custom node return type") {
@@ -622,8 +862,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'terefere' in type: AnotherSimpleRecord",
-      "sampleFilter2", Some(DefaultExpressionId), "#out1.terefere"), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "There is no property 'terefere' in type: AnotherSimpleRecord",
+                "sampleFilter2",
+                Some(DefaultExpressionId),
+                "#out1.terefere"
+              ),
+              _
+            )
+          ) =>
     }
   }
 
@@ -636,7 +885,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'strangeVar'", "cNode1", Some("par1"), "#strangeVar"), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Unresolved reference 'strangeVar'",
+                "cNode1",
+                Some("par1"),
+                "#strangeVar"
+              ),
+              _
+            )
+          ) =>
     }
   }
 
@@ -659,7 +918,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'terefere' in type: BigDecimal", "sampleFilter1", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "There is no property 'terefere' in type: BigDecimal",
+                "sampleFilter1",
+                Some(DefaultExpressionId),
+                _
+              ),
+              _
+            )
+          ) =>
     }
   }
 
@@ -667,21 +936,31 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .split("split",
+      .split(
+        "split",
         GraphBuilder.processorEnd("p1", "withParamsService", "par1" -> "#terefere"),
         GraphBuilder.customNode("c1", "output", "withParamsTransformer", "par1" -> "{").emptySink("id2", "sink"),
-        GraphBuilder.buildVariable("v1", "output", "par1" -> "#terefere22")
+        GraphBuilder
+          .buildVariable("v1", "output", "par1" -> "#terefere22")
           .emptySink("id3", "sink")
       )
 
-    //sortBy is for having defined order
+    // sortBy is for having defined order
     validate(process, definitionWithTypedSource).result.leftMap(_.sortBy(_.toString)) should matchPattern {
-      case Invalid(NonEmptyList(
-      ExpressionParserCompilationError("Expression [{] @0: EL1044E: Unexpectedly ran out of input", "c1", Some("par1"), _),
-      List(
-      ExpressionParserCompilationError("Unresolved reference 'terefere'", "p1", Some("par1"), _),
-      ExpressionParserCompilationError("Unresolved reference 'terefere22'", "v1", Some("par1"), _))
-      )) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Expression [{] @0: EL1044E: Unexpectedly ran out of input",
+                "c1",
+                Some("par1"),
+                _
+              ),
+              List(
+                ExpressionParserCompilationError("Unresolved reference 'terefere'", "p1", Some("par1"), _),
+                ExpressionParserCompilationError("Unresolved reference 'terefere22'", "v1", Some("par1"), _)
+              )
+            )
+          ) =>
     }
   }
 
@@ -697,10 +976,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map(
-      "input" -> Typed[SimpleRecord],
-      "meta" -> MetaVariables.typingResult(process.metaData),
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(process.metaData),
       "processHelper" -> Typed(ProcessHelper.getClass),
-      "var1" -> Typed.fromInstance("")
+      "var1"          -> Typed.fromInstance("")
     )
   }
 
@@ -751,7 +1030,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Wrong part types", "notWorking", Some(DefaultExpressionId), "#var1.a > 10"), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Wrong part types",
+                "notWorking",
+                Some(DefaultExpressionId),
+                "#var1.a > 10"
+              ),
+              _
+            )
+          ) =>
     }
   }
 
@@ -772,26 +1061,30 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .switch("switch", "''", "var2",
+      .switch(
+        "switch",
+        "''",
+        "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-        Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()").emptySink("id3", "sink")))
+        Case("true", GraphBuilder.buildSimpleVariable("var3b", "var3", "#var2.length()").emptySink("id3", "sink"))
+      )
 
     val compilationResult = validate(process, definitionWithTypedSource)
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map(
-      "input" -> Typed[SimpleRecord],
-      "meta" -> MetaVariables.typingResult(process.metaData),
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(process.metaData),
       "processHelper" -> Typed(ProcessHelper.getClass),
-      "var2" -> Typed.fromInstance(""),
-      "var3" -> Typed.fromInstance(""))
+      "var2"          -> Typed.fromInstance(""),
+      "var3"          -> Typed.fromInstance("")
+    )
     compilationResult.variablesInNodes("id3") shouldBe Map(
-      "input" -> Typed[SimpleRecord],
-      "meta" -> MetaVariables.typingResult(process.metaData),
+      "input"         -> Typed[SimpleRecord],
+      "meta"          -> MetaVariables.typingResult(process.metaData),
       "processHelper" -> Typed(ProcessHelper.getClass),
-      "var2" -> Typed.fromInstance(""),
-      "var3" -> Typed[Int]
+      "var2"          -> Typed.fromInstance(""),
+      "var3"          -> Typed[Int]
     )
   }
 
@@ -799,12 +1092,26 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .switch("switch", "''", "var2",
+      .switch(
+        "switch",
+        "''",
+        "var2",
         GraphBuilder.buildSimpleVariable("var3", "var3", "''").emptySink("id2", "sink"),
-        Case("false", GraphBuilder.buildSimpleVariable("id3", "result", "#var3").emptySink("end3", "sink")))
+        Case("false", GraphBuilder.buildSimpleVariable("id3", "result", "#var3").emptySink("end3", "sink"))
+      )
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'var3'", "id3", Some(DefaultExpressionId), "#var3"), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Unresolved reference 'var3'",
+                "id3",
+                Some(DefaultExpressionId),
+                "#var3"
+              ),
+              _
+            )
+          ) =>
     }
   }
 
@@ -815,7 +1122,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       .switch("switch", "''", "var2", Case("#notExist", GraphBuilder.emptySink("end1", "sink")))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'notExist'", "switch", Some("end1"), "#notExist"), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError("Unresolved reference 'notExist'", "switch", Some("end1"), "#notExist"),
+              _
+            )
+          ) =>
     }
   }
 
@@ -825,7 +1137,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .source("id1", "source")
         .customNode("custom", "varName", "withoutReturnType", "par1" -> "'1'")
-        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
+        .buildSimpleVariable("result-id2", "result", "''")
+        .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(RedundantParameters(vars, _), _)) if vars == Set("OutputVariable") =>
@@ -838,7 +1151,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .streaming("process1")
         .source("id1", "source")
         .customNodeNoOutput("custom", "customTransformer")
-        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
+        .buildSimpleVariable("result-id2", "result", "''")
+        .emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpresssion, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(MissingParameters(vars, "custom"), Nil)) if vars == Set("OutputVariable") =>
@@ -850,12 +1164,18 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("custom", "outVar", "withManyParameters",
-          "long" -> "123123123133L", "lazyString" -> "'44'", "lazyInt" -> "43")
-        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
+        .customNode(
+          "custom",
+          "outVar",
+          "withManyParameters",
+          "long"       -> "123123123133L",
+          "lazyString" -> "'44'",
+          "lazyInt"    -> "43"
+        )
+        .buildSimpleVariable("result-id2", "result", "''")
+        .emptySink("end-id2", "sink")
 
-    validate(process, baseDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(process, baseDefinition).result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -863,101 +1183,134 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
     val failingDefinition = base
-      .copy(sourceFactories = base.sourceFactories
-        .mapValuesNow(_.withImplementationInvoker((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
-          throw new RuntimeException("You passed incorrect parameter, cannot proceed")
-        })))
+      .copy(sourceFactories =
+        base.sourceFactories
+          .mapValuesNow(_.withImplementationInvoker((_: Map[String, Any], _: Option[String], _: Seq[AnyRef]) => {
+            throw new RuntimeException("You passed incorrect parameter, cannot proceed")
+          }))
+      )
 
     val processWithInvalidExpresssion =
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
+        .buildSimpleVariable("result-id2", "result", "''")
+        .emptySink("end-id2", "sink")
 
     validateWithDef(processWithInvalidExpresssion, failingDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(CannotCreateObjectError("You passed incorrect parameter, cannot proceed", "id1"), Nil)) =>
+      case Invalid(
+            NonEmptyList(CannotCreateObjectError("You passed incorrect parameter, cannot proceed", "id1"), Nil)
+          ) =>
     }
 
   }
 
   test("should be able to derive type from ServiceReturningType") {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
-    val withServiceRef = base.copy(services = base.services + ("returningTypeService" ->
-      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceReturningTypeSample), SingleComponentConfig.zero)))
+    val withServiceRef = base.copy(services =
+      base.services + ("returningTypeService" ->
+        new DefinitionExtractor(ProcessObjectDefinitionExtractor.service)
+          .extract(WithCategories(ServiceReturningTypeSample), SingleComponentConfig.zero))
+    )
 
     val process =
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .enricher("serviceDef", "defined", "returningTypeService", "definition" -> "{param1: 'String', param2: 'Integer'}", "inRealTime" -> "#input.toString()")
+        .enricher(
+          "serviceDef",
+          "defined",
+          "returningTypeService",
+          "definition" -> "{param1: 'String', param2: 'Integer'}",
+          "inRealTime" -> "#input.toString()"
+        )
         .emptySink("id2", "sink")
 
     val result = validateWithDef(process, withServiceRef)
-    result.result should matchPattern {
-      case Valid(_) =>
+    result.result should matchPattern { case Valid(_) =>
     }
     result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
-      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer]))))
+      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer])))
+    )
 
   }
 
   test("should override parameter definition from WithExplicitMethodToInvoke by definition from ServiceReturningType") {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
-    val withServiceRef = base.copy(services = base.services + ("returningTypeService" ->
-      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceReturningTypeWithExplicitMethodSample), SingleComponentConfig.zero)))
+    val withServiceRef = base.copy(services =
+      base.services + ("returningTypeService" ->
+        new DefinitionExtractor(ProcessObjectDefinitionExtractor.service)
+          .extract(WithCategories(ServiceReturningTypeWithExplicitMethodSample), SingleComponentConfig.zero))
+    )
 
     val process =
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .enricher("serviceDef", "defined", "returningTypeService", "definition" -> "{param1: 'String', param2: 'Integer'}", "inRealTime" -> "#input.toString()")
+        .enricher(
+          "serviceDef",
+          "defined",
+          "returningTypeService",
+          "definition" -> "{param1: 'String', param2: 'Integer'}",
+          "inRealTime" -> "#input.toString()"
+        )
         .emptySink("id2", "sink")
 
     val result = validateWithDef(process, withServiceRef)
-    result.result should matchPattern {
-      case Valid(_) =>
+    result.result should matchPattern { case Valid(_) =>
     }
     result.variablesInNodes("id2")("defined") shouldBe Typed.genericTypeClass[java.util.List[_]](
-      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer]))))
+      List(TypedObjectTypingResult(ListMap("param1" -> Typed[String], "param2" -> Typed[Integer])))
+    )
   }
 
   test("should be able to run custom validation using ServiceReturningType") {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
-    val withServiceRef = base.copy(services = base.services + ("withCustomValidation" ->
-      new DefinitionExtractor(ProcessObjectDefinitionExtractor.service).extract(WithCategories(ServiceWithCustomValidation), SingleComponentConfig.zero)))
+    val withServiceRef = base.copy(services =
+      base.services + ("withCustomValidation" ->
+        new DefinitionExtractor(ProcessObjectDefinitionExtractor.service)
+          .extract(WithCategories(ServiceWithCustomValidation), SingleComponentConfig.zero))
+    )
 
     val process =
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .enricher("service-1", "output1", "withCustomValidation",
-          "age" -> "12",
-          "fields" -> "{:}")
-        .enricher("service-2", "output2", "withCustomValidation",
-          "age" -> "30",
-          "fields" -> "{invalid: 'yes'}")
-        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
+        .enricher("service-1", "output1", "withCustomValidation", "age" -> "12", "fields" -> "{:}")
+        .enricher("service-2", "output2", "withCustomValidation", "age" -> "30", "fields" -> "{invalid: 'yes'}")
+        .buildSimpleVariable("result-id2", "result", "''")
+        .emptySink("end-id2", "sink")
 
     val result = validateWithDef(process, withServiceRef)
 
-    result.result shouldBe Invalid(NonEmptyList.of(
-      CustomNodeError("service-1", "Too young", Some("age")),
-      CustomNodeError("service-2", "Service is invalid", None),
-    ))
+    result.result shouldBe Invalid(
+      NonEmptyList.of(
+        CustomNodeError("service-1", "Too young", Some("age")),
+        CustomNodeError("service-2", "Service is invalid", None),
+      )
+    )
   }
-
 
   test("not allows local variables in eager custom node parameter") {
     val processWithLocalVarInEagerParam =
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("custom", "outVar", "withParamsTransformer",
-          "par1" -> "#input.toString()")
+        .customNode("custom", "outVar", "withParamsTransformer", "par1" -> "#input.toString()")
         .emptySink("id2", "sink")
 
     validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "custom", Some("par1"), "#input.toString()"), _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Unresolved reference 'input'",
+                "custom",
+                Some("par1"),
+                "#input.toString()"
+              ),
+              _
+            )
+          ) =>
     }
   }
 
@@ -966,7 +1319,10 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
       ScenarioBuilder
         .streaming("process1")
         .source("id1", "source")
-        .customNode("custom", "outVar", "manyParams",
+        .customNode(
+          "custom",
+          "outVar",
+          "manyParams",
           "par1" -> "#input.toString()",
           "par2" -> "''",
           "par3" -> "#input.toString()",
@@ -974,8 +1330,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         )
         .emptySink("id2", "sink")
 
-    validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -986,8 +1341,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .source("id1", "source")
         .emptySink("sinkWithLazyParam", "sinkWithLazyParam", "lazyString" -> "#input.toString()")
 
-    validate(process, baseDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(process, baseDefinition).result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -1000,8 +1354,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .buildSimpleVariable("var1", "var1", "#meta.properties.property1")
         .emptySink("sink", "sink")
 
-    validate(process, baseDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(process, baseDefinition).result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -1013,11 +1366,13 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .buildSimpleVariable("var1", "var1", "#meta.processName")
         .emptySink("sink", "sink")
 
-    validate(process, baseDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(process, baseDefinition).result should matchPattern { case Valid(_) =>
     }
 
-    validate(process, baseDefinition.copy(expressionConfig = baseDefinition.expressionConfig.copy(hideMetaVariable = true))).result should matchPattern {
+    validate(
+      process,
+      baseDefinition.copy(expressionConfig = baseDefinition.expressionConfig.copy(hideMetaVariable = true))
+    ).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'meta'", _, _, _), _)) =>
     }
   }
@@ -1032,13 +1387,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     val compilationResult = validate(process, baseDefinition)
 
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
 
     compilationResult.expressionsInNodes shouldEqual Map(
       "source" -> Map.empty,
-      "filter" -> Map(DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 4) -> Typed.fromInstance(true)), Typed.fromInstance(true))),
+      "filter" -> Map(
+        DefaultExpressionId -> SpelExpressionTypingInfo(
+          Map(PositionRange(0, 4) -> Typed.fromInstance(true)),
+          Typed.fromInstance(true)
+        )
+      ),
       "sink" -> Map.empty
     )
   }
@@ -1052,12 +1411,16 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     val compilationResult = validate(process, baseDefinition)
 
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
 
     compilationResult.expressionsInNodes shouldEqual Map(
-      "source" -> Map("param" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed.fromInstance(123)), Typed.fromInstance(123))),
+      "source" -> Map(
+        "param" -> SpelExpressionTypingInfo(
+          Map(PositionRange(0, 3) -> Typed.fromInstance(123)),
+          Typed.fromInstance(123)
+        )
+      ),
       "sink" -> Map.empty
     )
   }
@@ -1071,14 +1434,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     val compilationResult = validate(process, baseDefinition)
 
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
 
     compilationResult.expressionsInNodes shouldEqual Map(
       "source" -> Map.empty,
       "sink" -> Map(
-        "lazyString" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed.fromInstance("123")), Typed.fromInstance("123")))
+        "lazyString" -> SpelExpressionTypingInfo(
+          Map(PositionRange(0, 5) -> Typed.fromInstance("123")),
+          Typed.fromInstance("123")
+        )
+      )
     )
   }
 
@@ -1092,19 +1458,24 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     val compilationResult = validate(process, baseDefinition)
 
-    compilationResult.result should matchPattern {
-      case Valid(_) =>
+    compilationResult.result should matchPattern { case Valid(_) =>
     }
 
     compilationResult.expressionsInNodes shouldEqual Map(
       "source" -> Map.empty,
-      "customNode" -> Map("par1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed.fromInstance("123")), Typed.fromInstance("123"))),
+      "customNode" -> Map(
+        "par1" -> SpelExpressionTypingInfo(
+          Map(PositionRange(0, 5) -> Typed.fromInstance("123")),
+          Typed.fromInstance("123")
+        )
+      ),
       "sink" -> Map.empty
     )
   }
 
   test("validation of method returning future values") {
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder
+      .streaming("proc1")
       .source("id", "source")
       .buildSimpleVariable("sampleVar", "var", "#processHelper.futureValue")
       .buildSimpleVariable("sampleVar2", "var2", "#processHelper.identity(#var)")
@@ -1113,7 +1484,17 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val compilationResult = validate(process, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError("Mismatch parameter types. Found: identity(Future[String]). Required: identity(String)", _, _, _), Nil)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError(
+                "Mismatch parameter types. Found: identity(Future[String]). Required: identity(String)",
+                _,
+                _,
+                _
+              ),
+              Nil
+            )
+          ) =>
     }
   }
 
@@ -1125,8 +1506,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .customNode("customNodeId", "event", "withCustomValidatorParam", "param" -> "'Aaaaa'")
         .emptySink("emptySink", "sink")
 
-    validate(processWithValidExpression, baseDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(processWithValidExpression, baseDefinition).result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -1140,10 +1520,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("emptySink", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(
-      CustomParameterValidationError(_, _, "param", "customNodeId2"),
-      Nil
-      )) =>
+      case Invalid(
+            NonEmptyList(
+              CustomParameterValidationError(_, _, "param", "customNodeId2"),
+              Nil
+            )
+          ) =>
     }
   }
 
@@ -1155,8 +1537,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .customNode("customNodeId", "event", "withAdditionalVariable", "param" -> "#additional.toString")
         .emptySink("emptySink", "sink")
 
-    validate(processWithValidExpression, baseDefinition).result should matchPattern {
-      case Valid(_) =>
+    validate(processWithValidExpression, baseDefinition).result should matchPattern { case Valid(_) =>
     }
   }
 
@@ -1169,9 +1550,12 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         .emptySink("emptySink", "sink")
 
     validate(processWithValidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(
-      ExpressionParserCompilationError("Unresolved reference 'input'", "customNodeId", Some("param"), _),
-      _)) =>
+      case Invalid(
+            NonEmptyList(
+              ExpressionParserCompilationError("Unresolved reference 'input'", "customNodeId", Some("param"), _),
+              _
+            )
+          ) =>
     }
   }
 
@@ -1193,31 +1577,53 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
     val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
     withNonUsed shouldBe Symbol("valid")
 
-    val withUsed = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
+    val withUsed  = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
     val outputVar = OutputVar.fragmentOutput("output1", "")
     withUsed should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable(usedVarName, "sample-out", Some(outputVar)), Nil)) =>
     }
   }
 
-  private def validate(process: CanonicalProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
+  private def validate(
+      process: CanonicalProcess,
+      definitions: ProcessDefinition[ObjectDefinition]
+  ): CompilationResult[Unit] = {
     validateWithDef(process, ProcessDefinitionBuilder.withEmptyObjects(definitions))
   }
 
-  private def validateWithDef(process: CanonicalProcess, definitions: ProcessDefinition[ObjectWithMethodDef]): CompilationResult[Unit] = {
+  private def validateWithDef(
+      process: CanonicalProcess,
+      definitions: ProcessDefinition[ObjectWithMethodDef]
+  ): CompilationResult[Unit] = {
     val fragmentDefinitionExtractor = FragmentComponentDefinitionExtractor(ConfigFactory.empty, getClass.getClassLoader)
-    ProcessValidator.default(ModelDefinitionWithTypes(definitions), fragmentDefinitionExtractor, new SimpleDictRegistry(Map.empty), CustomProcessValidatorLoader.emptyCustomProcessValidator).validate(process)
+    ProcessValidator
+      .default(
+        ModelDefinitionWithTypes(definitions),
+        fragmentDefinitionExtractor,
+        new SimpleDictRegistry(Map.empty),
+        CustomProcessValidatorLoader.emptyCustomProcessValidator
+      )
+      .validate(process)
   }
 
-  private val definitionWithTypedSource = baseDefinition.copy(sourceFactories
-  = Map("source" -> objectDefinition(List.empty, Some(Typed[SimpleRecord]))))
+  private val definitionWithTypedSource =
+    baseDefinition.copy(sourceFactories = Map("source" -> objectDefinition(List.empty, Some(Typed[SimpleRecord]))))
 
   private val definitionWithTypedSourceAndTransformNode =
-    definitionWithTypedSource.withCustomStreamTransformer("custom",
-      Some(Typed[AnotherSimpleRecord]), emptyQueryNamesData, Parameter[String]("par1"))
+    definitionWithTypedSource.withCustomStreamTransformer(
+      "custom",
+      Some(Typed[AnotherSimpleRecord]),
+      emptyQueryNamesData,
+      Parameter[String]("par1")
+    )
 
-
-  case class SimpleRecord(value1: AnotherSimpleRecord, plainValue: BigDecimal, plainValueOpt: Option[BigDecimal], intAsAny: Any, list: java.util.List[SimpleRecord]) {
+  case class SimpleRecord(
+      value1: AnotherSimpleRecord,
+      plainValue: BigDecimal,
+      plainValueOpt: Option[BigDecimal],
+      intAsAny: Any,
+      list: java.util.List[SimpleRecord]
+  ) {
     private val privateValue = "priv"
 
     def invoke1: Future[AnotherSimpleRecord] = ???
@@ -1228,7 +1634,8 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   case class AnotherSimpleRecord(value2: Long)
 
   class SampleEnricher extends Service {
-    def invoke()(implicit ec: ExecutionContext): Future[SimpleRecord] = Future.successful(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, Collections.emptyList[SimpleRecord]))
+    def invoke()(implicit ec: ExecutionContext): Future[SimpleRecord] =
+      Future.successful(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, Collections.emptyList[SimpleRecord]))
   }
 
   object ProcessHelper {
@@ -1242,17 +1649,23 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   object ServiceReturningTypeSample extends EagerService {
 
     @MethodToInvoke
-    def invoke(@ParamName("definition") definition: java.util.Map[String, _],
-               @ParamName("inRealTime") inRealTime: LazyParameter[String],
-               @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation =
-      EnricherContextTransformation(variableName, Typed.genericTypeClass[java.util.List[_]](List(
-        TypingUtils.typeMapDefinition(definition))), new ServiceInvoker {
-        override def invokeService(params: Map[String, Any])
-                                  (implicit ec: ExecutionContext,
-                                   collector: InvocationCollectors.ServiceInvocationCollector,
-                                   contextId: ContextId,
-                                   componentUseCase: ComponentUseCase): Future[Any] = Future.successful(null)
-      })
+    def invoke(
+        @ParamName("definition") definition: java.util.Map[String, _],
+        @ParamName("inRealTime") inRealTime: LazyParameter[String],
+        @OutputVariableName variableName: String
+    )(implicit nodeId: NodeId): ContextTransformation =
+      EnricherContextTransformation(
+        variableName,
+        Typed.genericTypeClass[java.util.List[_]](List(TypingUtils.typeMapDefinition(definition))),
+        new ServiceInvoker {
+          override def invokeService(params: Map[String, Any])(
+              implicit ec: ExecutionContext,
+              collector: InvocationCollectors.ServiceInvocationCollector,
+              contextId: ContextId,
+              componentUseCase: ComponentUseCase
+          ): Future[Any] = Future.successful(null)
+        }
+      )
 
   }
 
@@ -1260,35 +1673,47 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
 
     override val hasOutput = true
 
-    override def returnType(validationContext: ValidationContext,
-                            parameters: Map[String, DefinedSingleParameter]): ValidatedNel[ProcessCompilationError, TypingResult] = {
-      Valid(parameters
-        .get("definition").collect {
-        case DefinedEagerParameter(value: java.util.Map[String@unchecked, _], _) => TypingUtils.typeMapDefinition(value)
-      }.map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
-        .getOrElse(Unknown))
+    override def returnType(
+        validationContext: ValidationContext,
+        parameters: Map[String, DefinedSingleParameter]
+    ): ValidatedNel[ProcessCompilationError, TypingResult] = {
+      Valid(
+        parameters
+          .get("definition")
+          .collect { case DefinedEagerParameter(value: java.util.Map[String @unchecked, _], _) =>
+            TypingUtils.typeMapDefinition(value)
+          }
+          .map(param => Typed.genericTypeClass[java.util.List[_]](List(param)))
+          .getOrElse(Unknown)
+      )
     }
 
-
-    override def serviceImplementation(eagerParameters: Map[String, Any], typingResult: TypingResult, metaData: MetaData): ServiceInvoker = new ServiceInvoker {
-      override def invokeService(params: Map[String, Any])
-                                (implicit ec: ExecutionContext,
-                                 collector: InvocationCollectors.ServiceInvocationCollector,
-                                 contextId: ContextId,
-                                 componentUseCase: ComponentUseCase): Future[Any] = Future.successful(null)
+    override def serviceImplementation(
+        eagerParameters: Map[String, Any],
+        typingResult: TypingResult,
+        metaData: MetaData
+    ): ServiceInvoker = new ServiceInvoker {
+      override def invokeService(params: Map[String, Any])(
+          implicit ec: ExecutionContext,
+          collector: InvocationCollectors.ServiceInvocationCollector,
+          contextId: ContextId,
+          componentUseCase: ComponentUseCase
+      ): Future[Any] = Future.successful(null)
 
     }
 
-    //@ParamName("definition") definition: java.util.Map[String, _], @ParamName("inRealTime") inRealTime: String
+    // @ParamName("definition") definition: java.util.Map[String, _], @ParamName("inRealTime") inRealTime: String
     override def parameters: List[Parameter] = List(
       Parameter.optional(
         name = "definition",
         typ = Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)),
       ),
-      Parameter.optional(
-        name = "inRealTime",
-        typ = Typed.typedClass(classOf[String]),
-      ).copy(isLazyParameter = true)
+      Parameter
+        .optional(
+          name = "inRealTime",
+          typ = Typed.typedClass(classOf[String]),
+        )
+        .copy(isLazyParameter = true)
     )
 
   }
@@ -1296,9 +1721,11 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
   object ServiceWithCustomValidation extends EagerService {
 
     @MethodToInvoke
-    def invoke(@ParamName("age") age: Int,
-               @ParamName("fields") fields: LazyParameter[java.util.Map[String, String]],
-               @OutputVariableName variableName: String)(implicit nodeId: NodeId): ContextTransformation = {
+    def invoke(
+        @ParamName("age") age: Int,
+        @ParamName("fields") fields: LazyParameter[java.util.Map[String, String]],
+        @OutputVariableName variableName: String
+    )(implicit nodeId: NodeId): ContextTransformation = {
       def returnType: ValidatedNel[ProcessCompilationError, TypingResult] = {
         if (age < 18) {
           Validated.invalidNel(CustomNodeError("Too young", Some("age")))
@@ -1311,15 +1738,21 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside with Op
         }
       }
 
-      EnricherContextTransformation(variableName, returnType,
+      EnricherContextTransformation(
+        variableName,
+        returnType,
         new ServiceInvoker {
-          override def invokeService(params: Map[String, Any])
-                                    (implicit ec: ExecutionContext,
-                                     collector: InvocationCollectors.ServiceInvocationCollector,
-                                     contextId: ContextId,
-                                     componentUseCase: ComponentUseCase): Future[Any] =
-            Future.successful(s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age")
-        })
+          override def invokeService(params: Map[String, Any])(
+              implicit ec: ExecutionContext,
+              collector: InvocationCollectors.ServiceInvocationCollector,
+              contextId: ContextId,
+              componentUseCase: ComponentUseCase
+          ): Future[Any] =
+            Future.successful(
+              s"name: ${params("fields").asInstanceOf[java.util.Map[String, String]].get("name")}, age: $age"
+            )
+        }
+      )
     }
   }
 }
@@ -1329,9 +1762,17 @@ class StartingWithACustomValidator extends CustomParameterValidator {
 
   import cats.data.Validated.{invalid, valid}
 
-  override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
+  override def isValid(paramName: String, value: String, label: Option[String])(
+      implicit nodeId: NodeId
+  ): Validated[PartSubGraphCompilationError, Unit] =
     if (value.stripPrefix("'").startsWith("A")) valid(())
-    else invalid(
-      CustomParameterValidationError(s"Value $value does not starts with 'A'",
-        "Value does not starts with 'A'", paramName, nodeId.id))
+    else
+      invalid(
+        CustomParameterValidationError(
+          s"Value $value does not starts with 'A'",
+          "Value does not starts with 'A'",
+          paramName,
+          nodeId.id
+        )
+      )
 }

@@ -7,9 +7,15 @@ import pl.touk.nussknacker.engine.graph.node.FragmentInputDefinition.{FragmentCl
 
 object SampleFragment {
 
-  val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
+  val fragment = CanonicalProcess(
+    MetaData("fragment1", FragmentSpecificData()),
     List(
-      canonicalnode.FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
-      canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
+      canonicalnode.FlatNode(
+        FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))
+      ),
+      canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+    ),
+    List.empty
+  )
 
 }

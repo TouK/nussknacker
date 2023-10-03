@@ -16,8 +16,7 @@ import scala.concurrent.duration._
 class AuthenticationConfigurationSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest with OptionValues {
   it should "parse rules default config" in {
 
-    val config = ConfigFactory.parseString(
-      """
+    val config = ConfigFactory.parseString("""
         authentication: {
          usersFile: "./src/test/resources/oauth2-users.conf"
         }
@@ -30,8 +29,7 @@ class AuthenticationConfigurationSpec extends AnyFlatSpec with Matchers with Sca
   }
 
   it should "parse caching hashes" in {
-    val config = ConfigFactory.parseString(
-      """
+    val config = ConfigFactory.parseString("""
         authentication: {
          usersFile: "./src/test/resources/oauth2-users.conf"
          cachingHashes {
@@ -47,9 +45,12 @@ class AuthenticationConfigurationSpec extends AnyFlatSpec with Matchers with Sca
   }
 
   it should "parse oidc config with no users" in {
-    val config = ConfigFactory.parseString(ResourceLoader.load("/oidc.conf")).withValue(
-      "authentication.usersFile", fromAnyRef("./src/test/resources/oauth2-no-users.conf")
-    )
+    val config = ConfigFactory
+      .parseString(ResourceLoader.load("/oidc.conf"))
+      .withValue(
+        "authentication.usersFile",
+        fromAnyRef("./src/test/resources/oauth2-no-users.conf")
+      )
 
     val authConfig = OAuth2Configuration.create(config)
     authConfig.users shouldBe List()

@@ -20,8 +20,8 @@ class SensitiveDataMaskerTest extends AnyFunSuite with Matchers with EitherValue
 
   test("mask json") {
     import SensitiveDataMasker._
-    val inputJson = io.circe.parser.parse(
-      """{
+    val inputJson = io.circe.parser
+      .parse("""{
         |  "str": "123456",
         |  "obj": {
         |    "n1": "123456"
@@ -29,7 +29,8 @@ class SensitiveDataMaskerTest extends AnyFunSuite with Matchers with EitherValue
         |  "bool": false,
         |  "null": null,
         |  "int": 123456
-        |}""".stripMargin).rightValue
+        |}""".stripMargin)
+      .rightValue
 
     val expected = """{
                      |  "str" : "12**56",

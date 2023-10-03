@@ -16,9 +16,9 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val scenarioId = "fooId"
+  private val scenarioId   = "fooId"
   private val sourceNodeId = "source"
-  private val sourceType = "source-type"
+  private val sourceType   = "source-type"
 
   private val scenarioJson =
     s"""{
@@ -101,7 +101,9 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
 
   test("should be able to rewrite scenario") {
     val canonicalScenario = ProcessMarshaller.fromJson(scenarioJson).toEither.rightValue
-    val rewritten = ProcessNodesRewriter.rewritingAllExpressions(_ => expr => expr.copy(language = "fooLang")).rewriteProcess(canonicalScenario)
+    val rewritten = ProcessNodesRewriter
+      .rewritingAllExpressions(_ => expr => expr.copy(language = "fooLang"))
+      .rewriteProcess(canonicalScenario)
     rewritten.nodes.head.data.asInstanceOf[Source].parameters.head.expression.language shouldEqual "fooLang"
   }
 

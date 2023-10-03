@@ -24,6 +24,8 @@ object Product extends TestSchemaWithRecord {
     """.stripMargin
 
   val exampleData: Map[String, Any] = Map(
-    "id" -> "11b682af-4b37-45d9-8b47-f11d04213ecf", "name" -> "RTM", "price" -> 40.00
+    "id"    -> "11b682af-4b37-45d9-8b47-f11d04213ecf",
+    "name"  -> "RTM",
+    "price" -> 40.00
   )
 }

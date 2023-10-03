@@ -22,9 +22,19 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
 
   test("all topic strategy test") {
     val strategy = new AllTopicsSelectionStrategy()
-    strategy.getTopics(confluentClient).toList.map(_.toSet) shouldBe List(Set(
-      RecordTopic, RecordTopicWithKey, IntTopicNoKey, IntTopicWithKey, ArrayOfNumbersTopic, ArrayOfRecordsTopic,
-      InvalidDefaultsTopic, PaymentDateTopic, GeneratedWithLogicalTypesTopic))
+    strategy.getTopics(confluentClient).toList.map(_.toSet) shouldBe List(
+      Set(
+        RecordTopic,
+        RecordTopicWithKey,
+        IntTopicNoKey,
+        IntTopicWithKey,
+        ArrayOfNumbersTopic,
+        ArrayOfRecordsTopic,
+        InvalidDefaultsTopic,
+        PaymentDateTopic,
+        GeneratedWithLogicalTypesTopic
+      )
+    )
   }
 
   test("topic filtering strategy test") {
@@ -33,7 +43,12 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   test("show how to override topic selection strategy") {
-    new UniversalKafkaSourceFactory[Any, Any](schemaRegistryClientFactory, UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory), testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+    new UniversalKafkaSourceFactory[Any, Any](
+      schemaRegistryClientFactory,
+      UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory),
+      testProcessObjectDependencies,
+      new FlinkKafkaSourceImplFactory(None)
+    ) {
       override def topicSelectionStrategy = new TopicPatternSelectionStrategy(Pattern.compile("test-.*"))
     }
   }

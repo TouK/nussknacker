@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.lite.kafka.TestComponentProvider.{SourceFailur
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 
 object KafkaFactory {
-  final val TopicParamName = "Topic"
+  final val TopicParamName     = "Topic"
   final val SinkValueParamName = "Value"
 }
 
@@ -38,26 +38,30 @@ class TestComponentProvider extends ComponentProvider {
   object KafkaSource extends SourceFactory {
 
     @MethodToInvoke(returnType = classOf[String])
-    def invoke(@ParamName(`TopicParamName`) topicName: String)(implicit nodeIdPassed: NodeId): LiteKafkaSource = new LiteKafkaSource {
+    def invoke(@ParamName(`TopicParamName`) topicName: String)(implicit nodeIdPassed: NodeId): LiteKafkaSource =
+      new LiteKafkaSource {
 
-      override val nodeId: NodeId = nodeIdPassed
+        override val nodeId: NodeId = nodeIdPassed
 
-      override def topics: List[String] = topicName :: Nil
+        override def topics: List[String] = topicName :: Nil
 
-      override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
-        val value = new String(record.value())
-        if (value == failingInputValue)
-          throw SourceFailure
-        Context(contextIdGenerator.nextContextId())
-          .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
-          .withVariable(VariableConstants.InputVariableName, value)
+        override def transform(record: ConsumerRecord[Array[Byte], Array[Byte]]): Context = {
+          val value = new String(record.value())
+          if (value == failingInputValue)
+            throw SourceFailure
+          Context(contextIdGenerator.nextContextId())
+            .withVariable(VariableConstants.EventTimestampVariableName, record.timestamp())
+            .withVariable(VariableConstants.InputVariableName, value)
+        }
       }
-    }
   }
 
   object KafkaSink extends SinkFactory {
     @MethodToInvoke
-    def invoke(@ParamName(`TopicParamName`) topicName: String, @ParamName(SinkValueParamName) value: LazyParameter[String]): LazyParamSink[Output] =
+    def invoke(
+        @ParamName(`TopicParamName`) topicName: String,
+        @ParamName(SinkValueParamName) value: LazyParameter[String]
+    ): LazyParamSink[Output] =
       (evaluateLazyParameter: LazyParameterInterpreter) => {
         implicit val epi: LazyParameterInterpreter = evaluateLazyParameter
         value.map(out => new ProducerRecord[Array[Byte], Array[Byte]](topicName, out.getBytes()))

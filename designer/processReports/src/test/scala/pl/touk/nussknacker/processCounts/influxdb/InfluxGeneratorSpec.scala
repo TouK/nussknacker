@@ -13,14 +13,15 @@ class InfluxGeneratorSpec extends AnyFunSuite with Matchers with PatientScalaFut
 
   import InfluxGenerator._
 
-  //TODO: test generated query, not just shape of output
+  // TODO: test generated query, not just shape of output
   test("Point in time query returns correct results") {
 
-    val pointInTimeQuery = new PointInTimeQuery[Identity](_ => sampleInfluxOutput, "process1", "test", MetricsConfig())(IdMonad)
+    val pointInTimeQuery =
+      new PointInTimeQuery[Identity](_ => sampleInfluxOutput, "process1", "test", MetricsConfig())(IdMonad)
 
     pointInTimeQuery.query(Instant.now()) shouldBe Map(
       "start" -> (552855221L + 557871409L),
-      "end" -> (412793677L + 414963365L)
+      "end"   -> (412793677L + 414963365L)
     )
   }
 
@@ -105,6 +106,7 @@ class InfluxGeneratorSpec extends AnyFunSuite with Matchers with PatientScalaFut
     |      ]
   """.stripMargin
 
-  val sampleInfluxOutput: List[InfluxSeries] = CirceUtil.decodeJsonUnsafe[List[InfluxSeries]](sampleInfluxOutputRaw, "failed to decode series")
+  val sampleInfluxOutput: List[InfluxSeries] =
+    CirceUtil.decodeJsonUnsafe[List[InfluxSeries]](sampleInfluxOutputRaw, "failed to decode series")
 
 }

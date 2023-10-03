@@ -33,21 +33,17 @@ class K8sScalingOptionsDeterminerTestSpec extends AnyFunSuite with Matchers {
     val emptyConfig = ConfigFactory.empty()
     emptyConfig.as[K8sScalingConfig] shouldEqual NotDefinedConfig
 
-    val configWithFixedReplicasCount = ConfigFactory.parseString(
-      s"""
+    val configWithFixedReplicasCount = ConfigFactory.parseString(s"""
          |$fixedReplicasCountPath: 2
          |""".stripMargin)
     configWithFixedReplicasCount.as[K8sScalingConfig] shouldEqual FixedReplicasCountConfig(2)
 
-
-    val configWithTasksPerReplica = ConfigFactory.parseString(
-      s"""
+    val configWithTasksPerReplica = ConfigFactory.parseString(s"""
          |$tasksPerReplicaPath: 4
          |""".stripMargin)
     configWithTasksPerReplica.as[K8sScalingConfig] shouldEqual DividingParallelismConfig(4)
 
-    val configWithMultipleStrategies = ConfigFactory.parseString(
-      s"""
+    val configWithMultipleStrategies = ConfigFactory.parseString(s"""
          |$fixedReplicasCountPath: 2
          |$tasksPerReplicaPath: 4
          |""".stripMargin)

@@ -18,7 +18,8 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
 
   private val migrationFunc = V1_019__SourceSinkExceptionHandlerExpressionsChange.processJson _
 
-  private val meta = """"metaData":{"id":"DEFGH","typeSpecificData": {"type": "StreamMetaData", "parallelism" : 4}, "additionalFields":{"groups":[]}}"""
+  private val meta =
+    """"metaData":{"id":"DEFGH","typeSpecificData": {"type": "StreamMetaData", "parallelism" : 4}, "additionalFields":{"groups":[]}}"""
 
   private val sourceToConvert = """  {
        |      "type" : "Source",
@@ -48,7 +49,6 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
       |          }
       |       }"""
 
-
   it should "convert source" in {
 
     val oldJson =
@@ -59,12 +59,14 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
           |    $sourceToConvert
           |  ]
           |}
-          |""".stripMargin, "invalid scenario")
+          |""".stripMargin,
+        "invalid scenario"
+      )
 
     val migrated = migrationFunc(oldJson).get
 
     val converted = migrateAndConvert(oldJson)
-    val source = converted.nodes.head.asInstanceOf[FlatNode].data.asInstanceOf[Source]
+    val source    = converted.nodes.head.asInstanceOf[FlatNode].data.asInstanceOf[Source]
 
     source shouldBe Source("start", SourceRef("source1", List(Parameter("param1", Expression("spel", "'string1'")))))
   }
@@ -91,7 +93,9 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
           |  ${sinkToConvert("sink2")}
           |  ]
           |}
-          |""".stripMargin, "invalid scenario")
+          |""".stripMargin,
+        "invalid scenario"
+      )
 
     val converted = migrateAndConvert(oldJson)
 
@@ -121,7 +125,9 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
           |  }
           |  ]
           |}
-          |""".stripMargin, "invalid scenario")
+          |""".stripMargin,
+        "invalid scenario"
+      )
 
     val converted = migrateAndConvert(oldJson)
 
@@ -165,12 +171,13 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
           |  }
           |  ]
           |}
-          |""".stripMargin, "invalid scenario")
+          |""".stripMargin,
+        "invalid scenario"
+      )
 
     val converted = migrateAndConvert(oldJson)
 
     val switch = converted.nodes(1).asInstanceOf[SwitchNode]
-
 
     val sink1 = switch.nexts.head.nodes.head.data
     sink1 shouldBe sinkToVerify("sink1")
@@ -201,7 +208,9 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
           |  }
           |  ]
           |}
-          |""".stripMargin, "invalid scenario")
+          |""".stripMargin,
+        "invalid scenario"
+      )
 
     val converted = migrateAndConvert(oldJson)
 
@@ -214,11 +223,11 @@ class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpe
     Sink(id, SinkRef("sink", List(Parameter("param1", Expression("spel", "'string1'")))))
   }
 
-  private def migrateAndConvert(oldJson: Json) : CanonicalProcess = {
+  private def migrateAndConvert(oldJson: Json): CanonicalProcess = {
     val migrated = migrationFunc(oldJson).get
 
     ProcessMarshaller.fromJson(migrated) match {
-      case Invalid(errors) => throw new AssertionError(errors)
+      case Invalid(errors)  => throw new AssertionError(errors)
       case Valid(converted) => converted
     }
   }

@@ -39,12 +39,20 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     def invoke(@ParamName("listParam") param: java.util.List[Any]): Future[Any] = Future.successful(param)
   }
 
-  class MyProcessConfigCreator(spelCustomConversionsProviderOpt: Option[SpelConversionsProvider]) extends EmptyProcessConfigCreator {
-    override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
-      Map("stringSource" -> WithCategories(SourceFactory.noParam[String](new pl.touk.nussknacker.engine.api.process.Source {})))
+  class MyProcessConfigCreator(spelCustomConversionsProviderOpt: Option[SpelConversionsProvider])
+      extends EmptyProcessConfigCreator {
+    override def sourceFactories(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[SourceFactory]] =
+      Map(
+        "stringSource" -> WithCategories(
+          SourceFactory.noParam[String](new pl.touk.nussknacker.engine.api.process.Source {})
+        )
+      )
 
-
-    override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = {
+    override def services(
+        processObjectDependencies: ProcessObjectDependencies
+    ): Map[String, WithCategories[Service]] = {
       Map("service" -> WithCategories(new SomeService))
     }
 
@@ -52,7 +60,8 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       ExpressionConfig(
         globalProcessVariables = Map("CONV" -> WithCategories(ConversionUtils)),
         globalImports = List.empty,
-        customConversionsProviders = spelCustomConversionsProviderOpt.toList)
+        customConversionsProviders = spelCustomConversionsProviderOpt.toList
+      )
     }
   }
 
@@ -67,28 +76,55 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     val inputValue = "123,234"
 
     interpret(process, None, inputValue) should matchPattern {
-      case Invalid(NonEmptyList(NuExceptionInfo(Some(NodeComponentInfo("invoke-service", Some(ComponentInfo("service", ComponentType.Enricher)))), ex, _), Nil)) if ex.getMessage.contains("cannot convert from java.lang.String to java.util.List<?>") =>
+      case Invalid(
+            NonEmptyList(
+              NuExceptionInfo(
+                Some(NodeComponentInfo("invoke-service", Some(ComponentInfo("service", ComponentType.Enricher)))),
+                ex,
+                _
+              ),
+              Nil
+            )
+          ) if ex.getMessage.contains("cannot convert from java.lang.String to java.util.List<?>") =>
     }
 
     val defaultSpelConversionServiceProvider = new SpelConversionsProvider {
       override def getConversionService: ConversionService =
         new DefaultConversionService
     }
-    val outputValue = interpret(process, Some(defaultSpelConversionServiceProvider), inputValue).value.finalContext[AnyRef]("output")
+    val outputValue =
+      interpret(process, Some(defaultSpelConversionServiceProvider), inputValue).value.finalContext[AnyRef]("output")
     outputValue shouldEqual List("123", "234").asJava
   }
 
-  private def interpret(process: CanonicalProcess, spelCustomConversionsProviderOpt: Option[SpelConversionsProvider], inputValue: Any) = {
+  private def interpret(
+      process: CanonicalProcess,
+      spelCustomConversionsProviderOpt: Option[SpelConversionsProvider],
+      inputValue: Any
+  ) = {
     val modelData = LocalModelData(ConfigFactory.empty(), new MyProcessConfigCreator(spelCustomConversionsProviderOpt))
-    val compilerData = ProcessCompilerData.prepare(process, modelData.modelDefinitionWithTypes, modelData.engineDictRegistry,
-      FragmentComponentDefinitionExtractor(modelData), Seq.empty, getClass.getClassLoader, ProductionServiceInvocationCollector,
-      ComponentUseCase.EngineRuntime, CustomProcessValidatorLoader.emptyCustomProcessValidator)
-    val parts = compilerData.compile().value
+    val compilerData = ProcessCompilerData.prepare(
+      process,
+      modelData.modelDefinitionWithTypes,
+      modelData.engineDictRegistry,
+      FragmentComponentDefinitionExtractor(modelData),
+      Seq.empty,
+      getClass.getClassLoader,
+      ProductionServiceInvocationCollector,
+      ComponentUseCase.EngineRuntime,
+      CustomProcessValidatorLoader.emptyCustomProcessValidator
+    )
+    val parts  = compilerData.compile().value
     val source = parts.sources.head
-    val compiledNode = compilerData.subPartCompiler.compile(source.node, source.validationContext)(process.metaData).result.value
+    val compiledNode =
+      compilerData.subPartCompiler.compile(source.node, source.validationContext)(process.metaData).result.value
 
     val inputContext = Context("foo").withVariable(VariableConstants.InputVariableName, inputValue)
-    Validated.fromEither(compilerData.interpreter.interpret(compiledNode, parts.metaData, inputContext).unsafeRunSync().head.swap).toValidatedNel
+    Validated
+      .fromEither(
+        compilerData.interpreter.interpret(compiledNode, parts.metaData, inputContext).unsafeRunSync().head.swap
+      )
+      .toValidatedNel
   }
 
   object ConversionUtils extends HideToString {

@@ -32,7 +32,11 @@ import scala.util.Random
 
 // we use this tag to mark tests using external dependencies
 @Network
-class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with OptionValues with EitherValuesDetailedMessage with LazyLogging {
+class K8sDeploymentManagerReqRespTest
+    extends BaseK8sDeploymentManagerTest
+    with OptionValues
+    with EitherValuesDetailedMessage
+    with LazyLogging {
 
   private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
@@ -40,10 +44,11 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
   test("deployment of req-resp ping-pong") {
     val givenScenarioName = "reqresp-ping-pong"
-    val f = createReqRespFixture(givenScenarioName)
+    val f                 = createReqRespFixture(givenScenarioName)
 
     f.withRunningScenario {
-      val services = k8s.listSelected[ListResource[Service]](requirementForName(f.version.processName)).futureValue.items
+      val services =
+        k8s.listSelected[ListResource[Service]](requirementForName(f.version.processName)).futureValue.items
 
       services should have length 1
       val service = services.head
@@ -56,33 +61,38 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
         val pingContent = """Nussknacker!"""
         val pingMessage = s"""{"ping":"$pingContent"}"""
         val instanceIds = (1 to 10).map { _ =>
-          val request = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
-          val response = request.body(pingMessage).send(backend).body.rightValue
+          val request      = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
+          val response     = request.body(pingMessage).send(backend).body.rightValue
           val jsonResponse = parser.parse(response).rightValue
           jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
           jsonResponse.hcursor.downField("instanceId").as[String].rightValue
         }.toSet
 
         instanceIds.map(_.length) should contain only (5) // size of k8s instance id hash
-        instanceIds.size shouldEqual 2 // default number of replicas
+        instanceIds.size shouldEqual 2                    // default number of replicas
       }
     }
   }
 
   test("deployment of req-resp with ingress") {
     val givenScenarioName = "reqresp-ingress"
-    val config = ConfigFactory.empty().withValue("ingress.enabled", fromAnyRef(true))
-    val f = createReqRespFixture(givenScenarioName, extraDeployConfig = config)
+    val config            = ConfigFactory.empty().withValue("ingress.enabled", fromAnyRef(true))
+    val f                 = createReqRespFixture(givenScenarioName, extraDeployConfig = config)
 
     f.withRunningScenario {
-      k8s.listSelected[ListResource[Ingress]](requirementForName(f.version.processName)).futureValue.items.headOption shouldBe Symbol("defined")
+      k8s
+        .listSelected[ListResource[Ingress]](requirementForName(f.version.processName))
+        .futureValue
+        .items
+        .headOption shouldBe Symbol("defined")
 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""
-      val request = basicRequest.post(uri"http://localhost".port(8081).withPath(givenScenarioName))
-      val response = eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
-        request.body(pingMessage).send(backend).body.rightValue
-      }
+      val request     = basicRequest.post(uri"http://localhost".port(8081).withPath(givenScenarioName))
+      val response =
+        eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
+          request.body(pingMessage).send(backend).body.rightValue
+        }
       val jsonResponse = parser.parse(response).rightValue
       jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
     }
@@ -90,21 +100,29 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
   test("deployment of secured req-resp") {
     val givenScenarioName = "reqresp-secured"
-    val config = ConfigFactory.empty()
+    val config = ConfigFactory
+      .empty()
       .withValue("ingress.enabled", fromAnyRef(true))
       .withValue("configExecutionOverrides.request-response.security.basicAuth.user", fromAnyRef("publisher"))
       .withValue("configExecutionOverrides.request-response.security.basicAuth.password", fromAnyRef("rrPassword"))
     val f = createReqRespFixture(givenScenarioName, extraDeployConfig = config)
 
     f.withRunningScenario {
-      k8s.listSelected[ListResource[Ingress]](requirementForName(f.version.processName)).futureValue.items.headOption shouldBe Symbol("defined")
+      k8s
+        .listSelected[ListResource[Ingress]](requirementForName(f.version.processName))
+        .futureValue
+        .items
+        .headOption shouldBe Symbol("defined")
 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""
-      val request = basicRequest.auth.basic("publisher", "rrPassword").post(uri"http://localhost".port(8081).withPath(givenScenarioName))
-      val response = eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
-        request.body(pingMessage).send(backend).body.rightValue
-      }
+      val request = basicRequest.auth
+        .basic("publisher", "rrPassword")
+        .post(uri"http://localhost".port(8081).withPath(givenScenarioName))
+      val response =
+        eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
+          request.body(pingMessage).send(backend).body.rightValue
+        }
       val jsonResponse = parser.parse(response).rightValue
       jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
     }
@@ -112,9 +130,12 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
   test("redeployment of req-resp") {
     val givenScenarioName = "reqresp-redeploy"
-    val firstVersion = 1
-    val f = createReqRespFixture(givenScenarioName, firstVersion,
-      extraDeployConfig = ConfigFactory.empty().withValue("scalingConfig.fixedReplicasCount", fromAnyRef(2)))
+    val firstVersion      = 1
+    val f = createReqRespFixture(
+      givenScenarioName,
+      firstVersion,
+      extraDeployConfig = ConfigFactory.empty().withValue("scalingConfig.fixedReplicasCount", fromAnyRef(2))
+    )
 
     f.withRunningScenario {
       k8sTestUtils.withForwardedProxyPod(s"http://$givenScenarioName:$givenServicePort") { proxyLocalPort =>
@@ -123,9 +144,10 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
         def checkVersions() = (1 to 10).map { _ =>
           val request = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
-          val response = eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
-            request.body(pingMessage).send(backend).body.rightValue
-          }
+          val response =
+            eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
+              request.body(pingMessage).send(backend).body.rightValue
+            }
           val jsonResponse = parser.parse(response).rightValue
           jsonResponse.hcursor.downField("version").as[Int].rightValue
         }.toSet
@@ -133,10 +155,17 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
         val versionsBeforeRedeploy = checkVersions()
         versionsBeforeRedeploy shouldEqual Set(firstVersion)
 
-        val secondVersion = 2
+        val secondVersion     = 2
         val secondVersionInfo = f.version.copy(versionId = VersionId(secondVersion))
         // It can take a while on CI :/
-        f.manager.deploy(secondVersionInfo, DeploymentData.empty, preparePingPongScenario(givenScenarioName, secondVersion), None).futureValue
+        f.manager
+          .deploy(
+            secondVersionInfo,
+            DeploymentData.empty,
+            preparePingPongScenario(givenScenarioName, secondVersion),
+            None
+          )
+          .futureValue
         eventually {
           val state = f.manager.getFreshProcessStates(secondVersionInfo.processName).futureValue
           state.flatMap(_.version).map(_.versionId.value) shouldBe List(secondVersion)
@@ -150,17 +179,20 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
   test("check slug uniqueness validation") {
     val givenScenarioName = "reqresp-uniqueness"
-    val slug = "slug1"
-    val f = createReqRespFixture(givenScenarioName, givenSlug = Some(slug))
+    val slug              = "slug1"
+    val f                 = createReqRespFixture(givenScenarioName, givenSlug = Some(slug))
 
     f.withRunningScenario {
-      //ends without errors, we only change version
+      // ends without errors, we only change version
       f.manager.validate(f.version.copy(versionId = VersionId(2)), DeploymentData.empty, f.scenario).futureValue
 
       val newName = "reqresp-other"
-      //different id and name
-      val newVersion = f.version.copy(processName = ProcessName(newName), processId = ProcessId(Random.nextInt(1000)),
-        versionId = VersionId(2))
+      // different id and name
+      val newVersion = f.version.copy(
+        processName = ProcessName(newName),
+        processId = ProcessId(Random.nextInt(1000)),
+        versionId = VersionId(2)
+      )
       val scenario = preparePingPongScenario(newName, 2, Some(slug))
 
       val failure = f.manager.validate(newVersion, DeploymentData.empty, scenario).failed.futureValue
@@ -171,52 +203,85 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
   test("check cleanup after slug change") {
     val givenScenarioName = "reqresp-slugchange"
-    val slug = "slug1"
-    val f = createReqRespFixture(givenScenarioName, givenSlug = Some(slug))
+    val slug              = "slug1"
+    val f                 = createReqRespFixture(givenScenarioName, givenSlug = Some(slug))
 
     f.withRunningScenario {
-      val otherSlug = "otherSlug"
+      val otherSlug   = "otherSlug"
       val changedSlug = preparePingPongScenario(givenScenarioName, 1, Some(otherSlug))
-      val newVersion = f.version.copy(versionId = VersionId(Random.nextInt(1000)))
+      val newVersion  = f.version.copy(versionId = VersionId(Random.nextInt(1000)))
       f.manager.deploy(newVersion, DeploymentData.empty, changedSlug, None).futureValue
       f.waitForRunning(newVersion)
-      val servicesForScenario = k8s.listSelected[ListResource[Service]](LabelSelector(requirementForName(newVersion.processName))).futureValue.items
+      val servicesForScenario = k8s
+        .listSelected[ListResource[Service]](LabelSelector(requirementForName(newVersion.processName)))
+        .futureValue
+        .items
       servicesForScenario.map(_.name) should have length 1
     }
 
   }
 
-  private def reqRespDeployConfig(port: Int, extraClasses: K8sExtraClasses, fallback: Config): K8sDeploymentManagerConfig = {
+  private def reqRespDeployConfig(
+      port: Int,
+      extraClasses: K8sExtraClasses,
+      fallback: Config
+  ): K8sDeploymentManagerConfig = {
     val extraClassesVolume = "extra-classes"
-    val runtimeContainerConfig = baseRuntimeContainerConfig.withValue("volumeMounts", fromIterable(List(fromMap(Map(
-      "name" -> extraClassesVolume,
-      "mountPath" -> "/opt/nussknacker/components/common/extra"
-    ).asJava)).asJava)).root()
+    val runtimeContainerConfig = baseRuntimeContainerConfig
+      .withValue(
+        "volumeMounts",
+        fromIterable(
+          List(
+            fromMap(
+              Map(
+                "name"      -> extraClassesVolume,
+                "mountPath" -> "/opt/nussknacker/components/common/extra"
+              ).asJava
+            )
+          ).asJava
+        )
+      )
+      .root()
     val ficusConfig = baseDeployConfig("request-response")
       .withValue("servicePort", fromAnyRef(port))
-      .withValue("k8sDeploymentConfig.spec.template.spec.volumes", fromIterable(List(fromMap(Map(
-        "name" -> extraClassesVolume,
-        "secret" -> ConfigFactory.parseMap(extraClasses.secretReferenceResourcePart).root()
-      ).asJava)).asJava))
-      .withValue("k8sDeploymentConfig.spec.template.spec.containers", fromIterable(List(runtimeContainerConfig).asJava)).withFallback(fallback)
+      .withValue(
+        "k8sDeploymentConfig.spec.template.spec.volumes",
+        fromIterable(
+          List(
+            fromMap(
+              Map(
+                "name"   -> extraClassesVolume,
+                "secret" -> ConfigFactory.parseMap(extraClasses.secretReferenceResourcePart).root()
+              ).asJava
+            )
+          ).asJava
+        )
+      )
+      .withValue("k8sDeploymentConfig.spec.template.spec.containers", fromIterable(List(runtimeContainerConfig).asJava))
+      .withFallback(fallback)
     K8sDeploymentManagerConfig.parse(ficusConfig)
   }
 
   private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator)
 
-  private def createReqRespFixture(givenScenarioName: String,
-                                   givenVersion: Int = 1,
-                                   givenSlug: Option[String] = None,
-                                   modelData: LocalModelData = modelData,
-                                   extraDeployConfig: Config = ConfigFactory.empty()) = {
-    val extraClasses = new K8sExtraClasses(k8s,
+  private def createReqRespFixture(
+      givenScenarioName: String,
+      givenVersion: Int = 1,
+      givenSlug: Option[String] = None,
+      modelData: LocalModelData = modelData,
+      extraDeployConfig: Config = ConfigFactory.empty()
+  ) = {
+    val extraClasses = new K8sExtraClasses(
+      k8s,
       List(classOf[TestComponentProvider], classOf[EnvService]),
-      K8sExtraClasses.serviceLoaderConfigURL(getClass, classOf[ComponentProvider]))
+      K8sExtraClasses.serviceLoaderConfigURL(getClass, classOf[ComponentProvider])
+    )
     val deployConfig = reqRespDeployConfig(givenServicePort, extraClasses, extraDeployConfig)
-    val manager = new K8sDeploymentManager(modelData, deployConfig, ConfigFactory.empty())
-    val scenario = preparePingPongScenario(givenScenarioName, givenVersion, givenSlug)
+    val manager      = new K8sDeploymentManager(modelData, deployConfig, ConfigFactory.empty())
+    val scenario     = preparePingPongScenario(givenScenarioName, givenVersion, givenSlug)
     logger.info(s"Running req-resp test on ${scenario.id}")
-    val version = ProcessVersion(VersionId(givenVersion), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
+    val version =
+      ProcessVersion(VersionId(givenVersion), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
     new ReqRespTestFixture(manager = manager, scenario = scenario, version = version, extraClasses)
   }
 
@@ -243,26 +308,34 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
     ScenarioBuilder
       .requestResponse(scenarioName)
       .slug(slug)
-      .additionalFields(properties = Map(
-        "inputSchema" -> pingSchema,
-        "outputSchema" -> pongSchema
-      ))
+      .additionalFields(properties =
+        Map(
+          "inputSchema"  -> pingSchema,
+          "outputSchema" -> pongSchema
+        )
+      )
       .source("source", "request")
       .enricher("instanceId", "instanceId", "env", "name" -> "\"INSTANCE_ID\"")
-      .emptySink("sink", "response", "Raw editor" -> "false",
-        "pong" -> "#input.ping",
+      .emptySink(
+        "sink",
+        "response",
+        "Raw editor" -> "false",
+        "pong"       -> "#input.ping",
         "instanceId" -> "#instanceId",
-        "version" -> version.toString)
+        "version"    -> version.toString
+      )
   }
 
-  private class ReqRespTestFixture(manager: K8sDeploymentManager,
-                                   scenario: CanonicalProcess,
-                                   version: ProcessVersion,
-                                   extraClasses: K8sExtraClasses) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
+  private class ReqRespTestFixture(
+      manager: K8sDeploymentManager,
+      scenario: CanonicalProcess,
+      version: ProcessVersion,
+      extraClasses: K8sExtraClasses
+  ) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
     override def withRunningScenario(action: => Unit): Unit = {
       extraClasses.withExtraClassesSecret {
         super.withRunningScenario(action)
-        //should not fail
+        // should not fail
         assertNoGarbageLeft()
       }
     }

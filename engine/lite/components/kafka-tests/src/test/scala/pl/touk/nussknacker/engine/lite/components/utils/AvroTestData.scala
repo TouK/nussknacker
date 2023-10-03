@@ -9,7 +9,16 @@ import org.apache.avro.{LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
-import pl.touk.nussknacker.engine.lite.components.utils.AvroSchemaCreator.{Null, createArray, createEnum, createField, createFixed, createLogical, createMap, createRecord}
+import pl.touk.nussknacker.engine.lite.components.utils.AvroSchemaCreator.{
+  Null,
+  createArray,
+  createEnum,
+  createField,
+  createFixed,
+  createLogical,
+  createMap,
+  createRecord
+}
 
 import java.nio.charset.StandardCharsets
 import java.time.temporal.ChronoUnit
@@ -20,10 +29,10 @@ import java.util.concurrent.TimeUnit
 object AvroTestData {
 
   implicit class LocalTimeOutput(time: LocalTime) {
-    //See org.apache.avro.date.TimeConversions.TimeMillisConversion
+    // See org.apache.avro.date.TimeConversions.TimeMillisConversion
     def toMillis: Int = TimeUnit.NANOSECONDS.toMillis(time.toNanoOfDay).toInt
 
-    //See org.apache.avro.date.TimeConversions.TimeMicrosConversion
+    // See org.apache.avro.date.TimeConversions.TimeMicrosConversion
     def toMicros: Long = TimeUnit.NANOSECONDS.toMicros(time.toNanoOfDay)
 
   }
@@ -38,7 +47,7 @@ object AvroTestData {
 
   val RecordFieldName: String = "field"
 
-  //Primitive schemas
+  // Primitive schemas
   val nullSchema: Schema = Schema.create(Type.NULL)
 
   val integerSchema: Schema = Schema.create(Type.INT)
@@ -55,7 +64,7 @@ object AvroTestData {
 
   val bytesSchema: Schema = Schema.create(Type.BYTES)
 
-  //Record with primitives
+  // Record with primitives
   val recordIntegerSchema: Schema = createSimpleRecord(integerSchema)
 
   val recordBooleanSchema: Schema = createSimpleRecord(booleanSchema)
@@ -70,7 +79,7 @@ object AvroTestData {
 
   val recordStringPriceSchema: Schema = createRecord(createField("price", nullSchema, stringSchema))
 
-  //Avro array schemas
+  // Avro array schemas
   val arrayOfStringsSchema: Schema = createArray(stringSchema)
 
   val recordArrayOfStringsSchema: Schema = createSimpleRecord(arrayOfStringsSchema)
@@ -83,13 +92,16 @@ object AvroTestData {
 
   val recordOptionalArrayOfNumbersSchema: Schema = createSimpleRecord(Null, nullSchema, arrayOfNumbersSchema)
 
-  val recordOptionalArrayOfArraysStringsSchema: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, arrayOfStringsSchema))
+  val recordOptionalArrayOfArraysStringsSchema: Schema =
+    createSimpleRecord(Null, nullSchema, createArray(nullSchema, arrayOfStringsSchema))
 
-  val recordOptionalArrayOfArraysNumbersSchema: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, arrayOfNumbersSchema))
+  val recordOptionalArrayOfArraysNumbersSchema: Schema =
+    createSimpleRecord(Null, nullSchema, createArray(nullSchema, arrayOfNumbersSchema))
 
-  val recordOptionalArrayOfRecordsSchema: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, recordPriceSchema))
+  val recordOptionalArrayOfRecordsSchema: Schema =
+    createSimpleRecord(Null, nullSchema, createArray(nullSchema, recordPriceSchema))
 
-  //Avro map schemas
+  // Avro map schemas
   val mapOfStringsSchema: Schema = createMap(nullSchema, stringSchema)
 
   val recordMapOfStringsSchema: Schema = createSimpleRecord(mapOfStringsSchema)
@@ -102,18 +114,24 @@ object AvroTestData {
 
   val recordOptionalMapOfIntsSchema: Schema = createSimpleRecord(Null, nullSchema, mapOfIntsSchema)
 
-  val recordMapOfMapsStringsSchema: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, mapOfStringsSchema))
+  val recordMapOfMapsStringsSchema: Schema =
+    createSimpleRecord(Null, nullSchema, createMap(nullSchema, mapOfStringsSchema))
 
-  val recordOptionalMapOfMapsIntsSchema: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, mapOfIntsSchema))
+  val recordOptionalMapOfMapsIntsSchema: Schema =
+    createSimpleRecord(Null, nullSchema, createMap(nullSchema, mapOfIntsSchema))
 
-  val recordOptionalMapOfStringRecordsSchema: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordStringPriceSchema))
+  val recordOptionalMapOfStringRecordsSchema: Schema =
+    createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordStringPriceSchema))
 
-  val recordOptionalMapOfRecordsSchema: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordPriceSchema))
+  val recordOptionalMapOfRecordsSchema: Schema =
+    createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordPriceSchema))
 
   val fakeMapRecordWithStringPrice: Schema = createSimpleRecord(recordStringPriceSchema)
 
-  //Avro record schemas
-  val baseRecordWithStringPriceSchema: Schema = createRecord(createField("sub", Null, nullSchema, recordStringPriceSchema))
+  // Avro record schemas
+  val baseRecordWithStringPriceSchema: Schema = createRecord(
+    createField("sub", Null, nullSchema, recordStringPriceSchema)
+  )
 
   val nestedRecordWithStringPriceSchema: Schema = createSimpleRecord(Null, nullSchema, baseRecordWithStringPriceSchema)
 
@@ -124,7 +142,9 @@ object AvroTestData {
   val nestedRecordV2FieldsSchema: Schema = Schema.createUnion(
     nullSchema,
     createRecord(
-      createField("sub", Null,
+      createField(
+        "sub",
+        Null,
         nullSchema,
         createRecord(
           createField("price", nullSchema, doubleSchema),
@@ -137,7 +157,7 @@ object AvroTestData {
 
   val nestedRecordSchemaV2: Schema = createSimpleRecord(Null, nestedRecordV2FieldsSchema)
 
-  //Union schemas
+  // Union schemas
   val recordUnionStringAndIntegerSchema: Schema = createSimpleRecord(stringSchema, integerSchema)
 
   val recordUnionStringAndBooleanSchema: Schema = createSimpleRecord(stringSchema, booleanSchema)
@@ -154,8 +174,9 @@ object AvroTestData {
 
   val recordUnionMapOfLongsAndLongSchema: Schema = createSimpleRecord(createMap(longSchema), longSchema)
 
-  //Avro other schemas
-  val recordWithBigUnionSchema: Schema = createSimpleRecord(nullSchema, booleanSchema, baseRecordWithStringPriceSchema, baseRecordWithPriceSchema)
+  // Avro other schemas
+  val recordWithBigUnionSchema: Schema =
+    createSimpleRecord(nullSchema, booleanSchema, baseRecordWithStringPriceSchema, baseRecordWithPriceSchema)
 
   val recordStringSchema: Schema = createSimpleRecord(stringSchema)
 
@@ -175,7 +196,9 @@ object AvroTestData {
 
   val recordUUIDSchema: Schema = createSimpleRecord(createLogical(LogicalTypes.uuid()))
 
-  val recordDecimalSchema: Schema = createSimpleRecord(AvroUtils.parseSchema("""{"type":"bytes","logicalType":"decimal","precision":4,"scale":2}"""))
+  val recordDecimalSchema: Schema = createSimpleRecord(
+    AvroUtils.parseSchema("""{"type":"bytes","logicalType":"decimal","precision":4,"scale":2}""")
+  )
 
   val recordDateSchema: Schema = createSimpleRecord(createLogical(LogicalTypes.date()))
 
@@ -187,71 +210,86 @@ object AvroTestData {
 
   val recordTimestampMicrosSchema: Schema = createSimpleRecord(createLogical(LogicalTypes.timestampMicros()))
 
-  //Sample data
-  val sampleInteger: Int = 1
-  val sampleFloat: Float = 13.3.toFloat
-  val sampleDouble: Double = 15.5
-  val sampleLong: Long = Integer.MAX_VALUE.toLong + 1
-  val sampleString: String = "lcl"
-  val sampleBoolean: Boolean = true
-  val sampleBytes: Array[Byte] = sampleString.getBytes(StandardCharsets.UTF_8)
+  // Sample data
+  val sampleInteger: Int               = 1
+  val sampleFloat: Float               = 13.3.toFloat
+  val sampleDouble: Double             = 15.5
+  val sampleLong: Long                 = Integer.MAX_VALUE.toLong + 1
+  val sampleString: String             = "lcl"
+  val sampleBoolean: Boolean           = true
+  val sampleBytes: Array[Byte]         = sampleString.getBytes(StandardCharsets.UTF_8)
   val samplePriceRecord: GenericRecord = AvroUtils.createRecord(recordPriceSchema, Map("price" -> sampleDouble))
 
-  val typedInt: typing.TypingResult = Typed.fromInstance(sampleInteger)
-  val typedLong: typing.TypingResult = Typed.fromInstance(sampleLong)
-  val typedFloat: typing.TypingResult = Typed.fromInstance(sampleFloat)
+  val typedInt: typing.TypingResult    = Typed.fromInstance(sampleInteger)
+  val typedLong: typing.TypingResult   = Typed.fromInstance(sampleLong)
+  val typedFloat: typing.TypingResult  = Typed.fromInstance(sampleFloat)
   val typedDouble: typing.TypingResult = Typed.fromInstance(sampleDouble)
-  val typedStr: typing.TypingResult = Typed.fromInstance(sampleString)
-  val typedBool: typing.TypingResult = Typed.fromInstance(sampleBoolean)
+  val typedStr: typing.TypingResult    = Typed.fromInstance(sampleString)
+  val typedBool: typing.TypingResult   = Typed.fromInstance(sampleBoolean)
 
-  val sampleNestedRecord: GenericRecord = AvroUtils.createRecord(nestedRecordSchema,
-    Map(RecordFieldName -> Map("sub" -> samplePriceRecord))
-  )
+  val sampleNestedRecord: GenericRecord =
+    AvroUtils.createRecord(nestedRecordSchema, Map(RecordFieldName -> Map("sub" -> samplePriceRecord)))
 
-  val sampleNestedRecordV2: GenericRecord = AvroUtils.createRecord(nestedRecordSchemaV2,
+  val sampleNestedRecordV2: GenericRecord = AvroUtils.createRecord(
+    nestedRecordSchemaV2,
     Map(RecordFieldName -> Map("sub" -> Map("price" -> sampleDouble, "currency" -> "PLN"), "str" -> "sample"))
   )
 
-  val sampleUnionStringAndRecordInt: GenericRecord = AvroUtils.createRecord(recordUnionStringAndRecordIntSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger)))
+  val sampleUnionStringAndRecordInt: GenericRecord = AvroUtils.createRecord(
+    recordUnionStringAndRecordIntSchema,
+    Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger))
+  )
 
-  val sampleUnionRecordIntAndString: GenericRecord = AvroUtils.createRecord(recordUnionRecordIntAndStringSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger)))
+  val sampleUnionRecordIntAndString: GenericRecord = AvroUtils.createRecord(
+    recordUnionRecordIntAndStringSchema,
+    Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger))
+  )
 
-  val sampleUnionRecordLongAndString: GenericRecord = AvroUtils.createRecord(recordUnionRecordLongAndStringSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger.toLong)))
+  val sampleUnionRecordLongAndString: GenericRecord = AvroUtils.createRecord(
+    recordUnionRecordLongAndStringSchema,
+    Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger.toLong))
+  )
 
-  val sampleMapOfIntsAndInt: GenericRecord = AvroUtils.createRecord(recordMapOfIntsSchema, Map(RecordFieldName -> Map("key" -> sampleInteger)))
+  val sampleMapOfIntsAndInt: GenericRecord =
+    AvroUtils.createRecord(recordMapOfIntsSchema, Map(RecordFieldName -> Map("key" -> sampleInteger)))
 
-  val sampleUnionMapOfIntsAndInt: GenericRecord = AvroUtils.createRecord(recordUnionMapOfIntsAndIntSchema, Map(RecordFieldName -> Map("key" -> sampleInteger)))
+  val sampleUnionMapOfIntsAndInt: GenericRecord =
+    AvroUtils.createRecord(recordUnionMapOfIntsAndIntSchema, Map(RecordFieldName -> Map("key" -> sampleInteger)))
 
-  val sampleUnionMapOfLongsAndLong: GenericRecord = AvroUtils.createRecord(recordUnionMapOfLongsAndLongSchema, Map(RecordFieldName -> Map("key" -> sampleInteger.toLong)))
+  val sampleUnionMapOfLongsAndLong: GenericRecord = AvroUtils.createRecord(
+    recordUnionMapOfLongsAndLongSchema,
+    Map(RecordFieldName -> Map("key" -> sampleInteger.toLong))
+  )
 
   val sampleEnumString = "SPADES"
-  val sampleEnum = new EnumSymbol(baseEnumSchema, sampleEnumString)
+  val sampleEnum       = new EnumSymbol(baseEnumSchema, sampleEnumString)
 
-  val sampleStrEnumV2 = "HEARTS2"
+  val sampleStrEnumV2                     = "HEARTS2"
   val typedStrEnumV2: typing.TypingResult = Typed.fromInstance(sampleStrEnumV2)
-  val sampleEnumV2 = new EnumSymbol(enumSchemaV2, sampleStrEnumV2)
+  val sampleEnumV2                        = new EnumSymbol(enumSchemaV2, sampleStrEnumV2)
 
   val sampleStrFixed = "098f6bcd4621d373cade4e832627b4f6"
-  val sampleFixed = new Fixed(baseFixedSchema, sampleStrFixed.getBytes(StandardCharsets.UTF_8))
+  val sampleFixed    = new Fixed(baseFixedSchema, sampleStrFixed.getBytes(StandardCharsets.UTF_8))
 
-  val sampleStrFixedV = "7551140914207932"
+  val sampleStrFixedV                     = "7551140914207932"
   val typeStrFixedV2: typing.TypingResult = Typed.fromInstance(sampleStrFixedV)
   val sampleFixedV2 = new Fixed(recordFixedSchemaV2, sampleStrFixedV.getBytes(StandardCharsets.UTF_8))
 
-  val sampleUUID: UUID = UUID.randomUUID()
+  val sampleUUID: UUID                    = UUID.randomUUID()
   val sampleDecimal: java.math.BigDecimal = new java.math.BigDecimal(1).setScale(2)
-  val sampleDate: LocalDate = LocalDate.now()
-  val sampleMillisLocalTime: LocalTime = LocalTime.now().truncatedTo(ChronoUnit.MILLIS)
-  val sampleMicrosLocalTime: LocalTime = LocalTime.now().truncatedTo(ChronoUnit.MICROS)
-  val sampleMillisInstant: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
-  val sampleMicrosInstant: Instant = Instant.now().truncatedTo(ChronoUnit.MICROS)
+  val sampleDate: LocalDate               = LocalDate.now()
+  val sampleMillisLocalTime: LocalTime    = LocalTime.now().truncatedTo(ChronoUnit.MILLIS)
+  val sampleMicrosLocalTime: LocalTime    = LocalTime.now().truncatedTo(ChronoUnit.MICROS)
+  val sampleMillisInstant: Instant        = Instant.now().truncatedTo(ChronoUnit.MILLIS)
+  val sampleMicrosInstant: Instant        = Instant.now().truncatedTo(ChronoUnit.MICROS)
 
   private def createSimpleRecord(schema: Schema*) = createRecord(createField(RecordFieldName, schema: _*))
 
-  private def createSimpleRecord(default: Any, schema: Schema*) = createRecord(createField(RecordFieldName, default, schema: _*))
+  private def createSimpleRecord(default: Any, schema: Schema*) = createRecord(
+    createField(RecordFieldName, default, schema: _*)
+  )
 
-  val personSchema: avro.Schema = AvroUtils.parseSchema(
-    s"""{
+  val personSchema: avro.Schema = AvroUtils.parseSchema(s"""{
        |  "type": "record",
        |  "namespace": "pl.touk.nussknacker.engine.schemedkafka",
        |  "name": "FullName",

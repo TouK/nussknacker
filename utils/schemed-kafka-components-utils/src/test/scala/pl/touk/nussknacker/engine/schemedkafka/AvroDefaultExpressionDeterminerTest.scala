@@ -30,7 +30,7 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
 
   test("not supported record default") {
     val recordField = getField("recordField_3")
-    val expression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(recordField)
+    val expression  = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(recordField)
 
     expression shouldBe Invalid(
       AvroDefaultExpressionDeterminer.TypeNotSupported(recordField.schema())
@@ -38,7 +38,7 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
   }
 
   test("not supported record default with not supported type handling") {
-    val recordField = getField("recordField_3")
+    val recordField         = getField("recordField_3")
     val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(recordField)
     validatedExpression shouldBe Valid(None)
   }
@@ -74,11 +74,10 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
     }
   }
 
-  private def verify(fieldName: String)
-                    (expressionAssertion: Option[Expression] => Assertion): Unit = {
-    val field = getField(fieldName)
+  private def verify(fieldName: String)(expressionAssertion: Option[Expression] => Assertion): Unit = {
+    val field               = getField(fieldName)
     val validatedExpression = new AvroDefaultExpressionDeterminer(handleNotSupported = false).determine(field)
-    val expression = validatedExpression.valueOr(errors => throw errors.head)
+    val expression          = validatedExpression.valueOr(errors => throw errors.head)
     expressionAssertion(expression)
     expression.map(evaluate).foreach(_ shouldEqual record.get(fieldName))
   }
@@ -95,8 +94,7 @@ class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
     new LogicalTypesGenericRecordBuilder(schema).build()
 
   private lazy val schema =
-    AvroUtils.parseSchema(
-      s"""
+    AvroUtils.parseSchema(s"""
        |{
        |  "type": "record",
        |  "name": "MyRecord",

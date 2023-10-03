@@ -61,46 +61,62 @@ class Util {
 class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
   implicit val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
 
-  private val dictRegistry = new SimpleDictRegistry(Map(
-    "dictFoo" -> EmbeddedDictDefinition(Map("one" -> "One", "two" -> "Two")),
-    "dictBar" -> EmbeddedDictDefinition(Map("sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots")),
-  ))
+  private val dictRegistry = new SimpleDictRegistry(
+    Map(
+      "dictFoo" -> EmbeddedDictDefinition(Map("one" -> "One", "two" -> "Two")),
+      "dictBar" -> EmbeddedDictDefinition(Map("sentence-with-spaces-and-dots" -> "Sentence with spaces and . dots")),
+    )
+  )
   private val dictServices = UiDictServices(dictRegistry, new SimpleDictQueryService(dictRegistry, 10))
 
-  private val clazzDefinitions: TypeDefinitionSet = TypeDefinitionSet(Set(
-    EspTypeUtils.clazzDefinition(classOf[A]),
-    EspTypeUtils.clazzDefinition(classOf[B]),
-    EspTypeUtils.clazzDefinition(classOf[C]),
-    EspTypeUtils.clazzDefinition(classOf[AA]),
-    EspTypeUtils.clazzDefinition(classOf[WithList]),
-    ClazzDefinition(
-      Typed.typedClass[String],
-      Map("toUpperCase" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toUpperCase", None))),
-      Map.empty
-    ),
-    ClazzDefinition(
-      Typed.typedClass[LocalDateTime],
-      Map("isBefore" -> List(StaticMethodInfo(MethodTypeInfo(List(GenericsParameter("arg0", Typed[LocalDateTime])), None, Typed[Boolean]), "isBefore", None))),
-      Map.empty
-    ),
-    EspTypeUtils.clazzDefinition(classOf[Util]),
-    EspTypeUtils.clazzDefinition(classOf[Duration]),
-    ClazzDefinition(
-      Typed.typedClass[java.util.Map[_, _]],
-      Map("empty" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[Boolean]), "empty", None))),
-      Map.empty
-    ),
-  ))
+  private val clazzDefinitions: TypeDefinitionSet = TypeDefinitionSet(
+    Set(
+      EspTypeUtils.clazzDefinition(classOf[A]),
+      EspTypeUtils.clazzDefinition(classOf[B]),
+      EspTypeUtils.clazzDefinition(classOf[C]),
+      EspTypeUtils.clazzDefinition(classOf[AA]),
+      EspTypeUtils.clazzDefinition(classOf[WithList]),
+      ClazzDefinition(
+        Typed.typedClass[String],
+        Map("toUpperCase" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[String]), "toUpperCase", None))),
+        Map.empty
+      ),
+      ClazzDefinition(
+        Typed.typedClass[LocalDateTime],
+        Map(
+          "isBefore" -> List(
+            StaticMethodInfo(
+              MethodTypeInfo(List(GenericsParameter("arg0", Typed[LocalDateTime])), None, Typed[Boolean]),
+              "isBefore",
+              None
+            )
+          )
+        ),
+        Map.empty
+      ),
+      EspTypeUtils.clazzDefinition(classOf[Util]),
+      EspTypeUtils.clazzDefinition(classOf[Duration]),
+      ClazzDefinition(
+        Typed.typedClass[java.util.Map[_, _]],
+        Map("empty" -> List(StaticMethodInfo(MethodTypeInfo(Nil, None, Typed[Boolean]), "empty", None))),
+        Map.empty
+      ),
+    )
+  )
   private val expressionSuggester = new ExpressionSuggester(
-    ProcessDefinitionBuilder.empty.expressionConfig.copy(staticMethodInvocationsChecking = true), clazzDefinitions, dictServices, getClass.getClassLoader)
+    ProcessDefinitionBuilder.empty.expressionConfig.copy(staticMethodInvocationsChecking = true),
+    clazzDefinitions,
+    dictServices,
+    getClass.getClassLoader
+  )
 
   private val variables: Map[String, TypingResult] = Map(
-    "input" -> Typed[A],
-    "other" -> Typed[C],
-    "ANOTHER" -> Typed[A],
+    "input"      -> Typed[A],
+    "other"      -> Typed[C],
+    "ANOTHER"    -> Typed[A],
     "dynamicMap" -> Typed.fromInstance(Map("intField" -> 1, "aField" -> new A)),
-    "listVar" -> Typed[WithList],
-    "util" -> Typed[Util],
+    "listVar"    -> Typed[WithList],
+    "util"       -> Typed[Util],
     "union" -> Typed(
       Typed[A],
       Typed[B],
@@ -111,8 +127,8 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       Typed.genericTypeClass[java.util.List[B]](List(Typed[B])),
     ),
     "listOfUnions" -> Typed.genericTypeClass[java.util.List[A]](List(Typed(Typed[A], Typed[B]))),
-    "dictFoo" -> DictInstance("dictFoo", EmbeddedDictDefinition(Map.empty[String, String])).typingResult,
-    "dictBar" -> DictInstance("dictBar", EmbeddedDictDefinition(Map.empty[String, String])).typingResult,
+    "dictFoo"      -> DictInstance("dictFoo", EmbeddedDictDefinition(Map.empty[String, String])).typingResult,
+    "dictBar"      -> DictInstance("dictBar", EmbeddedDictDefinition(Map.empty[String, String])).typingResult,
   )
 
   private def spelSuggestionsFor(input: String, row: Int = 0, column: Int = -1): List[ExpressionSuggestion] = {
@@ -124,25 +140,65 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   }
 
   private def suggestionsFor(expression: Expression, row: Int, column: Int): List[ExpressionSuggestion] = {
-    expressionSuggester.expressionSuggestions(expression, CaretPosition2d(row, if (column == -1) expression.expression.length else column), variables)(ExecutionContext.global).futureValue
+    expressionSuggester
+      .expressionSuggestions(
+        expression,
+        CaretPosition2d(row, if (column == -1) expression.expression.length else column),
+        variables
+      )(ExecutionContext.global)
+      .futureValue
   }
 
-  private def suggestion(methodName: String, refClazz: TypingResult, description: Option[String] = None, parameters: List[Parameter] = Nil): ExpressionSuggestion = {
+  private def suggestion(
+      methodName: String,
+      refClazz: TypingResult,
+      description: Option[String] = None,
+      parameters: List[Parameter] = Nil
+  ): ExpressionSuggestion = {
     ExpressionSuggestion(methodName = methodName, refClazz, fromClass = false, description, parameters)
   }
 
-  private val suggestionForBazCWithParams: ExpressionSuggestion = suggestion("bazCWithParams", Typed[C], None, List(Parameter("string1", Typed[String]), Parameter("string2", Typed[String]), Parameter("int", Typed[Int])))
+  private val suggestionForBazCWithParams: ExpressionSuggestion = suggestion(
+    "bazCWithParams",
+    Typed[C],
+    None,
+    List(Parameter("string1", Typed[String]), Parameter("string2", Typed[String]), Parameter("int", Typed[Int]))
+  )
 
   test("should not suggest anything for empty input") {
     spelSuggestionsFor("") shouldBe List()
   }
 
   test("should suggest all global variables if # specified") {
-    spelSuggestionsFor("#").map(_.methodName) shouldBe List("#ANOTHER", "#dictBar", "#dictFoo", "#dynamicMap", "#input", "#listOfUnions", "#listVar", "#other", "#union", "#unionOfLists", "#util")
+    spelSuggestionsFor("#").map(_.methodName) shouldBe List(
+      "#ANOTHER",
+      "#dictBar",
+      "#dictFoo",
+      "#dynamicMap",
+      "#input",
+      "#listOfUnions",
+      "#listVar",
+      "#other",
+      "#union",
+      "#unionOfLists",
+      "#util"
+    )
   }
 
   test("should suggest all global variables if # specified (multiline)") {
-    spelSuggestionsFor("#foo.foo(\n#\n).bar", row = 1, column = 1).map(_.methodName) shouldBe List("#ANOTHER", "#dictBar", "#dictFoo", "#dynamicMap", "#input", "#listOfUnions", "#listVar", "#other", "#union", "#unionOfLists", "#util")
+    spelSuggestionsFor("#foo.foo(\n#\n).bar", row = 1, column = 1).map(_.methodName) shouldBe List(
+      "#ANOTHER",
+      "#dictBar",
+      "#dictFoo",
+      "#dynamicMap",
+      "#input",
+      "#listOfUnions",
+      "#listVar",
+      "#other",
+      "#union",
+      "#unionOfLists",
+      "#util"
+    )
   }
 
   // TODO: add some score to each suggestion or sort them from most to least relevant
@@ -205,7 +261,9 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
       "#dictBar['Sentence with spaces and . dots']"
     )
     correctInputs.foreach(inputValue => {
-      spelSuggestionsFor(inputValue, 0, inputValue.length - 2).map(_.methodName) shouldBe List("Sentence with spaces and . dots")
+      spelSuggestionsFor(inputValue, 0, inputValue.length - 2).map(_.methodName) shouldBe List(
+        "Sentence with spaces and . dots"
+      )
     })
   }
 
@@ -278,7 +336,11 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   }
 
   test("should suggest for invocations with method parameters #2") {
-    spelSuggestionsFor("#input.foo + #input.barB.bazCWithParams('1', #input.foo, 2).quax", 0, "#input.foo + #input.barB.bazCWithParams('1', #input.foo".length) shouldBe List(
+    spelSuggestionsFor(
+      "#input.foo + #input.barB.bazCWithParams('1', #input.foo, 2).quax",
+      0,
+      "#input.foo + #input.barB.bazCWithParams('1', #input.foo".length
+    ) shouldBe List(
       suggestion("foo", Typed[A]),
       suggestion("fooString", Typed[String]),
     )
@@ -391,14 +453,22 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   }
 
   test("should suggest #this fields in projection after selection") {
-    spelSuggestionsFor("#listVar.listField.?[#this == 'value'].![#this.f]", 0, "#listVar.listField.?[#this == 'value'].![#this.f".length) shouldBe List(
+    spelSuggestionsFor(
+      "#listVar.listField.?[#this == 'value'].![#this.f]",
+      0,
+      "#listVar.listField.?[#this == 'value'].![#this.f".length
+    ) shouldBe List(
       suggestion("foo", Typed[A]),
       suggestion("fooString", Typed[String]),
     )
   }
 
   test("handles negated parameters with projections and selections") {
-    spelSuggestionsFor("!#listVar.listField.?[#this == 'value'].![#this.f]", 0, "!#listVar.listField.?[#this == 'value'].![#this.f".length) shouldBe List(
+    spelSuggestionsFor(
+      "!#listVar.listField.?[#this == 'value'].![#this.f]",
+      0,
+      "!#listVar.listField.?[#this == 'value'].![#this.f".length
+    ) shouldBe List(
       suggestion("foo", Typed[A]),
       suggestion("fooString", Typed[String]),
     )
@@ -412,7 +482,11 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   }
 
   test("should support nested method invocations") {
-    spelSuggestionsFor("#util.now(#other.quaxString.toUpperCase().)", 0, "#util.now(#other.quaxString.toUpperCase().".length) shouldBe List(
+    spelSuggestionsFor(
+      "#util.now(#other.quaxString.toUpperCase().)",
+      0,
+      "#util.now(#other.quaxString.toUpperCase().".length
+    ) shouldBe List(
       suggestion("toUpperCase", Typed[String]),
     )
   }
@@ -479,13 +553,25 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   }
 
   test("should suggest variables for spel template with spaces around") {
-    spelTemplateSuggestionsFor("#{        #hello        } - #{  #AN  }", 0, "#{        #hello        } - #{  #AN".length) shouldBe List(
+    spelTemplateSuggestionsFor(
+      "#{        #hello        } - #{  #AN  }",
+      0,
+      "#{        #hello        } - #{  #AN".length
+    ) shouldBe List(
       suggestion("#ANOTHER", Typed[A]),
     )
-    spelTemplateSuggestionsFor("#{#hello} - #{        #AN        }", 0, "#{#hello} - #{        #AN".length) shouldBe List(
+    spelTemplateSuggestionsFor(
+      "#{#hello} - #{        #AN        }",
+      0,
+      "#{#hello} - #{        #AN".length
+    ) shouldBe List(
       suggestion("#ANOTHER", Typed[A]),
     )
-    spelTemplateSuggestionsFor("#{    #hello    } - #{    #AN    }", 0, "#{    #hello    } - #{    #AN".length) shouldBe List(
+    spelTemplateSuggestionsFor(
+      "#{    #hello    } - #{    #AN    }",
+      0,
+      "#{    #hello    } - #{    #AN".length
+    ) shouldBe List(
       suggestion("#ANOTHER", Typed[A]),
     )
     spelTemplateSuggestionsFor("#{\n#hello\n} - #{\n\t#AN  }", 3, "\t#AN".length) shouldBe List(
@@ -498,7 +584,11 @@ class ExpressionSuggesterSpec extends AnyFunSuite with Matchers with PatientScal
   }
 
   test("should suggest variables for second spel expression, even if the first one is invalid") {
-    spelTemplateSuggestionsFor(s"Hello #{#invalidVar.foo} and #{#in}", 0, "Hello #{#invalidVar.foo} and #{#in".length) shouldBe List(
+    spelTemplateSuggestionsFor(
+      s"Hello #{#invalidVar.foo} and #{#in}",
+      0,
+      "Hello #{#invalidVar.foo} and #{#in".length
+    ) shouldBe List(
       suggestion("#input", Typed[A]),
     )
     spelTemplateSuggestionsFor(s"Hello #{!1 + a} and #{#in}", 0, "Hello #{!1 + a} and #{#in".length) shouldBe List(

@@ -7,7 +7,12 @@ import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonSerializer}
-import pl.touk.nussknacker.engine.schemedkafka.schema.{FullNameV1, FullNameV2, GeneratedAvroClassSample, GeneratedAvroClassSampleSchema}
+import pl.touk.nussknacker.engine.schemedkafka.schema.{
+  FullNameV1,
+  FullNameV2,
+  GeneratedAvroClassSample,
+  GeneratedAvroClassSampleSchema
+}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.source.SpecificRecordKafkaAvroSourceFactory
@@ -23,38 +28,74 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   override protected def valueSerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 
-  override def resolveConfig(config: Config): Config = super.resolveConfig(config).withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
+  override def resolveConfig(config: Config): Config =
+    super.resolveConfig(config).withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
 
   test("should read generated generic record in v1 with null key") {
     val givenValue = FullNameV1.record
 
-    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), null, givenValue)
+    roundTripKeyValueObject(
+      universalSourceFactory,
+      useStringForKey = true,
+      RecordTopic,
+      ExistingSchemaVersion(1),
+      null,
+      givenValue
+    )
   }
 
   test("should read generated generic record in v2 (latest) with null key") {
     val givenValue = FullNameV2.record
 
-    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(2), null, givenValue)
+    roundTripKeyValueObject(
+      universalSourceFactory,
+      useStringForKey = true,
+      RecordTopic,
+      ExistingSchemaVersion(2),
+      null,
+      givenValue
+    )
   }
 
   test("should read generated generic record in v1 with empty string key") {
     val givenValue = FullNameV1.record
 
-    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), "", givenValue)
+    roundTripKeyValueObject(
+      universalSourceFactory,
+      useStringForKey = true,
+      RecordTopic,
+      ExistingSchemaVersion(1),
+      "",
+      givenValue
+    )
   }
 
   test("should read generated generic record in v2 (latest) with empty string key") {
     val givenValue = FullNameV2.record
 
-    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(2), "", givenValue)
+    roundTripKeyValueObject(
+      universalSourceFactory,
+      useStringForKey = true,
+      RecordTopic,
+      ExistingSchemaVersion(2),
+      "",
+      givenValue
+    )
   }
 
   test("should read generated specific record in v1") {
     val givenValue = GeneratedAvroClassSampleSchema.specificRecord.asInstanceOf[GeneratedAvroClassSample]
 
-    val factory = (useStringForKey: Boolean) => new SpecificRecordKafkaAvroSourceFactory[GeneratedAvroClassSample](schemaRegistryClientFactory, ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory), testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
-      override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)
-    }.asInstanceOf[KafkaSource]
+    val factory = (useStringForKey: Boolean) =>
+      new SpecificRecordKafkaAvroSourceFactory[GeneratedAvroClassSample](
+        schemaRegistryClientFactory,
+        ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory),
+        testProcessObjectDependencies,
+        new FlinkKafkaSourceImplFactory(None)
+      ) {
+        override protected def prepareKafkaConfig: KafkaConfig =
+          super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)
+      }.asInstanceOf[KafkaSource]
 
     roundTripKeyValueObject(factory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), "", givenValue)
   }

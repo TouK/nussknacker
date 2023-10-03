@@ -26,7 +26,7 @@ case class FullNameV1(var first: CharSequence, var last: CharSequence) extends S
 
 object FullNameV1 extends TestSchemaWithSpecificRecord {
   final val BaseFirst = "Lucas"
-  final val BaseLast = "Touk"
+  final val BaseLast  = "Touk"
 
   val stringSchema: String =
     """{

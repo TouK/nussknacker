@@ -20,20 +20,29 @@ class AvroBenchmark {
 
   private val avroKryoTypeInfo = TypeInformation.of(classOf[GenericData.Record])
 
-  private[avro] val defaultFlinkKryoSetup = new SerializationBenchmarkSetup(avroKryoTypeInfo, AvroSamples.sampleRecord,
-    config => new AvroSerializersRegistrar().register(ConfigFactory.empty(), config))
+  private[avro] val defaultFlinkKryoSetup = new SerializationBenchmarkSetup(
+    avroKryoTypeInfo,
+    AvroSamples.sampleRecord,
+    config => new AvroSerializersRegistrar().register(ConfigFactory.empty(), config)
+  )
 
-  private[avro] val schemaIdBasedKryoSetup = new SerializationBenchmarkSetup(avroKryoTypeInfo, AvroSamples.sampleRecordWithSchemaId,
+  private[avro] val schemaIdBasedKryoSetup = new SerializationBenchmarkSetup(
+    avroKryoTypeInfo,
+    AvroSamples.sampleRecordWithSchemaId,
     config => {
       val schemaRegistryMockClient = new MockSchemaRegistryClient
-      val parsedSchema = ConfluentUtils.convertToAvroSchema(AvroSamples.sampleSchema, Some(1))
+      val parsedSchema             = ConfluentUtils.convertToAvroSchema(AvroSamples.sampleSchema, Some(1))
       schemaRegistryMockClient.register("foo-value", parsedSchema, 1, AvroSamples.sampleSchemaId.asInt)
       val factory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
-      val serializer = SchemaIdBasedAvroGenericRecordSerializer(factory, KafkaConfig(Some(Map("bootstrap.servers" -> "fooKafkaAddress")), None))
-      config.getRegisteredTypesWithKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
+      val serializer = SchemaIdBasedAvroGenericRecordSerializer(
+        factory,
+        KafkaConfig(Some(Map("bootstrap.servers" -> "fooKafkaAddress")), None)
+      )
+      config.getRegisteredTypesWithKryoSerializers
+        .put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
       config.getDefaultKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
-    })
-
+    }
+  )
 
   @Benchmark
   @BenchmarkMode(Array(Mode.AverageTime))

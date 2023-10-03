@@ -24,7 +24,11 @@ class SecurityApiSpec extends org.scalatest.flatspec.AnyFlatSpec with Matchers w
     Get("/secured") ~> route(basic) ~> check {
       status shouldEqual StatusCodes.Unauthorized
       responseAs[String] shouldEqual "The resource requires authentication, which was not supplied with the request"
-      header[`WWW-Authenticate`].get.challenges.head shouldEqual HttpChallenge("Basic", "nussknacker", Map("charset" -> StandardCharsets.UTF_8.name))
+      header[`WWW-Authenticate`].get.challenges.head shouldEqual HttpChallenge(
+        "Basic",
+        "nussknacker",
+        Map("charset" -> StandardCharsets.UTF_8.name)
+      )
     }
   }
   it should "support basic auth" in {
@@ -73,7 +77,10 @@ private object Auth {
       extractExecutionContext.flatMap { implicit ec =>
         onSuccess(authenticator(cookie)).flatMap {
           case Some(user) => provide(user)
-          case None => reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenge("", ""))): Directive1[AuthenticatedUser]
+          case None =>
+            reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenge("", ""))): Directive1[
+              AuthenticatedUser
+            ]
         }
       }
     }
@@ -84,21 +91,21 @@ private object Auth {
     Future {
       cookie match {
         case HttpCookiePair(_, "Im_a_random_hash") => someAdmin
-        case _ => None
+        case _                                     => None
       }
     }
   }
 
   def myUserPassAuthenticator(credentials: Credentials): Option[AuthenticatedUser] =
     credentials match {
-      case p@Credentials.Provided(id) if p.verify("admin") => someAdmin
-      case _ => None
+      case p @ Credentials.Provided(id) if p.verify("admin") => someAdmin
+      case _                                                 => None
     }
 }
 
 private object SecurityApiSpec {
   val cookieAuth = Auth.cookieAuth
-  val basic = Auth.basic
+  val basic      = Auth.basic
 
   implicit val actorSystem: ActorSystem = ActorSystem.create()
 

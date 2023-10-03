@@ -16,10 +16,13 @@ trait BaseNuRuntimeBinTestMixin extends VeryPatientScalaFutures with Matchers { 
     "CONFIG_FORCE_akka_management_http_hostname=127.0.0.1"
   )
 
-  protected def withProcessExecutedInBackground(shellScriptArgs: Array[String], shellScriptEnvs: Array[String],
-                                                executeBeforeProcessStatusCheck: => Unit,
-                                                executeAfterProcessStatusCheck: => Unit): Unit = {
-    val process = Runtime.getRuntime.exec(shellScriptArgs, shellScriptEnvs)
+  protected def withProcessExecutedInBackground(
+      shellScriptArgs: Array[String],
+      shellScriptEnvs: Array[String],
+      executeBeforeProcessStatusCheck: => Unit,
+      executeAfterProcessStatusCheck: => Unit
+  ): Unit = {
+    val process               = Runtime.getRuntime.exec(shellScriptArgs, shellScriptEnvs)
     val processExitCodeFuture = ProcessUtils.attachLoggingAndReturnWaitingFuture(process)
     ProcessUtils.destroyProcessEventually(process) {
       executeBeforeProcessStatusCheck
@@ -31,8 +34,8 @@ trait BaseNuRuntimeBinTestMixin extends VeryPatientScalaFutures with Matchers { 
 
   protected def shellScriptPath: Path = {
     val targetItClassesDir = Path.of(getClass.getResource("/").toURI)
-    val liteModuleDir = targetItClassesDir.getParent.getParent.getParent.getParent
-    val stageDir = liteModuleDir.resolve("runtime-app/target/universal/stage")
+    val liteModuleDir      = targetItClassesDir.getParent.getParent.getParent.getParent
+    val stageDir           = liteModuleDir.resolve("runtime-app/target/universal/stage")
     stageDir.resolve("bin/run.sh")
   }
 

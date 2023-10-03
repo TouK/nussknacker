@@ -16,8 +16,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   private val sampleLong: Long = Int.MaxValue.toLong + 1
 
   test("json object") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
+    val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "properties": {
         |    "firstName": {
@@ -32,8 +31,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  }
         |}""".stripMargin)
 
-    val result = new CirceJsonDeserializer(schema).deserialize(
-      """{
+    val result = new CirceJsonDeserializer(schema).deserialize("""{
         |  "firstName": "John",
         |  "lastName": "Doe",
         |  "age": 21
@@ -41,8 +39,8 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
 
     result shouldEqual Map(
       "firstName" -> "John",
-      "lastName" -> "Doe",
-      "age" -> 21L
+      "lastName"  -> "Doe",
+      "age"       -> 21L
     ).asJava
   }
 
@@ -54,9 +52,10 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   }
 
   test("json object with union") {
-    forAll(Table(
-      "schema",
-      """{
+    forAll(
+      Table(
+        "schema",
+        """{
         |  "type": "object",
         |  "properties": {
         |    "a": {
@@ -64,7 +63,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |    }
         |  }
         |}""".stripMargin,
-      """{
+        """{
         |  "type": "object",
         |  "properties": {
         |    "a": {
@@ -75,7 +74,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |    }
         |  }
         |}""".stripMargin,
-      """{
+        """{
         |  "type": "object",
         |  "properties": {
         |    "a": {
@@ -86,8 +85,9 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |    }
         |  }
         |}""".stripMargin
-    )) { schemaString =>
-      val schema = JsonSchemaBuilder.parseSchema(schemaString)
+      )
+    ) { schemaString =>
+      val schema       = JsonSchemaBuilder.parseSchema(schemaString)
       val deserializer = new CirceJsonDeserializer(schema)
 
       deserializer.deserialize("""{ "a": "1"}""".stripMargin) shouldEqual Map("a" -> "1").asJava
@@ -96,8 +96,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   }
 
   test("handling nulls and empty json") {
-    val unionSchemaWithNull = JsonSchemaBuilder.parseSchema(
-      """
+    val unionSchemaWithNull = JsonSchemaBuilder.parseSchema("""
         |{
         |  "type": "object",
         |  "properties": {
@@ -108,8 +107,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |}
         |""".stripMargin)
 
-    val schemaWithNotRequiredField = JsonSchemaBuilder.parseSchema(
-      """
+    val schemaWithNotRequiredField = JsonSchemaBuilder.parseSchema("""
         |{
         |  "type": "object",
         |  "properties": {
@@ -120,8 +118,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |}
         |""".stripMargin)
 
-    val schemaUnionWithDefaultField = JsonSchemaBuilder.parseSchema(
-      """
+    val schemaUnionWithDefaultField = JsonSchemaBuilder.parseSchema("""
         |{
         |  "type": "object",
         |  "properties": {
@@ -133,15 +130,17 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |}
         |""".stripMargin)
 
-    forAll(Table(
-      ("json", "schema", "result"),
-      ("""{"a": "test"}""", unionSchemaWithNull, Map("a" -> "test")),
-      ("""{"a": null}""", unionSchemaWithNull, Map("a" -> null)),
-      ("""{}""", unionSchemaWithNull, Map()),
-      ("""{}""", schemaWithNotRequiredField, Map()),
-      ("""{}""", schemaUnionWithDefaultField, Map("a" -> "lcl")),
-      ("""{"a": null}""", schemaUnionWithDefaultField, Map("a" -> null)),
-    )) { (json, schema, result) =>
+    forAll(
+      Table(
+        ("json", "schema", "result"),
+        ("""{"a": "test"}""", unionSchemaWithNull, Map("a" -> "test")),
+        ("""{"a": null}""", unionSchemaWithNull, Map("a" -> null)),
+        ("""{}""", unionSchemaWithNull, Map()),
+        ("""{}""", schemaWithNotRequiredField, Map()),
+        ("""{}""", schemaUnionWithDefaultField, Map("a" -> "lcl")),
+        ("""{"a": null}""", schemaUnionWithDefaultField, Map("a" -> null)),
+      )
+    ) { (json, schema, result) =>
       val deserializer = new CirceJsonDeserializer(schema)
       deserializer.deserialize(json) shouldEqual result.asJava
     }
@@ -149,19 +148,21 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
 
   test("handle number / integer schema") {
     val integerSchema = NumberSchema.builder().requiresInteger(true).build()
-    val numberSchema = NumberSchema.builder().build()
+    val numberSchema  = NumberSchema.builder().build()
 
-    forAll(Table(
-      ("json", "schema", "expected"),
-      (1.toString, integerSchema, 1),
-      (sampleLong.toString, integerSchema, sampleLong),
-      //It's a little bit tricky, big int is rounded to Long.Max by JsonToNuStruct because for integer schema we assign long type from OpenApi schema
-      (BigInt.long2bigInt(sampleLong).setBit(67).toString(), integerSchema, Long.MaxValue),
-      (sampleLong.toString, numberSchema, java.math.BigDecimal.valueOf(sampleLong)),
-      (sampleLong.toDouble.toString, numberSchema, java.math.BigDecimal.valueOf(sampleLong)),
-    )) { (json, schema, expected) =>
+    forAll(
+      Table(
+        ("json", "schema", "expected"),
+        (1.toString, integerSchema, 1),
+        (sampleLong.toString, integerSchema, sampleLong),
+        // It's a little bit tricky, big int is rounded to Long.Max by JsonToNuStruct because for integer schema we assign long type from OpenApi schema
+        (BigInt.long2bigInt(sampleLong).setBit(67).toString(), integerSchema, Long.MaxValue),
+        (sampleLong.toString, numberSchema, java.math.BigDecimal.valueOf(sampleLong)),
+        (sampleLong.toDouble.toString, numberSchema, java.math.BigDecimal.valueOf(sampleLong)),
+      )
+    ) { (json, schema, expected) =>
       val deserializer = new CirceJsonDeserializer(schema)
-      val result = deserializer.deserialize(json)
+      val result       = deserializer.deserialize(json)
       result shouldEqual expected
     }
 
@@ -171,8 +172,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   }
 
   test("json object with defined, pattern and additional properties") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
+    val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "properties": {
         |    "someDefinedProp": {
@@ -189,23 +189,21 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  }
         |}""".stripMargin)
 
-    val result = new CirceJsonDeserializer(schema).deserialize(
-      """{
+    val result = new CirceJsonDeserializer(schema).deserialize("""{
         |  "someDefinedProp": true,
         |  "someAdditionalProp": "string",
         |  "somePatternProp_int": 1234
         |}""".stripMargin)
 
     result shouldEqual Map(
-      "someDefinedProp" -> true,
-      "someAdditionalProp" -> "string",
+      "someDefinedProp"     -> true,
+      "someAdditionalProp"  -> "string",
       "somePatternProp_int" -> 1234L
     ).asJava
   }
 
   test("json object pattern properties and with disabled additional properties") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
+    val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "additionalProperties": false,
         |  "patternProperties": {
@@ -215,8 +213,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  }
         |}""".stripMargin)
 
-    val result = new CirceJsonDeserializer(schema).deserialize(
-      """{
+    val result = new CirceJsonDeserializer(schema).deserialize("""{
         |  "somePatternProp_int": 1234
         |}""".stripMargin)
 
@@ -226,8 +223,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   }
 
   test("json object pattern properties when no explicit properties") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
+    val schema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "additionalProperties": {
         |    "type": "string"
@@ -243,17 +239,16 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  }
         |}""".stripMargin)
 
-    val result = new CirceJsonDeserializer(schema).deserialize(
-      """{
+    val result = new CirceJsonDeserializer(schema).deserialize("""{
         |  "somePatternProp_int": 1234,
         |  "somePatternProp_date": "2023-01-23",
         |  "someAdditionalProp": "1234"
         |}""".stripMargin)
 
     result shouldEqual Map(
-      "somePatternProp_int" -> 1234L,
+      "somePatternProp_int"  -> 1234L,
       "somePatternProp_date" -> LocalDate.parse("2023-01-23"),
-      "someAdditionalProp" -> "1234"
+      "someAdditionalProp"   -> "1234"
     ).asJava
   }
 
@@ -273,23 +268,23 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  "additionalProperties": true
         |}""".stripMargin
 
-    forAll(Table(
-      ("schema"),
-      (emptySchemaInAdditionalProperties),
-      (implicitAdditionalProperties),
-      (trueInAdditionalProperties),
-    )) { schemaStr =>
-      val schema = JsonSchemaBuilder.parseSchema(
-        schemaStr.stripMargin)
-      val result = new CirceJsonDeserializer(schema).deserialize(
-        """{
+    forAll(
+      Table(
+        ("schema"),
+        (emptySchemaInAdditionalProperties),
+        (implicitAdditionalProperties),
+        (trueInAdditionalProperties),
+      )
+    ) { schemaStr =>
+      val schema = JsonSchemaBuilder.parseSchema(schemaStr.stripMargin)
+      val result = new CirceJsonDeserializer(schema).deserialize("""{
           |  "additionalInt": 1234,
           |  "additionalString": "foo",
           |  "additionalObject": {"foo": "bar"}
           |}""".stripMargin)
 
       result shouldEqual Map(
-        "additionalInt" -> java.math.BigDecimal.valueOf(1234),
+        "additionalInt"    -> java.math.BigDecimal.valueOf(1234),
         "additionalString" -> "foo",
         "additionalObject" -> Map("foo" -> "bar").asJava
       ).asJava
@@ -297,19 +292,20 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   }
 
   test("handle empty always true schema") {
-    forAll(Table(
-      ("json", "schema", "expected"),
-      ("{}", "{}", Map.empty.asJava),
-      ("{}", "true", Map.empty.asJava),
-      ("\"foo\"", "{}", "foo"),
-      ("\"foo\"", "true", "foo"),
-      ("{\"foo\": \"bar\"}", "{}", Map("foo" -> "bar").asJava),
-      ("{\"foo\": \"bar\"}", "true", Map("foo" -> "bar").asJava),
-    )) { (json, schemaStr, expected) =>
-      val schema = JsonSchemaBuilder.parseSchema(
-        schemaStr.stripMargin)
+    forAll(
+      Table(
+        ("json", "schema", "expected"),
+        ("{}", "{}", Map.empty.asJava),
+        ("{}", "true", Map.empty.asJava),
+        ("\"foo\"", "{}", "foo"),
+        ("\"foo\"", "true", "foo"),
+        ("{\"foo\": \"bar\"}", "{}", Map("foo" -> "bar").asJava),
+        ("{\"foo\": \"bar\"}", "true", Map("foo" -> "bar").asJava),
+      )
+    ) { (json, schemaStr, expected) =>
+      val schema       = JsonSchemaBuilder.parseSchema(schemaStr.stripMargin)
       val deserializer = new CirceJsonDeserializer(schema)
-      val result = deserializer.deserialize(json)
+      val result       = deserializer.deserialize(json)
       result shouldEqual expected
     }
   }

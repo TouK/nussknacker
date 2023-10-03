@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
 
 object Address extends TestSchemaWithRecord {
-  final val DefaultCity = "Warsaw"
+  final val DefaultCity   = "Warsaw"
   final val DefaultStreet = "ul. Bohaterów Września 9"
 
   val stringSchema: String =
@@ -23,7 +23,7 @@ object Address extends TestSchemaWithRecord {
     """.stripMargin
 
   val exampleData: Map[String, Any] = Map(
-    "city" -> DefaultCity,
+    "city"   -> DefaultCity,
     "street" -> DefaultStreet
   )
 

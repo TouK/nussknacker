@@ -19,18 +19,17 @@ import java.net.URI
 import scala.concurrent.Future
 
 class OpaqueTokenAuthenticationSpec
-  extends AnyFunSpec
+    extends AnyFunSpec
     with Matchers
     with ScalatestRouteTest
     with Directives
     with FailFastCirceSupport
     with EitherValues {
 
-  private val tokenUri = Uri(URI.create("http://authorization.server/token"))
+  private val tokenUri    = Uri(URI.create("http://authorization.server/token"))
   private val userinfoUri = Uri(URI.create("http://authorization.server/userinfo"))
 
-  private val config = ConfigFactory.parseString(
-    s"""authentication: {
+  private val config = ConfigFactory.parseString(s"""authentication: {
        |  method: "OAuth2"
        |  usersFile: "classpath:oauth2-users.conf"
        |  authorizeUri: "http://ignored"
@@ -42,11 +41,13 @@ class OpaqueTokenAuthenticationSpec
        |}""".stripMargin)
 
   private val validAccessToken = "aValidAccessToken"
-  implicit private val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture
-    .whenRequestMatches(_.uri.equals(tokenUri))
-    .thenRespond(s""" { "access_token": "${validAccessToken}", "token_type": "Bearer" } """)
-    .whenRequestMatches(_.uri.equals(userinfoUri))
-    .thenRespond(s""" { "sub": "admin" } """))
+  implicit private val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend(
+    SttpBackendStub.asynchronousFuture
+      .whenRequestMatches(_.uri.equals(tokenUri))
+      .thenRespond(s""" { "access_token": "${validAccessToken}", "token_type": "Bearer" } """)
+      .whenRequestMatches(_.uri.equals(userinfoUri))
+      .thenRespond(s""" { "sub": "admin" } """)
+  )
 
   private val classLoader = getClass.getClassLoader
 
@@ -72,7 +73,9 @@ class OpaqueTokenAuthenticationSpec
   }
 
   it("should permit an authorized user to a restricted resource") {
-    Get("/authentication/oauth2?code=test&redirect_uri=http://ignored/") ~> authenticationResources.routeWithPathPrefix ~> check {
+    Get(
+      "/authentication/oauth2?code=test&redirect_uri=http://ignored/"
+    ) ~> authenticationResources.routeWithPathPrefix ~> check {
       status shouldEqual StatusCodes.OK
       val accessToken = responseAs[Json].hcursor.downField("accessToken").as[String].value
       Get("/config").addCredentials(HttpCredentials.createOAuth2BearerToken(accessToken)) ~> testRoute ~> check {
@@ -87,7 +90,8 @@ class OpaqueTokenAuthenticationSpec
       status shouldEqual StatusCodes.Unauthorized
     }
     // We should deny a token even if it is valid and permit retrieving user info if it has not been obtained before and stored in the cache.
-    testingBackend.allInteractions.map { case (request, _) => (request.method, request.uri) } should not contain ((Method.GET, userinfoUri))
+    testingBackend.allInteractions
+      .map { case (request, _) => (request.method, request.uri) } should not contain ((Method.GET, userinfoUri))
   }
 
 }

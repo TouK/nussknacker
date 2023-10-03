@@ -45,7 +45,6 @@
 [IJ]
   */
 
-
 package pl.touk.nussknacker.engine.benchmarks.spel
 
 import org.openjdk.jmh.annotations._
@@ -64,6 +63,3 @@ class SpelSecurityExcludeListBenchmark {
     setup.test()
   }
 }
-
-
-
