@@ -164,7 +164,18 @@ describe("Process", () => {
                 .contains(/^cancel$/i)
                 .click();
 
-            cy.deployScenario();
+            cy.contains(/^deploy$/i).click();
+            cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy");
+            cy.get("[data-testid=window] textarea").click().type("issues/123");
+            cy.get("[data-testid=window]").matchImage();
+            cy.contains(/^ok$/i).should("be.enabled").click();
+            cy.wait(["@deploy", "@fetch"], {
+                timeout: 20000,
+                log: true,
+            }).each((res) => {
+                cy.wrap(res).its("response.statusCode").should("eq", 200);
+            });
+
             cy.get("@button").click();
             cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible");
             cy.contains(/^latest deploy$/i).should("be.visible");
