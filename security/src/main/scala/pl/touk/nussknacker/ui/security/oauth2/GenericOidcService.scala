@@ -38,7 +38,7 @@ class GenericOidcService[
 
 }
 
-@ConfiguredJsonCodec case class DefaultOidcAuthorizationData(
+@ConfiguredJsonCodec final case class DefaultOidcAuthorizationData(
     @JsonKey("access_token") accessToken: String,
     @JsonKey("token_type") tokenType: String,
     @JsonKey("refresh_token") refreshToken: Option[String] = None,
@@ -59,8 +59,8 @@ object GenericOidcService {
       OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration),
       configuration
     ) {
-      override protected def toIntrospectionResult(claims: OpenIdConnectUserInfo): AccessTokenData = {
-        super.toIntrospectionResult(claims).copy(roles = claims.roles)
+      override protected def toIntrospectedData(claims: OpenIdConnectUserInfo): IntrospectedAccessTokenData = {
+        super.toIntrospectedData(claims).copy(roles = claims.roles)
       }
     }
 }

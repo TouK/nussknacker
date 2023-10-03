@@ -60,12 +60,12 @@ class CachingOAuth2Service[
     userInfo.map { case (userInfo, expiration) => (userInfo, Some(expiration)) }
   }
 
-  override def introspectAccessToken(accessToken: String): Future[AccessTokenData] =
+  override def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
     throw new IllegalAccessError(
       "CachingOAuth2Service.introspectAccessToken shouldn't be used directly - checkAuthorizationAndObtainUserinfo should be called instead"
     )
 
-  override def obtainUserInfo(accessToken: String, accessTokenData: AccessTokenData): Future[UserInfoData] =
+  override def obtainUserInfo(accessToken: String, accessTokenData: IntrospectedAccessTokenData): Future[UserInfoData] =
     throw new IllegalAccessError(
       "CachingOAuth2Service.obtainUserInfo shouldn't be used directly - checkAuthorizationAndObtainUserinfo should be called instead"
     )

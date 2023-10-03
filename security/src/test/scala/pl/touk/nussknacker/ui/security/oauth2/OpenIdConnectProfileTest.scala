@@ -78,7 +78,9 @@ class OpenIdConnectProfileTest
 
     forAll(data) { (config, profile, expected) =>
       val result =
-        OpenIdConnectProfile.getAuthenticatedUser(AccessTokenData.empty, Future.successful(profile), config).futureValue
+        OpenIdConnectProfile
+          .getAuthenticatedUser(IntrospectedAccessTokenData.empty, Future.successful(profile), config)
+          .futureValue
       result shouldBe expected
     }
 

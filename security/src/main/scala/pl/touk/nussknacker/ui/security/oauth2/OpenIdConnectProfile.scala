@@ -9,7 +9,7 @@ import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.{getUserRoles, usern
 import java.time.{Instant, LocalDate}
 import scala.concurrent.{ExecutionContext, Future}
 
-@ConfiguredJsonCodec(decodeOnly = true) case class OpenIdConnectUserInfo(
+@ConfiguredJsonCodec(decodeOnly = true) final case class OpenIdConnectUserInfo(
     // Although the `sub` field is optional claim for a JWT, it becomes mandatory in OIDC context,
     // hence Some[] overrides here Option[] from JwtStandardClaims.
     @JsonKey("sub") subject: Some[String],
@@ -67,7 +67,7 @@ object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
 
 object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
   override def getAuthenticatedUser(
-      accessTokenData: AccessTokenData,
+      accessTokenData: IntrospectedAccessTokenData,
       getProfile: => Future[OpenIdConnectUserInfo],
       configuration: OAuth2Configuration
   )(implicit ec: ExecutionContext): Future[AuthenticatedUser] = {
@@ -77,7 +77,7 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
   }
 
   private def authenticateUserBasedOnAccessTokenDataAndUsersConfigurationOnly(
-      accessTokenData: AccessTokenData,
+      accessTokenData: IntrospectedAccessTokenData,
       configuration: OAuth2Configuration
   ) = {
     for {
@@ -90,7 +90,7 @@ object OpenIdConnectProfile extends OAuth2Profile[OpenIdConnectUserInfo] {
   }
 
   private def authenticateUserBasedOnProfile(
-      accessTokenData: AccessTokenData,
+      accessTokenData: IntrospectedAccessTokenData,
       getProfile: => Future[OpenIdConnectUserInfo],
       configuration: OAuth2Configuration
   )(implicit ec: ExecutionContext) = {

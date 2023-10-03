@@ -5,9 +5,9 @@ import io.circe.Decoder
 import pdi.jwt.JwtAlgorithm
 import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
 import pl.touk.nussknacker.ui.security.oauth2.{
-  AccessTokenData,
   DefaultOidcAuthorizationData,
   GenericOidcService,
+  IntrospectedAccessTokenData,
   OAuth2ClientApi,
   OpenIdConnectUserInfo
 }
@@ -31,8 +31,8 @@ class OidcService(configuration: OidcAuthenticationConfiguration)(
       configuration.oAuth2Configuration
     )(OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims), ec) {
 
-  override protected def toIntrospectionResult(claims: OpenIdConnectUserInfo): AccessTokenData = {
-    super.toIntrospectionResult(claims).copy(roles = claims.roles)
+  override protected def toIntrospectedData(claims: OpenIdConnectUserInfo): IntrospectedAccessTokenData = {
+    super.toIntrospectedData(claims).copy(roles = claims.roles)
   }
 
   override protected lazy val jwtValidator: JwtValidator = createJwtValidator(configuration)

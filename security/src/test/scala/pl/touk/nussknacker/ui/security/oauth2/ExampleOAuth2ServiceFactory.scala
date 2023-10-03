@@ -25,10 +25,13 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
       authenticatedUser   <- checkAuthorizationAndObtainUserinfo(accessTokenResponse.accessToken).map(_._1)
     } yield (accessTokenResponse, authenticatedUser)
 
-  override def introspectAccessToken(accessToken: String): Future[AccessTokenData] =
-    Future.successful(AccessTokenData.empty)
+  override def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
+    Future.successful(IntrospectedAccessTokenData.empty)
 
-  override def obtainUserInfo(accessToken: String, accessTokenData: AccessTokenData): Future[AuthenticatedUser] =
+  override def obtainUserInfo(
+      accessToken: String,
+      accessTokenData: IntrospectedAccessTokenData
+  ): Future[AuthenticatedUser] =
     clientApi.profileRequest(accessToken).map { prf: TestProfileResponse =>
       AuthenticatedUser(
         prf.uid,
@@ -78,7 +81,7 @@ object ExampleOAuth2ServiceFactory {
   val testRules: List[AuthenticationConfiguration.ConfigRule] =
     AuthenticationConfiguration.getRules(testConfig.usersFile)
 
-  @ConfiguredJsonCodec case class TestAccessTokenResponse(
+  @ConfiguredJsonCodec final case class TestAccessTokenResponse(
       @JsonKey("access_token") accessToken: String,
       @JsonKey("token_type") tokenType: String,
       @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration],
@@ -90,7 +93,7 @@ object ExampleOAuth2ServiceFactory {
     implicit val config: Configuration = Configuration.default
   }
 
-  @JsonCodec case class TestProfileResponse(email: String, uid: String, clearance: TestProfileClearanceResponse)
-  @JsonCodec case class TestTokenIntrospectionResponse(exp: Option[Long])
-  @JsonCodec case class TestProfileClearanceResponse(roles: Set[String])
+  @JsonCodec final case class TestProfileResponse(email: String, uid: String, clearance: TestProfileClearanceResponse)
+  @JsonCodec final case class TestTokenIntrospectionResponse(exp: Option[Long])
+  @JsonCodec final case class TestProfileClearanceResponse(roles: Set[String])
 }

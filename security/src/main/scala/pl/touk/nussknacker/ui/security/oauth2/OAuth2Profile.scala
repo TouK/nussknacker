@@ -6,7 +6,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait OAuth2Profile[ProfileResponse] {
   def getAuthenticatedUser(
-      accessTokenData: AccessTokenData,
+      accessTokenData: IntrospectedAccessTokenData,
       getProfile: => Future[ProfileResponse],
       configuration: OAuth2Configuration
   )(implicit ec: ExecutionContext): Future[AuthenticatedUser]

@@ -32,14 +32,18 @@ abstract class OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2Authoriz
       userInfo        <- obtainUserInfo(accessToken, accessTokenData)
     } yield (userInfo, accessTokenData.expirationTime)
   }
-  def introspectAccessToken(accessToken: String): Future[AccessTokenData]
-  def obtainUserInfo(accessToken: String, accessTokenData: AccessTokenData): Future[UserInfoData]
+  def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData]
+  def obtainUserInfo(accessToken: String, accessTokenData: IntrospectedAccessTokenData): Future[UserInfoData]
 }
 
-case class AccessTokenData(subject: Option[String], expirationTime: Option[Instant], roles: Set[String])
+final case class IntrospectedAccessTokenData(
+    subject: Option[String],
+    expirationTime: Option[Instant],
+    roles: Set[String]
+)
 
-object AccessTokenData {
-  val empty: AccessTokenData = AccessTokenData(None, None, Set.empty)
+object IntrospectedAccessTokenData {
+  val empty: IntrospectedAccessTokenData = IntrospectedAccessTokenData(None, None, Set.empty)
 }
 
 trait OAuth2ServiceFactory {

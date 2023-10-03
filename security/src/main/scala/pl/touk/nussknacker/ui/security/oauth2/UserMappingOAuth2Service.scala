@@ -19,15 +19,18 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
     for {
       (authorization, userInfo) <- delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
       loggedUser <- loggedUserFunction(
-        LoggedUserFunctionParameters(AccessTokenData.empty, () => Future.successful(userInfo))
+        LoggedUserFunctionParameters(IntrospectedAccessTokenData.empty, () => Future.successful(userInfo))
       )
     } yield (authorization, loggedUser)
   }
 
-  override def introspectAccessToken(accessToken: String): Future[AccessTokenData] =
+  override def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] =
     delegate.introspectAccessToken(accessToken)
 
-  override def obtainUserInfo(accessToken: String, accessTokenData: AccessTokenData): Future[AuthenticatedUser] = {
+  override def obtainUserInfo(
+      accessToken: String,
+      accessTokenData: IntrospectedAccessTokenData
+  ): Future[AuthenticatedUser] = {
     loggedUserFunction(
       LoggedUserFunctionParameters(accessTokenData, () => delegate.obtainUserInfo(accessToken, accessTokenData))
     )
@@ -35,7 +38,7 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
 
 }
 
-case class LoggedUserFunctionParameters[UserInfoData](
-    accessTokenData: AccessTokenData,
+final case class LoggedUserFunctionParameters[UserInfoData](
+    accessTokenData: IntrospectedAccessTokenData,
     getUserInfo: () => Future[UserInfoData]
 )

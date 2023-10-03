@@ -46,11 +46,11 @@ class JwtOAuth2Service[
       case Invalid(jwtError) => Future.failed(OAuth2CompoundException(one(jwtError)))
     }
 
-  override def introspectAccessToken(accessToken: String): Future[AccessTokenData] = {
+  override def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] = {
     if (accessTokenIsJwt) {
       introspectJwtToken[AccessTokenClaims](accessToken).map { claims =>
         if (verifyAccessTokenAudience(claims)) {
-          toIntrospectionResult(claims)
+          toIntrospectedData(claims)
         } else {
           throw OAuth2CompoundException(one(OAuth2AccessTokenRejection("Invalid audience claim")))
         }
@@ -64,8 +64,8 @@ class JwtOAuth2Service[
     requiredAccessTokenAudience.isEmpty || claims.audienceAsList.exists(requiredAccessTokenAudience.contains)
   }
 
-  protected def toIntrospectionResult(claims: AccessTokenClaims): AccessTokenData = {
-    AccessTokenData(claims.subject, claims.expirationTime, Set.empty)
+  protected def toIntrospectedData(claims: AccessTokenClaims): IntrospectedAccessTokenData = {
+    IntrospectedAccessTokenData(claims.subject, claims.expirationTime, Set.empty)
   }
 
   override protected def obtainAuthorization(

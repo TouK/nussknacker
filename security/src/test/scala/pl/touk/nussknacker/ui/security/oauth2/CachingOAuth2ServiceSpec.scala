@@ -46,8 +46,11 @@ class CachingOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matcher
       checkRecordings = checkRecordings + (accessToken -> (checkRecordings.getOrElse(accessToken, 0) + 1))
       jwtOAuth2Service.checkAuthorizationAndObtainUserinfo(accessToken)
     }
-    override def introspectAccessToken(accessToken: String): Future[AccessTokenData] = ???
-    override def obtainUserInfo(accessToken: String, accessTokenData: AccessTokenData): Future[OpenIdConnectUserInfo] =
+    override def introspectAccessToken(accessToken: String): Future[IntrospectedAccessTokenData] = ???
+    override def obtainUserInfo(
+        accessToken: String,
+        accessTokenData: IntrospectedAccessTokenData
+    ): Future[OpenIdConnectUserInfo] =
       ???
   }
 
