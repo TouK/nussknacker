@@ -45,7 +45,7 @@ import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.{AuthenticationConfiguration, AuthenticationResources, LoggedUser}
-import pl.touk.nussknacker.ui.services.{AppApiHttpService, NuDesignerOpenApiHttpService}
+import pl.touk.nussknacker.ui.services.{AppApiHttpService, NuDesignerExposedApiHttpService}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettingsDeterminer
 import pl.touk.nussknacker.ui.suggester.ExpressionSuggester
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
@@ -301,15 +301,12 @@ class AkkaHttpBasedRouteProvider(
         authenticationResources.routeWithPathPrefix,
       )
 
-      val nuDesignerOpenApi = new NuDesignerOpenApiHttpService(appApiHttpService)
+      val nuDesignerApi = new NuDesignerExposedApiHttpService(appApiHttpService)
 
       createAppRoute(
         resolvedConfig = resolvedConfig,
         authenticationResources = authenticationResources,
-        tapirRelatedRoutes = List(
-          akkaHttpServerInterpreter.toRoute(nuDesignerOpenApi.publicServerEndpoints),
-          akkaHttpServerInterpreter.toRoute(appApiHttpService.serverEndpoints)
-        ),
+        tapirRelatedRoutes = akkaHttpServerInterpreter.toRoute(nuDesignerApi.allEndpoints) :: Nil,
         apiResourcesWithAuthentication = apiResourcesWithAuthentication,
         apiResourcesWithoutAuthentication = apiResourcesWithoutAuthentication,
         processCategoryService = processCategoryService,

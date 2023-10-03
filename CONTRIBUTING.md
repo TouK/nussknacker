@@ -190,6 +190,9 @@ sbt dist/Docker/publishLocal
 #### Publish jars to local maven repository
 ```sbt publishM2```
 
+#### Generating Nu Designer API OpenAPI static document
+```sbt generateDesignerOpenApi```
+
 ### Automated testing
 
 You can run tests via `sbt test` or using your IDE.
