@@ -125,9 +125,9 @@ function addEdge(process: Process, fromId: NodeId, toId: NodeId): Process {
 }
 
 export const handleGraphEvent =
-    (
-        touchEvent: ((cellView: dia.CellView, event: dia.Event) => void) | null,
-        mouseEvent: ((cellView: dia.CellView, event: dia.Event) => void) | null,
+    <T = dia.CellView>(
+        touchEvent: ((cellView: T, event: dia.Event) => void) | null,
+        mouseEvent: ((cellView: T, event: dia.Event) => void) | null,
     ) =>
-    (cellView: dia.CellView, event: dia.Event) =>
+    (cellView: T, event: dia.Event) =>
         isTouchEvent(event) ? touchEvent?.(cellView, event) : mouseEvent?.(cellView, event);
