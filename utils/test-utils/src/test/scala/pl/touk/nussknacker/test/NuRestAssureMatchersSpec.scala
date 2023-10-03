@@ -42,7 +42,7 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (true)
+      .matches(currentJson) should be(true)
   }
 
   test("it should not match when string value field in root level is not matched") {
@@ -65,7 +65,7 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
   test("it should not match when string value field in nested level is not matched") {
@@ -88,7 +88,7 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
   test("it should not match when boolean value field in root level is not matched") {
@@ -111,7 +111,7 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
   test("it should not match when boolean value field in nested level is not matched") {
@@ -134,7 +134,7 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
   test("it should not match when number value field in root level is not matched") {
@@ -157,7 +157,7 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
   test("it should not match when number value field in nested level is not matched") {
@@ -180,10 +180,12 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
-  test("it should not match when array value field in root level is not matched (because of different order of elements)") {
+  test(
+    "it should not match when array value field in root level is not matched (because of different order of elements)"
+  ) {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
@@ -203,10 +205,12 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
-  test("it should not match when array value field in root level is not matched (because of different count of elements)") {
+  test(
+    "it should not match when array value field in root level is not matched (because of different count of elements)"
+  ) {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
@@ -226,10 +230,12 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
-  test("it should not match when array value field in root level is not matched (because of object in array is different)") {
+  test(
+    "it should not match when array value field in root level is not matched (because of object in array is different)"
+  ) {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
@@ -249,10 +255,12 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
-  test("it should not match when array value field in nested level is not matched (because of different order of elements)") {
+  test(
+    "it should not match when array value field in nested level is not matched (because of different order of elements)"
+  ) {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
@@ -272,10 +280,12 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
-  test("it should not match when array value field in nested level is not matched (because of different count of elements)") {
+  test(
+    "it should not match when array value field in nested level is not matched (because of different count of elements)"
+  ) {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
@@ -295,10 +305,12 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
-  test("it should not match when array value field in nested level is not matched (because of object in array is different)") {
+  test(
+    "it should not match when array value field in nested level is not matched (because of object in array is different)"
+  ) {
     NuRestAssureMatchers
       .matchJsonWithRegexValues(
         s"""{
@@ -318,7 +330,7 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
   test("it should not match when expected JSON has more fields in root level") {
@@ -342,7 +354,7 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  "h": {}
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 
   test("it should not match when expected JSON has more fields in nested level") {
@@ -366,6 +378,6 @@ class NuRestAssureMatchersSpec extends AnyFunSuiteLike with Matchers {
            |  }
            |}""".stripMargin
       )
-      .matches(currentJson) should be (false)
+      .matches(currentJson) should be(false)
   }
 }

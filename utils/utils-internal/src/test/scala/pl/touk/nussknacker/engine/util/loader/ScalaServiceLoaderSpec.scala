@@ -21,14 +21,15 @@ class ScalaServiceLoaderSpec extends AnyFlatSpec with Matchers with TableDrivenP
   }
 
   trait DummyFactoryTrait
-  case object DummyAuthenticatorFactory extends DummyFactoryTrait
+  case object DummyAuthenticatorFactory  extends DummyFactoryTrait
   case object DummyAuthenticatorFactory2 extends DummyFactoryTrait
   case object DummyAuthenticatorFactory3 extends DummyFactoryTrait
 
   it should "give proper hint" in {
     val tempFile = Files.createTempFile("test", ".jar")
-    val loader = new URLClassLoader(Array(new URL("http://example.com"),
-      tempFile.toUri.toURL, new URL("file:///shouldNotExist.jar")))
+    val loader = new URLClassLoader(
+      Array(new URL("http://example.com"), tempFile.toUri.toURL, new URL("file:///shouldNotExist.jar"))
+    )
 
     val exception = intercept[IllegalArgumentException] {
       DummyLoader.justOne(loader)
@@ -41,17 +42,21 @@ class ScalaServiceLoaderSpec extends AnyFlatSpec with Matchers with TableDrivenP
       ("class factories", "default factory", "chosen factory"),
       (DummyAuthenticatorFactory :: Nil, DummyAuthenticatorFactory, DummyAuthenticatorFactory),
       (List(DummyAuthenticatorFactory3), DummyAuthenticatorFactory, DummyAuthenticatorFactory3),
-      (List(DummyAuthenticatorFactory3, DummyAuthenticatorFactory2), DummyAuthenticatorFactory, DummyAuthenticatorFactory3)
+      (
+        List(DummyAuthenticatorFactory3, DummyAuthenticatorFactory2),
+        DummyAuthenticatorFactory,
+        DummyAuthenticatorFactory3
+      )
     )
 
-    forAll(table) {
-      (factories: List[DummyFactoryTrait], default: DummyFactoryTrait, chosen: DummyFactoryTrait) => {
+    forAll(table) { (factories: List[DummyFactoryTrait], default: DummyFactoryTrait, chosen: DummyFactoryTrait) =>
+      {
         try {
-          ScalaServiceLoader.chooseClass[DummyFactoryTrait]({default}, factories) match {
+          ScalaServiceLoader.chooseClass[DummyFactoryTrait]({ default }, factories) match {
             case loaded: DummyFactoryTrait => chosen shouldBe loaded
           }
         } catch {
-          case _ : IllegalArgumentException => succeed
+          case _: IllegalArgumentException => succeed
         }
       }
     }

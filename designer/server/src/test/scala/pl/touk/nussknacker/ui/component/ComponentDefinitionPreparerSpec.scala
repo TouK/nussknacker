@@ -4,11 +4,20 @@ import org.scalatest.Inside.inside
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType, ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{
+  ComponentGroupName,
+  ComponentId,
+  ComponentType,
+  ParameterConfig,
+  SingleComponentConfig
+}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{
+  CustomTransformerAdditionalData,
+  ProcessDefinition
+}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
@@ -27,13 +36,23 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   test("return groups sorted in order: inputs, base, other, outputs and then sorted by name within group") {
-    val groups = prepareGroups(Map(), Map(ComponentGroupName("custom") -> Some(ComponentGroupName("CUSTOM")), ComponentGroupName("sinks") -> Some(ComponentGroupName("BAR"))))
-    groups.map(_.name) shouldBe List("sources", "base", "CUSTOM", "enrichers", "BAR", "optionalEndingCustom", "services").map(ComponentGroupName(_))
+    val groups = prepareGroups(
+      Map(),
+      Map(
+        ComponentGroupName("custom") -> Some(ComponentGroupName("CUSTOM")),
+        ComponentGroupName("sinks")  -> Some(ComponentGroupName("BAR"))
+      )
+    )
+    groups
+      .map(_.name) shouldBe List("sources", "base", "CUSTOM", "enrichers", "BAR", "optionalEndingCustom", "services")
+      .map(ComponentGroupName(_))
   }
 
   test("return groups with hidden base group") {
     val groups = prepareGroups(Map.empty, Map(ComponentGroupName("base") -> None))
-    groups.map(_.name) shouldBe List("sources", "custom", "enrichers", "optionalEndingCustom", "services", "sinks").map(ComponentGroupName(_))
+    groups.map(_.name) shouldBe List("sources", "custom", "enrichers", "optionalEndingCustom", "services", "sinks").map(
+      ComponentGroupName(_)
+    )
   }
 
   test("return objects sorted by label case insensitive") {
@@ -57,12 +76,23 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
       NodeEdges(NodeTypeId("Split"), List(), true, false),
       NodeEdges(NodeTypeId("Switch"), List(NextSwitch(Expression.spel("true")), SwitchDefault), true, false),
       NodeEdges(NodeTypeId("Filter"), List(FilterTrue, FilterFalse), false, false),
-      NodeEdges(NodeTypeId("FragmentInput", Some("sub1")), List(FragmentOutput("out1"), FragmentOutput("out2")), false, false)
+      NodeEdges(
+        NodeTypeId("FragmentInput", Some("sub1")),
+        List(FragmentOutput("out1"), FragmentOutput("out2")),
+        false,
+        false
+      )
     )
   }
 
   test("return objects sorted by label with mapped categories") {
-    val groups = prepareGroups(Map(), Map(ComponentGroupName("custom") -> Some(ComponentGroupName("base")), ComponentGroupName("optionalEndingCustom") -> Some(ComponentGroupName("base"))))
+    val groups = prepareGroups(
+      Map(),
+      Map(
+        ComponentGroupName("custom")               -> Some(ComponentGroupName("base")),
+        ComponentGroupName("optionalEndingCustom") -> Some(ComponentGroupName("base"))
+      )
+    )
 
     validateGroups(groups, 5)
 
@@ -83,7 +113,11 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
     val groups = prepareGroups(
       Map("barService" -> "foo", "barSource" -> "fooBar"),
-      Map(ComponentGroupName("custom") -> Some(ComponentGroupName("base")), ComponentGroupName("optionalEndingCustom") -> Some(ComponentGroupName("base"))))
+      Map(
+        ComponentGroupName("custom")               -> Some(ComponentGroupName("base")),
+        ComponentGroupName("optionalEndingCustom") -> Some(ComponentGroupName("base"))
+      )
+    )
 
     validateGroups(groups, 7)
 
@@ -107,10 +141,18 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   test("return custom nodes with correct group") {
     val initialDefinition = ProcessTestData.processDefinition
     val definitionWithCustomNodesInSomeCategory = initialDefinition.copy(
-      customStreamTransformers = initialDefinition.customStreamTransformers.map {
-        case (name, (objectDef, additionalData)) =>
-          (name, (objectDef.copy(componentConfig = objectDef.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))), additionalData))
-      }
+      customStreamTransformers =
+        initialDefinition.customStreamTransformers.map { case (name, (objectDef, additionalData)) =>
+          (
+            name,
+            (
+              objectDef.copy(componentConfig =
+                objectDef.componentConfig.copy(componentGroup = Some(ComponentGroupName("cat1")))
+              ),
+              additionalData
+            )
+          )
+        }
     )
     val groups = prepareGroups(Map.empty, Map.empty, definitionWithCustomNodesInSomeCategory)
 
@@ -120,33 +162,36 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
   test("return default value defined in parameter") {
     val defaultValueExpression = Expression("fooLang", "'fooDefault'")
-    val parameter = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValueExpression))
-    val definition = ProcessDefinitionBuilder.empty.withCustomStreamTransformer("fooTransformer", Some(Unknown),
-      CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true), parameter)
+    val parameter              = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValueExpression))
+    val definition = ProcessDefinitionBuilder.empty.withCustomStreamTransformer(
+      "fooTransformer",
+      Some(Unknown),
+      CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true),
+      parameter
+    )
 
-    val groups = prepareGroups(Map.empty, Map.empty, definition)
+    val groups           = prepareGroups(Map.empty, Map.empty, definition)
     val transformerGroup = groups.find(_.name == ComponentGroupName("optionalEndingCustom")).value
-    inside(transformerGroup.components.head.node) {
-      case withParameters: WithParameters =>
-        withParameters.parameters.head.expression shouldEqual defaultValueExpression
+    inside(transformerGroup.components.head.node) { case withParameters: WithParameters =>
+      withParameters.parameters.head.expression shouldEqual defaultValueExpression
     }
   }
 
   test("should prefer config over code configuration") {
     val fixed = Map(
-      "service" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
+      "service"  -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
       "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, None),
       "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None)
     )
 
     val dynamic = Map(
-      "service" -> SingleComponentConfig(None, None, Some("doc1"), None, Some(ComponentId("dynamic"))),
+      "service"  -> SingleComponentConfig(None, None, Some("doc1"), None, Some(ComponentId("dynamic"))),
       "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
       "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
     )
 
     val expected = Map(
-      "service" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
+      "service"  -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("fixed"))),
       "serviceA" -> SingleComponentConfig(None, None, Some("doc"), None, None),
       "serviceB" -> SingleComponentConfig(None, None, Some("doc"), None, None),
       "serviceC" -> SingleComponentConfig(None, None, Some("doc"), None, Some(ComponentId("dynamic"))),
@@ -157,11 +202,23 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
 
   test("should merge default value maps") {
     val fixed = Map(
-      "service" -> SingleComponentConfig(Some(Map("a" -> "x", "b" -> "y").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None))), None, Some("doc"), None, None)
+      "service" -> SingleComponentConfig(
+        Some(Map("a" -> "x", "b" -> "y").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None))),
+        None,
+        Some("doc"),
+        None,
+        None
+      )
     )
 
     val dynamic = Map(
-      "service" -> SingleComponentConfig(Some(Map("a" -> "xx", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None))), None, Some("doc1"), None, None)
+      "service" -> SingleComponentConfig(
+        Some(Map("a" -> "xx", "c" -> "z").mapValuesNow(dv => ParameterConfig(Some(dv), None, None, None))),
+        None,
+        Some("doc1"),
+        None,
+        None
+      )
     )
 
     val expected = Map(
@@ -181,14 +238,24 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     groups.filterNot(ng => ng.components.isEmpty) should have size expectedSizeOfNotEmptyGroups
   }
 
-  private def prepareGroups(fixedConfig: Map[String, String], componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
-                            processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[ComponentGroup] = {
+  private def prepareGroups(
+      fixedConfig: Map[String, String],
+      componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
+      processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition
+  ): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
     val fragmentInputs = Map[String, FragmentObjectDefinition]()
-    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, fragmentInputs, Set.empty, processCategoryService)
+    val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(
+      processDefinition,
+      fragmentInputs,
+      Set.empty,
+      processCategoryService
+    )
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
-    val fixedComponentsConfig = fixedConfig.mapValuesNow(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
-    val componentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
+    val fixedComponentsConfig =
+      fixedConfig.mapValuesNow(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))
+    val componentsConfig =
+      ComponentDefinitionPreparer.combineComponentsConfig(fixedComponentsConfig, dynamicComponentsConfig)
 
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
@@ -207,7 +274,8 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val processDefinition = services.foldRight(ProcessDefinitionBuilder.empty)((s, p) => p.withService(s))
     val groups = ComponentDefinitionPreparer.prepareComponentsGroupList(
       user = TestFactory.adminUser("aa"),
-      processDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty, processCategoryService),
+      processDefinition =
+        UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, Map(), Set.empty, processCategoryService),
       isFragment = false,
       componentsConfig = Map(),
       componentsGroupMapping = Map(),

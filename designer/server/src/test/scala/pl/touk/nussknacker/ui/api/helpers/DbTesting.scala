@@ -29,13 +29,16 @@ trait WithTestDb extends BeforeAndAfterAll {
 trait WithTestHsqlDb extends WithTestDb {
   self: Suite =>
 
-  override val testDbConfig: Config = ConfigFactory.parseMap(Map(
-    "db" -> Map(
-      "user" -> "SA",
-      "password" -> "",
-      "url" -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
-      "driver" -> "org.hsqldb.jdbc.JDBCDriver"
-    ).asJava).asJava)
+  override val testDbConfig: Config = ConfigFactory.parseMap(
+    Map(
+      "db" -> Map(
+        "user"     -> "SA",
+        "password" -> "",
+        "url"      -> "jdbc:hsqldb:mem:esp;sql.syntax_ora=true",
+        "driver"   -> "org.hsqldb.jdbc.JDBCDriver"
+      ).asJava
+    ).asJava
+  )
 }
 
 trait WithTestPostgresDb extends WithTestDb {
@@ -44,19 +47,20 @@ trait WithTestPostgresDb extends WithTestDb {
   override val container: PostgreSQLContainer =
     PostgreSQLContainer(DockerImageName.parse("postgres:11.2"))
 
-  override def testDbConfig: Config = ConfigFactory.parseMap(Map(
-    "db" -> Map(
-      "user" -> container.username,
-      "password" -> container.password,
-      "url" -> container.jdbcUrl,
-      "driver" -> "org.postgresql.Driver",
-      "schema" -> "testschema"
-    ).asJava).asJava)
+  override def testDbConfig: Config = ConfigFactory.parseMap(
+    Map(
+      "db" -> Map(
+        "user"     -> container.username,
+        "password" -> container.password,
+        "url"      -> container.jdbcUrl,
+        "driver"   -> "org.postgresql.Driver",
+        "schema"   -> "testschema"
+      ).asJava
+    ).asJava
+  )
 }
 
-trait DbTesting
-  extends BeforeAndAfterEach
-    with BeforeAndAfterAll {
+trait DbTesting extends BeforeAndAfterEach with BeforeAndAfterAll {
   self: Suite with WithTestDb =>
 
   override def beforeAll(): Unit = {
@@ -67,7 +71,10 @@ trait DbTesting
   override protected def afterEach(): Unit = {
     super.afterEach()
     cleanDB().failed.foreach { e =>
-      throw new InternalError("Error during cleaning test resources", e) //InternalError as scalatest swallows other exceptions in afterEach
+      throw new InternalError(
+        "Error during cleaning test resources",
+        e
+      ) // InternalError as scalatest swallows other exceptions in afterEach
     }
   }
 
@@ -82,14 +89,12 @@ trait DbTesting
   }
 }
 
-trait WithHsqlDbTesting
-  extends DbTesting
-    with WithTestHsqlDb {
+trait WithHsqlDbTesting extends DbTesting with WithTestHsqlDb {
   self: Suite =>
 }
 
 trait WithPostgresDbTesting
-  extends DbTesting
+    extends DbTesting
     with PatientScalaFutures
     with ForAllTestContainer
     with WithTestPostgresDb {

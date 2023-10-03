@@ -11,9 +11,8 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
-import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos.HealthCheckProcessSuccessResponseDto
-import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.api.AppApiEndpoints
+import pl.touk.nussknacker.ui.api.AppApiEndpoints.Dtos._
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
@@ -44,7 +43,7 @@ class AppApiHttpService(
   expose {
     appApiEndpoints.appHealthCheckEndpoint
       .serverLogicSuccess { _ =>
-        Future.successful(HealthCheckProcessSuccessResponseDto)
+        Future.successful(HealthCheckProcessSuccessResponseDto())
       }
   }
 
@@ -55,7 +54,7 @@ class AppApiHttpService(
         problemStateByProcessName
           .map { set =>
             if (set.isEmpty) {
-              success(HealthCheckProcessSuccessResponseDto)
+              success(HealthCheckProcessSuccessResponseDto())
             } else {
               logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
               logger.debug(s"Scenarios with status PROBLEM: $set")
@@ -85,7 +84,7 @@ class AppApiHttpService(
       .serverLogic { implicit loggedUser => _ =>
         processesWithValidationErrors.map { processes =>
           if (processes.isEmpty) {
-            success(HealthCheckProcessSuccessResponseDto)
+            success(HealthCheckProcessSuccessResponseDto())
           } else {
             businessError(
               HealthCheckProcessErrorResponseDto(
@@ -103,7 +102,7 @@ class AppApiHttpService(
       .serverLogicSuccess { _ =>
         Future {
           import net.ceedubs.ficus.Ficus._
-          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
+          val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
           val modelDataInfo: Map[ProcessingType, Map[String, String]] =
             modelData.all.mapValuesNow(_.configCreator.buildInfo())
           BuildInfoDto(

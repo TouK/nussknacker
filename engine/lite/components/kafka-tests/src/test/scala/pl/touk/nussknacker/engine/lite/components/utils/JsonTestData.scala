@@ -3,7 +3,15 @@ package pl.touk.nussknacker.engine.lite.components.utils
 import io.circe.Json
 import io.circe.Json._
 import org.everit.json.schema.regexp.JavaUtilRegexpFactory
-import org.everit.json.schema.{ArraySchema, CombinedSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema}
+import org.everit.json.schema.{
+  ArraySchema,
+  CombinedSchema,
+  NullSchema,
+  NumberSchema,
+  ObjectSchema,
+  Schema,
+  StringSchema
+}
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.SpecialSpELElement
 
@@ -34,19 +42,22 @@ object JsonTestData {
 
   val schemaString: Schema = StringSchema.builder().build()
 
-  val schemaInt: Schema = NumberSchema.builder()
+  val schemaInt: Schema = NumberSchema
+    .builder()
     .requiresInteger(true)
     .minimum(Integer.MIN_VALUE)
     .maximum(Integer.MAX_VALUE)
     .build()
 
-  val schemaIntRange0to100: Schema = NumberSchema.builder()
+  val schemaIntRange0to100: Schema = NumberSchema
+    .builder()
     .requiresInteger(true)
     .minimum(0)
     .maximum(100)
     .build()
 
-  val schemaIntRangeTo100: Schema = NumberSchema.builder()
+  val schemaIntRangeTo100: Schema = NumberSchema
+    .builder()
     .requiresInteger(true)
     .maximum(100)
     .build()
@@ -57,8 +68,7 @@ object JsonTestData {
 
   val nameAndLastNameSchema: Schema = nameAndLastNameSchema(true)
 
-  def nameAndLastNameSchema(additionalProperties: Any): Schema = JsonSchemaBuilder.parseSchema(
-    s"""{
+  def nameAndLastNameSchema(additionalProperties: Any): Schema = JsonSchemaBuilder.parseSchema(s"""{
        |  "type": "object",
        |  "properties": {
        |    "first": {
@@ -99,10 +109,11 @@ object JsonTestData {
 
   val schemaObjMapObjPerson: ObjectSchema = createObjSchema(schemaMapObjPerson)
 
-  val schemaEnumAB: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", "B" ] }""".stripMargin)
+  val schemaEnumAB: Schema  = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", "B" ] }""".stripMargin)
   val schemaEnumABC: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", "B", "C"] }""".stripMargin)
   val schemaEnumAB1: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", "B", 1] }""".stripMargin)
-  val schemaEnumStrOrObj: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", {"x":"A", "y": [1,2]}] }""".stripMargin)
+  val schemaEnumStrOrObj: Schema =
+    JsonSchemaBuilder.parseSchema("""{ "enum": ["A", {"x":"A", "y": [1,2]}] }""".stripMargin)
   val schemaEnumStrOrList: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", [1,2,3] ] }""".stripMargin)
 
   /* SpEL sink output configuration */
@@ -136,7 +147,6 @@ object JsonTestData {
 
   val sampleObjMapPersonOutput: Map[String, Map[String, Any]] = Map(ObjectFieldName -> sampleMapPersonOutput)
 
-
   /* Input / Output json configuration */
 
   val sampleJInt: Json = fromInt(sampleInt)
@@ -155,7 +165,8 @@ object JsonTestData {
 
   val samplePerson: Json = obj("first" -> fromString(strNu), "last" -> fromString(strTouK), "age" -> sampleJInt)
 
-  val sampleInvalidPerson: Json = obj("first" -> fromString(strNu), "last" -> fromString(strTouK), "age" -> fromInt(300))
+  val sampleInvalidPerson: Json =
+    obj("first" -> fromString(strNu), "last" -> fromString(strTouK), "age" -> fromInt(300))
 
   val sampleArrayInt: Json = arr(sampleJInt)
 
@@ -181,12 +192,12 @@ object JsonTestData {
     def apply(value: Json): Json = obj(ObjectFieldName -> value)
   }
 
-  //Empty list of schema means map of any type
+  // Empty list of schema means map of any type
   def createMapSchema(schemas: Schema*): ObjectSchema = {
     val builder = ObjectSchema.builder()
 
     val additionalProperties = schemas match {
-      case Nil => true
+      case Nil  => true
       case list => asSchema(list: _*)
     }
 
@@ -198,7 +209,7 @@ object JsonTestData {
   def createObjSchema(schemas: Schema*): ObjectSchema = createObjSchema(false, false, schemas: _*)
 
   def createObjSchema(additionalProperties: Any, required: Boolean, schemas: Schema*): ObjectSchema = {
-    val schema = asSchema(schemas: _*)
+    val schema  = asSchema(schemas: _*)
     val builder = ObjectSchema.builder()
     builder.addPropertySchema(ObjectFieldName, schema)
 
@@ -212,12 +223,12 @@ object JsonTestData {
   }
 
   def createArraySchema(schemas: Schema*): ArraySchema =
-    ArraySchema.builder().allItemSchema(asSchema(schemas:_*)).build()
+    ArraySchema.builder().allItemSchema(asSchema(schemas: _*)).build()
 
-  //We assume list of schema is union with combined mode
+  // We assume list of schema is union with combined mode
   private def asSchema(schemas: Schema*): Schema = schemas.toList match {
     case head :: Nil => head
-    case list => CombinedSchema.anyOf(list.asJava).build()
+    case list        => CombinedSchema.anyOf(list.asJava).build()
   }
 
   private def prepareAdditionalProperties(builder: ObjectSchema.Builder, additionalProperties: Any): Unit = {
@@ -232,9 +243,13 @@ object JsonTestData {
     }
   }
 
-  private def schemaPerson(minimum: Option[Int], maximum: Option[Int], exclusiveMinimum: Boolean = false, exclusiveMaximum: Boolean = false): Schema =
-    JsonSchemaBuilder.parseSchema(
-      s"""{
+  private def schemaPerson(
+      minimum: Option[Int],
+      maximum: Option[Int],
+      exclusiveMinimum: Boolean = false,
+      exclusiveMaximum: Boolean = false
+  ): Schema =
+    JsonSchemaBuilder.parseSchema(s"""{
          |  "type": "object",
          |  "properties": {
          |    "first": {
@@ -252,7 +267,11 @@ object JsonTestData {
          |  "additionalProperties": false
          |}""".stripMargin)
 
-  def createObjectSchemaWithPatternProperties(patternProperties: Map[String, Schema], additionalPropertySchema: Option[Schema] = None, definedProperties: Map[String, Schema] = Map.empty): Schema = {
+  def createObjectSchemaWithPatternProperties(
+      patternProperties: Map[String, Schema],
+      additionalPropertySchema: Option[Schema] = None,
+      definedProperties: Map[String, Schema] = Map.empty
+  ): Schema = {
     val builder = ObjectSchema.builder()
     definedProperties.foreach { case (propertyName, schema) =>
       builder.addPropertySchema(propertyName, schema)

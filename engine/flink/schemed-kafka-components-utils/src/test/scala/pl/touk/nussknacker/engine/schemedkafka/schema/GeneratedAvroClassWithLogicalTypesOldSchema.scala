@@ -4,7 +4,12 @@ import java.time.{Instant, LocalDate, LocalTime}
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.avro.specific.SpecificRecordBase
 
-case class GeneratedAvroClassWithLogicalTypesOldSchema(var dateTime: Instant, var date: LocalDate, var time: LocalTime, var decimal: java.math.BigDecimal) extends SpecificRecordBase {
+case class GeneratedAvroClassWithLogicalTypesOldSchema(
+    var dateTime: Instant,
+    var date: LocalDate,
+    var time: LocalTime,
+    var decimal: java.math.BigDecimal
+) extends SpecificRecordBase {
 
   override def getSchema: Schema = GeneratedAvroClassWithLogicalTypesOldSchema.schema
 

@@ -1,4 +1,4 @@
-  package pl.touk.nussknacker.engine.benchmarks.interpreter
+package pl.touk.nussknacker.engine.benchmarks.interpreter
 
 import cats.effect.IO
 import org.openjdk.jmh.annotations._
@@ -25,9 +25,9 @@ class OneParamInterpreterBenchmark {
     .source("source", "source")
     .buildSimpleVariable("v1", "v1", "{a:'', b: 2}")
     .enricher("e1", "out", "service", "p1" -> "''")
-    //Uncomment to assess impact of costly variables
-    //.buildSimpleVariable("v2", "v2", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
-    //.buildSimpleVariable("v3", "v3", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
+    // Uncomment to assess impact of costly variables
+    // .buildSimpleVariable("v2", "v2", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
+    // .buildSimpleVariable("v3", "v3", "{a:'', b: #out, c: {'d','d','ss','aa'}.?[#this.substring(0, 1) == ''] }")
     .emptySink("sink", "sink")
 
   private val instantlyCompletedFuture = false
@@ -35,7 +35,9 @@ class OneParamInterpreterBenchmark {
   private val service = new OneParamService(instantlyCompletedFuture)
 
   private val interpreterFuture = new InterpreterSetup[String]
-    .sourceInterpretation[Future](process, Map("service" -> service), Nil)(new FutureShape()(SynchronousExecutionContext.ctx))
+    .sourceInterpretation[Future](process, Map("service" -> service), Nil)(
+      new FutureShape()(SynchronousExecutionContext.ctx)
+    )
 
   private val interpreterIO = new InterpreterSetup[String]
     .sourceInterpretation[IO](process, Map("service" -> service), Nil)
@@ -43,14 +45,12 @@ class OneParamInterpreterBenchmark {
   private val interpreterFutureAsync = new InterpreterSetup[String]
     .sourceInterpretation[Future](process, Map("service" -> service), Nil)(new FutureShape()(ExecutionContext.global))
 
-
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkFutureSync(): AnyRef = {
     Await.result(interpreterFuture(Context(""), SynchronousExecutionContext.ctx), 1 second)
   }
-
 
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
@@ -66,15 +66,12 @@ class OneParamInterpreterBenchmark {
     interpreterIO(Context(""), SynchronousExecutionContext.ctx).unsafeRunSync()
   }
 
-
   @Benchmark
   @BenchmarkMode(Array(Mode.Throughput))
   @OutputTimeUnit(TimeUnit.SECONDS)
   def benchmarkAsyncIO(): AnyRef = {
     interpreterIO(Context(""), ExecutionContext.Implicits.global).unsafeRunSync()
   }
-
-
 
 }
 class OneParamService(instantlyCompletedFuture: Boolean) extends Service {

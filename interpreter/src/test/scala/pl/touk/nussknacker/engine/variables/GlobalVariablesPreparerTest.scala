@@ -12,10 +12,13 @@ class GlobalVariablesPreparerTest extends AnyFunSuite with Matchers {
 
   test("should resolve real value and return type for typed variable") {
     val metaData = MetaData("test", StreamMetaData())
-    val varsWithMethodDef = Map("typedVar" ->
-      GlobalVariableDefinitionExtractor.extractDefinition(WithCategories.anyCategory(TestTypedGlobalVariable)))
+    val varsWithMethodDef = Map(
+      "typedVar" ->
+        GlobalVariableDefinitionExtractor.extractDefinition(WithCategories.anyCategory(TestTypedGlobalVariable))
+    )
 
-    val varsWithType = new GlobalVariablesPreparer(varsWithMethodDef, hideMetaVariable = true).prepareGlobalVariables(metaData)
+    val varsWithType =
+      new GlobalVariablesPreparer(varsWithMethodDef, hideMetaVariable = true).prepareGlobalVariables(metaData)
 
     val varWithType = varsWithType("typedVar")
     varWithType.obj shouldBe 1

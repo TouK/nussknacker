@@ -17,17 +17,17 @@ class SchemaIdBasedAvroGenericRecordSerializerSpec extends AnyFunSuite with Matc
 
   test("should be able to duplicate serializer after use") {
     val config = KafkaConfig(Some(Map("bootstrap.servers" -> "dummy:9092")), None, None)
-    val factory = MockSchemaRegistryClientFactory.confluentBased(SchemaIdBasedAvroGenericRecordSerializerSpec.schemaRegistryClient)
+    val factory =
+      MockSchemaRegistryClientFactory.confluentBased(SchemaIdBasedAvroGenericRecordSerializerSpec.schemaRegistryClient)
 
     val ec = new ExecutionConfig
     SchemaIdBasedAvroGenericRecordSerializer(factory, config).registerIn(ec)
 
     val kryoS = new KryoSerializer(classOf[GenericRecordWithSchemaId], ec)
     checkSerializationRoundTrip(kryoS)
-    //we check if SchemaIdBasedAvroGenericRecordSerializer can *really* be duplicated and that it still works...
+    // we check if SchemaIdBasedAvroGenericRecordSerializer can *really* be duplicated and that it still works...
     checkSerializationRoundTrip(kryoS.duplicate())
   }
-
 
   private def checkSerializationRoundTrip(serializer: KryoSerializer[GenericRecordWithSchemaId]) = {
     val output = new DataOutputSerializer(100)
@@ -40,13 +40,16 @@ class SchemaIdBasedAvroGenericRecordSerializerSpec extends AnyFunSuite with Matc
 
 object SchemaIdBasedAvroGenericRecordSerializerSpec {
 
-  val schema: Schema = SchemaBuilder.record("name")
-    .fields().nullableString("f1", "").endRecord()
+  val schema: Schema = SchemaBuilder
+    .record("name")
+    .fields()
+    .nullableString("f1", "")
+    .endRecord()
 
-  //we put it in object to avoid serialization problems
+  // we put it in object to avoid serialization problems
   val (schemaRegistryClient, id) = {
     val client = new MockSchemaRegistryClient
-    val id = client.register("t1", new AvroSchema(schema))
+    val id     = client.register("t1", new AvroSchema(schema))
     (client, SchemaId.fromInt(id))
   }
 

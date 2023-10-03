@@ -37,12 +37,12 @@ object AvroSchemaCreator {
 
   def createLogical(logicalType: LogicalType): Schema = {
     val schema = logicalType match {
-      case _ if logicalType.equals(LogicalTypes.uuid()) => Schema.create(Type.STRING)
-      case _ if logicalType.equals(LogicalTypes.date()) => Schema.create(Type.INT)
-      case _ if logicalType.equals(LogicalTypes.timeMillis()) => Schema.create(Type.INT)
-      case _ if logicalType.equals(LogicalTypes.timeMicros()) => Schema.create(Type.LONG)
-      case _ if logicalType.equals(LogicalTypes.timestampMillis()) => Schema.create(Type.LONG)
-      case _ if logicalType.equals(LogicalTypes.timestampMicros()) => Schema.create(Type.LONG)
+      case _ if logicalType.equals(LogicalTypes.uuid())                              => Schema.create(Type.STRING)
+      case _ if logicalType.equals(LogicalTypes.date())                              => Schema.create(Type.INT)
+      case _ if logicalType.equals(LogicalTypes.timeMillis())                        => Schema.create(Type.INT)
+      case _ if logicalType.equals(LogicalTypes.timeMicros())                        => Schema.create(Type.LONG)
+      case _ if logicalType.equals(LogicalTypes.timestampMillis())                   => Schema.create(Type.LONG)
+      case _ if logicalType.equals(LogicalTypes.timestampMicros())                   => Schema.create(Type.LONG)
       case _ if classOf[LogicalTypes.Decimal].isAssignableFrom(logicalType.getClass) => Schema.create(Type.BYTES)
       case _ => throw new IllegalArgumentException(s"Unknown logical type: $logicalType.")
     }
@@ -53,7 +53,7 @@ object AvroSchemaCreator {
 
   private def asSchema(schemas: Schema*): Schema = schemas.toList match {
     case head :: Nil => head
-    case list => Schema.createUnion(list: _*)
+    case list        => Schema.createUnion(list: _*)
   }
 
 }

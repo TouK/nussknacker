@@ -14,7 +14,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
 class OidcAuthenticationResourcesSpec
-  extends AnyFunSpec
+    extends AnyFunSpec
     with Matchers
     with ScalatestRouteTest
     with FailFastCirceSupport
@@ -25,22 +25,25 @@ class OidcAuthenticationResourcesSpec
   private val someClientId = "fooClientId"
 
   private val defaultAuthConfig = Map(
-    "usersFile" -> "",
-    "issuer" -> "",
-    "clientId" -> someClientId,
-    "clientSecret" -> "",
+    "usersFile"             -> "",
+    "issuer"                -> "",
+    "clientId"              -> someClientId,
+    "clientSecret"          -> "",
     "authorizationEndpoint" -> authorizationEndpoint,
-    "profileUri" -> "",
-    "accessTokenUri" -> "",
-    "userinfoEndpoint" -> "",
-    "tokenEndpoint" -> "")
+    "profileUri"            -> "",
+    "accessTokenUri"        -> "",
+    "userinfoEndpoint"      -> "",
+    "tokenEndpoint"         -> ""
+  )
 
   private def authenticationRoute(authConfig: Map[String, Any]) = {
     implicit val testingBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture
 
-    val config = ConfigFactory.parseMap(Map(
-      "authentication" -> authConfig.asJava
-    ).asJava)
+    val config = ConfigFactory.parseMap(
+      Map(
+        "authentication" -> authConfig.asJava
+      ).asJava
+    )
 
     OidcAuthenticationProvider.createAuthenticationResources(config, getClass.getClassLoader).routeWithPathPrefix
   }
@@ -49,7 +52,10 @@ class OidcAuthenticationResourcesSpec
     Get(s"/authentication/oidc/settings") ~> authenticationRoute(defaultAuthConfig) ~> check {
       status shouldBe StatusCodes.OK
       val response = responseAs[Json]
-      response.hcursor.downField("authorizeUrl").as[String].rightValue shouldBe s"$authorizationEndpoint?client_id=$someClientId&response_type=code&scope=openid+profile"
+      response.hcursor
+        .downField("authorizeUrl")
+        .as[String]
+        .rightValue shouldBe s"$authorizationEndpoint?client_id=$someClientId&response_type=code&scope=openid+profile"
       response.hcursor.downField("jwtIdTokenNonceVerificationRequired").as[Boolean].rightValue shouldBe false
       response.hcursor.downField("implicitGrantEnabled").as[Boolean].rightValue shouldBe false
       response.hcursor.downField("anonymousAccessAllowed").as[Boolean].rightValue shouldBe false
@@ -60,7 +66,7 @@ class OidcAuthenticationResourcesSpec
   it("should return overriden authentication settings") {
     val moduleUrl = "http://some.remote.url"
     val authConfig = defaultAuthConfig + ("overrideFrontendAuthenticationStrategy" -> Map(
-      "strategy" -> "Remote",
+      "strategy"  -> "Remote",
       "moduleUrl" -> moduleUrl
     ).asJava)
 

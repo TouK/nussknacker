@@ -8,7 +8,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import scala.concurrent.Future
 import scala.concurrent.duration.{DAYS, Deadline, FiniteDuration, HOURS, MINUTES}
 
-class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFutures{
+class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFutures {
 
   private var currentTime = Deadline.now
   private val ticker = new Ticker {
@@ -16,9 +16,7 @@ class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFu
   }
 
   it should "not expire any value when no expiry times configured" in {
-    val cache = new DefaultCache[String, String](
-      cacheConfig = CacheConfig(),
-      ticker)
+    val cache = new DefaultCache[String, String](cacheConfig = CacheConfig(), ticker)
 
     cache.getOrCreate("key")("value")
 
@@ -29,7 +27,8 @@ class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFu
   it should "expire a value when the after write expiration is set, but not prolong it after reading" in {
     val cache = new DefaultCache[String, String](
       cacheConfig = CacheConfig(expireAfterWrite = Some(FiniteDuration(3, MINUTES))),
-      ticker)
+      ticker
+    )
 
     cache.getOrCreate("key")("value")
 
@@ -43,7 +42,8 @@ class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFu
   it should "prolong a value when the after reading expiration is set and getOrCreate is used" in {
     val cache = new DefaultCache[String, String](
       cacheConfig = CacheConfig(expireAfterAccess = Some(FiniteDuration(3, MINUTES))),
-      ticker)
+      ticker
+    )
 
     cache.getOrCreate("key")("value")
 
@@ -54,7 +54,8 @@ class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFu
   it should "expire a value when the after reading expiration is set and override deadline after write" in {
     val cache = new DefaultCache[String, String](
       cacheConfig = CacheConfig(expireAfterAccess = Some(FiniteDuration(3, MINUTES))),
-      ticker)
+      ticker
+    )
 
     cache.getOrCreate("key")("value")
 
@@ -78,7 +79,8 @@ class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFu
         expireAfterWrite = Some(FiniteDuration(3, MINUTES)),
         expireAfterAccess = Some(FiniteDuration(3, MINUTES))
       ),
-      ticker)
+      ticker
+    )
 
     cache.getOrCreate("key")("value")
 
@@ -92,21 +94,27 @@ class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFu
   it should "allow setting expiration time depending on a value" in {
     case class Value(sub: String, expireAt: Deadline)
     val cache = new DefaultCache[String, Value](
-      cacheConfig = CacheConfig(
-        expiry = new ExpiryConfig[String, Value] {
-          override def expireAfterWriteFn(key: String, value: Value, now: Deadline): Option[Deadline] =
-            Some(value.expireAt)
-        }),
-      ticker)
+      cacheConfig = CacheConfig(expiry = new ExpiryConfig[String, Value] {
+        override def expireAfterWriteFn(key: String, value: Value, now: Deadline): Option[Deadline] =
+          Some(value.expireAt)
+      }),
+      ticker
+    )
 
     cache.getOrCreate("key1")(Value("value1", currentTime + FiniteDuration(1, MINUTES)))
     cache.getOrCreate("key2")(Value("value2", currentTime + FiniteDuration(3, MINUTES)))
 
     currentTime += FiniteDuration(2, MINUTES)
-    cache.getOrCreate("key1")(Value("newValue", currentTime + FiniteDuration(1, HOURS))) should have(Symbol("sub")("newValue"))
-    cache.getOrCreate("key2")(Value("newValue", currentTime + FiniteDuration(1, HOURS))) should /*still*/ have(Symbol("sub")("value2"))
+    cache.getOrCreate("key1")(Value("newValue", currentTime + FiniteDuration(1, HOURS))) should have(
+      Symbol("sub")("newValue")
+    )
+    cache.getOrCreate("key2")(Value("newValue", currentTime + FiniteDuration(1, HOURS))) should /*still*/ have(
+      Symbol("sub")("value2")
+    )
 
     currentTime += FiniteDuration(2, MINUTES)
-    cache.getOrCreate("key2")(Value("newValue", currentTime + FiniteDuration(1, HOURS))) should have(Symbol("sub")("newValue"))
+    cache.getOrCreate("key2")(Value("newValue", currentTime + FiniteDuration(1, HOURS))) should have(
+      Symbol("sub")("newValue")
+    )
   }
 }

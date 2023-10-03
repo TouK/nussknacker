@@ -47,7 +47,9 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
   }
 
   private def prepareFlinkImage(): ImageFromDockerfile = {
-    List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "log4j-console.properties").foldLeft(new ImageFromDockerfile()) { case (image, file) =>
+    List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "log4j-console.properties").foldLeft(
+      new ImageFromDockerfile()
+    ) { case (image, file) =>
       val resource = ResourceLoader.load(s"/docker/$file")
 
       val flinkLibTweakCommand = ScalaMajorVersionConfig.scalaMajorVersion match {
@@ -66,10 +68,10 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
     }
   }
 
-  //testcontainers expose kafka via mapped port on host network, it will be used for kafkaClient in tests, signal sending etc.
+  // testcontainers expose kafka via mapped port on host network, it will be used for kafkaClient in tests, signal sending etc.
   protected def hostKafkaAddress: String = kafka.bootstrapServers
 
-  //on flink we have to access kafka via network alias
+  // on flink we have to access kafka via network alias
   protected def dockerKafkaAddress = s"$kafkaNetworkAlias:9092"
 
   protected def taskManagerSlotCount = 8
@@ -77,12 +79,15 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
   private lazy val jobManagerContainer: GenericContainer = {
     logger.debug(s"Running with number TASK_MANAGER_NUMBER_OF_TASK_SLOTS=$taskManagerSlotCount")
     val savepointDir = prepareVolumeDir()
-    new GenericContainer(dockerImage = prepareFlinkImage(),
+    new GenericContainer(
+      dockerImage = prepareFlinkImage(),
       command = "jobmanager" :: Nil,
       exposedPorts = FlinkJobManagerRestPort :: Nil,
-      env = Map("SAVEPOINT_DIR_NAME" -> savepointDir.getFileName.toString,
-        "FLINK_PROPERTIES" -> s"state.savepoints.dir: ${savepointDir.toFile.toURI.toString}",
-        "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString),
+      env = Map(
+        "SAVEPOINT_DIR_NAME"                -> savepointDir.getFileName.toString,
+        "FLINK_PROPERTIES"                  -> s"state.savepoints.dir: ${savepointDir.toFile.toURI.toString}",
+        "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString
+      ),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Recover all persisted job graphs.*"))
     ).configure { self =>
       self.withNetwork(network)
@@ -93,7 +98,8 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
   }
 
   private lazy val taskManagerContainer: GenericContainer = {
-    new GenericContainer(dockerImage = prepareFlinkImage(),
+    new GenericContainer(
+      dockerImage = prepareFlinkImage(),
       command = "taskmanager" :: Nil,
       env = Map("TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Successful registration at resource manager.*"))
@@ -107,12 +113,20 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
   override def container: Container = MultipleContainers(kafka, jobManagerContainer, taskManagerContainer)
 
   private def prepareVolumeDir(): Path = {
-    Files.createTempDirectory("dockerTest",
-      PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet[PosixFilePermission].asJava))
+    Files.createTempDirectory(
+      "dockerTest",
+      PosixFilePermissions.asFileAttribute(PosixFilePermission.values().toSet[PosixFilePermission].asJava)
+    )
   }
 
-  def config: Config = ConfigFactory.load()
-    .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"))
+  def config: Config = ConfigFactory
+    .load()
+    .withValue(
+      "deploymentConfig.restUrl",
+      fromAnyRef(
+        s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"
+      )
+    )
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
     .withValue("enableObjectReuse", fromAnyRef(false))
     .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(dockerKafkaAddress))

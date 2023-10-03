@@ -16,14 +16,12 @@ class JsonRecordFormatterSpec extends AnyFunSuite with Matchers {
 
     testGenerateThenParse("{}")
     testGenerateThenParse("""{"st": {"a": "b"}}""")
-    testGenerateThenParse(
-      """{
+    testGenerateThenParse("""{
         |"st": {
         |"a":
         |"bb"} }
         |""".stripMargin)
-    testGenerateThenParse(
-      """{
+    testGenerateThenParse("""{
         |"st": 
         |{ "a": "bb\n\n", "list": [
         |]}
@@ -33,16 +31,15 @@ class JsonRecordFormatterSpec extends AnyFunSuite with Matchers {
 
   private def testGenerateThenParse(json: String): Unit = {
     val recordBytes = json.getBytes(StandardCharsets.UTF_8)
-    val size = 3
+    val size        = 3
 
-    val record = new ConsumerRecord[Array[Byte], Array[Byte]](topic, 0, 0, null, recordBytes)
+    val record   = new ConsumerRecord[Array[Byte], Array[Byte]](topic, 0, 0, null, recordBytes)
     val testData = JsonRecordFormatter.prepareGeneratedTestData((1 to size).map(_ => record).toList)
-    val parsed = testData.testRecords.map(testRecord => JsonRecordFormatter.parseRecord(topic, testRecord))
+    val parsed   = testData.testRecords.map(testRecord => JsonRecordFormatter.parseRecord(topic, testRecord))
     parsed should have length size
     parsed.foreach { producer =>
       decodeJsonUnsafe[Json](producer.value()) shouldBe decodeJsonUnsafe[Json](recordBytes)
     }
   }
-
 
 }

@@ -4,43 +4,57 @@ import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, Parameter, MethodTypeInfo, Signature}
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, MethodTypeInfo, Parameter, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{FunctionalMethodInfo, MethodInfo, StaticMethodInfo}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 
 class TypeInfosSpec extends AnyFunSuite with Matchers {
   private val noVarArgsMethodInfo =
-    StaticMethodInfo(MethodTypeInfo(List(Parameter("", Typed[Int]), Parameter("", Typed[String])), None, Typed[Double]), "f", None)
+    StaticMethodInfo(
+      MethodTypeInfo(List(Parameter("", Typed[Int]), Parameter("", Typed[String])), None, Typed[Double]),
+      "f",
+      None
+    )
   private val varArgsMethodInfo =
-    StaticMethodInfo(MethodTypeInfo(List(Parameter("", Typed[String])), Some(Parameter("", Typed[Int])), Typed[Float]), "f", None)
+    StaticMethodInfo(
+      MethodTypeInfo(List(Parameter("", Typed[String])), Some(Parameter("", Typed[Int])), Typed[Float]),
+      "f",
+      None
+    )
   private val superclassMethodInfo =
-    StaticMethodInfo(MethodTypeInfo(List(Parameter("", Unknown)), Some(Parameter("", Typed[Number])), Typed[String]), "f", None)
+    StaticMethodInfo(
+      MethodTypeInfo(List(Parameter("", Unknown)), Some(Parameter("", Typed[Number])), Typed[String]),
+      "f",
+      None
+    )
 
-  private def checkApply(info: MethodInfo,
-                         args: List[TypingResult],
-                         expected: ValidatedNel[String, TypingResult]): Unit =
+  private def checkApply(
+      info: MethodInfo,
+      args: List[TypingResult],
+      expected: ValidatedNel[String, TypingResult]
+  ): Unit =
     info.computeResultType(args).leftMap(_.map(_.message)) shouldBe expected
 
-  private def checkApplyValid(info: MethodInfo,
-                              args: List[TypingResult],
-                              expected: TypingResult): Unit =
+  private def checkApplyValid(info: MethodInfo, args: List[TypingResult], expected: TypingResult): Unit =
     checkApply(info, args, expected.validNel)
 
-  private def checkApplyInvalid(info: MethodInfo,
-                                args: List[TypingResult],
-                                expected: ExpressionParseError): Unit =
+  private def checkApplyInvalid(info: MethodInfo, args: List[TypingResult], expected: ExpressionParseError): Unit =
     checkApply(info, args, expected.message.invalidNel)
 
   test("should generate type functions for methods without varArgs") {
     def noVarArgsCheckValid(args: List[TypingResult]): Unit =
       checkApplyValid(noVarArgsMethodInfo, args, Typed[Double])
     def noVarArgsCheckInvalid(args: List[TypingResult]): Unit =
-      checkApplyInvalid(noVarArgsMethodInfo, args, ArgumentTypeError(
-        noVarArgsMethodInfo.name,
-        Signature(args, None),
-        NonEmptyList.one(Signature(noVarArgsMethodInfo.signature.noVarArgs.map(_.refClazz), None))
-      ))
+      checkApplyInvalid(
+        noVarArgsMethodInfo,
+        args,
+        ArgumentTypeError(
+          noVarArgsMethodInfo.name,
+          Signature(args, None),
+          NonEmptyList.one(Signature(noVarArgsMethodInfo.signature.noVarArgs.map(_.refClazz), None))
+        )
+      )
 
     noVarArgsCheckValid(List(Typed[Int], Typed[String]))
 
@@ -54,14 +68,20 @@ class TypeInfosSpec extends AnyFunSuite with Matchers {
     def varArgsCheckValid(args: List[TypingResult]): Unit =
       checkApplyValid(varArgsMethodInfo, args, Typed[Float])
     def varArgsCheckInvalid(args: List[TypingResult]): Unit =
-      checkApplyInvalid(varArgsMethodInfo, args, ArgumentTypeError(
-        varArgsMethodInfo.name,
-        Signature(args, None),
-        NonEmptyList.one(Signature(
-          varArgsMethodInfo.signature.noVarArgs.map(_.refClazz),
-          varArgsMethodInfo.signature.varArg.map(_.refClazz)
-        ))
-      ))
+      checkApplyInvalid(
+        varArgsMethodInfo,
+        args,
+        ArgumentTypeError(
+          varArgsMethodInfo.name,
+          Signature(args, None),
+          NonEmptyList.one(
+            Signature(
+              varArgsMethodInfo.signature.noVarArgs.map(_.refClazz),
+              varArgsMethodInfo.signature.varArg.map(_.refClazz)
+            )
+          )
+        )
+      )
 
     varArgsCheckValid(List(Typed[String]))
     varArgsCheckValid(List(Typed[String], Typed[Int]))
@@ -81,7 +101,11 @@ class TypeInfosSpec extends AnyFunSuite with Matchers {
   test("should automatically validate arguments of generic functions") {
     val methodInfo = FunctionalMethodInfo(
       _ => Typed[Int].validNel,
-      MethodTypeInfo(Parameter("a", Typed[Int]) :: Parameter("b", Typed[Double]) :: Nil, Some(Parameter("c", Typed[String])), Typed[Int]),
+      MethodTypeInfo(
+        Parameter("a", Typed[Int]) :: Parameter("b", Typed[Double]) :: Nil,
+        Some(Parameter("c", Typed[String])),
+        Typed[Int]
+      ),
       "f",
       None
     )

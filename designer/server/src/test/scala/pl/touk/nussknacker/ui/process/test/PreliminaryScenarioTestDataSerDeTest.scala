@@ -9,14 +9,26 @@ import pl.touk.nussknacker.ui.api.TestDataSettings
 
 class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
-  private val maxSamplesCount = 5
+  private val maxSamplesCount   = 5
   private val testDataMaxLength = 200
-  private val serDe = new PreliminaryScenarioTestDataSerDe(TestDataSettings(maxSamplesCount = maxSamplesCount, testDataMaxLength = testDataMaxLength, resultsMaxBytes = Int.MaxValue))
+  private val serDe = new PreliminaryScenarioTestDataSerDe(
+    TestDataSettings(
+      maxSamplesCount = maxSamplesCount,
+      testDataMaxLength = testDataMaxLength,
+      resultsMaxBytes = Int.MaxValue
+    )
+  )
 
-  private val scenarioTestData = PreliminaryScenarioTestData(List(
-    PreliminaryScenarioTestRecord.Standard("source1", Json.obj("f1" -> Json.fromString("field value"), "f2" -> Json.fromLong(42L)), timestamp = Some(24L)),
-    PreliminaryScenarioTestRecord.Simplified(Json.fromString("a JSON string")),
-  ))
+  private val scenarioTestData = PreliminaryScenarioTestData(
+    List(
+      PreliminaryScenarioTestRecord.Standard(
+        "source1",
+        Json.obj("f1" -> Json.fromString("field value"), "f2" -> Json.fromLong(42L)),
+        timestamp = Some(24L)
+      ),
+      PreliminaryScenarioTestRecord.Simplified(Json.fromString("a JSON string")),
+    )
+  )
   private val rawStringScenarioTestData =
     """{"sourceId":"source1","record":{"f1":"field value","f2":42},"timestamp":24}
       |"a JSON string"""".stripMargin
@@ -28,7 +40,9 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   }
 
   test("should fail trying to serialize too much bytes") {
-    val testData = PreliminaryScenarioTestData(List.fill(10)(PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("a JSON string"))))
+    val testData = PreliminaryScenarioTestData(
+      List.fill(10)(PreliminaryScenarioTestRecord.Standard("source1", Json.fromString("a JSON string")))
+    )
 
     val error = serDe.serialize(testData).leftValue
 
@@ -42,7 +56,8 @@ class PreliminaryScenarioTestDataSerDeTest extends AnyFunSuite with Matchers wit
   }
 
   test("should fail trying to parse too many records") {
-    val tooBigRawScenarioTestData = RawScenarioTestData(List.fill(10)("""{"sourceId":"source1","record":"a JSON string"}""").mkString("\n"))
+    val tooBigRawScenarioTestData =
+      RawScenarioTestData(List.fill(10)("""{"sourceId":"source1","record":"a JSON string"}""").mkString("\n"))
 
     val error = serDe.deserialize(tooBigRawScenarioTestData).leftValue
 

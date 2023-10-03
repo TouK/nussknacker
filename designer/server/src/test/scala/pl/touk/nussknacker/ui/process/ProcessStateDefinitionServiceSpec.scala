@@ -22,8 +22,7 @@ import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 
 class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
 
-  private val categoryConfig = ConfigFactory.parseString(
-    s"""
+  private val categoryConfig = ConfigFactory.parseString(s"""
        |{
        |  categoriesConfig: {
        |    "$Category1": "$Streaming",
@@ -37,8 +36,10 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
   private val categoryService = new ConfigProcessCategoryService(categoryConfig)
 
   test("should fetch state definitions when definitions with the same name are unique") {
-    val streamingProcessStateDefinitionManager = createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_STREAMING" -> "Streaming"))
-    val fraudProcessStateDefinitionManager = createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_FRAUD" -> "Fraud"))
+    val streamingProcessStateDefinitionManager =
+      createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_STREAMING" -> "Streaming"))
+    val fraudProcessStateDefinitionManager =
+      createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_FRAUD" -> "Fraud"))
 
     val definitions = testStateDefinitions(
       AdminUser("admin", "admin"),
@@ -49,36 +50,44 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     definitions should have size 3
 
     val expectedCommon = streamingProcessStateDefinitionManager.stateDefinitions("COMMON")
-    definitions should contain(UIStateDefinition(
-      name = "COMMON",
-      displayableName = expectedCommon.displayableName,
-      icon = expectedCommon.icon,
-      tooltip = expectedCommon.tooltip,
-      categories = List(Category1, Category2, TestCat, TestCat2)
-    ))
+    definitions should contain(
+      UIStateDefinition(
+        name = "COMMON",
+        displayableName = expectedCommon.displayableName,
+        icon = expectedCommon.icon,
+        tooltip = expectedCommon.tooltip,
+        categories = List(Category1, Category2, TestCat, TestCat2)
+      )
+    )
 
     val expectedCustomStreaming = streamingProcessStateDefinitionManager.stateDefinitions("CUSTOM_STREAMING")
-    definitions should contain(UIStateDefinition(
-      name = "CUSTOM_STREAMING",
-      displayableName = expectedCustomStreaming.displayableName,
-      icon = expectedCustomStreaming.icon,
-      tooltip = expectedCustomStreaming.tooltip,
-      categories = List(Category1, Category2)
-    ))
+    definitions should contain(
+      UIStateDefinition(
+        name = "CUSTOM_STREAMING",
+        displayableName = expectedCustomStreaming.displayableName,
+        icon = expectedCustomStreaming.icon,
+        tooltip = expectedCustomStreaming.tooltip,
+        categories = List(Category1, Category2)
+      )
+    )
 
     val expectedCustomFraud = fraudProcessStateDefinitionManager.stateDefinitions("CUSTOM_FRAUD")
-    definitions should contain(UIStateDefinition(
-      name = "CUSTOM_FRAUD",
-      displayableName = expectedCustomFraud.displayableName,
-      icon = expectedCustomFraud.icon,
-      tooltip = expectedCustomFraud.tooltip,
-      categories = List(TestCat, TestCat2)
-    ))
+    definitions should contain(
+      UIStateDefinition(
+        name = "CUSTOM_FRAUD",
+        displayableName = expectedCustomFraud.displayableName,
+        icon = expectedCustomFraud.icon,
+        tooltip = expectedCustomFraud.tooltip,
+        categories = List(TestCat, TestCat2)
+      )
+    )
   }
 
-  test("should hide state definitions when user does not have permissions to category"){
-    val streamingProcessStateDefinitionManager = createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_STREAMING" -> "Streaming"))
-    val fraudProcessStateDefinitionManager = createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_FRAUD" -> "Fraud"))
+  test("should hide state definitions when user does not have permissions to category") {
+    val streamingProcessStateDefinitionManager =
+      createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_STREAMING" -> "Streaming"))
+    val fraudProcessStateDefinitionManager =
+      createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_FRAUD" -> "Fraud"))
 
     val definitions = testStateDefinitions(
       CommonUser("user", "user", Map(Category1 -> Set(Permission.Read))),
@@ -89,29 +98,35 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     definitions should have size 2
 
     val expectedCommon = streamingProcessStateDefinitionManager.stateDefinitions("COMMON")
-    definitions should contain(UIStateDefinition(
-      name = "COMMON",
-      displayableName = expectedCommon.displayableName,
-      icon = expectedCommon.icon,
-      tooltip = expectedCommon.tooltip,
-      categories = List(Category1)
-    ))
+    definitions should contain(
+      UIStateDefinition(
+        name = "COMMON",
+        displayableName = expectedCommon.displayableName,
+        icon = expectedCommon.icon,
+        tooltip = expectedCommon.tooltip,
+        categories = List(Category1)
+      )
+    )
 
     val expectedCustomStreaming = streamingProcessStateDefinitionManager.stateDefinitions("CUSTOM_STREAMING")
-    definitions should contain(UIStateDefinition(
-      name = "CUSTOM_STREAMING",
-      displayableName = expectedCustomStreaming.displayableName,
-      icon = expectedCustomStreaming.icon,
-      tooltip = expectedCustomStreaming.tooltip,
-      categories = List(Category1)
-    ))
+    definitions should contain(
+      UIStateDefinition(
+        name = "CUSTOM_STREAMING",
+        displayableName = expectedCustomStreaming.displayableName,
+        icon = expectedCustomStreaming.icon,
+        tooltip = expectedCustomStreaming.tooltip,
+        categories = List(Category1)
+      )
+    )
   }
 
   test("should raise exception when definitions with the same name are NOT unique") {
-    val streamingProcessStateDefinitionManager = createStateDefinitionManager(Map("COMMON" -> "Non unique name", "CUSTOM_STREAMING" -> "Streaming"))
-    val fraudProcessStateDefinitionManager = createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_FRAUD" -> "Fraud"))
+    val streamingProcessStateDefinitionManager =
+      createStateDefinitionManager(Map("COMMON" -> "Non unique name", "CUSTOM_STREAMING" -> "Streaming"))
+    val fraudProcessStateDefinitionManager =
+      createStateDefinitionManager(Map("COMMON" -> "Common", "CUSTOM_FRAUD" -> "Fraud"))
 
-    intercept[IllegalStateException]{
+    intercept[IllegalStateException] {
       testStateDefinitions(
         AdminUser("admin", "admin"),
         streamingProcessStateDefinitionManager,
@@ -120,47 +135,63 @@ class ProcessStateDefinitionServiceSpec extends AnyFunSuite with Matchers {
     }.getMessage shouldBe "State definitions are not unique for states: COMMON"
   }
 
-  private def createStateDefinitionManager(definitions: Map[StatusName, String]) = new OverridingProcessStateDefinitionManager(
-    customStateDefinitions = definitions.map { case (name, displayableName) =>
-      name -> StateDefinitionDetails(
-        displayableName = displayableName, icon = UnknownIcon, tooltip = "dummy", description = s"Description for ${displayableName}"
-      )
-    },
-    delegate = emptyStateDefinitionManager
-  )
+  private def createStateDefinitionManager(definitions: Map[StatusName, String]) =
+    new OverridingProcessStateDefinitionManager(
+      customStateDefinitions = definitions.map { case (name, displayableName) =>
+        name -> StateDefinitionDetails(
+          displayableName = displayableName,
+          icon = UnknownIcon,
+          tooltip = "dummy",
+          description = s"Description for ${displayableName}"
+        )
+      },
+      delegate = emptyStateDefinitionManager
+    )
 
-  private def testStateDefinitions(user: LoggedUser, streamingProcessStateDefinitionManager: OverridingProcessStateDefinitionManager, fraudProcessStateDefinitionManager: OverridingProcessStateDefinitionManager): List[UIStateDefinition] = {
-    val processingTypeDataMap = createProcessingTypeDataMap(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
-    val stateDefinitions = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
+  private def testStateDefinitions(
+      user: LoggedUser,
+      streamingProcessStateDefinitionManager: OverridingProcessStateDefinitionManager,
+      fraudProcessStateDefinitionManager: OverridingProcessStateDefinitionManager
+  ): List[UIStateDefinition] = {
+    val processingTypeDataMap =
+      createProcessingTypeDataMap(streamingProcessStateDefinitionManager, fraudProcessStateDefinitionManager)
+    val stateDefinitions           = ProcessStateDefinitionService.createDefinitionsMappingUnsafe(processingTypeDataMap)
     val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(processingTypeDataMap, stateDefinitions)
-    val service = new ProcessStateDefinitionService(processingTypeDataProvider, categoryService)
+    val service                    = new ProcessStateDefinitionService(processingTypeDataProvider, categoryService)
     service.fetchStateDefinitions(user)
   }
 
   private val emptyStateDefinitionManager = new ProcessStateDefinitionManager {
-    override def stateDefinitions: Map[StatusName, StateDefinitionDetails] = Map.empty
+    override def stateDefinitions: Map[StatusName, StateDefinitionDetails]        = Map.empty
     override def statusActions(stateStatus: StateStatus): List[ProcessActionType] = Nil
   }
 
-  private def createProcessingTypeDataMap(streaming: ProcessStateDefinitionManager,
-                                         fraud: ProcessStateDefinitionManager): Map[ProcessingType, ProcessingTypeData] = {
-    createProcessingTypeDataMap(Map(
-      Streaming -> new MockDeploymentManager() {
-        override def processStateDefinitionManager: ProcessStateDefinitionManager = streaming
-      },
-      Fraud -> new MockDeploymentManager() {
-        override def processStateDefinitionManager: ProcessStateDefinitionManager = fraud
-      },
-    ))
+  private def createProcessingTypeDataMap(
+      streaming: ProcessStateDefinitionManager,
+      fraud: ProcessStateDefinitionManager
+  ): Map[ProcessingType, ProcessingTypeData] = {
+    createProcessingTypeDataMap(
+      Map(
+        Streaming -> new MockDeploymentManager() {
+          override def processStateDefinitionManager: ProcessStateDefinitionManager = streaming
+        },
+        Fraud -> new MockDeploymentManager() {
+          override def processStateDefinitionManager: ProcessStateDefinitionManager = fraud
+        },
+      )
+    )
   }
 
-  private def createProcessingTypeDataMap(processingTypeToDeploymentManager: Map[ProcessingType, DeploymentManager]): Map[ProcessingType, ProcessingTypeData] = {
+  private def createProcessingTypeDataMap(
+      processingTypeToDeploymentManager: Map[ProcessingType, DeploymentManager]
+  ): Map[ProcessingType, ProcessingTypeData] = {
     processingTypeToDeploymentManager.transform { case (_, deploymentManager) =>
       ProcessingTypeData.createProcessingTypeData(
         MockManagerProvider,
         deploymentManager,
         LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator),
-        ConfigFactory.empty())
+        ConfigFactory.empty()
+      )
     }
   }
 

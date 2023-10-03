@@ -13,11 +13,15 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
 
   test("run scenario with sum aggregation") {
-    val results = sample.run(sampleScenarioWithState, ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>
-      (SourceId("start"), SampleInput(idx.toString, value))
-    }), Map("test" -> 10))
+    val results = sample.run(
+      sampleScenarioWithState,
+      ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>
+        (SourceId("start"), SampleInput(idx.toString, value))
+      }),
+      Map("test" -> 10)
+    )
 
-    //we start with 10, add 2 * each input, but omit 1 as enricher fails on that value
+    // we start with 10, add 2 * each input, but omit 1 as enricher fails on that value
     results.value.map(er => (er.context.id, er.result)) shouldBe List(
       "0" -> "0:10.0",
       "2" -> "2:14.0",
@@ -27,11 +31,15 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
   }
 
   test("run scenario failing on source") {
-    val results = sample.run(sampleScenarioWithFailingSource, ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>
-      (SourceId("start"), SampleInput(idx.toString, value))
-    }), Map("test" -> 10))
+    val results = sample.run(
+      sampleScenarioWithFailingSource,
+      ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>
+        (SourceId("start"), SampleInput(idx.toString, value))
+      }),
+      Map("test" -> 10)
+    )
 
-    //we start with 10, add 2 * each input, but omit 1 as enricher fails on that value
+    // we start with 10, add 2 * each input, but omit 1 as enricher fails on that value
     results.value.map(er => (er.context.id, er.result)) shouldBe List(
       "0" -> 0,
       "2" -> 2,
@@ -56,4 +64,3 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
     .emptySink("end", "end", "value" -> "#input")
 
 }
-

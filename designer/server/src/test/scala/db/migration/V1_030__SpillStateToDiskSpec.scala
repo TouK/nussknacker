@@ -59,7 +59,7 @@ class V1_030__SpillStateToDiskSpec extends AnyFlatSpec with Matchers {
         |}
         |""".stripMargin
 
-    val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
+    val oldJson   = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
     val converted = V1_030__SpillStateToDisk.renameSpillStateToDisk(oldJson)
 
     converted shouldBe expectedJsonWithSpillStateToDisk
@@ -81,7 +81,7 @@ class V1_030__SpillStateToDiskSpec extends AnyFlatSpec with Matchers {
         |}
         |""".stripMargin
 
-    val oldJson = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
+    val oldJson   = CirceUtil.decodeJsonUnsafe[Json](rawJsonString, "Invalid json string.")
     val converted = V1_030__SpillStateToDisk.renameSpillStateToDisk(oldJson)
 
     converted shouldBe expectedJsonWithoutSpillStateToDisk

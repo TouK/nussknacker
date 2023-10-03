@@ -26,16 +26,17 @@ import java.time.Duration
 
 class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
-  private val sinkId = "end"
-  private val resultVariableName = "resultVar"
+  private val sinkId                    = "end"
+  private val resultVariableName        = "resultVar"
   private val forEachOutputVariableName = "forEachVar"
-  private val forEachNodeResultId = "for-each-result"
+  private val forEachNodeResultId       = "for-each-result"
 
   test("should produce results for each element in list") {
     val collectingListener = initializeListener
-    val model = modelData(List(TestRecord()), collectingListener)
+    val model              = modelData(List(TestRecord()), collectingListener)
 
-    val testProcess = aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
+    val testProcess =
+      aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
 
     val results = collectTestResults[String](model, testProcess, collectingListener)
     extractResultValues(results) shouldBe List("one_1", "other_1")
@@ -43,9 +44,10 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
   test("should produce unique contextId for each element in list") {
     val collectingListener = initializeListener
-    val model = modelData(List(TestRecord()), collectingListener)
+    val model              = modelData(List(TestRecord()), collectingListener)
 
-    val testProcess = aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
+    val testProcess =
+      aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
 
     val results = collectTestResults[String](model, testProcess, collectingListener)
     extractContextIds(results) shouldBe List("forEachProcess-start-0-0-0", "forEachProcess-start-0-0-1")
@@ -53,9 +55,10 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
   test("should set return type based on element types") {
     val collectingListener = initializeListener
-    val model = modelData(List(TestRecord()), collectingListener)
+    val model              = modelData(List(TestRecord()), collectingListener)
 
-    val testProcess = aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
+    val testProcess =
+      aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
     val processValidator = ProcessValidator.default(model, None)
 
     val forEachResultValidationContext = processValidator.validate(testProcess).typing(forEachNodeResultId)
@@ -64,7 +67,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
   test("should not produce any results when elements list is empty") {
     val collectingListener = initializeListener
-    val model = modelData(List(TestRecord()), collectingListener)
+    val model              = modelData(List(TestRecord()), collectingListener)
 
     val testProcess = aProcessWithForEachNode(elements = "{}")
 
@@ -74,8 +77,15 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
   private def initializeListener = ResultsCollectingListenerHolder.registerRun(identity)
 
-  private def modelData(list: List[TestRecord] = List(), collectingListener: ResultsCollectingListener): LocalModelData = LocalModelData(ConfigFactory
-    .empty().withValue("useTypingResultTypeInformation", fromAnyRef(true)), new Creator(list, collectingListener))
+  private def modelData(
+      list: List[TestRecord] = List(),
+      collectingListener: ResultsCollectingListener
+  ): LocalModelData = LocalModelData(
+    ConfigFactory
+      .empty()
+      .withValue("useTypingResultTypeInformation", fromAnyRef(true)),
+    new Creator(list, collectingListener)
+  )
 
   private def aProcessWithForEachNode(elements: String, resultExpression: String = s"#$forEachOutputVariableName") =
     ScenarioBuilder
@@ -87,32 +97,46 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       .buildSimpleVariable(forEachNodeResultId, "resultVar", resultExpression)
       .emptySink(sinkId, "dead-end")
 
-  private def collectTestResults[T](model: LocalModelData, testProcess: CanonicalProcess, collectingListener: ResultsCollectingListener): TestProcess.TestResults[Any] = {
+  private def collectTestResults[T](
+      model: LocalModelData,
+      testProcess: CanonicalProcess,
+      collectingListener: ResultsCollectingListener
+  ): TestProcess.TestResults[Any] = {
     runProcess(model, testProcess)
     collectingListener.results[Any]
   }
 
-  private def extractResultValues(results: TestProcess.TestResults[Any]): List[String] = results.nodeResults(sinkId)
+  private def extractResultValues(results: TestProcess.TestResults[Any]): List[String] = results
+    .nodeResults(sinkId)
     .map(_.variableTyped[String](resultVariableName).get)
 
-  private def extractContextIds(results: TestProcess.TestResults[Any]): List[String] = results.nodeResults(forEachNodeResultId)
+  private def extractContextIds(results: TestProcess.TestResults[Any]): List[String] = results
+    .nodeResults(forEachNodeResultId)
     .map(_.context.id)
 
   private def runProcess(model: LocalModelData, testProcess: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
-    val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
+    val registrar =
+      FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 }
 
-class Creator(input: List[TestRecord], collectingListener: ResultsCollectingListener) extends EmptyProcessConfigCreator {
+class Creator(input: List[TestRecord], collectingListener: ResultsCollectingListener)
+    extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
+  override def sourceFactories(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[SourceFactory]] = {
     implicit val testRecordTypeInfo: TypeInformation[TestRecord] = TypeInformation.of(classOf[TestRecord])
     Map(
-      "start" -> WithCategories(SourceFactory.noParam[TestRecord](EmitWatermarkAfterEachElementCollectionSource
-        .create[TestRecord](input, _.timestamp, Duration.ofHours(1))))
+      "start" -> WithCategories(
+        SourceFactory.noParam[TestRecord](
+          EmitWatermarkAfterEachElementCollectionSource
+            .create[TestRecord](input, _.timestamp, Duration.ofHours(1))
+        )
+      )
     )
   }
 

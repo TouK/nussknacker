@@ -14,14 +14,17 @@ import java.util.Optional
 class RecordFormatterTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   object EmptyRecordFormatter extends RecordFormatter {
-    override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord = TestRecord(Json.Null)
+    override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord = TestRecord(
+      Json.Null
+    )
     override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = ???
   }
 
   object EmptyWithTimestampRecordFormatter extends RecordFormatter {
     val customTimestamp = 42
 
-    override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord = TestRecord(Json.Null, timestamp = Some(customTimestamp))
+    override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord =
+      TestRecord(Json.Null, timestamp = Some(customTimestamp))
     override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = ???
   }
 
@@ -39,12 +42,26 @@ class RecordFormatterTest extends AnyFunSuite with Matchers with TableDrivenProp
   test("should not overwrite test record timestamp if set") {
     val testRecords = EmptyWithTimestampRecordFormatter.prepareGeneratedTestData(consumerRecords).testRecords
 
-    testRecords.map(_.timestamp) shouldBe List(Some(EmptyWithTimestampRecordFormatter.customTimestamp), Some(EmptyWithTimestampRecordFormatter.customTimestamp))
+    testRecords.map(_.timestamp) shouldBe List(
+      Some(EmptyWithTimestampRecordFormatter.customTimestamp),
+      Some(EmptyWithTimestampRecordFormatter.customTimestamp)
+    )
   }
 
   private def createConsumerRecordWithTimestamp(timestamp: java.lang.Long): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    new ConsumerRecord[Array[Byte], Array[Byte]]("topic", 0, 0, timestamp, TimestampType.CREATE_TIME, 0, 0,
-      Array.empty[Byte], Array.empty[Byte], new RecordHeaders(), Optional.empty[java.lang.Integer]())
+    new ConsumerRecord[Array[Byte], Array[Byte]](
+      "topic",
+      0,
+      0,
+      timestamp,
+      TimestampType.CREATE_TIME,
+      0,
+      0,
+      Array.empty[Byte],
+      Array.empty[Byte],
+      new RecordHeaders(),
+      Optional.empty[java.lang.Integer]()
+    )
   }
 
 }

@@ -16,7 +16,9 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   // warning: can't be val - uses ConfigFactory.load which breaks "should preserve config overrides" test
   private def globalConfig = ConfigWithScalaVersion.TestsConfig
 
-  private def modelData: ModelData = ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig))
+  private def modelData: ModelData = ModelData(
+    ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
+  )
 
   private lazy val modelDataConfig = modelData.processConfig
 
@@ -25,16 +27,19 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   }
 
   test("defaultConfig works") {
-    DesignerConfigLoader.load(globalConfig, classLoader).resolved.getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
+    DesignerConfigLoader
+      .load(globalConfig, classLoader)
+      .resolved
+      .getString("db.driver") shouldBe "org.hsqldb.jdbc.JDBCDriver"
   }
 
   test("should be possible to config entries defined in default ui config from passed config") {
     val configUri = writeToTemp("foo: ${storageDir}") // storageDir is defined inside defaultDesignerConfig.conf
 
-    val loadedConfig = DesignerConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader), classLoader)
+    val loadedConfig =
+      DesignerConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(configUri), classLoader), classLoader)
     loadedConfig.resolved.getString("foo") shouldEqual "./storage"
   }
-
 
   test("defaultConfig is not accessible from model") {
     modelDataConfig.hasPath("db.driver") shouldBe false
@@ -47,13 +52,13 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
 
   test("Can override model.conf from application config, also substitutions") {
     modelDataConfig.getString("additionalPropertiesConfig.environment.value") shouldBe "OverriddenByConf"
-    //in model.conf it's: ${documentationBase}"filter", in designer.conf we substitute documentationBase only
+    // in model.conf it's: ${documentationBase}"filter", in designer.conf we substitute documentationBase only
     modelDataConfig.getString("componentsUiConfig.filter.docsUrl") shouldBe "https://touk.github.io/nussknacker/filter"
   }
 
   // See SampleModelConfigLoader.
   test("should load config using custom loader") {
-    modelDataConfig.getLong("configLoadedMs") shouldBe < (System.currentTimeMillis)
+    modelDataConfig.getLong("configLoadedMs") shouldBe <(System.currentTimeMillis)
     modelDataConfig.getString("configValueToLoad") shouldBe "someDummyValue"
   }
 
@@ -68,19 +73,20 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
          |""".stripMargin
     val conf1 = writeToTemp(content)
 
-    val result = try {
-      System.setProperty(randomPropertyName, "I win!")
-      DesignerConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader), classLoader)
-    } finally {
-      System.getProperties.remove(randomPropertyName)
-    }
+    val result =
+      try {
+        System.setProperty(randomPropertyName, "I win!")
+        DesignerConfigLoader.load(ConfigFactoryExt.parseConfigFallbackChain(List(conf1), classLoader), classLoader)
+      } finally {
+        System.getProperties.remove(randomPropertyName)
+      }
 
     result.resolved.getString(randomPropertyName) shouldBe "I win!"
   }
 
-  //to be able to run this test:
-  //add -Dconfig.override_with_env_vars=true to VM parameters
-  //set env variable: CONFIG_FORCE_scenarioTypes_streaming_modelConfig_testProperty=testValue
+  // to be able to run this test:
+  // add -Dconfig.override_with_env_vars=true to VM parameters
+  // set env variable: CONFIG_FORCE_scenarioTypes_streaming_modelConfig_testProperty=testValue
   ignore("check if env properties are used/passed") {
     modelDataConfig.getString("testProperty") shouldBe "testValue"
     modelData.inputConfigDuringExecution.config.getString("testProperty") shouldBe "testValue"

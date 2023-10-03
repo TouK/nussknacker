@@ -28,40 +28,46 @@ import scala.jdk.CollectionConverters._
   Using typing results should give 4-5 times better performance for round-trip serialization
   It also gives significant (2-5 times) reduction in serialized data size
 
-*/
+ */
 @State(Scope.Thread)
 class TypingResultBasedSerializationBenchmark {
 
-  //we use TypedMap here to have TypedObjectTypingResult in Typed.fromInstance
-  private val mapToSerialize = TypedMap(Map("field1" -> "strValue", "field2" -> 333L, "field3" -> 555, "field4" -> 555.3))
+  // we use TypedMap here to have TypedObjectTypingResult in Typed.fromInstance
+  private val mapToSerialize = TypedMap(
+    Map("field1" -> "strValue", "field2" -> 333L, "field3" -> 555, "field4" -> 555.3)
+  )
 
   private val mapToSerializeType = Typed.fromInstance(mapToSerialize).asInstanceOf[TypedObjectTypingResult]
 
-  private val contextToSerialize = Context("id").copy(variables = Map(
-    "var1" -> "11",
-    "var2" -> 11L,
-    "map" -> mapToSerialize))
+  private val contextToSerialize =
+    Context("id").copy(variables = Map("var1" -> "11", "var2" -> 11L, "map" -> mapToSerialize))
 
   private val determiner = new TypingResultAwareTypeInformationDetection(new CompositeCustomisation(Nil))
 
-  private val genericContextSetup = new SerializationBenchmarkSetup(TypeInformation.of(classOf[Context]), contextToSerialize)
-  
+  private val genericContextSetup =
+    new SerializationBenchmarkSetup(TypeInformation.of(classOf[Context]), contextToSerialize)
+
   private val typingResultContextSetup = new SerializationBenchmarkSetup(
-    determiner.forContext(ValidationContext(Map(
-      "var1" -> Typed[String],
-      "var2" -> Typed[Long],
-      "map" -> mapToSerializeType)
-    )), contextToSerialize)
+    determiner.forContext(
+      ValidationContext(Map("var1" -> Typed[String], "var2" -> Typed[Long], "map" -> mapToSerializeType))
+    ),
+    contextToSerialize
+  )
 
-  private val genericTypedMapSetup = new SerializationBenchmarkSetup(TypeInformation.of(classOf[TypedMap]), mapToSerialize)
+  private val genericTypedMapSetup =
+    new SerializationBenchmarkSetup(TypeInformation.of(classOf[TypedMap]), mapToSerialize)
 
-  private val typingResultTypedMapSetup = new SerializationBenchmarkSetup(determiner.forType(mapToSerializeType), mapToSerialize)
+  private val typingResultTypedMapSetup =
+    new SerializationBenchmarkSetup(determiner.forType(mapToSerializeType), mapToSerialize)
 
-  private val genericScalaMapSetup = new SerializationBenchmarkSetup(TypeInformation.of(classOf[Map[String, Any]]), mapToSerialize.asScala.toMap)
+  private val genericScalaMapSetup =
+    new SerializationBenchmarkSetup(TypeInformation.of(classOf[Map[String, Any]]), mapToSerialize.asScala.toMap)
 
-  private val typingResultScalaMapSetup = new SerializationBenchmarkSetup(determiner
-    .forType(mapToSerializeType.copy(objType = Typed.typedClass[Map[String, Any]])), mapToSerialize.asScala.toMap)
-
+  private val typingResultScalaMapSetup = new SerializationBenchmarkSetup(
+    determiner
+      .forType(mapToSerializeType.copy(objType = Typed.typedClass[Map[String, Any]])),
+    mapToSerialize.asScala.toMap
+  )
 
   @Benchmark
   @BenchmarkMode(Array(Mode.AverageTime))
@@ -106,4 +112,3 @@ class TypingResultBasedSerializationBenchmark {
   }
 
 }
-

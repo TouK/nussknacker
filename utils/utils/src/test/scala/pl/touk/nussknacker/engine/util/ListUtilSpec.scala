@@ -10,7 +10,11 @@ class ListUtilSpec extends AnyFunSuite with Matchers {
   }
 
   test("merges list of same size") {
-    ListUtil.mergeLists(List(List("aa", "ab", "ac"), List("ba", "bb", "bc"), List("ca", "cb", "cc")), 3) shouldBe List("aa", "ba", "ca")
+    ListUtil.mergeLists(List(List("aa", "ab", "ac"), List("ba", "bb", "bc"), List("ca", "cb", "cc")), 3) shouldBe List(
+      "aa",
+      "ba",
+      "ca"
+    )
   }
 
   test("merges list of different size") {

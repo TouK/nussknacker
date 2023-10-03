@@ -17,16 +17,18 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
   import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  private implicit val metadata: MetaData = MetaData("proc1", StreamMetaData())
-  private implicit val ctxId: ContextId = ContextId("")
+  private implicit val metadata: MetaData                 = MetaData("proc1", StreamMetaData())
+  private implicit val ctxId: ContextId                   = ContextId("")
   private implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
 
-  private val nodeId = NodeId("id")
+  private val nodeId           = NodeId("id")
   private val jobData: JobData = JobData(metadata, ProcessVersion.empty)
 
   it should "invoke service method with declared parameters as scala params" in {
     val mock = new MockService(jobData)
-    val definition = ObjectWithMethodDef.withEmptyConfig(mock, DefaultServiceInvoker.Extractor).asInstanceOf[StandardObjectWithMethodDef]
+    val definition = ObjectWithMethodDef
+      .withEmptyConfig(mock, DefaultServiceInvoker.Extractor)
+      .asInstanceOf[StandardObjectWithMethodDef]
     val invoker = DefaultServiceInvoker(metadata, nodeId, None, definition)
 
     whenReady(invoker.invokeService(Map("foo" -> "aa", "bar" -> 1))) { _ =>
@@ -36,17 +38,21 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
 
   it should "throw excpetion with nice message when parameters do not match" in {
     val mock = new MockService(jobData)
-    val definition = ObjectWithMethodDef.withEmptyConfig(mock, DefaultServiceInvoker.Extractor).asInstanceOf[StandardObjectWithMethodDef]
+    val definition = ObjectWithMethodDef
+      .withEmptyConfig(mock, DefaultServiceInvoker.Extractor)
+      .asInstanceOf[StandardObjectWithMethodDef]
     val invoker = DefaultServiceInvoker(metadata, nodeId, None, definition)
 
     intercept[IllegalArgumentException](
-      invoker.invokeService(Map("foo" -> "aa", "bar" -> "terefere")))
-        .getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String): argument type mismatch"""
+      invoker.invokeService(Map("foo" -> "aa", "bar" -> "terefere"))
+    ).getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String): argument type mismatch"""
   }
 
   it should "invoke service method with CompletionStage return type" in {
     val mock = new MockCompletionStageService(jobData)
-    val definition = ObjectWithMethodDef.withEmptyConfig(mock, DefaultServiceInvoker.Extractor).asInstanceOf[StandardObjectWithMethodDef]
+    val definition = ObjectWithMethodDef
+      .withEmptyConfig(mock, DefaultServiceInvoker.Extractor)
+      .asInstanceOf[StandardObjectWithMethodDef]
     val invoker = DefaultServiceInvoker(metadata, nodeId, None, definition)
 
     whenReady(invoker.invokeService(Map("foo" -> "aa", "bar" -> 1))) { _ =>
@@ -61,8 +67,7 @@ class MockService(override val jobData: JobData) extends Service with WithJobDat
   @volatile var invoked: Option[(String, Int, MetaData)] = None
 
   @MethodToInvoke
-  def invoke(@ParamName("foo") foo: String, @ParamName("bar") bar: Int)
-            (implicit ec: ExecutionContext): Future[Any] = {
+  def invoke(@ParamName("foo") foo: String, @ParamName("bar") bar: Int)(implicit ec: ExecutionContext): Future[Any] = {
     invoked = Some((foo, bar, jobData.metaData))
     Future.successful(())
   }
@@ -74,13 +79,17 @@ class MockCompletionStageService(override val jobData: JobData) extends Service 
   @volatile var invoked: Option[(String, Int, MetaData)] = None
 
   @MethodToInvoke
-  def invoke(@ParamName("foo") foo: String, @ParamName("bar") bar: Int)
-            (implicit executor: Executor): java.util.concurrent.CompletionStage[Any] = {
-    java.util.concurrent.CompletableFuture.supplyAsync(new Supplier[Any] {
-      override def get() = {
-        invoked = Some((foo, bar, jobData.metaData))
-      }
-    }, executor)
+  def invoke(@ParamName("foo") foo: String, @ParamName("bar") bar: Int)(
+      implicit executor: Executor
+  ): java.util.concurrent.CompletionStage[Any] = {
+    java.util.concurrent.CompletableFuture.supplyAsync(
+      new Supplier[Any] {
+        override def get() = {
+          invoked = Some((foo, bar, jobData.metaData))
+        }
+      },
+      executor
+    )
   }
 
 }

@@ -25,7 +25,11 @@ import scala.concurrent.Future
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures with BeforeAndAfterAll {
+class BaseK8sDeploymentManagerTest
+    extends AnyFunSuite
+    with Matchers
+    with ExtremelyPatientScalaFutures
+    with BeforeAndAfterAll {
   self: LazyLogging =>
 
   protected implicit val system: ActorSystem = ActorSystem()
@@ -33,35 +37,42 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
   import system.dispatcher
 
   protected lazy val k8s: KubernetesClient = k8sInit
-  protected lazy val k8sTestUtils = new K8sTestUtils(k8s)
+  protected lazy val k8sTestUtils          = new K8sTestUtils(k8s)
 
   protected def baseDeployConfig(mode: String): Config = ConfigFactory.empty
     .withValue("mode", fromAnyRef(mode))
-    .withValue("k8sDeploymentConfig.spec.template.spec.containers", fromIterable(List(baseRuntimeContainerConfig.root()).asJava))
+    .withValue(
+      "k8sDeploymentConfig.spec.template.spec.containers",
+      fromIterable(List(baseRuntimeContainerConfig.root()).asJava)
+    )
 
   protected val baseRuntimeContainerConfig: Config = ConfigFactory.empty
     .withValue("name", fromAnyRef("runtime"))
     .withValue("imagePullPolicy", fromAnyRef("Never"))
 
   override protected def beforeAll(): Unit = {
-    //cleanup just in case...
+    // cleanup just in case...
     cleanup()
   }
 
   protected def cleanup(): Unit = {
     val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
-    Future.sequence(
-      k8s.listSelected[ListResource[Service]](selector)
-        .futureValue
-        .map(_.name)
-        .map(k8s.delete[Service](_)) ++
-        List(
-          k8s.deleteAllSelected[ListResource[Ingress]](selector),
-          k8s.deleteAllSelected[ListResource[Deployment]](selector),
-          k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
-          k8s.deleteAllSelected[ListResource[Secret]](selector),
-          k8sTestUtils.deleteIfExists[Resource.Quota]("nu-pods-limit")
-        )).futureValue
+    Future
+      .sequence(
+        k8s
+          .listSelected[ListResource[Service]](selector)
+          .futureValue
+          .map(_.name)
+          .map(k8s.delete[Service](_)) ++
+          List(
+            k8s.deleteAllSelected[ListResource[Ingress]](selector),
+            k8s.deleteAllSelected[ListResource[Deployment]](selector),
+            k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
+            k8s.deleteAllSelected[ListResource[Secret]](selector),
+            k8sTestUtils.deleteIfExists[Resource.Quota]("nu-pods-limit")
+          )
+      )
+      .futureValue
     assertNoGarbageLeft()
   }
 
@@ -81,8 +92,13 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
     cleanup()
   }
 
-  class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val scenario: CanonicalProcess, val version: ProcessVersion)
-    extends ExtremelyPatientScalaFutures with Matchers with LazyLogging {
+  class K8sDeploymentManagerTestFixture(
+      val manager: K8sDeploymentManager,
+      val scenario: CanonicalProcess,
+      val version: ProcessVersion
+  ) extends ExtremelyPatientScalaFutures
+      with Matchers
+      with LazyLogging {
 
     def withRunningScenario(action: => Unit): Unit = {
       manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
@@ -123,7 +139,9 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
         // It looks like it is a common situation that waiting for logs take a longer time than patient config.
         // I guess that for still running pods, it can wait forever. Even if futureValue failed, printing of logs would
         // still be continued. Because of that, I silently ignore this error
-        Try(k8s.getPodLogSource(p.name, LogQueryParams()).futureValue.runForeach(bs => println(bs.utf8String)).futureValue)
+        Try(
+          k8s.getPodLogSource(p.name, LogQueryParams()).futureValue.runForeach(bs => println(bs.utf8String)).futureValue
+        )
         logger.info(s"Finished printing logs for pod: ${p.name}")
       }
     }

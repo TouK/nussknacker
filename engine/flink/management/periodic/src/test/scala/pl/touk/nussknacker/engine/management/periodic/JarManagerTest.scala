@@ -13,16 +13,13 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.file.{Files, Path, Paths}
 
-class JarManagerTest extends AnyFunSuite
-  with Matchers
-  with ScalaFutures
-  with PatientScalaFutures {
+class JarManagerTest extends AnyFunSuite with Matchers with ScalaFutures with PatientScalaFutures {
 
-  private val processName = "test"
+  private val processName      = "test"
   private val processVersionId = 5
-  private val processVersion = ProcessVersion.empty.copy(processName = ProcessName(processName),
-    versionId = VersionId(processVersionId))
-  private val jarsDir = Files.createTempDirectory("jars-dir")
+  private val processVersion =
+    ProcessVersion.empty.copy(processName = ProcessName(processName), versionId = VersionId(processVersionId))
+  private val jarsDir             = Files.createTempDirectory("jars-dir")
   private val modelJarFileContent = "abc".getBytes
   private val currentModelJarFile = {
     val tempFile = Files.createTempFile("currentModelJarFile", ".jar")
@@ -42,7 +39,8 @@ class JarManagerTest extends AnyFunSuite
   }
 
   test("prepareDeploymentWithJar - should copy to local dir") {
-    val result = jarManager.prepareDeploymentWithJar(processVersion, CanonicalProcess(MetaData("foo", StreamMetaData()), Nil))
+    val result =
+      jarManager.prepareDeploymentWithJar(processVersion, CanonicalProcess(MetaData("foo", StreamMetaData()), Nil))
 
     val copiedJarFileName = result.futureValue.jarFileName
     copiedJarFileName should fullyMatch regex s"^$processName-$processVersionId-\\d+\\.jar$$"
@@ -52,13 +50,14 @@ class JarManagerTest extends AnyFunSuite
   }
 
   test("prepareDeploymentWithJar - should create jars dir if not exists") {
-    val tmpDir = System.getProperty("java.io.tmpdir")
-    val jarsDir = Paths.get(tmpDir, s"jars-dir-not-exists-${System.currentTimeMillis()}")
+    val tmpDir     = System.getProperty("java.io.tmpdir")
+    val jarsDir    = Paths.get(tmpDir, s"jars-dir-not-exists-${System.currentTimeMillis()}")
     val jarManager = createJarManager(jarsDir = jarsDir)
 
     Files.exists(jarsDir) shouldBe false
 
-    val result = jarManager.prepareDeploymentWithJar(processVersion, CanonicalProcess(MetaData("foo", StreamMetaData()), Nil))
+    val result =
+      jarManager.prepareDeploymentWithJar(processVersion, CanonicalProcess(MetaData("foo", StreamMetaData()), Nil))
 
     val copiedJarFileName = result.futureValue.jarFileName
     Files.exists(jarsDir) shouldBe true
@@ -67,7 +66,7 @@ class JarManagerTest extends AnyFunSuite
 
   test("deleteJar - should delete both local and Flink jar") {
     val jarFileName = s"${System.currentTimeMillis()}.jar"
-    val jarPath = jarsDir.resolve(jarFileName)
+    val jarPath     = jarsDir.resolve(jarFileName)
     Files.copy(currentModelJarFile.toPath, jarPath)
 
     jarManager.deleteJar(jarFileName).futureValue

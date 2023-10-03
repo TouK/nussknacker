@@ -20,11 +20,13 @@ class GroupByMigrationSpec extends AnyFunSuite {
   test("should migrate custom aggregation node keyBy parameter name to groupBy") {
     val testMigration = newTestModelMigrations(migrations)
     val process =
-      ProcessTestData.toValidatedDisplayable(ScenarioBuilder
-        .streaming("fooProcess")
-        .source("source", existingSourceFactory)
-        .customNode("customNode", "groupedBy", "aggregate-sliding", "keyBy" -> "#input")
-        .emptySink("sink", existingSinkFactory))
+      ProcessTestData.toValidatedDisplayable(
+        ScenarioBuilder
+          .streaming("fooProcess")
+          .source("source", existingSourceFactory)
+          .customNode("customNode", "groupedBy", "aggregate-sliding", "keyBy" -> "#input")
+          .emptySink("sink", existingSinkFactory)
+      )
 
     val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
@@ -37,11 +39,13 @@ class GroupByMigrationSpec extends AnyFunSuite {
   test("should do nothing for non aggregate custom node") {
     val testMigration = newTestModelMigrations(migrations)
     val process =
-      ProcessTestData.toValidatedDisplayable(ScenarioBuilder
-        .streaming("fooProcess")
-        .source("source", existingSourceFactory)
-        .customNode("customNode", "groupedBy", "non-aggregate-sliding", "keyBy" -> "#input")
-        .emptySink("sink", existingSinkFactory))
+      ProcessTestData.toValidatedDisplayable(
+        ScenarioBuilder
+          .streaming("fooProcess")
+          .source("source", existingSourceFactory)
+          .customNode("customNode", "groupedBy", "non-aggregate-sliding", "keyBy" -> "#input")
+          .emptySink("sink", existingSinkFactory)
+      )
 
     val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
@@ -54,10 +58,12 @@ class GroupByMigrationSpec extends AnyFunSuite {
   test("should do nothing when custom node is missing") {
     val testMigration = newTestModelMigrations(migrations)
     val process =
-      ProcessTestData.toValidatedDisplayable(ScenarioBuilder
-        .streaming("fooProcess")
-        .source("source", existingSourceFactory)
-        .emptySink("sink", existingSinkFactory))
+      ProcessTestData.toValidatedDisplayable(
+        ScenarioBuilder
+          .streaming("fooProcess")
+          .source("source", existingSourceFactory)
+          .emptySink("sink", existingSinkFactory)
+      )
 
     val results = testMigration.testMigrations(List(TestProcessUtil.validatedToProcess(process)), List())
 
@@ -66,10 +72,15 @@ class GroupByMigrationSpec extends AnyFunSuite {
     processMigrationResult.shouldFail shouldBe false
   }
 
-  private def getFirst[T: ClassTag](result: TestMigrationResult): T = result.converted.nodes.collectFirst { case t: T => t }.get
+  private def getFirst[T: ClassTag](result: TestMigrationResult): T = result.converted.nodes.collectFirst { case t: T =>
+    t
+  }.get
 
   private def newTestModelMigrations(testMigrations: ProcessMigrations): TestModelMigrations = {
-    new TestModelMigrations(TestFactory.mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> testMigrations), TestFactory.processValidation)
+    new TestModelMigrations(
+      TestFactory.mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> testMigrations),
+      TestFactory.processValidation
+    )
   }
 
 }

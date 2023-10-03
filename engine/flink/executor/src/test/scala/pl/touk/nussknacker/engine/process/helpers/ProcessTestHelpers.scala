@@ -24,13 +24,15 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
     def invokeWithSampleData(process: CanonicalProcess, data: List[SimpleRecord]): Unit =
       invokeWithSampleData(process, data, config)
 
-    def invokeWithSampleData(process: CanonicalProcess,
-                             data: List[SimpleRecord],
-                             config: Config,
-                             processVersion: ProcessVersion = ProcessVersion.empty): Unit = {
+    def invokeWithSampleData(
+        process: CanonicalProcess,
+        data: List[SimpleRecord],
+        config: Config,
+        processVersion: ProcessVersion = ProcessVersion.empty
+    ): Unit = {
       val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(data, config)
 
-      val env = flinkMiniCluster.createExecutionEnvironment()
+      val env       = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
       FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
         .register(env, process, processVersion, DeploymentData.empty)
@@ -41,14 +43,17 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       env.executeAndWaitForFinished(process.id)()
     }
 
-    def invoke(process: CanonicalProcess,
-               creator: ProcessConfigCreator,
-               config: Config,
-               processVersion: ProcessVersion,
-               actionToInvokeWithJobRunning: => Unit): Unit = {
-      val env = flinkMiniCluster.createExecutionEnvironment()
+    def invoke(
+        process: CanonicalProcess,
+        creator: ProcessConfigCreator,
+        config: Config,
+        processVersion: ProcessVersion,
+        actionToInvokeWithJobRunning: => Unit
+    ): Unit = {
+      val env       = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
-      registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+      registrar
+        .FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
         .register(env, process, processVersion, DeploymentData.empty)
 
       MockService.clear()
@@ -63,57 +68,70 @@ object ProcessTestHelpers {
 }
 
 class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCreator {
-  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(
-    "logService" -> WithCategories(new MockService),
-    "lifecycleService" -> WithCategories(LifecycleService),
-    "eagerLifecycleService" -> WithCategories(EagerLifecycleService),
-    "enricherWithOpenService" -> WithCategories(new EnricherWithOpenService),
-    "serviceAcceptingOptionalValue" -> WithCategories(ServiceAcceptingScalaOption),
-    "returningComponentUseCaseService" -> WithCategories(ReturningComponentUseCaseService),
-    "throwingNonTransientErrors" -> WithCategories(new ThrowingService(NonTransientException("test input", "test msg"))),
-  )
+  override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
+    Map(
+      "logService"                       -> WithCategories(new MockService),
+      "lifecycleService"                 -> WithCategories(LifecycleService),
+      "eagerLifecycleService"            -> WithCategories(EagerLifecycleService),
+      "enricherWithOpenService"          -> WithCategories(new EnricherWithOpenService),
+      "serviceAcceptingOptionalValue"    -> WithCategories(ServiceAcceptingScalaOption),
+      "returningComponentUseCaseService" -> WithCategories(ReturningComponentUseCaseService),
+      "throwingNonTransientErrors" -> WithCategories(
+        new ThrowingService(NonTransientException("test input", "test msg"))
+      ),
+    )
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-    "input" -> WithCategories(SampleNodes.simpleRecordSource(data)),
-    "intInputWithParam" -> WithCategories(new IntParamSourceFactory),
-    "genericParametersSource" -> WithCategories(GenericParametersSource),
+  override def sourceFactories(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[SourceFactory]] = Map(
+    "input"                            -> WithCategories(SampleNodes.simpleRecordSource(data)),
+    "intInputWithParam"                -> WithCategories(new IntParamSourceFactory),
+    "genericParametersSource"          -> WithCategories(GenericParametersSource),
     "genericSourceWithCustomVariables" -> WithCategories(GenericSourceWithCustomVariables)
   )
 
-  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
-    "monitor" -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
-    "sinkForInts" -> WithCategories(SinkForInts.toSinkFactory),
-    "sinkForStrings" -> WithCategories(SinkForStrings.toSinkFactory),
+  override def sinkFactories(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[SinkFactory]] = Map(
+    "monitor"                    -> WithCategories(SinkFactory.noParam(MonitorEmptySink)),
+    "sinkForInts"                -> WithCategories(SinkForInts.toSinkFactory),
+    "sinkForStrings"             -> WithCategories(SinkForStrings.toSinkFactory),
     "eagerOptionalParameterSink" -> WithCategories(EagerOptionalParameterSinkFactory),
-    "genericParametersSink" -> WithCategories(GenericParametersSink)
+    "genericParametersSink"      -> WithCategories(GenericParametersSink)
   )
 
-  override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
-    "stateCustom" -> WithCategories(StateCustomNode),
-    "customFilter" -> WithCategories(CustomFilter),
+  override def customStreamTransformers(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[CustomStreamTransformer]] = Map(
+    "stateCustom"                       -> WithCategories(StateCustomNode),
+    "customFilter"                      -> WithCategories(CustomFilter),
     "customFilterContextTransformation" -> WithCategories(CustomFilterContextTransformation),
-    "customContextClear" -> WithCategories(CustomContextClear),
-    "sampleJoin" -> WithCategories(CustomJoin),
-    "joinBranchExpression" -> WithCategories(CustomJoinUsingBranchExpressions),
-    "transformWithNullable" -> WithCategories(TransformerWithNullableParam),
-    "optionalEndingCustom" -> WithCategories(OptionalEndingCustom),
-    "genericParametersNode" -> WithCategories(GenericParametersNode),
-    "nodePassingStateToImplementation" -> WithCategories(NodePassingStateToImplementation)
+    "customContextClear"                -> WithCategories(CustomContextClear),
+    "sampleJoin"                        -> WithCategories(CustomJoin),
+    "joinBranchExpression"              -> WithCategories(CustomJoinUsingBranchExpressions),
+    "transformWithNullable"             -> WithCategories(TransformerWithNullableParam),
+    "optionalEndingCustom"              -> WithCategories(OptionalEndingCustom),
+    "genericParametersNode"             -> WithCategories(GenericParametersNode),
+    "nodePassingStateToImplementation"  -> WithCategories(NodePassingStateToImplementation)
   )
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(CountingNodesListener)
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
-    val dictId = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])
+    val dictId  = EmbeddedDictDefinition.enumDictId(classOf[SimpleJavaEnum])
     val dictDef = EmbeddedDictDefinition.forJavaEnum(classOf[SimpleJavaEnum])
     val globalProcessVariables = Map(
       "processHelper" -> WithCategories(ProcessHelper),
-      "enum" -> WithCategories(DictInstance(dictId, dictDef)),
-      "typedMap" -> WithCategories(TypedMap(Map("aField" -> "123"))))
-    ExpressionConfig(globalProcessVariables, List.empty, List.empty, dictionaries = Map(dictId -> WithCategories(dictDef)))
+      "enum"          -> WithCategories(DictInstance(dictId, dictDef)),
+      "typedMap"      -> WithCategories(TypedMap(Map("aField" -> "123")))
+    )
+    ExpressionConfig(
+      globalProcessVariables,
+      List.empty,
+      List.empty,
+      dictionaries = Map(dictId -> WithCategories(dictDef))
+    )
   }
 
   override def buildInfo(): Map[String, String] = Map.empty
 }
-
-

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.api
 import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.ToSecure
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
 import sttp.model.StatusCode.{Forbidden, Unauthorized}
+import sttp.tapir.EndpointIO.Example
 import sttp.tapir.EndpointInput.Auth
 import sttp.tapir._
 
@@ -34,8 +35,26 @@ object BaseEndpointDefinitions {
         .securityIn(auth)
         .errorOutEither(
           oneOf(
-            oneOfVariantFromMatchType(Unauthorized, plainBody[SecurityError.AuthenticationError.type]),
-            oneOfVariantFromMatchType(Forbidden, plainBody[SecurityError.AuthorizationError.type])
+            oneOfVariantFromMatchType(
+              Unauthorized,
+              plainBody[SecurityError.AuthenticationError.type]
+                .example(
+                  Example.of(
+                    summary = Some("Authentication failed"),
+                    value = SecurityError.AuthenticationError
+                  )
+                )
+            ),
+            oneOfVariantFromMatchType(
+              Forbidden,
+              plainBody[SecurityError.AuthorizationError.type]
+                .example(
+                  Example.of(
+                    summary = Some("Authorization failed"),
+                    value = SecurityError.AuthorizationError
+                  )
+                )
+            )
           )
         )
     }
