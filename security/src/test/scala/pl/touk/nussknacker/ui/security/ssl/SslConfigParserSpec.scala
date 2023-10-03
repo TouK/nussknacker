@@ -8,8 +8,7 @@ import org.scalatest.matchers.should.Matchers
 class SslConfigParserSpec extends AnyFlatSpec with Matchers with OptionValues {
 
   it should "parse implicitly disabled ssl configuration" in {
-    val config = ConfigFactory.parseString(
-      """ssl {
+    val config = ConfigFactory.parseString("""ssl {
          }
       """.stripMargin)
 
@@ -17,8 +16,7 @@ class SslConfigParserSpec extends AnyFlatSpec with Matchers with OptionValues {
   }
 
   it should "parse enabled ssl configuration" in {
-    val config = ConfigFactory.parseString(
-      """ssl {
+    val config = ConfigFactory.parseString("""ssl {
            enabled: true
            keyStore {
              location: /some/location
@@ -32,8 +30,7 @@ class SslConfigParserSpec extends AnyFlatSpec with Matchers with OptionValues {
   }
 
   it should "parse explicitly disabled ssl configuration" in {
-    val config = ConfigFactory.parseString(
-      """ssl {
+    val config = ConfigFactory.parseString("""ssl {
            enabled: false
            keyStore {
              location: /some/location

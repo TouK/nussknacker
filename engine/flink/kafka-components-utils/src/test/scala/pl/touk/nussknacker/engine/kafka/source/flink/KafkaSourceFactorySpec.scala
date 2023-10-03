@@ -24,29 +24,46 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import java.util.Collections.singletonMap
 import java.util.Optional
 
-class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec with PatientScalaFutures with KafkaSourceFactoryMixin {
+class KafkaSourceFactorySpec
+    extends AnyFunSuite
+    with Matchers
+    with KafkaSpec
+    with PatientScalaFutures
+    with KafkaSourceFactoryMixin {
 
   private lazy val metaData: MetaData = MetaData("mock-id", StreamMetaData())
 
   private lazy val nodeId: NodeId = NodeId("mock-node-id")
 
-  private def readLastMessage(sourceFactory: KafkaSourceFactory[Any, Any], topic: String, numberOfMessages: Int = 1): List[AnyRef] = {
-    val source = createSource(sourceFactory, topic)
+  private def readLastMessage(
+      sourceFactory: KafkaSourceFactory[Any, Any],
+      topic: String,
+      numberOfMessages: Int = 1
+  ): List[AnyRef] = {
+    val source   = createSource(sourceFactory, topic)
     val testData = source.generateTestData(numberOfMessages)
     testData.testRecords.map(source.testRecordParser.parse)
   }
 
-  private def createSource[K, V](sourceFactory: KafkaSourceFactory[K, V], topic: String): Source with TestDataGenerator with FlinkSourceTestSupport[ConsumerRecord[K, V]] with ReturningType = {
-    val finalState = KafkaSourceFactoryState(new KafkaContextInitializer[K, V](VariableConstants.InputVariableName, Typed[Any], Typed[Any]))
+  private def createSource[K, V](
+      sourceFactory: KafkaSourceFactory[K, V],
+      topic: String
+  ): Source with TestDataGenerator with FlinkSourceTestSupport[ConsumerRecord[K, V]] with ReturningType = {
+    val finalState = KafkaSourceFactoryState(
+      new KafkaContextInitializer[K, V](VariableConstants.InputVariableName, Typed[Any], Typed[Any])
+    )
     val source = sourceFactory
-      .implementation(Map(TopicParamName -> topic),
-        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)), Some(finalState))
+      .implementation(
+        Map(TopicParamName -> topic),
+        List(TypedNodeDependencyValue(metaData), TypedNodeDependencyValue(nodeId)),
+        Some(finalState)
+      )
       .asInstanceOf[Source with TestDataGenerator with FlinkSourceTestSupport[ConsumerRecord[K, V]] with ReturningType]
     source
   }
 
   test("read and deserialize from simple string source") {
-    val topic = createTopic("simpleString")
+    val topic    = createTopic("simpleString")
     val givenObj = "sample text"
     val expectedObj = new ConsumerRecord[String, String](
       topic,
@@ -67,7 +84,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
   }
 
   test("read and deserialize from simple json source") {
-    val topic = createTopic("simpleJson")
+    val topic    = createTopic("simpleJson")
     val givenObj = sampleValue
     val expectedObj = createConsumerRecord[String, SampleValue](
       topic,
@@ -80,13 +97,18 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       KafkaRecordUtils.emptyHeaders,
       Optional.of(0)
     )
-    pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
+    pushMessage(
+      new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]],
+      givenObj,
+      topic,
+      timestamp = constTimestamp
+    )
     val result = readLastMessage(SampleEventSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
     checkResult(result, expectedObj)
   }
 
   test("read and deserialize consumer record with value only") {
-    val topic = createTopic("consumerRecordNoKey")
+    val topic    = createTopic("consumerRecordNoKey")
     val givenObj = sampleValue
     val expectedObj = createConsumerRecord[String, SampleValue](
       topic,
@@ -99,13 +121,19 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       KafkaRecordUtils.emptyHeaders,
       Optional.of(0)
     )
-    pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
-    val result = readLastMessage(ConsumerRecordValueSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
+    pushMessage(
+      new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]],
+      givenObj,
+      topic,
+      timestamp = constTimestamp
+    )
+    val result =
+      readLastMessage(ConsumerRecordValueSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, SampleValue]]
     checkResult(result, expectedObj)
   }
 
   test("read and deserialize consumer record with key, value and headers") {
-    val topic = createTopic("consumerRecordKeyValueHeaders")
+    val topic    = createTopic("consumerRecordKeyValueHeaders")
     val givenObj = ObjToSerialize(sampleValue, sampleKey, sampleHeadersMap)
     val expectedObj = createConsumerRecord[SampleKey, SampleValue](
       topic,
@@ -119,7 +147,8 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       Optional.of(0)
     )
     pushMessage(objToSerializeSerializationSchema(topic), givenObj, topic, timestamp = constTimestamp)
-    val result = readLastMessage(ConsumerRecordKeyValueSourceFactory, topic).head.asInstanceOf[ConsumerRecord[SampleKey, SampleValue]]
+    val result = readLastMessage(ConsumerRecordKeyValueSourceFactory, topic).head
+      .asInstanceOf[ConsumerRecord[SampleKey, SampleValue]]
     checkResult(result, expectedObj)
   }
 
@@ -131,7 +160,8 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       SampleValue("first2", "last2"),
       SampleValue("first3", "last3")
     )
-    val serializationSchema = new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]]
+    val serializationSchema =
+      new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]]
 
     pushMessage(serializationSchema, givenObj(0), topic, partition = Some(0), timestamp = constTimestamp)
     pushMessage(serializationSchema, givenObj(1), topic, partition = Some(0), timestamp = constTimestamp)
@@ -139,7 +169,8 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
     pushMessage(serializationSchema, givenObj(3), topic, partition = Some(1), timestamp = constTimestamp)
 
     val result = readLastMessage(ConsumerRecordValueSourceFactory, topic, 4)
-    val valuePartitionOffsetToCheck = result.asInstanceOf[List[ConsumerRecord[SampleKey, SampleValue]]]
+    val valuePartitionOffsetToCheck = result
+      .asInstanceOf[List[ConsumerRecord[SampleKey, SampleValue]]]
       .map(record => (record.value, record.partition, record.offset))
       .toSet
 
@@ -158,7 +189,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
     kafkaClient.sendMessage[Json](topic, Json.obj("key" -> Json.fromString("value2")))
 
     def generatedForSource[K, V](sourceFactory: KafkaSourceFactory[K, V]): List[V] = {
-      val source = createSource(sourceFactory, topic)
+      val source   = createSource(sourceFactory, topic)
       val testData = source.generateTestData(2)
 
       testData.testRecords.map(source.testRecordParser.parse).map(_.value())
@@ -172,4 +203,3 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
   }
 
 }
-

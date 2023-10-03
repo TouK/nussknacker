@@ -14,9 +14,12 @@ class V1_016__TypeSpecificMetaDataChangeSpec extends AnyFlatSpec with Matchers {
       CirceUtil.decodeJsonUnsafe[Json](
         """{"metaData":{"id":"DEFGH","parallelism":3,
           |"additionalFields":{"groups":[]}},
-          |"nodes":[]}""".stripMargin, "invalid scenario")
+          |"nodes":[]}""".stripMargin,
+        "invalid scenario"
+      )
 
-    val converted = V1_016__TypeSpecificMetaDataChange.updateMetaData(oldJson).flatMap(ProcessMarshaller.fromJson(_).toOption)
+    val converted =
+      V1_016__TypeSpecificMetaDataChange.updateMetaData(oldJson).flatMap(ProcessMarshaller.fromJson(_).toOption)
 
     val metaData = converted.map(_.metaData)
 

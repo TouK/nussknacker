@@ -5,7 +5,7 @@ import derevo.derive
 import enumeratum.EnumEntry.Uppercase
 import enumeratum._
 import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, Encoder, Json, Codec => CirceCodec}
+import io.circe.{Codec => CirceCodec, Decoder, Encoder, Json}
 import pl.touk.nussknacker.engine.api.CirceUtil.HCursorExt
 import pl.touk.nussknacker.ui.api.BaseEndpointDefinitions.SecuredEndpoint
 import pl.touk.nussknacker.ui.security.api.AuthCredentials
@@ -17,8 +17,7 @@ import sttp.tapir.codec.enumeratum._
 import sttp.tapir.derevo.schema
 import sttp.tapir.json.circe.jsonBody
 
-class AppApiEndpoints(auth: Auth[AuthCredentials, _])
-  extends BaseEndpointDefinitions {
+class AppApiEndpoints(auth: Auth[AuthCredentials, _]) extends BaseEndpointDefinitions {
 
   import AppApiEndpoints.Dtos._
 
@@ -40,7 +39,8 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
         )
       )
 
-  lazy val processDeploymentHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto, Any] =
+  lazy val processDeploymentHealthCheckEndpoint
+      : SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto, Any] =
     baseNuApiEndpoint
       .summary("Deployed processes health check service")
       .tag("App")
@@ -74,7 +74,8 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
       )
       .withSecurity(auth)
 
-  lazy val processValidationHealthCheckEndpoint: SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto, Any] =
+  lazy val processValidationHealthCheckEndpoint
+      : SecuredEndpoint[Unit, HealthCheckProcessErrorResponseDto, HealthCheckProcessSuccessResponseDto, Any] =
     baseNuApiEndpoint
       .summary("Deployed processes validation service")
       .tag("App")
@@ -127,7 +128,7 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
                   processingType = Map(
                     "streaming" -> Map(
                       "process-version" -> "0.1",
-                      "engine-version" -> "0.2",
+                      "engine-version"  -> "0.2",
                       "generation-time" -> "2023-09-25T09:26:30.402299"
                     )
                   )
@@ -150,27 +151,30 @@ class AppApiEndpoints(auth: Auth[AuthCredentials, _])
             .example(
               Example.of(
                 summary = Some("Server configuration response"),
-                value = ServerConfigInfoDto(Json.obj(
-                  "environment" -> Json.fromString("local"),
-                  "scenarioTypes" -> Json.obj(
-                    "development-tests" -> Json.obj(
-                      "type" -> Json.fromString("development-tests")
-                    ),
-                    "modelConfig" -> Json.obj(
-                      "classPath" -> Json.arr(
-                        Json.fromString("model/devModel.jar"),
-                        Json.fromString("model/flinkExecutor.jar"),
-                        Json.fromString("components/flink")
+                value = ServerConfigInfoDto(
+                  Json.obj(
+                    "environment" -> Json.fromString("local"),
+                    "scenarioTypes" -> Json.obj(
+                      "development-tests" -> Json.obj(
+                        "type" -> Json.fromString("development-tests")
+                      ),
+                      "modelConfig" -> Json.obj(
+                        "classPath" -> Json.arr(
+                          Json.fromString("model/devModel.jar"),
+                          Json.fromString("model/flinkExecutor.jar"),
+                          Json.fromString("components/flink")
+                        )
                       )
                     )
                   )
-                ))
+                )
               )
             )
         )
       )
 
-  lazy val userCategoriesWithProcessingTypesEndpoint: SecuredEndpoint[Unit, Unit, UserCategoriesWithProcessingTypesDto, Any] =
+  lazy val userCategoriesWithProcessingTypesEndpoint
+      : SecuredEndpoint[Unit, Unit, UserCategoriesWithProcessingTypesDto, Any] =
     baseNuApiEndpoint
       .summary("Configured categories with their processing types service")
       .tag("App")
@@ -218,9 +222,11 @@ object AppApiEndpoints {
   object Dtos {
 
     @derive(encoder, decoder, schema)
-    final case class HealthCheckProcessSuccessResponseDto private(status: HealthCheckProcessSuccessResponseDto.Status,
-                                                                  message: Option[String],
-                                                                  processes: Option[Set[String]])
+    final case class HealthCheckProcessSuccessResponseDto private (
+        status: HealthCheckProcessSuccessResponseDto.Status,
+        message: Option[String],
+        processes: Option[Set[String]]
+    )
     object HealthCheckProcessSuccessResponseDto {
 
       sealed trait Status extends EnumEntry with Uppercase
@@ -230,14 +236,15 @@ object AppApiEndpoints {
         override def values = findValues
       }
 
-
       def apply() = new HealthCheckProcessSuccessResponseDto(status = Status.Ok, message = None, processes = None)
     }
 
     @derive(encoder, decoder, schema)
-    final case class HealthCheckProcessErrorResponseDto private(status: HealthCheckProcessErrorResponseDto.Status,
-                                                                message: Option[String],
-                                                                processes: Option[Set[String]])
+    final case class HealthCheckProcessErrorResponseDto private (
+        status: HealthCheckProcessErrorResponseDto.Status,
+        message: Option[String],
+        processes: Option[Set[String]]
+    )
     object HealthCheckProcessErrorResponseDto {
 
       sealed trait Status extends EnumEntry with Uppercase
@@ -247,54 +254,54 @@ object AppApiEndpoints {
         override def values = findValues
       }
 
-      def apply(message: Option[String],
-                processes: Option[Set[String]]) =
+      def apply(message: Option[String], processes: Option[Set[String]]) =
         new HealthCheckProcessErrorResponseDto(status = Status.Error, message, processes)
     }
 
     @derive(schema)
-    final case class BuildInfoDto(name: String,
-                                  gitCommit: String,
-                                  buildTime: String,
-                                  version: String,
-                                  processingType: Map[String, Map[String, String]],
-                                  globalBuildInfo: Option[Map[String, String]] = None)
+    final case class BuildInfoDto(
+        name: String,
+        gitCommit: String,
+        buildTime: String,
+        version: String,
+        processingType: Map[String, Map[String, String]],
+        globalBuildInfo: Option[Map[String, String]] = None
+    )
     object BuildInfoDto {
 
       implicit val circeCodec: CirceCodec[BuildInfoDto] = {
         CirceCodec.from(
           Decoder.instance { c =>
             for {
-              name <- c.downField("name").as[String]
-              version <- c.downField("version").as[String]
-              buildTime <- c.downField("buildTime").as[String]
-              gitCommit <- c.downField("gitCommit").as[String]
-              processingType <- c.downField("processingType").as[Map[String, Map[String, String]]]
+              name               <- c.downField("name").as[String]
+              version            <- c.downField("version").as[String]
+              buildTime          <- c.downField("buildTime").as[String]
+              gitCommit          <- c.downField("gitCommit").as[String]
+              processingType     <- c.downField("processingType").as[Map[String, Map[String, String]]]
               globalBuildInfoOpt <- c.downField("globalBuildInfo").as[Option[Map[String, String]]]
               globalBuildInfo <- globalBuildInfoOpt match {
-                case globalBuildInfo@Some(_) =>
+                case globalBuildInfo @ Some(_) =>
                   Right(globalBuildInfo)
                 case None =>
                   // for the purpose of backward compatibility
                   c.toMapExcluding("name", "version", "buildTime", "gitCommit", "processingType")
                     .map {
                       case m if m.isEmpty => None
-                      case m => Some(m)
+                      case m              => Some(m)
                     }
               }
             } yield BuildInfoDto(name, gitCommit, buildTime, version, processingType, globalBuildInfo)
           },
           Encoder.encodeJson.contramap { buildInfo =>
-            buildInfo
-              .globalBuildInfo.asJson // for the purpose of backward compatibility
+            buildInfo.globalBuildInfo.asJson // for the purpose of backward compatibility
               .deepMerge {
                 Json
                   .obj(
-                    "name" -> Json.fromString(buildInfo.name),
-                    "version" -> Json.fromString(buildInfo.version),
-                    "buildTime" -> Json.fromString(buildInfo.buildTime),
-                    "gitCommit" -> Json.fromString(buildInfo.gitCommit),
-                    "processingType" -> buildInfo.processingType.asJson,
+                    "name"            -> Json.fromString(buildInfo.name),
+                    "version"         -> Json.fromString(buildInfo.version),
+                    "buildTime"       -> Json.fromString(buildInfo.buildTime),
+                    "gitCommit"       -> Json.fromString(buildInfo.gitCommit),
+                    "processingType"  -> buildInfo.processingType.asJson,
                     "globalBuildInfo" -> buildInfo.globalBuildInfo.asJson
                   )
               }

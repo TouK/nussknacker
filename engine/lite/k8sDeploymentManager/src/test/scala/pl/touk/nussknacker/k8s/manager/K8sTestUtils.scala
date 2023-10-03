@@ -17,7 +17,12 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 
-class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers with OptionValues with ExtremelyPatientScalaFutures with LazyLogging {
+class K8sTestUtils(k8s: KubernetesClient)
+    extends K8sUtils(k8s)
+    with Matchers
+    with OptionValues
+    with ExtremelyPatientScalaFutures
+    with LazyLogging {
 
   val reverseProxyPodRemotePort = 8080
 
@@ -25,9 +30,14 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
 
   private val reverseProxyConfConfigMapName = "reverse-proxy-conf"
 
-  def execPodWithLogs(podName: String, command: String, end: String => Boolean, input: Option[String] = None): String = {
+  def execPodWithLogs(
+      podName: String,
+      command: String,
+      end: String => Boolean,
+      input: Option[String] = None
+  ): String = {
     val closePromise = Promise[Unit]()
-    val output = new mutable.StringBuilder
+    val output       = new mutable.StringBuilder
     val stdoutSink: Sink[String, Future[Done]] = Sink.foreach { s =>
       logger.debug(s"$podName exec stdout: $s")
       output.append(s)
@@ -40,11 +50,16 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
       output.append(s)
     }
     val inputSource = input.map(Source.single)
-    k8s.exec(podName, command.split(" ").toIndexedSeq,
-      maybeStdout = Some(stdoutSink),
-      maybeStderr = Some(stderrSink),
-      maybeStdin = inputSource,
-      maybeClose = Some(closePromise)).futureValue
+    k8s
+      .exec(
+        podName,
+        command.split(" ").toIndexedSeq,
+        maybeStdout = Some(stdoutSink),
+        maybeStderr = Some(stderrSink),
+        maybeStdin = inputSource,
+        maybeClose = Some(closePromise)
+      )
+      .futureValue
     output.toString()
   }
 
@@ -54,12 +69,13 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
     }
   }
 
-  def withPortForwarded(obj: ObjectResource, remotePort:Int)(action: Int => Unit): Unit = {
+  def withPortForwarded(obj: ObjectResource, remotePort: Int)(action: Int => Unit): Unit = {
     ensureRunningStatus(obj)
     val localPort = AvailablePortFinder.findAvailablePorts(1).head
-    val portForwardProcess = new ProcessBuilder("kubectl", "port-forward", s"${fixedKind(obj)}/${obj.name}", s"$localPort:$remotePort")
-      .directory(new File("/tmp"))
-      .start()
+    val portForwardProcess =
+      new ProcessBuilder("kubectl", "port-forward", s"${fixedKind(obj)}/${obj.name}", s"$localPort:$remotePort")
+        .directory(new File("/tmp"))
+        .start()
 
     ProcessUtils.destroyProcessEventually(portForwardProcess) {
       val processExitFuture = ProcessUtils.attachLoggingAndReturnWaitingFuture(portForwardProcess)
@@ -79,7 +95,7 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
           k8s.get[Pod](p.name).futureValue.status.value.phase.value shouldEqual Phase.Running
         }
       case s: Service =>
-      case other => throw new IllegalArgumentException(s"Unknown resource with empty kind: $other")
+      case other      => throw new IllegalArgumentException(s"Unknown resource with empty kind: $other")
     }
   }
 
@@ -87,9 +103,9 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
   private def fixedKind(obj: ObjectResource) = {
     Option(obj.kind.toLowerCase).filterNot(_.isBlank).getOrElse {
       obj match {
-        case _: Pod => "pod"
+        case _: Pod     => "pod"
         case _: Service => "service"
-        case other => throw new IllegalArgumentException(s"Unknown resource with empty kind: $other")
+        case other      => throw new IllegalArgumentException(s"Unknown resource with empty kind: $other")
       }
     }
   }
@@ -104,25 +120,38 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
   }
 
   private def createReverseProxyPod(targetUrl: String): Pod = {
-    val pod = Pod(reverseProxyPodName, Pod.Spec(
-      containers = List(Container(
-        image = "nginx:1.23.1",
-        name = "reverse-proxy",
-        volumeMounts = List(Volume.Mount(reverseProxyConfConfigMapName, "/etc/nginx/conf.d/"))
-      )),
-      volumes = List(Volume(
-        reverseProxyConfConfigMapName, Volume.ConfigMapVolumeSource(reverseProxyConfConfigMapName)
-      ))
-    ))
+    val pod = Pod(
+      reverseProxyPodName,
+      Pod.Spec(
+        containers = List(
+          Container(
+            image = "nginx:1.23.1",
+            name = "reverse-proxy",
+            volumeMounts = List(Volume.Mount(reverseProxyConfConfigMapName, "/etc/nginx/conf.d/"))
+          )
+        ),
+        volumes = List(
+          Volume(
+            reverseProxyConfConfigMapName,
+            Volume.ConfigMapVolumeSource(reverseProxyConfConfigMapName)
+          )
+        )
+      )
+    )
     // We setup keepalive_timeout to 0 to make sure that nginx won't keep any idle connection to terminating pods
-    val configMap = ConfigMap(metadata = ObjectMeta(reverseProxyConfConfigMapName), data = Map("nginx.conf" ->
-      s"""server {
+    val configMap = ConfigMap(
+      metadata = ObjectMeta(reverseProxyConfConfigMapName),
+      data = Map(
+        "nginx.conf" ->
+          s"""server {
          |  listen $reverseProxyPodRemotePort;
          |  location / {
          |    proxy_pass $targetUrl;
          |    keepalive_timeout 0;
          |  }
-         |}""".stripMargin))
+         |}""".stripMargin
+      )
+    )
     cleanupReverseProxyPod()
     k8s.create(configMap).futureValue
     k8s.create(pod).futureValue
@@ -130,10 +159,14 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
   }
 
   private def cleanupReverseProxyPod(): Unit = {
-    Future.sequence(List(
-      deleteIfExists[Pod](reverseProxyPodName),
-      deleteIfExists[ConfigMap](reverseProxyConfConfigMapName)
-    )).futureValue
+    Future
+      .sequence(
+        List(
+          deleteIfExists[Pod](reverseProxyPodName),
+          deleteIfExists[ConfigMap](reverseProxyConfConfigMapName)
+        )
+      )
+      .futureValue
   }
 
 }

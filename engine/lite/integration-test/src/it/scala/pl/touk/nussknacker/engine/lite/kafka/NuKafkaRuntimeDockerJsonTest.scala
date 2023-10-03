@@ -8,22 +8,34 @@ import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-class NuKafkaRuntimeDockerJsonTest extends AnyFunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with PatientScalaFutures with LazyLogging {
+class NuKafkaRuntimeDockerJsonTest
+    extends AnyFunSuite
+    with BaseNuKafkaRuntimeDockerTest
+    with Matchers
+    with PatientScalaFutures
+    with LazyLogging {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 
   override val container: Container = {
-    kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
+    kafkaContainer.start()          // must be started before prepareTestCaseFixture because it creates topic via api
     schemaRegistryContainer.start() // should be started after kafka
-    fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
+    fixture =
+      prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
     registerSchemas()
     startRuntimeContainer(fixture.scenarioFile)
     MultipleContainers(kafkaContainer, schemaRegistryContainer, runtimeContainer)
   }
 
   private def registerSchemas(): Unit = {
-    schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.inputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
-    schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.outputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
+    schemaRegistryClient.register(
+      ConfluentUtils.valueSubject(fixture.inputTopic),
+      NuKafkaRuntimeTestSamples.jsonPingSchema
+    )
+    schemaRegistryClient.register(
+      ConfluentUtils.valueSubject(fixture.outputTopic),
+      NuKafkaRuntimeTestSamples.jsonPingSchema
+    )
   }
 
   test("json ping-pong should work") {

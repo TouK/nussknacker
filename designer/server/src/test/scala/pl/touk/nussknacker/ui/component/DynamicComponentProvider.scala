@@ -9,10 +9,10 @@ import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
 import scala.concurrent.Future
 
 object DynamicComponentProvider {
-  val SharedProvidedComponentName = "sharedProvidedComponent"
-  val SingleProvidedComponentName = "singleProvidedComponent"
+  val SharedProvidedComponentName    = "sharedProvidedComponent"
+  val SingleProvidedComponentName    = "singleProvidedComponent"
   val KafkaAvroProvidedComponentName = "kafkaAvroSameName"
-  val ProviderName = "dynamicComponent"
+  val ProviderName                   = "dynamicComponent"
 }
 
 class DynamicComponentProvider extends ComponentProvider {
@@ -23,12 +23,12 @@ class DynamicComponentProvider extends ComponentProvider {
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
-      List(
-        ComponentDefinition(SharedProvidedComponentName, DynamicProvidedService),
-        ComponentDefinition(SingleProvidedComponentName, DynamicProvidedService),
-        ComponentDefinition(KafkaAvroProvidedComponentName, SinkFactory.noParam(new Sink {})),
-        ComponentDefinition(KafkaAvroProvidedComponentName, SourceFactory.noParam(new Source {}, Unknown)),
-      )
+    List(
+      ComponentDefinition(SharedProvidedComponentName, DynamicProvidedService),
+      ComponentDefinition(SingleProvidedComponentName, DynamicProvidedService),
+      ComponentDefinition(KafkaAvroProvidedComponentName, SinkFactory.noParam(new Sink {})),
+      ComponentDefinition(KafkaAvroProvidedComponentName, SourceFactory.noParam(new Source {}, Unknown)),
+    )
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true

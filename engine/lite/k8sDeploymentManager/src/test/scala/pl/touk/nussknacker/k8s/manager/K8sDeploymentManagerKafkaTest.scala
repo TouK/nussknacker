@@ -32,10 +32,13 @@ import scala.util.Random
 
 // we use this tag to mark tests using external dependencies
 @Network
-class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
-  with OptionValues with EitherValuesDetailedMessage with LazyLogging {
+class K8sDeploymentManagerKafkaTest
+    extends BaseK8sDeploymentManagerTest
+    with OptionValues
+    with EitherValuesDetailedMessage
+    with LazyLogging {
 
-  private lazy val kafka = new KafkaK8sSupport(k8s)
+  private lazy val kafka                                   = new KafkaK8sSupport(k8s)
   private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
   test("deployment of kafka ping-pong") {
@@ -48,9 +51,9 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   }
 
   test("redeployment of ping-pong") {
-    //we append random to make it easier to test with reused kafka deployment
-    val seed = new Random().nextInt()
-    val input = s"ping-$seed"
+    // we append random to make it easier to test with reused kafka deployment
+    val seed   = new Random().nextInt()
+    val input  = s"ping-$seed"
     val output = s"pong-$seed"
     kafka.createTopic(input)
     kafka.createTopic(output)
@@ -61,8 +64,16 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
       val scenario = ScenarioBuilder
         .streamingLite("foo scenario \u2620")
         .source("source", "kafka", "Topic" -> s"'$input'", "Schema version" -> "'latest'")
-        .emptySink("sink", "kafka", "Topic" -> s"'$output'", "Schema version" -> "'latest'", "Key" -> "", "Raw editor" -> "true", "Value validation mode" -> "'strict'",
-          "Value" -> s"{ original: #input, version: $version }")
+        .emptySink(
+          "sink",
+          "kafka",
+          "Topic"                 -> s"'$output'",
+          "Schema version"        -> "'latest'",
+          "Key"                   -> "",
+          "Raw editor"            -> "true",
+          "Value validation mode" -> "'strict'",
+          "Value"                 -> s"{ original: #input, version: $version }"
+        )
 
       val pversion = ProcessVersion(VersionId(version), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
       manager.deploy(pversion, DeploymentData.empty, scenario, None).futureValue
@@ -82,7 +93,10 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
     def messageForVersion(version: Int) = s"""{"original":$message,"version":$version}"""
 
     kafka.createSchema(s"$input-value", defaultSchema)
-    kafka.createSchema(s"$output-value", s"""{"type":"object","properties":{"original":$defaultSchema,"version":{"type":"number"}}}""")
+    kafka.createSchema(
+      s"$output-value",
+      s"""{"type":"object","properties":{"original":$defaultSchema,"version":{"type":"number"}}}"""
+    )
 
     val version1 = deployScenario(1)
     waitForRunning(version1)
@@ -101,21 +115,39 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
   test("should deploy scenario with env, resources and replicas count from k8sDeploymentConfig") {
     val runtimeContainerConfig = baseRuntimeContainerConfig
-      .withValue("env", fromIterable(List(fromMap(Map(
-          "name" -> "ENV_VARIABLE",
-          "value" -> "VALUE"
-      ).asJava)).asJava))
-      .withValue("resources", fromMap(Map(
-        "requests" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava),
-        "limits" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava)
-      ).asJava)).root()
+      .withValue(
+        "env",
+        fromIterable(
+          List(
+            fromMap(
+              Map(
+                "name"  -> "ENV_VARIABLE",
+                "value" -> "VALUE"
+              ).asJava
+            )
+          ).asJava
+        )
+      )
+      .withValue(
+        "resources",
+        fromMap(
+          Map(
+            "requests" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava),
+            "limits"   -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava)
+          ).asJava
+        )
+      )
+      .root()
     val f = createKafkaFixture(
       deployConfig = kafkaDeployConfig
         .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
-        .withValue("k8sDeploymentConfig.spec.template.spec.containers",
-          fromIterable(List(
-            runtimeContainerConfig
-          ).asJava)
+        .withValue(
+          "k8sDeploymentConfig.spec.template.spec.containers",
+          fromIterable(
+            List(
+              runtimeContainerConfig
+            ).asJava
+          )
         )
     )
     f.withRunningScenario {
@@ -127,7 +159,8 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
             skuber.Resource.Requirements(
               limits = Map("cpu" -> Quantity("800m"), "memory" -> Quantity("256Mi")),
               requests = Map("cpu" -> Quantity("800m"), "memory" -> Quantity("256Mi"))
-            ))
+            )
+          )
           container.env should contain(EnvVar("ENV_VARIABLE", EnvVar.StringValue("VALUE")))
         }
       }
@@ -148,35 +181,48 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
     val customLogger = "test.passing.logback.conf"
     val logbackFile = {
       val tempFile = Files.createTempFile("test-logback", ".xml")
-      Files.write(tempFile,
+      Files.write(
+        tempFile,
         s"""
            |<configuration scan="true" scanPeriod="5 seconds">
            |    <logger name="$customLogger" level="WARN"/>
            |</configuration>
-           |""".stripMargin.getBytes)
+           |""".stripMargin.getBytes
+      )
       tempFile.toFile
     }
     val manager: K8sDeploymentManager = prepareManager(deployConfig =
       kafkaDeployConfig
         .withValue(
-          "logbackConfigPath", fromAnyRef(logbackFile.toString)
+          "logbackConfigPath",
+          fromAnyRef(logbackFile.toString)
         )
     )
 
     withManager(manager) { version =>
       eventually {
-        val cm = k8s.listSelected[ListResource[ConfigMap]](requirementForName(version.processName)).futureValue.items.find {
-          _.data.isDefinedAt("logback.xml")
-        }.head
+        val cm = k8s
+          .listSelected[ListResource[ConfigMap]](requirementForName(version.processName))
+          .futureValue
+          .items
+          .find {
+            _.data.isDefinedAt("logback.xml")
+          }
+          .head
         cm.data("logback.xml").contains(customLogger) shouldBe true
       }
     }
 
     withManager(prepareManager()) { version =>
       eventually {
-        val cm = k8s.listSelected[ListResource[ConfigMap]](requirementForName(version.processName)).futureValue.items.find {
-          _.data.isDefinedAt("logback.xml")
-        }.head
+        val cm = k8s
+          .listSelected[ListResource[ConfigMap]](requirementForName(version.processName))
+          .futureValue
+          .items
+          .find {
+            _.data.isDefinedAt("logback.xml")
+          }
+          .head
         cm.data("logback.xml").contains(customLogger) shouldBe false
       }
     }
@@ -184,36 +230,48 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
   test("should deploy scenarios with common logging conf") {
     val configMapName = "test" + new Random().nextInt(1000000)
-    val f = createKafkaFixture(deployConfig = kafkaDeployConfig.withValue("commonConfigMapForLogback", fromAnyRef(configMapName)))
+    val f = createKafkaFixture(deployConfig =
+      kafkaDeployConfig.withValue("commonConfigMapForLogback", fromAnyRef(configMapName))
+    )
 
     f.withRunningScenario {
-      //check if cm exists
+      // check if cm exists
       k8s.list[ListResource[ConfigMap]]().futureValue.items.exists(_.name == configMapName) shouldBe true
 
-      //check if cm is actually mounted
+      // check if cm is actually mounted
       val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
       pod.spec.get.volumes.exists(_.source match {
         case Volume.ConfigMapVolumeSource(`configMapName`, _, _, _) => true
-        case _ => false
+        case _                                                      => false
       }) shouldBe true
     }
     // check that after cancelling scenario CM is still there
     k8s.list[ListResource[ConfigMap]]().futureValue.items.exists(_.name == configMapName) shouldBe true
 
-    //cleanup
+    // cleanup
     k8s.delete[ConfigMap](configMapName)
   }
 
   test("should deploy within specified resource quota") {
     val f = createKafkaFixture()
-    k8s.create(Quota(metadata = ObjectMeta(name = "nu-pods-limit"), spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("3")))))) //two pods takes test setup
+    k8s.create(
+      Quota(
+        metadata = ObjectMeta(name = "nu-pods-limit"),
+        spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("3"))))
+      )
+    ) // two pods takes test setup
     f.withRunningScenario(())
     k8s.delete[Resource.Quota]("nu-pods-limit").futureValue
   }
 
   test("should not deploy when resource quota exceeded") {
     val f = createKafkaFixture()
-    k8s.create(Quota(metadata = ObjectMeta(name = "nu-pods-limit"), spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("2")))))) //two pods takes test setup
+    k8s.create(
+      Quota(
+        metadata = ObjectMeta(name = "nu-pods-limit"),
+        spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("2"))))
+      )
+    ) // two pods takes test setup
 
     f.manager.validate(f.version, DeploymentData.empty, f.scenario).failed.futureValue shouldEqual
       ResourceQuotaExceededException("Cluster is full. Release some cluster resources.")
@@ -225,18 +283,42 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   test("should expose prometheus metrics") {
     val port = 8041
     val runtimeContainerConfig = baseRuntimeContainerConfig
-      .withValue("env", fromIterable(List(fromMap(Map(
-        "name" -> "PROMETHEUS_METRICS_PORT",
-        "value" -> s"$port"
-      ).asJava)).asJava))
-      .withValue("ports", fromIterable(List(fromMap(Map(
-        "name" -> "prometheus",
-        "containerPort" -> port,
-        "protocol" -> "TCP"
-      ).asJava)).asJava)).root()
+      .withValue(
+        "env",
+        fromIterable(
+          List(
+            fromMap(
+              Map(
+                "name"  -> "PROMETHEUS_METRICS_PORT",
+                "value" -> s"$port"
+              ).asJava
+            )
+          ).asJava
+        )
+      )
+      .withValue(
+        "ports",
+        fromIterable(
+          List(
+            fromMap(
+              Map(
+                "name"          -> "prometheus",
+                "containerPort" -> port,
+                "protocol"      -> "TCP"
+              ).asJava
+            )
+          ).asJava
+        )
+      )
+      .root()
 
-    val f = createKafkaFixture(deployConfig = kafkaDeployConfig
-      .withValue("k8sDeploymentConfig.spec.template.spec.containers", fromIterable(List(runtimeContainerConfig).asJava)))
+    val f = createKafkaFixture(deployConfig =
+      kafkaDeployConfig
+        .withValue(
+          "k8sDeploymentConfig.spec.template.spec.containers",
+          fromIterable(List(runtimeContainerConfig).asJava)
+        )
+    )
 
     f.withRunningScenario {
       val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
@@ -244,7 +326,13 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
       k8sTestUtils.withPortForwarded(pod, port) { localPort =>
         eventually {
-          basicRequest.get(uri"http://localhost:$localPort").send(backend).body.toOption.get.contains("jvm_memory_bytes_committed") shouldBe true
+          basicRequest
+            .get(uri"http://localhost:$localPort")
+            .send(backend)
+            .body
+            .toOption
+            .get
+            .contains("jvm_memory_bytes_committed") shouldBe true
         }
       }
     }
@@ -269,24 +357,40 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   }
 
   private lazy val kafkaDeployConfig: Config = baseDeployConfig("streaming")
-    .withValue(KafkaConfigProperties.bootstrapServersProperty("configExecutionOverrides.modelConfig.kafka"), fromAnyRef(s"${KafkaK8sSupport.kafkaServiceName}:9092"))
-    .withValue(KafkaConfigProperties.property("configExecutionOverrides.modelConfig.kafka", "schema.registry.url"), fromAnyRef(s"http://${KafkaK8sSupport.srServiceName}:8081"))
-  private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty
-    //e.g. when we want to run Designer locally with some proxy?
-    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("localhost:19092"))
-    .withValue(KafkaConfigProperties.property("auto.offset.reset"), fromAnyRef("earliest"))
-    .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
-    .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)
+    .withValue(
+      KafkaConfigProperties.bootstrapServersProperty("configExecutionOverrides.modelConfig.kafka"),
+      fromAnyRef(s"${KafkaK8sSupport.kafkaServiceName}:9092")
+    )
+    .withValue(
+      KafkaConfigProperties.property("configExecutionOverrides.modelConfig.kafka", "schema.registry.url"),
+      fromAnyRef(s"http://${KafkaK8sSupport.srServiceName}:8081")
+    )
+  private val modelData: LocalModelData = LocalModelData(
+    ConfigFactory.empty
+      // e.g. when we want to run Designer locally with some proxy?
+      .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("localhost:19092"))
+      .withValue(KafkaConfigProperties.property("auto.offset.reset"), fromAnyRef("earliest"))
+      .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
+      .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")),
+    new EmptyProcessConfigCreator
+  )
 
-  private def prepareManager(modelData: LocalModelData = modelData, deployConfig: Config = kafkaDeployConfig): K8sDeploymentManager = {
+  private def prepareManager(
+      modelData: LocalModelData = modelData,
+      deployConfig: Config = kafkaDeployConfig
+  ): K8sDeploymentManager = {
     new K8sDeploymentManager(modelData, K8sDeploymentManagerConfig.parse(deployConfig), deployConfig)
   }
 
   lazy val defaultSchema = """{"type":"object","properties":{"message":{"type":"string"}}}"""
 
-  private def createKafkaFixture(modelData: LocalModelData = modelData, deployConfig: Config = kafkaDeployConfig, schema: String = defaultSchema) = {
-    val seed = new Random().nextInt()
-    val input = s"ping-$seed"
+  private def createKafkaFixture(
+      modelData: LocalModelData = modelData,
+      deployConfig: Config = kafkaDeployConfig,
+      schema: String = defaultSchema
+  ) = {
+    val seed   = new Random().nextInt()
+    val input  = s"ping-$seed"
     val output = s"pong-$seed"
 
     kafka.createSchema(s"$input-value", schema)
@@ -296,23 +400,39 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
     val scenario = ScenarioBuilder
       .streamingLite("foo scenario \u2620")
       .source("source", "kafka", "Topic" -> s"'$input'", "Schema version" -> "'latest'")
-      .emptySink("sink", "kafka", "Topic" -> s"'$output'", "Schema version" -> "'latest'", "Key" -> "", "Raw editor" -> "true", "Value validation mode" -> "'strict'",
-        "Value" -> "#input")
+      .emptySink(
+        "sink",
+        "kafka",
+        "Topic"                 -> s"'$output'",
+        "Schema version"        -> "'latest'",
+        "Key"                   -> "",
+        "Raw editor"            -> "true",
+        "Value validation mode" -> "'strict'",
+        "Value"                 -> "#input"
+      )
     logger.info(s"Running kafka test on ${scenario.id} $input - $output")
     val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-    new KafkaTestFixture(inputTopic = input, outputTopic = output, manager = manager, scenario = scenario, version = version)
+    new KafkaTestFixture(
+      inputTopic = input,
+      outputTopic = output,
+      manager = manager,
+      scenario = scenario,
+      version = version
+    )
   }
 
-  private class KafkaTestFixture(val inputTopic: String,
-                                 val outputTopic: String,
-                                 manager: K8sDeploymentManager,
-                                 scenario: CanonicalProcess,
-                                 version: ProcessVersion) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
+  private class KafkaTestFixture(
+      val inputTopic: String,
+      val outputTopic: String,
+      manager: K8sDeploymentManager,
+      scenario: CanonicalProcess,
+      version: ProcessVersion
+  ) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
     override def withRunningScenario(action: => Unit): Unit = {
       kafka.createTopic(inputTopic)
       kafka.createTopic(outputTopic)
       super.withRunningScenario(action)
-      //should not fail
+      // should not fail
       assertNoGarbageLeft()
     }
   }

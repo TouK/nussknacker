@@ -12,7 +12,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParserCompilationError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{
+  CustomNodeError,
+  ExpressionParserCompilationError
+}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -28,8 +31,12 @@ import pl.touk.nussknacker.test.SpecialSpELElement.{EmptyMap, Input}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 //More tests e2e with json are available at LiteKafkaUniversalJsonFunctionalTest
-class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage
-  with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
+class LiteRequestResponseFunctionalTest
+    extends AnyFunSuite
+    with Matchers
+    with EitherValuesDetailedMessage
+    with TableDrivenPropertyChecks
+    with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink._
   import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -70,15 +77,14 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
   private val sampleStr = "sample"
 
   private val sampleObjWithAdds: Json = obj(
-    ObjectFieldName -> fromString(sampleStr),
+    ObjectFieldName     -> fromString(sampleStr),
     AdditionalFieldName -> fromString("str")
   )
 
   private val sampleSpELObjWithAdds = Map(
-    ObjectFieldName -> sampleStr,
+    ObjectFieldName     -> sampleStr,
     AdditionalFieldName -> "str"
   )
-
 
   test("should handle nested non-raw mode") {
     val input =
@@ -111,24 +117,25 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
         |}
         |""".stripMargin
     val params: List[(String, Expression)] = List(
-      //TODO: currently inline map is not properly typed here :/
+      // TODO: currently inline map is not properly typed here :/
       "field" -> "#input"
     )
     val scenario = ScenarioBuilder
       .requestResponse("test")
-      .additionalFields(properties = Map(
-        "inputSchema" -> input,
-        "outputSchema" -> output
-      ))
-      .source("input", "request")
-      .emptySink(sinkName, "response",
-        (SinkRawEditorParamName -> ("false": Expression)) :: params: _*
+      .additionalFields(properties =
+        Map(
+          "inputSchema"  -> input,
+          "outputSchema" -> output
+        )
       )
+      .source("input", "request")
+      .emptySink(sinkName, "response", (SinkRawEditorParamName -> ("false": Expression)) :: params: _*)
 
     val result = runner.runWithRequests(scenario) { _ => }
 
     result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _), Nil)) if message.startsWith("Bad expression type") =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _), Nil))
+          if message.startsWith("Bad expression type") =>
     }
   }
 
@@ -151,30 +158,31 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
         |  }
         |}""".stripMargin
     )
-    val input = fromString("")
+    val input    = fromString("")
     val scConfig = config(input, schemaStr, refSchema, SpecialSpELElement("{item: {value: #input}}"))
     runWithResults(scConfig) shouldBe Valid(obj("item" -> obj("value" -> input)))
 
     val invalidConfig = config(Null, schemaStr, refSchema, SpecialSpELElement("{item: {value: 11}}"))
     inside(runWithResults(invalidConfig)) {
-      case Invalid(NonEmptyList(CustomNodeError(_, message, Some(SinkRawValueParamName)), Nil)) => message should include ("Provided value does not match")
+      case Invalid(NonEmptyList(CustomNodeError(_, message, Some(SinkRawValueParamName)), Nil)) =>
+        message should include("Provided value does not match")
     }
 
   }
 
   test("should handle empty object in non-raw mode") {
-    val input = "{}"
+    val input  = "{}"
     val output = """{"type":"object", "additionalProperties": false}"""
     val scenario = ScenarioBuilder
       .requestResponse("test")
-      .additionalFields(properties = Map(
-        "inputSchema" -> input,
-        "outputSchema" -> output
-      ))
-      .source("input", "request")
-      .emptySink(sinkName, "response",
-        SinkRawEditorParamName -> "false"
+      .additionalFields(properties =
+        Map(
+          "inputSchema"  -> input,
+          "outputSchema" -> output
+        )
       )
+      .source("input", "request")
+      .emptySink(sinkName, "response", SinkRawEditorParamName -> "false")
 
     val result = runner.runWithRequests(scenario) { invoker =>
       invoker(HttpRequest(HttpMethods.POST, entity = "{}}")).rightValue
@@ -202,26 +210,39 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
         |  }
         |}""".stripMargin
     )
-    //TODO: handle ref schemas on output...
-    val scenarioConfig = config(obj("items" -> obj("value" -> fromString("1"), "next" -> obj("value" -> fromString("2")))),
-      schema, schemaStr, output = SpecialSpELElement("#input.items.value"))
+    // TODO: handle ref schemas on output...
+    val scenarioConfig = config(
+      obj("items" -> obj("value" -> fromString("1"), "next" -> obj("value" -> fromString("2")))),
+      schema,
+      schemaStr,
+      output = SpecialSpELElement("#input.items.value")
+    )
     runWithResults(scenarioConfig) shouldBe Valid(fromString("1"))
   }
 
-  test("should test e2e request-response flow at sink and source / handling nulls and empty json" ) {
+  test("should test e2e request-response flow at sink and source / handling nulls and empty json") {
     val testData = Table(
       ("config", "result"),
       (config(obj(), schemaObjNull, schemaObjNull), Valid(obj())),
       (config(obj(), schemaObjNull, schemaObjNull, Map(ObjectFieldName -> InputField)), validJObj(Null)),
       (config(JsonObject(Null), schemaObjNull, schemaObjNull), validJObj(Null)),
       (config(JsonObject(Null), schemaObjNull, schemaObjNull, Map(ObjectFieldName -> InputField)), validJObj(Null)),
-
       (config(obj(), schemaObjStr, schemaObjStr), Valid(obj())),
-
-      (config(obj(), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)), validJObj(Null)),
+      (
+        config(obj(), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)),
+        validJObj(Null)
+      ),
       (config(obj(), schemaObjUnionNullString(), schemaObjUnionNullString()), Valid(obj())),
       (config(JsonObject(Null), schemaObjUnionNullString(), schemaObjUnionNullString()), validJObj(Null)),
-      (config(JsonObject(Null), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)), validJObj(Null)),
+      (
+        config(
+          JsonObject(Null),
+          schemaObjUnionNullString(),
+          schemaObjUnionNullString(),
+          Map(ObjectFieldName -> InputField)
+        ),
+        validJObj(Null)
+      ),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, Json]) =>
@@ -235,7 +256,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
 
     val testData = Table(
       ("config", "result"),
-      //Primitive integer validations
+      // Primitive integer validations
       (config(fromInt(1), schemaInt, schemaInt), Valid(fromInt(1))),
       (conf(schemaInt, 1), Valid(fromInt(1))),
       (conf(schemaInt, 100), invalidRange("actual value: '100' should be between 1 and 16")),
@@ -247,24 +268,35 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     }
   }
 
-  test("should test e2e request-response flow at sink and source / handling objects.." ) {
+  test("should test e2e request-response flow at sink and source / handling objects..") {
     val testData = Table(
       ("config", "result"),
       (config(JsonObject(fromString(sampleStr)), schemaObjStr, schemaObjStr), validJObj(fromString(sampleStr))),
       (conf(schemaObjStr, SpELObject(sampleStr)), validJObj(fromString(sampleStr))),
 
-      //Union testing
-      (config(JsonObject(fromString(sampleStr)), schemaObjUnionNullString(), schemaObjUnionNullString()), validJObj(fromString(sampleStr))),
-      (config(JsonObject(fromString(sampleStr)), schemaObjStr, schemaObjUnionNullString()), validJObj(fromString(sampleStr))),
+      // Union testing
+      (
+        config(JsonObject(fromString(sampleStr)), schemaObjUnionNullString(), schemaObjUnionNullString()),
+        validJObj(fromString(sampleStr))
+      ),
+      (
+        config(JsonObject(fromString(sampleStr)), schemaObjStr, schemaObjUnionNullString()),
+        validJObj(fromString(sampleStr))
+      ),
       (config(JsonObject(Null), schemaObjNull, schemaObjUnionNullString()), validJObj(Null)),
-      (config(JsonObject(fromString(sampleStr)), schemaObjUnionNullString(), schemaObjStr), validJObj(fromString(sampleStr))),
+      (
+        config(JsonObject(fromString(sampleStr)), schemaObjUnionNullString(), schemaObjStr),
+        validJObj(fromString(sampleStr))
+      ),
       (conf(schemaObjUnionNullString(), SpELObject(sampleStr)), validJObj(fromString(sampleStr))),
 
-      //Testing additional properties
-      (config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)),
+      // Testing additional properties
+      (
+        config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString(true)),
+        Valid(sampleObjWithAdds)
+      ),
       (conf(schemaObjUnionNullString(), sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
       (conf(schemaObjUnionNullString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
-
       (config(sampleObjWithAdds, schemaObjString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)),
       (conf(schemaObjStr, sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
       (conf(schemaObjString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
@@ -279,22 +311,36 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
   test("should catch runtime errors") {
     val testData = Table(
       ("config", "result"),
-      //Errors at source
-      (config(sampleObjWithAdds, schemaObjUnionNullString(), schemaObjUnionNullString(true)), "#: extraneous key [field2] is not permitted"),
+      // Errors at source
+      (
+        config(sampleObjWithAdds, schemaObjUnionNullString(), schemaObjUnionNullString(true)),
+        "#: extraneous key [field2] is not permitted"
+      ),
 
-      //Errors at sink
-      (config(sampleObjWithAdds, schemaObjString(true), schemaObjStr), s"Not expected field with name: field2 for schema: $schemaObjStr."),
-      (config(obj(), schemaObjString(), schemaObjString(), Map(ObjectFieldName -> InputField)), s"Not expected type: Null for field: 'field' with schema: $schemaStr."),
-      (config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()), s"Not expected field with name: field2 for schema: ${schemaObjUnionNullString()}."),
+      // Errors at sink
+      (
+        config(sampleObjWithAdds, schemaObjString(true), schemaObjStr),
+        s"Not expected field with name: field2 for schema: $schemaObjStr."
+      ),
+      (
+        config(obj(), schemaObjString(), schemaObjString(), Map(ObjectFieldName -> InputField)),
+        s"Not expected type: Null for field: 'field' with schema: $schemaStr."
+      ),
+      (
+        config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()),
+        s"Not expected field with name: field2 for schema: ${schemaObjUnionNullString()}."
+      ),
       (config(fromInt(Int.MaxValue), schemaInt, schemaInt), s"#: ${Int.MaxValue} is not less or equal to 16"),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: String) =>
       val scenario: CanonicalProcess = createScenario(config)
-      val result = runner.runWithRequests(scenario) { invoker =>
-        val response = invoker(HttpRequest(HttpMethods.POST, entity = config.input.asJson.spaces2))
-        response.leftValue.head.throwable.getMessage
-      }.validValue
+      val result = runner
+        .runWithRequests(scenario) { invoker =>
+          val response = invoker(HttpRequest(HttpMethods.POST, entity = config.input.asJson.spaces2))
+          response.leftValue.head.throwable.getMessage
+        }
+        .validValue
 
       result shouldBe expected
     }
@@ -305,8 +351,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
       val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(List(error), Nil, Nil, Nil)
       Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(fieldName))))
     }
-    val objectWithNestedPatternPropertiesSchema = JsonSchemaBuilder.parseSchema(
-      """{
+    val objectWithNestedPatternPropertiesSchema = JsonSchemaBuilder.parseSchema("""{
         |  "type": "object",
         |  "properties": {
         |    "field": {
@@ -320,22 +365,32 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
 
     val testData = Table(
       ("sinkSchema", "sinkFields", "result"),
-      (objectWithNestedPatternPropertiesSchema, Map("field" -> "{'foo_int': 1}"), Valid(obj("field" -> obj("foo_int" -> fromInt(1))))),
-      (objectWithNestedPatternPropertiesSchema, Map("field" -> "{'foo_int': '1'}"), invalidTypeInEditorMode("field", "actual: 'String(1)' expected: 'Long'")),
+      (
+        objectWithNestedPatternPropertiesSchema,
+        Map("field" -> "{'foo_int': 1}"),
+        Valid(obj("field" -> obj("foo_int" -> fromInt(1))))
+      ),
+      (
+        objectWithNestedPatternPropertiesSchema,
+        Map("field" -> "{'foo_int': '1'}"),
+        invalidTypeInEditorMode("field", "actual: 'String(1)' expected: 'Long'")
+      ),
     )
 
-    forAll(testData) {  (sinkSchema: Schema, sinkFields: Map[String, String], expected: Validated[_, Json]) =>
+    forAll(testData) { (sinkSchema: Schema, sinkFields: Map[String, String], expected: Validated[_, Json]) =>
       val cfg = config(sampleObjWithAdds, schemaObjString(true), sinkSchema)
       val sinkParams = (Map(
-        SinkRawEditorParamName -> "false",
+        SinkRawEditorParamName          -> "false",
         SinkValidationModeParameterName -> s"'${cfg.validationModeName}'",
       ) ++ sinkFields).mapValuesNow(Expression.spel)
       val scenario = ScenarioBuilder
         .requestResponse("test")
-        .additionalFields(properties = Map(
-          "inputSchema" -> cfg.sourceSchema.toString,
-          "outputSchema" -> cfg.outputSchema.toString
-        ))
+        .additionalFields(properties =
+          Map(
+            "inputSchema"  -> cfg.sourceSchema.toString,
+            "outputSchema" -> cfg.outputSchema.toString
+          )
+        )
         .source("input", "request")
         .emptySink(sinkName, "response", sinkParams.toList: _*)
       val result = runner.runWithRequests(scenario) { invoker =>
@@ -358,29 +413,49 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
   private def createScenario(config: ScenarioConfig): CanonicalProcess =
     ScenarioBuilder
       .requestResponse("test")
-      .additionalFields(properties = Map(
-        "inputSchema" -> config.sourceSchema.toString,
-        "outputSchema" -> config.outputSchema.toString
-      ))
+      .additionalFields(properties =
+        Map(
+          "inputSchema"  -> config.sourceSchema.toString,
+          "outputSchema" -> config.outputSchema.toString
+        )
+      )
       .source("input", "request")
-      .emptySink(sinkName, "response",
-        SinkRawEditorParamName -> "true",
+      .emptySink(
+        sinkName,
+        "response",
+        SinkRawEditorParamName          -> "true",
         SinkValidationModeParameterName -> s"'${config.validationModeName}'",
-        SinkRawValueParamName -> config.sinkDefinition
+        SinkRawValueParamName           -> config.sinkDefinition
       )
 
-  case class ScenarioConfig(input: Json, sourceSchema: Schema, outputSchema: Schema, sinkDefinition: String, validationMode: Option[ValidationMode]) {
+  case class ScenarioConfig(
+      input: Json,
+      sourceSchema: Schema,
+      outputSchema: Schema,
+      sinkDefinition: String,
+      validationMode: Option[ValidationMode]
+  ) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
   }
 
-  //Special config for SpEL as output, on input we pass simple null
-  private def conf(outputSchema: Schema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig =
+  // Special config for SpEL as output, on input we pass simple null
+  private def conf(
+      outputSchema: Schema,
+      output: Any = Input,
+      validationMode: Option[ValidationMode] = None
+  ): ScenarioConfig =
     config(Null, schemaNull, outputSchema, output, validationMode)
 
-  private def config(input: Json, inputSchema: Schema, outputSchema: Schema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
+  private def config(
+      input: Json,
+      inputSchema: Schema,
+      outputSchema: Schema,
+      output: Any = Input,
+      validationMode: Option[ValidationMode] = None
+  ): ScenarioConfig = {
     val sinkDefinition = output match {
       case element: SpecialSpELElement if List(EmptyMap, Input).contains(element) => element
-      case any => any
+      case any                                                                    => any
     }
 
     ScenarioConfig(input, inputSchema, outputSchema, sinkDefinition.toSpELLiteral, validationMode)
@@ -394,12 +469,28 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
   protected def invalidRange(rangeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
     invalid(Nil, Nil, Nil, rangeErrors.toList)
 
-  protected def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String]): Invalid[NonEmptyList[CustomNodeError]] =
+  protected def invalid(
+      typeFieldErrors: List[String],
+      missingFieldsError: List[String],
+      redundantFieldsError: List[String]
+  ): Invalid[NonEmptyList[CustomNodeError]] =
     invalid(typeFieldErrors, missingFieldsError, redundantFieldsError, Nil)
 
-  protected def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String], rangeTypeError: List[String]): Invalid[NonEmptyList[CustomNodeError]] = {
-    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(typeFieldErrors, missingFieldsError, redundantFieldsError, rangeTypeError)
-    Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(JsonRequestResponseSink.SinkRawValueParamName))))
+  protected def invalid(
+      typeFieldErrors: List[String],
+      missingFieldsError: List[String],
+      redundantFieldsError: List[String],
+      rangeTypeError: List[String]
+  ): Invalid[NonEmptyList[CustomNodeError]] = {
+    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(
+      typeFieldErrors,
+      missingFieldsError,
+      redundantFieldsError,
+      rangeTypeError
+    )
+    Invalid(
+      NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(JsonRequestResponseSink.SinkRawValueParamName)))
+    )
   }
 
   object JsonObject {

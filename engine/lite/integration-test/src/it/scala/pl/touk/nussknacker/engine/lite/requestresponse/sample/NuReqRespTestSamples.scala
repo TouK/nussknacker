@@ -26,10 +26,12 @@ object NuReqRespTestSamples {
 
   val pingPongScenario: CanonicalProcess = ScenarioBuilder
     .requestResponse("reqresp-ping-pong") // TODO: test defined path case
-    .additionalFields(properties = Map(
-      "inputSchema" -> pingSchema,
-      "outputSchema" -> pongSchema
-    ))
+    .additionalFields(properties =
+      Map(
+        "inputSchema"  -> pingSchema,
+        "outputSchema" -> pongSchema
+      )
+    )
     .source("source", "request")
     .emptySink("sink", "response", SinkRawEditorParamName -> "false", "pong" -> "#input.ping")
 

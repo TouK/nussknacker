@@ -12,13 +12,21 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import scala.language.higherKinds
 
-class FragmentRepositorySpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with BeforeAndAfterEach with NuResourcesTest with VeryPatientScalaFutures {
+class FragmentRepositorySpec
+    extends AnyFlatSpec
+    with ScalatestRouteTest
+    with Matchers
+    with BeforeAndAfterEach
+    with NuResourcesTest
+    with VeryPatientScalaFutures {
 
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._
 
   it should "fetches fragment by its version" in {
-    val sampleFragment = ProcessConverter.toDisplayable(ProcessTestData.sampleFragment, TestProcessingTypes.Streaming, TestCat)
-    val sampleFragment2 = ProcessConverter.toDisplayable(ProcessTestData.sampleFragment2, TestProcessingTypes.Streaming, TestCat)
+    val sampleFragment =
+      ProcessConverter.toDisplayable(ProcessTestData.sampleFragment, TestProcessingTypes.Streaming, TestCat)
+    val sampleFragment2 =
+      ProcessConverter.toDisplayable(ProcessTestData.sampleFragment2, TestProcessingTypes.Streaming, TestCat)
     savefragment(sampleFragment) {
       status shouldEqual StatusCodes.OK
     }
@@ -31,9 +39,15 @@ class FragmentRepositorySpec extends AnyFlatSpec with ScalatestRouteTest with Ma
 
     fragmentRepository.loadFragments() shouldBe Set(FragmentDetails(ProcessTestData.sampleFragment2, TestCat))
     val fragmentId = ProcessTestData.sampleFragment.metaData.id
-    fragmentRepository.loadFragments(Map(fragmentId -> VersionId(1))) shouldBe Set(FragmentDetails(ProcessTestData.emptyFragment, TestCat))
-    fragmentRepository.loadFragments(Map(fragmentId -> VersionId(2))) shouldBe Set(FragmentDetails(ProcessTestData.sampleFragment, TestCat))
-    fragmentRepository.loadFragments(Map(fragmentId -> VersionId(3))) shouldBe Set(FragmentDetails(ProcessTestData.sampleFragment2, TestCat))
+    fragmentRepository.loadFragments(Map(fragmentId -> VersionId(1))) shouldBe Set(
+      FragmentDetails(ProcessTestData.emptyFragment, TestCat)
+    )
+    fragmentRepository.loadFragments(Map(fragmentId -> VersionId(2))) shouldBe Set(
+      FragmentDetails(ProcessTestData.sampleFragment, TestCat)
+    )
+    fragmentRepository.loadFragments(Map(fragmentId -> VersionId(3))) shouldBe Set(
+      FragmentDetails(ProcessTestData.sampleFragment2, TestCat)
+    )
     fragmentRepository.loadFragments() shouldBe Set(FragmentDetails(ProcessTestData.sampleFragment2, TestCat))
   }
 

@@ -16,8 +16,13 @@ import skuber.api.Configuration
 
 import scala.concurrent.duration._
 
-class K8sDeploymentManagerOnMocksTest extends AnyFunSuite with BeforeAndAfterAll with PatientScalaFutures
-  with Inside with Matchers with OptionValues {
+class K8sDeploymentManagerOnMocksTest
+    extends AnyFunSuite
+    with BeforeAndAfterAll
+    with PatientScalaFutures
+    with Inside
+    with Matchers
+    with OptionValues {
 
   protected implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
   import system.dispatcher
@@ -29,39 +34,49 @@ class K8sDeploymentManagerOnMocksTest extends AnyFunSuite with BeforeAndAfterAll
       wireMockServer.stubFor(
         get(urlPathEqualTo("/apis/apps/v1/namespaces/default/deployments")).willReturn(
           aResponse()
-            .withBody(
-              """{
+            .withBody("""{
                 |  "apiVersion": "v1",
                 |  "kind": "DeploymentList",
                 |  "items": []
                 |}""".stripMargin)
             .withHeader("Content-Type", "application/json")
-            .withFixedDelay(delay.toMillis.toInt)))
+            .withFixedDelay(delay.toMillis.toInt)
+        )
+      )
       wireMockServer.stubFor(
         get(urlPathEqualTo("/api/v1/namespaces/default/pods")).willReturn(
           aResponse()
-            .withBody(
-              """{
+            .withBody("""{
                 |  "apiVersion": "v1",
                 |  "kind": "PodList",
                 |  "items": []
                 |}""".stripMargin)
-            .withHeader("Content-Type", "application/json")))
+            .withHeader("Content-Type", "application/json")
+        )
+      )
     }
     val clientIdleTimeout = 1.second
-    val k8sConfig = K8sDeploymentManagerConfig(scenarioStateIdleTimeout = clientIdleTimeout)
-    val manager = new K8sDeploymentManager(LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), k8sConfig, ConfigFactory.empty()) {
+    val k8sConfig         = K8sDeploymentManagerConfig(scenarioStateIdleTimeout = clientIdleTimeout)
+    val manager = new K8sDeploymentManager(
+      LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()),
+      k8sConfig,
+      ConfigFactory.empty()
+    ) {
       override protected def k8sConfiguration: Configuration = Configuration.useLocalProxyOnPort(wireMockServer.port())
     }
 
     val durationLongerThanClientTimeout = clientIdleTimeout.plus(patienceConfig.timeout)
     stubWithFixedDelay(durationLongerThanClientTimeout)
     a[TcpIdleTimeoutException] shouldBe thrownBy {
-      manager.getFreshProcessStates(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
+      manager
+        .getFreshProcessStates(ProcessName("foo"))
+        .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     }
 
     stubWithFixedDelay(0 seconds)
-    val result = manager.getFreshProcessStates(ProcessName("foo")).futureValueEnsuringInnerException(durationLongerThanClientTimeout)
+    val result = manager
+      .getFreshProcessStates(ProcessName("foo"))
+      .futureValueEnsuringInnerException(durationLongerThanClientTimeout)
     result shouldEqual List.empty
   }
 

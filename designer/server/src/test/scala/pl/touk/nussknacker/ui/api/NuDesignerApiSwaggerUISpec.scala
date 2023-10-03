@@ -4,11 +4,16 @@ import io.restassured.RestAssured.`given`
 import io.restassured.module.scala.RestAssuredSupport.AddThenToResponse
 import org.hamcrest.Matchers.containsString
 import org.scalatest.freespec.AnyFreeSpecLike
-import pl.touk.nussknacker.test.{NuRestAssureExtensions, NuRestAssureMatchers, PatientScalaFutures, RestAssuredVerboseLogging}
+import pl.touk.nussknacker.test.{
+  NuRestAssureExtensions,
+  NuRestAssureMatchers,
+  PatientScalaFutures,
+  RestAssuredVerboseLogging
+}
 import pl.touk.nussknacker.ui.api.helpers.{NuItTest, NuScenarioConfigurationHelper, WithMockableDeploymentManager}
 
 class NuDesignerApiSwaggerUISpec
-  extends AnyFreeSpecLike
+    extends AnyFreeSpecLike
     with NuItTest
     with WithMockableDeploymentManager
     with NuScenarioConfigurationHelper

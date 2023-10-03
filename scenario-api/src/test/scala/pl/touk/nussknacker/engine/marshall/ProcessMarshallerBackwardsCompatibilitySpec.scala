@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.marshall
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Matchers{
+class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Matchers {
 
   private val legacyJsonWithNoFields =
     """{
@@ -122,7 +122,6 @@ class ProcessMarshallerBackwardsCompatibilitySpec extends AnyFlatSpec with Match
       |  "nodes" : [],
       |  "additionalBranches" : []
       |}""".stripMargin
-
 
   it should "decode legacy json with no additional fields" in {
     ProcessMarshaller.fromJson(legacyJsonWithNoFields).isValid shouldBe true

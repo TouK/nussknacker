@@ -32,13 +32,22 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 
 import java.time.Instant
 
-class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with NuResourcesTest {
+class ManagementResourcesSpec
+    extends AnyFunSuite
+    with ScalatestRouteTest
+    with FailFastCirceSupport
+    with Matchers
+    with PatientScalaFutures
+    with OptionValues
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with NuResourcesTest {
 
   import TestCategories._
   import KafkaFactory._
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+  private implicit final val string: FromEntityUnmarshaller[String] =
+    Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val processName: ProcessName = ProcessName(SampleProcess.process.id)
 
@@ -85,7 +94,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   test("can't deploy archived process") {
-    val id = createArchivedProcess(processName)
+    val id                = createArchivedProcess(processName)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deploymentManager.withProcessStateStatus(processName, SimpleStateStatus.Canceled) {
@@ -97,7 +106,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   test("can't deploy fragment") {
-    val id = createValidProcess(processName, TestCat, isFragment = true)
+    val id                = createValidProcess(processName, TestCat, isFragment = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -107,7 +116,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   test("can't cancel fragment") {
-    val id = createValidProcess(processName, TestCat, isFragment = true)
+    val id                = createValidProcess(processName, TestCat, isFragment = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -118,16 +127,24 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> checkThatEventually {
+    deployProcess(
+      SampleProcess.process.id,
+      Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))),
+      comment = Some("deployComment")
+    ) ~> checkThatEventually {
       getProcess(processName) ~> check {
         val processDetails = responseAs[ProcessDetails]
         processDetails.lastStateAction.exists(_.actionType.equals(ProcessActionType.Deploy)) shouldBe true
       }
-      cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))), comment = Some("cancelComment")) ~> check {
+      cancelProcess(
+        SampleProcess.process.id,
+        Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))),
+        comment = Some("cancelComment")
+      ) ~> check {
         status shouldBe StatusCodes.OK
-        //TODO: remove Deployment:, Stop: after adding custom icons
+        // TODO: remove Deployment:, Stop: after adding custom icons
         val expectedDeployComment = "Deployment: deployComment"
-        val expectedStopComment = "Stop: cancelComment"
+        val expectedStopComment   = "Stop: cancelComment"
         getActivity(ProcessName(SampleProcess.process.id)) ~> check {
           val comments = responseAs[ProcessActivity].comments.sortBy(_.id)
           comments.map(_.content) shouldBe List(expectedDeployComment, expectedStopComment)
@@ -136,10 +153,26 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
           Get(s"/processes/${SampleProcess.process.id}/deployments") ~> withAllPermissions(processesRoute) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
-            val curTime = Instant.now()
-            deploymentHistory.map(a => (a.processVersionId, a.user, a.actionType, a.commentId, a.comment, a.buildInfo)) shouldBe List(
-              (VersionId(2), user().username, ProcessActionType.Cancel, Some(secondCommentId), Some(expectedStopComment), Map()),
-              (VersionId(2), user().username, ProcessActionType.Deploy, Some(firstCommentId), Some(expectedDeployComment), TestFactory.buildInfo)
+            val curTime           = Instant.now()
+            deploymentHistory.map(a =>
+              (a.processVersionId, a.user, a.actionType, a.commentId, a.comment, a.buildInfo)
+            ) shouldBe List(
+              (
+                VersionId(2),
+                user().username,
+                ProcessActionType.Cancel,
+                Some(secondCommentId),
+                Some(expectedStopComment),
+                Map()
+              ),
+              (
+                VersionId(2),
+                user().username,
+                ProcessActionType.Deploy,
+                Some(firstCommentId),
+                Some(expectedDeployComment),
+                TestFactory.buildInfo
+              )
             )
           }
         }
@@ -149,7 +182,11 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("rejects deploy without comment if comment required") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    deployProcess(SampleProcess.process.id, deploymentCommentSettings = Some(DeploymentCommentSettings.unsafe("requiredCommentPattern", Some("exampleRequiredComment")))) ~> check {
+    deployProcess(
+      SampleProcess.process.id,
+      deploymentCommentSettings =
+        Some(DeploymentCommentSettings.unsafe("requiredCommentPattern", Some("exampleRequiredComment")))
+    ) ~> check {
       status shouldBe StatusCodes.BadRequest
     }
   }
@@ -205,7 +242,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("not authorize user with write permission to deploy") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    Post(s"/processManagement/deploy/${SampleProcess.process.id}") ~> withPermissions(deployRoute(), testPermissionWrite) ~> check {
+    Post(s"/processManagement/deploy/${SampleProcess.process.id}") ~> withPermissions(
+      deployRoute(),
+      testPermissionWrite
+    ) ~> check {
       rejection shouldBe server.AuthorizationFailedRejection
     }
   }
@@ -244,7 +284,9 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   }
 
   test("should return failure for not validating deployment") {
-    val largeParallelismScenario = SampleProcess.process.copy(metaData = MetaData(SampleProcess.process.id, StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1))))
+    val largeParallelismScenario = SampleProcess.process.copy(metaData =
+      MetaData(SampleProcess.process.id, StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1)))
+    )
     saveProcessAndAssertSuccess(largeParallelismScenario.id, largeParallelismScenario)
 
     deploymentManager.withFailingDeployment(ProcessName(largeParallelismScenario.id)) {
@@ -382,7 +424,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     createEmptyProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("non-existing")) ~> check {
       status shouldBe StatusCodes.NotFound
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "non-existing is not existing")
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(
+        isSuccess = false,
+        msg = "non-existing is not existing"
+      )
     }
   }
 
@@ -390,7 +435,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     createEmptyProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("not-implemented")) ~> check {
       status shouldBe StatusCodes.NotImplemented
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = "not-implemented is not implemented")
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(
+        isSuccess = false,
+        msg = "not-implemented is not implemented"
+      )
     }
   }
 
@@ -398,7 +446,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     createEmptyProcess(SampleProcess.processName)
     customAction(SampleProcess.processName, CustomActionRequest("invalid-status")) ~> check {
       status shouldBe StatusCodes.Forbidden
-      responseAs[CustomActionResponse] shouldBe CustomActionResponse(isSuccess = false, msg = s"Scenario status: NOT_DEPLOYED is not allowed for action invalid-status")
+      responseAs[CustomActionResponse] shouldBe CustomActionResponse(
+        isSuccess = false,
+        msg = s"Scenario status: NOT_DEPLOYED is not allowed for action invalid-status"
+      )
     }
   }
 

@@ -18,12 +18,15 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
     val processId = "runningJavaFlink"
 
     val process = ScenarioBuilder
-          .streaming(processId)
-          .source("startProcess", "source")
-          .emptySink("endSend", "sink")
+      .streaming(processId)
+      .source("startProcess", "source")
+      .emptySink("endSend", "sink")
 
-    assert(deploymentManager.deploy(ProcessVersion.empty.copy(processName=ProcessName(process.id)), DeploymentData.empty,
-      process, None).isReadyWithin(100 seconds))
+    assert(
+      deploymentManager
+        .deploy(ProcessVersion.empty.copy(processName = ProcessName(process.id)), DeploymentData.empty, process, None)
+        .isReadyWithin(100 seconds)
+    )
 
     eventually {
       val jobStatus = deploymentManager.getProcessStates(ProcessName(process.id)).futureValue.value

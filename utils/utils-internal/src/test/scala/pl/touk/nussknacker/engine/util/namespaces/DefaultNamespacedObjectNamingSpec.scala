@@ -10,7 +10,8 @@ class DefaultNamespacedObjectNamingSpec extends AnyFunSuite with Matchers {
 
   private val emptyConfig = ConfigFactory.empty()
 
-  private val configWithNamespace = ConfigFactory.empty()
+  private val configWithNamespace = ConfigFactory
+    .empty()
     .withValue(DefaultNamespacedObjectNaming.NamespacePath, fromAnyRef("customer1"))
 
   private val defaultNaming = DefaultNamespacedObjectNaming

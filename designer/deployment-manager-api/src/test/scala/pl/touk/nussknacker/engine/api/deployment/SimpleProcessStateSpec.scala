@@ -13,17 +13,17 @@ class SimpleProcessStateSpec extends AnyFunSpec with Matchers with Inside {
   def createProcessState(stateStatus: StateStatus): ProcessState =
     SimpleProcessStateDefinitionManager.processState(StatusDetails(stateStatus, None, Some(ExternalDeploymentId("12"))))
 
-  it ("scenario state should be during deploy") {
+  it("scenario state should be during deploy") {
     val state = createProcessState(SimpleStateStatus.DuringDeploy)
     state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Cancel)
   }
 
-  it ("scenario state should be running") {
+  it("scenario state should be running") {
     val state = createProcessState(SimpleStateStatus.Running)
     state.allowedActions shouldBe List(ProcessActionType.Cancel, ProcessActionType.Pause, ProcessActionType.Deploy)
   }
 
-  it ("scenario state should be finished") {
+  it("scenario state should be finished") {
     val state = createProcessState(SimpleStateStatus.Finished)
     state.allowedActions shouldBe List(ProcessActionType.Deploy, ProcessActionType.Archive, ProcessActionType.Rename)
   }

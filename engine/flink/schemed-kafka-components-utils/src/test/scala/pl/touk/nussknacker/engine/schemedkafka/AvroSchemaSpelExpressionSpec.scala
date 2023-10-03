@@ -32,25 +32,26 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
   private val dictId = "dict1"
 
   it("should recognize record with simple fields") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  { "name": "intField", "type": "int" },
         |  { "name": "stringField", "type": "string" },
         |  { "name": "booleanField", "type": "boolean" }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
+    val ctx = ValidationContext.empty
+      .withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None)
+      .toOption
+      .get
 
-    parse[Integer]("#input.intField", ctx) should be (Symbol("valid"))
-    parse[CharSequence]("#input.intField", ctx) should be (Symbol("invalid"))
-    parse[CharSequence]("#input.stringField", ctx) should be (Symbol("valid"))
-    parse[Boolean]("#input.booleanField", ctx) should be (Symbol("valid"))
-    parse[Integer]("#input.nonExisting", ctx) should be (Symbol("invalid"))
-    parse[GenericRecord]("#input", ctx) should be (Symbol("valid"))
+    parse[Integer]("#input.intField", ctx) should be(Symbol("valid"))
+    parse[CharSequence]("#input.intField", ctx) should be(Symbol("invalid"))
+    parse[CharSequence]("#input.stringField", ctx) should be(Symbol("valid"))
+    parse[Boolean]("#input.booleanField", ctx) should be(Symbol("valid"))
+    parse[Integer]("#input.nonExisting", ctx) should be(Symbol("invalid"))
+    parse[GenericRecord]("#input", ctx) should be(Symbol("valid"))
   }
 
   it("should recognize record with list field") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  {
         |    "name": "array",
         |    "type": {
@@ -65,15 +66,17 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         |    }
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
+    val ctx = ValidationContext.empty
+      .withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None)
+      .toOption
+      .get
 
-    parse[CharSequence]("#input.array[0].foo", ctx) should be (Symbol("valid"))
-    parse[CharSequence]("#input.array[0].bar", ctx) should be (Symbol("invalid"))
+    parse[CharSequence]("#input.array[0].foo", ctx) should be(Symbol("valid"))
+    parse[CharSequence]("#input.array[0].bar", ctx) should be(Symbol("invalid"))
   }
 
   it("should recognize record with map field") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  {
         |    "name": "map",
         |    "type": {
@@ -88,15 +91,17 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         |    }
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
+    val ctx = ValidationContext.empty
+      .withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None)
+      .toOption
+      .get
 
-    parse[CharSequence]("#input.map['ala'].foo", ctx) should be (Symbol("valid"))
-    parse[CharSequence]("#input.map['ala'].bar", ctx) should be (Symbol("invalid"))
+    parse[CharSequence]("#input.map['ala'].foo", ctx) should be(Symbol("valid"))
+    parse[CharSequence]("#input.map['ala'].bar", ctx) should be(Symbol("invalid"))
   }
 
   it("should recognize record with simple union") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  {
         |    "name": "union",
         |    "type": [
@@ -111,15 +116,17 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         |    ]
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
+    val ctx = ValidationContext.empty
+      .withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None)
+      .toOption
+      .get
 
-    parse[CharSequence]("#input.union.foo", ctx) should be (Symbol("valid"))
-    parse[CharSequence]("#input.union.bar", ctx) should be (Symbol("invalid"))
+    parse[CharSequence]("#input.union.foo", ctx) should be(Symbol("valid"))
+    parse[CharSequence]("#input.union.bar", ctx) should be(Symbol("invalid"))
   }
 
   it("should recognize record with class union") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  {
         |    "name": "union",
         |    "type": [
@@ -129,60 +136,74 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         |    ]
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
+    val ctx = ValidationContext.empty
+      .withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None)
+      .toOption
+      .get
 
-    parse[Int]("#input.union", ctx) should be (Symbol("valid"))
-    parse[Long]("#input.union", ctx) should be (Symbol("valid"))
-    parse[CharSequence]("#input.union", ctx) should be (Symbol("invalid"))
+    parse[Int]("#input.union", ctx) should be(Symbol("valid"))
+    parse[Long]("#input.union", ctx) should be(Symbol("valid"))
+    parse[CharSequence]("#input.union", ctx) should be(Symbol("invalid"))
   }
 
   it("should recognize record with enum") {
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema), paramName = None).toOption.get
-    parse[CharSequence]("#input.currency.toString", ctx) should be (Symbol("valid"))
-    parse[EnumSymbol]("#input.currency", ctx) should be (Symbol("valid"))
+    val ctx = ValidationContext.empty
+      .withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema), paramName = None)
+      .toOption
+      .get
+    parse[CharSequence]("#input.currency.toString", ctx) should be(Symbol("valid"))
+    parse[EnumSymbol]("#input.currency", ctx) should be(Symbol("valid"))
   }
 
   it("should not skipp nullable field vat from schema PaymentV1 when skippNullableFields is set") {
-    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
+    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(
+      PaymentV1.schema,
+      AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes
+    )
     val ctx = ValidationContext.empty.withVariable("input", typeResult, paramName = None).toOption.get
 
-    parse[Int]("#input.vat", ctx) should be (Symbol("valid"))
+    parse[Int]("#input.vat", ctx) should be(Symbol("valid"))
   }
 
   it("should add dictionaryId if annotated") {
-    val schema = wrapWithRecordSchema(
-      s"""[
+    val schema = wrapWithRecordSchema(s"""[
         |  {
         |    "name": "withDict",
         |    "type": "string",
         |    "${AvroSchemaTypeDefinitionExtractor.dictIdProperty}": "$dictId"
         |  }
         |]""".stripMargin)
-    val ctx = ValidationContext.empty.withVariable("input",
-      AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).andThen(_.withVariable("DICT1", TypedDict(dictId, Typed.typedClass[String]), paramName = None)).toOption.get
+    val ctx = ValidationContext.empty
+      .withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None)
+      .andThen(_.withVariable("DICT1", TypedDict(dictId, Typed.typedClass[String]), paramName = None))
+      .toOption
+      .get
 
-    parse[CharSequence]("#input.withDict", ctx) should be (Symbol("valid"))
-    parse[Boolean]("#input.withDict == #DICT1['key1']", ctx) should be (Symbol("valid"))
-    parse[Boolean]("#input.withDict == #DICT1['noKey']", ctx) should be (Symbol("invalid"))
+    parse[CharSequence]("#input.withDict", ctx) should be(Symbol("valid"))
+    parse[Boolean]("#input.withDict == #DICT1['key1']", ctx) should be(Symbol("valid"))
+    parse[Boolean]("#input.withDict == #DICT1['noKey']", ctx) should be(Symbol("invalid"))
   }
 
   it("should recognize avro type string as String") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  { "name": "stringField", "type": "string" },
         |  { "name": "mapField", "type": { "type": "map", "values": "string" } }
         |]""".stripMargin)
 
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
+    val ctx = ValidationContext.empty
+      .withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None)
+      .toOption
+      .get
 
     parse[String]("#input.stringField", ctx) should be(Symbol("valid"))
-    parse[AnyRef]("#input.mapField", ctx).map(_.returnType) shouldBe Valid(Typed.fromDetailedType[java.util.Map[String, String]])
+    parse[AnyRef]("#input.mapField", ctx).map(_.returnType) shouldBe Valid(
+      Typed.fromDetailedType[java.util.Map[String, String]]
+    )
 
   }
 
   it("should recognize date types") {
-    val schema = wrapWithRecordSchema(
-      """[
+    val schema = wrapWithRecordSchema("""[
         |  { "name": "date", "type": { "type": "int", "logicalType": "date" } },
         |  { "name": "timeMillis", "type": { "type": "int", "logicalType": "time-millis" } },
         |  { "name": "timeMicros", "type": { "type": "int", "logicalType": "time-micros" } },
@@ -192,9 +213,12 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         |  { "name": "timestampMicros", "type": { "type": "long", "logicalType": "timestamp-micros" } }
         |]""".stripMargin)
 
-    val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
+    val ctx = ValidationContext.empty
+      .withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None)
+      .toOption
+      .get
 
-    def checkTypeForExpr[Type:ClassTag](expr: String) = {
+    def checkTypeForExpr[Type: ClassTag](expr: String) = {
       parse[AnyRef](expr, ctx).map(_.returnType) shouldBe Valid(Typed[Type])
     }
 
@@ -207,10 +231,20 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
     checkTypeForExpr[Instant]("#input.timestampMicros")
   }
 
-  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
-    SpelExpressionParser.default(getClass.getClassLoader, ProcessDefinitionBuilder.empty.expressionConfig, new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))), enableSpelForceCompile = true,
-      Standard, TypeDefinitionSet.forClasses(classOf[EnumSymbol])
-    ).parse(expr, validationCtx, Typed.fromDetailedType[T])
+  private def parse[T: TypeTag](
+      expr: String,
+      validationCtx: ValidationContext
+  ): ValidatedNel[ExpressionParseError, TypedExpression] = {
+    SpelExpressionParser
+      .default(
+        getClass.getClassLoader,
+        ProcessDefinitionBuilder.empty.expressionConfig,
+        new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))),
+        enableSpelForceCompile = true,
+        Standard,
+        TypeDefinitionSet.forClasses(classOf[EnumSymbol])
+      )
+      .parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
   private def wrapWithRecordSchema(fieldsDefinition: String) =
@@ -219,6 +253,5 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
                                  |  "type": "record",
                                  |  "fields": $fieldsDefinition
                                  |}""".stripMargin)
-
 
 }

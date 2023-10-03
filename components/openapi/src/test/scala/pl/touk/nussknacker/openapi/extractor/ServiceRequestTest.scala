@@ -19,9 +19,13 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
 
   private val fixedHeaders = List(("Accept-Encoding", "gzip, deflate"))
 
-  private def prepareRequest(location: String, inputParams: Map[String, Any], fixedParams: Map[String, () => AnyRef]): SwaggerRequestType = {
-    val openApiConfig = OpenAPIServicesConfig(baseUrl, allowedMethods = List("POST", "GET"))
-    val swaggerService = SwaggerParser.loadFromResource(location, openApiConfig).flatMap(_.toOption).head
+  private def prepareRequest(
+      location: String,
+      inputParams: Map[String, Any],
+      fixedParams: Map[String, () => AnyRef]
+  ): SwaggerRequestType = {
+    val openApiConfig       = OpenAPIServicesConfig(baseUrl, allowedMethods = List("POST", "GET"))
+    val swaggerService      = SwaggerParser.loadFromResource(location, openApiConfig).flatMap(_.toOption).head
     val parametersExtractor = new ParametersExtractor(swaggerService, fixedParams)
     ServiceRequest(rootUrl = baseUrl, swaggerService, parametersExtractor.prepareParams(inputParams))
   }
@@ -29,8 +33,8 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
   test("query params to url extraction") {
 
     val paramInputs: Map[String, AnyRef] = Map(
-      "pathParam1" -> lang.Long.valueOf(1234L),
-      "pathParam2" -> "alamakota",
+      "pathParam1"  -> lang.Long.valueOf(1234L),
+      "pathParam2"  -> "alamakota",
       "queryParam1" -> List(1, 2).asJava,
       "queryParam2" -> lang.Boolean.valueOf(false),
       "queryParam3" -> Map("NAME" -> "myName").asJava
@@ -39,7 +43,7 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
 
     req.uri.querySegments.toList.map {
       case Uri.QuerySegment.KeyValue(key, value, _, _) => (key, value)
-      case _ => ???
+      case _                                           => ???
     } shouldBe List(
       ("queryParam1", "1"),
       ("queryParam1", "2"),
@@ -51,8 +55,8 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
   test("path params to url extraction") {
 
     val paramInputs: Map[String, AnyRef] = Map(
-      "pathParam1" -> lang.Long.valueOf(1234L),
-      "pathParam2" -> "alamakota",
+      "pathParam1"  -> lang.Long.valueOf(1234L),
+      "pathParam2"  -> "alamakota",
       "queryParam1" -> List(1, 2).asJava,
       "queryParam2" -> lang.Boolean.valueOf(false),
       "queryParam3" -> Map("NAME" -> "myName").asJava
@@ -66,20 +70,22 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
   test("body parameters extraction") {
 
     val paramInputs: Map[String, Any] = Map(
-      "param1" -> 185,
-      "offers" -> List(singletonMap("accountId", 123), singletonMap("accountId", 44)).asJava,
+      "param1"     -> 185,
+      "offers"     -> List(singletonMap("accountId", 123), singletonMap("accountId", 44)).asJava,
       "otherField" -> "terefere"
     )
     val req = prepareRequest("/swagger/enricher-body-param.yml", paramInputs, Map())
 
     req.uri.toString() shouldBe "http://baseUrl/someService/185"
-    req.body.asInstanceOf[StringBody].s shouldBe "{\"offers\":[{\"accountId\":123},{\"accountId\":44}],\"otherField\":\"terefere\"}"
+    req.body
+      .asInstanceOf[StringBody]
+      .s shouldBe "{\"offers\":[{\"accountId\":123},{\"accountId\":44}],\"otherField\":\"terefere\"}"
   }
 
   test("primitive body extraction") {
 
     val paramInputs: Map[String, Any] = Map(
-      "param1" -> 185,
+      "param1"                 -> 185,
       SingleBodyParameter.name -> "123"
     )
     val req = prepareRequest("/swagger/enricher-primitive-body-param.yml", paramInputs, Map())
@@ -91,9 +97,9 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
   test("fixed parameters extraction") {
     val fixedParams = Map("System-Name" -> (() => "fixed"), "X-Correlation-ID" -> (() => "54321"))
     val paramInputs: Map[String, Any] = Map(
-      "accountNo" -> 1234L,
+      "accountNo"        -> 1234L,
       "System-User-Name" -> "User1",
-      "pretty" ->  "true"
+      "pretty"           -> "true"
     )
     val req = prepareRequest("/swagger/swagger-20.json", paramInputs, fixedParams)
 
@@ -110,9 +116,9 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
   test("Null params handling") {
     val fixedParams = Map("System-Name" -> (() => "fixed"), "X-Correlation-ID" -> (() => null))
     val paramInputs: Map[String, Any] = Map(
-      "accountNo" -> 1234L,
+      "accountNo"        -> 1234L,
       "System-User-Name" -> "User1",
-      "pretty" -> null
+      "pretty"           -> null
     )
     val req = prepareRequest("/swagger/swagger-20.json", paramInputs, fixedParams)
 
@@ -124,6 +130,5 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
     )
     req.uri.toString() shouldBe "http://baseUrl/line/getCollectionData/1234"
   }
-
 
 }

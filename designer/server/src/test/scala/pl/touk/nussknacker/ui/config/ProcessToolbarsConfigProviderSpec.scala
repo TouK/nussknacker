@@ -120,12 +120,36 @@ class ProcessToolbarsConfigProviderSpec extends AnyFlatSpec with Matchers {
       List(ToolbarPanelConfig(TipsPanel, None, None, None, None, Some(ToolbarCondition(Some(true), None, None)))),
       Nil,
       List(
-        ToolbarPanelConfig(ProcessInfoPanel, None,
-          Some("Process Info"), None, Some(List(
-            ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, Some("save"), None, Some("/assets/buttons/save.svg"), None, None, Some(ToolbarCondition(None, Some(true), None))),
-            ToolbarButtonConfig(ToolbarButtonConfigType.ProcessDeploy, None, None, None, None, None, None),
-            ToolbarButtonConfig(ToolbarButtonConfigType.CustomLink, Some("metrics"), Some("Metrics for process $processName"), Some("/assets/buttons/metrics.svg"), Some("/metrics/$processName"), None, None)
-          )), None)
+        ToolbarPanelConfig(
+          ProcessInfoPanel,
+          None,
+          Some("Process Info"),
+          None,
+          Some(
+            List(
+              ToolbarButtonConfig(
+                ToolbarButtonConfigType.ProcessSave,
+                Some("save"),
+                None,
+                Some("/assets/buttons/save.svg"),
+                None,
+                None,
+                Some(ToolbarCondition(None, Some(true), None))
+              ),
+              ToolbarButtonConfig(ToolbarButtonConfigType.ProcessDeploy, None, None, None, None, None, None),
+              ToolbarButtonConfig(
+                ToolbarButtonConfigType.CustomLink,
+                Some("metrics"),
+                Some("Metrics for process $processName"),
+                Some("/assets/buttons/metrics.svg"),
+                Some("/metrics/$processName"),
+                None,
+                None
+              )
+            )
+          ),
+          None
+        )
       ),
       Nil
     )
@@ -135,9 +159,18 @@ class ProcessToolbarsConfigProviderSpec extends AnyFlatSpec with Matchers {
       List(ToolbarPanelConfig(TipsPanel, None, None, None, None, Some(ToolbarCondition(Some(true), None, None)))),
       Nil,
       List(
-        ToolbarPanelConfig(ProcessInfoPanel, None, Some("Process Info Right"), Some(Small), Some(List(
-          ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, None, None, None, None, None, None)
-        )), None)
+        ToolbarPanelConfig(
+          ProcessInfoPanel,
+          None,
+          Some("Process Info Right"),
+          Some(Small),
+          Some(
+            List(
+              ToolbarButtonConfig(ToolbarButtonConfigType.ProcessSave, None, None, None, None, None, None)
+            )
+          ),
+          None
+        )
       ),
       List(ToolbarPanelConfig(VersionsPanel, None, None, None, None, None))
     )
@@ -164,7 +197,11 @@ class ProcessToolbarsConfigProviderSpec extends AnyFlatSpec with Matchers {
       (processToolbarConfig, "RedundantButtonsError", "Toolbar tips-panel doesn't contain param: 'buttons'."),
       (processToolbarConfig, "RedundantIdError", "Toolbar tips-panel doesn't contain param: 'id'."),
       (processToolbarConfig, "RedundantUrlError", "Button process-save doesn't contain param: 'url'."),
-      (processToolbarConfig, "RedundantButtonsVariantError", "Toolbar tips-panel doesn't contain param: 'buttonsVariant'.")
+      (
+        processToolbarConfig,
+        "RedundantButtonsVariantError",
+        "Toolbar tips-panel doesn't contain param: 'buttonsVariant'."
+      )
     )
 
     forAll(errorTestingConfigs) { (config: Config, category: String, message) =>

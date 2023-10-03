@@ -4,7 +4,13 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{
+  EmptyProcessConfigCreator,
+  ProcessObjectDependencies,
+  SinkFactory,
+  SourceFactory,
+  WithCategories
+}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -35,7 +41,8 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
       .withValue("exceptionHandler.kafka", config.getConfig("kafka").root())
 
     val modelData = LocalModelData(configWithExceptionHandler, new ExceptionTestConfigCreator())
-    registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
+    registrar =
+      FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
   }
 
   test("should record errors on topic") {
@@ -64,11 +71,15 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
 
 class ExceptionTestConfigCreator extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
-    "source" -> WithCategories(SampleNodes.simpleRecordSource(SimpleRecord("id1", 1, "value1", new Date())::Nil))
+  override def sourceFactories(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[SourceFactory]] = Map(
+    "source" -> WithCategories(SampleNodes.simpleRecordSource(SimpleRecord("id1", 1, "value1", new Date()) :: Nil))
   )
 
-  override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = Map(
+  override def sinkFactories(
+      processObjectDependencies: ProcessObjectDependencies
+  ): Map[String, WithCategories[SinkFactory]] = Map(
     "sink" -> WithCategories(SinkFactory.noParam(SampleNodes.MonitorEmptySink))
   )
 }

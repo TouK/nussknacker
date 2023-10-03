@@ -28,22 +28,23 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 
   private def baseUrl: String = s"${container.container.getAuthServerUrl}/realms/$realmId"
 
-
   test("Basic OpenIDConnect flow") {
     val config = oauth2Conf
     val oidcService = new UserMappingOAuth2Service(
       new OidcService(config),
-      (userInfo: OpenIdConnectUserInfo) => OpenIdConnectProfile.getAuthenticatedUser(userInfo, config.oAuth2Configuration)
+      (userInfo: OpenIdConnectUserInfo) =>
+        OpenIdConnectProfile.getAuthenticatedUser(userInfo, config.oAuth2Configuration)
     )
 
     val oidcServiceWithCache = new CachingOAuth2Service(oidcService, config.oAuth2Configuration)
 
     List(oidcService, oidcServiceWithCache).foreach { open =>
-      //we emulate FE part
-      val loginResult = keyCloakLogin(config.oAuth2Configuration)
+      // we emulate FE part
+      val loginResult       = keyCloakLogin(config.oAuth2Configuration)
       val authorizationCode = uri"${loginResult.header("Location").get}".params.get("code").get
 
-      val (authData, userData) = open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.get.toString).futureValue
+      val (authData, userData) =
+        open.obtainAuthorizationAndUserInfo(authorizationCode, config.redirectUri.get.toString).futureValue
       userData.username shouldBe "user1"
       userData.roles should contain("ARole")
 
@@ -54,12 +55,13 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
     }
   }
 
-  //We emulate keycloak login form :)
+  // We emulate keycloak login form :)
   private def keyCloakLogin(config: OAuth2Configuration): Response[Either[String, String]] = {
     val redirectValue = basicRequest
       .get(uri"${config.authorizeUrl.get.toString}")
       .response(asString)
-      .send(backend).futureValue
+      .send(backend)
+      .futureValue
 
     val pattern = """.*action="([^"]*)".*""".r
     val passwordLocation = redirectValue.body.toOption.get.replaceAll("\n", "") match {
@@ -71,7 +73,8 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       .cookies(redirectValue.unsafeCookies)
       .body("username" -> "user1", "password" -> "pass1", "credentialId" -> "")
       .followRedirects(false)
-      .send(backend).futureValue
+      .send(backend)
+      .futureValue
   }
 
   private def oauth2Conf: OidcAuthenticationConfiguration =
@@ -89,6 +92,6 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
 
 class KeyCloakScalaContainer() extends SingleContainer[KeycloakContainer] {
   override val container: KeycloakContainer = new KeycloakContainer()
-    //sample keycloak realm...
+    // sample keycloak realm...
     .withRealmImportFile("/keycloak.json")
 }

@@ -53,9 +53,9 @@ class ExpressionSuggesterBenchmark {
   @BenchmarkMode(Array(Mode.SingleShotTime))
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
   def complexExpressionBenchmark(): AnyRef = {
-    setup.test("""{{"abc": 1, "def": "foo"}, {"abc":-4, "def": "bar"}, {"abc": #intVar, "def": #stringVar}}.?[#this.abc > 0].![#this.def][0].toUpperCase.""", 135)
+    setup.test(
+      """{{"abc": 1, "def": "foo"}, {"abc":-4, "def": "bar"}, {"abc": #intVar, "def": #stringVar}}.?[#this.abc > 0].![#this.def][0].toUpperCase.""",
+      135
+    )
   }
 }
-
-
-

@@ -39,10 +39,10 @@ object PaymentV1 extends TestSchemaWithRecord {
     """.stripMargin
 
   val exampleData: Map[String, Any] = Map(
-    "id" -> "1",
-    "amount" -> 100.00,
+    "id"       -> "1",
+    "amount"   -> 100.00,
     "currency" -> Currency.exampleData,
-    "company" -> Company.exampleData,
+    "company"  -> Company.exampleData,
     "products" -> List(
       Product.exampleData,
       Map("id" -> "fff29bd0-0778-4525-83f2-f0e4a486754f", "name" -> "FRAUD", "price" -> 60.00)

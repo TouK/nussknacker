@@ -23,10 +23,13 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   test("should accept same id in fragment and main process ") {
 
-    val process = resolve(ScenarioBuilder.streaming("proc1")
-      .source("id", "input")
-      .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "param" -> "#input.value2")
-      .processorEnd("end1", "logService", "all" -> "#input.value2"))
+    val process = resolve(
+      ScenarioBuilder
+        .streaming("proc1")
+        .source("id", "input")
+        .fragmentOneOut("sub", "fragment1", "output", "fragmentResult", "param" -> "#input.value2")
+        .processorEnd("end1", "logService", "all" -> "#input.value2")
+    )
 
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0))
@@ -40,10 +43,13 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   test("should handle split in fragment") {
 
-    val process = resolve(ScenarioBuilder.streaming("proc1")
-      .source("id", "input")
-      .fragmentOneOut("sub", "splitFragment", "output", "fragmentResult", "param" -> "#input.value2")
-      .processorEnd("end1", "logService", "all" -> "#input.value2"))
+    val process = resolve(
+      ScenarioBuilder
+        .streaming("proc1")
+        .source("id", "input")
+        .fragmentOneOut("sub", "splitFragment", "output", "fragmentResult", "param" -> "#input.value2")
+        .processorEnd("end1", "logService", "all" -> "#input.value2")
+    )
 
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0))
@@ -56,10 +62,13 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("be possible to use global vars in fragment") {
-    val process = resolve(ScenarioBuilder.streaming("proc1")
-      .source("id", "input")
-      .fragmentOneOut("sub", "fragmentGlobal", "output", "fragmentResult")
-      .processorEnd("end1", "logService", "all" -> "#input.value2"))
+    val process = resolve(
+      ScenarioBuilder
+        .streaming("proc1")
+        .source("id", "input")
+        .fragmentOneOut("sub", "fragmentGlobal", "output", "fragmentResult")
+        .processorEnd("end1", "logService", "all" -> "#input.value2")
+    )
 
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0))
@@ -72,10 +81,13 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("be possible to use diamond fragments") {
-    val process = resolve(ScenarioBuilder.streaming("proc1")
-      .source("id", "input")
-      .fragmentOneOut("sub", "diamondFragment", "output33", "fragmentResult", "ala" -> "#input.id")
-      .processorEnd("end1", "logService", "all" -> "#input.value2"))
+    val process = resolve(
+      ScenarioBuilder
+        .streaming("proc1")
+        .source("id", "input")
+        .fragmentOneOut("sub", "diamondFragment", "output33", "fragmentResult", "ala" -> "#input.id")
+        .processorEnd("end1", "logService", "all" -> "#input.value2")
+    )
 
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0))
@@ -88,52 +100,89 @@ class FragmentSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   }
 
   private def resolve(scenario: CanonicalProcess) = {
-    val fragment = CanonicalProcess(MetaData("fragment1", FragmentSpecificData()),
+    val fragment = CanonicalProcess(
+      MetaData("fragment1", FragmentSpecificData()),
       List(
-        canonicalnode.FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "#param == 'a'"),
+        canonicalnode.FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))
+        ),
+        canonicalnode.FilterNode(
+          Filter("f1", "#param == 'a'"),
           List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List()))))
-        ), canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
+        ),
+        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      ),
+      List.empty
+    )
 
-    val fragmentWithSplit = CanonicalProcess(MetaData("splitFragment", FragmentSpecificData()),
+    val fragmentWithSplit = CanonicalProcess(
+      MetaData("splitFragment", FragmentSpecificData()),
       List(
-        canonicalnode.FlatNode(FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))),
-        canonicalnode.SplitNode(Split("split"), List(
-          List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List())))),
-          List(canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty)))
-        ))
-      ), List.empty)
-
-    val fragmentWithGlobalVar = CanonicalProcess(MetaData("fragmentGlobal", FragmentSpecificData()),
-      List(
-        canonicalnode.FlatNode(FragmentInputDefinition("start", List())),
-        canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"),
-          List()
-        ), canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))), List.empty)
-
-    val diamondFragment = CanonicalProcess(MetaData("diamondFragment", FragmentSpecificData()),
-      List(
-        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
-        canonicalnode.SplitNode(Split("split"),
+        canonicalnode.FlatNode(
+          FragmentInputDefinition("start", List(FragmentParameter("param", FragmentClazzRef[String])))
+        ),
+        canonicalnode.SplitNode(
+          Split("split"),
           List(
-            List(canonicalnode.FilterNode(Filter("filter2a", "true"), Nil), FlatNode(BranchEndData(BranchEndDefinition("end1", "join1")))),
-            List(canonicalnode.FilterNode(Filter("filter2b", "true"), Nil), FlatNode(BranchEndData(BranchEndDefinition("end2", "join1"))))
+            List(canonicalnode.FlatNode(Sink("end1", SinkRef("monitor", List())))),
+            List(canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty)))
           )
         )
-      ), List(
-        FlatNode(Join("join1", Some("output"), "joinBranchExpression", Nil, List(
-          BranchParameters("end1", List(Parameter("value", "#ala"))),
-          BranchParameters("end2", List(Parameter("value", "#ala")))
-        ), None)),
+      ),
+      List.empty
+    )
+
+    val fragmentWithGlobalVar = CanonicalProcess(
+      MetaData("fragmentGlobal", FragmentSpecificData()),
+      List(
+        canonicalnode.FlatNode(FragmentInputDefinition("start", List())),
+        canonicalnode.FilterNode(Filter("f1", "#processHelper.constant == 4"), List()),
+        canonicalnode.FlatNode(FragmentOutputDefinition("out1", "output", List.empty))
+      ),
+      List.empty
+    )
+
+    val diamondFragment = CanonicalProcess(
+      MetaData("diamondFragment", FragmentSpecificData()),
+      List(
+        FlatNode(FragmentInputDefinition("start", List(FragmentParameter("ala", FragmentClazzRef[String])))),
+        canonicalnode.SplitNode(
+          Split("split"),
+          List(
+            List(
+              canonicalnode.FilterNode(Filter("filter2a", "true"), Nil),
+              FlatNode(BranchEndData(BranchEndDefinition("end1", "join1")))
+            ),
+            List(
+              canonicalnode.FilterNode(Filter("filter2b", "true"), Nil),
+              FlatNode(BranchEndData(BranchEndDefinition("end2", "join1")))
+            )
+          )
+        )
+      ),
+      List(
+        FlatNode(
+          Join(
+            "join1",
+            Some("output"),
+            "joinBranchExpression",
+            Nil,
+            List(
+              BranchParameters("end1", List(Parameter("value", "#ala"))),
+              BranchParameters("end2", List(Parameter("value", "#ala")))
+            ),
+            None
+          )
+        ),
         FlatNode(FragmentOutputDefinition("output22", "output33", Nil, None))
       ) :: Nil
     )
 
-    val resolved = FragmentResolver(Set(fragmentWithSplit, fragment, fragmentWithGlobalVar, diamondFragment)).resolve(scenario)
+    val resolved =
+      FragmentResolver(Set(fragmentWithSplit, fragment, fragmentWithGlobalVar, diamondFragment)).resolve(scenario)
 
     resolved shouldBe Symbol("valid")
     resolved.toOption.get
   }
-
 
 }

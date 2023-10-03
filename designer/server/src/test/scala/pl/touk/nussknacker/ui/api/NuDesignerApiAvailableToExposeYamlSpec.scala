@@ -22,11 +22,11 @@ import scala.util.Try
 class NuDesignerApiAvailableToExposeYamlSpec extends AnyFunSuite with Matchers {
 
   test("Nu Designer OpenAPI document with all available to expose endpoints has to be up to date") {
-    val currentNuDesignerOpenApiYamlContent = (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
-    NuDesignerApiAvailableToExpose.generateOpenApiYaml should be (currentNuDesignerOpenApiYamlContent)
+    val currentNuDesignerOpenApiYamlContent =
+      (Project.root / "docs-internal" / "api" / "nu-designer-openapi.yaml").contentAsString
+    NuDesignerApiAvailableToExpose.generateOpenApiYaml should be(currentNuDesignerOpenApiYamlContent)
   }
 }
-
 
 object NuDesignerApiAvailableToExpose {
 
@@ -43,17 +43,19 @@ object NuDesignerApiAvailableToExpose {
 
   private def findApiEndpointsClasses() = {
     val baseEndpointDefinitionsClass = classOf[BaseEndpointDefinitions]
-    val reflections = new Reflections(new ConfigurationBuilder().forPackages(baseEndpointDefinitionsClass.getPackageName))
+    val reflections = new Reflections(
+      new ConfigurationBuilder().forPackages(baseEndpointDefinitionsClass.getPackageName)
+    )
     reflections
-      .getSubTypesOf(baseEndpointDefinitionsClass).asScala
+      .getSubTypesOf(baseEndpointDefinitionsClass)
+      .asScala
       .toList
       .sortBy(_.getName)
   }
 
   private def findEndpointsInClass(clazz: Class[_ <: BaseEndpointDefinitions]) = {
     val endpointDefinitions = createInstanceOf(clazz)
-    clazz
-      .getDeclaredMethods.toList
+    clazz.getDeclaredMethods.toList
       .filter(isEndpointMethod)
       .sortBy(_.getName)
       .map(instantiateEndpointDefinition(endpointDefinitions, _))
@@ -66,14 +68,18 @@ object NuDesignerApiAvailableToExpose {
         Try(clazz.getDeclaredConstructor())
           .map(_.newInstance())
       }
-      .getOrElse(throw new IllegalStateException(s"Class ${clazz.getName} is required to have either one parameter constructor or constructor iwhtout parameters"))
+      .getOrElse(
+        throw new IllegalStateException(
+          s"Class ${clazz.getName} is required to have either one parameter constructor or constructor iwhtout parameters"
+        )
+      )
   }
 
   private def isEndpointMethod(method: Method) = {
     method.getReturnType == classOf[Endpoint[_, _, _, _, _]] &&
-      Modifier.isPublic(method.getModifiers) &&
-      method.getParameterCount == 0 &&
-      !method.getName.startsWith("base")
+    Modifier.isPublic(method.getModifiers) &&
+    method.getParameterCount == 0 &&
+    !method.getName.startsWith("base")
   }
 
   private def instantiateEndpointDefinition(instance: BaseEndpointDefinitions, method: Method) = {

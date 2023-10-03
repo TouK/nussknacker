@@ -24,17 +24,18 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class AppApiHttpService(config: Config,
-                        authenticator: AuthenticationResources,
-                        processingTypeDataReloader: ProcessingTypeDataReload,
-                        modelData: ProcessingTypeDataProvider[ModelData, _],
-                        processRepository: FetchingProcessRepository[Future],
-                        processValidation: ProcessValidation,
-                        deploymentService: DeploymentService,
-                        processCategoryService: ProcessCategoryService,
-                        shouldExposeConfig: Boolean)
-                       (implicit executionContext: ExecutionContext)
-  extends BaseHttpService(config, processCategoryService, authenticator)
+class AppApiHttpService(
+    config: Config,
+    authenticator: AuthenticationResources,
+    processingTypeDataReloader: ProcessingTypeDataReload,
+    modelData: ProcessingTypeDataProvider[ModelData, _],
+    processRepository: FetchingProcessRepository[Future],
+    processValidation: ProcessValidation,
+    deploymentService: DeploymentService,
+    processCategoryService: ProcessCategoryService,
+    shouldExposeConfig: Boolean
+)(implicit executionContext: ExecutionContext)
+    extends BaseHttpService(config, processCategoryService, authenticator)
     with LazyLogging {
 
   private val appApiEndpoints = new AppApiEndpoints(authenticator.authenticationMethod())
@@ -49,47 +50,50 @@ class AppApiHttpService(config: Config,
   expose {
     appApiEndpoints.processDeploymentHealthCheckEndpoint
       .serverSecurityLogic(authorizeKnownUser[HealthCheckProcessErrorResponseDto])
-      .serverLogic { implicit loggedUser =>
-        _ =>
-          problemStateByProcessName
-            .map { set =>
-              if (set.isEmpty) {
-                success(HealthCheckProcessSuccessResponseDto())
-              } else {
-                logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
-                logger.debug(s"Scenarios with status PROBLEM: $set")
-                businessError(HealthCheckProcessErrorResponseDto(
+      .serverLogic { implicit loggedUser => _ =>
+        problemStateByProcessName
+          .map { set =>
+            if (set.isEmpty) {
+              success(HealthCheckProcessSuccessResponseDto())
+            } else {
+              logger.warn(s"Scenarios with status PROBLEM: ${set.keys}")
+              logger.debug(s"Scenarios with status PROBLEM: $set")
+              businessError(
+                HealthCheckProcessErrorResponseDto(
                   message = Some("Scenarios with status PROBLEM"),
                   processes = Some(set.keys.toSet)
-                ))
-              }
+                )
+              )
             }
-            .recover {
-              case NonFatal(e) =>
-                logger.error("Failed to get statuses", e)
-                businessError(HealthCheckProcessErrorResponseDto(
-                  message = Some("Failed to retrieve job statuses"),
-                  processes = None
-                ))
-            }
+          }
+          .recover { case NonFatal(e) =>
+            logger.error("Failed to get statuses", e)
+            businessError(
+              HealthCheckProcessErrorResponseDto(
+                message = Some("Failed to retrieve job statuses"),
+                processes = None
+              )
+            )
+          }
       }
   }
 
   expose {
     appApiEndpoints.processValidationHealthCheckEndpoint
       .serverSecurityLogic(authorizeKnownUser[HealthCheckProcessErrorResponseDto])
-      .serverLogic { implicit loggedUser =>
-        _ =>
-          processesWithValidationErrors.map { processes =>
-            if (processes.isEmpty) {
-              success(HealthCheckProcessSuccessResponseDto())
-            } else {
-              businessError(HealthCheckProcessErrorResponseDto(
+      .serverLogic { implicit loggedUser => _ =>
+        processesWithValidationErrors.map { processes =>
+          if (processes.isEmpty) {
+            success(HealthCheckProcessSuccessResponseDto())
+          } else {
+            businessError(
+              HealthCheckProcessErrorResponseDto(
                 message = Some("Scenarios with validation errors"),
                 processes = Some(processes.toSet)
-              ))
-            }
+              )
+            )
           }
+        }
       }
   }
 
@@ -99,8 +103,16 @@ class AppApiHttpService(config: Config,
         Future {
           import net.ceedubs.ficus.Ficus._
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo")
-          val modelDataInfo: Map[ProcessingType, Map[String, String]] = modelData.all.mapValuesNow(_.configCreator.buildInfo())
-          BuildInfoDto(BuildInfo.name, BuildInfo.gitCommit, BuildInfo.buildTime, BuildInfo.version, modelDataInfo, configuredBuildInfo)
+          val modelDataInfo: Map[ProcessingType, Map[String, String]] =
+            modelData.all.mapValuesNow(_.configCreator.buildInfo())
+          BuildInfoDto(
+            BuildInfo.name,
+            BuildInfo.gitCommit,
+            BuildInfo.buildTime,
+            BuildInfo.version,
+            modelDataInfo,
+            configuredBuildInfo
+          )
         }
       }
   }
@@ -108,40 +120,37 @@ class AppApiHttpService(config: Config,
   expose(when = shouldExposeConfig) {
     appApiEndpoints.serverConfigEndpoint
       .serverSecurityLogic(authorizeAdminUser[Unit])
-      .serverLogic { _ =>
-        _ =>
-          Future {
-            val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
-            configJson match {
-              case Right(json) =>
-                success(ServerConfigInfoDto(json))
-              case Left(errorMessage) =>
-                logger.error(s"Cannot create JSON from the Nussknacker configuration. Error: $errorMessage")
-                throw new Exception("Cannot prepare configuration")
-            }
+      .serverLogic { _ => _ =>
+        Future {
+          val configJson = parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
+          configJson match {
+            case Right(json) =>
+              success(ServerConfigInfoDto(json))
+            case Left(errorMessage) =>
+              logger.error(s"Cannot create JSON from the Nussknacker configuration. Error: $errorMessage")
+              throw new Exception("Cannot prepare configuration")
           }
+        }
       }
   }
 
   expose {
     appApiEndpoints.userCategoriesWithProcessingTypesEndpoint
       .serverSecurityLogic(authorizeKnownUser[Unit])
-      .serverLogicSuccess { loggedUser =>
-        _ =>
-          Future {
-            UserCategoriesWithProcessingTypesDto(processCategoryService.getUserCategoriesWithType(loggedUser))
-          }
+      .serverLogicSuccess { loggedUser => _ =>
+        Future {
+          UserCategoriesWithProcessingTypesDto(processCategoryService.getUserCategoriesWithType(loggedUser))
+        }
       }
   }
 
   expose {
     appApiEndpoints.processingTypeDataReloadEndpoint
       .serverSecurityLogic(authorizeAdminUser[Unit])
-      .serverLogic { _ =>
-        _ =>
-          Future(
-            success(processingTypeDataReloader.reloadAll())
-          )
+      .serverLogic { _ => _ =>
+        Future(
+          success(processingTypeDataReloader.reloadAll())
+        )
       }
   }
 
@@ -150,12 +159,15 @@ class AppApiHttpService(config: Config,
       processes <- processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.deployed)
       statusMap <- Future.sequence(mapNameToProcessState(processes)).map(_.toMap)
       withProblem = statusMap.collect {
-        case (name, processStatus@ProcessState(_, _@ProblemStateStatus(_, _), _, _, _, _, _, _, _, _)) => (name, processStatus)
+        case (name, processStatus @ ProcessState(_, _ @ProblemStateStatus(_, _), _, _, _, _, _, _, _, _)) =>
+          (name, processStatus)
       }
     } yield withProblem
   }
 
-  private def mapNameToProcessState(processes: Seq[BaseProcessDetails[_]])(implicit user: LoggedUser): Seq[Future[(String, ProcessState)]] = {
+  private def mapNameToProcessState(
+      processes: Seq[BaseProcessDetails[_]]
+  )(implicit user: LoggedUser): Seq[Future[(String, ProcessState)]] = {
     // Problems should be detected by Healtcheck very quickly. Because of that we return fresh states for list of processes
     implicit val freshnessPolicy: DataFreshnessPolicy = DataFreshnessPolicy.Fresh
     processes.map(process => deploymentService.getProcessState(process).map((process.name, _)))

@@ -15,9 +15,9 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec extends AnyFunSuite with Mat
 
   test("deploy scenario with too low task manager slots counts") {
     val processId = "processTestingTMSlots"
-    val version = ProcessVersion(VersionId.initialVersionId, ProcessName(processId), ProcessId(12), "user1", Some(13))
+    val version   = ProcessVersion(VersionId.initialVersionId, ProcessName(processId), ProcessId(12), "user1", Some(13))
     val parallelism = 2
-    val process = SampleProcess.prepareProcess(processId, parallelism = Some(parallelism))
+    val process     = SampleProcess.prepareProcess(processId, parallelism = Some(parallelism))
 
     try {
       deploymentManager.deploy(version, DeploymentData.empty, process, None).failed.futureValue shouldEqual
