@@ -11,19 +11,23 @@ import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
 
-class OpenIdConnectProfileTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks with PatientScalaFutures {
+class OpenIdConnectProfileTest
+    extends AnyFunSuite
+    with Matchers
+    with TableDrivenPropertyChecks
+    with PatientScalaFutures {
 
   import UsernameClaim._
 
   private val config = OAuth2Configuration.create(ConfigFactory.parseResources("oidc.conf"))
 
   test("should create AuthenticatedUser with proper filled username") {
-    val adminIdentifier = "b5a31081-0251-401d-ac76-b375a171a0a3" //se oauth2-users.conf
-    val identifier = UUID.randomUUID().toString
+    val adminIdentifier   = "b5a31081-0251-401d-ac76-b375a171a0a3" // se oauth2-users.conf
+    val identifier        = UUID.randomUUID().toString
     val preferredUsername = UUID.randomUUID().toString
-    val givenName = UUID.randomUUID().toString
-    val nickname = UUID.randomUUID().toString
-    val name = UUID.randomUUID().toString
+    val givenName         = UUID.randomUUID().toString
+    val nickname          = UUID.randomUUID().toString
+    val name              = UUID.randomUUID().toString
 
     val profile = OpenIdConnectUserInfo(
       subject = Some(identifier),
@@ -35,7 +39,7 @@ class OpenIdConnectProfileTest extends AnyFunSuite with Matchers with TableDrive
       middleName = None,
       profile = None,
       picture = None,
-      website =None,
+      website = None,
       email = None,
       emailVerified = None,
       gender = None,
@@ -59,17 +63,22 @@ class OpenIdConnectProfileTest extends AnyFunSuite with Matchers with TableDrive
     val data = Table(
       ("config", "profile", "result"),
       (config, profile.copy(preferredUsername = None, nickname = None), expected),
-      (config, profile, expected.copy(username = preferredUsername)), //back compatibility
-      (config, profile.copy(preferredUsername = None), expected.copy(username = nickname)), //back compatibility
-      (config, profile.copy(subject = Some(adminIdentifier)), expected.copy(id = adminIdentifier, username = "Adminek")),
+      (config, profile, expected.copy(username = preferredUsername)),                       // back compatibility
+      (config, profile.copy(preferredUsername = None), expected.copy(username = nickname)), // back compatibility
+      (
+        config,
+        profile.copy(subject = Some(adminIdentifier)),
+        expected.copy(id = adminIdentifier, username = "Adminek")
+      ),
       (config.copy(usernameClaim = Some(PreferredUsername)), profile, expected.copy(username = preferredUsername)),
       (config.copy(usernameClaim = Some(GivenName)), profile, expected.copy(username = givenName)),
       (config.copy(usernameClaim = Some(Nickname)), profile, expected.copy(username = nickname)),
       (config.copy(usernameClaim = Some(Name)), profile, expected.copy(username = name)),
     )
 
-    forAll(data){ (config, profile,  expected) =>
-      val result = OpenIdConnectProfile.getAuthenticatedUser(AccessTokenData.empty, Future.successful(profile), config).futureValue
+    forAll(data) { (config, profile, expected) =>
+      val result =
+        OpenIdConnectProfile.getAuthenticatedUser(AccessTokenData.empty, Future.successful(profile), config).futureValue
       result shouldBe expected
     }
 

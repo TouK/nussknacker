@@ -23,25 +23,28 @@ trait JwtStandardClaims {
 }
 
 class JwtOAuth2Service[
-  UserInfoData,
-  AuthorizationData <: OAuth2AuthorizationData,
-  AccessTokenClaims <: JwtStandardClaims : Decoder
-](clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData],
-  configuration: OAuth2Configuration)
- (implicit ec: ExecutionContext)
-  extends BaseOAuth2Service[UserInfoData, AuthorizationData](clientApi)
+    UserInfoData,
+    AuthorizationData <: OAuth2AuthorizationData,
+    AccessTokenClaims <: JwtStandardClaims: Decoder
+](clientApi: OAuth2ClientApi[UserInfoData, AuthorizationData], configuration: OAuth2Configuration)(
+    implicit ec: ExecutionContext
+) extends BaseOAuth2Service[UserInfoData, AuthorizationData](clientApi)
     with LazyLogging {
 
-  protected val accessTokenIsJwt: Boolean = configuration.jwt.exists(_.accessTokenIsJwt)
+  protected val accessTokenIsJwt: Boolean                   = configuration.jwt.exists(_.accessTokenIsJwt)
   protected val requiredAccessTokenAudience: Option[String] = configuration.jwt.flatMap(_.audience)
 
-  protected lazy val jwtValidator: JwtValidator = new JwtValidator(_ => configuration.jwt
-    .flatMap(_.authServerPublicKey).getOrElse(throw new NoSuchElementException("JWT configuration not found")))
+  protected lazy val jwtValidator: JwtValidator = new JwtValidator(_ =>
+    configuration.jwt
+      .flatMap(_.authServerPublicKey)
+      .getOrElse(throw new NoSuchElementException("JWT configuration not found"))
+  )
 
-  protected def introspectJwtToken[Claims : Decoder](token: String): Future[Claims] = jwtValidator.introspect[Claims](token) match {
-    case Valid(claims) => Future.successful(claims)
-    case Invalid(jwtError) => Future.failed(OAuth2CompoundException(one(jwtError)))
-  }
+  protected def introspectJwtToken[Claims: Decoder](token: String): Future[Claims] =
+    jwtValidator.introspect[Claims](token) match {
+      case Valid(claims)     => Future.successful(claims)
+      case Invalid(jwtError) => Future.failed(OAuth2CompoundException(one(jwtError)))
+    }
 
   override def introspectAccessToken(accessToken: String): Future[AccessTokenData] = {
     if (accessTokenIsJwt) {
@@ -65,8 +68,12 @@ class JwtOAuth2Service[
     AccessTokenData(claims.subject, claims.expirationTime, Set.empty)
   }
 
-  override protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
-    clientApi.accessTokenRequest(authorizationCode, redirectUri)
+  override protected def obtainAuthorization(
+      authorizationCode: String,
+      redirectUri: String
+  ): Future[AuthorizationData] =
+    clientApi
+      .accessTokenRequest(authorizationCode, redirectUri)
       .andThen { case Success(authorization) if accessTokenIsJwt => introspectAccessToken(authorization.accessToken) }
 
 }

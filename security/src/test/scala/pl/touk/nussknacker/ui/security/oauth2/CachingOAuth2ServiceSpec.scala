@@ -14,7 +14,8 @@ import scala.concurrent.duration._
 
 class CachingOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matchers with WithJwtOauth2Service {
 
-  final override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(100, Millis)))
+  final override implicit def patienceConfig: PatienceConfig =
+    PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(100, Millis)))
 
   implicit val clock: Clock = Clock.systemUTC()
 
@@ -34,20 +35,27 @@ class CachingOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matcher
   private var checkRecordings = Map[String, Int]()
 
   private val recordingJwtOauth2Service = new OAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData] {
-    override def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(DefaultOidcAuthorizationData, OpenIdConnectUserInfo)] =
+    override def obtainAuthorizationAndUserInfo(
+        authorizationCode: String,
+        redirectUri: String
+    ): Future[(DefaultOidcAuthorizationData, OpenIdConnectUserInfo)] =
       jwtOAuth2Service.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
-    override def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(OpenIdConnectUserInfo, Option[Instant])] = {
+    override def checkAuthorizationAndObtainUserinfo(
+        accessToken: String
+    ): Future[(OpenIdConnectUserInfo, Option[Instant])] = {
       checkRecordings = checkRecordings + (accessToken -> (checkRecordings.getOrElse(accessToken, 0) + 1))
       jwtOAuth2Service.checkAuthorizationAndObtainUserinfo(accessToken)
     }
     override def introspectAccessToken(accessToken: String): Future[AccessTokenData] = ???
-    override def obtainUserInfo(accessToken: String, accessTokenData: AccessTokenData): Future[OpenIdConnectUserInfo] = ???
+    override def obtainUserInfo(accessToken: String, accessTokenData: AccessTokenData): Future[OpenIdConnectUserInfo] =
+      ???
   }
 
   private val cachingOAuth2Service = new CachingOAuth2Service(recordingJwtOauth2Service, config, ticker)
 
   it("should cache token only for period when token is valid") {
-    val token = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
+    val token =
+      JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
     checkRecordings.get(token) shouldBe None
 
     cachingOAuth2Service.checkAuthorizationAndObtainUserinfo(token).futureValue

@@ -14,33 +14,38 @@ trait OAuth2AuthorizationData {
   val refreshToken: Option[String]
 }
 
-abstract class OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2AuthorizationData](implicit ec: ExecutionContext) {
+abstract class OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2AuthorizationData](
+    implicit ec: ExecutionContext
+) {
   /*
   According to the OAuth2 specification, the redirect URI previously passed to the authorization endpoint is required
   along with an authorization code to obtain an access token. At this step, the URI is used solely for verification.
    String comparison is performed by the authorization server, hence the type.
    */
-  def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, UserInfoData)]
+  def obtainAuthorizationAndUserInfo(
+      authorizationCode: String,
+      redirectUri: String
+  ): Future[(AuthorizationData, UserInfoData)]
   def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] = {
     for {
       accessTokenData <- introspectAccessToken(accessToken)
-      userInfo <- obtainUserInfo(accessToken, accessTokenData)
+      userInfo        <- obtainUserInfo(accessToken, accessTokenData)
     } yield (userInfo, accessTokenData.expirationTime)
   }
   def introspectAccessToken(accessToken: String): Future[AccessTokenData]
   def obtainUserInfo(accessToken: String, accessTokenData: AccessTokenData): Future[UserInfoData]
 }
 
-case class AccessTokenData(subject: Option[String],
-                           expirationTime: Option[Instant],
-                           roles: Set[String])
+case class AccessTokenData(subject: Option[String], expirationTime: Option[Instant], roles: Set[String])
 
 object AccessTokenData {
   val empty: AccessTokenData = AccessTokenData(None, None, Set.empty)
 }
 
-
 trait OAuth2ServiceFactory {
-  def create(configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any]): OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] =
+  def create(configuration: OAuth2Configuration)(
+      implicit ec: ExecutionContext,
+      sttpBackend: SttpBackend[Future, Any]
+  ): OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] =
     throw new NotImplementedError("Trying to use the new version of the interface, which is not implemented yet")
 }

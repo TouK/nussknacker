@@ -22,19 +22,23 @@ import java.util.Base64
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-class JwtTokenAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives
-  with FailFastCirceSupport with OptionValues {
+class JwtTokenAuthenticationSpec
+    extends AnyFunSpec
+    with Matchers
+    with ScalatestRouteTest
+    with Directives
+    with FailFastCirceSupport
+    with OptionValues {
 
   implicit val clock: Clock = Clock.systemUTC()
 
-  private val keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair()
+  private val keyPair     = KeyPairGenerator.getInstance("RSA").generateKeyPair()
   private val userinfoUri = Uri(URI.create("http://authorization.server/userinfo"))
-  private val audience = "http://nussknacker"
+  private val audience    = "http://nussknacker"
 
   implicit val timeout: RouteTestTimeout = RouteTestTimeout(5 seconds)
 
-  private val config = ConfigFactory.parseString(
-    s"""authentication: {
+  private val config = ConfigFactory.parseString(s"""authentication: {
        |  method: "OAuth2"
        |  usersFile: "classpath:oauth2-users.conf"
        |  authorizeUri: "http://ignored"
@@ -50,15 +54,26 @@ class JwtTokenAuthenticationSpec extends AnyFunSpec with Matchers with Scalatest
        |  }
        |}""".stripMargin)
 
-  private val validAccessToken = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
-  private val expiredAccessToken = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresNow, keyPair.getPrivate, JwtAlgorithm.RS256)
-  private val accessTokenWithInvalidAudience = JwtCirce.encode(JwtClaim().about("admin").to("invalid").expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
-  private val noProfileAccessToken = JwtCirce.encode(JwtClaim().about("no-profile-user").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
+  private val validAccessToken =
+    JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
+  private val expiredAccessToken =
+    JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresNow, keyPair.getPrivate, JwtAlgorithm.RS256)
+  private val accessTokenWithInvalidAudience =
+    JwtCirce.encode(JwtClaim().about("admin").to("invalid").expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
+  private val noProfileAccessToken = JwtCirce.encode(
+    JwtClaim().about("no-profile-user").to(audience).expiresIn(180),
+    keyPair.getPrivate,
+    JwtAlgorithm.RS256
+  )
 
-  implicit private val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture
-    .whenRequestMatches(req => req.uri == userinfoUri && req.header(HeaderNames.Authorization).value != s"Bearer $noProfileAccessToken")
-    .thenRespond(s""" { "sub": "admin" } """))
-     // See classpath:oauth2-users.conf for the roles defined for user admin.
+  implicit private val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend(
+    SttpBackendStub.asynchronousFuture
+      .whenRequestMatches(req =>
+        req.uri == userinfoUri && req.header(HeaderNames.Authorization).value != s"Bearer $noProfileAccessToken"
+      )
+      .thenRespond(s""" { "sub": "admin" } """)
+  )
+  // See classpath:oauth2-users.conf for the roles defined for user admin.
 
   private val classLoader = getClass.getClassLoader
 
@@ -84,7 +99,9 @@ class JwtTokenAuthenticationSpec extends AnyFunSpec with Matchers with Scalatest
   }
 
   it("should request authorization on a token with an invalid audience claim") {
-    Get("/config").addCredentials(HttpCredentials.createOAuth2BearerToken(accessTokenWithInvalidAudience)) ~> testRoute ~> check {
+    Get("/config").addCredentials(
+      HttpCredentials.createOAuth2BearerToken(accessTokenWithInvalidAudience)
+    ) ~> testRoute ~> check {
       status shouldEqual StatusCodes.Unauthorized
     }
   }

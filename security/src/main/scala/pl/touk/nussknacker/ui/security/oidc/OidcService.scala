@@ -4,7 +4,13 @@ import com.auth0.jwk.{JwkProvider, JwkProviderBuilder}
 import io.circe.Decoder
 import pdi.jwt.JwtAlgorithm
 import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
-import pl.touk.nussknacker.ui.security.oauth2.{AccessTokenData, DefaultOidcAuthorizationData, GenericOidcService, OAuth2ClientApi, OpenIdConnectUserInfo}
+import pl.touk.nussknacker.ui.security.oauth2.{
+  AccessTokenData,
+  DefaultOidcAuthorizationData,
+  GenericOidcService,
+  OAuth2ClientApi,
+  OpenIdConnectUserInfo
+}
 import pl.touk.nussknacker.ui.security.oidc.OidcService.createJwtValidator
 import sttp.client3.SttpBackend
 
@@ -12,11 +18,18 @@ import java.nio.charset.StandardCharsets
 import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.{ExecutionContext, Future}
 
-class OidcService(configuration: OidcAuthenticationConfiguration)
-                 (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
-  extends GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](
-    OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration.oAuth2Configuration)(OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims), implicitly[Decoder[DefaultOidcAuthorizationData]], ec, sttpBackend),
-    configuration.oAuth2Configuration)(OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims), ec) {
+class OidcService(configuration: OidcAuthenticationConfiguration)(
+    implicit ec: ExecutionContext,
+    sttpBackend: SttpBackend[Future, Any]
+) extends GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](
+      OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration.oAuth2Configuration)(
+        OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims),
+        implicitly[Decoder[DefaultOidcAuthorizationData]],
+        ec,
+        sttpBackend
+      ),
+      configuration.oAuth2Configuration
+    )(OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims), ec) {
 
   override protected def toIntrospectionResult(claims: OpenIdConnectUserInfo): AccessTokenData = {
     super.toIntrospectionResult(claims).copy(roles = claims.roles)
@@ -33,8 +46,15 @@ object OidcService {
       case Some(definedKeyId) =>
         jwkProvider(configuration).get(definedKeyId).getPublicKey
       case None =>
-        val definedClientSecret = configuration.clientSecret.getOrElse(throw new IllegalStateException("clientSecret must be specified in configuration for JWT without keyId for OIDC"))
-        new SecretKeySpec(definedClientSecret.getBytes(StandardCharsets.UTF_8), jwtHeader.algorithm.getOrElse(JwtAlgorithm.HS256).name)
+        val definedClientSecret = configuration.clientSecret.getOrElse(
+          throw new IllegalStateException(
+            "clientSecret must be specified in configuration for JWT without keyId for OIDC"
+          )
+        )
+        new SecretKeySpec(
+          definedClientSecret.getBytes(StandardCharsets.UTF_8),
+          jwtHeader.algorithm.getOrElse(JwtAlgorithm.HS256).name
+        )
     }
   })
 
@@ -43,4 +63,3 @@ object OidcService {
   ).build()
 
 }
-
